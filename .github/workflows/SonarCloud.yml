@@ -4,6 +4,8 @@ on:
     branches: [ 7.2, master ]
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
 jobs:
   build:
     name: Build
