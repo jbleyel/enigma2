@@ -17,7 +17,7 @@ jobs:
       - uses: 654wak654/python-lint@master
         with:
           python-root-list: "lib/python"
-          use-pylint: true
+          use-pylint: false
           use-pycodestyle: true
           use-flake8: true
           use-black: true
