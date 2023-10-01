@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import absolute_import
 from Plugins.Extensions.CutListEditor.plugin import CutListEditor
 from Components.ServiceEventTracker import ServiceEventTracker
 from enigma import iPlayableService, iServiceInformation
@@ -80,8 +78,8 @@ class CutlistReader(TitleCutter):
 						MultiContentEntryText(text = 1),
 						MultiContentEntryText(text = 2)
 					],
-				 "fonts": [gFont("Regular", 18)],
-				 "itemHeight": 20
+					"fonts": [gFont("Regular", 18)],
+					"itemHeight": 20
 				}
 			</convert>
 		</widget>

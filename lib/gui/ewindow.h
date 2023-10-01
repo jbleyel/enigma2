@@ -23,6 +23,8 @@ public:
 	};
 
 	void setBackgroundColor(const gRGB &col);
+	void setBackgroundGradient(const gRGB &startcolor, const gRGB &endcolor, int direction, bool alphablend);
+	void setCornerRadius(int radius, int edges);
 
 	void setFlag(int flags);
 	void clearFlag(int flags);

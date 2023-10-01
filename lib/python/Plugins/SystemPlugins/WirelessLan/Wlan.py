@@ -429,7 +429,7 @@ class Status:
 						signal = line[line.index("Signal level") + 13:len(line)]
 				if signal:
 					data["signal"] = signal
-		if ssid != None and ssid != "off" and ssid != "":
+		if ssid is not None and ssid != "off" and ssid != "":
 			try:
 				scanResults = list(Cell.all(iface, 5))
 				print("[Wlan] Scan results = '%s'." % scanResults)
@@ -473,8 +473,8 @@ class Status:
 			if not self.wlanConsole.appContainers:
 				print("[Wlan] self.wlanIface after loading: '%s'." % str(self.wlanIface))
 				if self.statusCallback is not None:
-						self.statusCallback(True, self.wlanIface)
-						self.statusCallback = None
+					self.statusCallback(True, self.wlanIface)
+					self.statusCallback = None
 
 	def getAdapterAttribute(self, iface, attribute):
 		self.iface = iface

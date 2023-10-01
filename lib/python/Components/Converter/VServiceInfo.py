@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from Components.Converter.Converter import Converter
-from enigma import iServiceInformation, iPlayableService
+from enigma import iPlayableService
 from Components.Element import cached
 
 
@@ -55,7 +55,7 @@ class VServiceInfo(Converter):
 		if not info:
 			return ""
 
-	# FIXME What's this ? 
+	# FIXME What's this ?
 
 	text = property(getText)
 
@@ -66,7 +66,7 @@ class VServiceInfo(Converter):
 		if not info:
 			return -1
 
-	# FIXME What's this ? 
+	# FIXME What's this ?
 
 	value = property(getValue)
 

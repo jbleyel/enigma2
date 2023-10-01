@@ -1,11 +1,8 @@
-from __future__ import print_function
-from __future__ import absolute_import
 from Components.config import config
 from Components.Converter.Converter import Converter
 from enigma import iServiceInformation, iPlayableService
 from Components.Element import cached
 from Components.Converter.Poll import Poll
-
 
 
 class VtiInfo(Poll, Converter):
@@ -158,7 +155,7 @@ class VtiInfo(Poll, Converter):
             f = open('/proc/stb/sensors/temp0/unit', 'rb')
             unit = f.readline().strip()
             f.close()
-            tempinfo = 'TEMP: %s %s%s' % (str(temp), u"\u00B0", str(unit))
+            tempinfo = 'TEMP: %s %s%s' % (str(temp), "\u00B0", str(unit))
             return tempinfo
         except:
             pass

@@ -1,12 +1,11 @@
 from errno import EEXIST
 from grp import getgrgid
 from json import loads
-from os import R_OK, X_OK, access, chmod, environ, listdir, lstat, mkdir, readlink, remove, rename, rmdir, sep, stat, strerror, symlink, walk
+from os import R_OK, X_OK, access, chmod, environ, listdir, lstat, mkdir, readlink, remove, rename, rmdir, stat, symlink
 from os.path import basename, dirname, exists, getsize, isdir, isfile, islink, join as pathjoin, normpath, splitext
 from pwd import getpwuid
 from puremagic import PureError, from_file as fromfile
 from re import compile
-from shutil import copy2, copytree, move, rmtree
 from string import digits
 from stat import S_IFBLK, S_IFCHR, S_IFDIR, S_IFIFO, S_IFLNK, S_IFMT, S_IFREG, S_IFSOCK, S_IMODE, S_ISBLK, S_ISCHR, S_ISLNK, filemode
 from tempfile import gettempdir, mkdtemp
@@ -16,11 +15,10 @@ from twisted.internet.threads import deferToThread
 from enigma import eConsoleAppContainer, ePicLoad, ePoint, eServiceReference, eSize, eTimer
 
 from Components.ActionMap import ActionMap, HelpableActionMap, HelpableNumberActionMap
-from Components.AVSwitch import AVSwitch
 from Components.ChoiceList import ChoiceList, ChoiceEntryComponent
 from Components.config import config, ConfigYesNo, ConfigText, ConfigDirectory, ConfigSelection, ConfigLocations, ConfigSelectionNumber, ConfigSubsection
 from Components.Console import Console as console
-from Components.FileList import AUDIO_EXTENSIONS, DVD_EXTENSIONS, EXTENSIONS, FILE_PATH, FILE_IS_DIR, FileList, FileListMultiSelect, IMAGE_EXTENSIONS, MOVIE_EXTENSIONS, RECORDING_EXTENSIONS
+from Components.FileList import AUDIO_EXTENSIONS, DVD_EXTENSIONS, EXTENSIONS, FILE_PATH, FILE_IS_DIR, FileList, IMAGE_EXTENSIONS, MOVIE_EXTENSIONS, RECORDING_EXTENSIONS
 from Components.Harddisk import harddiskmanager
 from Components.Label import Label
 from Components.MenuList import MenuList
@@ -391,7 +389,7 @@ class FileCommander(Screen, HelpableScreen, NumericalTextInput, StatInfo):
 
 	def buildFileFilter(self):
 		if config.plugins.FileCommander.extension.value == "myfilter":
-			return compile("^.*\.(%s)" % "|".join([x.strip() for x in config.plugins.FileCommander.myExtensions.value.split(",")]))
+			return compile(r"^.*\.(%s)" % "|".join([x.strip() for x in config.plugins.FileCommander.myExtensions.value.split(",")]))
 		return compile(config.plugins.FileCommander.extension.value)
 
 	def selectionChanged(self):
@@ -399,10 +397,10 @@ class FileCommander(Screen, HelpableScreen, NumericalTextInput, StatInfo):
 		self.updateButtons()
 
 	def layoutFinished(self):
-		self["headleft"].master.master.instance.enableAutoNavigation(False)  # Override listbox navigation.
-		self["headright"].master.master.instance.enableAutoNavigation(False)  # Override listbox navigation.
-		self["listleft"].instance.enableAutoNavigation(False)  # Override listbox navigation.
-		self["listright"].instance.enableAutoNavigation(False)  # Override listbox navigation.
+		self["headleft"].enableAutoNavigation(False)  # Override listbox navigation.
+		self["headright"].enableAutoNavigation(False)  # Override listbox navigation.
+		self["listleft"].enableAutoNavigation(False)  # Override listbox navigation.
+		self["listright"].enableAutoNavigation(False)  # Override listbox navigation.
 		if self.leftActive:
 			self.keyGoLeftColumn()
 		else:
@@ -418,8 +416,8 @@ class FileCommander(Screen, HelpableScreen, NumericalTextInput, StatInfo):
 	def updateHeading(self, column):
 		def buildHeadingData(column):  # Numbers in trailing comments are the template text indexes.
 			sort = column.getSortBy().split(",")
-			sortDirs, reverseDirs = [int(x) for x in sort[0].split(".")]
-			sortFiles, reverseFiles = [int(x) for x in sort[1].split(".")]
+			sortDirs, reverseDirs = (int(x) for x in sort[0].split("."))
+			sortFiles, reverseFiles = (int(x) for x in sort[1].split("."))
 			sortText = "[D]%s%s[F]%s%s" % (("n", "d", "s")[sortDirs], ("+", "-")[reverseDirs], ("n", "d", "s")[sortFiles], ("+", "-")[reverseFiles])  # (name|date|size)(normal|reverse)
 			path = column.getPath()
 			currentDirectory = column.getCurrentDirectory()
@@ -484,8 +482,8 @@ class FileCommander(Screen, HelpableScreen, NumericalTextInput, StatInfo):
 	def updateSort(self):
 		def formatSort(columnSort):
 			sortDirs, sortFiles = columnSort.split(",")
-			sortDirs, reverseDirs = [int(x) for x in sortDirs.split(".")]
-			sortFiles, reverseFiles = [int(x) for x in sortFiles.split(".")]
+			sortDirs, reverseDirs = (int(x) for x in sortDirs.split("."))
+			sortFiles, reverseFiles = (int(x) for x in sortFiles.split("."))
 			sD = (_("name"), _("date"), _("size"))[sortDirs]  # name, date, size
 			sF = (_("name"), _("date"), _("size"))[sortFiles]
 			rD = ("\u25B2", "\u25BC")[reverseDirs]  # normal, reverse
@@ -1659,7 +1657,7 @@ class FileCommander(Screen, HelpableScreen, NumericalTextInput, StatInfo):
 	def isFileText(self, path):
 		text = True
 		try:
-			with open(path, mode="r", encoding="UTF-8", errors="strict") as fd:
+			with open(path, encoding="UTF-8", errors="strict") as fd:
 				fd.read(BLOCK_CHUNK_SIZE)
 		except Exception:
 			text = False
@@ -2156,7 +2154,7 @@ class FileCommanderFileViewer(Screen, HelpableScreen):
 	def keyText(self):
 		data = []
 		try:
-			with open(self.path, "r") as fd:
+			with open(self.path) as fd:
 				data = fd.read(MAX_EDIT_SIZE).splitlines()
 		except OSError as err:
 			data = ["Error %d: Unable to read '%s'!  (%s)" % (err.errno, self.path, err.strerror)]
@@ -2252,8 +2250,7 @@ class FileCommanderImageViewer(Screen, HelpableScreen):
 	def layoutFinished(self):
 		if self.fileListLen >= 0:
 			self.imageLoad.PictureData.get().append(self.finishDecode)
-			scale = AVSwitch().getFramebufferScale()
-			self.imageLoad.setPara([self["image"].instance.size().width(), self["image"].instance.size().height(), scale[0], scale[1], 0, 1, "#00000000"])
+			self.imageLoad.setPara([self["image"].instance.size().width(), self["image"].instance.size().height(), 1, 1, 0, 1, "#00000000"])
 			self["icon"].hide()
 			self["message"].setText("")
 			self["infolabels"].setText("")
@@ -2493,7 +2490,7 @@ class FileCommanderInformation(FileCommanderData, StatInfo):
 		elif extension in TEXT_FILES:
 			text = True
 			try:
-				with open(self.path, mode="r", encoding="UTF-8", errors="strict") as fd:
+				with open(self.path, encoding="UTF-8", errors="strict") as fd:
 					fd.read(BLOCK_CHUNK_SIZE)
 			except Exception:
 				text = False
@@ -2641,7 +2638,7 @@ class FileCommanderTextEditor(Screen, HelpableScreen):
 		self.onLayoutFinish.append(self.layoutFinished)
 
 	def layoutFinished(self):
-		self["data"].instance.enableAutoNavigation(False)  # Override listbox navigation.
+		self["data"].enableAutoNavigation(False)  # Override listbox navigation.
 		self.data = fileReadLines(self.path, default=[], source=MODULE_NAME)
 		self["data"].setList(self.data)
 		self["data"].onSelectionChanged.append(self.updateStatus)
@@ -2709,7 +2706,7 @@ class FileCommanderTextEditor(Screen, HelpableScreen):
 		line = self["data"].getCurrent()
 		# Find and replace TABs with a special single character.  This could also be helpful for NEWLINE as well.
 		# line = line.replace("\t", "<TAB>") # Find and replace TABs.  This could also be helpful for NEWLINE as well.
-		currPos = None if config.plugins.FileCommander.editLineEnd.value == True else 0
+		currPos = None if config.plugins.FileCommander.editLineEnd.value is True else 0
 		self.session.openWithCallback(keyEditCallback, VirtualKeyBoard, title="%s: %s" % (_("Original"), line), text=line, currPos=currPos, allMarked=False, windowTitle=self.getTitle())
 
 	def keyInsert(self):

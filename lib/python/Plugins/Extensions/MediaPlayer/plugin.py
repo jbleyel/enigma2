@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import absolute_import
 import os
 import time
 import random
@@ -23,7 +21,6 @@ from Components.MovieList import AUDIO_EXTENSIONS
 from Components.ServicePosition import ServicePositionGauge
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Components.Playlist import PlaylistIOInternal, PlaylistIOM3U, PlaylistIOPLS
-from Components.AVSwitch import AVSwitch
 from Components.config import config
 from Components.SystemInfo import BoxInfo
 from Tools.Directories import fileExists, resolveFilename, SCOPE_CONFIG, SCOPE_PLAYLIST, SCOPE_GUISKIN
@@ -65,9 +62,8 @@ class MediaPixmap(Pixmap):
 
 	def onShow(self):
 		Pixmap.onShow(self)
-		sc = AVSwitch().getFramebufferScale()
 		#0=Width 1=Height 2=Aspect 3=use_cache 4=resize_type 5=Background(#AARRGGBB)
-		self.picload.setPara((self.instance.size().width(), self.instance.size().height(), sc[0], sc[1], False, 1, "#00000000"))
+		self.picload.setPara((self.instance.size().width(), self.instance.size().height(), 1, 1, False, 1, "#00000000"))
 
 	def paintCoverArtPixmapCB(self, picInfo=None):
 		ptr = self.picload.getData()
@@ -140,7 +136,7 @@ class MediaPlayer(Screen, InfoBarBase, InfoBarScreenSaver, InfoBarSeek, InfoBarA
 			defaultDir = ""
 		if defaultDir == "":
 			defaultDir = None
-		self.filelist = FileList(defaultDir, matchingPattern="(?i)^.*\.(mp2|mp3|ogg|ts|trp|mts|m2ts|wav|wave|m3u|pls|e2pls|mpg|vob|avi|divx|m4v|mkv|mp4|m4a|dat|flac|flv|mov|dts|3gp|3g2|asf|wmv|wma|webm)", useServiceRef=True, additionalExtensions="4098:m3u 4098:e2pls 4098:pls")
+		self.filelist = FileList(defaultDir, matchingPattern=r"(?i)^.*\.(mp2|mp3|ogg|ts|trp|mts|m2ts|wav|wave|m3u|pls|e2pls|mpg|vob|avi|divx|m4v|mkv|mp4|m4a|dat|flac|flv|mov|dts|3gp|3g2|asf|wmv|wma|webm)", useServiceRef=True, additionalExtensions="4098:m3u 4098:e2pls 4098:pls")
 		self["filelist"] = self.filelist
 
 		self.playlist = MyPlayList()
@@ -214,7 +210,7 @@ class MediaPlayer(Screen, InfoBarBase, InfoBarScreenSaver, InfoBarSeek, InfoBarA
 
 		self["InfobarEPGActions"] = HelpableActionMap(self, "InfobarEPGActions",
 			{
-				"showEventInfo": (self.showEventInformation, _("show event details")),
+				"showEventInfo": (self.showEventInformation, _("Show event details")),
 			})
 
 		self["actions"] = MoviePlayerActionMap(self, ["DirectionActions"],
@@ -886,15 +882,15 @@ class MediaPlayer(Screen, InfoBarBase, InfoBarScreenSaver, InfoBarSeek, InfoBarA
 		# check if MerlinMusicPlayer is installed and merlinmp3player.so is running
 		# so we need the right id to play now the mp3-file
 		elif self.filelist.getServiceRef().type == 4116:
-				if self.filelist.getSelection() is not None:
-					inst = self.filelist.getSelection()[0]
-					if isinstance(inst, eServiceReference):
-						path = inst.getPath()
-						service = eServiceReference(4097, 0, path)
-						self.playlist.addFile(service)
-						self.playlist.updateList()
-						if len(self.playlist) == 1:
-							self.changeEntry(0)
+			if self.filelist.getSelection() is not None:
+				inst = self.filelist.getSelection()[0]
+				if isinstance(inst, eServiceReference):
+					path = inst.getPath()
+					service = eServiceReference(4097, 0, path)
+					self.playlist.addFile(service)
+					self.playlist.updateList()
+					if len(self.playlist) == 1:
+						self.changeEntry(0)
 		else:
 			self.playlist.addFile(self.filelist.getServiceRef())
 			self.playlist.updateList()
@@ -908,7 +904,7 @@ class MediaPlayer(Screen, InfoBarBase, InfoBarScreenSaver, InfoBarSeek, InfoBarA
 		next = self.playlist.getCurrentIndex() + 1
 		if next < len(self.playlist):
 			self.changeEntry(next)
-		elif (len(self.playlist) > 0) and (config.mediaplayer.repeat.value == True):
+		elif (len(self.playlist) > 0) and (config.mediaplayer.repeat.value is True):
 			self.stopEntry()
 			self.changeEntry(0)
 		elif len(self.playlist) > 0:
@@ -1160,7 +1156,6 @@ def filescan_open(list, session, **kwargs):
 
 
 def audioCD_open(list, session, **kwargs):
-	from enigma import eServiceReference
 	if os.path.isfile('/media/audiocd/cdplaylist.cdpls'):
 		list = open("/media/audiocd/cdplaylist.cdpls")
 	else:
@@ -1179,7 +1174,6 @@ def audioCD_open(list, session, **kwargs):
 
 
 def audioCD_open_mn(session, **kwargs):
-	from enigma import eServiceReference
 	if os.path.isfile('/media/audiocd/cdplaylist.cdpls'):
 		list = open("/media/audiocd/cdplaylist.cdpls")
 	else:

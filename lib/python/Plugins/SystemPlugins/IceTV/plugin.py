@@ -6,11 +6,8 @@ Copyright (C) 2014 Peter Urbanec
 All Right Reserved
 License: Proprietary / Commercial - contact enigma.licensing (at) urbanec.net
 '''
-from __future__ import print_function
-from __future__ import absolute_import
 
 from enigma import eTimer, eEPGCache, eDVBDB, eServiceReference, iRecordableService, eServiceCenter
-from Tools.ServiceReference import service_types_tv_ref
 from Components.ActionMap import ActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.Label import Label
@@ -24,7 +21,7 @@ from Screens.ChoiceBox import ChoiceBox
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from RecordTimer import RecordTimerEntry
-from ServiceReference import ServiceReference
+from ServiceReference import ServiceReference, service_types_tv_ref
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 from Tools.LoadPixmap import LoadPixmap
 from calendar import timegm
@@ -307,7 +304,7 @@ class LogEntry(dict):
         return self.fmt()
 
 
-class EPGFetcher(object):
+class EPGFetcher:
     START_EVENTS = {
         iRecordableService.evStart,
     }

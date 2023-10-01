@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import absolute_import
 from os import path as os_path
 
 from Plugins.Plugin import PluginDescriptor
@@ -47,7 +45,7 @@ class VideoEnhancementSetup(Screen, ConfigListScreen):
 		self["key_yellow"] = StaticText(_("Last config"))
 		self["key_blue"] = StaticText(_("Default"))
 
-		if not self.SelectionChanged in self["config"].onSelectionChanged:
+		if self.SelectionChanged not in self["config"].onSelectionChanged:
 			self["config"].onSelectionChanged.append(self.SelectionChanged)
 		self.rememberOldSettings()
 		self.changedEntry()
@@ -257,7 +255,7 @@ class VideoEnhancementSetup(Screen, ConfigListScreen):
 			if self.dynamic_contrastEntry is not None:
 				config.pep.dynamic_contrast.setValue(0)
 			if self.color_spaceEntry is not None:
-				file = open("/proc/stb/video/hdmi_colorspace_choices", "r")
+				file = open("/proc/stb/video/hdmi_colorspace_choices")
 				modes = file.readline().split()
 				file.close()
 				config.pep.color_space.setValue(modes[0])
@@ -337,7 +335,7 @@ class VideoEnhancementPreview(Screen, ConfigListScreen):
 		self["config"].list = self.list
 		self["config"].l.setSeperation(300)
 		self["config"].l.setList(self.list)
-		if not self.selectionChanged in self["config"].onSelectionChanged:
+		if self.selectionChanged not in self["config"].onSelectionChanged:
 			self["config"].onSelectionChanged.append(self.selectionChanged)
 		self.selectionChanged()
 
@@ -410,7 +408,6 @@ def startSetup(menuid):
 
 
 def Plugins(**kwargs):
-	list = []
 	if config.usage.setup_level.index >= 2 and os_path.exists("/proc/stb/vmpeg/0/pep_apply"):
-		list.append(PluginDescriptor(name=_("Video enhancement setup"), description=_("Advanced video enhancement setup"), where=PluginDescriptor.WHERE_MENU, needsRestart=False, fnc=startSetup))
-	return list
+		return PluginDescriptor(name=_("Video enhancement setup"), description=_("Advanced video enhancement setup"), where=PluginDescriptor.WHERE_MENU, needsRestart=False, fnc=startSetup)
+	return []

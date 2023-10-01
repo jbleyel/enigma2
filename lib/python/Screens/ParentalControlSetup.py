@@ -5,10 +5,7 @@ from Components.config import config, getConfigListEntry, ConfigNothing, NoSave,
 from Components.Sources.StaticText import StaticText
 from Screens.MessageBox import MessageBox
 from Screens.InputBox import PinInput
-from Screens.ChannelSelection import service_types_tv
 from Tools.BoundFunction import boundFunction
-from enigma import eServiceCenter, eTimer, eServiceReference
-from operator import itemgetter
 
 
 class ProtectedScreen:
@@ -23,7 +20,7 @@ class ProtectedScreen:
 		if result is None:
 			self.closeProtectedScreen()
 		elif not result:
-			self.session.openWithCallback(self.closeProtectedScreen, MessageBox, _("The pin code you entered is wrong."), MessageBox.TYPE_ERROR)
+			self.session.openWithCallback(self.closeProtectedScreen, MessageBox, _("The PIN code entered is incorrect!"), MessageBox.TYPE_ERROR)
 
 	def closeProtectedScreen(self, result=None):
 		self.close(None)
@@ -44,9 +41,9 @@ class ParentalControlSetup(Screen, ConfigListScreen, ProtectedScreen):
 
 		self["actions"] = NumberActionMap(["SetupActions", "MenuActions"],
 		{
-		  "cancel": self.keyCancel,
-		  "save": self.keySave,
-		  "menu": self.closeRecursive,
+			"cancel": self.keyCancel,
+			"save": self.keySave,
+			"menu": self.closeRecursive,
 		}, -2)
 		self["key_red"] = StaticText(_("Cancel"))
 		self["key_green"] = StaticText(_("Save"))

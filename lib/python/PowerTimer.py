@@ -93,7 +93,6 @@ def parseEvent(event):
 class PowerTimer(Timer):
 	def __init__(self):
 		Timer.__init__(self)
-		self.loadTimers()
 
 	def loadTimers(self):
 		if exists(TIMER_XML_FILE):
@@ -111,7 +110,7 @@ class PowerTimer(Timer):
 		check = True  # Display a message when at least one timer overlaps another one.
 		for timer in timerDom.findall("timer"):
 			newTimer = self.createTimer(timer)
-			if (self.record(newTimer, doSave=False) is not None) and (check == True):
+			if (self.record(newTimer, doSave=False) is not None) and (check is True):
 				AddPopup(_("Timer overlap in '%s' detected!\nPlease recheck it!") % TIMER_XML_FILE, type=MessageBox.TYPE_ERROR, timeout=0, id="TimerLoadFailed")
 				check = False  # At the moment it is enough if the message is only displayed once.
 
@@ -407,7 +406,7 @@ class PowerTimer(Timer):
 		return isRunning
 
 
-class PowerTimerEntry(TimerEntry, object):
+class PowerTimerEntry(TimerEntry):
 	def __init__(self, begin, end, disabled=False, afterEvent=AFTEREVENT.NONE, timerType=TIMERTYPE.WAKEUP, checkOldTimers=False, autosleepdelay=60):
 		TimerEntry.__init__(self, int(begin), int(end))
 		print("[PowerTimerEntry] DEBUG: Running init code.")
@@ -436,6 +435,8 @@ class PowerTimerEntry(TimerEntry, object):
 		self.autosleepbegin = self.begin
 		self.autosleepend = self.end
 		self.nettraffic = False
+		self.netbytes = 0
+		self.netbytes_time = 0
 		self.trafficlimit = 100
 		self.netip = False
 		self.ipadress = "0.0.0.0"
@@ -518,7 +519,7 @@ class PowerTimerEntry(TimerEntry, object):
 			if isRecTimerWakeup:
 				wasTimerWakeup = True
 			elif exists(TIMER_FLAG_FILE) and not wasTimerWakeup:
-				wasTimerWakeup = int(open(TIMER_FLAG_FILE, "r").read()) and True or False
+				wasTimerWakeup = int(open(TIMER_FLAG_FILE).read()) and True or False
 		if nextState == self.StatePrepared:
 			self.log(6, "Prepare okay, waiting for begin %s." % ctime(self.begin))
 			self.backoff = 0

@@ -1,10 +1,8 @@
-from __future__ import print_function
-from __future__ import absolute_import
 import os
 import struct
 import random
 
-from enigma import eListboxPythonMultiContent, eListbox, gFont, iServiceInformation, eSize, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, eServiceReference, eServiceReferenceFS, eServiceCenter, eTimer, getDesktop, loadPNG, BT_SCALE, BT_KEEP_ASPECT_RATIO
+from enigma import eListboxPythonMultiContent, eListbox, gFont, iServiceInformation, eSize, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, eServiceReference, eServiceReferenceFS, eServiceCenter, eTimer, loadPNG, BT_SCALE, BT_KEEP_ASPECT_RATIO
 
 from Components.GUIComponent import GUIComponent
 from Tools.FuzzyDate import FuzzyTime
@@ -13,18 +11,19 @@ from Components.config import config
 from Tools.LoadPixmap import LoadPixmap
 from Tools.Directories import SCOPE_GUISKIN, resolveFilename
 from Tools.TextBoundary import getTextBoundarySize
+from Tools.Trashcan import TRASHCAN
 from Screens.LocationBox import defaultInhibitDirs
 from ServiceReference import ServiceReference
 from Components.Renderer.Picon import getPiconName
 import NavigationInstance
 import skin
 
-AUDIO_EXTENSIONS = frozenset((".dts", ".mp3", ".wav", ".wave", ".ogg", ".flac", ".m4a", ".mp2", ".m2a", ".3gp", ".3g2", ".asf", ".wma"))
-DVD_EXTENSIONS = ('.iso', '.img')
-IMAGE_EXTENSIONS = frozenset((".jpg", ".png", ".gif", ".bmp"))
-MOVIE_EXTENSIONS = frozenset((".mpg", ".vob", ".wav", ".m4v", ".mkv", ".avi", ".divx", ".dat", ".flv", ".mp4", ".mov", ".wmv", ".m2ts", ".webm"))
+AUDIO_EXTENSIONS = frozenset((".dts", ".mp3", ".wav", ".wave", ".wv", ".oga", ".ogg", ".flac", ".m4a", ".mp2", ".m2a", ".wma", ".ac3", ".mka", ".aac", ".ape", ".alac", ".amr", ".au", ".mid"))
+DVD_EXTENSIONS = frozenset((".iso", ".img", ".nrg"))
+IMAGE_EXTENSIONS = frozenset((".jpg", ".png", ".gif", ".bmp", ".jpeg", ".jpe", ".svg"))
+MOVIE_EXTENSIONS = frozenset((".mpg", ".vob", ".m4v", ".mkv", ".avi", ".divx", ".dat", ".flv", ".mp4", ".mov", ".wmv", ".asf", ".3gp", ".3g2", ".mpeg", ".mpe", ".rm", ".rmvb", ".ogm", ".ogv", ".m2ts", ".mts", ".webm", ".pva", ".wtv"))
 KNOWN_EXTENSIONS = MOVIE_EXTENSIONS.union(IMAGE_EXTENSIONS, DVD_EXTENSIONS, AUDIO_EXTENSIONS)
-RECORD_EXTENSIONS = (".ts")
+RECORD_EXTENSIONS = (".ts", ".stream")
 
 cutsParser = struct.Struct('>QI')  # big-endian, 64-bit PTS and 32-bit type
 
@@ -272,7 +271,7 @@ class MovieList(GUIComponent):
 			self.reloadDelayTimer.start(5000, 1)
 
 	def connectSelChanged(self, fnc):
-		if not fnc in self.onSelectionChanged:
+		if fnc not in self.onSelectionChanged:
 			self.onSelectionChanged.append(fnc)
 
 	def disconnectSelChanged(self, fnc):
@@ -364,16 +363,16 @@ class MovieList(GUIComponent):
 					# if path ends in '/', p is blank.
 					p = os.path.split(p[0])
 				txt = p[1]
-				if txt == ".Trash":
+				if txt == TRASHCAN:
 					dateSize = getTextBoundarySize(self.instance, self.dateFont, self.l.getItemSize(), _("Trashcan")).width()
-					res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=self.iconTrash))
+					res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=self.iconTrash, flags=BT_SCALE | BT_KEEP_ASPECT_RATIO))
 					res.append(MultiContentEntryText(pos=(textPosX, 0), size=(width - textPosX - dateSize - listMarginX - listEndX, ih), font=0, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER, text=_("Deleted items")))
 					res.append(MultiContentEntryText(pos=(width - dateSize - listEndX, textPosY), size=(dateSize, self.itemHeight), font=1, flags=RT_HALIGN_RIGHT | RT_VALIGN_CENTER, text=_("Trashcan")))
 					return res
 			if not config.movielist.show_underscores.value:
 				txt = txt.replace('_', ' ').strip()
 			dateSize = getTextBoundarySize(self.instance, self.dateFont, self.l.getItemSize(), _("Directory")).width()
-			res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=self.iconFolder))
+			res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=self.iconFolder, flags=BT_SCALE | BT_KEEP_ASPECT_RATIO))
 			res.append(MultiContentEntryText(pos=(textPosX, 0), size=(width - textPosX - dateSize - listMarginX - listEndX, ih), font=0, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER, text=txt))
 			res.append(MultiContentEntryText(pos=(width - dateSize - listEndX, textPosY), size=(dateSize, self.itemHeight), font=1, flags=RT_HALIGN_RIGHT | RT_VALIGN_CENTER, text=_("Directory")))
 			return res
@@ -436,7 +435,7 @@ class MovieList(GUIComponent):
 			iconPosY = ih // 2 - iconSize // 2
 			if iconPosY < iconPosX:
 				iconPosY = iconPosX
-			res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=data.icon))
+			res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=data.icon, flags=BT_SCALE | BT_KEEP_ASPECT_RATIO))
 		elif switch == 'p':
 			if data.part is not None and data.part > 0:
 				iconSize = progressBarSize
@@ -451,7 +450,7 @@ class MovieList(GUIComponent):
 				iconPosY = ih // 2 - iconSize // 2
 				if iconPosY < iconPosX:
 					iconPosY = iconPosX
-				res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=data.icon))
+				res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=data.icon, flags=BT_SCALE | BT_KEEP_ASPECT_RATIO))
 		elif switch == 's':
 			iconSize = progressIconSize
 			iconPosX = listBeginX
@@ -461,7 +460,7 @@ class MovieList(GUIComponent):
 			if data.part is not None and data.part > 0:
 				res.append(MultiContentEntryProgress(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), percent=data.part, borderWidth=2, foreColor=data.partcol, foreColorSelected=None, backColor=None, backColorSelected=None))
 			else:
-				res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=data.icon))
+				res.append(MultiContentEntryPixmapAlphaBlend(pos=(iconPosX, iconPosY), size=(iconSize, iconSize), png=data.icon, flags=BT_SCALE | BT_KEEP_ASPECT_RATIO))
 
 		begin_string = ""
 		if begin > 0:
@@ -851,7 +850,7 @@ class MovieList(GUIComponent):
 			itemsBelow = self.list[currentIndex + 1:]
 			#first search the items below the selection
 			for index, item in enumerate(itemsBelow):
-				if item[1] == None:
+				if item[1] is None:
 					continue
 				ref = item[0]
 				itemName = getShortName(item[1].getName(ref).upper(), ref)
@@ -863,10 +862,10 @@ class MovieList(GUIComponent):
 					found = True
 					self.instance.moveSelectionTo(index + currentIndex + 1)
 					break
-		if found == False and currentIndex > 0:
+		if found is False and currentIndex > 0:
 			itemsAbove = self.list[1:currentIndex]  # first item (0) points parent folder - no point to include
 			for index, item in enumerate(itemsAbove):
-				if item[1] == None:
+				if item[1] is None:
 					continue
 				ref = item[0]
 				itemName = getShortName(item[1].getName(ref).upper(), ref)

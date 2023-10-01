@@ -9,7 +9,7 @@ from Components.Sources.Source import Source
 
 # Fake eServiceEvent to fill Event_Now and Event_Next in Infobar for Streams.
 #
-class pServiceEvent(object):
+class pServiceEvent:
 	NOW = 0
 	NEXT = 1
 
@@ -23,7 +23,7 @@ class pServiceEvent(object):
 		self.m_ExtendedDescriptionNext = ""
 		self.m_Begin = time()
 		self.m_Duration = 0
-		
+
 		sTagTitle = info.getInfoString(iServiceInformation.sTagTitle)
 		if sTagTitle:
 			sTagTitleList = sTagTitle.split(" - ")
@@ -81,6 +81,7 @@ class pServiceEvent(object):
 
 	def getExtraEventData(self):
 		return None
+
 
 class EventInfo(PerServiceBase, Source):
 	NOW = 0

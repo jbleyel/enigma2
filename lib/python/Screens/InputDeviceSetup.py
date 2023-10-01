@@ -131,7 +131,7 @@ class InputDeviceSetup(Setup):
 	def cleanup(self):
 		inputDevices.currentDevice = None
 
-	def createSetup(self):
+	def createSetup(self, appendItems=None, prependItems=None):
 		settingsList = []
 		if self.enableEntry and isinstance(self.enableEntry[1], ConfigYesNo):
 			settingsList.append(self.enableEntry)
@@ -316,7 +316,7 @@ class RemoteControlType(Setup):
 				("multibox", 27),
 				("multiboxse", 27),
 				("multiboxpro", 27),
-				("h7", 28),  # new model
+				("h7", 21),  # new model
 				("h9", 28),  # new model
 				("h9se", 28),  # new model
 				("h9combo", 28),
@@ -333,9 +333,9 @@ class RemoteControlType(Setup):
 		Setup.__init__(self, session, None)
 		self.setTitle(_("Setup InputDevice"))
 
-	def createSetup(self):
+	def createSetup(self, appendItems=None, prependItems=None):
 		settingsList = []
-		if self.rctype == None:
+		if self.rctype is None:
 			rctype = config.plugins.remotecontroltype.rctype.value
 			self.rctype = ConfigSelection(choices=self.rcList, default=str(rctype))
 		settingsList.append(getConfigListEntry(_("Remote control type"), self.rctype))
@@ -343,7 +343,7 @@ class RemoteControlType(Setup):
 
 	def getBoxTypeCompatible(self):
 		try:
-			with open('/proc/stb/info/boxtype', 'r') as fd:
+			with open('/proc/stb/info/boxtype') as fd:
 				boxType = fd.read()
 				return boxType
 		except:

@@ -7,12 +7,12 @@ from struct import pack
 from enigma import eRCInput
 
 from keyids import KEYIDS, KEYIDNAMES
-from Components.config import ConfigSubsection, ConfigInteger, ConfigSelection, ConfigYesNo, ConfigText, ConfigSlider, config
+from Components.config import ConfigSubsection, ConfigSelection, ConfigYesNo, ConfigText, ConfigSlider, config
 from Components.Console import Console
+from Components.International import international
 from Components.SystemInfo import BoxInfo
 from Tools.Directories import SCOPE_KEYMAPS, SCOPE_SKINS, fileReadLine, fileWriteLine, fileReadLines, fileReadXML, resolveFilename, pathExists
 
-from six import ensure_str
 MODULE_NAME = __name__.split(".")[-1]
 
 REMOTE_MODEL = 0
@@ -35,8 +35,7 @@ class InputDevices:
 				_buffer = "\0" * 512
 				self.fd = osopen("/dev/input/%s" % device, O_RDWR | O_NONBLOCK)
 				self.name = ioctl(self.fd, self.EVIOCGNAME(256), _buffer)
-				self.name = self.name[:self.name.find(b"\0")]
-				self.name = ensure_str(self.name)
+				self.name = self.name[:self.name.find(b"\0")].decode()
 				if str(self.name).find("Keyboard") != -1:
 					self.name = 'keyboard'
 				osclose(self.fd)
@@ -161,7 +160,7 @@ class Keyboard:
 				keyboardMapFile = None
 				keyboardMapName = None
 				for line in lines:
-					key, val = [x.strip() for x in line.split("=", 1)]
+					key, val = (x.strip() for x in line.split("=", 1))
 					if key == "kmap":
 						keyboardMapFile = val
 					elif key == "name":
@@ -191,27 +190,18 @@ class Keyboard:
 		return self.keyboardMaps
 
 	def getDefaultKeyboardMap(self):
-		# This is a code proposal to make the default keymap respond
-		# to the currently defined locale.  OpenATV initialises the
-		# keymap based on hardware manufacturer.  Making the
-		# selection based on language locale makes more sense.  There
-		# are other code changes coming that will allow this to happen.
-		#
-		# locale = language.getLocale()
-		# if locale.startswith("de_") and "de.kmap" in self.keyboardMaps:
-		# 	return "de.kmap"
-		if BoxInfo.getItem("displaybrand") in ("Zgemma", "Atto.TV"):
-			return "us.kmap"
-		elif BoxInfo.getItem("displaybrand") == "Beyonwiz":
+		locale = international.getLocale()
+		if locale.startswith("de_"):
+			return "de.kmap"
+		elif locale.startswith("en_") and locale != "en_US":
 			return "eng.kmap"
-		return "de.kmap"
+		return "us.kmap"
 
 
 class RemoteControl:
 	knownCompatibleRemotes = [
 		("gb0", "gb1", "gb2", "gb3", "gb4"),
 		("ini0", "ini1", "ini2", "ini3", "ini4", "ini5", "ini6", "ini7", "ini8"),
-		("wetek", "wetek2", "wetek3"),
 		("zgemma1", "zgemma2", "zgemma3", "zgemma4", "zgemma5", "zgemma6", "zgemma7", "evo6", "evo7")
 	]
 

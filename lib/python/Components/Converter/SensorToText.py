@@ -1,7 +1,6 @@
 from Components.Converter.Converter import Converter
 
 
-
 class SensorToText(Converter):
 	def __init__(self, arguments):
 		Converter.__init__(self, arguments)
@@ -11,6 +10,6 @@ class SensorToText(Converter):
 			return ""
 		unit = self.source.getUnit()
 		if unit in ('C', 'F'):
-			return "%d%s%s" % (self.source.getValue(), u"\u00B0", unit)
+			return "%d%s%s" % (self.source.getValue(), "\u00B0", unit)
 
 	text = property(getText)

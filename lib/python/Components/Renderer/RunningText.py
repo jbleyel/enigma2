@@ -100,12 +100,11 @@ class RunningText(Renderer):
 				else:
 					x = max(limit, int(val))
 			except:
-					x = default
+				x = default
 			return x
 
 		def setWrapFlag(attrib, value):
-			if (attrib.lower() == "wrap" and value == "0") or \
-			   (attrib.lower() == "nowrap" and value != "0"):
+			if (attrib.lower() == "wrap" and value == "0") or (attrib.lower() == "nowrap" and value != "0"):
 				self.txtflags &= ~RT_WRAP
 			else:
 				self.txtflags |= RT_WRAP
@@ -189,7 +188,7 @@ class RunningText(Renderer):
 
 		self.scroll_label.setFont(self.txfont)
 		if not (self.txtflags & RT_WRAP):
-			self.scroll_label.setNoWrap(1)
+			self.scroll_label.setWrap(0)
 		self.scroll_label.setVAlign(valign)
 		self.scroll_label.setHAlign(self.halign)
 		self.scroll_label.move(ePoint(0, 0))
@@ -215,7 +214,7 @@ class RunningText(Renderer):
 		Renderer.connect(self, source)
 
 	def changed(self, what):
-		if not self.mTimer is None:
+		if self.mTimer is not None:
 			self.mTimer.stop()
 		if what[0] == self.CHANGED_CLEAR:
 			self.txtext = ""
@@ -277,7 +276,7 @@ class RunningText(Renderer):
 					self.mStep = abs(self.mStep)
 					self.mStop = self.B - text_width + self.soffset[0] - self.mStep
 					self.P = self.A
-				if not self.mStartPoint is None:
+				if self.mStartPoint is not None:
 					if self.direction == LEFT:
 						self.mStop = self.P = max(self.A, min(self.W, self.mStartPoint))
 					else:
@@ -325,7 +324,7 @@ class RunningText(Renderer):
 					self.mStep = abs(self.mStep)
 					self.mStop = self.B - text_height + self.soffset[1] - self.mStep
 					self.P = self.A
-				if not self.mStartPoint is None:
+				if self.mStartPoint is not None:
 					if self.direction == TOP:
 						self.mStop = self.P = max(self.A, min(self.H, self.mStartPoint))
 					else:

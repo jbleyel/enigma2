@@ -5,18 +5,19 @@ from os.path import exists, isfile, join as pathjoin, normpath, splitext
 from sys import maxsize
 from time import time
 
-from enigma import Misc_Options, RT_HALIGN_CENTER, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, RT_WRAP, eBackgroundFileEraser, eDVBDB, eDVBFrontend, eEnv, eEPGCache, eServiceEvent, setEnableTtCachingOnOff, setPreferredTuner, setSpinnerOnOff, setTunerTypePriorityOrder, eServiceEvent
+from enigma import Misc_Options, RT_HALIGN_CENTER, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, RT_WRAP, eBackgroundFileEraser, eDVBDB, eDVBFrontend, eEnv, eEPGCache, eServiceEvent, setEnableTtCachingOnOff, setPreferredTuner, setSpinnerOnOff, setTunerTypePriorityOrder
 
 from keyids import KEYIDS
 from skin import parameters
-from Components.About import about
 from Components.config import ConfigBoolean, ConfigClock, ConfigDirectory, ConfigDictionarySet, ConfigFloat, ConfigInteger, ConfigIP, ConfigLocations, ConfigNumber, ConfigSelectionNumber, ConfigPassword, ConfigSelection, ConfigSet, ConfigSlider, ConfigSubsection, ConfigText, ConfigYesNo, NoSave, config
 from Components.Harddisk import harddiskmanager
 from Components.NimManager import nimmanager
 from Components.ServiceList import refreshServiceList
 from Components.SystemInfo import BoxInfo
-from Tools.Directories import SCOPE_HDD, SCOPE_SYSETC, SCOPE_TIMESHIFT, defaultRecordingLocation, fileContains, isPluginInstalled, resolveFilename
-from Tools.HardwareInfo import HardwareInfo
+from Tools.Directories import SCOPE_HDD, SCOPE_TIMESHIFT, defaultRecordingLocation, resolveFilename
+from Components.AVSwitch import iAVSwitch
+
+DEFAULTKEYMAP = eEnv.resolve("${datadir}/enigma2/keymap.xml")
 
 
 def InitUsageConfig():
@@ -291,6 +292,11 @@ def InitUsageConfig():
 		("3", _("2nd InfoBar ECM"))
 	])
 	config.usage.second_infobar_timeout = ConfigSelection(default="5", choices=choiceList)
+	config.usage.show_infobar_subservices = ConfigSelection(default=1, choices=[
+		(0, _("Off")),
+		(1, _("If EPG available")),
+		(2, _("Always"))
+	])
 
 	def showsecondinfobarChanged(configElement):
 		if config.usage.show_second_infobar.value != "INFOBAREPG":
@@ -1179,10 +1185,18 @@ def InitUsageConfig():
 	config.epg.cacheloadtimer = ConfigSelectionNumber(default=24, stepwidth=1, min=1, max=24, wraparound=True)
 	config.epg.cachesavetimer = ConfigSelectionNumber(default=24, stepwidth=1, min=1, max=24, wraparound=True)
 
-	config.osd.dst_left = ConfigSelectionNumber(default=0, stepwidth=1, min=0, max=720, wraparound=False)
-	config.osd.dst_width = ConfigSelectionNumber(default=720, stepwidth=1, min=0, max=720, wraparound=False)
-	config.osd.dst_top = ConfigSelectionNumber(default=0, stepwidth=1, min=0, max=576, wraparound=False)
-	config.osd.dst_height = ConfigSelectionNumber(default=576, stepwidth=1, min=0, max=576, wraparound=False)
+	if BoxInfo.getItem("AmlogicFamily"):
+		limits = [int(x) for x in iAVSwitch.getWindowsAxis().split()]
+		config.osd.dst_left = ConfigSelectionNumber(default=limits[0], stepwidth=1, min=limits[0] - 255, max=limits[0] + 255, wraparound=False)
+		config.osd.dst_top = ConfigSelectionNumber(default=limits[1], stepwidth=1, min=limits[1] - 255, max=limits[1] + 255, wraparound=False)
+		config.osd.dst_width = ConfigSelectionNumber(default=limits[2], stepwidth=1, min=limits[2] - 255, max=limits[2] + 255, wraparound=False)
+		config.osd.dst_height = ConfigSelectionNumber(default=limits[3], stepwidth=1, min=limits[3] - 255, max=limits[3] + 255, wraparound=False)
+	else:
+		config.osd.dst_left = ConfigSelectionNumber(default=0, stepwidth=1, min=0, max=720, wraparound=False)
+		config.osd.dst_width = ConfigSelectionNumber(default=720, stepwidth=1, min=0, max=720, wraparound=False)
+		config.osd.dst_top = ConfigSelectionNumber(default=0, stepwidth=1, min=0, max=576, wraparound=False)
+		config.osd.dst_height = ConfigSelectionNumber(default=576, stepwidth=1, min=0, max=576, wraparound=False)
+
 	config.osd.alpha = ConfigSelectionNumber(default=255, stepwidth=1, min=0, max=255, wraparound=False)
 	config.osd.alpha_teletext = ConfigSelectionNumber(default=255, stepwidth=1, min=0, max=255, wraparound=False)
 	config.osd.alpha_webbrowser = ConfigSelectionNumber(default=255, stepwidth=1, min=0, max=255, wraparound=False)
@@ -1262,17 +1276,16 @@ def InitUsageConfig():
 		"u80": _("UP80  (keymap.u80)")
 	}
 
-	keymapdefault = eEnv.resolve("${datadir}/enigma2/keymap.xml")
 	keymapchoices = []
 	for kmap in KM.keys():
 		kmfile = eEnv.resolve("${datadir}/enigma2/keymap.%s" % kmap)
 		if isfile(kmfile):
 			keymapchoices.append((kmfile, KM.get(kmap)))
 
-	if not isfile(keymapdefault):  # BIG PROBLEM
-		keymapchoices.append((keymapdefault, KM.get("xml")))
+	if not isfile(DEFAULTKEYMAP):  # BIG PROBLEM
+		keymapchoices.append((DEFAULTKEYMAP, KM.get("xml")))
 
-	config.usage.keymap = ConfigSelection(default=keymapdefault, choices=keymapchoices)
+	config.usage.keymap = ConfigSelection(default=DEFAULTKEYMAP, choices=keymapchoices)
 	config.usage.keytrans = ConfigText(default=eEnv.resolve("${datadir}/enigma2/keytranslation.xml"))
 	config.usage.keymap_usermod = ConfigText(default=eEnv.resolve("${datadir}/enigma2/keymap_usermod.xml"))
 
@@ -1339,7 +1352,7 @@ def InitUsageConfig():
 	config.crash.enabledebug = ConfigYesNo(default=False)
 	config.crash.debugloglimit = ConfigSelectionNumber(min=1, max=10, stepwidth=1, default=4, wraparound=True)
 	config.crash.daysloglimit = ConfigSelectionNumber(min=1, max=30, stepwidth=1, default=8, wraparound=True)
-	config.crash.sizeloglimit = ConfigSelectionNumber(min=1, max=20, stepwidth=1, default=10, wraparound=True)
+	config.crash.sizeloglimit = ConfigSelectionNumber(min=1, max=250, stepwidth=1, default=10, wraparound=True)
 	config.crash.lastfulljobtrashtime = ConfigInteger(default=-1)
 
 	# The config.crash.debugTimeFormat item is used to set ENIGMA_DEBUG_TIME environmental variable on enigma2 start from enigma2.sh.
@@ -1371,6 +1384,8 @@ def InitUsageConfig():
 		"MEMDUMP"
 	])
 	config.crash.gstdot = ConfigYesNo(default=False)
+
+	config.crash.coredump = ConfigYesNo(default=False)
 
 	def updateDebugPath(configElement):
 		debugPath = config.crash.debug_path.value
@@ -1450,7 +1465,7 @@ def InitUsageConfig():
 		def setZapmode(el):
 			open(BoxInfo.getItem("ZapMode"), "w").write(el.value)
 		config.misc.zapmode = ConfigSelection(default="mute", choices=[
-			("mute", _("Black screen")),
+			("mute", _("Black Screen")),
 			("hold", _("Hold screen")),
 			("mutetilllock", _("Black screen till locked")),
 			("holdtilllock", _("Hold till locked"))
@@ -1534,7 +1549,7 @@ def InitUsageConfig():
 	languageChoiceList = [
 		("", _("None")),
 		("und", _("Undetermined")),
-		("orj dos ory org esl qaa und mis mul ORY ORJ Audio_ORJ oth", _("Original")),
+		("orj dos ory org esl qaa qaf und mis mul ORY ORJ Audio_ORJ oth", _("Original")),
 		("ara", _("Arabic")),
 		("eus baq", _("Basque")),
 		("bul", _("Bulgarian")),
@@ -1654,7 +1669,7 @@ def InitUsageConfig():
 		("3", _("Yes, but if not available show the plugin browser"))
 	])
 	config.plisettings.ColouredButtons = ConfigYesNo(default=False)
-	config.plisettings.InfoBarEpg_mode = ConfigSelection(default="3", choices=[
+	config.plisettings.InfoBarEpg_mode = ConfigSelection(default="0", choices=[
 		("0", _("As plugin in extended bar")),
 		("1", _("With long OK press")),
 		("2", _("With EXIT button")),
@@ -1808,6 +1823,7 @@ def InitUsageConfig():
 		("autotimer", _("AutoTimer")),
 		("timer", _("Add/Remove Timer")),
 		("imdb", _("IMDb Search")),
+		("tmdb", _("TMDB Search")),
 		("bouquetlist", _("Bouquet List")),
 		("showmovies", _("Show Movies List")),
 		("record", _("Record - same as record button")),
@@ -1848,6 +1864,7 @@ def InitUsageConfig():
 		("24plus", _("+24 Hours")),
 		("24minus", _("-24 Hours")),
 		("imdb", _("IMDb Search")),
+		("tmdb", _("TMDB Search")),
 		("bouquetlist", _("Bouquet List")),
 		("showmovies", _("Show Movies List")),
 		("record", _("Record - same as record button")),
@@ -2029,7 +2046,7 @@ def updateChoices(sel, choices):
 	if choices:
 		defval = None
 		val = int(sel.value)
-		if not val in choices:
+		if val not in choices:
 			tmp = choices[:]
 			tmp.reverse()
 			for x in tmp:
@@ -2060,15 +2077,6 @@ def preferredInstantRecordPath():
 
 def defaultMoviePath():
 	return defaultRecordingLocation(config.usage.default_path.value)
-
-
-def refreshServiceList(configElement=None):
-	from Screens.InfoBar import InfoBar
-	InfoBarInstance = InfoBar.instance
-	if InfoBarInstance is not None:
-		servicelist = InfoBarInstance.servicelist
-		if servicelist:
-			servicelist.setMode()
 
 
 def patchTuxtxtConfFile(dummyConfigElement):

@@ -1,7 +1,6 @@
 from Screens.Screen import Screen
 from Components.ConfigList import ConfigListScreen
 from Components.ActionMap import ActionMap
-from Components.Sources.FrontendStatus import FrontendStatus
 from Components.Sources.StaticText import StaticText
 from Components.config import config, configfile, getConfigListEntry
 from Components.NimManager import nimmanager, InitNimManager
@@ -26,7 +25,8 @@ class AutoDiseqc(Screen, ConfigListScreen):
 			192,
 			eDVBFrontendParametersSatellite.System_DVB_S,
 			eDVBFrontendParametersSatellite.Modulation_Auto,
-			eDVBFrontendParametersSatellite.RollOff_auto, eDVBFrontendParametersSatellite.Pilot_Unknown,
+			eDVBFrontendParametersSatellite.RollOff_auto,
+			eDVBFrontendParametersSatellite.Pilot_Unknown,
 			eDVBFrontendParametersSatellite.No_Stream_Id_Filter,
 			eDVBFrontendParametersSatellite.PLS_Gold,
 			eDVBFrontendParametersSatellite.PLS_Default_Gold_Code,
@@ -59,12 +59,12 @@ class AutoDiseqc(Screen, ConfigListScreen):
 			_("Astra 3 23.5e")
 		),
 
-		# astra 282 cnbc
+		# Astra 28.2E EPG background audio
 		(
-			11479,
-			22000,
+			11778,
+			27500,
 			eDVBFrontendParametersSatellite.Polarisation_Vertical,
-			eDVBFrontendParametersSatellite.FEC_5_6,
+			eDVBFrontendParametersSatellite.FEC_2_3,
 			eDVBFrontendParametersSatellite.Inversion_Off,
 			282,
 			eDVBFrontendParametersSatellite.System_DVB_S,
@@ -76,7 +76,7 @@ class AutoDiseqc(Screen, ConfigListScreen):
 			eDVBFrontendParametersSatellite.PLS_Default_Gold_Code,
 			eDVBFrontendParametersSatellite.No_T2MI_PLP_Id,
 			eDVBFrontendParametersSatellite.T2MI_Default_Pid,
-			2090,
+			2004,
 			2,
 			_("Astra 2 28.2e")
 		),
@@ -316,22 +316,22 @@ class AutoDiseqc(Screen, ConfigListScreen):
 			self.tunerStopScan(False)
 			return
 		if dict["tuner_state"] == "TUNING":
-                        self["tunerstatusbar"].setText(_("Tuner status TUNING"))
+			self["tunerstatusbar"].setText(_("Tuner status TUNING"))
 
 		elif dict["tuner_state"] == "FAILED":
-                        self["tunerstatusbar"].setText(_("Tuner status FAILED"))
+			self["tunerstatusbar"].setText(_("Tuner status FAILED"))
 
 		elif dict["tuner_state"] == "LOSTLOCK":
-                        self["tunerstatusbar"].setText(_("Tuner status LOSTLOCK"))
+			self["tunerstatusbar"].setText(_("Tuner status LOSTLOCK"))
 
 		elif dict["tuner_state"] == "LOCKED":
-                        self["tunerstatusbar"].setText(_("Tuner status LOCKED"))
+			self["tunerstatusbar"].setText(_("Tuner status LOCKED"))
 
 		elif dict["tuner_state"] == "IDLE":
-                        self["tunerstatusbar"].setText(_("Tuner status IDLE"))
+			self["tunerstatusbar"].setText(_("Tuner status IDLE"))
 
 		elif dict["tuner_state"] == "UNKNOWN":
-                        self["tunerstatusbar"].setText(_("Tuner status UNKNOWN"))
+			self["tunerstatusbar"].setText(_("Tuner status UNKNOWN"))
 
 		if dict["tuner_state"] == "LOSTLOCK" or dict["tuner_state"] == "FAILED":
 			self.tunerStopScan(False)

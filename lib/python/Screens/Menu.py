@@ -1,10 +1,11 @@
 from os.path import isdir, isfile
-from xml.etree.cElementTree import parse
+from xml.etree.ElementTree import parse
 
 from enigma import eTimer
 
 from skin import findSkinScreen, menus
 from Components.ActionMap import HelpableNumberActionMap, HelpableActionMap
+from Components.AVSwitch import iAVSwitch
 from Components.config import ConfigDictionarySet, NoSave, config, configfile
 from Components.Pixmap import Pixmap
 from Components.PluginComponent import plugins
@@ -48,7 +49,7 @@ imageCache = {}
 lastKey = None
 
 # Read the menu.
-file = open(resolveFilename(SCOPE_SKINS, "menu.xml"), "r")
+file = open(resolveFilename(SCOPE_SKINS, "menu.xml"))
 mdom = parse(file)
 file.close()
 
@@ -210,7 +211,7 @@ class Menu(Screen, HelpableScreen, ProtectedScreen):
 			self.onShown.append(self.openTestA)
 		elif config.usage.menuType.value == "horzicon" and findSkinScreen("Iconmain"):
 			self.onShown.append(self.openTestB)
-		self["menuActions"] = HelpableNumberActionMap(self, ["OkCancelActions", "MenuActions", "ColorActions", "NumberActions"], {
+		self["menuActions"] = HelpableNumberActionMap(self, ["OkCancelActions", "MenuActions", "ColorActions", "NumberActions", "TextActions"], {
 			"ok": (self.okbuttonClick, _("Select the current menu item")),
 			"cancel": (self.closeNonRecursive, _("Exit menu")),
 			"close": (self.closeRecursive, _("Exit all menus")),
@@ -225,7 +226,8 @@ class Menu(Screen, HelpableScreen, ProtectedScreen):
 			"7": (self.keyNumberGlobal, _("Direct menu item selection")),
 			"8": (self.keyNumberGlobal, _("Direct menu item selection")),
 			"9": (self.keyNumberGlobal, _("Direct menu item selection")),
-			"0": (self.keyNumberGlobal, _("Direct menu item selection"))
+			"0": (self.keyNumberGlobal, _("Direct menu item selection")),
+			"textlong": (self.keyText, _("Switch to 720p video"))
 		}, prio=0, description=_("Menu Common Actions"))
 		if config.usage.menuSortOrder.value == "user":
 			self["moveActions"] = HelpableActionMap(self, ["NavigationActions"], {
@@ -536,10 +538,10 @@ class Menu(Screen, HelpableScreen, ProtectedScreen):
 			else:
 				self["key_green"].setText(_("Move Mode Off"))
 			for entry in self.menuList:
-				if current[WIDGET_KEY] == entry[MENU_KEY] and select == True:
+				if current[WIDGET_KEY] == entry[MENU_KEY] and select is True:
 					self.selectedEntry = current[WIDGET_KEY]
 					break
-				elif current[WIDGET_KEY] == entry[MENU_KEY] and select == False:
+				elif current[WIDGET_KEY] == entry[MENU_KEY] and select is False:
 					self.selectedEntry = None
 					break
 		elif not self.sortMode:
@@ -624,6 +626,9 @@ class Menu(Screen, HelpableScreen, ProtectedScreen):
 		self["menu"].bottom()
 		if self.sortMode and self.selectedEntry is not None:
 			self.moveAction()
+
+	def keyText(self):
+		iAVSwitch.setMode("HDMI", "720p", "50Hz")
 
 	def moveAction(self):
 		menuListCopy = list(self.menuList)
@@ -1071,4 +1076,4 @@ class MenuSummary(ScreenSummary):
 			self.parent["menu"].onSelectionChanged.remove(self.selectionChanged)
 
 	def selectionChanged(self):
-		self["entry"].text = self.parent["menu"].getCurrent()[WIDGET_NUMBER_TEXT]
+		self["entry"].setText(self.parent["menu"].getCurrent()[WIDGET_NUMBER_TEXT])

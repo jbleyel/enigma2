@@ -1,7 +1,7 @@
 #include <lib/gui/elabel.h>
 #include <lib/gdi/font.h>
 
-eLabel::eLabel(eWidget *parent, int markedPos): eWidget(parent)
+eLabel::eLabel(eWidget *parent, int markedPos) : eWidget(parent)
 {
 	m_pos = markedPos;
 	ePtr<eWindowStyle> style;
@@ -9,17 +9,9 @@ eLabel::eLabel(eWidget *parent, int markedPos): eWidget(parent)
 
 	style->getFont(eWindowStyle::fontStatic, m_font);
 
-		/* default to topleft alignment */
+	/* default to topleft alignment */
 	m_valign = alignTop;
 	m_halign = alignBidi;
-
-	m_have_foreground_color = 0;
-	m_have_shadow_color = 0;
-
-	m_nowrap = 0;
-	m_border_size = 0;
-
-	m_text_offset = 0;
 }
 
 int eLabel::event(int event, void *data, void *data2)
@@ -34,7 +26,7 @@ int eLabel::event(int event, void *data, void *data2)
 
 		eWidget::event(event, data, data2);
 
-		gPainter &painter = *(gPainter*)data2;
+		gPainter &painter = *(gPainter *)data2;
 
 		painter.setFont(m_font);
 		style->setStyle(painter, eWindowStyle::styleLabel);
@@ -61,8 +53,13 @@ int eLabel::event(int event, void *data, void *data2)
 		else if (m_halign == alignBlock)
 			flags |= gPainter::RT_HALIGN_BLOCK;
 
-		if (!m_nowrap)
+		if (m_wrap == 1)
 			flags |= gPainter::RT_WRAP;
+		else if (m_wrap == 2)
+			flags |= gPainter::RT_ELLIPSIS;
+
+		if (isGradientSet() || m_blend)
+			flags |= gPainter::RT_BLEND;
 
 		int x = m_padding.x();
 		int y = m_padding.y();
@@ -72,8 +69,8 @@ int eLabel::event(int event, void *data, void *data2)
 
 		auto position = eRect(x, y, w, h);
 		/* if we don't have shadow, m_shadow_offset will be 0,0 */
-		auto shadowposition = eRect(position.x()-m_shadow_offset.x(),position.y()-m_shadow_offset.y(),position.width()-m_shadow_offset.x(),position.height()-m_shadow_offset.y());
-		painter.renderText(shadowposition, m_text, flags, m_border_color, m_border_size, m_pos, &m_text_offset);
+		auto shadowposition = eRect(position.x() - m_shadow_offset.x(), position.y() - m_shadow_offset.y(), position.width() - m_shadow_offset.x(), position.height() - m_shadow_offset.y());
+		painter.renderText(shadowposition, m_text, flags, m_text_border_color, m_text_border_width, m_pos, &m_text_offset);
 
 		if (m_have_shadow_color)
 		{
@@ -118,11 +115,6 @@ void eLabel::setFont(gFont *font)
 	event(evtChangedFont);
 }
 
-gFont* eLabel::getFont()
-{
-	return m_font;
-}
-
 void eLabel::setVAlign(int align)
 {
 	m_valign = align;
@@ -155,30 +147,30 @@ void eLabel::setShadowColor(const gRGB &col)
 	}
 }
 
-void eLabel::setShadowOffset(const ePoint &offset)
+void eLabel::setTextBorderColor(const gRGB &col)
 {
-	m_shadow_offset = offset;
-}
-
-void eLabel::setBorderColor(const gRGB &col)
-{
-	if (m_border_color != col)
+	if (m_text_border_color != col)
 	{
-		m_border_color = col;
+		m_text_border_color = col;
 		invalidate();
 	}
 }
 
-void eLabel::setBorderWidth(int size)
+void eLabel::setWrap(int wrap)
 {
-	m_border_size = size;
+	if (m_wrap != wrap)
+	{
+		m_wrap = wrap;
+		invalidate();
+	}
 }
 
-void eLabel::setNoWrap(int nowrap)
+void eLabel::setAlphatest(int alphatest)
 {
-	if (m_nowrap != nowrap)
+	bool blend = (alphatest > 0); // blend if BT_ALPHATEST or BT_ALPHABLEND
+	if (m_blend != blend)
 	{
-		m_nowrap = nowrap;
+		m_blend = blend;
 		invalidate();
 	}
 }
@@ -194,12 +186,12 @@ void eLabel::clearForegroundColor()
 
 eSize eLabel::calculateSize()
 {
-	return calculateTextSize(m_font, m_text, size(), m_nowrap);
+	return calculateTextSize(m_font, m_text, size(), m_wrap == 0);
 }
 
-eSize eLabel::calculateTextSize(gFont* font, const std::string &string, eSize targetSize, bool nowrap)
+eSize eLabel::calculateTextSize(gFont *font, const std::string &string, eSize targetSize, bool nowrap)
 {
-	// Calculate text size for a piece of text without creating an eLabel instance 
+	// Calculate text size for a piece of text without creating an eLabel instance
 	// this avoids the side effect of "invalidate" being called on the parent container
 	// during the setup of the font and text on the eLabel
 	eTextPara para(eRect(0, 0, targetSize.width(), targetSize.height()));

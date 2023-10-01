@@ -1,11 +1,8 @@
-from __future__ import print_function
-from __future__ import absolute_import
 from Tools.Directories import fileExists
 from Components.config import config, ConfigSubsection, ConfigInteger, ConfigText, ConfigSelection, ConfigSequence, ConfigSubList
 from . import Title
 import xml.dom.minidom
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS, SCOPE_FONTS
-import six
 
 
 class ConfigColor(ConfigSequence):
@@ -21,7 +18,7 @@ class ConfigFilename(ConfigText):
 		if self.text == "":
 			return ("mtext"[1 - selected:], "", 0)
 		cut_len = min(len(self.text), 40)
-		filename = six.ensure_str((self.text.rstrip("/").rsplit("/", 1))[1])[:cut_len] + " "
+		filename = self.text.rstrip("/").rsplit("/", 1)[1][:cut_len] + " "
 		if self.allmarked:
 			mark = list(range(0, len(filename)))
 		else:
@@ -116,38 +113,32 @@ class Project:
 		return ret
 
 	def loadProject(self, filename):
-		#try:
-			if not fileExists(filename):
-				self.error = "xml file not found!"
-				#raise AttributeError
-			file = open(filename, "r")
-			data = file.read().decode("utf-8").replace('&', "&amp;").encode("ascii", 'xmlcharrefreplace')
-			file.close()
-			projectfiledom = xml.dom.minidom.parseString(data)
-			for node in projectfiledom.childNodes[0].childNodes:
-				print("node:", node)
-				if node.nodeType == xml.dom.minidom.Element.nodeType:
-					if node.tagName == 'settings':
-						self.xmlAttributesToConfig(node, self.settings)
-					elif node.tagName == 'titles':
-						self.xmlGetTitleNodeRecursive(node)
+		if not fileExists(filename):
+			self.error = "xml file not found!"
+		file = open(filename)
+		data = file.read().decode("utf-8").replace('&', "&amp;").encode("ascii", 'xmlcharrefreplace')
+		file.close()
+		projectfiledom = xml.dom.minidom.parseString(data)
+		for node in projectfiledom.childNodes[0].childNodes:
+			print("node:", node)
+			if node.nodeType == xml.dom.minidom.Element.nodeType:
+				if node.tagName == 'settings':
+					self.xmlAttributesToConfig(node, self.settings)
+				elif node.tagName == 'titles':
+					self.xmlGetTitleNodeRecursive(node)
 
-			for key in self.filekeys:
-				val = self.settings.dict()[key].getValue()
-				if not fileExists(val):
-					if val[0] != "/":
-						if key.find("font") == 0:
-							val = resolveFilename(SCOPE_FONTS) + val
-						else:
-							val = resolveFilename(SCOPE_PLUGINS) + "Extensions/DVDBurn/" + val
-						if fileExists(val):
-							self.settings.dict()[key].setValue(val)
-							continue
-					self.error += "\n%s '%s' not found" % (key, val)
-		#except AttributeError:
-		  	#print "loadProject AttributeError", self.error
-			#self.error += (" in project '%s'") % (filename)
-			#return False
+		for key in self.filekeys:
+			val = self.settings.dict()[key].getValue()
+			if not fileExists(val):
+				if val[0] != "/":
+					if key.find("font") == 0:
+						val = resolveFilename(SCOPE_FONTS) + val
+					else:
+						val = resolveFilename(SCOPE_PLUGINS) + "Extensions/DVDBurn/" + val
+					if fileExists(val):
+						self.settings.dict()[key].setValue(val)
+						continue
+				self.error += "\n%s '%s' not found" % (key, val)
 			return True
 
 	def xmlAttributesToConfig(self, node, config):
@@ -158,11 +149,15 @@ class Project:
 				#raise AttributeError
 			while i < node.attributes.length:
 				item = node.attributes.item(i)
-				key = six.ensure_str(item.name)
+				key = item.name
+				if isinstance(key, bytes):
+					key = key.decode()
 				try:
 					val = eval(item.nodeValue)
 				except (NameError, SyntaxError):
-					val = six.ensure_str(item.nodeValue)
+					val = item.nodeValue
+					if isinstance(val, bytes):
+						val = val.decode()
 				try:
 					print("config[%s].setValue(%s)" % (key, val))
 					config.dict()[key].setValue(val)
@@ -189,7 +184,9 @@ class Project:
 				if subnode.tagName == 'path':
 					print("path:", subnode.firstChild.data)
 					filename = subnode.firstChild.data
-					self.titles[title_idx].addFile(six.ensure_str(filename))
+					if isinstance(filename, bytes):
+						filename = filename.decode()
+					self.titles[title_idx].addFile(filename)
 				if subnode.tagName == 'properties':
 					self.xmlAttributesToConfig(node, self.titles[title_idx].properties)
 				if subnode.tagName == 'audiotracks':

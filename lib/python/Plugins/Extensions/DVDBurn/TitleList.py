@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import absolute_import
 from . import Project, TitleCutter, TitleProperties, ProjectSettings, MediumToolbox, Process, Bludisc
 from Screens.Screen import Screen
 from Screens.ChoiceBox import ChoiceBox
@@ -11,9 +9,7 @@ from Components.ActionMap import HelpableActionMap, ActionMap
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Components.Sources.Progress import Progress
-from Components.MultiContent import MultiContentEntryText
 from Components.Label import MultiColorLabel
-from enigma import gFont, RT_HALIGN_LEFT, RT_HALIGN_RIGHT
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 
 MODE_DVD, MODE_BLUDISC = list(range(2))
@@ -73,9 +69,9 @@ class TitleList(Screen, HelpableScreen):
 				"burnProject": (self.askBurnProject, _("Burn to medium"), _("Burn to medium")),
 			})
 
-		self["MovieSelectionActions"] = HelpableActionMap(self, "MovieSelectionActions",
+		self["menuactions"] = HelpableActionMap(self, "MenuActions",
 			{
-				"contextMenu": (self.showMenu, _("Menu")),
+				"menu": (self.showMenu, _("Menu")),
 			})
 
 		self["actions"] = ActionMap(["OkCancelActions"],
@@ -96,10 +92,10 @@ class TitleList(Screen, HelpableScreen):
 		self["space_bar_single"] = Progress()
 		self["space_bar_dual"] = Progress()
 		self["space_bar_bludisc"] = Progress()
-		self["marker_single"] = StaticText(("SINGLE"))
-		self["marker_dvd"] = StaticText(("DVD"))
-		self["marker_dual"] = StaticText(("DUAL"))
-		self["marker_bludisc"] = StaticText(("BLUDISC"))
+		self["marker_single"] = StaticText("SINGLE")
+		self["marker_dvd"] = StaticText("DVD")
+		self["marker_dual"] = StaticText("DUAL")
+		self["marker_bludisc"] = StaticText("BLUDISC")
 
 		self["titles"] = List([])
 		self.previous_size = 0
@@ -152,7 +148,7 @@ class TitleList(Screen, HelpableScreen):
 
 	def titleProperties(self):
 		#if self.getCurrentTitle():
-			self.session.openWithCallback(self.updateTitleList, TitleProperties.TitleProperties, self, self.project, self["titles"].getIndex())
+		self.session.openWithCallback(self.updateTitleList, TitleProperties.TitleProperties, self, self.project, self["titles"].getIndex())
 
 	def selectImage(self):
 		self.session.openWithCallback(self.burnISO, ProjectSettings.FileBrowser, "image", self.project.settings)
@@ -370,7 +366,7 @@ class TitleList(Screen, HelpableScreen):
 		if t.VideoType != 0 and self.project.settings.authormode.value not in ("data_ts", "bdmv"):
 			text = _("The DVD standard doesn't support H.264 (HDTV) video streams.")
 
-			if all_hd == True:
+			if all_hd is True:
 				choices.append((_("BDMV Blu-ray disk (HDTV titles only)"), "bdmv"))
 
 			choices.append((_("Dreambox format data DVD (won't work in other DVD players)"), "data_ts"))

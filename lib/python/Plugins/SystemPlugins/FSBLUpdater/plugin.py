@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from Components.config import config, ConfigBoolean
 from Screens.ChoiceBox import ChoiceBox
 from Plugins.Plugin import PluginDescriptor
@@ -6,14 +5,13 @@ from Tools.HardwareInfo import HardwareInfo
 
 from .FSBLUpdater import FSBLUpdater
 
-from Tools.Log import Log
 import Tools.Notifications
 
 
 config.misc.fsbl_update_never = ConfigBoolean(default=False)
 
 
-class FSBLUpdateHandler(object):
+class FSBLUpdateHandler:
 	def __init__(self):
 		self._boxtype = HardwareInfo().get_device_name()
 		self._session = None
@@ -23,7 +21,7 @@ class FSBLUpdateHandler(object):
 			return
 		self._session = session
 		if FSBLUpdater.isUpdateRequired(self._boxtype):
-			Log.w("FSBL Update required!")
+			print("FSBL Update required!")
 			choices = [
 				(_("Yes"), "yes"),
 				(_("No"), "no"),
@@ -32,12 +30,12 @@ class FSBLUpdateHandler(object):
 			txt = _("DO NOT POWER OFF YOUR DEVICE WHILE UPDATING!\nUpdate now?")
 			Tools.Notifications.AddNotificationWithCallback(self._startFSBLUpdater, ChoiceBox, list=choices, title=txt, windowTitle=_("Boot loader update required!"))
 		else:
-			Log.i("No FSBL update required!")
+			print("No FSBL update required!")
 
 	def _startFSBLUpdater(self, answer):
 		if not answer:
 			return
-		Log.i(answer)
+		print(answer)
 		answer = answer[1]
 		if answer == "yes":
 			self._session.open(FSBLUpdater, HardwareInfo().get_device_name())

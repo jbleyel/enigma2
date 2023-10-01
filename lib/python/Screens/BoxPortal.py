@@ -1,6 +1,5 @@
-from __future__ import print_function
 from Screens.Screen import Screen
-from Components.ActionMap import ActionMap, HelpableActionMap, NumberActionMap
+from Components.ActionMap import ActionMap
 from Components.Sources.List import List
 from Components.config import config
 from Screens.InfoBar import InfoBar
@@ -52,10 +51,8 @@ class BoxPortal(Screen):
 			list.append((_("Media Center"), "bmc", "", "50"))
 		if isExtension_installed(_("Media Player")):
 			list.append((_("Media Player"), "MediaPlayer", "", "50"))
-		if isExtension_installed('MediaPortal'):
-			list.append((_("Media Portal"), "MediaPortal", "", "50"))
-		if isExtension_installed(_("AZPlay")):
-			list.append((_("AZPlay"), "AZPlay", "", "50"))
+		if isExtension_installed('MediaStream'):
+			list.append((_("Media Stream"), "MediaStream", "", "50"))
 		list.append((_("Teletext"), "teletext", "", "50"))
 		self["menu"] = List(list)
 
@@ -78,16 +75,10 @@ class BoxPortal(Screen):
 					open(showMoviesNew(InfoBar.instance))
 				except Exception as e:
 					print('[EMCPlayer] showMovies exception:\n' + str(e))
-			elif selection[1] == "MediaPortal":
+			elif selection[1] == "MediaStream":
 				InfoBar.showPORTAL(InfoBar.instance)
 			elif selection[1] == "MediaPlayer":
 				InfoBar.showMediaPlayer(InfoBar.instance)
-			elif selection[1] == "AZPlay":
-				try:
-					from Plugins.Extensions.AZPlay.plugin import main
-					open(main(self.session))
-				except Exception as e:
-					print('[AZPlay] exception:\n' + str(e))
 			elif selection[1] == "teletext":
 				self.InfoBarTeletextPlugin()
 

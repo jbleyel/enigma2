@@ -1,7 +1,6 @@
-from __future__ import absolute_import
 from time import localtime, time, strftime, mktime
 
-from enigma import eEPGCache, eListbox, eListboxPythonMultiContent, eServiceReference, loadPNG, gFont, getDesktop, eRect, eSize, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER, RT_VALIGN_TOP, RT_WRAP, BT_SCALE, BT_KEEP_ASPECT_RATIO
+from enigma import eEPGCache, eListbox, eListboxPythonMultiContent, eServiceReference, loadPNG, gFont, eRect, eSize, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER, RT_VALIGN_TOP, RT_WRAP, BT_SCALE, BT_KEEP_ASPECT_RATIO
 
 from Components.GUIComponent import GUIComponent
 from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixmapAlphaBlend, MultiContentEntryPixmapAlphaTest
@@ -80,6 +79,10 @@ class EPGList(GUIComponent):
 		#//vertical
 		self.days = (_("Mon"), _("Tue"), _("Wed"), _("Thu"), _("Fri"), _("Sat"), _("Sun"))
 		#//
+
+		self.listRows = 8
+		self.listFirstServiceIndex = 0
+		self.serviceList = ()
 
 		self.overjump_empty = overjump_empty
 		self.timer = timer
@@ -544,6 +547,7 @@ class EPGList(GUIComponent):
 			self.listHeight = self.instance.size().height()
 			self.listWidth = self.instance.size().width()
 			self.itemHeight = itemHeight
+			self.listRows = int(self.listHeight / itemHeight)
 
 		elif self.type == EPG_TYPE_ENHANCED or self.type == EPG_TYPE_SINGLE or self.type == EPG_TYPE_SIMILAR:
 			if self.listHeight > 0:
@@ -1485,7 +1489,7 @@ class EPGList(GUIComponent):
 		self.l.setList(self.list)
 		self.selectionChanged()
 
-	def fillGraphEPG(self, services, stime=None, getnow=False):
+	def fillGraphEPG(self, services, stime=None, getnow=False, current_service=None):
 		if (self.type == EPG_TYPE_GRAPH or self.type == EPG_TYPE_INFOBARGRAPH) and not self.graphicsloaded:
 			if self.graphic:
 				self.nowEvPix = loadPNG(resolveFilename(SCOPE_GUISKIN, 'epg/CurrentEvent.png'))
@@ -1514,6 +1518,8 @@ class EPGList(GUIComponent):
 
 			self.graphicsloaded = True
 
+		test = ['XRnITBD']  # return record, service ref, service name, event id, event title, begin time, duration
+
 		if stime is not None:
 			self.time_base = int(stime)
 		if services is None:
@@ -1522,31 +1528,42 @@ class EPGList(GUIComponent):
 			self.time_base = time_base
 			self.offs = 0
 			#//
-			test = [(service[0], 0, time_base, self.time_epoch) for service in self.list]
-			serviceList = self.list
-			piconIdx = 3
-			channelIdx = 4
-		else:
-			self.cur_event = None
-			self.cur_service = None
-			test = [(service.ref.toString(), 0, self.time_base, self.time_epoch) for service in services]
-			serviceList = services
+			endRow = min(self.listFirstServiceIndex + self.listRows, len(self.serviceList))
+			for i in range(self.listFirstServiceIndex, endRow):
+				test.append((self.serviceList[i].ref.toString(), 0, self.time_base, self.time_epoch))
 			piconIdx = 0
 			channelIdx = None
 
-		test.insert(0, 'XRnITBD')  # return record, service ref, service name, event id, event title, begin time, duration
+		else:
+			self.cur_event = None
+			self.cur_service = None
+			self.listFirstServiceIndex = 0
+			self.serviceList = services
+			if current_service is not None:
+				for i in range(len(self.serviceList)):
+					if self.serviceList[i].ref == current_service:
+						self.listFirstServiceIndex = int(i / self.listRows) * self.listRows
+						break
+			endRow = min(self.listFirstServiceIndex + self.listRows, len(self.serviceList))
+			for i in range(self.listFirstServiceIndex, endRow):
+				test.append((self.serviceList[i].ref.toString(), 0, self.time_base, self.time_epoch))
+
+			piconIdx = 0
+			channelIdx = None
+
 		epg_data = self.queryEPG(test)
 		self.list = []
 		tmp_list = None
 		service = ""
 		sname = ""
 
-		serviceIdx = 0
+		serviceIdx = self.listFirstServiceIndex
+
 		for x in epg_data:
 			if service != x[0]:
 				if tmp_list is not None:
-					picon = None if piconIdx == 0 else serviceList[serviceIdx][piconIdx]
-					channel = serviceList[serviceIdx] if (channelIdx == None) else serviceList[serviceIdx][channelIdx]
+					picon = None if piconIdx == 0 else self.serviceList[serviceIdx][piconIdx]
+					channel = self.serviceList[serviceIdx] if (channelIdx is None) else self.serviceList[serviceIdx][channelIdx]
 					self.list.append((service, sname, tmp_list[0][0] is not None and tmp_list or None, picon, channel))
 					serviceIdx += 1
 				service = x[0]
@@ -1554,8 +1571,8 @@ class EPGList(GUIComponent):
 				tmp_list = []
 			tmp_list.append((x[2], x[3], x[4], x[5]))  # (event_id, event_title, begin_time, duration)
 		if tmp_list and len(tmp_list):
-			picon = None if piconIdx == 0 else serviceList[serviceIdx][piconIdx]
-			channel = serviceList[serviceIdx] if (channelIdx == None) else serviceList[serviceIdx][channelIdx]
+			picon = None if piconIdx == 0 else self.serviceList[serviceIdx][piconIdx]
+			channel = self.serviceList[serviceIdx] if (channelIdx is None) else self.serviceList[serviceIdx][channelIdx]
 			self.list.append((service, sname, tmp_list[0][0] is not None and tmp_list or None, picon, channel))
 			serviceIdx += 1
 
@@ -1617,6 +1634,41 @@ class EPGList(GUIComponent):
 				self.instance.moveSelectionTo(index)
 				break
 			index += 1
+
+	def nextPage(self, selectFirstService=False):
+		if self.listFirstServiceIndex + self.listRows < len(self.serviceList):
+			self.listFirstServiceIndex += self.listRows
+		else:
+			self.listFirstServiceIndex = 0
+		self.fillGraphEPG(None)
+		if selectFirstService:
+			self.setCurrentIndex(0)
+
+	def prevPage(self, selectLastService=False):
+		if self.listFirstServiceIndex - self.listRows >= 0:
+			self.listFirstServiceIndex -= self.listRows
+		else:
+			self.listFirstServiceIndex = int(len(self.serviceList) / self.listRows) * self.listRows
+		self.fillGraphEPG(None)
+		if selectLastService:
+			if self.listFirstServiceIndex + self.listRows <= len(self.serviceList):
+				self.setCurrentIndex(self.listRows - 1)
+			else:
+				self.setCurrentIndex(len(self.serviceList) - self.listFirstServiceIndex - 1)
+
+	def moveUp(self):
+		idx = self.getCurrentIndex() - 1
+		if idx < 0:
+			self.prevPage(True)
+		else:
+			self.setCurrentIndex(idx)
+
+	def moveDown(self):
+		idx = self.getCurrentIndex() + 1
+		if idx >= self.listRows or self.listFirstServiceIndex + idx >= len(self.serviceList):
+			self.nextPage(True)
+		else:
+			self.setCurrentIndex(idx)
 
 
 class TimelineText(GUIComponent):
