@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-22 08:09+0000\n"
+"POT-Creation-Date: 2023-11-19 11:41+0000\n"
 "PO-Revision-Date: 2021-08-15 18:50+0000\n"
 "Last-Translator: openATV <openatv@gmail.com>\n"
 "Language-Team: Icelandic <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/is/>\n"
@@ -1533,9 +1533,6 @@ msgstr ""
 msgid "13 V"
 msgstr "13 V"
 
-msgid "16:9 reset to normal"
-msgstr ""
-
 #
 msgid "16:10 Letterbox"
 msgstr "16:10 Letterbox"
@@ -1563,6 +1560,9 @@ msgid "16:9 Letterbox"
 msgstr "16:9 Letterbox"
 
 msgid "16:9 PanScan"
+msgstr ""
+
+msgid "16:9 reset to normal"
 msgstr ""
 
 #
@@ -2212,6 +2212,9 @@ msgstr ""
 msgid "Add service"
 msgstr "bæta við rás"
 
+msgid "Add service to AutoCam"
+msgstr ""
+
 msgid "Add services to this bouquet?"
 msgstr ""
 
@@ -2247,10 +2250,10 @@ msgstr ""
 msgid "Additional files/folders to backup"
 msgstr ""
 
-msgid "Additional motor options allow you to enter details from your motor's spec sheet so enigma can work out how long it will take to move the dish from one satellite to another satellite."
+msgid "Additional motor options allow you to enter details from your motor's specifications so Enigma can work out how long it will take to move the dish from one satellite to another."
 msgstr ""
 
-msgid "Additional motor options allow you to enter details from your motor's spec sheet so enigma can work out how long it will take to move to another satellite."
+msgid "Additional motor options allow you to enter details from your motor's specifications so Enigma can work out how long it will take to move to another satellite."
 msgstr ""
 
 msgid "Address"
@@ -2461,13 +2464,10 @@ msgstr ""
 msgid "Allows you to set the maximum size of the Debug log size (MB). When that size is reached, a new file will be created."
 msgstr ""
 
-msgid "Allows you to show/hide CCcam in extensions (BLUE button)."
+msgid "Allows you to show/hide Log Manager in the Extension Menu screen (BLUE button)."
 msgstr ""
 
-msgid "Allows you to show/hide Log Manager in extensions (BLUE button)."
-msgstr ""
-
-msgid "Allows you to show/hide OScam in extensions (BLUE button)."
+msgid "Allows you to show/hide OScam/CCcam in the Extension Menu screen (BLUE button)."
 msgstr ""
 
 msgid "Almost there... "
@@ -2933,6 +2933,12 @@ msgstr ""
 #, fuzzy
 msgid "AutoUpdate"
 msgstr "Uppfæra"
+
+msgid "AutoCam Settings"
+msgstr ""
+
+msgid "AutoCam Setup Actions"
+msgstr ""
 
 msgid "Automatic"
 msgstr "Sjálfvirkt"
@@ -3632,9 +3638,6 @@ msgstr ""
 msgid "CI Boot Delay"
 msgstr ""
 
-msgid "CI Helper Settings"
-msgstr ""
-
 msgid "CI assignment"
 msgstr "CI stillingar"
 
@@ -3642,6 +3645,9 @@ msgid "CI enabled"
 msgstr ""
 
 msgid "CI slot: "
+msgstr ""
+
+msgid "CI+ Helper*"
 msgstr ""
 
 msgid "CIFS/Samba Settings"
@@ -3945,6 +3951,9 @@ msgid "Cards: 0"
 msgstr ""
 
 msgid "Cardserial"
+msgstr ""
+
+msgid "Cardserver Settings"
 msgstr ""
 
 msgid "Cartoon"
@@ -4420,9 +4429,6 @@ msgid "Client Info ( Oscam-Version: %s )"
 msgstr ""
 
 msgid "Client is streaming from this box!"
-msgstr ""
-
-msgid "ClientIP"
 msgstr ""
 
 msgid "Clients"
@@ -4958,7 +4964,7 @@ msgstr ""
 msgid "Configure the width of the TrueType font letters used for teletext."
 msgstr ""
 
-msgid "Configure this tuner using simple or advanced options, or loop it through to another tuner, or copy a configuration from another tuner, or disable it."
+msgid "Configure this tuner using Simple or Advanced options, loop it through to another tuner, copy a configuration from another tuner or disable it."
 msgstr ""
 
 msgid "Configure to show channel names, numbers, picons or all three inside EPG."
@@ -5070,10 +5076,16 @@ msgstr ""
 msgid "Constellation"
 msgstr ""
 
-msgid "Consult your SCR device spec sheet for this information."
+msgid "Consult your SCR device specifications for this information."
 msgstr ""
 
-msgid "Consult your motor's spec sheet for this information, or leave the default setting."
+msgid "Consult your motor's specifications for this information, or leave the default setting."
+msgstr ""
+
+msgid "Consult your receiver's manual for more information on power management."
+msgstr ""
+
+msgid "Consult your receiver's manual for more information on power threshold."
 msgstr ""
 
 #, python-format
@@ -5181,6 +5193,9 @@ msgstr ""
 #
 msgid "Copy To Bouquets"
 msgstr "afrita til rásavanda"
+
+msgid "Copy To Stream Relay"
+msgstr ""
 
 msgid "Copy all related files"
 msgstr ""
@@ -5923,6 +5938,12 @@ msgid "Default: '%s'."
 msgstr ""
 
 msgid "Defaults"
+msgstr ""
+
+msgid "Define Softcam For This Provider"
+msgstr ""
+
+msgid "Define Softcam For This Service"
 msgstr ""
 
 msgid "Define additional delay in milliseconds before start of http(s) streams."
@@ -6782,9 +6803,6 @@ msgstr ""
 msgid "Don't ask again!"
 msgstr ""
 
-msgid "Don't restart"
-msgstr ""
-
 msgid "Don't save"
 msgstr ""
 
@@ -7395,7 +7413,7 @@ msgstr ""
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr ""
 
-msgid "Enable this setting if your aerial system needs power"
+msgid "Enable this setting if your aerial system needs power."
 msgstr ""
 
 msgid "Enable to add some extra spacing to the Information screens. This can improve readability."
@@ -7407,13 +7425,13 @@ msgstr ""
 msgid "Enable to display setup entries alphabetically."
 msgstr ""
 
-msgid "Enable to display the Extension menu entries alphabetically."
+msgid "Enable to display the Extension Menu screen entries alphabetically."
 msgstr ""
 
 msgid "Enable to display the current value of the slider at end of the slider bar."
 msgstr ""
 
-msgid "Enable to show the 'Restart Network' entry in the Extensions menu."
+msgid "Enable to show the 'Restart Network' entry in the Extension Menu screen."
 msgstr ""
 
 msgid "Enable unlinked bouquets"
@@ -7568,10 +7586,10 @@ msgstr ""
 msgid "Enter a new name for this device."
 msgstr ""
 
-msgid "Enter if you are in the east or west hemisphere."
+msgid "Enter if you are North or South of the equator."
 msgstr ""
 
-msgid "Enter if you are north or south of the equator."
+msgid "Enter if you are in the East or West hemisphere."
 msgstr ""
 
 #
@@ -7593,7 +7611,7 @@ msgstr "Slá inn kóða"
 msgid "Enter text via an attached keyboard"
 msgstr ""
 
-msgid "Enter the frequency at which you LNB switches between low band and high band. For more information consult the spec sheet of your LNB."
+msgid "Enter the frequency at which you LNB switches between low band and high band. For more information consult the specifications of your LNB."
 msgstr ""
 
 msgid "Enter the frequency step size for the tuner to use when searching for cable multiplexes. For more information consult your cable provider's documentation."
@@ -7611,10 +7629,10 @@ msgstr ""
 msgid "Enter your current longitude. This is the number of degrees you are from zero meridian as a decimal."
 msgstr ""
 
-msgid "Enter your high band local oscillator frequency. For more information consult the spec sheet of your LNB."
+msgid "Enter your high band local oscillator frequency. For more information consult the specifications of your LNB."
 msgstr ""
 
-msgid "Enter your low band local oscillator frequency. For more information consult the spec sheet of your LNB."
+msgid "Enter your low band local oscillator frequency. For more information consult the specifications of your LNB."
 msgstr ""
 
 msgid "Enter your personal feed URL to allow you to select packages from your personal feed."
@@ -9656,6 +9674,9 @@ msgstr ""
 msgid "IP address"
 msgstr "IP Netfang"
 
+msgid "IP address of the Stream Relay server used to descramble services that can only be decrypted via Stream Relay."
+msgstr ""
+
 msgid "IPK Installer"
 msgstr ""
 
@@ -9815,13 +9836,13 @@ msgstr ""
 msgid "If using multiple uncommitted switches the DiSEqC commands must be sent multiple times. Set to the number of uncommitted switches in the chain minus one."
 msgstr ""
 
-msgid "If you are using a Circular polarised LNB select 'yes', otherwise select 'no'."
-msgstr ""
-
 msgid "If you are using a DiSEqC committed switch enter the port letter required to access the LNB used for this satellite."
 msgstr ""
 
 msgid "If you are using a DiSEqC uncommitted switch enter the port number required to access the LNB used for this satellite."
+msgstr ""
+
+msgid "If you are using a circular polarized LNB select 'Yes', otherwise select 'No'."
 msgstr ""
 
 #
@@ -10332,6 +10353,9 @@ msgstr "Ógildur staður"
 msgid "Invalid transponder data"
 msgstr "Handvirk leit á sendi"
 
+msgid "Invalid type"
+msgstr ""
+
 #
 msgid "Inversion"
 msgstr "Umbreyting"
@@ -10588,6 +10612,9 @@ msgstr ""
 msgid "Kurdish"
 msgstr ""
 
+msgid "Kurdistan"
+msgstr ""
+
 #
 #, fuzzy
 msgid "Kuwait"
@@ -10762,7 +10789,7 @@ msgstr "Lettneska"
 msgid "Leave DVD player?"
 msgstr "Hætta í DVD spilara?"
 
-msgid "Leave this set to 'yes' unless you fully understand why you are adjusting it."
+msgid "Leave this set to 'Yes' unless you fully understand why you are adjusting it."
 msgstr ""
 
 msgid "Lebanon"
@@ -11590,11 +11617,6 @@ msgid "Mins"
 msgstr ""
 
 #
-#, fuzzy
-msgid "Minute"
-msgstr "mínútur"
-
-#
 msgid "Minutes"
 msgstr "mínútur"
 
@@ -11812,7 +11834,7 @@ msgstr ""
 msgid "Move down one line"
 msgstr "Færa vestur"
 
-msgid "Move down one line.  Move to the top of the next screen if this is the last line of the screen.  Move to the first line of the list if this is the last line on the list."
+msgid "Move down one line. Move to the top of the next screen if this is the last line of the screen. Move to the first line of the list if this is the last line on the list."
 msgstr ""
 
 #
@@ -11820,7 +11842,7 @@ msgstr ""
 msgid "Move down one screen"
 msgstr "fara niður í næsta atriði"
 
-msgid "Move down one screen.  Move to the last line of the screen if this is the last screen."
+msgid "Move down one screen. Move to the last line of the screen if this is the last screen."
 msgstr ""
 
 #
@@ -11974,7 +11996,7 @@ msgstr ""
 msgid "Move up one line"
 msgstr "Færa austur"
 
-msgid "Move up one line.  Move to the bottom of the previous screen if this is the first line of the screen.  Move to the last of the entry / list if this is the first line of the list."
+msgid "Move up one line. Move to the bottom of the previous screen if this is the first line of the screen. Move to the last of the entry / list if this is the first line of the list."
 msgstr ""
 
 #
@@ -11982,7 +12004,7 @@ msgstr ""
 msgid "Move up one screen"
 msgstr "Færa austur"
 
-msgid "Move up one screen.  Move to the first line of the screen if this is the first screen."
+msgid "Move up one screen. Move to the first line of the screen if this is the first screen."
 msgstr ""
 
 #
@@ -12877,6 +12899,9 @@ msgstr ""
 msgid "Not associated"
 msgstr "Ekki tengt"
 
+msgid "Not configured"
+msgstr "ekki stillt"
+
 msgid "Not currently mounted."
 msgstr ""
 
@@ -13424,7 +13449,7 @@ msgstr ""
 msgid "Package information currently not available!"
 msgstr ""
 
-msgid "Package installation failed"
+msgid "Package installation failed."
 msgstr ""
 
 msgid "Package list"
@@ -13788,6 +13813,12 @@ msgstr ""
 msgid "Play selected service on the main screen"
 msgstr ""
 
+msgid "Play service with Stream Relay"
+msgstr ""
+
+msgid "Play service without Stream Relay"
+msgstr ""
+
 msgid "Play the audio file"
 msgstr ""
 
@@ -14076,10 +14107,6 @@ msgstr ""
 msgid "Please wait, loading image..."
 msgstr ""
 
-#, python-format
-msgid "Please wait, restarting %s."
-msgstr ""
-
 msgid "Please wait, swap is is being created. This could take a few minutes to complete."
 msgstr ""
 
@@ -14182,6 +14209,9 @@ msgstr "Tengi C"
 msgid "Port D"
 msgstr "Tengi D"
 
+msgid "Port number for the Stream Relay server used to descramble services that can only be decrypted via Stream Relay."
+msgstr ""
+
 #
 #, fuzzy
 msgid "Portugal"
@@ -14248,15 +14278,9 @@ msgstr ""
 msgid "Power On Display"
 msgstr ""
 
-msgid "Power management. Consult your receiver's manual for more information."
-msgstr ""
-
 #
 msgid "Power threshold in mA"
 msgstr "Aflmörk í mA"
-
-msgid "Power threshold. Consult your receiver's manual for more information."
-msgstr ""
 
 msgid "PowerTimer"
 msgstr ""
@@ -14683,7 +14707,7 @@ msgstr ""
 msgid "Purge all but / Add / Delete the currently highlighted locale/language"
 msgstr ""
 
-msgid "Purge all but the current and permanent locales/languages.  Add the current locale/language if it is not installed.  Delete the current locale/language if it is installed."
+msgid "Purge all but the current and permanent locales/languages. Add the current locale/language if it is not installed. Delete the current locale/language if it is installed."
 msgstr ""
 
 msgid "Purging all unused locales/languages..."
@@ -15405,6 +15429,9 @@ msgstr ""
 msgid "Remove selected service"
 msgstr ""
 
+msgid "Remove service from AutoCam"
+msgstr ""
+
 msgid "Remove texts for the hearing impaired from external subtitles (instrumental music or environmental sounds, e.g., when a doorbell rings or a gun shot is heard)."
 msgstr ""
 
@@ -15579,9 +15606,6 @@ msgstr ""
 msgid "Reset sort order"
 msgstr ""
 
-msgid "Reset the selected devices and save changes of your config when the GREEN button is pressed."
-msgstr ""
-
 #
 msgid "Reset video enhancement settings to system defaults?"
 msgstr "Endursetja mynd stillingar á sjálfvaldar kerfis stillingar?"
@@ -15629,15 +15653,6 @@ msgstr ""
 msgid "Restart Network Adapter"
 msgstr ""
 
-#
-#, fuzzy
-msgid "Restart both"
-msgstr "Prufa aftur"
-
-#, fuzzy
-msgid "Restart cardserver"
-msgstr "byrja klippingu hér"
-
 msgid "Restart enigma"
 msgstr ""
 
@@ -15654,11 +15669,6 @@ msgstr ""
 
 msgid "Restart network to with current setup"
 msgstr ""
-
-#
-#, fuzzy
-msgid "Restart softcam"
-msgstr "Prufa aftur"
 
 #
 msgid "Restart test"
@@ -16222,7 +16232,7 @@ msgstr "Leita"
 msgid "Scan %s"
 msgstr ""
 
-#. TRANSLATORS: option name, indicating which type of (DVB-C) band should be scanned. The name of the band is printed in '%s'. E.g.: 'Scan EU MID band'
+#. TRANSLATORS: Option name, indicating which type of (DVB-C) band should be scanned. The name of the band is printed in '%s'. E.g.: 'Scan EU MID band'.
 #, python-format
 msgid "Scan %s band"
 msgstr ""
@@ -16431,10 +16441,19 @@ msgstr "Veldu"
 msgid "Select '1.0' for standard committed switches, '1.1' for uncommitted switches, and '1.2' for systems using a positioner."
 msgstr ""
 
-msgid "Select 'A' or 'B' if your aerial system requires this, otherwise select 'none'. If you are unsure select 'none'."
+msgid "Select 'A' or 'B' if your aerial system requires this, otherwise select 'None'. If you are unsure select 'None'."
+msgstr ""
+
+msgid "Select 'Band' if using a 'Universal' LNB, otherwise consult your LNB specifications."
 msgstr ""
 
 msgid "Select 'Enable' to force a package clean before a package update. This is helpful to make sure the package list is up-to-date and can avoid/solve issues during the update. Only enable this when you can not update on-line."
+msgstr ""
+
+msgid "Select 'Enable' to start the CI+ helper."
+msgstr ""
+
+msgid "Select 'Enabled' if this tuner has a signal cable connected, otherwise select 'Nothing connected'."
 msgstr ""
 
 msgid "Select 'No' to make time shift use a single buffer file. Use 'Time shift checking for older files [in minutes]' and 'Time shift checking for free space?' to control the size of the buffer file."
@@ -16446,10 +16465,19 @@ msgstr ""
 msgid "Select 'No' to save older events even after zapping or interrupting time shifting."
 msgstr ""
 
+msgid "Select 'Polarization' if using a 'Universal' LNB, otherwise consult your LNB specifications."
+msgstr ""
+
+msgid "Select 'Provider' to scan from the predefined list of cable multiplexes. Select 'Bands' to only scan certain parts of the spectrum. Select 'Steps' to scan in steps of a particular frequency bandwidth."
+msgstr ""
+
 msgid "Select 'Yes' if an end time is required for this timer."
 msgstr ""
 
 msgid "Select 'Yes' if network traffic should be checked before activating the timer."
+msgstr ""
+
+msgid "Select 'Yes' if this tuner is connected to the SCR device through another tuner, otherwise select 'No'."
 msgstr ""
 
 msgid "Select 'Yes' if volume adjustments should be applied to Dolby sound tracks."
@@ -16504,6 +16532,21 @@ msgid "Select 'Yes' to enable use of the LEFT/RIGHT buttons to move PageUp/PageD
 msgstr ""
 
 msgid "Select 'Yes' to hide channels without EPG data."
+msgstr ""
+
+#, python-format
+msgid "Select 'Yes' to include %s multiplexes in your search."
+msgstr ""
+
+#, python-format
+msgid "Select 'Yes' to include symbol rate %s in your search."
+msgstr ""
+
+#, python-format
+msgid "Select 'Yes' to include the %s band in your search."
+msgstr ""
+
+msgid "Select 'Yes' to only send the DiSEqC command when changing from one satellite to another, or select 'No' for the DiSEqC command to be resent on every zap."
 msgstr ""
 
 msgid "Select 'Yes' to remove all main settings configuration data. Selecting this option will set all Enigma2 settings back to their default values. This will also cause Enigma2 to run the Welcome Wizard on restart."
@@ -16587,7 +16630,7 @@ msgstr ""
 msgid "Select 'Yes' to show skin packages in the Download Plugins screen."
 msgstr ""
 
-msgid "Select 'Yes' to show softcam packages in the Download Plugins screen."
+msgid "Select 'Yes' to show Softcam packages in the Download Plugins screen."
 msgstr ""
 
 msgid "Select 'Yes' to show source 'src' packages in the Download Plugins screen."
@@ -16620,36 +16663,6 @@ msgstr ""
 msgid "Select 'Yes, to display the InfoBar when fast forwarding or rewinding during media playback."
 msgstr ""
 
-msgid "Select 'band' if using a 'universal' LNB, otherwise consult your LNB spec sheet."
-msgstr ""
-
-msgid "Select 'enabled' if this tuner has a signal cable connected, otherwise select 'nothing connected'."
-msgstr ""
-
-msgid "Select 'polarisation' if using a 'universal' LNB, otherwise consult your LNB spec sheet."
-msgstr ""
-
-msgid "Select 'provider' to scan from the predefined list of cable multiplexes. Select 'bands' to only scan certain parts of the spectrum. Select 'steps' to scan in steps of a particular frequency bandwidth."
-msgstr ""
-
-msgid "Select 'yes' if this tuner is connected to the SCR device through another tuner, otherwise select 'no'."
-msgstr ""
-
-#, python-format
-msgid "Select 'yes' to include %s multiplexes in your search."
-msgstr ""
-
-#, python-format
-msgid "Select 'yes' to include symbol rate %s in your search."
-msgstr ""
-
-#, python-format
-msgid "Select 'yes' to include the %s band in your search."
-msgstr ""
-
-msgid "Select 'yes' to only send the DiSEqC command when changing from one satellite to another, or select 'no' for the DiSEqC command to be resent on every zap."
-msgstr ""
-
 msgid "Select Additional Backup Files"
 msgstr ""
 
@@ -16674,7 +16687,7 @@ msgstr ""
 msgid "Select Excluded Backup Files"
 msgstr ""
 
-msgid "Select Fast DiSEqC if your aerial system supports this. If you are unsure select 'no'."
+msgid "Select Fast DiSEqC if your aerial system supports it. If you are unsure select 'No'."
 msgstr ""
 
 msgid "Select Folders"
@@ -16703,6 +16716,9 @@ msgstr ""
 msgid "Select Quad Channels"
 msgstr ""
 
+msgid "Select Satellites"
+msgstr ""
+
 msgid "Select Software Update"
 msgstr ""
 
@@ -16724,9 +16740,6 @@ msgid "Select Your Skin"
 msgstr "veldu CAId"
 
 msgid "Select a bouquet"
-msgstr ""
-
-msgid "Select a cardserver from the available list."
 msgstr ""
 
 msgid "Select a debug log file to view:"
@@ -16766,7 +16779,10 @@ msgstr ""
 msgid "Select a script to run:"
 msgstr ""
 
-msgid "Select a softcam from the available list."
+msgid "Select a Softcam from the available list as the default for AutoCam."
+msgstr ""
+
+msgid "Select a Softcam from the available list."
 msgstr ""
 
 msgid "Select a tuner"
@@ -16798,6 +16814,9 @@ msgstr ""
 #
 msgid "Select audio track"
 msgstr "Veldu hljóð rás"
+
+msgid "Select AutoCam default Softcam"
+msgstr ""
 
 msgid "Select cardserver"
 msgstr ""
@@ -16926,9 +16945,6 @@ msgstr "Veldu sendanda til að bæta við..."
 msgid "Select refresh rate"
 msgstr "Veldu hressingar tíðni"
 
-msgid "Select satellites"
-msgstr ""
-
 msgid "Select seekbar to be activated by arrow L/R (long) or << >> (long)."
 msgstr ""
 
@@ -16939,7 +16955,7 @@ msgstr ""
 msgid "Select service to add..."
 msgstr "Veldur rás til að bæta við..."
 
-msgid "Select softcam"
+msgid "Select Softcam"
 msgstr ""
 
 msgid "Select sort method:"
@@ -16955,6 +16971,10 @@ msgid "Select temporary file sort order for the current column"
 msgstr ""
 
 msgid "Select the No / False response"
+msgstr ""
+
+#, python-format
+msgid "Select the Softcam for '%s'"
 msgstr ""
 
 msgid "Select the Swap File Size:"
@@ -16985,6 +17005,9 @@ msgid "Select the action to perform when the timer ends."
 msgstr ""
 
 msgid "Select the animation speed of the button indicators in the help screens. 'Disabled' turns off animation so that indicators jump between buttons."
+msgstr ""
+
+msgid "Select the cardserver to be used from the list of available cardservers."
 msgstr ""
 
 msgid "Select the channel from which to record:"
@@ -17089,13 +17112,13 @@ msgstr "velja slóð að mynd"
 msgid "Select the location in which to store the recording:"
 msgstr ""
 
-msgid "Select the manufacturer of your SCR device. If the manufacturer is not listed, set 'SCR' to 'user defined' and enter the device parameters manually according to its spec sheet."
+msgid "Select the manufacturer of your SCR device. If the manufacturer is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
 msgstr ""
 
 msgid "Select the method of restoring screen resolution and framebuffer when leaving teletext."
 msgstr ""
 
-msgid "Select the model number of your Unicable device. If the model number is not listed, set 'SCR' to 'user defined' and enter the device parameters manually according to its spec sheet."
+msgid "Select the model number of your Unicable device. If the model number is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
 msgstr ""
 
 #
@@ -17130,22 +17153,22 @@ msgstr ""
 msgid "Select the refresh rate to be used on the TV."
 msgstr ""
 
-msgid "Select the satellite which is connected to Port-A of your switch. If you are unsure select 'automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'nothing connected'."
+msgid "Select the satellite from which your dish is receiving its signal. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you."
 msgstr ""
 
-msgid "Select the satellite which is connected to Port-B of your switch. If you are unsure select 'automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'nothing connected'."
+msgid "Select the satellite which is connected to Port-A of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'."
 msgstr ""
 
-msgid "Select the satellite which is connected to Port-C of your switch. If you are unsure select 'automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'nothing connected'."
+msgid "Select the satellite which is connected to Port-B of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'."
 msgstr ""
 
-msgid "Select the satellite which is connected to Port-D of your switch. If you are unsure select 'automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'nothing connected'."
+msgid "Select the satellite which is connected to Port-C of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'."
 msgstr ""
 
-msgid "Select the satellite you want to configure. Once that satellite is configured you can select and configure other satellites that will be accessed using this same tuner."
+msgid "Select the satellite which is connected to Port-D of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'."
 msgstr ""
 
-msgid "Select the satellite your dish receives from. If you are unsure select 'automatic' and the receiver will attempt to determine this for you."
+msgid "Select the satellite you want to configure. Once configured you can select and configure other satellites that will be accessed using this same tuner."
 msgstr ""
 
 #
@@ -17156,7 +17179,7 @@ msgstr "velja slóð að mynd"
 msgid "Select the shifted character set for the next character only"
 msgstr ""
 
-msgid "Select the softcam protocol."
+msgid "Select the Softcam protocol."
 msgstr ""
 
 msgid "Select the sort order for the file lines:"
@@ -17211,13 +17234,13 @@ msgstr "Samsetning nafna á upptökum"
 msgid "Select the tuner that controls the motorized dish."
 msgstr ""
 
-msgid "Select the tuner that this loopthrough depends on."
-msgstr ""
-
 msgid "Select the tuner to which the signal cable of the SCR device is connected."
 msgstr ""
 
-msgid "Select the type of LNB/device being used (normally 'Universal'). If your LNB type is not available select 'user defined'."
+msgid "Select the tuner upon which this loop through depends."
+msgstr ""
+
+msgid "Select the type of LNB/device being used (normally 'Universal'). If your LNB type is not available select 'User defined'."
 msgstr ""
 
 msgid "Select the type of Single Cable Reception device you are using."
@@ -17308,16 +17331,16 @@ msgstr ""
 msgid "Select your backup device."
 msgstr ""
 
-msgid "Select your country. If not available select 'all'."
+msgid "Select your country. If not available select 'All'."
 msgstr ""
 
-msgid "Select your provider and region. If not present in this list you will need to select one of the other 'service scan types'."
+msgid "Select your provider and region. If not present in this list you will need to select one of the other 'Service scan types'."
 msgstr ""
 
 msgid "Select your provider, and press OK to start the scan"
 msgstr ""
 
-msgid "Select your region. If not available change 'Country' to 'all' and select one of the default alternatives."
+msgid "Select your region. If it is not available change 'Country' to 'All' and select one of the default alternatives."
 msgstr ""
 
 msgid "Select your time zone area or region."
@@ -17593,6 +17616,9 @@ msgstr ""
 msgid "Set DVB CI delay."
 msgstr ""
 
+msgid "Set Default"
+msgstr ""
+
 msgid "Set Framerate for MiniTV"
 msgstr ""
 
@@ -17616,9 +17642,6 @@ msgid "Set action for 'Info' key"
 msgstr "Veldu afrits skrár"
 
 msgid "Set current CEC address as fixed address"
-msgstr ""
-
-msgid "Set default"
 msgstr ""
 
 #, fuzzy
@@ -18097,9 +18120,6 @@ msgstr ""
 msgid "Show CCcam Info"
 msgstr ""
 
-msgid "Show CCcam in extensions"
-msgstr ""
-
 msgid "Show CI messages"
 msgstr ""
 
@@ -18191,7 +18211,7 @@ msgid "Show Log"
 msgstr ""
 
 #, fuzzy
-msgid "Show Log Manager in extensions list"
+msgid "Show Log Manager in Extension Menu"
 msgstr "skoða íforrit..."
 
 msgid "Show M2k packages"
@@ -18218,7 +18238,7 @@ msgstr ""
 msgid "Show OScam Info"
 msgstr ""
 
-msgid "Show OScam in extensions"
+msgid "Show OScam/CCcam in Extension Menu"
 msgstr ""
 
 msgid "Show OpenPLi packages"
@@ -18465,7 +18485,7 @@ msgstr ""
 msgid "Show in Standby"
 msgstr "Biðstaða"
 
-msgid "Show in extensions list"
+msgid "Show in Extension Menu"
 msgstr ""
 
 #
@@ -18478,7 +18498,7 @@ msgstr "Sýna upplýsingar"
 msgid "Show info line"
 msgstr "sýna upplýsingalínu"
 
-msgid "Show job tasks in extensions"
+msgid "Show job tasks in Extension Menu"
 msgstr ""
 
 msgid "Show last image"
@@ -19353,7 +19373,7 @@ msgstr ""
 msgid "Sort EPG List"
 msgstr ""
 
-msgid "Sort Extensions menu"
+msgid "Sort Extension Menu"
 msgstr ""
 
 msgid "Sort Plugin Browser"
@@ -19784,6 +19804,12 @@ msgstr "Vistuð staða"
 msgid "Stream"
 msgstr ""
 
+msgid "Stream Relay URL"
+msgstr ""
+
+msgid "Stream Relay port"
+msgstr ""
+
 msgid "Stream request"
 msgstr ""
 
@@ -19994,7 +20020,7 @@ msgstr "Sænskt"
 msgid "Swimming"
 msgstr ""
 
-msgid "Switch BLUE short (QuickMenu) with BLUE long (Extensions)"
+msgid "Switch BLUE short (QuickMenu) with BLUE long (Extension Menu)"
 msgstr ""
 
 msgid "Switch EPG Page Down"
@@ -20722,7 +20748,7 @@ msgstr ""
 
 msgid ""
 "The unicable connection setting is wrong.\n"
-" Maybe recursive connection of tuners."
+"Maybe recursive connection of tuners."
 msgstr ""
 
 #
@@ -21032,7 +21058,7 @@ msgstr ""
 msgid "This option lets you choose the 3D mode"
 msgstr ""
 
-msgid "This option lets you show the option in the extension screen."
+msgid "This option lets you show the option in the Extension Menu screen."
 msgstr ""
 
 msgid "This option moves the PVR status display from a separate window into the MoviePlayer InfoBar."
@@ -21090,7 +21116,7 @@ msgstr "þessi rás er læst með kóða"
 msgid "This sets the prefix for each line in the debug log. The 'Boot time' is the number of seconds since your %s %s was last booted."
 msgstr ""
 
-msgid "This setting allows the tuner configuration to be a duplication of how another tuner is already configured."
+msgid "This setting allows the tuner configuration to be a duplication of another configured tuner."
 msgstr ""
 
 msgid "This setting depends on your cable provider and location. If you don't know the correct setting refer to the menu in the official cable receiver, or get it from your cable provider, or seek help via Internet forum."
@@ -21592,11 +21618,6 @@ msgstr "Spor"
 
 msgid "Traditional Chinese"
 msgstr ""
-
-#
-#, fuzzy
-msgid "Transcode"
-msgstr "Sendir"
 
 msgid "Transcoding"
 msgstr ""
@@ -22312,6 +22333,9 @@ msgstr ""
 msgid "Use as HDD"
 msgstr ""
 
+msgid "Use AutoCam"
+msgstr ""
+
 msgid "Use automatic mode detection"
 msgstr ""
 
@@ -22349,6 +22373,9 @@ msgid "Use geolocation to get WAN information"
 msgstr ""
 
 msgid "Use geolocation to set the current time zone location"
+msgstr ""
+
+msgid "Use increased voltage '14/18V' if there are problems when switching the LNB."
 msgstr ""
 
 #
@@ -23333,6 +23360,9 @@ msgstr ""
 msgid "When set the PIG will return to live after a movie has stopped playing."
 msgstr ""
 
+msgid "When set to 'Yes' a specific Softcam can be assigned to each encrypted service."
+msgstr ""
+
 msgid "When the content has an aspect ratio of 16:9, choose whether to scale/stretch the picture."
 msgstr ""
 
@@ -23428,7 +23458,7 @@ msgstr ""
 msgid "With pop up"
 msgstr ""
 
-msgid "With this option you can hide Job Tasks from the extension screen (BLUE button press)."
+msgid "With this option you can hide Job Tasks from the Extension Menu screen (BLUE button press)."
 msgstr ""
 
 msgid "With this option you can switch off the display during operation."
@@ -23773,7 +23803,7 @@ msgstr ""
 "Vinsamlega veldu hvað þú vilt gera næst."
 
 #, python-format
-msgid "Your Internet connection is working (ip: %s)"
+msgid "Your Internet connection is working (IP: %s)"
 msgstr ""
 
 #, python-format
@@ -24019,9 +24049,6 @@ msgstr ""
 msgid "am"
 msgstr ""
 
-msgid "and"
-msgstr ""
-
 msgid "aqua"
 msgstr ""
 
@@ -24115,9 +24142,6 @@ msgstr ""
 msgid "card reader"
 msgstr ""
 
-msgid "cardserver"
-msgstr ""
-
 msgid "cartoon/puppets"
 msgstr ""
 
@@ -24182,7 +24206,7 @@ msgstr ""
 msgid "default"
 msgstr ""
 
-msgid "default Astra (13e-19e)"
+msgid "Default Astra (13e-19e)"
 msgstr ""
 
 msgid "delete"
@@ -24490,9 +24514,6 @@ msgstr "Skyndi upptaka..."
 msgid "internally loopthrough to"
 msgstr ""
 
-msgid "invalid type"
-msgstr ""
-
 msgid "jazz"
 msgstr ""
 
@@ -24684,9 +24705,6 @@ msgstr ""
 #, fuzzy
 msgid "not"
 msgstr "nei"
-
-msgid "not configured"
-msgstr "ekki stillt"
 
 #
 msgid "not locked"
@@ -24973,9 +24991,6 @@ msgstr ""
 msgid "social/spiritual science"
 msgstr ""
 
-msgid "softcam"
-msgstr ""
-
 msgid "special (general)"
 msgstr ""
 
@@ -25129,9 +25144,6 @@ msgstr "Virkja"
 msgid "update"
 msgstr "Uppfæra"
 
-msgid "use increased voltage '14/18V' if there are problems when switching the lnb"
-msgstr ""
-
 #
 #, fuzzy
 msgid "userdefined"
@@ -25205,6 +25217,30 @@ msgstr "já (halda fæðirásum)"
 
 msgid "®"
 msgstr ""
+
+#
+#, fuzzy
+#~ msgid "Restart both"
+#~ msgstr "Prufa aftur"
+
+#, fuzzy
+#~ msgid "Restart cardserver"
+#~ msgstr "byrja klippingu hér"
+
+#
+#, fuzzy
+#~ msgid "Restart softcam"
+#~ msgstr "Prufa aftur"
+
+#
+#, fuzzy
+#~ msgid "Minute"
+#~ msgstr "mínútur"
+
+#
+#, fuzzy
+#~ msgid "Transcode"
+#~ msgstr "Sendir"
 
 #
 #, fuzzy

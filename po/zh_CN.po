@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: openATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-22 08:09+0000\n"
+"POT-Creation-Date: 2023-11-19 11:41+0000\n"
 "PO-Revision-Date: 2023-08-11 04:46+0000\n"
 "Last-Translator: Mark Stone <grystyle@gmail.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/zh_Hans/>\n"
@@ -1413,9 +1413,6 @@ msgstr "12位 4:2:0/4:2:2 无画中画"
 msgid "13 V"
 msgstr "13V"
 
-msgid "16:9 reset to normal"
-msgstr ""
-
 msgid "16:10 Letterbox"
 msgstr "16:10信箱模式"
 
@@ -1438,6 +1435,9 @@ msgid "16:9 Letterbox"
 msgstr "16:9信箱模式"
 
 msgid "16:9 PanScan"
+msgstr ""
+
+msgid "16:9 reset to normal"
 msgstr ""
 
 msgid "18 V"
@@ -2023,6 +2023,9 @@ msgstr ""
 msgid "Add service"
 msgstr "添加频道"
 
+msgid "Add service to AutoCam"
+msgstr ""
+
 msgid "Add services to this bouquet?"
 msgstr ""
 
@@ -2056,10 +2059,10 @@ msgstr "添加任务..."
 msgid "Additional files/folders to backup"
 msgstr "额外备份的 文件/文件夹"
 
-msgid "Additional motor options allow you to enter details from your motor's spec sheet so enigma can work out how long it will take to move the dish from one satellite to another satellite."
+msgid "Additional motor options allow you to enter details from your motor's specifications so Enigma can work out how long it will take to move the dish from one satellite to another."
 msgstr "额外的电机选项允许您输入电机规格表中的详细信息,这样就可以计算出从一颗卫星移动到另一颗卫星需要多长时间."
 
-msgid "Additional motor options allow you to enter details from your motor's spec sheet so enigma can work out how long it will take to move to another satellite."
+msgid "Additional motor options allow you to enter details from your motor's specifications so Enigma can work out how long it will take to move to another satellite."
 msgstr "额外的电机选项允许您输入电机规格表中的详细信息,这样就可以计算出从一颗卫星移动到另一颗卫星需要多长时间."
 
 msgid "Address"
@@ -2251,14 +2254,11 @@ msgstr "允许您隐藏已知的文件类型的扩展名."
 msgid "Allows you to set the maximum size of the Debug log size (MB). When that size is reached, a new file will be created."
 msgstr "允许你设置调试日志的最大(MB).当达到这个大小,一个新的文件将被创建."
 
-msgid "Allows you to show/hide CCcam in extensions (BLUE button)."
-msgstr "允许您在扩展中显示/隐藏CCcam（蓝色按钮）."
-
-msgid "Allows you to show/hide Log Manager in extensions (BLUE button)."
+msgid "Allows you to show/hide Log Manager in the Extension Menu screen (BLUE button)."
 msgstr "允许您显示/隐藏日志管理器的扩展(蓝色键)."
 
-msgid "Allows you to show/hide OScam in extensions (BLUE button)."
-msgstr "允许您显示/隐藏OScam扩展(蓝色键)."
+msgid "Allows you to show/hide OScam/CCcam in the Extension Menu screen (BLUE button)."
+msgstr ""
 
 msgid "Almost there... "
 msgstr "即将完成... "
@@ -2698,6 +2698,12 @@ msgstr ""
 
 msgid "AutoUpdate"
 msgstr "自动更新"
+
+msgid "AutoCam Settings"
+msgstr ""
+
+msgid "AutoCam Setup Actions"
+msgstr ""
 
 msgid "Automatic"
 msgstr "自动"
@@ -3377,9 +3383,6 @@ msgstr "CI(通用接口)设置"
 msgid "CI Boot Delay"
 msgstr ""
 
-msgid "CI Helper Settings"
-msgstr "CI 助手设置"
-
 msgid "CI assignment"
 msgstr "接口分配（CI）"
 
@@ -3388,6 +3391,9 @@ msgstr ""
 
 msgid "CI slot: "
 msgstr "CI插槽: "
+
+msgid "CI+ Helper*"
+msgstr ""
 
 msgid "CIFS/Samba Settings"
 msgstr "CIFS/Samba设置"
@@ -3690,6 +3696,9 @@ msgstr "卡片: 0"
 
 msgid "Cardserial"
 msgstr "卡片序列号"
+
+msgid "Cardserver Settings"
+msgstr ""
 
 msgid "Cartoon"
 msgstr "卡通片"
@@ -4149,9 +4158,6 @@ msgstr "客户端信息(Oscam-版本: %s)"
 
 msgid "Client is streaming from this box!"
 msgstr "客户端正在从这个机顶盒中进行流式传输!"
-
-msgid "ClientIP"
-msgstr "客户端IP"
 
 msgid "Clients"
 msgstr "客户端"
@@ -4672,7 +4678,7 @@ msgstr "配置分配给频道名称的宽度."
 msgid "Configure the width of the TrueType font letters used for teletext."
 msgstr "配置用于图文电视的TrueType字体字母的宽度."
 
-msgid "Configure this tuner using simple or advanced options, or loop it through to another tuner, or copy a configuration from another tuner, or disable it."
+msgid "Configure this tuner using Simple or Advanced options, loop it through to another tuner, copy a configuration from another tuner or disable it."
 msgstr "使用简单或高级选项配置此调谐器,或将其循环到另一个调谐器,或从另一个调谐器复制配置,或将其禁用."
 
 msgid "Configure to show channel names, numbers, picons or all three inside EPG."
@@ -4781,11 +4787,17 @@ msgstr "控制台"
 msgid "Constellation"
 msgstr ""
 
-msgid "Consult your SCR device spec sheet for this information."
+msgid "Consult your SCR device specifications for this information."
 msgstr "有关此信息,请参阅SCR设备规格表."
 
-msgid "Consult your motor's spec sheet for this information, or leave the default setting."
+msgid "Consult your motor's specifications for this information, or leave the default setting."
 msgstr "有关此信息,请参阅电机的规格表,或保留默认设置."
+
+msgid "Consult your receiver's manual for more information on power management."
+msgstr "电源管理.有关更多信息,请查阅您的接收器手册."
+
+msgid "Consult your receiver's manual for more information on power threshold."
+msgstr "功率阈值.有关更多信息,请查阅您的接收器手册."
 
 #, python-format
 msgid "Contacting IceTV server and setting up your %s %s."
@@ -4889,6 +4901,9 @@ msgstr "复制"
 
 msgid "Copy To Bouquets"
 msgstr "复制到自定义组"
+
+msgid "Copy To Stream Relay"
+msgstr ""
 
 msgid "Copy all related files"
 msgstr ""
@@ -5590,6 +5605,12 @@ msgstr "默认: '%s'."
 
 msgid "Defaults"
 msgstr "默认值"
+
+msgid "Define Softcam For This Provider"
+msgstr ""
+
+msgid "Define Softcam For This Service"
+msgstr ""
 
 msgid "Define additional delay in milliseconds before start of http(s) streams."
 msgstr "定义http流开始之前的额外延迟(以毫秒为单位)."
@@ -6394,9 +6415,6 @@ msgstr "不添加此录像"
 msgid "Don't ask again!"
 msgstr "以后不再询问该会话!"
 
-msgid "Don't restart"
-msgstr "不重启"
-
 msgid "Don't save"
 msgstr "不保存"
 
@@ -6975,7 +6993,7 @@ msgstr "启用此选项可将屏幕名称和分辨率数据添加到调试日志
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr ""
 
-msgid "Enable this setting if your aerial system needs power"
+msgid "Enable this setting if your aerial system needs power."
 msgstr "如果天线系统需要电源,请启用此设置"
 
 msgid "Enable to add some extra spacing to the Information screens. This can improve readability."
@@ -6987,13 +7005,13 @@ msgstr "启用显示所有开/关和启用/禁用设置选项作为图形开关.
 msgid "Enable to display setup entries alphabetically."
 msgstr ""
 
-msgid "Enable to display the Extension menu entries alphabetically."
+msgid "Enable to display the Extension Menu screen entries alphabetically."
 msgstr ""
 
 msgid "Enable to display the current value of the slider at end of the slider bar."
 msgstr "启用滑块末端滑块的当前值."
 
-msgid "Enable to show the 'Restart Network' entry in the Extensions menu."
+msgid "Enable to show the 'Restart Network' entry in the Extension Menu screen."
 msgstr ""
 
 msgid "Enable unlinked bouquets"
@@ -7141,11 +7159,11 @@ msgstr ""
 msgid "Enter a new name for this device."
 msgstr "输入此设备的新名称."
 
-msgid "Enter if you are in the east or west hemisphere."
-msgstr "输入您是在东半球还是西半球."
-
-msgid "Enter if you are north or south of the equator."
+msgid "Enter if you are North or South of the equator."
 msgstr "输入您是否在赤道以北或以南."
+
+msgid "Enter if you are in the East or West hemisphere."
+msgstr "输入您是在东半球还是西半球."
 
 msgid "Enter main menu..."
 msgstr "输入主菜单..."
@@ -7165,7 +7183,7 @@ msgstr "输入PIN码"
 msgid "Enter text via an attached keyboard"
 msgstr ""
 
-msgid "Enter the frequency at which you LNB switches between low band and high band. For more information consult the spec sheet of your LNB."
+msgid "Enter the frequency at which you LNB switches between low band and high band. For more information consult the specifications of your LNB."
 msgstr "输入LNB在低频段和高频段之间切换的频率.有关更多信息,请参阅LNB的规格表."
 
 msgid "Enter the frequency step size for the tuner to use when searching for cable multiplexes. For more information consult your cable provider's documentation."
@@ -7183,10 +7201,10 @@ msgstr "输入您当前的纬度.这是您距赤道的度数(以十进制表示)
 msgid "Enter your current longitude. This is the number of degrees you are from zero meridian as a decimal."
 msgstr "输入当前经度.这是从子午线零点算起的十进制度数."
 
-msgid "Enter your high band local oscillator frequency. For more information consult the spec sheet of your LNB."
+msgid "Enter your high band local oscillator frequency. For more information consult the specifications of your LNB."
 msgstr "输入您的高频本地振荡器频率.有关更多信息,请参阅LNB的规格表."
 
-msgid "Enter your low band local oscillator frequency. For more information consult the spec sheet of your LNB."
+msgid "Enter your low band local oscillator frequency. For more information consult the specifications of your LNB."
 msgstr "输入您的低频本地振荡器频率.有关更多信息,请参阅LNB的规格表."
 
 msgid "Enter your personal feed URL to allow you to select packages from your personal feed."
@@ -9096,6 +9114,9 @@ msgstr ""
 msgid "IP address"
 msgstr "IP地址"
 
+msgid "IP address of the Stream Relay server used to descramble services that can only be decrypted via Stream Relay."
+msgstr ""
+
 msgid "IPK Installer"
 msgstr "IPK安装器"
 
@@ -9245,14 +9266,14 @@ msgstr ""
 msgid "If using multiple uncommitted switches the DiSEqC commands must be sent multiple times. Set to the number of uncommitted switches in the chain minus one."
 msgstr "如果使用多个未提交的开关,则必须多次设置DISEQC命令.设置为链中未提交的开关数减去1."
 
-msgid "If you are using a Circular polarised LNB select 'yes', otherwise select 'no'."
-msgstr "如果您使用的是圆极化LNB,请选择'是',否则请选择'否'."
-
 msgid "If you are using a DiSEqC committed switch enter the port letter required to access the LNB used for this satellite."
 msgstr "如果使用的是DISEQC提交的开关,请输入访问此卫星使用的高频头所需的字母."
 
 msgid "If you are using a DiSEqC uncommitted switch enter the port number required to access the LNB used for this satellite."
 msgstr "如果使用的是DiSEqC uncommitted开关,请输入访问此卫星使用的高频头所需的端口号."
+
+msgid "If you are using a circular polarized LNB select 'Yes', otherwise select 'No'."
+msgstr "如果您使用的是圆极化LNB,请选择'是',否则请选择'否'."
 
 msgid ""
 "If you see this, something is wrong with\n"
@@ -9705,6 +9726,9 @@ msgstr "无效位置"
 msgid "Invalid transponder data"
 msgstr "无效的转发器数据"
 
+msgid "Invalid type"
+msgstr "无效类型"
+
 msgid "Inversion"
 msgstr "反演"
 
@@ -9944,6 +9968,9 @@ msgstr "关山"
 msgid "Kurdish"
 msgstr "库尔德语"
 
+msgid "Kurdistan"
+msgstr ""
+
 msgid "Kuwait"
 msgstr "科威特"
 
@@ -10097,7 +10124,7 @@ msgstr "拉脱维亚语"
 msgid "Leave DVD player?"
 msgstr "是否退出DVD播放器?"
 
-msgid "Leave this set to 'yes' unless you fully understand why you are adjusting it."
+msgid "Leave this set to 'Yes' unless you fully understand why you are adjusting it."
 msgstr "将此设置保留为'是',除非您完全理解要调整它的原因."
 
 msgid "Lebanon"
@@ -10838,9 +10865,6 @@ msgstr "最小发送间隔"
 msgid "Mins"
 msgstr "分钟"
 
-msgid "Minute"
-msgstr "分钟"
-
 msgid "Minutes"
 msgstr "分钟"
 
@@ -11035,13 +11059,13 @@ msgstr ""
 msgid "Move down one line"
 msgstr "下移一行"
 
-msgid "Move down one line.  Move to the top of the next screen if this is the last line of the screen.  Move to the first line of the list if this is the last line on the list."
+msgid "Move down one line. Move to the top of the next screen if this is the last line of the screen. Move to the first line of the list if this is the last line on the list."
 msgstr "下移一行.如果这是屏幕的最后一行,则移至下一个屏幕 的顶部.如果这是列表的最后一行,则移至列表的第一行."
 
 msgid "Move down one screen"
 msgstr "向下移动一个屏幕"
 
-msgid "Move down one screen.  Move to the last line of the screen if this is the last screen."
+msgid "Move down one screen. Move to the last line of the screen if this is the last screen."
 msgstr "向下移动一屏.如果这是最后一个屏幕,则移动到屏幕的最后一行."
 
 msgid "Move down to last line"
@@ -11186,13 +11210,13 @@ msgstr ""
 msgid "Move up one line"
 msgstr "向上移动一行"
 
-msgid "Move up one line.  Move to the bottom of the previous screen if this is the first line of the screen.  Move to the last of the entry / list if this is the first line of the list."
+msgid "Move up one line. Move to the bottom of the previous screen if this is the first line of the screen. Move to the last of the entry / list if this is the first line of the list."
 msgstr "上移一行.如果这是屏幕的第一行,则移至上一个屏幕 的底部.如果这是列表的第一行,则移至条目/列表的最后一行."
 
 msgid "Move up one screen"
 msgstr "向上移动一页"
 
-msgid "Move up one screen.  Move to the first line of the screen if this is the first screen."
+msgid "Move up one screen. Move to the first line of the screen if this is the first screen."
 msgstr "向上移动一屏.如果这是第一个屏幕,则移动到屏幕的第一行."
 
 msgid "Move up to first line"
@@ -11968,6 +11992,9 @@ msgstr "不显示"
 msgid "Not associated"
 msgstr "未关联"
 
+msgid "Not configured"
+msgstr "未配置"
+
 msgid "Not currently mounted."
 msgstr "当前未安装."
 
@@ -12480,7 +12507,7 @@ msgstr ""
 msgid "Package information currently not available!"
 msgstr "软件包信息暂时不可用!"
 
-msgid "Package installation failed"
+msgid "Package installation failed."
 msgstr ""
 
 msgid "Package list"
@@ -12801,6 +12828,12 @@ msgstr ""
 msgid "Play selected service on the main screen"
 msgstr ""
 
+msgid "Play service with Stream Relay"
+msgstr ""
+
+msgid "Play service without Stream Relay"
+msgstr ""
+
 msgid "Play the audio file"
 msgstr ""
 
@@ -13059,10 +13092,6 @@ msgstr ""
 msgid "Please wait, loading image..."
 msgstr ""
 
-#, python-format
-msgid "Please wait, restarting %s."
-msgstr "请稍候,正在重新启动 %s."
-
 msgid "Please wait, swap is is being created. This could take a few minutes to complete."
 msgstr ""
 
@@ -13156,6 +13185,9 @@ msgstr "端口 C"
 msgid "Port D"
 msgstr "端口 D"
 
+msgid "Port number for the Stream Relay server used to descramble services that can only be decrypted via Stream Relay."
+msgstr ""
+
 msgid "Portugal"
 msgstr "葡萄牙"
 
@@ -13210,14 +13242,8 @@ msgstr "待机期间电源LED的状态."
 msgid "Power On Display"
 msgstr "LCD电源控制"
 
-msgid "Power management. Consult your receiver's manual for more information."
-msgstr "电源管理.有关更多信息,请查阅您的接收器手册."
-
 msgid "Power threshold in mA"
 msgstr "功率阈值(毫安)"
-
-msgid "Power threshold. Consult your receiver's manual for more information."
-msgstr "功率阈值.有关更多信息,请查阅您的接收器手册."
 
 msgid "PowerTimer"
 msgstr "电源定时器"
@@ -13609,7 +13635,7 @@ msgstr "清除已删除的用户频道组"
 msgid "Purge all but / Add / Delete the currently highlighted locale/language"
 msgstr "清除除/添加/删除当前突出显示的语言环境/语言之外的所有内容"
 
-msgid "Purge all but the current and permanent locales/languages.  Add the current locale/language if it is not installed.  Delete the current locale/language if it is installed."
+msgid "Purge all but the current and permanent locales/languages. Add the current locale/language if it is not installed. Delete the current locale/language if it is installed."
 msgstr "清除除当前和永久语言环境/语言之外的所有内容.如果 未安装,请添加当前语言环境/语言.如果已安装,请删除当前的语言环境/语言."
 
 msgid "Purging all unused locales/languages..."
@@ -14253,6 +14279,9 @@ msgstr ""
 msgid "Remove selected service"
 msgstr ""
 
+msgid "Remove service from AutoCam"
+msgstr ""
+
 msgid "Remove texts for the hearing impaired from external subtitles (instrumental music or environmental sounds, e.g., when a doorbell rings or a gun shot is heard)."
 msgstr "从外部字幕(器乐或环境声音,例如,当门铃响或听到枪声)中删除听力受损者的文本."
 
@@ -14409,9 +14438,6 @@ msgstr "重置播放位置"
 msgid "Reset sort order"
 msgstr ""
 
-msgid "Reset the selected devices and save changes of your config when the GREEN button is pressed."
-msgstr "按下绿色键时,重置所选设备并保存配置更改."
-
 msgid "Reset video enhancement settings to system defaults?"
 msgstr "是否将视频增强设置重置为系统默认值?"
 
@@ -14452,12 +14478,6 @@ msgstr "重启网络"
 msgid "Restart Network Adapter"
 msgstr "重启网络适配器"
 
-msgid "Restart both"
-msgstr "两个都重启"
-
-msgid "Restart cardserver"
-msgstr "重启卡服务器"
-
 msgid "Restart enigma"
 msgstr "重启Enigma"
 
@@ -14472,9 +14492,6 @@ msgstr "重启网络并重新挂载连接"
 
 msgid "Restart network to with current setup"
 msgstr "使用当前配置重启网络适配器"
-
-msgid "Restart softcam"
-msgstr "重启softcam"
 
 msgid "Restart test"
 msgstr "重启测试"
@@ -14987,7 +15004,7 @@ msgstr "扫描 "
 msgid "Scan %s"
 msgstr "扫描 %s"
 
-#. TRANSLATORS: option name, indicating which type of (DVB-C) band should be scanned. The name of the band is printed in '%s'. E.g.: 'Scan EU MID band'
+#. TRANSLATORS: Option name, indicating which type of (DVB-C) band should be scanned. The name of the band is printed in '%s'. E.g.: 'Scan EU MID band'.
 #, python-format
 msgid "Scan %s band"
 msgstr "扫描 %s 波段"
@@ -15171,11 +15188,20 @@ msgstr "选择"
 msgid "Select '1.0' for standard committed switches, '1.1' for uncommitted switches, and '1.2' for systems using a positioner."
 msgstr "为标准开关选择'1.0',为非固定开关选择'1.1,'为使用定位器的系统选择 '1.2'."
 
-msgid "Select 'A' or 'B' if your aerial system requires this, otherwise select 'none'. If you are unsure select 'none'."
+msgid "Select 'A' or 'B' if your aerial system requires this, otherwise select 'None'. If you are unsure select 'None'."
 msgstr "如果天线系统需要,请选择'A'或'B',否则请选择’无'.如果不确定,请选择'无'."
+
+msgid "Select 'Band' if using a 'Universal' LNB, otherwise consult your LNB specifications."
+msgstr "如果使用'通用”高频头,请选择'波段',否则请查阅高频头规格表."
 
 msgid "Select 'Enable' to force a package clean before a package update. This is helpful to make sure the package list is up-to-date and can avoid/solve issues during the update. Only enable this when you can not update on-line."
 msgstr ""
+
+msgid "Select 'Enable' to start the CI+ helper."
+msgstr ""
+
+msgid "Select 'Enabled' if this tuner has a signal cable connected, otherwise select 'Nothing connected'."
+msgstr "如果此调谐器已连接信号电缆,请选择'已启用',否则选择'未连接'."
 
 msgid "Select 'No' to make time shift use a single buffer file. Use 'Time shift checking for older files [in minutes]' and 'Time shift checking for free space?' to control the size of the buffer file."
 msgstr "如果设置为'否',则时移仅使用一个缓冲文件. 建议'时移检查旧文件 [以分钟为单位]'和'时移检查可用空间?' 调整."
@@ -15186,11 +15212,20 @@ msgstr "如果设置为'否',则仅将调试消息写入调试日志 "
 msgid "Select 'No' to save older events even after zapping or interrupting time shifting."
 msgstr "如果设为'否',即使在切换或中断时移后,您也可以保存较旧的事件."
 
+msgid "Select 'Polarization' if using a 'Universal' LNB, otherwise consult your LNB specifications."
+msgstr "如果使用'通用'高频头,请选择'极化',否则请查阅LNB规格表."
+
+msgid "Select 'Provider' to scan from the predefined list of cable multiplexes. Select 'Bands' to only scan certain parts of the spectrum. Select 'Steps' to scan in steps of a particular frequency bandwidth."
+msgstr "从电缆复用器的预定义列表中选择'供应商'进行扫描.选择'频段'仅扫描频谱的某些部分.选择'频率步长'以特定频率带宽进行扫描."
+
 msgid "Select 'Yes' if an end time is required for this timer."
 msgstr ""
 
 msgid "Select 'Yes' if network traffic should be checked before activating the timer."
 msgstr ""
+
+msgid "Select 'Yes' if this tuner is connected to the SCR device through another tuner, otherwise select 'No'."
+msgstr "如果此调谐器通过另一个调谐器连接到SCR设备,请选择'是',否则请选择'否'."
 
 msgid "Select 'Yes' if volume adjustments should be applied to Dolby sound tracks."
 msgstr ""
@@ -15245,6 +15280,21 @@ msgstr ""
 
 msgid "Select 'Yes' to hide channels without EPG data."
 msgstr "如果设为'是',没有EPG的频道将不显示."
+
+#, python-format
+msgid "Select 'Yes' to include %s multiplexes in your search."
+msgstr "选择'是'可在搜索中包含 %s 多路复用."
+
+#, python-format
+msgid "Select 'Yes' to include symbol rate %s in your search."
+msgstr "选择'是'可将符号速率 %s 包含在搜索中."
+
+#, python-format
+msgid "Select 'Yes' to include the %s band in your search."
+msgstr "选择'是'可在搜索中包括 %s 波段."
+
+msgid "Select 'Yes' to only send the DiSEqC command when changing from one satellite to another, or select 'No' for the DiSEqC command to be resent on every zap."
+msgstr "选择‘是’仅在从一颗卫星转换为另一颗卫星时发送DiSEqC命令,或者选择'否'以使DiSEqC命令在每次切换时都重新发送."
 
 msgid "Select 'Yes' to remove all main settings configuration data. Selecting this option will set all Enigma2 settings back to their default values. This will also cause Enigma2 to run the Welcome Wizard on restart."
 msgstr ""
@@ -15327,7 +15377,7 @@ msgstr ""
 msgid "Select 'Yes' to show skin packages in the Download Plugins screen."
 msgstr ""
 
-msgid "Select 'Yes' to show softcam packages in the Download Plugins screen."
+msgid "Select 'Yes' to show Softcam packages in the Download Plugins screen."
 msgstr ""
 
 msgid "Select 'Yes' to show source 'src' packages in the Download Plugins screen."
@@ -15360,36 +15410,6 @@ msgstr ""
 msgid "Select 'Yes, to display the InfoBar when fast forwarding or rewinding during media playback."
 msgstr "如果设置为'是'在媒体播放中快进或快退将会显示信息栏."
 
-msgid "Select 'band' if using a 'universal' LNB, otherwise consult your LNB spec sheet."
-msgstr "如果使用'通用”高频头,请选择'波段',否则请查阅高频头规格表."
-
-msgid "Select 'enabled' if this tuner has a signal cable connected, otherwise select 'nothing connected'."
-msgstr "如果此调谐器已连接信号电缆,请选择'已启用',否则选择'未连接'."
-
-msgid "Select 'polarisation' if using a 'universal' LNB, otherwise consult your LNB spec sheet."
-msgstr "如果使用'通用'高频头,请选择'极化',否则请查阅LNB规格表."
-
-msgid "Select 'provider' to scan from the predefined list of cable multiplexes. Select 'bands' to only scan certain parts of the spectrum. Select 'steps' to scan in steps of a particular frequency bandwidth."
-msgstr "从电缆复用器的预定义列表中选择'供应商'进行扫描.选择'频段'仅扫描频谱的某些部分.选择'频率步长'以特定频率带宽进行扫描."
-
-msgid "Select 'yes' if this tuner is connected to the SCR device through another tuner, otherwise select 'no'."
-msgstr "如果此调谐器通过另一个调谐器连接到SCR设备,请选择'是',否则请选择'否'."
-
-#, python-format
-msgid "Select 'yes' to include %s multiplexes in your search."
-msgstr "选择'是'可在搜索中包含 %s 多路复用."
-
-#, python-format
-msgid "Select 'yes' to include symbol rate %s in your search."
-msgstr "选择'是'可将符号速率 %s 包含在搜索中."
-
-#, python-format
-msgid "Select 'yes' to include the %s band in your search."
-msgstr "选择'是'可在搜索中包括 %s 波段."
-
-msgid "Select 'yes' to only send the DiSEqC command when changing from one satellite to another, or select 'no' for the DiSEqC command to be resent on every zap."
-msgstr "选择‘是’仅在从一颗卫星转换为另一颗卫星时发送DiSEqC命令,或者选择'否'以使DiSEqC命令在每次切换时都重新发送."
-
 msgid "Select Additional Backup Files"
 msgstr "选择额外的备份文件"
 
@@ -15411,7 +15431,7 @@ msgstr "选择Enigma2皮肤"
 msgid "Select Excluded Backup Files"
 msgstr "选择排除的备份文件"
 
-msgid "Select Fast DiSEqC if your aerial system supports this. If you are unsure select 'no'."
+msgid "Select Fast DiSEqC if your aerial system supports it. If you are unsure select 'No'."
 msgstr "如果天线系统支持此功能,请选择'快速DISEQC'.如果不确定,请选择'否'."
 
 msgid "Select Folders"
@@ -15438,6 +15458,9 @@ msgstr ""
 msgid "Select Quad Channels"
 msgstr "选择四画面频道"
 
+msgid "Select Satellites"
+msgstr "选择卫星"
+
 msgid "Select Software Update"
 msgstr "选择软件更新"
 
@@ -15455,9 +15478,6 @@ msgstr "选择你的皮肤"
 
 msgid "Select a bouquet"
 msgstr "选择自定义组"
-
-msgid "Select a cardserver from the available list."
-msgstr "从可用列表中选择一个卡服务器."
 
 msgid "Select a debug log file to view:"
 msgstr ""
@@ -15496,7 +15516,10 @@ msgstr ""
 msgid "Select a script to run:"
 msgstr "选择要运行的脚本:"
 
-msgid "Select a softcam from the available list."
+msgid "Select a Softcam from the available list as the default for AutoCam."
+msgstr ""
+
+msgid "Select a Softcam from the available list."
 msgstr "从可用列表中选择一个softcam."
 
 msgid "Select a tuner"
@@ -15523,6 +15546,9 @@ msgstr ""
 
 msgid "Select audio track"
 msgstr "选择音轨"
+
+msgid "Select AutoCam default Softcam"
+msgstr ""
 
 msgid "Select cardserver"
 msgstr "选择卡服务器"
@@ -15644,9 +15670,6 @@ msgstr "选择并添加供应商..."
 msgid "Select refresh rate"
 msgstr "选择刷新率"
 
-msgid "Select satellites"
-msgstr "选择卫星"
-
 msgid "Select seekbar to be activated by arrow L/R (long) or << >> (long)."
 msgstr "选择要激活的搜索栏,通过L/R箭头(长按)或<< >>(长按)."
 
@@ -15656,7 +15679,7 @@ msgstr ""
 msgid "Select service to add..."
 msgstr "选择要添加的频道..."
 
-msgid "Select softcam"
+msgid "Select Softcam"
 msgstr "选择softcam"
 
 msgid "Select sort method:"
@@ -15673,6 +15696,10 @@ msgstr ""
 
 msgid "Select the No / False response"
 msgstr "选择否/错误响应"
+
+#, python-format
+msgid "Select the Softcam for '%s'"
+msgstr ""
 
 msgid "Select the Swap File Size:"
 msgstr "选择交换文件大小:"
@@ -15703,6 +15730,9 @@ msgstr ""
 
 msgid "Select the animation speed of the button indicators in the help screens. 'Disabled' turns off animation so that indicators jump between buttons."
 msgstr "控制帮助屏幕中按键指针的动画速度,使用'禁用'关闭动画,以便指针在按键之间切换."
+
+msgid "Select the cardserver to be used from the list of available cardservers."
+msgstr ""
 
 msgid "Select the channel from which to record:"
 msgstr ""
@@ -15804,13 +15834,13 @@ msgstr "从菜单中选择区域设置"
 msgid "Select the location in which to store the recording:"
 msgstr ""
 
-msgid "Select the manufacturer of your SCR device. If the manufacturer is not listed, set 'SCR' to 'user defined' and enter the device parameters manually according to its spec sheet."
+msgid "Select the manufacturer of your SCR device. If the manufacturer is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
 msgstr "选择SCR设备的制造商.如果制造商未列出,请将'SCR'设置为'用户定义',并根据其规格表手动输入设备参数."
 
 msgid "Select the method of restoring screen resolution and framebuffer when leaving teletext."
 msgstr "选择屏幕分辨率和帧恢复时留下的图文的方法."
 
-msgid "Select the model number of your Unicable device. If the model number is not listed, set 'SCR' to 'user defined' and enter the device parameters manually according to its spec sheet."
+msgid "Select the model number of your Unicable device. If the model number is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
 msgstr "选择Unicable设备的型号.如果未列出型号,请将'SCR'设置为'用户定义',并根据其规格表手动输入设备参数."
 
 msgid "Select the movie path"
@@ -15843,23 +15873,23 @@ msgstr "选择SCR设备使用的协议.可选择的选项有'SCR Unicable'(可�
 msgid "Select the refresh rate to be used on the TV."
 msgstr ""
 
-msgid "Select the satellite which is connected to Port-A of your switch. If you are unsure select 'automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'nothing connected'."
+msgid "Select the satellite from which your dish is receiving its signal. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you."
+msgstr "选择接收的卫星.如果不确定,请选择'自动',接收器将尝试为您确定."
+
+msgid "Select the satellite which is connected to Port-A of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'."
 msgstr "选择连接到交换机端口A的卫星.如果不确定,请选择'自动',接收器将尝试为您确定.如果没有连接到此端口,请选择'无连接'."
 
-msgid "Select the satellite which is connected to Port-B of your switch. If you are unsure select 'automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'nothing connected'."
+msgid "Select the satellite which is connected to Port-B of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'."
 msgstr "选择连接到交换机端口B的卫星.如果您不确定,请选择'自动',接收器将尝试为您确定.如果没有连接到此端口,请选择'无连接'."
 
-msgid "Select the satellite which is connected to Port-C of your switch. If you are unsure select 'automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'nothing connected'."
+msgid "Select the satellite which is connected to Port-C of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'."
 msgstr "选择连接到交换机端口C的卫星.如果您不确定,请选择'自动',接收器将尝试为您确定.如果没有连接到此端口,请选择'无连接'."
 
-msgid "Select the satellite which is connected to Port-D of your switch. If you are unsure select 'automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'nothing connected'."
+msgid "Select the satellite which is connected to Port-D of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'."
 msgstr "选择连接到交换机端口D的卫星.如果您不确定,请选择'自动',接收器将尝试为您确定.如果没有连接到此端口,请选择'无连接'."
 
-msgid "Select the satellite you want to configure. Once that satellite is configured you can select and configure other satellites that will be accessed using this same tuner."
+msgid "Select the satellite you want to configure. Once configured you can select and configure other satellites that will be accessed using this same tuner."
 msgstr "选择要配置的卫星.一旦配置了卫星,您就可以 选择和配置将使用同一个调谐器访问的其他卫星."
-
-msgid "Select the satellite your dish receives from. If you are unsure select 'automatic' and the receiver will attempt to determine this for you."
-msgstr "选择接收的卫星.如果不确定,请选择'自动',接收器将尝试为您确定."
 
 msgid "Select the shifted character set"
 msgstr "选择转换后的字符集"
@@ -15867,7 +15897,7 @@ msgstr "选择转换后的字符集"
 msgid "Select the shifted character set for the next character only"
 msgstr "仅为下一个字符选择移位字符集"
 
-msgid "Select the softcam protocol."
+msgid "Select the Softcam protocol."
 msgstr ""
 
 msgid "Select the sort order for the file lines:"
@@ -15921,13 +15951,13 @@ msgstr "选择区域或区域内的时区."
 msgid "Select the tuner that controls the motorized dish."
 msgstr "选择控制电动极轴的调谐器."
 
-msgid "Select the tuner that this loopthrough depends on."
-msgstr "选择此循环依赖的调谐器."
-
 msgid "Select the tuner to which the signal cable of the SCR device is connected."
 msgstr "选择与SCR设备的信号线连接的调谐器."
 
-msgid "Select the type of LNB/device being used (normally 'Universal'). If your LNB type is not available select 'user defined'."
+msgid "Select the tuner upon which this loop through depends."
+msgstr "选择此循环依赖的调谐器."
+
+msgid "Select the type of LNB/device being used (normally 'Universal'). If your LNB type is not available select 'User defined'."
 msgstr "选择要使用的LNB/设备类型(通常为'通用').如果您的LNB类型不可用,请选择'用户自定义'."
 
 msgid "Select the type of Single Cable Reception device you are using."
@@ -16014,16 +16044,16 @@ msgstr "选择音频/字幕语言"
 msgid "Select your backup device."
 msgstr ""
 
-msgid "Select your country. If not available select 'all'."
+msgid "Select your country. If not available select 'All'."
 msgstr "选择国家(地区).如果不可用,请选择'全部'."
 
-msgid "Select your provider and region. If not present in this list you will need to select one of the other 'service scan types'."
+msgid "Select your provider and region. If not present in this list you will need to select one of the other 'Service scan types'."
 msgstr "选择供应商和区域.如果不在这个列表里,将需要选择另一种频道扫描类型."
 
 msgid "Select your provider, and press OK to start the scan"
 msgstr "选择供应商,并按OK开始扫描"
 
-msgid "Select your region. If not available change 'Country' to 'all' and select one of the default alternatives."
+msgid "Select your region. If it is not available change 'Country' to 'All' and select one of the default alternatives."
 msgstr "选择您的地区.如果不可用,请将'国家/地区'更改为'全部'并选择默认选项之一."
 
 msgid "Select your time zone area or region."
@@ -16283,6 +16313,9 @@ msgstr "设置CI分配检测可用的频道."
 msgid "Set DVB CI delay."
 msgstr ""
 
+msgid "Set Default"
+msgstr "设置默认值"
+
 msgid "Set Framerate for MiniTV"
 msgstr "设置MiniTV帧率"
 
@@ -16306,9 +16339,6 @@ msgstr "为'Info'键设置动作"
 
 msgid "Set current CEC address as fixed address"
 msgstr "将当前CEC地址设置为固定地址"
-
-msgid "Set default"
-msgstr "设置默认值"
 
 msgid "Set end time"
 msgstr "设置结束时间"
@@ -16764,9 +16794,6 @@ msgstr "显示机顶盒门户网站"
 msgid "Show CCcam Info"
 msgstr ""
 
-msgid "Show CCcam in extensions"
-msgstr ""
-
 msgid "Show CI messages"
 msgstr "显示CI消息"
 
@@ -16848,7 +16875,7 @@ msgstr "小窗口(MiniTV)播放节目"
 msgid "Show Log"
 msgstr "显示日志"
 
-msgid "Show Log Manager in extensions list"
+msgid "Show Log Manager in Extension Menu"
 msgstr "在扩展列表中显示日志管理器？"
 
 msgid "Show M2k packages"
@@ -16875,7 +16902,7 @@ msgstr "显示多个EPG"
 msgid "Show OScam Info"
 msgstr "显示OScam信息"
 
-msgid "Show OScam in extensions"
+msgid "Show OScam/CCcam in Extension Menu"
 msgstr ""
 
 msgid "Show OpenPLi packages"
@@ -17098,7 +17125,7 @@ msgstr ""
 msgid "Show in Standby"
 msgstr "在待机状态下显示"
 
-msgid "Show in extensions list"
+msgid "Show in Extension Menu"
 msgstr "显示在扩展列表中？"
 
 msgid "Show info"
@@ -17107,7 +17134,7 @@ msgstr "显示信息"
 msgid "Show info line"
 msgstr "显示信息行"
 
-msgid "Show job tasks in extensions"
+msgid "Show job tasks in Extension Menu"
 msgstr "在扩展中显示工作任务"
 
 msgid "Show last image"
@@ -17907,7 +17934,7 @@ msgstr ""
 msgid "Sort EPG List"
 msgstr "EPG列表排序"
 
-msgid "Sort Extensions menu"
+msgid "Sort Extension Menu"
 msgstr "按字母顺序对扩展列表进行排序"
 
 msgid "Sort Plugin Browser"
@@ -18286,6 +18313,12 @@ msgstr "已存储位置"
 msgid "Stream"
 msgstr "媒体流"
 
+msgid "Stream Relay URL"
+msgstr ""
+
+msgid "Stream Relay port"
+msgstr ""
+
 msgid "Stream request"
 msgstr "流的请求"
 
@@ -18474,7 +18507,7 @@ msgstr "瑞典语"
 msgid "Swimming"
 msgstr "游泳"
 
-msgid "Switch BLUE short (QuickMenu) with BLUE long (Extensions)"
+msgid "Switch BLUE short (QuickMenu) with BLUE long (Extension Menu)"
 msgstr "蓝键－短按(快速菜单)蓝键－长按(附件)"
 
 msgid "Switch EPG Page Down"
@@ -19182,7 +19215,7 @@ msgstr ""
 
 msgid ""
 "The unicable connection setting is wrong.\n"
-" Maybe recursive connection of tuners."
+"Maybe recursive connection of tuners."
 msgstr ""
 "可连接的连接设置是错误.\n"
 "可能是调谐器的递归连接."
@@ -19486,7 +19519,7 @@ msgstr "此选项允许您调整用户界面的透明度"
 msgid "This option lets you choose the 3D mode"
 msgstr "此选项可让您选择3D模式"
 
-msgid "This option lets you show the option in the extension screen."
+msgid "This option lets you show the option in the Extension Menu screen."
 msgstr "此选项允许您在附件屏幕显示选项"
 
 msgid "This option moves the PVR status display from a separate window into the MoviePlayer InfoBar."
@@ -19543,7 +19576,7 @@ msgstr "此频道受家长控制密码保护"
 msgid "This sets the prefix for each line in the debug log. The 'Boot time' is the number of seconds since your %s %s was last booted."
 msgstr "这将为调试日志中的每一行设置前缀.'启动时间'是自上次启动%s%s以来的秒数."
 
-msgid "This setting allows the tuner configuration to be a duplication of how another tuner is already configured."
+msgid "This setting allows the tuner configuration to be a duplication of another configured tuner."
 msgstr "此设置允许调谐器配置复制另一个调谐器的配置方式."
 
 msgid "This setting depends on your cable provider and location. If you don't know the correct setting refer to the menu in the official cable receiver, or get it from your cable provider, or seek help via Internet forum."
@@ -20000,9 +20033,6 @@ msgstr "轨道"
 
 msgid "Traditional Chinese"
 msgstr "繁体中文"
-
-msgid "Transcode"
-msgstr "转码"
 
 msgid "Transcoding"
 msgstr "转码"
@@ -20655,6 +20685,9 @@ msgstr "使用备选屏幕"
 msgid "Use as HDD"
 msgstr "当作硬盘使用"
 
+msgid "Use AutoCam"
+msgstr ""
+
 msgid "Use automatic mode detection"
 msgstr ""
 
@@ -20693,6 +20726,9 @@ msgstr ""
 
 msgid "Use geolocation to set the current time zone location"
 msgstr "使用定位设置当前时区位置"
+
+msgid "Use increased voltage '14/18V' if there are problems when switching the LNB."
+msgstr "如果在切换lnb时出现问题,请使用增加的电压'14/18V'"
 
 msgid "Use interface"
 msgstr "使用界面"
@@ -21616,6 +21652,9 @@ msgstr "当设置时每个文件夹时将显示之前使用的状态,当关闭�
 msgid "When set the PIG will return to live after a movie has stopped playing."
 msgstr "当设置时,PIG将在停止播放影片后返回到直播."
 
+msgid "When set to 'Yes' a specific Softcam can be assigned to each encrypted service."
+msgstr ""
+
 msgid "When the content has an aspect ratio of 16:9, choose whether to scale/stretch the picture."
 msgstr "当内容的宽高比为16:9时.选择是否缩放/拉伸图片."
 
@@ -21703,7 +21742,7 @@ msgstr "长按OK键"
 msgid "With pop up"
 msgstr "弹出"
 
-msgid "With this option you can hide Job Tasks from the extension screen (BLUE button press)."
+msgid "With this option you can hide Job Tasks from the Extension Menu screen (BLUE button press)."
 msgstr "该选项可从扩展屏幕隐藏工作任务(短按蓝色键)."
 
 msgid "With this option you can switch off the display during operation."
@@ -22040,7 +22079,7 @@ msgstr ""
 "请选择下一步要做的事情."
 
 #, python-format
-msgid "Your Internet connection is working (ip: %s)"
+msgid "Your Internet connection is working (IP: %s)"
 msgstr ""
 
 #, python-format
@@ -22278,9 +22317,6 @@ msgstr "按 字母倒序/由新到旧 排序"
 msgid "am"
 msgstr "上午"
 
-msgid "and"
-msgstr "和"
-
 msgid "aqua"
 msgstr ""
 
@@ -22370,9 +22406,6 @@ msgstr "卡片"
 msgid "card reader"
 msgstr "读卡器"
 
-msgid "cardserver"
-msgstr "卡片服务器"
-
 msgid "cartoon/puppets"
 msgstr "动画/木偶"
 
@@ -22433,7 +22466,7 @@ msgstr "向上减小 1"
 msgid "default"
 msgstr "默认"
 
-msgid "default Astra (13e-19e)"
+msgid "Default Astra (13e-19e)"
 msgstr "默认Astra (13e-19e)"
 
 msgid "delete"
@@ -22713,9 +22746,6 @@ msgstr "即时录制"
 msgid "internally loopthrough to"
 msgstr "内循环到"
 
-msgid "invalid type"
-msgstr "无效类型"
-
 msgid "jazz"
 msgstr "爵士乐"
 
@@ -22880,9 +22910,6 @@ msgstr "正常"
 
 msgid "not"
 msgstr "否"
-
-msgid "not configured"
-msgstr "未配置"
 
 msgid "not locked"
 msgstr "未锁定"
@@ -23141,9 +23168,6 @@ msgstr "社会/政治/经济问题(一般)"
 msgid "social/spiritual science"
 msgstr "社会/精神科学"
 
-msgid "softcam"
-msgstr "softcam设置"
-
 msgid "special (general)"
 msgstr "特殊(一般)"
 
@@ -23279,9 +23303,6 @@ msgstr "无法测试"
 msgid "update"
 msgstr "更新"
 
-msgid "use increased voltage '14/18V' if there are problems when switching the lnb"
-msgstr "如果在切换lnb时出现问题,请使用增加的电压'14/18V'"
-
 msgid "userdefined"
 msgstr "用户定义"
 
@@ -23347,6 +23368,55 @@ msgstr "是(保持订阅源)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Allows you to show/hide CCcam in extensions (BLUE button)."
+#~ msgstr "允许您在扩展中显示/隐藏CCcam（蓝色按钮）."
+
+#~ msgid "Allows you to show/hide OScam in extensions (BLUE button)."
+#~ msgstr "允许您显示/隐藏OScam扩展(蓝色键)."
+
+#~ msgid "Don't restart"
+#~ msgstr "不重启"
+
+#, python-format
+#~ msgid "Please wait, restarting %s."
+#~ msgstr "请稍候,正在重新启动 %s."
+
+#~ msgid "Reset the selected devices and save changes of your config when the GREEN button is pressed."
+#~ msgstr "按下绿色键时,重置所选设备并保存配置更改."
+
+#~ msgid "Restart both"
+#~ msgstr "两个都重启"
+
+#~ msgid "Restart cardserver"
+#~ msgstr "重启卡服务器"
+
+#~ msgid "Restart softcam"
+#~ msgstr "重启softcam"
+
+#~ msgid "Select a cardserver from the available list."
+#~ msgstr "从可用列表中选择一个卡服务器."
+
+#~ msgid "and"
+#~ msgstr "和"
+
+#~ msgid "cardserver"
+#~ msgstr "卡片服务器"
+
+#~ msgid "softcam"
+#~ msgstr "softcam设置"
+
+#~ msgid "CI Helper Settings"
+#~ msgstr "CI 助手设置"
+
+#~ msgid "ClientIP"
+#~ msgstr "客户端IP"
+
+#~ msgid "Minute"
+#~ msgstr "分钟"
+
+#~ msgid "Transcode"
+#~ msgstr "转码"
 
 #, python-format
 #~ msgid "%.3f MHz"

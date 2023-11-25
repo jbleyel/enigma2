@@ -40,7 +40,6 @@ def InitUsageConfig():
 	config.misc.remotecontrol_text_support = ConfigYesNo(default=True)
 
 	config.misc.extraopkgpackages = ConfigYesNo(default=False)
-	config.misc.opkgcleanmode = ConfigYesNo(default=False)
 	config.misc.actionLeftRightToPageUpPageDown = ConfigYesNo(default=True)
 
 	config.misc.usegstplaybin3 = ConfigYesNo(default=False)
@@ -787,10 +786,10 @@ def InitUsageConfig():
 	config.usage.hide_zap_errors = ConfigYesNo(default=True)
 	config.misc.use_ci_assignment = ConfigYesNo(default=True)
 	config.usage.hide_ci_messages = ConfigYesNo(default=False)
-	config.usage.show_cryptoinfo = ConfigSelection(default="2", choices=[
-		("0", _("Off")),
-		("1", _("One line")),
-		("2", _("Two lines"))
+	config.usage.show_cryptoinfo = ConfigSelection(default=2, choices=[
+		(0, _("Off")),
+		(1, _("One line")),
+		(2, _("Two lines"))
 	])
 	config.usage.show_eit_nownext = ConfigYesNo(default=True)
 	config.usage.show_vcr_scart = ConfigYesNo(default=False)
@@ -1246,6 +1245,10 @@ def InitUsageConfig():
 				if partition.mountpoint != "/":
 					hddchoises.append((partition.mountpoint, path))
 		config.misc.epgcachepath.setChoices(hddchoises)
+		if config.misc.epgcachepath.saved_value and config.misc.epgcachepath.saved_value != config.misc.epgcachepath.value and config.misc.epgcachepath.saved_value in [x[0] for x in hddchoises]:
+			print(f"[UsageConfig] epgcachepath changed from '{config.misc.epgcachepath.value}' to '{config.misc.epgcachepath.saved_value}'")
+			eEPGCache.getInstance().setCacheFile("")
+			config.misc.epgcachepath.value = config.misc.epgcachepath.saved_value
 
 	harddiskmanager.on_partition_list_change.append(partitionListChanged)
 
@@ -1878,8 +1881,10 @@ def InitUsageConfig():
 	config.epgselection.vertical_yellow = ConfigSelection(default="epgsearch", choices=choiceList)
 	config.epgselection.vertical_blue = ConfigSelection(default="autotimer", choices=choiceList)
 
+	config.softcam = ConfigSubsection()
+	config.softcam.showInExtensions = ConfigYesNo(default=False)
+
 	config.oscaminfo = ConfigSubsection()
-	config.oscaminfo.showInExtensions = ConfigYesNo(default=False)
 	config.oscaminfo.userdatafromconf = ConfigYesNo(default=True)
 	config.oscaminfo.autoupdate = ConfigYesNo(default=False)
 	config.oscaminfo.username = ConfigText(default="username", fixed_size=False, visible_width=12)
@@ -1893,7 +1898,6 @@ def InitUsageConfig():
 	config.misc.softcam_streamrelay_port = ConfigInteger(default=17999, limits=(0, 65535))
 
 	config.cccaminfo = ConfigSubsection()
-	config.cccaminfo.showInExtensions = ConfigYesNo(default=False)
 	config.cccaminfo.serverNameLength = ConfigSelectionNumber(min=10, max=100, stepwidth=1, default=22, wraparound=True)
 	config.cccaminfo.name = ConfigText(default="Profile", fixed_size=False)
 	config.cccaminfo.ip = ConfigText(default="192.168.2.12", fixed_size=False)

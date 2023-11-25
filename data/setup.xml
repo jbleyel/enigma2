@@ -26,6 +26,10 @@
 		<item level="1" text="Enable BT Audio" description="This Option allows you to switch Audio to BT Speakers." requires="CanBTAudio">config.av.btaudio</item>
 		<item level="1" text="General BT Audio delay" description="This option configures the general audio delay for BT Speakers." requires="CanBTAudioDelay">config.av.btaudiodelay</item>
 	</setup>
+	<setup key="AutoCam" title="AutoCam Settings">
+		<item level="0" text="Use AutoCam" description="When set to 'Yes' a specific Softcam can be assigned to each encrypted service.">config.misc.autocamEnabled</item>
+		<item level="0" text="Select AutoCam default Softcam" description="Select a Softcam from the available list as the default for AutoCam." conditional="config.misc.autocamEnabled.value">self.autocamDefault</item>
+	</setup>
 	<setup key="AutoLanguage" title="Auto Language Settings" level="1" showOpenWebif="1">
 		<item level="1" text="Audio language selection 1" description="Configure the first audio language (highest priority).">config.autolanguage.audio_autoselect1</item>
 		<item level="1" text="Audio language selection 2" description="Configure the second audio language.">config.autolanguage.audio_autoselect2</item>
@@ -46,8 +50,11 @@
 		<item level="1" text="EPG language selection 1" description="Configure the primary EPG language.">config.autolanguage.audio_epglanguage</item>
 		<item level="1" text="EPG language selection 2" description="Configure the secondary EPG language.">config.autolanguage.audio_epglanguage_alternative</item>
 	</setup>
+	<setup key="Cardserver" title="Cardserver Settings" showOpenWebif="1">
+		<item level="0" text="Select cardserver" description="Select the cardserver to be used from the list of available cardservers.">config.misc.cardservers</item>
+	</setup>
 	<setup key="CCcamLineEdit" title="CCcam Line Editor">
-		<item level="0" text="Protocol" description="Select the softcam protocol.">config.cccamlineedit.protocol</item>
+		<item level="0" text="Protocol" description="Select the Softcam protocol.">config.cccamlineedit.protocol</item>
 		<item level="0" text="Domain" description="Edit the CCcam/NewCamd server hostname.">config.cccamlineedit.domain</item>
 		<item level="0" text="Port" description="Edit the CCcam/NewCamd server port.">config.cccamlineedit.port</item>
 		<item level="0" text="Username" description="Edit the username.">config.cccamlineedit.username</item>
@@ -63,6 +70,7 @@
 	</setup>
 	<setup key="CiSelection" title="Common Interface">
 		<item level="0" text="Common Settings"></item>
+		<item level="0" text="CI+ Helper*" description="Select 'Enable' to start the CI+ helper." requires="CIPlusHelper">config.cimisc.cihelperenabled</item>
 		<item level="0" text="DVB CI Delay" description="Set DVB CI delay." requires="CommonInterfaceCIDelay">config.cimisc.dvbCiDelay</item>
 		<item level="0" text="CI Boot Delay" description="Set CI Boot delay.">config.cimisc.bootDelay</item>
 	</setup>
@@ -155,8 +163,8 @@
 			<item level="0" text="Power On Display" description="This option allows you to Power Off the display.">config.lcd.power</item>
 			<item level="0" text="Show HDMI-Output Res" description="Show HDMI Output Resolution">config.lcd.showoutputresolution</item>
 			<item level="0" text="Show HDD progress" description="Disable the HDD Process on VFD">config.lcd.hdd</item>
-			<item level="1" text="Scrolling speed (software renderer)" description="Set the scrolling speed of text on the front display, this is used by software renderer in some skins.">config.lcd.scroll_speed</item>
-			<item level="1" text="Scrolling delay (software renderer)" description="Set the delay time between repeated loops, this is used by software renderer in some skins.">config.lcd.scroll_delay</item>
+			<item level="1" text="Scrolling speed (software renderer)" description="Set the scrolling speed of text on the front display, this is used by software renderer in some skins.">config.lcd.scrollSpeed</item>
+			<item level="1" text="Scrolling delay (software renderer)" description="Set the delay time between repeated loops, this is used by software renderer in some skins.">config.lcd.scrollDelay</item>
 		</if>
 		<item level="0" text="Date style" description="Choose the front panel display formatting style for dates. 'D' / 'DD' is the date and 'M' / 'MM' is the month in digits.  ('DD' and 'MM' have leading zeros for single digit values.) The screen display will be based on your choice but can be influenced by the skin." requires="config.usage.date.enabled_display">config.usage.date.display</item>
 		<item level="0" text="Time style" description="Choose the front panel display formatting style for times. 'H' / 'HH' is the hour for a 24 hour clock, 'h' / 'hh' is the hour for a 12 hour clock, 'mm' is the minutes.  ('HH' and 'hh' have leading zeros for single digit values.) The front panel display will be based on your choice but can be influenced any applicable skin." requires="config.usage.time.enabled_display">config.usage.time.display</item>
@@ -415,7 +423,7 @@
 		<item level="2" text="Include EPG data" description="Enable this option to add extra EPG data to the debug log file.">config.crash.debugEPG</item>
 		<item level="2" text="Include DVB scan data" description="Enable this option to add extra DVB scan data to the debug log file.">config.crash.debugDVBScan</item>
 		<item level="2" text="Limit debug log size (MB)" description="Allows you to set the maximum size of the Debug log size (MB). When that size is reached, a new file will be created.">config.crash.debugloglimit</item>
-		<item level="2" text="Show Log Manager in extensions list" description="Allows you to show/hide Log Manager in extensions (BLUE button).">config.logmanager.showinextensions</item>
+		<item level="2" text="Show Log Manager in Extension Menu" description="Allows you to show/hide Log Manager in the Extension Menu screen (BLUE button).">config.logmanager.showinextensions</item>
 		<item level="2" text="Maximum no of days" description="Logs older then the set no of days will be deleted.">config.crash.daysloglimit</item>
 		<item level="2" text="Maximum space used (MB)" description="If logs are using the set maximum space used the eldest will be deleted.">config.crash.sizeloglimit</item>
 		<item level="2" text="Crash at skin error for debug reasons" description="Select 'No' to only write a log message to the debug log file.">config.crash.skin_error_crash</item>
@@ -490,7 +498,7 @@
 	<setup key="OSD3D" title="OSD 3D Settings" showOpenWebif="1">
 		<item level="0" text="3D Mode" description="This option lets you choose the 3D mode">config.osd.threeDmode</item>
 		<item level="0" text="Depth" description="This option lets you adjust the 3D depth">config.osd.threeDznorm</item>
-		<item level="0" text="Show in extensions list" description="This option lets you show the option in the extension screen.">config.osd.show3dextensions</item>
+		<item level="0" text="Show in Extension Menu" description="This option lets you show the option in the Extension Menu screen.">config.osd.show3dextensions</item>
 	</setup>
 	<setup key="Password" title="Password Settings">
 		<item level="0" text="New password" description="Setting a password is strongly advised if your STB is open to the Internet. You must set a password in order to be able to use network services like FTP, Telnet or SSH.">config.network.password</item>
@@ -531,12 +539,11 @@
 	<setup key="PluginBrowser" title="Plugin Browser Settings" showOpenWebif="1">
 		<item level="0" text="Plugin Browser layout" description="Select the layout of the installed plugins in the Plugin Browser screen. NOTE: The change is not immediate but will be seen when Plugin Browser is restarted!">config.usage.pluginListLayout</item>
 		<item level="0" text="Sort Plugin Browser entries" description="Select the sort order of the Plugin Browser menu entries. User defined also allows the plugin entries to be hidden.">config.usage.plugins_sort_mode</item>
-		<item level="0" text="Force OPKG clean mode" description="Select 'Enable' to force a package clean before a package update. This is helpful to make sure the package list is up-to-date and can avoid/solve issues during the update. Only enable this when you can not update on-line.">config.misc.opkgcleanmode</item>
 		<item level="0" text="Picon package target location" description="Select the target location where picon files will be installed.">config.usage.piconInstallLocation</item>
 		<item level="0" text="Show Driver packages" description="Select 'Yes' to show driver packages in the Download Plugins screen.">config.pluginfilter.drivers</item>
 		<item level="0" text="Show Extension packages" description="Select 'Yes' to show extensions packages in the Download Plugins screen.">config.pluginfilter.extensions</item>
 		<item level="0" text="Show System Plugin packages" description="Select 'Yes' to show system plugin packages in the Download Plugins screen.">config.pluginfilter.systemplugins</item>
-		<item level="0" text="Show Softcam packages" description="Select 'Yes' to show softcam packages in the Download Plugins screen." requires="SoftCam">config.pluginfilter.softcams</item>
+		<item level="0" text="Show Softcam packages" description="Select 'Yes' to show Softcam packages in the Download Plugins screen." requires="SoftCam">config.pluginfilter.softcams</item>
 		<item level="0" text="Show Skin packages" description="Select 'Yes' to show skin packages in the Download Plugins screen.">config.pluginfilter.skins</item>
 		<item level="0" text="Show Skin Component packages" description="Select 'Yes' to show skin component packages in the Download Plugins screen.">config.pluginfilter.skincomponents</item>
 		<item level="0" text="Show Plugin Skin packages" description="Select 'Yes' to show plugin skin packages in the Download Plugins screen.">config.pluginfilter.skinpacks</item>
@@ -704,7 +711,7 @@
 		<!--item level="0" text="Select RED long action" description="Select what you want the RED long button to activate.">config.plugins.infopanel_redpanel.selectionLong</item-->
 		<!--item level="0" text="Select YELLOW action" description="Select what you want the YELLOW button to activate.">config.plugins.infopanel_yellowkey.list</item-->
 		<!--item level="0" text="Select YELLOW long action" description="Select what you want the YELLOW long button to activate.">config.plugins.infopanel_yellowkey.listLong</item-->
-		<item level="0" text="BLUE switch: BLUE/BLUE long" description="Switch BLUE short (QuickMenu) with BLUE long (Extensions)">config.workaround.blueswitch</item>
+		<item level="0" text="BLUE switch: BLUE/BLUE long" description="Switch BLUE short (QuickMenu) with BLUE long (Extension Menu)">config.workaround.blueswitch</item>
 		<item level="0" text="Long press emulation with button" description="Press this button to emulate a long press on a button pressed afterwards (this also overrides any other actions assigned to emulation button).">config.usage.long_press_emulation_key</item>
 		<item level="0" text="Add legacy LEFT/RIGHT actions" description="Select 'Yes' to enable use of the LEFT/RIGHT buttons to move PageUp/PageDown when the LEFT/RIGHT buttons are otherwise undefined. This provides legacy navigation for users who prefer it.">config.misc.actionLeftRightToPageUpPageDown</item>
 	</setup>
@@ -733,11 +740,21 @@
 		</if>
 	</setup>
 	<setup key="Softcam" title="Softcam Settings" showOpenWebif="1">
-		<item level="0" text="Select softcam" description="Select a softcam from the available list.">config.misc.softcams</item>
-		<item level="0" text="Select cardserver" description="Select a cardserver from the available list." conditional="config.misc.cardservers.value != ''">config.misc.cardservers</item>
-		<item level="0" text="Restart" description="Reset the selected devices and save changes of your config when the GREEN button is pressed.">config.misc.restarts</item>
-		<item level="2" text="Show CCcam in extensions" description="Allows you to show/hide CCcam in extensions (BLUE button)." conditional="'cccam' in config.misc.softcams.value.lower()">config.cccaminfo.showInExtensions</item>
-		<item level="2" text="Show OScam in extensions" description="Allows you to show/hide OScam in extensions (BLUE button)." conditional="'oscam' in config.misc.softcams.value.lower()">config.oscaminfo.showInExtensions</item>
+		<item level="0" text="Select Softcam" description="Select a Softcam from the available list.">config.misc.softcams</item>
+		<item level="2" text="Show OScam/CCcam in Extension Menu" description="Allows you to show/hide OScam/CCcam in the Extension Menu screen (BLUE button).">config.softcam.showInExtensions</item>
+	</setup>
+	<setup key="SoftwareManager" title="Software Manager Settings" showOpenWebif="1">
+		<if conditional="BoxInfo.getItem('model').startswith('et')">
+			<item level="2" text="Select Software Update" description="Select how your box will upgrade.">config.plugins.softwaremanager.updatetype</item>
+		</if>
+		<item level="2" text="Overwrite configuration files?" description="Overwrite configuration files during software upgrade?">config.plugins.softwaremanager.overwriteConfigFiles</item>
+		<item level="2" text="Overwrite Setting Files ?" description="Overwrite setting files (channellist) during software upgrade?">config.plugins.softwaremanager.overwriteSettingsFiles</item>
+		<item level="2" text="Overwrite Driver Files ?" description="Overwrite driver files during software upgrade?">config.plugins.softwaremanager.overwriteDriversFiles</item>
+		<item level="2" text="Overwrite Emu Files ?" description="Overwrite softcam files during software upgrade?" requires="HasSoftcamEmu">config.plugins.softwaremanager.overwriteEmusFiles</item>
+		<item level="2" text="Overwrite Picon Files ?" description="Overwrite picon files during software upgrade?">config.plugins.softwaremanager.overwritePiconsFiles</item>
+		<item level="2" text="Overwrite Bootlogo Files ?" description="Overwrite bootlogo files during software upgrade?">config.plugins.softwaremanager.overwriteBootlogoFiles</item>
+		<item level="2" text="Overwrite Spinner Files ?" description="Overwrite spinner files during software upgrade?">config.plugins.softwaremanager.overwriteSpinnerFiles</item>
+		<item level="2" text="Mode for autorestore" description="Turbo: One reboot after flash\nFast: One reboot after flash, one reboot after restore\nSlow: One reboot after flash, one reboot after restore in GUI">config.plugins.softwaremanager.restoremode</item>
 	</setup>
 	<setup key="SpecialFeatures" title="Special Features Settings">
 		<!-- This is just a placeholder, the 'specialfeatures' menu is currently disabled. -->
@@ -852,8 +869,8 @@
 		<item level="0" text="Menu entry style" description="Select the display options for each menu entry item. If menu numbers are available then the number buttons can be used to select the numbered menu entries directly." requires="config.usage.menuType" value="standard">config.usage.menuEntryStyle</item>
 		<item level="0" text="Menu entry sort order" description="Select the sort order of the menu entries. User defined also allows the menu entries to be hidden.">config.usage.menuSortOrder</item>
 		<item level="1" text="Show screen menu path" description="Select if the screen menu path history is displayed and, if so, how it is to be displayed.">config.usage.showScreenPath</item>
-		<item level="1" text="Sort Extensions menu" description="Enable to display the Extension menu entries alphabetically.">config.usage.sort_extensionslist</item>
-		<item level="1" text="Show Restart Network in Extensions *" description="Enable to show the 'Restart Network' entry in the Extensions menu.">config.usage.show_restart_network_extensionslist</item>
+		<item level="1" text="Sort Extension Menu" description="Enable to display the Extension Menu screen entries alphabetically.">config.usage.sort_extensionslist</item>
+		<item level="1" text="Show Restart Network in Extensions *" description="Enable to show the 'Restart Network' entry in the Extension Menu screen.">config.usage.show_restart_network_extensionslist</item>
 		<item level="1" text="Sort Plugin Browser" description="Select the sort order of the Plugin Browser menu entries. User defined also allows the menu entries to be hidden.">config.usage.plugins_sort_mode</item>
 		<item level="1" text="Setup entry sort" description="Enable to display setup entries alphabetically.">config.usage.sort_settings</item>
 		<item level="1" text="Show setup default value" description="Select if the default value for a setup entry is shown and, if so, where it is displayed in relation to the description.">config.usage.setupShowDefault</item>
@@ -874,7 +891,7 @@
 		<item level="0" text="InfoBar fade-out speed" description="Control the InfoBar fading speed">config.usage.show_infobar_dimming_speed</item>
 		<item level="0" text="InfoBar EPG mode" description="Select how to activate the Quick EPG mode." requires="InfoBarEpg">config.plisettings.InfoBarEpg_mode</item>
 		<item level="0" text="Time delay of the shutdown messages" description="Set the time to wait for execute the default action in shutdown, standby or restart messages. (e.g. used in RecordTimer, PowerTimer, SleepTimer, ...)">config.usage.shutdown_msgbox_timeout</item>
-		<item level="1" text="Show job tasks in extensions" description="With this option you can hide Job Tasks from the extension screen (BLUE button press).">config.usage.jobtaksextensions</item>
+		<item level="1" text="Show job tasks in Extension Menu" description="With this option you can hide Job Tasks from the Extension Menu screen (BLUE button press).">config.usage.jobtaksextensions</item>
 		<item level="1" text="Show positioner movement" description="Choose whether or not to show an icon when a motorized dish is moving.">config.usage.showdish</item>
 		<item level="1" text="Alternative radio mode" description="Use the alternative or the conventional radio mode.">config.usage.e1like_radio_mode</item>
 		<item level="1" text="Position of finished Timers in Timerlist" description="Control of the position how finished timer are shown in the Timer List.">config.usage.timerlist_finished_timer_position</item>
