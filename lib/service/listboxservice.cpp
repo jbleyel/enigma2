@@ -622,10 +622,9 @@ void eListboxServiceContent::setItemHeight(int height)
 }
 
 inline bool compareServices(const eServiceReference &src, const eServiceReference &trg) {
-	if (trg.alternativeurl.empty() && src.path.empty())
+	if (trg.alternativeurl.empty() || src.path.empty() || trg.alternativeurl.size() > src.path.size() || trg.alternativeurl[0] != '1')
 		return false;
-	std::size_t found = src.path.find_first_of(trg.alternativeurl);
-	return (found != std::string::npos);
+	return (src.path.find(trg.alternativeurl) != std::string::npos);
 }
 
 bool eListboxServiceContent::checkServiceIsRecorded(eServiceReference ref,pNavigation::RecordType type)
@@ -634,8 +633,6 @@ bool eListboxServiceContent::checkServiceIsRecorded(eServiceReference ref,pNavig
 	recordedServices = eNavigation::getInstance()->getRecordingsServices(type);
 	for (std::map<ePtr<iRecordableService>, eServiceReference >::iterator it = recordedServices.begin(); it != recordedServices.end(); ++it)
 	{
-		eDebug("eListboxServiceContent::checkServiceIsRecorded A %s", ref.toString().c_str());
-		eDebug("eListboxServiceContent::checkServiceIsRecorded B %s", ref.path.c_str());
 		if (ref.flags & eServiceReference::isGroup)
 		{
 			ePtr<iDVBChannelList> db;
