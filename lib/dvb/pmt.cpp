@@ -969,9 +969,11 @@ int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 		{
 			std::list<eDVBResourceManager::active_channel> list;
 			res_mgr->getActiveChannels(list);
-			if(list) {
+			if(list.size()) {
+
 				eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels count %d", list.size());
 
+				ePtr<iDVBFrontend> frontend;
 				for (std::list<eDVBResourceManager::active_channel>::iterator i(list.begin()); i != list.end(); ++i)
 				{
 					i->m_channel->getFrontend(frontend);
