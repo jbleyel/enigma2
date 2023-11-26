@@ -627,9 +627,10 @@ bool eListboxServiceContent::checkServiceIsRecorded(eServiceReference ref,pNavig
 	recordedServices = eNavigation::getInstance()->getRecordingsServices(type);
 	for (std::map<ePtr<iRecordableService>, eServiceReference >::iterator it = recordedServices.begin(); it != recordedServices.end(); ++it)
 	{
-		eDebug("eListboxServiceContent::checkServiceIsRecorded A %s", ref.toString());
-		eDebug("eListboxServiceContent::checkServiceIsRecorded B %s", it->second.toString());
-		eDebug("eListboxServiceContent::checkServiceIsRecorded C %s", it->second.alternativeurl.c_str());
+		eDebug("eListboxServiceContent::checkServiceIsRecorded A %s", ref.toString().c_str());
+		eDebug("eListboxServiceContent::checkServiceIsRecorded B %s", ref.alternativeurl.c_str());
+		eDebug("eListboxServiceContent::checkServiceIsRecorded C %s", it->second.toString().c_str());
+		eDebug("eListboxServiceContent::checkServiceIsRecorded D %s", it->second.alternativeurl.c_str());
 		if (ref.flags & eServiceReference::isGroup)
 		{
 			ePtr<iDVBChannelList> db;
