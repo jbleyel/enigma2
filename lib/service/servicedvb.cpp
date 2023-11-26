@@ -2034,6 +2034,10 @@ int eDVBServicePlay::getInfo(int w)
 	case sTSID:
 		return ((const eServiceReferenceDVB&)m_reference).getTransportStreamID().get();
 	case sNamespace:
+		// use origiginal namespace
+		if (!m_reference.alternativeurl.empty()){
+			return ((const eServiceReferenceDVB&)eServiceReferenceDVB(m_reference.alternativeurl)).getDVBNamespace().get();
+		}
 		return ((const eServiceReferenceDVB&)m_reference).getDVBNamespace().get();
 	case sProvider:
 		if (!m_dvb_service)

@@ -962,7 +962,7 @@ int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 {
 	if (!m_sr_channel && !m_reference.alternativeurl.empty())
 	{
-		eDebug("[eDVBServicePMTHandler] getChannel for sr %s" , m_reference.alternativeurl.c_str());
+//		eDebug("[eDVBServicePMTHandler] getChannel for sr %s" , m_reference.alternativeurl.c_str());
 
 		ePtr<eDVBResourceManager> res_mgr;
 		if ( !eDVBResourceManager::getInstance( res_mgr ) )
@@ -971,18 +971,18 @@ int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 			res_mgr->getActiveChannels(list);
 			if(list.size()) {
 
-				eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels count %d", list.size());
+//				eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels count %d", list.size());
 
-				ePtr<iDVBFrontend> frontend;
+//				ePtr<iDVBFrontend> frontend;
 				for (std::list<eDVBResourceManager::active_channel>::iterator i(list.begin()); i != list.end(); ++i)
 				{
-					i->m_channel->getFrontend(frontend);
-					eDVBFrontend *f = (eDVBFrontend *)(iDVBFrontend *)frontend;
-					if (f) {
-						eDebug("[eDVBServicePMTHandler] Channel Adapter %d slot %d frequency %d", f->getDVBID(), f->getSlotID(), frontend->readFrontendData(iFrontendInformation_ENUMS::frequency));
+//					i->m_channel->getFrontend(frontend);
+//					eDVBFrontend *f = (eDVBFrontend *)(iDVBFrontend *)frontend;
+//					if (f) {
+//						eDebug("[eDVBServicePMTHandler] Channel Adapter %d slot %d frequency %d", f->getDVBID(), f->getSlotID(), frontend->readFrontendData(iFrontendInformation_ENUMS::frequency));
 						m_sr_channel = i->m_channel;
 						break;
-					}
+//					}
 				}
 
 			}
