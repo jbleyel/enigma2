@@ -621,6 +621,13 @@ void eListboxServiceContent::setItemHeight(int height)
 		m_listbox->setItemHeight(height);
 }
 
+inline bool compareServices(const eServiceReference &src, const eServiceReference &trg) {
+	if (trg.alternativeurl.empty() && src.path.empty())
+		return false;
+	std::size_t found = src.path.find_first_of(trg.alternativeurl);
+	return (found != std::string::npos);
+}
+
 bool eListboxServiceContent::checkServiceIsRecorded(eServiceReference ref,pNavigation::RecordType type)
 {
 	std::map<ePtr<iRecordableService>, eServiceReference, std::less<iRecordableService*> > recordedServices;
@@ -628,9 +635,7 @@ bool eListboxServiceContent::checkServiceIsRecorded(eServiceReference ref,pNavig
 	for (std::map<ePtr<iRecordableService>, eServiceReference >::iterator it = recordedServices.begin(); it != recordedServices.end(); ++it)
 	{
 		eDebug("eListboxServiceContent::checkServiceIsRecorded A %s", ref.toString().c_str());
-		eDebug("eListboxServiceContent::checkServiceIsRecorded B %s", ref.alternativeurl.c_str());
-		eDebug("eListboxServiceContent::checkServiceIsRecorded C %s", it->second.toString().c_str());
-		eDebug("eListboxServiceContent::checkServiceIsRecorded D %s", it->second.alternativeurl.c_str());
+		eDebug("eListboxServiceContent::checkServiceIsRecorded B %s", ref.path.c_str());
 		if (ref.flags & eServiceReference::isGroup)
 		{
 			ePtr<iDVBChannelList> db;
@@ -640,10 +645,10 @@ bool eListboxServiceContent::checkServiceIsRecorded(eServiceReference ref,pNavig
 			eBouquet *bouquet=0;
 			db->getBouquet(ref, bouquet);
 			for (std::list<eServiceReference>::iterator i(bouquet->m_services.begin()); i != bouquet->m_services.end(); ++i)
-				if (*i == it->second)
+				if (*i == it->second || compareServices(*i, it->second))
 					return true;
 		}
-		else if (ref == it->second)
+		else if (ref == it->second || compareServices(ref, it->second))
 			return true;
 	}
 	return false;
