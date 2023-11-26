@@ -1057,7 +1057,7 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	CONNECT(m_subtitle_sync_timer->timeout, eDVBServicePlay::checkSubtitleTiming);
 	CONNECT(m_nownext_timer->timeout, eDVBServicePlay::updateEpgCacheNowNext);
 
-	eDebug("[eDVBServicePlay] init toString: %s alternative: %s path: %s", ref.toString().c_str(), ref.alternativeurl.c_str(), ref.path.c_str());
+//	eDebug("[eDVBServicePlay] init toString: %s alternative: %s path: %s", ref.toString().c_str(), ref.alternativeurl.c_str(), ref.path.c_str());
 
 }
 
@@ -2063,7 +2063,7 @@ std::string eDVBServicePlay::getInfoString(int w)
 		{
 			ePtr<eDVBService> sRelayServiceOrigSref;
 			eDVBDB::getInstance()->getService(eServiceReferenceDVB(m_reference.alternativeurl), sRelayServiceOrigSref);
-			eDebug("[eDVBServicePlay] getInfoString m_provider_name %s", sRelayServiceOrigSref->m_provider_name.c_str());
+//			eDebug("[eDVBServicePlay] getInfoString m_provider_name %s", sRelayServiceOrigSref->m_provider_name.c_str());
 			m_dvb_service->m_provider_name = std::string(sRelayServiceOrigSref->m_provider_name);
 		}
 		return m_dvb_service->m_provider_name;

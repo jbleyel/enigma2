@@ -976,13 +976,17 @@ int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 //				ePtr<iDVBFrontend> frontend;
 				for (std::list<eDVBResourceManager::active_channel>::iterator i(list.begin()); i != list.end(); ++i)
 				{
-//					i->m_channel->getFrontend(frontend);
-//					eDVBFrontend *f = (eDVBFrontend *)(iDVBFrontend *)frontend;
-//					if (f) {
-//						eDebug("[eDVBServicePMTHandler] Channel Adapter %d slot %d frequency %d", f->getDVBID(), f->getSlotID(), frontend->readFrontendData(iFrontendInformation_ENUMS::frequency));
+					std::string channelid = i->m_channel_id.toString();
+					eDebug("[eDVBServicePMTHandler] getChannel id %s", channelid.c_str());
+					eServiceReferenceDVB m_alternative_ref = eServiceReferenceDVB(m_reference.alternativeurl);
+					char buf[30];
+					sprintf(buf, "%x:%x:%x", m_alternative_ref.getTransportStreamID().get(), m_alternative_ref.getOriginalNetworkID().get(), m_alternative_ref.getDVBNamespace().get());
+					if (channelid == std::string(buf))
+					{
+						eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels channelid %s / buf %s", channelid.c_str(), buf);
 						m_sr_channel = i->m_channel;
 						break;
-//					}
+					}
 				}
 
 			}
