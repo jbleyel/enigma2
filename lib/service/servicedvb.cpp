@@ -1348,7 +1348,6 @@ RESULT eDVBServicePlay::start()
 	int packetsize = 188;
 	RESULT ret = 0;
 	eDVBServicePMTHandler::serviceType type = eDVBServicePMTHandler::livetv;
-//	m_originalchannel = nullptr;
 
 	if(tryFallbackTuner(/*REF*/service, /*REF*/m_is_stream, m_is_pvr, /*simulate*/false))
 		eDebug("[eDVBServicePlay] ServicePlay: fallback tuner selected");

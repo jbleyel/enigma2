@@ -962,7 +962,6 @@ int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 {
 	if (!m_sr_channel && !m_reference.alternativeurl.empty())
 	{
-//		eDebug("[eDVBServicePMTHandler] getChannel for sr %s" , m_reference.alternativeurl.c_str());
 
 		ePtr<eDVBResourceManager> res_mgr;
 		if ( !eDVBResourceManager::getInstance( res_mgr ) )
@@ -970,20 +969,15 @@ int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 			std::list<eDVBResourceManager::active_channel> list;
 			res_mgr->getActiveChannels(list);
 			if(list.size()) {
-
-//				eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels count %d", list.size());
-
-//				ePtr<iDVBFrontend> frontend;
 				for (std::list<eDVBResourceManager::active_channel>::iterator i(list.begin()); i != list.end(); ++i)
 				{
 					std::string channelid = i->m_channel_id.toString();
-					eDebug("[eDVBServicePMTHandler] getChannel id %s", channelid.c_str());
 					eServiceReferenceDVB m_alternative_ref = eServiceReferenceDVB(m_reference.alternativeurl);
 					char buf[30];
 					sprintf(buf, "%x:%x:%x", m_alternative_ref.getTransportStreamID().get(), m_alternative_ref.getOriginalNetworkID().get(), m_alternative_ref.getDVBNamespace().get());
 					if (channelid == std::string(buf))
 					{
-						eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels channelid %s / buf %s", channelid.c_str(), buf);
+//						eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels channelid %s / buf %s", channelid.c_str(), buf);
 						m_sr_channel = i->m_channel;
 						break;
 					}
