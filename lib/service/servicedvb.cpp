@@ -1056,6 +1056,9 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	CONNECT(m_event_handler.m_eit_changed, eDVBServicePlay::gotNewEvent);
 	CONNECT(m_subtitle_sync_timer->timeout, eDVBServicePlay::checkSubtitleTiming);
 	CONNECT(m_nownext_timer->timeout, eDVBServicePlay::updateEpgCacheNowNext);
+
+	eDebug("[eDVBServicePlay] init toString: %s alternative: %s path: %s", ref.toString().c_str(), ref.alternativeurl.c_str(), ref.path.c_str());
+
 }
 
 eDVBServicePlay::~eDVBServicePlay()
@@ -1345,6 +1348,7 @@ RESULT eDVBServicePlay::start()
 	int packetsize = 188;
 	RESULT ret = 0;
 	eDVBServicePMTHandler::serviceType type = eDVBServicePMTHandler::livetv;
+//	m_originalchannel = nullptr;
 
 	if(tryFallbackTuner(/*REF*/service, /*REF*/m_is_stream, m_is_pvr, /*simulate*/false))
 		eDebug("[eDVBServicePlay] ServicePlay: fallback tuner selected");
@@ -1372,6 +1376,29 @@ RESULT eDVBServicePlay::start()
 
 	if (m_is_stream)
 	{
+
+/*
+		if(!m_reference.alternativeurl.empty())
+		{
+
+			ePtr<eDVBResourceManager> res_mgr;
+			if ( !eDVBResourceManager::getInstance( res_mgr ) )
+			{
+				std::list<eDVBResourceManager::active_channel> list;
+				res_mgr->getActiveChannels(list);
+
+		//		for (std::list<eDVBResourceManager::active_channel>::iterator i(res_mgr->m_active_channels.begin()); i != res_mgr->m_active_channels.end(); ++i)
+				for (std::list<eDVBResourceManager::active_channel>::iterator i(list.begin()); i != list.end(); ++i)
+				{
+					m_originalchannel = i->m_channel;
+					break;
+				}
+
+			}
+
+			
+		}
+*/
 		/*
 		 * streams are considered to be descrambled by default;
 		 * user can indicate a stream is scrambled, by using servicetype id + 0x100
@@ -2051,6 +2078,13 @@ std::string eDVBServicePlay::getInfoString(int w)
 	{
 	case sProvider:
 		if (!m_dvb_service) return "";
+		if(m_dvb_service->m_provider_name.empty() && !m_reference.alternativeurl.empty())
+		{
+			ePtr<eDVBService> sRelayServiceOrigSref;
+			eDVBDB::getInstance()->getService(eServiceReferenceDVB(m_reference.alternativeurl), sRelayServiceOrigSref);
+			eDebug("[eDVBServicePlay] getInfoString m_provider_name %s", sRelayServiceOrigSref->m_provider_name.c_str());
+			m_dvb_service->m_provider_name = std::string(sRelayServiceOrigSref->m_provider_name);
+		}
 		return m_dvb_service->m_provider_name;
 	case sServiceref:
 		return m_reference.toString();
@@ -2076,6 +2110,10 @@ std::string eDVBServicePlay::getInfoString(int w)
 
 ePtr<iDVBTransponderData> eDVBServicePlay::getTransponderData()
 {
+	if(!m_reference.alternativeurl.empty())
+	{
+		return eStaticServiceDVBInformation().getTransponderData(eServiceReferenceDVB(m_reference.alternativeurl));
+	}
 	return eStaticServiceDVBInformation().getTransponderData(m_reference);
 }
 
