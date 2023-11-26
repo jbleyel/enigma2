@@ -74,7 +74,6 @@ protected:
 			bool &is_stream, bool is_pvr, bool simulate);
 
 	eDVBServicePMTHandler m_service_handler;
-//	ePtr<eDVBChannel> m_originalchannel;
 
 public:
 		// iFrontendInformation

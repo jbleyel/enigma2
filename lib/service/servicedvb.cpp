@@ -1376,29 +1376,6 @@ RESULT eDVBServicePlay::start()
 
 	if (m_is_stream)
 	{
-
-/*
-		if(!m_reference.alternativeurl.empty())
-		{
-
-			ePtr<eDVBResourceManager> res_mgr;
-			if ( !eDVBResourceManager::getInstance( res_mgr ) )
-			{
-				std::list<eDVBResourceManager::active_channel> list;
-				res_mgr->getActiveChannels(list);
-
-		//		for (std::list<eDVBResourceManager::active_channel>::iterator i(res_mgr->m_active_channels.begin()); i != res_mgr->m_active_channels.end(); ++i)
-				for (std::list<eDVBResourceManager::active_channel>::iterator i(list.begin()); i != list.end(); ++i)
-				{
-					m_originalchannel = i->m_channel;
-					break;
-				}
-
-			}
-
-			
-		}
-*/
 		/*
 		 * streams are considered to be descrambled by default;
 		 * user can indicate a stream is scrambled, by using servicetype id + 0x100

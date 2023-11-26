@@ -960,7 +960,34 @@ int eDVBServicePMTHandler::compareAudioSubtitleCode(const std::string &subtitleT
 
 int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 {
-	channel = m_channel;
+	if (!m_sr_channel && !m_reference.alternativeurl.empty())
+	{
+		eDebug("[eDVBServicePMTHandler] getChannel for sr %s" , m_reference.alternativeurl.c_str());
+
+		ePtr<eDVBResourceManager> res_mgr;
+		if ( !eDVBResourceManager::getInstance( res_mgr ) )
+		{
+			std::list<eDVBResourceManager::active_channel> list;
+			res_mgr->getActiveChannels(list);
+			if(list) {
+				eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels count %d", list.size());
+
+				for (std::list<eDVBResourceManager::active_channel>::iterator i(list.begin()); i != list.end(); ++i)
+				{
+					i->m_channel->getFrontend(frontend);
+					eDVBFrontend *f = (eDVBFrontend *)(iDVBFrontend *)frontend;
+					if (f) {
+						eDebug("[eDVBServicePMTHandler] Channel Adapter %d slot %d frequency %d", f->getDVBID(), f->getSlotID(), frontend->readFrontendData(iFrontendInformation_ENUMS::frequency));
+						m_sr_channel = i->m_channel;
+						break;
+					}
+				}
+
+			}
+		}
+	}
+
+	channel = (m_sr_channel) ? m_sr_channel : m_channel;
 	if (channel)
 		return 0;
 	else
