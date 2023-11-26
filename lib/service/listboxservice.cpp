@@ -622,11 +622,12 @@ void eListboxServiceContent::setItemHeight(int height)
 }
 
 inline bool compareServices(const eServiceReference &src, const eServiceReference &trg) {
+	eDebug("eListboxServiceContent::compareServices T %s", trg.alternativeurl.c_str());
+	eDebug("eListboxServiceContent::compareServices S %s", src.toString().c_str());
+	eDebug("eListboxServiceContent::compareServices P %s", src.path.c_str());
+
 	if (trg.alternativeurl.empty() || src.path.empty() || trg.alternativeurl.size() > src.path.size() || trg.alternativeurl[0] != '1')
 		return false;
-
-	eDebug("eListboxServiceContent::compareServices T %s", trg.alternativeurl.c_str());
-	eDebug("eListboxServiceContent::compareServices S %s", src.path.c_str());
 
 	return (src.path.find(trg.alternativeurl) != std::string::npos);
 }
