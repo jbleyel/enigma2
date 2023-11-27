@@ -233,6 +233,9 @@ bool eDVBService::isCrypted()
 
 int eDVBService::isPlayable(const eServiceReference &ref, const eServiceReference &ignore, bool simulate)
 {
+	eDebug("[eDVBService] isPlayable ref %s / ignore %s", ref.toString().c_str(),ignore.toString().c_str());
+	eDebug("[eDVBService] isPlayable ref alter %s / ignore alter %s", ref.alternativeurl().c_str(),ignore.alternativeurl().c_str());
+
 	ePtr<eDVBResourceManager> res_mgr;
 	bool remote_fallback_enabled = eConfigManager::getConfigBoolValue("config.usage.remote_fallback_enabled", false);
 
@@ -245,6 +248,8 @@ int eDVBService::isPlayable(const eServiceReference &ref, const eServiceReferenc
 
 		((const eServiceReferenceDVB&)ref).getChannelID(chid);
 		((const eServiceReferenceDVB&)ignore).getChannelID(chid_ignore);
+
+		eDebug("[eDVBService] isPlayable canAllocateChannel chid %s / chid_ignore %s", chid.toString().c_str(),chid_ignore.toString().c_str());
 
 		if (res_mgr->canAllocateChannel(chid, chid_ignore, system, simulate))
 		{
