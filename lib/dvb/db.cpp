@@ -233,6 +233,10 @@ bool eDVBService::isCrypted()
 
 int eDVBService::isPlayable(const eServiceReference &ref, const eServiceReference &ignore, bool simulate)
 {
+	// force is isPlayable for stream relay
+	if (!ignore.alternativeurl.empty())
+		return 2;
+
 	eDebug("[eDVBService] isPlayable ref %s / ignore %s", ref.toString().c_str(),ignore.toString().c_str());
 	eDebug("[eDVBService] isPlayable ref alter %s / ignore alter %s", ref.alternativeurl.c_str(),ignore.alternativeurl.c_str());
 
