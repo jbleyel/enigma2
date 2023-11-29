@@ -1516,7 +1516,12 @@ void fillTuple(ePyObject tuple, const char *argstring, int argcount, ePyObject s
 	while(spos < argcount)
 	{
 		bool inc_refcount=false;
-		switch((c=argstring[spos++]))
+		c = argstring[spos++];
+		if ( c > '0' && c <= '9' )
+		{
+			continue;
+		}
+		switch(c)
 		{
 			case '0': // PyLong 0
 				tmp = PyLong_FromLong(0);
@@ -1628,6 +1633,7 @@ int handleEvent(eServiceEvent *ptr, ePyObject dest_list, const char* argstring, 
 //       The returned tuple is filled with all available infos... non avail is filled as None
 //       The position and existence of 'X' in the format string has no influence on the result tuple... its completely ignored..
 //   M = see X just 10 items are returned
+//   1-9 = see X just 1-9 items are returned ( this must be the last item )
 // then for each service follows a tuple
 //   first tuple entry is the servicereference (as string... use the ref.toString() function)
 //   the second is the type of query
@@ -1678,7 +1684,16 @@ PyObject *eEPGCache::lookupEvent(ePyObject list, ePyObject convertFunc)
 		--argcount;
 
 	bool forceReturnTen = strchr(argstring, 'M') ? true : false;
-	int returnTenItemsCount=1;
+	int forceMaxItems = (forceReturnTen) ? 10 : 0;
+	if (!forceReturnTen && !forceReturnOne && argcount > 0) 
+	{
+		char lastarg = argstring[argcount-1];
+		if ( lastarg > '0' && lastarg <= '9' )
+		{
+			forceMaxItems = lastarg - '0';
+		}
+	}
+	int returnMaxItemsCount=1;
 
 	if (convertFunc)
 	{
@@ -1809,14 +1824,14 @@ PyObject *eEPGCache::lookupEvent(ePyObject list, ePyObject convertFunc)
 					ePtr<eServiceEvent> evt;
 					while ( getNextTimeEntry(evt) != -1 )
 					{
-						if (forceReturnTen)  // GN return only 10 items
+						if (forceMaxItems)  // GN return only X items
 						{
-							if (returnTenItemsCount > 10)
+							if (returnMaxItemsCount > forceMaxItems)
 							{
-								//eDebug("[eEPGCache] tuple entry no 10 is reached");
+								//eDebug("[eEPGCache] tuple entry no x is reached");
 								break;
 							}
-							returnTenItemsCount++;
+							returnMaxItemsCount++;
 						}
 						if (handleEvent(evt, dest_list, argstring, argcount, service, nowTime, service_name, convertFunc, convertFuncArgs))
 							return 0;  // error

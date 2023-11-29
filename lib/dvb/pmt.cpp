@@ -980,7 +980,7 @@ int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 					std::string channelid = i->m_channel_id.toString();
 					if (channelid == alternativeChannelID)
 					{
-//						eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels channelid %s / buf %s", channelid.c_str(), buf);
+						eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels channelid %s / buf %s", channelid.c_str(), buf);
 						m_sr_channel = i->m_channel;
 						break;
 					}

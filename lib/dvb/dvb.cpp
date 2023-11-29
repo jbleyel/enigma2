@@ -207,10 +207,13 @@ eDVBResourceManager::eDVBResourceManager()
 
 void eDVBResourceManager::feStateChanged()
 {
+	eDebug("[eDVBResourceManager] feStateChanged");
 	int mask=0;
-	for (eSmartPtrList<eDVBRegisteredFrontend>::iterator i(m_frontend.begin()); i != m_frontend.end(); ++i)
+	for (eSmartPtrList<eDVBRegisteredFrontend>::iterator i(m_frontend.begin()); i != m_frontend.end(); ++i) {
+		eDebug("[eDVBResourceManager] feStateChanged slot %d / inuse %d" , i->m_frontend->getSlotID(), i->m_inuse);
 		if (i->m_inuse)
 			mask |= ( 1 << i->m_frontend->getSlotID() );
+	}
 	/* emit */ frontendUseMaskChanged(mask);
 }
 
