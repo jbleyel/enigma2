@@ -982,6 +982,7 @@ int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 					{
 						eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels channelid %s / buf %s", channelid.c_str(), buf);
 						m_sr_channel = i->m_channel;
+						res_mgr->feStateChanged();
 						break;
 					}
 				}
