@@ -386,6 +386,16 @@ PyObject *eStreamServer::getConnectedClients()
 	ret = PyList_New(cnt);
 	for (eSmartPtrList<eStreamClient>::iterator it = clients.begin(); it != clients.end(); ++it)
 	{
+		eServiceReferenceDVB dvbservice = it->getDVBService();
+
+		if(dvbservice) {
+			eDVBChannelID channel;
+			dvbservice.getChannelID(channel);
+			eDebug("[eStreamServer] getConnectedClients sref %s / channel %s",it->getServiceref().c_str(), channel.toString().c_str());
+		}
+		else
+			eDebug("[eStreamServer] getConnectedClients sref %s / NO DVB",it->getServiceref().c_str());
+
 		ePyObject tuple = PyTuple_New(3);
 		PyTuple_SET_ITEM(tuple, 0, PyString_FromString((char *)it->getRemoteHost().c_str()));
 		PyTuple_SET_ITEM(tuple, 1, PyString_FromString((char *)it->getServiceref().c_str()));
