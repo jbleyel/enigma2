@@ -143,6 +143,7 @@ def InitUsageConfig():
 		("google", _("Google DNS")),
 		("cloudflare", _("Cloudflare DNS")),
 		("quad9", _("Quad9 DNS")),
+		("nordvpn", _("NordVPN DNS")),
 		("opendns-familyshield", _("OpenDNS FamilyShield")),
 		("opendns-home", _("OpenDNS Home"))
 	])

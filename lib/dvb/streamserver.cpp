@@ -383,18 +383,66 @@ PyObject *eStreamServer::getConnectedClients()
 	ePyObject ret;
 	int idx = 0;
 	int cnt = clients.size();
+
+	std::list<eDVBResourceManager::active_channel> list;
+	ePtr<eDVBResourceManager> res_mgr;
+	if ( !eDVBResourceManager::getInstance( res_mgr ) )
+	{
+		res_mgr->getActiveChannels(list);
+	}
+
 	ret = PyList_New(cnt);
 	for (eSmartPtrList<eStreamClient>::iterator it = clients.begin(); it != clients.end(); ++it)
 	{
-		eServiceReferenceDVB dvbservice = it->getDVBService();
 
-		if(dvbservice) {
-			eDVBChannelID channel;
-			dvbservice.getChannelID(channel);
-			eDebug("[eStreamServer] getConnectedClients sref %s / channel %s",it->getServiceref().c_str(), channel.toString().c_str());
+		if(list.size()) {
+
+			eUsePtr<iDVBChannel> stream_channel;
+			eServiceReferenceDVB dvbservice = it->getDVBService();
+
+			if(dvbservice) {
+				eDVBChannelID channel;
+				dvbservice.getChannelID(channel);
+				eDebug("[eStreamServer] getConnectedClients sref %s / channel %s",it->getServiceref().c_str(), channel.toString().c_str());
+
+				for (std::list<eDVBResourceManager::active_channel>::iterator i(list.begin()); i != list.end(); ++i)
+				{
+					std::string channelid = i->m_channel_id.toString();
+					if (channelid == channel.toString().c_str())
+					{
+						stream_channel = i->m_channel;
+						break;
+					}
+				}
+			
+				if(stream_channel)
+				{
+					eDebug("[eStreamServer] getConnectedClients stream_channel");
+
+					ePtr<iDVBFrontend> frontend;
+					if(!stream_channel->getFrontend(frontend)) {
+						eDVBFrontend *f = (eDVBFrontend *)(iDVBFrontend *)frontend;
+						if (f)
+							eDebug("[eStreamServer] getConnectedClients %d slot %d frequency %d", f->getDVBID(), f->getSlotID(), frontend->readFrontendData(iFrontendInformation_ENUMS::frequency));
+						else
+						{
+							eDebug("[eStreamServer] getConnectedClients NO frontend");
+						}
+					}
+					else
+					{
+						eDebug("[eStreamServer] getConnectedClients NO getFrontend");
+					}
+				}
+				else
+				{
+					eDebug("[eStreamServer] getConnectedClients NO stream_channel");
+				}
+
+			}
+
 		}
-		else
-			eDebug("[eStreamServer] getConnectedClients sref %s / NO DVB",it->getServiceref().c_str());
+
 
 		ePyObject tuple = PyTuple_New(3);
 		PyTuple_SET_ITEM(tuple, 0, PyString_FromString((char *)it->getRemoteHost().c_str()));
