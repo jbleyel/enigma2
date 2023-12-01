@@ -379,7 +379,7 @@ bool eStreamServer::stopStreamClient(const std::string remotehost, const std::st
 	return false;
 }
 
-PyObject *eStreamServer::getConnectedChannel(int index)
+PyObject *eStreamServer::getConnectedClientDetails(int index)
 {
 	ePyObject ret;
 
@@ -467,7 +467,6 @@ PyObject *eStreamServer::getConnectedClients()
 	ePyObject ret;
 	int idx = 0;
 	int cnt = clients.size();
-
 	ret = PyList_New(cnt);
 	for (eSmartPtrList<eStreamClient>::iterator it = clients.begin(); it != clients.end(); ++it)
 	{

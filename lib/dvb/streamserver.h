@@ -73,7 +73,7 @@ public:
 	void stopStream();
 	bool stopStreamClient(const std::string remotehost, const std::string serviceref);
 	PyObject *getConnectedClients();
-	PyObject *getConnectedChannel(int index);
+	PyObject *getConnectedClientDetails(int index);
 
 };
 
