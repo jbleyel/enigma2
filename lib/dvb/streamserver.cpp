@@ -19,6 +19,7 @@
 
 #include <lib/dvb/streamserver.h>
 #include <lib/dvb/encoder.h>
+#include <lib/python/python_helpers.h>
 
 eStreamClient::eStreamClient(eStreamServer *handler, int socket, const std::string remotehost)
  : parent(handler), encoderFd(-1), streamFd(socket), streamThread(NULL), m_remotehost(remotehost), m_timeout(eTimer::create(eApp))
@@ -378,8 +379,10 @@ bool eStreamServer::stopStreamClient(const std::string remotehost, const std::st
 	return false;
 }
 
-eUsePtr<iDVBChannel> eStreamServer::getConnectedChannel(int index)
+PyObject *eStreamServer::getConnectedChannel(int index)
 {
+	ePyObject ret;
+
 	eUsePtr<iDVBChannel> stream_channel;
 	eServiceReferenceDVB dvbservice;
 
@@ -420,7 +423,41 @@ eUsePtr<iDVBChannel> eStreamServer::getConnectedChannel(int index)
 		}
 
 	}
-	return stream_channel;
+
+	ret = PyDict_New();
+
+	if(stream_channel)
+	{
+
+		ePtr<iDVBFrontend> fe;
+		if(!stream_channel->getFrontend(fe))
+		{
+
+			ePtr<iDVBFrontendData> fdata;
+			fe->getFrontendData(fdata);
+			if (fdata)
+			{
+				ePyObject fret = PyDict_New();;
+				frontendDataToDict(fret, fdata);
+				PutToDict(ret, "frontend", fret);
+			}
+
+
+			ePtr<iDVBTransponderData> tdata;
+			fe->getTransponderData(tdata, true);
+			if (tdata)
+			{
+				ePyObject tret = PyDict_New();;
+				transponderDataToDict(tret, tdata);
+				PutToDict(ret, "transponder", tret);
+			}
+
+		}
+
+	}
+
+	return ret;
+
 }
 
 
