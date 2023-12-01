@@ -73,6 +73,9 @@ public:
 	void stopStream();
 	bool stopStreamClient(const std::string remotehost, const std::string serviceref);
 	PyObject *getConnectedClients();
+
+	eUsePtr<iDVBChannel> getConnectedChannel(int index);
+
 };
 
 #endif /* __DVB_STREAMSERVER_H_ */
