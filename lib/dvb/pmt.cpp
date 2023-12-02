@@ -1160,7 +1160,7 @@ int eDVBServicePMTHandler::tuneExt(eServiceReferenceDVB &ref, ePtr<iTsSource> &s
 				m_channelStateChanged_connection);
 			m_last_channel_state = -1;
 			int _state;
-			channel->getState(_state);
+			m_channel->getState(_state);
 			eDebug("[eDVBServicePMTHandler] tuneExt state. %d" , _state);
 			channelStateChanged(m_channel);
 
