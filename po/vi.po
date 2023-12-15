@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-23 11:43+0000\n"
+"POT-Creation-Date: 2023-12-10 10:52+0000\n"
 "PO-Revision-Date: 2019-07-27 12:19+0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -1348,9 +1348,6 @@ msgstr "* Chỉ khả dụng nếu có nhiều giao diện được kích hoạt
 msgid "* current animation"
 msgstr "* hoạt hình hiện tại"
 
-msgid "+24"
-msgstr "+24"
-
 msgid "+24 Hours"
 msgstr ""
 
@@ -1361,9 +1358,6 @@ msgstr " "
 
 msgid "-"
 msgstr ""
-
-msgid "-24"
-msgstr "-24"
 
 msgid "-24 Hours"
 msgstr ""
@@ -1658,13 +1652,6 @@ msgid ""
 msgstr ""
 "Một bản ghi âm đã được bắt đầu:\n"
 "%s"
-
-msgid ""
-"A recording is currently running.\n"
-"What do you want to do?"
-msgstr ""
-"Một bản ghi hiện đang chạy.\n"
-"Bạn muốn làm gì?"
 
 msgid "A recording is currently running. Please stop the recording before trying to configure the positioner."
 msgstr "Một bản ghi hiện đang chạy. Vui lòng dừng ghi âm trước khi thử cấu hình bộ định vị."
@@ -2017,16 +2004,16 @@ msgstr ""
 msgid "Add provider"
 msgstr "Thêm nhà cung cấp"
 
-msgid "Add recording (enter recording duration)"
+msgid "Add recording (Enter recording duration)"
 msgstr "Thêm ghi âm (nhập thời lượng ghi)"
 
-msgid "Add recording (enter recording end time)"
+msgid "Add recording (Enter recording end time)"
 msgstr "Thêm ghi âm (nhập thời gian kết thúc ghi âm)"
 
-msgid "Add recording (indefinitely)"
+msgid "Add recording (Indefinitely - 24 hours)"
 msgstr "Thêm ghi âm (vô thời hạn)"
 
-msgid "Add recording (stop after current event)"
+msgid "Add recording (Stop after current event)"
 msgstr "Thêm ghi âm (dừng sau sự kiện hiện tại)"
 
 msgid "Add selected service to bouquet or alternative"
@@ -2187,6 +2174,12 @@ msgstr "Tất cả các nhà cung cấp dịch vụ"
 
 msgid "All ages"
 msgstr "Mọi lứa tuổi"
+
+msgid "All events down"
+msgstr "tất cả các sự kiện xuống"
+
+msgid "All events up"
+msgstr "tất cả các sự kiện lên"
 
 msgid "All files"
 msgstr ""
@@ -3175,9 +3168,6 @@ msgstr ""
 msgid "Bouquet Selector Navigation Actions"
 msgstr ""
 
-msgid "BouquetList"
-msgstr "Danh sách kênh"
-
 msgid "Bouvet Island"
 msgstr "Đảo Bouvet"
 
@@ -3798,10 +3788,10 @@ msgstr "Change next timer"
 msgid "Change pin code"
 msgstr "Thay đổi bộ đếm thời gian tiếp theo"
 
-msgid "Change recording (duration)"
+msgid "Change recording (Duration)"
 msgstr "Thay đổi bản ghi (thời lượng)"
 
-msgid "Change recording (end time)"
+msgid "Change recording (End time)"
 msgstr "Thay đổi ghi âm (thời gian kết thúc)"
 
 msgid "Change repeat and delay settings?"
@@ -5019,11 +5009,11 @@ msgid "Could not open the file %s!"
 msgstr "Không thể mở tệp% s!"
 
 #, python-format
-msgid "Could not record due to conflicting timer %s"
+msgid "Could not record due to conflicting timer: %s"
 msgstr "Không thể ghi do bộ đếm thời gian xung đột%s"
 
 #, python-format
-msgid "Could not record due to invalid service %s"
+msgid "Could not record due to invalid service: %s"
 msgstr "Không thể ghi do dịch vụ không hợp lệ%s"
 
 #, python-format
@@ -6953,6 +6943,9 @@ msgstr "Cho phép tự động quét nhanh"
 msgid "Enable auto fast scan for %s"
 msgstr "Cho phép tự động quét nhanh cho%s"
 
+msgid "Enable blinking rec symbol on the LCD Display in Standby."
+msgstr "Trong Bản ghi chờ trên màn hình LCD"
+
 msgid "Enable blinking rec symbol on the LCD Display."
 msgstr "Bật biểu tượng rec nhấp nháy trên Màn hình LCD"
 
@@ -7076,9 +7069,6 @@ msgstr "Kích hoạt giá trị hiện tại của thanh trượt ở cuối tha
 
 msgid "Enable to show the 'Restart Network' entry in the Extension Menu screen."
 msgstr ""
-
-msgid "Enable unlinked bouquets"
-msgstr "Cho phép gói kênh không liên kết"
 
 msgid "Enabled"
 msgstr "Đã bật"
@@ -8562,14 +8552,14 @@ msgstr ""
 msgid "Geolocation data has been used to set the time zone."
 msgstr ""
 
+msgid "Geolocation data is not available."
+msgstr ""
+
 msgid "Geolocation information cannot be retrieved, please try again later."
 msgstr ""
 
 #, python-format
 msgid "Geolocation information for %s %s"
-msgstr ""
-
-msgid "Geolocation data is not available."
 msgstr ""
 
 msgid "Georgia"
@@ -8648,17 +8638,23 @@ msgstr "Đi đến :"
 msgid "Goto Date/Time"
 msgstr "Ngày / Thời gian"
 
-msgid "Goto Date/Timer"
-msgstr "Ngày / Hẹn giờ"
-
-msgid "Goto Prime time"
+msgid "Goto Prime Time"
 msgstr "Giờ nguyên thủy"
 
 msgid "Goto X"
 msgstr "Đi X"
 
+msgid "Goto current channel and now"
+msgstr "đến kênh hiện tại và bây giờ"
+
 msgid "Goto deep standby"
 msgstr "đến chế độ - chờ"
+
+msgid "Goto first channel"
+msgstr "đến kênh đầu tiên"
+
+msgid "Goto last channel"
+msgstr "đến kênh cuối cùng"
 
 msgid "Goto next bouquet"
 msgstr "Tới gói kênh tiếp theo"
@@ -8668,6 +8664,9 @@ msgstr "Tới kênh tiếp theo"
 
 msgid "Goto next event"
 msgstr "Sự kiện tiếp theo"
+
+msgid "Goto now"
+msgstr "đến bây giờ"
 
 msgid "Goto position"
 msgstr "Vị trí Goto"
@@ -9455,9 +9454,6 @@ msgstr ""
 msgid "In progress"
 msgstr "Trong tiến trình"
 
-msgid "Enable blinking rec symbol on the LCD Display in Standby."
-msgstr "Trong Bản ghi chờ trên màn hình LCD"
-
 msgid "Inaccessible"
 msgstr ""
 
@@ -9743,14 +9739,14 @@ msgstr "Cài đặt plugin từ IPK ..."
 msgid "Installing plugins from feed ..."
 msgstr "Cài đặt plugin từ nguồn cấp dữ liệu ..."
 
+msgid "Instant Recording Actions"
+msgstr ""
+
 msgid "Instant record"
 msgstr "Ghi lại ngay lập tức"
 
 msgid "Instant recording location"
 msgstr "Vị trí ghi âm tức thì"
-
-msgid "Instant recording..."
-msgstr "Ghi âm tức thì ..."
 
 msgid "Interface"
 msgstr "Giao diện"
@@ -9848,6 +9844,9 @@ msgid "Ireland"
 msgstr "Ai-len"
 
 msgid "Irish"
+msgstr ""
+
+msgid "Is the keyboard working?"
 msgstr ""
 
 msgid "Is this setting ok?"
@@ -11021,9 +11020,6 @@ msgstr ""
 "Cấu hình sai kết nối không thể kết nối từ bộ chỉnh % s sang bộ chỉnh% s!\n"
 "Tùy chọn Tuner % s \"được kết nối\" hiện bị tắt"
 
-msgid "Missing "
-msgstr "Còn thiếu "
-
 msgid "Mobile connection"
 msgstr ""
 
@@ -11812,15 +11808,18 @@ msgid "Next"
 msgstr "Kế tiếp"
 
 #, fuzzy
-msgid "Next bouquet"
+msgid "Next Bouquet"
 msgstr "Tới gói kênh tiếp theo"
+
+#, fuzzy
+msgid "Next Page"
+msgstr "trang tiếp theo của sự kiện"
+
+msgid "Next channel page"
+msgstr "trang tiếp theo của sự kiện"
 
 msgid "Next higher resolution"
 msgstr "nghị quyết cao hơn tiếp theo"
-
-#, fuzzy
-msgid "Next page"
-msgstr "trang tiếp theo của sự kiện"
 
 msgid "Next quad PiP channel"
 msgstr "Kênh quad PiP tiếp theo"
@@ -11917,7 +11916,7 @@ msgstr "Không có mục trong lcn db. Hãy làm một dịch vụ quét."
 msgid "No error"
 msgstr "lỗi không rõ"
 
-msgid "No event info found, recording indefinitely."
+msgid "No event information found, recording default is 24 hours."
 msgstr "Không tìm thấy thông tin sự kiện, ghi lại vô thời hạn."
 
 msgid "No fast winding possible yet.. but you can use the number buttons to skip forward/backward!"
@@ -12105,6 +12104,9 @@ msgstr ""
 
 msgid "None"
 msgstr "Không"
+
+msgid "NordVPN DNS"
+msgstr ""
 
 msgid "Norfolk Island"
 msgstr "Đảo Norfolk"
@@ -12815,6 +12817,10 @@ msgstr "Thiết lập mật khẩu"
 
 msgid "Password changed."
 msgstr "Mật khẩu đã được thay đổi."
+
+#, python-format
+msgid "Path '%s' missing!"
+msgstr ""
 
 msgid "Path to save not exist: '/tmp/'"
 msgstr "Đường dẫn lưu không tồn tại: '/ tmp /'"
@@ -13649,12 +13655,15 @@ msgid "Previous"
 msgstr "Trước"
 
 #, fuzzy
-msgid "Previous bouquet"
+msgid "Previous Bouquet"
 msgstr "Tới gói kênh trước"
 
 #, fuzzy
-msgid "Previous page"
+msgid "Previous Page"
 msgstr "Trước"
+
+msgid "Previous channel page"
+msgstr "trang kênh trước"
 
 #, fuzzy
 msgid "Previous/Next bouquet"
@@ -14157,7 +14166,7 @@ msgid "Record started! Stopping time shift now ..."
 msgstr "Ghi lại bắt đầu! Dừng timeshift ngay bây giờ ..."
 
 #, python-format
-msgid "Record time limited due to conflicting timer %s"
+msgid "Record time limited due to conflicting timer: %s"
 msgstr "Ghi lại thời gian giới hạn do bộ đếm thời gian xung đột%s"
 
 msgid "Record write error (no space on disk?)"
@@ -14183,10 +14192,6 @@ msgstr "Hộp công cụ ghi có thể ghi"
 
 msgid "Recording"
 msgstr "Ghi âm"
-
-#, fuzzy
-msgid "Recording Actions"
-msgstr "Cài đặt ghi âm"
 
 msgid "Recording Settings"
 msgstr "Cài đặt ghi âm"
@@ -15527,6 +15532,9 @@ msgstr "Nếu được đặt thành 'có', bạn có thể xem trước các k�
 msgid "Select 'Yes' to enable preview of channels while in the EPG list. Press 'OK' to preview the currently selected channel. Press 'OK' again to exit the EPG and zap to the selected channel. Press 'EXIT' to exit the EPG and return to the previously selected channel."
 msgstr "Nếu được đặt thành 'có', bạn có thể xem trước các kênh trong danh sách kênh. Nhấn 'OK' để xem trước kênh đã chọn, nhấn 'OK' thứ 2 để thoát và chuyển sang kênh đó, nhấn 'EXIT' để quay lại kênh bạn đã bắt đầu."
 
+msgid "Select 'Yes' to enable the loading of unlinked user bouquets. That is, user bouquets that are not included in the bouquets.tv or bouquets.radio files will be loaded. This allows you to, for example, create bouquets that do not conflict with, or get replaced by, bouquets that came from settings packages."
+msgstr "Khi được bật enigma2 sẽ tải các tập tin người dùng không liên kết. Điều này có nghĩa là các userbouquets có sẵn, nhưng không được bao gồm trong các tập tin bouquets.tv hoặc bouquets.radio, vẫn sẽ được tải. Điều này cho phép bạn lấy ví dụ để giữ bó hoa người dùng của riêng bạn trong khi cài đặt được cài đặt được nâng cấp"
+
 msgid "Select 'Yes' to enable use of the LEFT/RIGHT buttons to move PageUp/PageDown when the LEFT/RIGHT buttons are otherwise undefined. This provides legacy navigation for users who prefer it."
 msgstr ""
 
@@ -16038,6 +16046,9 @@ msgstr ""
 msgid "Select the delay before the timer activates."
 msgstr ""
 
+msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for boxes with multiple satellite tuners."
+msgstr ""
+
 msgid "Select the desired function and click on 'OK' to assign it. Use 'CH+/-' to toggle between the lists. Select an assigned function and click on 'OK' to deassign it. Use 'NEXT/PREVIOUS' to change the order of the assigned functions."
 msgstr "Chọn chức năng mong muốn và nhấp vào \"OK\" để gán nó. Sử dụng \"CH +/-\" để chuyển đổi giữa các danh sách. Chọn một chức năng được chỉ định và nhấp vào \"OK\" để hủy gán nó. Sử dụng \"Tiếp theo / Trước\" để thay đổi thứ tự của các chức năng được gán."
 
@@ -16089,6 +16100,9 @@ msgid "Select the locale from a menu"
 msgstr "Chọn ngôn ngữ bàn phím ảo từ menu"
 
 msgid "Select the location in which to store the recording:"
+msgstr ""
+
+msgid "Select the location where the picon files will be installed."
 msgstr ""
 
 msgid "Select the manufacturer of your SCR device. If the manufacturer is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
@@ -16178,9 +16192,6 @@ msgid "Select the starting/initial column to be activated on File Commander star
 msgstr ""
 
 msgid "Select the tags that should be used for this recording."
-msgstr ""
-
-msgid "Select the location where the picon files will be installed."
 msgstr ""
 
 msgid "Select the time after which this timer can start."
@@ -16565,7 +16576,7 @@ msgstr "Dịch vụ có thể được nhóm trong bó hoa. Khi được bật, 
 msgid "Set As Startup Service"
 msgstr "đặt làm dịch vụ khởi động"
 
-msgid "Set Base time"
+msgid "Set Base Time"
 msgstr "Đặt thời gian"
 
 msgid "Set CI Boot delay."
@@ -17216,6 +17227,9 @@ msgid "Show SD as"
 msgstr "Hiển thị SD dưới dạng"
 
 msgid "Show Security packages"
+msgstr ""
+
+msgid "Show Service Information"
 msgstr ""
 
 msgid "Show Setting packages"
@@ -18004,19 +18018,11 @@ msgid "Slot %s: %s as USB Recovery"
 msgstr ""
 
 #, python-format
-msgid "Slot '%s'"
+msgid "Slot '%s' %s"
 msgstr ""
 
 #, python-format
-msgid "Slot '%s':  %s"
-msgstr "vị trí%s -%s"
-
-#, python-format
-msgid "Slot '%s':  %s  -  Current"
-msgstr "vị trí%s -%s (hình ảnh hiện tại)"
-
-#, python-format
-msgid "Slot '%s': %s%s"
+msgid "Slot '%s' %s: %s%s"
 msgstr ""
 
 msgid "Slot Manager"
@@ -18177,11 +18183,11 @@ msgstr "Xin lỗi, cấu hình MiniDLNA bị thiếu"
 msgid "Sorry feeds are down for maintenance, please try again later."
 msgstr "Xin lỗi, nguồn cấp dữ liệu bị ngừng bảo trì, vui lòng thử lại sau."
 
+msgid "Sorry it is only possible to record 2 channels at once!"
+msgstr "Xin lỗi chỉ có thể ghi 2 kênh cùng một lúc"
+
 msgid "Sorry no backups found!"
 msgstr "Xin lỗi không tìm thấy bản sao lưu!"
-
-msgid "Sorry only possible to record 2 channels at once"
-msgstr "Xin lỗi chỉ có thể ghi 2 kênh cùng một lúc"
 
 msgid "Sorry uShare Config is Missing"
 msgstr "Xin lỗi uShare Config bị thiếu"
@@ -18378,6 +18384,9 @@ msgstr "Tương tự như trong hoạt động"
 msgid "Start Wizard"
 msgstr ""
 
+msgid "Start an instant recording"
+msgstr ""
+
 msgid "Start date"
 msgstr ""
 
@@ -18393,6 +18402,9 @@ msgstr "Bắt đầu từ đầu"
 msgid "Start instant recording"
 msgstr "Bắt đầu ghi âm ngay lập tức"
 
+msgid "Start instant recording?"
+msgstr ""
+
 msgid "Start mode"
 msgstr "Chế độ bắt đầu"
 
@@ -18401,9 +18413,6 @@ msgstr "Bắt đầu giải mã ngoại tuyến"
 
 msgid "Start recording current event"
 msgstr ""
-
-msgid "Start recording?"
-msgstr "Bắt đầu ghi âm?"
 
 msgid "Start teletext"
 msgstr "Bắt đầu teletext"
@@ -18613,10 +18622,19 @@ msgstr "Vị trí lưu trữ"
 msgid "Stream"
 msgstr "Suối"
 
+msgid "Stream Relay Settings"
+msgstr ""
+
+msgid "Stream Relay Setup Actions"
+msgstr ""
+
 msgid "Stream Relay URL"
 msgstr ""
 
 msgid "Stream Relay port"
+msgstr ""
+
+msgid "Stream Relay switch delay"
 msgstr ""
 
 msgid "Stream request"
@@ -19705,20 +19723,17 @@ msgstr "Tùy chọn này cho phép bạn có thể buộc các chế độ HDR10
 msgid "This option allows you can force the HLG Modes for UHD"
 msgstr "Tùy chọn này cho phép bạn có thể buộc các chế độ HLG cho UHD"
 
-msgid "This option allows you to choose how to display elapsed time, as + or -."
-msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị thời gian đã trôi qua là + hoặc -"
-
 msgid "This option allows you choose how to display remaining time, or elapsed time, or both."
 msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị thời gian còn lại hoặc thời gian đã trôi qua hoặc cả hai."
-
-msgid "This option allows you choose if the display shows the time or nothing in Standby."
-msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị Thời gian hoặc không có gì trong Chế độ chờ"
 
 msgid "This option allows you choose how to display the remaining/elapsed time for live tv."
 msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị thời gian còn lại / trôi qua cho truyền hình trực tiếp."
 
 msgid "This option allows you choose how to display the remaining/elapsed time for media playback."
 msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị thời gian còn lại / trôi qua để phát lại phương tiện."
+
+msgid "This option allows you choose if the display shows the time or nothing in Standby."
+msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị Thời gian hoặc không có gì trong Chế độ chờ"
 
 msgid "This option allows you choose the background color of transparent picons."
 msgstr "Tùy chọn này cho phép bạn chọn màu nền của picons trong suốt."
@@ -19779,6 +19794,9 @@ msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị 720p 24Hz tr�
 
 msgid "This option allows you to choose how to display SD progressive 24Hz on your TV. (as not all TV's support these resolutions)"
 msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị SD lũy tiến 24Hz trên TV của bạn. (vì không phải tất cả các TV đều hỗ trợ các độ phân giải này)"
+
+msgid "This option allows you to choose how to display elapsed time, as + or -."
+msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị thời gian đã trôi qua là + hoặc -"
 
 msgid "This option allows you to choose how to display standard definition video on your TV."
 msgstr "Tùy chọn này cho phép bạn chọn cách hiển thị video độ nét tiêu chuẩn trên TV của bạn."
@@ -20082,13 +20100,13 @@ msgstr "Lưu thời gian không thành công!"
 msgid "Time shift save recording (Select event)"
 msgstr "Timeshift lưu bản ghi (Chọn sự kiện)"
 
-msgid "Time shift save recording (stop after current event)"
+msgid "Time shift save recording (Stop after current event)"
 msgstr "Timeshift lưu bản ghi (dừng sau sự kiện hiện tại)"
 
 msgid "Time shift saved to your hard disk drive!"
 msgstr "Timeshift lưu vào đĩa cứng của bạn!"
 
-msgid "Time shift will get saved at end of event!"
+msgid "Time shift will get saved at end of event."
 msgstr "Timeshift sẽ được lưu vào cuối sự kiện!"
 
 msgid "Time style"
@@ -20657,6 +20675,10 @@ msgstr ""
 
 msgid "USB Stick"
 msgstr "Thanh USB"
+
+#, python-format
+msgid "USB slot %s%s"
+msgstr ""
 
 msgid "USB switch ERROR! - already on USB"
 msgstr "Công tắc USB LRI! - đã có trên USB"
@@ -21592,6 +21614,9 @@ msgstr ""
 msgid "Volume up"
 msgstr "Tăng âm lượng"
 
+msgid "Vu+ MultiBoot"
+msgstr ""
+
 msgid "W"
 msgstr "W"
 
@@ -21845,9 +21870,6 @@ msgstr ""
 msgid "When 'Enabled', the timer view will show the free space on the target device. This will wake the device from sleep mode."
 msgstr ""
 
-msgid "Select 'Yes' to enable the loading of unlinked user bouquets. That is, user bouquets that are not included in the bouquets.tv or bouquets.radio files will be loaded. This allows you to, for example, create bouquets that do not conflict with, or get replaced by, bouquets that came from settings packages."
-msgstr "Khi được bật enigma2 sẽ tải các tập tin người dùng không liên kết. Điều này có nghĩa là các userbouquets có sẵn, nhưng không được bao gồm trong các tập tin bouquets.tv hoặc bouquets.radio, vẫn sẽ được tải. Điều này cho phép bạn lấy ví dụ để giữ bó hoa người dùng của riêng bạn trong khi cài đặt được cài đặt được nâng cấp"
-
 msgid "When enabled the PiP can be closed by the exit button."
 msgstr "Khi được bật, PiP có thể được đóng bằng nút thoát."
 
@@ -21868,9 +21890,6 @@ msgstr "Khi được bật, dữ liệu AIT sẽ được bao gồm trong các l
 
 msgid "When enabled, EIT data will be included in http streams. This allows a client receiver to show EPG."
 msgstr "Khi được bật, dữ liệu EIT sẽ được bao gồm trong các luồng http. Điều này cho phép một máy thu khách hiển thị EPG."
-
-msgid "When enabled, Enigma2 will load unlinked bouquets. This means that bouquets that are available, but not included in the bouquets.tv or bouquets.radio files, will still be loaded. This allows you for example to keep your own user bouquet while installed settings are upgraded"
-msgstr "Khi được bật enigma2 sẽ tải các tập tin người dùng không liên kết. Điều này có nghĩa là các userbouquets có sẵn, nhưng không được bao gồm trong các tập tin bouquets.tv hoặc bouquets.radio, vẫn sẽ được tải. Điều này cho phép bạn lấy ví dụ để giữ bó hoa người dùng của riêng bạn trong khi cài đặt được cài đặt được nâng cấp"
 
 msgid "When enabled, SDT, BAT data will be included in http streams."
 msgstr ""
@@ -22661,12 +22680,6 @@ msgstr "phiêu lưu / tây / chiến tranh"
 msgid "advertisement/shopping"
 msgstr "quảng cáo / mua sắm"
 
-msgid "all events down"
-msgstr "tất cả các sự kiện xuống"
-
-msgid "all events up"
-msgstr "tất cả các sự kiện lên"
-
 msgid "all up/down"
 msgstr "tất cả lên / xuống"
 
@@ -23017,18 +23030,6 @@ msgstr "làm vườn"
 msgid "get the cards' server"
 msgstr "lấy máy chủ của thẻ"
 
-msgid "goto current channel and now"
-msgstr "đến kênh hiện tại và bây giờ"
-
-msgid "goto first channel"
-msgstr "đến kênh đầu tiên"
-
-msgid "goto last channel"
-msgstr "đến kênh cuối cùng"
-
-msgid "goto now"
-msgstr "đến bây giờ"
-
 msgid "grab this frame as bitmap"
 msgstr "lấy khung này làm bitmap"
 
@@ -23252,9 +23253,6 @@ msgstr "tin tức / vấn đề thời sự (chung)"
 msgid "news/weather report"
 msgstr "báo cáo tin tức / thời tiết"
 
-msgid "next channel page"
-msgstr "trang tiếp theo của sự kiện"
-
 msgid "no CAId selected"
 msgstr "không chọn CAId"
 
@@ -23365,9 +23363,6 @@ msgstr "văn hóa đại chúng / nghệ thuật truyền thống"
 
 msgid "pre-school children's program"
 msgstr "chương trình trẻ em"
-
-msgid "previous channel page"
-msgstr "trang kênh trước"
 
 msgid "provid:"
 msgstr "cung cấp:"
@@ -23759,6 +23754,52 @@ msgstr "có (giữ thức ăn)"
 
 msgid "®"
 msgstr ""
+
+#~ msgid "+24"
+#~ msgstr "+24"
+
+#~ msgid "-24"
+#~ msgstr "-24"
+
+#~ msgid ""
+#~ "A recording is currently running.\n"
+#~ "What do you want to do?"
+#~ msgstr ""
+#~ "Một bản ghi hiện đang chạy.\n"
+#~ "Bạn muốn làm gì?"
+
+#~ msgid "BouquetList"
+#~ msgstr "Danh sách kênh"
+
+#~ msgid "Instant recording..."
+#~ msgstr "Ghi âm tức thì ..."
+
+#~ msgid "Missing "
+#~ msgstr "Còn thiếu "
+
+#, fuzzy
+#~ msgid "Recording Actions"
+#~ msgstr "Cài đặt ghi âm"
+
+#~ msgid "Start recording?"
+#~ msgstr "Bắt đầu ghi âm?"
+
+#~ msgid "Goto Date/Timer"
+#~ msgstr "Ngày / Hẹn giờ"
+
+#, python-format
+#~ msgid "Slot '%s':  %s"
+#~ msgstr "vị trí%s -%s"
+
+#, python-format
+#~ msgid "Slot '%s':  %s  -  Current"
+#~ msgstr "vị trí%s -%s (hình ảnh hiện tại)"
+
+#~ msgid "Enable unlinked bouquets"
+#~ msgstr "Cho phép gói kênh không liên kết"
+
+#~ msgid "When enabled, Enigma2 will load unlinked bouquets. This means that bouquets that are available, but not included in the bouquets.tv or bouquets.radio files, will still be loaded. This allows you for example to keep your own user bouquet while installed settings are upgraded"
+#~ msgstr "Khi được bật enigma2 sẽ tải các tập tin người dùng không liên kết. Điều này có nghĩa là các userbouquets có sẵn, nhưng không được bao gồm trong các tập tin bouquets.tv hoặc bouquets.radio, vẫn sẽ được tải. Điều này cho phép bạn lấy ví dụ để giữ bó hoa người dùng của riêng bạn trong khi cài đặt được cài đặt được nâng cấp"
 
 #~ msgid "none"
 #~ msgstr "không"

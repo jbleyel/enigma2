@@ -961,7 +961,6 @@ int eDVBServicePMTHandler::compareAudioSubtitleCode(const std::string &subtitleT
 
 int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 {
-	eDebug("[eDVBServicePMTHandler] getChannel %s", m_reference.toString().c_str());
 	if (!m_sr_channel && !m_reference.alternativeurl.empty())
 	{
 
@@ -982,7 +981,6 @@ int eDVBServicePMTHandler::getChannel(eUsePtr<iDVBChannel> &channel)
 					std::string channelid = i->m_channel_id.toString();
 					if (channelid == alternativeChannelID)
 					{
-						eDebug("[eDVBServicePMTHandler] getChannel getActiveChannels channelid %s / buf %s", channelid.c_str(), buf);
 						m_sr_channel = i->m_channel;
 						res_mgr->feStateChanged();
 						break;

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: hu_po v3.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-23 11:43+0000\n"
+"POT-Creation-Date: 2023-12-10 10:52+0000\n"
 "PO-Revision-Date: 2022-03-10 14:56+0000\n"
 "Last-Translator: H. Árkosi Róbert <robreg@zsurob.hu>\n"
 "Language-Team: Hungarian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/hu/>\n"
@@ -1376,9 +1376,6 @@ msgstr "* Csak akkor érvényes, ha egynél több interfész aktív."
 msgid "* current animation"
 msgstr "* Aktuális konfiguráció aktiválása"
 
-msgid "+24"
-msgstr "+1 nap"
-
 msgid "+24 Hours"
 msgstr ""
 
@@ -1390,9 +1387,6 @@ msgstr " "
 #, fuzzy
 msgid "-"
 msgstr "-"
-
-msgid "-24"
-msgstr "-1 nap"
 
 msgid "-24 Hours"
 msgstr ""
@@ -1687,13 +1681,6 @@ msgid ""
 msgstr ""
 "A felvétel elindul:\n"
 "%s"
-
-msgid ""
-"A recording is currently running.\n"
-"What do you want to do?"
-msgstr ""
-"Egy felvétel folyamatban van. \n"
-"Mit szeretne tenni?"
 
 msgid "A recording is currently running. Please stop the recording before trying to configure the positioner."
 msgstr "Egy felvétel folyamatban van. Kérjük, állítsa le a felvételt, mielőtt beállítaná a pozícionálót."
@@ -2046,16 +2033,16 @@ msgstr "Új címke hozzáadása "
 msgid "Add provider"
 msgstr "Szolgáltató hozzáadása"
 
-msgid "Add recording (enter recording duration)"
+msgid "Add recording (Enter recording duration)"
 msgstr "Felvétel készítése (adja meg a felvétel hosszának idejét)"
 
-msgid "Add recording (enter recording end time)"
+msgid "Add recording (Enter recording end time)"
 msgstr "Felvétel készítése (adja meg a felvétel befejezésének idejét)"
 
-msgid "Add recording (indefinitely)"
+msgid "Add recording (Indefinitely - 24 hours)"
 msgstr "Felvétel készítése (ameddig le nem állítják)"
 
-msgid "Add recording (stop after current event)"
+msgid "Add recording (Stop after current event)"
 msgstr "Felvétel készítése (csak az adott műsor felvétele)"
 
 msgid "Add selected service to bouquet or alternative"
@@ -2214,6 +2201,12 @@ msgstr "Összes csatorna"
 
 msgid "All ages"
 msgstr "Minden korosztály"
+
+msgid "All events down"
+msgstr "minden esemény lefelé"
+
+msgid "All events up"
+msgstr "minden esemény fel"
 
 msgid "All files"
 msgstr ""
@@ -3196,9 +3189,6 @@ msgstr ""
 msgid "Bouquet Selector Navigation Actions"
 msgstr ""
 
-msgid "BouquetList"
-msgstr "Csatornacsomag lista"
-
 msgid "Bouvet Island"
 msgstr "Bouvet-sziget"
 
@@ -3811,10 +3801,10 @@ msgstr "A következő időzítő módosítása"
 msgid "Change pin code"
 msgstr "PIN-kód cseréje"
 
-msgid "Change recording (duration)"
+msgid "Change recording (Duration)"
 msgstr "Felvétel módosítása (hossz)"
 
-msgid "Change recording (end time)"
+msgid "Change recording (End time)"
 msgstr "Felvétel módosítása (befejezés időpontja)"
 
 msgid "Change repeat and delay settings?"
@@ -5025,11 +5015,11 @@ msgid "Could not open the file %s!"
 msgstr "Nem sikerült megnyitni a %s fájlt!"
 
 #, python-format
-msgid "Could not record due to conflicting timer %s"
+msgid "Could not record due to conflicting timer: %s"
 msgstr "A felvétel nem tud elindulni időzítés ütközés miatt: %s"
 
 #, python-format
-msgid "Could not record due to invalid service %s"
+msgid "Could not record due to invalid service: %s"
 msgstr "Az %s érvénytelen csatorna miatt a felvétel nem lehetséges"
 
 #, python-format
@@ -6939,6 +6929,9 @@ msgstr "Automatikus gyorskeresés engedélyezése"
 msgid "Enable auto fast scan for %s"
 msgstr "Automatikus gyorskeresés engedélyezése ehhez: %s"
 
+msgid "Enable blinking rec symbol on the LCD Display in Standby."
+msgstr "Felvétel jelzése az LCD kijelzőn készenléti módban"
+
 msgid "Enable blinking rec symbol on the LCD Display."
 msgstr "Engedélyezze a villogó felvételi jelzést az LCD kijelzőn"
 
@@ -7061,9 +7054,6 @@ msgstr "Engedélyezze a csúszka aktuális értékét a csúszka végén."
 
 msgid "Enable to show the 'Restart Network' entry in the Extension Menu screen."
 msgstr ""
-
-msgid "Enable unlinked bouquets"
-msgstr "Leválasztott csatornacsomagok engedélyezése"
 
 msgid "Enabled"
 msgstr "Engedélyezve"
@@ -8537,14 +8527,14 @@ msgstr ""
 msgid "Geolocation data has been used to set the time zone."
 msgstr ""
 
+msgid "Geolocation data is not available."
+msgstr ""
+
 msgid "Geolocation information cannot be retrieved, please try again later."
 msgstr ""
 
 #, python-format
 msgid "Geolocation information for %s %s"
-msgstr ""
-
-msgid "Geolocation data is not available."
 msgstr ""
 
 msgid "Georgia"
@@ -8623,17 +8613,23 @@ msgstr "Ide:"
 msgid "Goto Date/Time"
 msgstr "Ugrás dátumra"
 
-msgid "Goto Date/Timer"
-msgstr "Ugrás megadott dátumhoz/időzítőhez"
-
-msgid "Goto Prime time"
+msgid "Goto Prime Time"
 msgstr "Ugrás a Főműsoridőre"
 
 msgid "Goto X"
 msgstr "Goto X"
 
+msgid "Goto current channel and now"
+msgstr "ugrás az aktuális csatornára és most"
+
 msgid "Goto deep standby"
 msgstr "kikapcsolás"
+
+msgid "Goto first channel"
+msgstr "ugrás az első csatornára"
+
+msgid "Goto last channel"
+msgstr "ugrás az utolsó csatornára"
 
 msgid "Goto next bouquet"
 msgstr "Következő csatornacsomagra"
@@ -8643,6 +8639,9 @@ msgstr "Kövvetkező csatornára"
 
 msgid "Goto next event"
 msgstr "Következő eseményre"
+
+msgid "Goto now"
+msgstr "ugrás most"
 
 msgid "Goto position"
 msgstr "Pozícióra ugrás"
@@ -9425,9 +9424,6 @@ msgstr ""
 msgid "In progress"
 msgstr "Folyamatban"
 
-msgid "Enable blinking rec symbol on the LCD Display in Standby."
-msgstr "Felvétel jelzése az LCD kijelzőn készenléti módban"
-
 msgid "Inaccessible"
 msgstr ""
 
@@ -9712,14 +9708,14 @@ msgstr "Bővítmény telepítése IPK-ból..."
 msgid "Installing plugins from feed ..."
 msgstr "Bővítmény telepítése Feed-ből..."
 
+msgid "Instant Recording Actions"
+msgstr ""
+
 msgid "Instant record"
 msgstr "Azonnali felvétel"
 
 msgid "Instant recording location"
 msgstr "Azonnali felvételek helye"
-
-msgid "Instant recording..."
-msgstr "Felvétel azonnali indítása..."
 
 msgid "Interface"
 msgstr "Interfész"
@@ -9817,6 +9813,9 @@ msgid "Ireland"
 msgstr "Írország"
 
 msgid "Irish"
+msgstr ""
+
+msgid "Is the keyboard working?"
 msgstr ""
 
 msgid "Is this setting ok?"
@@ -10986,9 +10985,6 @@ msgstr ""
 "Konfiguráltalan unicable csatlakozás a %s tunerből %s tunerbe!\n"
 "A \"csatlakoztatott\" %s tuner opció le lett tiltva"
 
-msgid "Missing "
-msgstr "Hiányzó "
-
 msgid "Mobile connection"
 msgstr ""
 
@@ -11766,14 +11762,17 @@ msgctxt "now/next: 'next' event label"
 msgid "Next"
 msgstr "Következő"
 
-msgid "Next bouquet"
+msgid "Next Bouquet"
 msgstr "Következő lista"
+
+msgid "Next Page"
+msgstr "Következő oldal"
+
+msgid "Next channel page"
+msgstr "következő csatornaoldal"
 
 msgid "Next higher resolution"
 msgstr "következő magasabb felbontás"
-
-msgid "Next page"
-msgstr "Következő oldal"
 
 msgid "Next quad PiP channel"
 msgstr "Következő quad Kép-a-Képben csatorna"
@@ -11867,7 +11866,7 @@ msgstr "Nincs bejegyzés lcn db-ben. Kérjük, végezzen egy csatorna keresést.
 msgid "No error"
 msgstr "Nincs hiba"
 
-msgid "No event info found, recording indefinitely."
+msgid "No event information found, recording default is 24 hours."
 msgstr "Nincs esemény infó, felvétel korlátlanul."
 
 msgid "No fast winding possible yet.. but you can use the number buttons to skip forward/backward!"
@@ -12055,6 +12054,9 @@ msgstr ""
 
 msgid "None"
 msgstr "Nincs"
+
+msgid "NordVPN DNS"
+msgstr ""
 
 msgid "Norfolk Island"
 msgstr "Norfolk-szigetek"
@@ -12763,6 +12765,10 @@ msgstr "Jelszó beállítása"
 
 msgid "Password changed."
 msgstr "Jelszó módosítva."
+
+#, python-format
+msgid "Path '%s' missing!"
+msgstr ""
 
 msgid "Path to save not exist: '/tmp/'"
 msgstr "A mentéshez nem létező elérési út: '/tmp/'"
@@ -13597,11 +13603,14 @@ msgstr "Előnézeti menü"
 msgid "Previous"
 msgstr "Előző"
 
-msgid "Previous bouquet"
+msgid "Previous Bouquet"
 msgstr "Előző lista"
 
-msgid "Previous page"
+msgid "Previous Page"
 msgstr "Előző oldal"
+
+msgid "Previous channel page"
+msgstr "előző csatornaoldal"
 
 msgid "Previous/Next bouquet"
 msgstr "előző/következő lista"
@@ -14098,7 +14107,7 @@ msgid "Record started! Stopping time shift now ..."
 msgstr "A felvétel elkezdődött! A Timeshift megállítása most ..."
 
 #, python-format
-msgid "Record time limited due to conflicting timer %s"
+msgid "Record time limited due to conflicting timer: %s"
 msgstr "A felvételi idő rövidítve lett időzítés ütközés miatt: %s"
 
 msgid "Record write error (no space on disk?)"
@@ -14124,10 +14133,6 @@ msgstr "Rögzíthető média eszköztár"
 
 msgid "Recording"
 msgstr "Felvétel"
-
-#, fuzzy
-msgid "Recording Actions"
-msgstr "Felvétel beállítása"
 
 msgid "Recording Settings"
 msgstr "Felvétel beállítása"
@@ -15456,6 +15461,9 @@ msgstr "Ha az 'igen'-t választja, megtekintheti az adott csatorna előnézeti k
 msgid "Select 'Yes' to enable preview of channels while in the EPG list. Press 'OK' to preview the currently selected channel. Press 'OK' again to exit the EPG and zap to the selected channel. Press 'EXIT' to exit the EPG and return to the previously selected channel."
 msgstr "Ha az 'igen'-t választja, a csatornát előnézetben tekintheti meg. Nyomja meg az \"OK\" gombot a csatorna előnézetéhez, nyomja meg másodszor az \"OK\" gombot a csatornaváltáshoz és kilépéshez. Nyomja meg az \"EXIT\" gombot a visszatéréshez."
 
+msgid "Select 'Yes' to enable the loading of unlinked user bouquets. That is, user bouquets that are not included in the bouquets.tv or bouquets.radio files will be loaded. This allows you to, for example, create bouquets that do not conflict with, or get replaced by, bouquets that came from settings packages."
+msgstr "Ha engedélyezi, a leválasztott felhasználói csatornacsomagok is betöltődnek. Ez azt jelenti, hogy az olyan felhasználói csatornacsomagok is betöltődnek, amelyek léteznek, de nincsnek benne a bouquets.tv vagy bouquets.radio fájlban. Ez lehetőséget ad arra, hogy a saját csatornacsomagjait megtartsa, ha a csatornák frissülnek"
+
 msgid "Select 'Yes' to enable use of the LEFT/RIGHT buttons to move PageUp/PageDown when the LEFT/RIGHT buttons are otherwise undefined. This provides legacy navigation for users who prefer it."
 msgstr ""
 
@@ -15967,6 +15975,9 @@ msgstr ""
 msgid "Select the delay before the timer activates."
 msgstr ""
 
+msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for boxes with multiple satellite tuners."
+msgstr ""
+
 msgid "Select the desired function and click on 'OK' to assign it. Use 'CH+/-' to toggle between the lists. Select an assigned function and click on 'OK' to deassign it. Use 'NEXT/PREVIOUS' to change the order of the assigned functions."
 msgstr "Válassza ki a kívánt funkciót, és kattintson rá az \"OK\" gombra. Használja a \"CH +/-\" billentyűt a listák közötti váltáshoz. Válasszon ki egy hozzárendelt függvényt, és kattintson az \"OK\" gombra annak hozzárendeléséhez. Használja a \"Next / Previous\" gombot a hozzárendelt funkciók sorrendjének megváltoztatásához."
 
@@ -16018,6 +16029,9 @@ msgid "Select the locale from a menu"
 msgstr "A virtuális billentyűzet területi beállításának kiválasztása menüből"
 
 msgid "Select the location in which to store the recording:"
+msgstr ""
+
+msgid "Select the location where the picon files will be installed."
 msgstr ""
 
 msgid "Select the manufacturer of your SCR device. If the manufacturer is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
@@ -16107,9 +16121,6 @@ msgid "Select the starting/initial column to be activated on File Commander star
 msgstr ""
 
 msgid "Select the tags that should be used for this recording."
-msgstr ""
-
-msgid "Select the location where the picon files will be installed."
 msgstr ""
 
 msgid "Select the time after which this timer can start."
@@ -16491,7 +16502,7 @@ msgstr "A csatornák csoportosíthatók csatornacsomagokba. Mikor engedélyezve 
 msgid "Set As Startup Service"
 msgstr "beállítás indítási csatornának"
 
-msgid "Set Base time"
+msgid "Set Base Time"
 msgstr "Alapidő beállítása"
 
 msgid "Set CI Boot delay."
@@ -17139,6 +17150,9 @@ msgid "Show SD as"
 msgstr "Megjelenítés SD-ként"
 
 msgid "Show Security packages"
+msgstr ""
+
+msgid "Show Service Information"
 msgstr ""
 
 msgid "Show Setting packages"
@@ -17926,19 +17940,11 @@ msgid "Slot %s: %s as USB Recovery"
 msgstr ""
 
 #, python-format
-msgid "Slot '%s'"
+msgid "Slot '%s' %s"
 msgstr ""
 
 #, python-format
-msgid "Slot '%s':  %s"
-msgstr "bővítőhely%s - %s"
-
-#, python-format
-msgid "Slot '%s':  %s  -  Current"
-msgstr "bővítőhely%s - %s (aktuális lemezkép)"
-
-#, python-format
-msgid "Slot '%s': %s%s"
+msgid "Slot '%s' %s: %s%s"
 msgstr ""
 
 msgid "Slot Manager"
@@ -18099,11 +18105,11 @@ msgstr "Sajnálom, de a MiniDLNA Config hiányzik"
 msgid "Sorry feeds are down for maintenance, please try again later."
 msgstr "Sajnos a szolgáltatás le van állítva a karbantartás miatt. Kérem, próbálja meg később."
 
+msgid "Sorry it is only possible to record 2 channels at once!"
+msgstr "Sajnos, csak két csatorna rögzítésére van lehetőség egyszerre"
+
 msgid "Sorry no backups found!"
 msgstr "Sajnáljuk, mentések nem találhatók!"
-
-msgid "Sorry only possible to record 2 channels at once"
-msgstr "Sajnos, csak két csatorna rögzítésére van lehetőség egyszerre"
 
 msgid "Sorry uShare Config is Missing"
 msgstr "Sajnálom, de az uShare Config hiányzik"
@@ -18298,6 +18304,9 @@ msgstr "Ugyanaz, mint az aktív"
 msgid "Start Wizard"
 msgstr ""
 
+msgid "Start an instant recording"
+msgstr ""
+
 msgid "Start date"
 msgstr ""
 
@@ -18313,6 +18322,9 @@ msgstr "Indítsa az elejétől"
 msgid "Start instant recording"
 msgstr "Azonalli felvétel indítása"
 
+msgid "Start instant recording?"
+msgstr ""
+
 msgid "Start mode"
 msgstr "Indulás módja"
 
@@ -18321,9 +18333,6 @@ msgstr "Offline dekódolás indítása"
 
 msgid "Start recording current event"
 msgstr ""
-
-msgid "Start recording?"
-msgstr "Indítsam a felvételt?"
 
 msgid "Start teletext"
 msgstr "Teletext indítása"
@@ -18528,10 +18537,19 @@ msgstr "Tárolt pozíció"
 msgid "Stream"
 msgstr "Adatfolyam"
 
+msgid "Stream Relay Settings"
+msgstr ""
+
+msgid "Stream Relay Setup Actions"
+msgstr ""
+
 msgid "Stream Relay URL"
 msgstr ""
 
 msgid "Stream Relay port"
+msgstr ""
+
+msgid "Stream Relay switch delay"
 msgstr ""
 
 msgid "Stream request"
@@ -19623,20 +19641,17 @@ msgstr "Ezzel az opcióval ki tudja kényszeríteni a HDR10 módot az UHD felbon
 msgid "This option allows you can force the HLG Modes for UHD"
 msgstr "Ezzel az opcióval ki tudja kényszeríteni a HLG módot az UHD felbontásnál"
 
-msgid "This option allows you to choose how to display elapsed time, as + or -."
-msgstr "Ezzel a beállítással megadhatja, hogy hogyan jelenjen meg az eltelt idő, + vagy - kijelzéssel mutassa. Az 'igen' választása a +, a 'nem' választása a -"
-
 msgid "This option allows you choose how to display remaining time, or elapsed time, or both."
 msgstr "Ezzel az opcióval kiválaszthatja, hogyan jelenítse meg a hátralévő időt, az eltelt időt vagy mindkettőt."
-
-msgid "This option allows you choose if the display shows the time or nothing in Standby."
-msgstr "Ezzel az opcióval kiválaszthatja, hogy miként jelenjen meg az Idő vagy a semmi a készenléti állapotban"
 
 msgid "This option allows you choose how to display the remaining/elapsed time for live tv."
 msgstr "Ezzel az opcióval kiválaszthatja, hogyan jelenítse meg az élő TV adás Hátralévő/Eltelt időjét."
 
 msgid "This option allows you choose how to display the remaining/elapsed time for media playback."
 msgstr "Ezzel az opcióval kiválaszthatja, hogyan jelenítse meg az Média adás Hátralévő/Eltelt időjét."
+
+msgid "This option allows you choose if the display shows the time or nothing in Standby."
+msgstr "Ezzel az opcióval kiválaszthatja, hogy miként jelenjen meg az Idő vagy a semmi a készenléti állapotban"
 
 msgid "This option allows you choose the background color of transparent picons."
 msgstr "Ez az opció lehetővé teszi az átlátszó pikonok háttérszínének megválasztását."
@@ -19697,6 +19712,9 @@ msgstr "Ezzel az opcióval kiválaszthatja, hogyan jelenítse meg a 720p 24Hz-et
 
 msgid "This option allows you to choose how to display SD progressive 24Hz on your TV. (as not all TV's support these resolutions)"
 msgstr "Ezzel az opcióval kiválaszthatja, hogyan jelenítse meg a progresszív 24 Hz-es SD-t TV-készülékén. (mivel nem minden TV támogatja ezeket a felbontásokat)"
+
+msgid "This option allows you to choose how to display elapsed time, as + or -."
+msgstr "Ezzel a beállítással megadhatja, hogy hogyan jelenjen meg az eltelt idő, + vagy - kijelzéssel mutassa. Az 'igen' választása a +, a 'nem' választása a -"
 
 msgid "This option allows you to choose how to display standard definition video on your TV."
 msgstr "Ez az opció lehetővé teszi, hogy kiválassza, hogyan jelenítse meg a normál felbontású videót a tévében."
@@ -19997,13 +20015,13 @@ msgstr "Timeshift felvétel mentése sikertelen!"
 msgid "Time shift save recording (Select event)"
 msgstr "Timeshift folyamatban. Válasszon egy opciót."
 
-msgid "Time shift save recording (stop after current event)"
+msgid "Time shift save recording (Stop after current event)"
 msgstr "Timeshift felvétel (leállítás az aktuális műsor után)"
 
 msgid "Time shift saved to your hard disk drive!"
 msgstr "Timeshift felvétel mentése a háttértárra!"
 
-msgid "Time shift will get saved at end of event!"
+msgid "Time shift will get saved at end of event."
 msgstr "Az esemény végén lesz a Timeshift mentve!"
 
 msgid "Time style"
@@ -20569,6 +20587,10 @@ msgstr ""
 
 msgid "USB Stick"
 msgstr "USB-stick"
+
+#, python-format
+msgid "USB slot %s%s"
+msgstr ""
 
 msgid "USB switch ERROR! - already on USB"
 msgstr "USB kapcsoló HIBA! - már az USB-n"
@@ -21498,6 +21520,9 @@ msgstr ""
 msgid "Volume up"
 msgstr "Hangerő fel"
 
+msgid "Vu+ MultiBoot"
+msgstr ""
+
 msgid "W"
 msgstr "Ny"
 
@@ -21748,9 +21773,6 @@ msgstr ""
 msgid "When 'Enabled', the timer view will show the free space on the target device. This will wake the device from sleep mode."
 msgstr ""
 
-msgid "Select 'Yes' to enable the loading of unlinked user bouquets. That is, user bouquets that are not included in the bouquets.tv or bouquets.radio files will be loaded. This allows you to, for example, create bouquets that do not conflict with, or get replaced by, bouquets that came from settings packages."
-msgstr "Ha engedélyezi, a leválasztott felhasználói csatornacsomagok is betöltődnek. Ez azt jelenti, hogy az olyan felhasználói csatornacsomagok is betöltődnek, amelyek léteznek, de nincsnek benne a bouquets.tv vagy bouquets.radio fájlban. Ez lehetőséget ad arra, hogy a saját csatornacsomagjait megtartsa, ha a csatornák frissülnek"
-
 msgid "When enabled the PiP can be closed by the exit button."
 msgstr "Kép-a-Képben bezárása a távirányító EXIT gomb megnyomásakor."
 
@@ -21771,9 +21793,6 @@ msgstr "A HTTP jelfolyamba kerüljön bele a DVB-ből származó AID adatcsomag 
 
 msgid "When enabled, EIT data will be included in http streams. This allows a client receiver to show EPG."
 msgstr "A HTTP jelfolyamba kerüljön bele a DVB-ből származó EIT adatcsomag is. Ezáltal a fogadó készülék képes lesz EPG-t is megjeleníteni."
-
-msgid "When enabled, Enigma2 will load unlinked bouquets. This means that bouquets that are available, but not included in the bouquets.tv or bouquets.radio files, will still be loaded. This allows you for example to keep your own user bouquet while installed settings are upgraded"
-msgstr "Ha engedélyezi, a leválasztott csatornacsomagok is betöltődnek. Ez azt jelenti, hogy az olyan csatornacsomagok is betöltődnek, amelyek léteznek, de nincsnek benne a bouquets.tv vagy bouquets.radio fájlban. Ez lehetőséget ad arra, hogy a saját csatornacsomagjait megtartsa, ha a csatornák frissülnek"
 
 msgid "When enabled, SDT, BAT data will be included in http streams."
 msgstr ""
@@ -22561,12 +22580,6 @@ msgstr "kaland/western/háború"
 msgid "advertisement/shopping"
 msgstr "reklám/televíziós vásárlás"
 
-msgid "all events down"
-msgstr "minden esemény lefelé"
-
-msgid "all events up"
-msgstr "minden esemény fel"
-
 msgid "all up/down"
 msgstr "minden fel/le"
 
@@ -22909,18 +22922,6 @@ msgstr "kertészet"
 msgid "get the cards' server"
 msgstr "kártyaszerver"
 
-msgid "goto current channel and now"
-msgstr "ugrás az aktuális csatornára és most"
-
-msgid "goto first channel"
-msgstr "ugrás az első csatornára"
-
-msgid "goto last channel"
-msgstr "ugrás az utolsó csatornára"
-
-msgid "goto now"
-msgstr "ugrás most"
-
 msgid "grab this frame as bitmap"
 msgstr "pillanatkép mentése"
 
@@ -23139,9 +23140,6 @@ msgstr "hírek/gazdaság (általános)"
 msgid "news/weather report"
 msgstr "hírek/időjárás"
 
-msgid "next channel page"
-msgstr "következő csatornaoldal"
-
 msgid "no CAId selected"
 msgstr "nincs kijelölt CAId"
 
@@ -23252,9 +23250,6 @@ msgstr "néprajz"
 
 msgid "pre-school children's program"
 msgstr "óvodásoknak"
-
-msgid "previous channel page"
-msgstr "előző csatornaoldal"
 
 msgid "provid:"
 msgstr "szolgáltató Id:"
@@ -23645,6 +23640,52 @@ msgstr "igen (állapotok megtartása)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "+24"
+#~ msgstr "+1 nap"
+
+#~ msgid "-24"
+#~ msgstr "-1 nap"
+
+#~ msgid ""
+#~ "A recording is currently running.\n"
+#~ "What do you want to do?"
+#~ msgstr ""
+#~ "Egy felvétel folyamatban van. \n"
+#~ "Mit szeretne tenni?"
+
+#~ msgid "BouquetList"
+#~ msgstr "Csatornacsomag lista"
+
+#~ msgid "Instant recording..."
+#~ msgstr "Felvétel azonnali indítása..."
+
+#~ msgid "Missing "
+#~ msgstr "Hiányzó "
+
+#, fuzzy
+#~ msgid "Recording Actions"
+#~ msgstr "Felvétel beállítása"
+
+#~ msgid "Start recording?"
+#~ msgstr "Indítsam a felvételt?"
+
+#~ msgid "Goto Date/Timer"
+#~ msgstr "Ugrás megadott dátumhoz/időzítőhez"
+
+#, python-format
+#~ msgid "Slot '%s':  %s"
+#~ msgstr "bővítőhely%s - %s"
+
+#, python-format
+#~ msgid "Slot '%s':  %s  -  Current"
+#~ msgstr "bővítőhely%s - %s (aktuális lemezkép)"
+
+#~ msgid "Enable unlinked bouquets"
+#~ msgstr "Leválasztott csatornacsomagok engedélyezése"
+
+#~ msgid "When enabled, Enigma2 will load unlinked bouquets. This means that bouquets that are available, but not included in the bouquets.tv or bouquets.radio files, will still be loaded. This allows you for example to keep your own user bouquet while installed settings are upgraded"
+#~ msgstr "Ha engedélyezi, a leválasztott csatornacsomagok is betöltődnek. Ez azt jelenti, hogy az olyan csatornacsomagok is betöltődnek, amelyek léteznek, de nincsnek benne a bouquets.tv vagy bouquets.radio fájlban. Ez lehetőséget ad arra, hogy a saját csatornacsomagjait megtartsa, ha a csatornák frissülnek"
 
 #~ msgid "none"
 #~ msgstr "nincs"

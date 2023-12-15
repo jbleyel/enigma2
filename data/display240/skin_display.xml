@@ -314,9 +314,6 @@
 			<convert type="MovieInfo">FileSize</convert>
 		</widget>
 	</screen>
-	<screen name="EMCSelectionSummary" position="0,0" size="240,80">
-		<panel name="EMCSelection_summary" />
-	</screen>
 	<screen name="EMCMoviePlayerSummary" position="0,0" size="240,80"> 
 		<widget source="session.CurrentService" render="Label" position="0,0" size="240,40" foregroundColor="#FFFF00" font="FdLcD;26" valign="top" halign="center" >
 			<convert type="ServiceName">Name</convert>
@@ -343,13 +340,7 @@
 		</widget>
 		<panel name="SummaryClockPanel" />
 	</screen>	
-		
-<!-- Infopanel -->
-	<screen name="InfopanelSummary" position="0,0" size="240,80">
-		<widget source="parent.Title" render="Label" position="0,0" foregroundColor="#FFFF00" size="240,40" font="FdLcD;35" halign="center" valign="top" />
-		<widget source="parent.summary_description" render="Label" position="0,40" size="240,40" font="FdLcD;30" halign="center" valign="center"  />
-	</screen>
-	
+			
 <!-- Quickmenü -->
 	<screen name="QuickMenuSummary" position="0,0" size="240,80">
 		<widget source="parent.Title" render="Label" position="0,0" foregroundColor="#FFFF00" size="240,40" font="FdLcD;35" halign="center" valign="top" />

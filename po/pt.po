@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-23 11:43+0000\n"
+"POT-Creation-Date: 2023-12-10 10:52+0000\n"
 "PO-Revision-Date: 2023-06-26 04:40+0000\n"
 "Last-Translator: Pedro Figueiredo <pabfig@sapo.pt>\n"
 "Language-Team: Portuguese <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/pt/>\n"
@@ -1373,9 +1373,6 @@ msgstr "* Só disponível se houver mais que um interface activo."
 msgid "* current animation"
 msgstr "* animação actual"
 
-msgid "+24"
-msgstr "+24"
-
 msgid "+24 Hours"
 msgstr "+24 Horas"
 
@@ -1385,9 +1382,6 @@ msgstr ", "
 
 msgid "-"
 msgstr "-"
-
-msgid "-24"
-msgstr "-24"
 
 msgid "-24 Hours"
 msgstr "-24 Horas"
@@ -1694,14 +1688,6 @@ msgid ""
 msgstr ""
 "Uma gravação foi iniciada:\n"
 "%s"
-
-#
-msgid ""
-"A recording is currently running.\n"
-"What do you want to do?"
-msgstr ""
-"Uma gravação está a decorrer.\n"
-"O que deseja fazer?"
 
 #
 msgid "A recording is currently running. Please stop the recording before trying to configure the positioner."
@@ -2094,16 +2080,16 @@ msgstr "Adicionar nova etiqueta"
 msgid "Add provider"
 msgstr "Adicionar operador"
 
-msgid "Add recording (enter recording duration)"
+msgid "Add recording (Enter recording duration)"
 msgstr "Adicionar gravação (inserir duração)"
 
-msgid "Add recording (enter recording end time)"
+msgid "Add recording (Enter recording end time)"
 msgstr "Adicionar gravação (inserir hora de finalização"
 
-msgid "Add recording (indefinitely)"
+msgid "Add recording (Indefinitely - 24 hours)"
 msgstr "Adicionar gravação (indefinitivamente)"
 
-msgid "Add recording (stop after current event)"
+msgid "Add recording (Stop after current event)"
 msgstr "Adicionar gravação (paragem após evento actual)"
 
 msgid "Add selected service to bouquet or alternative"
@@ -2274,6 +2260,12 @@ msgstr "Todos os serviços"
 
 msgid "All ages"
 msgstr "Todas as idades"
+
+msgid "All events down"
+msgstr ""
+
+msgid "All events up"
+msgstr ""
 
 msgid "All files"
 msgstr "Todos os ficheiros"
@@ -3306,9 +3298,6 @@ msgstr "Ações do seletor do Bouquet"
 msgid "Bouquet Selector Navigation Actions"
 msgstr "Ações de navegação do seletor do Bouquet"
 
-msgid "BouquetList"
-msgstr "Lista de Bouquet"
-
 msgid "Bouvet Island"
 msgstr "Bouvet Island"
 
@@ -3938,10 +3927,10 @@ msgstr "Alterar próximo temporizador"
 msgid "Change pin code"
 msgstr "Alterar o PIN"
 
-msgid "Change recording (duration)"
+msgid "Change recording (Duration)"
 msgstr "Alterar gravação (duração)"
 
-msgid "Change recording (end time)"
+msgid "Change recording (End time)"
 msgstr "Alterar gravação (hora de fim)"
 
 msgid "Change repeat and delay settings?"
@@ -5205,11 +5194,11 @@ msgid "Could not open the file %s!"
 msgstr "Não foi possível abrir o ficheiro %s!"
 
 #, python-format
-msgid "Could not record due to conflicting timer %s"
+msgid "Could not record due to conflicting timer: %s"
 msgstr "Não foi possível gravar devido a conflito com um temporizador %s"
 
 #, python-format
-msgid "Could not record due to invalid service %s"
+msgid "Could not record due to invalid service: %s"
 msgstr ""
 
 #, python-format
@@ -7199,6 +7188,9 @@ msgstr ""
 msgid "Enable auto fast scan for %s"
 msgstr ""
 
+msgid "Enable blinking rec symbol on the LCD Display in Standby."
+msgstr ""
+
 msgid "Enable blinking rec symbol on the LCD Display."
 msgstr ""
 
@@ -7321,9 +7313,6 @@ msgid "Enable to display the current value of the slider at end of the slider ba
 msgstr ""
 
 msgid "Enable to show the 'Restart Network' entry in the Extension Menu screen."
-msgstr ""
-
-msgid "Enable unlinked bouquets"
 msgstr ""
 
 #
@@ -8853,14 +8842,14 @@ msgstr ""
 msgid "Geolocation data has been used to set the time zone."
 msgstr ""
 
+msgid "Geolocation data is not available."
+msgstr ""
+
 msgid "Geolocation information cannot be retrieved, please try again later."
 msgstr ""
 
 #, python-format
 msgid "Geolocation information for %s %s"
-msgstr ""
-
-msgid "Geolocation data is not available."
 msgstr ""
 
 msgid "Georgia"
@@ -8945,18 +8934,24 @@ msgstr "Ir Para :"
 msgid "Goto Date/Time"
 msgstr ""
 
-msgid "Goto Date/Timer"
-msgstr ""
-
-msgid "Goto Prime time"
+msgid "Goto Prime Time"
 msgstr ""
 
 #
 msgid "Goto X"
 msgstr "Ir para X"
 
+msgid "Goto current channel and now"
+msgstr ""
+
 msgid "Goto deep standby"
 msgstr "colocar em suspensão"
+
+msgid "Goto first channel"
+msgstr "ir para o primeiro canal"
+
+msgid "Goto last channel"
+msgstr "ir para o último canal"
 
 msgid "Goto next bouquet"
 msgstr ""
@@ -8966,6 +8961,9 @@ msgstr ""
 
 msgid "Goto next event"
 msgstr "Ir para o evento seguinte"
+
+msgid "Goto now"
+msgstr "ir agora"
 
 #
 msgid "Goto position"
@@ -9774,9 +9772,6 @@ msgstr ""
 msgid "In progress"
 msgstr "Em progresso"
 
-msgid "Enable blinking rec symbol on the LCD Display in Standby."
-msgstr ""
-
 msgid "Inaccessible"
 msgstr ""
 
@@ -10075,16 +10070,15 @@ msgstr "Instalar plugins a partir do IPK ..."
 msgid "Installing plugins from feed ..."
 msgstr "Instalar plugins a partir do feed ..."
 
+msgid "Instant Recording Actions"
+msgstr ""
+
 msgid "Instant record"
 msgstr ""
 
 #
 msgid "Instant recording location"
 msgstr "Local de gravação instantânea"
-
-#
-msgid "Instant recording..."
-msgstr "Gravação instantânea..."
 
 msgid "Interface"
 msgstr ""
@@ -10189,6 +10183,9 @@ msgid "Ireland"
 msgstr ""
 
 msgid "Irish"
+msgstr ""
+
+msgid "Is the keyboard working?"
 msgstr ""
 
 msgid "Is this setting ok?"
@@ -11398,9 +11395,6 @@ msgid ""
 "Tuner %s option \"connected to\" are disabled now"
 msgstr ""
 
-msgid "Missing "
-msgstr "Em falta "
-
 msgid "Mobile connection"
 msgstr ""
 
@@ -12208,15 +12202,18 @@ msgid "Next"
 msgstr "Seguinte"
 
 #
-msgid "Next bouquet"
+msgid "Next Bouquet"
 msgstr "Próximo bouquet"
+
+msgid "Next Page"
+msgstr "Próxima página"
+
+msgid "Next channel page"
+msgstr "Próxima página do canal"
 
 #
 msgid "Next higher resolution"
 msgstr "próxima resolução superior"
-
-msgid "Next page"
-msgstr "Próxima página"
 
 msgid "Next quad PiP channel"
 msgstr ""
@@ -12319,7 +12316,7 @@ msgid "No error"
 msgstr "Sem erro"
 
 #
-msgid "No event info found, recording indefinitely."
+msgid "No event information found, recording default is 24 hours."
 msgstr "Não foi encontrada informação do programa, a gravar indefinidamente."
 
 #
@@ -12530,6 +12527,9 @@ msgstr ""
 #
 msgid "None"
 msgstr "Nenhum"
+
+msgid "NordVPN DNS"
+msgstr ""
 
 msgid "Norfolk Island"
 msgstr ""
@@ -13247,6 +13247,10 @@ msgid "Password Settings"
 msgstr "Configurações da senha"
 
 msgid "Password changed."
+msgstr ""
+
+#, python-format
+msgid "Path '%s' missing!"
 msgstr ""
 
 msgid "Path to save not exist: '/tmp/'"
@@ -14165,11 +14169,14 @@ msgid "Previous"
 msgstr ""
 
 #
-msgid "Previous bouquet"
+msgid "Previous Bouquet"
 msgstr "Bouquet anterior"
 
-msgid "Previous page"
+msgid "Previous Page"
 msgstr "Página anterior"
+
+msgid "Previous channel page"
+msgstr ""
 
 msgid "Previous/Next bouquet"
 msgstr "Anterior / Próximo Bouquet"
@@ -14692,7 +14699,7 @@ msgstr ""
 
 #
 #, python-format
-msgid "Record time limited due to conflicting timer %s"
+msgid "Record time limited due to conflicting timer: %s"
 msgstr "Tempo de gravação limitado devido a conflito %s"
 
 msgid "Record write error (no space on disk?)"
@@ -14719,9 +14726,6 @@ msgstr ""
 #
 msgid "Recording"
 msgstr "A gravar"
-
-msgid "Recording Actions"
-msgstr "Ações de Gravação"
 
 msgid "Recording Settings"
 msgstr "Definições de gravação"
@@ -16132,6 +16136,9 @@ msgstr ""
 msgid "Select 'Yes' to enable preview of channels while in the EPG list. Press 'OK' to preview the currently selected channel. Press 'OK' again to exit the EPG and zap to the selected channel. Press 'EXIT' to exit the EPG and return to the previously selected channel."
 msgstr ""
 
+msgid "Select 'Yes' to enable the loading of unlinked user bouquets. That is, user bouquets that are not included in the bouquets.tv or bouquets.radio files will be loaded. This allows you to, for example, create bouquets that do not conflict with, or get replaced by, bouquets that came from settings packages."
+msgstr "Quando activo serão carregados bouquets desassociados. Desta forma os bouquets que estão disponíveis, mas não incluídos no bouquet.tv ou bouquet.radio, serão também carregados. Isto permite por ex. que possa manter o seu próprio bouquet enquanto instala definições actualizadas"
+
 msgid "Select 'Yes' to enable use of the LEFT/RIGHT buttons to move PageUp/PageDown when the LEFT/RIGHT buttons are otherwise undefined. This provides legacy navigation for users who prefer it."
 msgstr ""
 
@@ -16656,6 +16663,9 @@ msgstr ""
 msgid "Select the delay before the timer activates."
 msgstr ""
 
+msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for boxes with multiple satellite tuners."
+msgstr ""
+
 msgid "Select the desired function and click on 'OK' to assign it. Use 'CH+/-' to toggle between the lists. Select an assigned function and click on 'OK' to deassign it. Use 'NEXT/PREVIOUS' to change the order of the assigned functions."
 msgstr ""
 
@@ -16706,6 +16716,9 @@ msgid "Select the locale from a menu"
 msgstr "Seleccionar o local a partir de um menu"
 
 msgid "Select the location in which to store the recording:"
+msgstr ""
+
+msgid "Select the location where the picon files will be installed."
 msgstr ""
 
 msgid "Select the manufacturer of your SCR device. If the manufacturer is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
@@ -16794,9 +16807,6 @@ msgid "Select the starting/initial column to be activated on File Commander star
 msgstr ""
 
 msgid "Select the tags that should be used for this recording."
-msgstr ""
-
-msgid "Select the location where the picon files will be installed."
 msgstr ""
 
 msgid "Select the time after which this timer can start."
@@ -17188,7 +17198,7 @@ msgid "Set As Startup Service"
 msgstr "marcar com canal inicial"
 
 #
-msgid "Set Base time"
+msgid "Set Base Time"
 msgstr "Definir hora base"
 
 msgid "Set CI Boot delay."
@@ -17850,6 +17860,9 @@ msgid "Show SD as"
 msgstr "Mostrar SD como"
 
 msgid "Show Security packages"
+msgstr ""
+
+msgid "Show Service Information"
 msgstr ""
 
 msgid "Show Setting packages"
@@ -18677,19 +18690,11 @@ msgid "Slot %s: %s as USB Recovery"
 msgstr ""
 
 #, python-format
-msgid "Slot '%s'"
+msgid "Slot '%s' %s"
 msgstr ""
 
 #, python-format
-msgid "Slot '%s':  %s"
-msgstr ""
-
-#, python-format
-msgid "Slot '%s':  %s  -  Current"
-msgstr ""
-
-#, python-format
-msgid "Slot '%s': %s%s"
+msgid "Slot '%s' %s: %s%s"
 msgstr ""
 
 msgid "Slot Manager"
@@ -18857,10 +18862,10 @@ msgstr ""
 msgid "Sorry feeds are down for maintenance, please try again later."
 msgstr "Desculpe os feeds estão fora do ar para manutenção, por favor, tente novamente mais tarde."
 
-msgid "Sorry no backups found!"
+msgid "Sorry it is only possible to record 2 channels at once!"
 msgstr ""
 
-msgid "Sorry only possible to record 2 channels at once"
+msgid "Sorry no backups found!"
 msgstr ""
 
 msgid "Sorry uShare Config is Missing"
@@ -19058,6 +19063,9 @@ msgstr "Iniciar o RDS interactivo"
 msgid "Start Wizard"
 msgstr ""
 
+msgid "Start an instant recording"
+msgstr ""
+
 msgid "Start date"
 msgstr ""
 
@@ -19074,6 +19082,9 @@ msgstr "Começar do início"
 msgid "Start instant recording"
 msgstr "Iniciar gravação de imediato"
 
+msgid "Start instant recording?"
+msgstr ""
+
 msgid "Start mode"
 msgstr "Modo de arranque"
 
@@ -19082,9 +19093,6 @@ msgstr "Iniciar desencriptação offline"
 
 msgid "Start recording current event"
 msgstr ""
-
-msgid "Start recording?"
-msgstr "Iniciar a gravação?"
 
 msgid "Start teletext"
 msgstr "Iniciar teletexto"
@@ -19311,10 +19319,19 @@ msgstr "Posição guardada"
 msgid "Stream"
 msgstr ""
 
+msgid "Stream Relay Settings"
+msgstr ""
+
+msgid "Stream Relay Setup Actions"
+msgstr ""
+
 msgid "Stream Relay URL"
 msgstr ""
 
 msgid "Stream Relay port"
+msgstr ""
+
+msgid "Stream Relay switch delay"
 msgstr ""
 
 msgid "Stream request"
@@ -20407,20 +20424,17 @@ msgstr "Esta opção permite-lhe forçar os modos HDR10 para UHD"
 msgid "This option allows you can force the HLG Modes for UHD"
 msgstr "Esta opção permite-lhe forçar os modos HLG para UHD"
 
-msgid "This option allows you to choose how to display elapsed time, as + or -."
-msgstr ""
-
 msgid "This option allows you choose how to display remaining time, or elapsed time, or both."
 msgstr ""
-
-msgid "This option allows you choose if the display shows the time or nothing in Standby."
-msgstr "Esta opção permite-lhe escolher como apresentar a hora ou nada no modo de espera"
 
 msgid "This option allows you choose how to display the remaining/elapsed time for live tv."
 msgstr ""
 
 msgid "This option allows you choose how to display the remaining/elapsed time for media playback."
 msgstr ""
+
+msgid "This option allows you choose if the display shows the time or nothing in Standby."
+msgstr "Esta opção permite-lhe escolher como apresentar a hora ou nada no modo de espera"
 
 msgid "This option allows you choose the background color of transparent picons."
 msgstr ""
@@ -20480,6 +20494,9 @@ msgid "This option allows you to choose how to display 720p 24Hz on your TV. (as
 msgstr ""
 
 msgid "This option allows you to choose how to display SD progressive 24Hz on your TV. (as not all TV's support these resolutions)"
+msgstr ""
+
+msgid "This option allows you to choose how to display elapsed time, as + or -."
 msgstr ""
 
 msgid "This option allows you to choose how to display standard definition video on your TV."
@@ -20788,13 +20805,13 @@ msgstr ""
 msgid "Time shift save recording (Select event)"
 msgstr ""
 
-msgid "Time shift save recording (stop after current event)"
+msgid "Time shift save recording (Stop after current event)"
 msgstr ""
 
 msgid "Time shift saved to your hard disk drive!"
 msgstr ""
 
-msgid "Time shift will get saved at end of event!"
+msgid "Time shift will get saved at end of event."
 msgstr ""
 
 msgid "Time style"
@@ -21395,6 +21412,10 @@ msgid "USB 3.0 (Back, outer)"
 msgstr ""
 
 msgid "USB Stick"
+msgstr ""
+
+#, python-format
+msgid "USB slot %s%s"
 msgstr ""
 
 msgid "USB switch ERROR! - already on USB"
@@ -22361,6 +22382,9 @@ msgstr ""
 msgid "Volume up"
 msgstr "Aumentar volume"
 
+msgid "Vu+ MultiBoot"
+msgstr ""
+
 #
 msgid "W"
 msgstr "W"
@@ -22625,9 +22649,6 @@ msgstr ""
 msgid "When 'Enabled', the timer view will show the free space on the target device. This will wake the device from sleep mode."
 msgstr ""
 
-msgid "Select 'Yes' to enable the loading of unlinked user bouquets. That is, user bouquets that are not included in the bouquets.tv or bouquets.radio files will be loaded. This allows you to, for example, create bouquets that do not conflict with, or get replaced by, bouquets that came from settings packages."
-msgstr "Quando activo serão carregados bouquets desassociados. Desta forma os bouquets que estão disponíveis, mas não incluídos no bouquet.tv ou bouquet.radio, serão também carregados. Isto permite por ex. que possa manter o seu próprio bouquet enquanto instala definições actualizadas"
-
 msgid "When enabled the PiP can be closed by the exit button."
 msgstr ""
 
@@ -22648,9 +22669,6 @@ msgstr "Quando activado, os dados AIT serão incluídos em Streams HTTP. Isto pe
 
 msgid "When enabled, EIT data will be included in http streams. This allows a client receiver to show EPG."
 msgstr "Quando activado, os dados do EIT serão incluídos em Streams HTTP. Isto permite ao receptor cliente mostrar Guia de Programação."
-
-msgid "When enabled, Enigma2 will load unlinked bouquets. This means that bouquets that are available, but not included in the bouquets.tv or bouquets.radio files, will still be loaded. This allows you for example to keep your own user bouquet while installed settings are upgraded"
-msgstr ""
 
 msgid "When enabled, SDT, BAT data will be included in http streams."
 msgstr ""
@@ -23468,12 +23486,6 @@ msgstr "aventura/guerra"
 msgid "advertisement/shopping"
 msgstr "anúncios/vendas"
 
-msgid "all events down"
-msgstr ""
-
-msgid "all events up"
-msgstr ""
-
 msgid "all up/down"
 msgstr "todos para cima/para baixo"
 
@@ -23841,18 +23853,6 @@ msgstr "jardinagem"
 msgid "get the cards' server"
 msgstr ""
 
-msgid "goto current channel and now"
-msgstr ""
-
-msgid "goto first channel"
-msgstr "ir para o primeiro canal"
-
-msgid "goto last channel"
-msgstr "ir para o último canal"
-
-msgid "goto now"
-msgstr "ir agora"
-
 #
 msgid "grab this frame as bitmap"
 msgstr "usar este frame como bitmap"
@@ -24091,9 +24091,6 @@ msgstr "notícias/preocupações correntes"
 msgid "news/weather report"
 msgstr "notícias/meteorologia"
 
-msgid "next channel page"
-msgstr "Próxima página do canal"
-
 #
 msgid "no CAId selected"
 msgstr "CAId não seleccionado"
@@ -24219,9 +24216,6 @@ msgstr "cultura popular/artes tradicionais"
 
 msgid "pre-school children's program"
 msgstr "pré-escola"
-
-msgid "previous channel page"
-msgstr ""
 
 msgid "provid:"
 msgstr ""
@@ -24650,6 +24644,36 @@ msgstr "sim (mantenha os feeds)"
 
 msgid "®"
 msgstr ""
+
+#~ msgid "+24"
+#~ msgstr "+24"
+
+#~ msgid "-24"
+#~ msgstr "-24"
+
+#
+#~ msgid ""
+#~ "A recording is currently running.\n"
+#~ "What do you want to do?"
+#~ msgstr ""
+#~ "Uma gravação está a decorrer.\n"
+#~ "O que deseja fazer?"
+
+#~ msgid "BouquetList"
+#~ msgstr "Lista de Bouquet"
+
+#
+#~ msgid "Instant recording..."
+#~ msgstr "Gravação instantânea..."
+
+#~ msgid "Missing "
+#~ msgstr "Em falta "
+
+#~ msgid "Recording Actions"
+#~ msgstr "Ações de Gravação"
+
+#~ msgid "Start recording?"
+#~ msgstr "Iniciar a gravação?"
 
 #
 #~ msgid "none"

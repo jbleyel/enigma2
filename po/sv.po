@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-23 11:43+0000\n"
+"POT-Creation-Date: 2023-12-10 10:52+0000\n"
 "PO-Revision-Date: 2021-08-15 18:50+0000\n"
 "Last-Translator: openATV <openatv@gmail.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/sv/>\n"
@@ -1476,11 +1476,6 @@ msgstr "* Enbart tillgänglig om mer än ett kort är aktivt."
 msgid "* current animation"
 msgstr ""
 
-#
-#, fuzzy
-msgid "+24"
-msgstr "24"
-
 msgid "+24 Hours"
 msgstr ""
 
@@ -1490,11 +1485,6 @@ msgstr ""
 
 msgid "-"
 msgstr ""
-
-#
-#, fuzzy
-msgid "-24"
-msgstr "24"
 
 msgid "-24 Hours"
 msgstr ""
@@ -1819,14 +1809,6 @@ msgid ""
 msgstr ""
 "En inspelning har påbörjats:\n"
 "%s"
-
-#
-msgid ""
-"A recording is currently running.\n"
-"What do you want to do?"
-msgstr ""
-"En inspelning pågår redan.\n"
-"Vad vill du göra?"
 
 #
 msgid "A recording is currently running. Please stop the recording before trying to configure the positioner."
@@ -2220,16 +2202,16 @@ msgstr ""
 msgid "Add provider"
 msgstr "Lägg till operatör"
 
-msgid "Add recording (enter recording duration)"
+msgid "Add recording (Enter recording duration)"
 msgstr "Lägg till inspelning (ange inspelningslängd)"
 
-msgid "Add recording (enter recording end time)"
+msgid "Add recording (Enter recording end time)"
 msgstr "Lägg till inspelning (ange sluttid för inspelning)"
 
-msgid "Add recording (indefinitely)"
+msgid "Add recording (Indefinitely - 24 hours)"
 msgstr "Lägg till inspelning (oändlig)"
 
-msgid "Add recording (stop after current event)"
+msgid "Add recording (Stop after current event)"
 msgstr "Lägg till inspelning (avsluta efter nuvarande program)"
 
 msgid "Add selected service to bouquet or alternative"
@@ -2409,6 +2391,14 @@ msgstr "Kanaler"
 
 msgid "All ages"
 msgstr "Alla åldersgrupper"
+
+#, fuzzy
+msgid "All events down"
+msgstr "särskilda händelser"
+
+#, fuzzy
+msgid "All events up"
+msgstr "särskilda händelser"
 
 msgid "All files"
 msgstr ""
@@ -3476,10 +3466,6 @@ msgstr ""
 msgid "Bouquet Selector Navigation Actions"
 msgstr ""
 
-#, fuzzy
-msgid "BouquetList"
-msgstr "Kanallista"
-
 msgid "Bouvet Island"
 msgstr ""
 
@@ -4116,10 +4102,10 @@ msgstr "Ändra nästa timer"
 msgid "Change pin code"
 msgstr "Ändra pin kod"
 
-msgid "Change recording (duration)"
+msgid "Change recording (Duration)"
 msgstr "Ändra inspelning (längd)"
 
-msgid "Change recording (end time)"
+msgid "Change recording (End time)"
 msgstr "Ändra inspelning (sluttid)"
 
 msgid "Change repeat and delay settings?"
@@ -5431,11 +5417,11 @@ msgid "Could not open the file %s!"
 msgstr "Det gick inte att öppna filen %s!"
 
 #, python-format
-msgid "Could not record due to conflicting timer %s"
+msgid "Could not record due to conflicting timer: %s"
 msgstr "Kunde inte spela in på grund av timerkonflikt med %s"
 
 #, python-format
-msgid "Could not record due to invalid service %s"
+msgid "Could not record due to invalid service: %s"
 msgstr "Kunde inte spela in på grund av ogiltig kanal %s"
 
 #, python-format
@@ -7488,6 +7474,9 @@ msgstr "Aktivera Panikknapp"
 msgid "Enable auto fast scan for %s"
 msgstr "Aktivera Panikknapp"
 
+msgid "Enable blinking rec symbol on the LCD Display in Standby."
+msgstr ""
+
 msgid "Enable blinking rec symbol on the LCD Display."
 msgstr ""
 
@@ -7613,9 +7602,6 @@ msgid "Enable to display the current value of the slider at end of the slider ba
 msgstr ""
 
 msgid "Enable to show the 'Restart Network' entry in the Extension Menu screen."
-msgstr ""
-
-msgid "Enable unlinked bouquets"
 msgstr ""
 
 #
@@ -9195,14 +9181,14 @@ msgstr ""
 msgid "Geolocation data has been used to set the time zone."
 msgstr ""
 
+msgid "Geolocation data is not available."
+msgstr ""
+
 msgid "Geolocation information cannot be retrieved, please try again later."
 msgstr ""
 
 #, python-format
 msgid "Geolocation information for %s %s"
-msgstr ""
-
-msgid "Geolocation data is not available."
 msgstr ""
 
 msgid "Georgia"
@@ -9289,19 +9275,28 @@ msgstr "Gå till:"
 msgid "Goto Date/Time"
 msgstr ""
 
-msgid "Goto Date/Timer"
-msgstr ""
-
 #, fuzzy
-msgid "Goto Prime time"
+msgid "Goto Prime Time"
 msgstr "Hoppa till prime time"
 
 #
 msgid "Goto X"
 msgstr "Gå till X"
 
+#, fuzzy
+msgid "Goto current channel and now"
+msgstr "Gå till nästa kanal"
+
 msgid "Goto deep standby"
 msgstr ""
+
+#, fuzzy
+msgid "Goto first channel"
+msgstr "Gå till nästa kanal"
+
+#, fuzzy
+msgid "Goto last channel"
+msgstr "Gå till nästa kanal"
 
 msgid "Goto next bouquet"
 msgstr "Gå till nästa favoritlista"
@@ -9311,6 +9306,9 @@ msgstr "Gå till nästa kanal"
 
 msgid "Goto next event"
 msgstr "Gå till nästa händelse"
+
+msgid "Goto now"
+msgstr ""
 
 #
 msgid "Goto position"
@@ -10147,9 +10145,6 @@ msgstr ""
 msgid "In progress"
 msgstr "Pågående"
 
-msgid "Enable blinking rec symbol on the LCD Display in Standby."
-msgstr ""
-
 msgid "Inaccessible"
 msgstr ""
 
@@ -10468,6 +10463,9 @@ msgstr "Installera plugins"
 msgid "Installing plugins from feed ..."
 msgstr "Installera plugins"
 
+msgid "Instant Recording Actions"
+msgstr ""
+
 #
 msgid "Instant record"
 msgstr "Direktinspelning"
@@ -10475,10 +10473,6 @@ msgstr "Direktinspelning"
 #
 msgid "Instant recording location"
 msgstr "Direktinspelningens plats"
-
-#
-msgid "Instant recording..."
-msgstr "Direktinspelning..."
 
 msgid "Interface"
 msgstr "Gränssnitt"
@@ -10589,6 +10583,9 @@ msgid "Ireland"
 msgstr ""
 
 msgid "Irish"
+msgstr ""
+
+msgid "Is the keyboard working?"
 msgstr ""
 
 msgid "Is this setting ok?"
@@ -11842,9 +11839,6 @@ msgid ""
 "Tuner %s option \"connected to\" are disabled now"
 msgstr ""
 
-msgid "Missing "
-msgstr "Saknad "
-
 msgid "Mobile connection"
 msgstr ""
 
@@ -12685,17 +12679,21 @@ msgid "Next"
 msgstr "Nästa"
 
 #, fuzzy
-msgid "Next bouquet"
+msgid "Next Bouquet"
 msgstr "Gå till nästa favoritlista"
+
+#, fuzzy
+msgid "Next Page"
+msgstr "Gå till nästa kanal"
+
+#, fuzzy
+msgid "Next channel page"
+msgstr "Gå till nästa kanal"
 
 #
 #, fuzzy
 msgid "Next higher resolution"
 msgstr "Upplösning"
-
-#, fuzzy
-msgid "Next page"
-msgstr "Gå till nästa kanal"
 
 msgid "Next quad PiP channel"
 msgstr ""
@@ -12803,7 +12801,7 @@ msgid "No error"
 msgstr "okänd kanal"
 
 #
-msgid "No event info found, recording indefinitely."
+msgid "No event information found, recording default is 24 hours."
 msgstr "Ingen programinfo hittades, inspelning oändlig."
 
 msgid "No fast winding possible yet.. but you can use the number buttons to skip forward/backward!"
@@ -13015,6 +13013,9 @@ msgstr ""
 #
 msgid "None"
 msgstr "Inga"
+
+msgid "NordVPN DNS"
+msgstr ""
 
 msgid "Norfolk Island"
 msgstr ""
@@ -13769,6 +13770,10 @@ msgid "Password Settings"
 msgstr "Lösenord"
 
 msgid "Password changed."
+msgstr ""
+
+#, python-format
+msgid "Path '%s' missing!"
 msgstr ""
 
 msgid "Path to save not exist: '/tmp/'"
@@ -14714,12 +14719,16 @@ msgid "Previous"
 msgstr "Föregående"
 
 #, fuzzy
-msgid "Previous bouquet"
+msgid "Previous Bouquet"
 msgstr "Gå till föregående favoritlista"
 
 #, fuzzy
-msgid "Previous page"
+msgid "Previous Page"
 msgstr "Föregående"
+
+#, fuzzy
+msgid "Previous channel page"
+msgstr "Gå till färegående kanal"
 
 #, fuzzy
 msgid "Previous/Next bouquet"
@@ -15267,7 +15276,7 @@ msgstr "Inspelning startad! Stoppar timeshift nu..."
 
 #
 #, python-format
-msgid "Record time limited due to conflicting timer %s"
+msgid "Record time limited due to conflicting timer: %s"
 msgstr "Inspelningstid begränsad på grund av timerkonflikt med %s"
 
 msgid "Record write error (no space on disk?)"
@@ -15294,11 +15303,6 @@ msgstr ""
 #
 msgid "Recording"
 msgstr "Spelar in"
-
-#
-#, fuzzy
-msgid "Recording Actions"
-msgstr "Inspelningar"
 
 msgid "Recording Settings"
 msgstr ""
@@ -16756,6 +16760,9 @@ msgstr "Om 'Ja' är valt  så  kan du förhandsgranska  kanalerna i EPG listan"
 msgid "Select 'Yes' to enable preview of channels while in the EPG list. Press 'OK' to preview the currently selected channel. Press 'OK' again to exit the EPG and zap to the selected channel. Press 'EXIT' to exit the EPG and return to the previously selected channel."
 msgstr "Om 'Ja' är valt  så kan du förhandsgranska kanallistan. Tryck 'OK' för att förhandsgranska vald kanal, tryck en andra gång på 'OK' för att gå till den kanalen, tryck 'EXIT' för att återgå till kanalen du startade på."
 
+msgid "Select 'Yes' to enable the loading of unlinked user bouquets. That is, user bouquets that are not included in the bouquets.tv or bouquets.radio files will be loaded. This allows you to, for example, create bouquets that do not conflict with, or get replaced by, bouquets that came from settings packages."
+msgstr ""
+
 msgid "Select 'Yes' to enable use of the LEFT/RIGHT buttons to move PageUp/PageDown when the LEFT/RIGHT buttons are otherwise undefined. This provides legacy navigation for users who prefer it."
 msgstr ""
 
@@ -17289,6 +17296,9 @@ msgstr ""
 msgid "Select the delay before the timer activates."
 msgstr ""
 
+msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for boxes with multiple satellite tuners."
+msgstr ""
+
 msgid "Select the desired function and click on 'OK' to assign it. Use 'CH+/-' to toggle between the lists. Select an assigned function and click on 'OK' to deassign it. Use 'NEXT/PREVIOUS' to change the order of the assigned functions."
 msgstr ""
 
@@ -17341,6 +17351,9 @@ msgid "Select the locale from a menu"
 msgstr "Vänligen ange filmens sökväg"
 
 msgid "Select the location in which to store the recording:"
+msgstr ""
+
+msgid "Select the location where the picon files will be installed."
 msgstr ""
 
 msgid "Select the manufacturer of your SCR device. If the manufacturer is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
@@ -17431,9 +17444,6 @@ msgid "Select the starting/initial column to be activated on File Commander star
 msgstr ""
 
 msgid "Select the tags that should be used for this recording."
-msgstr ""
-
-msgid "Select the location where the picon files will be installed."
 msgstr ""
 
 msgid "Select the time after which this timer can start."
@@ -17840,7 +17850,7 @@ msgstr "ange som startkanal"
 
 #
 #, fuzzy
-msgid "Set Base time"
+msgid "Set Base Time"
 msgstr "Startid"
 
 msgid "Set CI Boot delay."
@@ -18527,6 +18537,9 @@ msgid "Show SD as"
 msgstr "Visa SD som"
 
 msgid "Show Security packages"
+msgstr ""
+
+msgid "Show Service Information"
 msgstr ""
 
 msgid "Show Setting packages"
@@ -19393,19 +19406,11 @@ msgid "Slot %s: %s as USB Recovery"
 msgstr ""
 
 #, python-format
-msgid "Slot '%s'"
+msgid "Slot '%s' %s"
 msgstr ""
 
 #, python-format
-msgid "Slot '%s':  %s"
-msgstr ""
-
-#, python-format
-msgid "Slot '%s':  %s  -  Current"
-msgstr ""
-
-#, python-format
-msgid "Slot '%s': %s%s"
+msgid "Slot '%s' %s: %s%s"
 msgstr ""
 
 msgid "Slot Manager"
@@ -19577,10 +19582,10 @@ msgstr "Tyvärr, MiniDLNA Config Saknas"
 msgid "Sorry feeds are down for maintenance, please try again later."
 msgstr "Tyvärr, feeds är nere för underåll, v.v. försök igen senare."
 
-msgid "Sorry no backups found!"
+msgid "Sorry it is only possible to record 2 channels at once!"
 msgstr ""
 
-msgid "Sorry only possible to record 2 channels at once"
+msgid "Sorry no backups found!"
 msgstr ""
 
 msgid "Sorry uShare Config is Missing"
@@ -19791,6 +19796,9 @@ msgstr "Visa Rass interaktivitet..."
 msgid "Start Wizard"
 msgstr ""
 
+msgid "Start an instant recording"
+msgstr ""
+
 msgid "Start date"
 msgstr ""
 
@@ -19808,6 +19816,9 @@ msgstr "Spela upp från början"
 msgid "Start instant recording"
 msgstr "Starta Direktinspelning"
 
+msgid "Start instant recording?"
+msgstr ""
+
 #
 #, fuzzy
 msgid "Start mode"
@@ -19818,10 +19829,6 @@ msgstr "Starta avkodning offline"
 
 msgid "Start recording current event"
 msgstr ""
-
-#
-msgid "Start recording?"
-msgstr "Starta inspelning?"
 
 #
 msgid "Start teletext"
@@ -20055,10 +20062,19 @@ msgstr "Lagrad position"
 msgid "Stream"
 msgstr "Strömning"
 
+msgid "Stream Relay Settings"
+msgstr ""
+
+msgid "Stream Relay Setup Actions"
+msgstr ""
+
 msgid "Stream Relay URL"
 msgstr ""
 
 msgid "Stream Relay port"
+msgstr ""
+
+msgid "Stream Relay switch delay"
 msgstr ""
 
 msgid "Stream request"
@@ -21195,21 +21211,18 @@ msgstr "Det här alternativet låter dig välja 3D-läget"
 msgid "This option allows you can force the HLG Modes for UHD"
 msgstr "Det här alternativet låter dig välja 3D-läget"
 
-msgid "This option allows you to choose how to display elapsed time, as + or -."
-msgstr ""
-
 msgid "This option allows you choose how to display remaining time, or elapsed time, or both."
 msgstr "Det här alternativet låter dig välja om återstående tid, förfluten tid, eller bägge skall visas. "
-
-#, fuzzy
-msgid "This option allows you choose if the display shows the time or nothing in Standby."
-msgstr "Det här alternativet låter dig välja hur förfluten tid skall visas, som + eller -"
 
 msgid "This option allows you choose how to display the remaining/elapsed time for live tv."
 msgstr ""
 
 msgid "This option allows you choose how to display the remaining/elapsed time for media playback."
 msgstr ""
+
+#, fuzzy
+msgid "This option allows you choose if the display shows the time or nothing in Standby."
+msgstr "Det här alternativet låter dig välja hur förfluten tid skall visas, som + eller -"
 
 msgid "This option allows you choose the background color of transparent picons."
 msgstr ""
@@ -21281,6 +21294,9 @@ msgstr "Det här alternativet låter dig välja hur förfluten tid skall visas, 
 #, fuzzy
 msgid "This option allows you to choose how to display SD progressive 24Hz on your TV. (as not all TV's support these resolutions)"
 msgstr "Det här alternativet låter dig välja hur förfluten tid skall visas, som + eller -"
+
+msgid "This option allows you to choose how to display elapsed time, as + or -."
+msgstr ""
 
 #, fuzzy
 msgid "This option allows you to choose how to display standard definition video on your TV."
@@ -21600,13 +21616,13 @@ msgstr "Sparande av Timeshift misslyckades!"
 msgid "Time shift save recording (Select event)"
 msgstr "Timeshift spara inspelning (Välj händelse)"
 
-msgid "Time shift save recording (stop after current event)"
+msgid "Time shift save recording (Stop after current event)"
 msgstr "Timeshift spara inspelning (stoppa efter nuvarande händelse)"
 
 msgid "Time shift saved to your hard disk drive!"
 msgstr "Timeshift sparad till din hårddisk!"
 
-msgid "Time shift will get saved at end of event!"
+msgid "Time shift will get saved at end of event."
 msgstr "Timeshift kommer att sparas vid händelsens slut!"
 
 #
@@ -22235,6 +22251,10 @@ msgid "USB 3.0 (Back, outer)"
 msgstr ""
 
 msgid "USB Stick"
+msgstr ""
+
+#, python-format
+msgid "USB slot %s%s"
 msgstr ""
 
 msgid "USB switch ERROR! - already on USB"
@@ -23229,6 +23249,9 @@ msgstr ""
 msgid "Volume up"
 msgstr "Volym upp"
 
+msgid "Vu+ MultiBoot"
+msgstr ""
+
 #
 msgid "W"
 msgstr "V"
@@ -23492,9 +23515,6 @@ msgstr ""
 msgid "When 'Enabled', the timer view will show the free space on the target device. This will wake the device from sleep mode."
 msgstr ""
 
-msgid "Select 'Yes' to enable the loading of unlinked user bouquets. That is, user bouquets that are not included in the bouquets.tv or bouquets.radio files will be loaded. This allows you to, for example, create bouquets that do not conflict with, or get replaced by, bouquets that came from settings packages."
-msgstr ""
-
 msgid "When enabled the PiP can be closed by the exit button."
 msgstr ""
 
@@ -23515,9 +23535,6 @@ msgstr "Vid aktiverad kommer AIT data inkluderas i http strömmar. Detta tillåt
 
 msgid "When enabled, EIT data will be included in http streams. This allows a client receiver to show EPG."
 msgstr "Vid aktiverad kommer EIT data inkluderas i http strömmar. Detta tillåter en klientmottagare att visa EPG."
-
-msgid "When enabled, Enigma2 will load unlinked bouquets. This means that bouquets that are available, but not included in the bouquets.tv or bouquets.radio files, will still be loaded. This allows you for example to keep your own user bouquet while installed settings are upgraded"
-msgstr ""
 
 msgid "When enabled, SDT, BAT data will be included in http streams."
 msgstr ""
@@ -24348,14 +24365,6 @@ msgid "advertisement/shopping"
 msgstr "reklam / shopping"
 
 #, fuzzy
-msgid "all events down"
-msgstr "särskilda händelser"
-
-#, fuzzy
-msgid "all events up"
-msgstr "särskilda händelser"
-
-#, fuzzy
 msgid "all up/down"
 msgstr "Flytta ner en sida"
 
@@ -24733,21 +24742,6 @@ msgstr "trädgård"
 msgid "get the cards' server"
 msgstr "erhåll kortets server"
 
-#, fuzzy
-msgid "goto current channel and now"
-msgstr "Gå till nästa kanal"
-
-#, fuzzy
-msgid "goto first channel"
-msgstr "Gå till nästa kanal"
-
-#, fuzzy
-msgid "goto last channel"
-msgstr "Gå till nästa kanal"
-
-msgid "goto now"
-msgstr ""
-
 #
 msgid "grab this frame as bitmap"
 msgstr "ta den här framen som bitmap"
@@ -24993,10 +24987,6 @@ msgstr "nyheter / aktuella frågor (allmänt)"
 msgid "news/weather report"
 msgstr "nyheter / väderprognos"
 
-#, fuzzy
-msgid "next channel page"
-msgstr "Gå till nästa kanal"
-
 #
 msgid "no CAId selected"
 msgstr "ingen CAId vald"
@@ -25125,10 +25115,6 @@ msgstr "populärkultur / traditionell konst"
 
 msgid "pre-school children's program"
 msgstr "barnprogram förskola"
-
-#, fuzzy
-msgid "previous channel page"
-msgstr "Gå till färegående kanal"
 
 msgid "provid:"
 msgstr "leverantörID:"
@@ -25561,6 +25547,44 @@ msgstr "ja (behåll feeds)"
 
 msgid "®"
 msgstr ""
+
+#
+#, fuzzy
+#~ msgid "+24"
+#~ msgstr "24"
+
+#
+#, fuzzy
+#~ msgid "-24"
+#~ msgstr "24"
+
+#
+#~ msgid ""
+#~ "A recording is currently running.\n"
+#~ "What do you want to do?"
+#~ msgstr ""
+#~ "En inspelning pågår redan.\n"
+#~ "Vad vill du göra?"
+
+#, fuzzy
+#~ msgid "BouquetList"
+#~ msgstr "Kanallista"
+
+#
+#~ msgid "Instant recording..."
+#~ msgstr "Direktinspelning..."
+
+#~ msgid "Missing "
+#~ msgstr "Saknad "
+
+#
+#, fuzzy
+#~ msgid "Recording Actions"
+#~ msgstr "Inspelningar"
+
+#
+#~ msgid "Start recording?"
+#~ msgstr "Starta inspelning?"
 
 #
 #~ msgid "none"
