@@ -30,7 +30,7 @@ class SoftwareUpdate(Screen, HelpableScreen, ProtectedScreen):
 	FEED_STABLE = 3
 
 	skin = ["""
-	<screen name="SoftwareUpdate" title="Software Update" position="center,center" size="%d,%d" >
+	<screen name="SoftwareUpdate" title="Software Update" position="center,center" size="%d,%d" resolution="1280,720">
 		<widget name="traffic_off" position="%d,%d" size="%d,%d" alphatest="blend" pixmap="icons/traffic_off.png" scale="1" />
 		<widget name="traffic_red" position="%d,%d" size="%d,%d" alphatest="blend" pixmap="icons/traffic_red.png" scale="1" />
 		<widget name="traffic_yellow" position="%d,%d" size="%d,%d" alphatest="blend" pixmap="icons/traffic_yellow.png" scale="1" />
