@@ -67,7 +67,6 @@ void eStreamClient::notifier(int what)
 	if (!(what & eSocketNotifier::Read))
 		return;
 
-	eDebug("[eStreamClient] notifier");
 	ePtr<eStreamClient> ref = this;
 	char buf[512];
 	int len;
@@ -82,7 +81,6 @@ void eStreamClient::notifier(int what)
 	if (running || (request.find('\n') == std::string::npos))
 		return;
 
-	eDebug("[eStreamClient] request %s", request.c_str());
 	if (request.substr(0, 5) == "GET /")
 	{
 		size_t pos;
@@ -295,7 +293,6 @@ void eStreamClient::notifier(int what)
 		return;
 	}
 	request.clear();
-	eDebug("[eStreamClient] notifier DONE");
 }
 
 void eStreamClient::stopStream()
@@ -384,7 +381,6 @@ bool eStreamServer::stopStreamClient(const std::string remotehost, const std::st
 
 PyObject *eStreamServer::getConnectedClientDetails(int index)
 {
-	eDebug("[eStreamClient] getConnectedClientDetails");
 	ePyObject ret;
 
 	eUsePtr<iDVBChannel> stream_channel;
@@ -459,7 +455,6 @@ PyObject *eStreamServer::getConnectedClientDetails(int index)
 		}
 
 	}
-	eDebug("[eStreamClient] getConnectedClientDetails DONE");
 
 	return ret;
 
@@ -469,7 +464,6 @@ PyObject *eStreamServer::getConnectedClientDetails(int index)
 
 PyObject *eStreamServer::getConnectedClients()
 {
-	eDebug("[eStreamClient] getConnectedClients");
 	ePyObject ret;
 	int idx = 0;
 	int cnt = clients.size();
@@ -482,7 +476,6 @@ PyObject *eStreamServer::getConnectedClients()
 		PyTuple_SET_ITEM(tuple, 2, PyLong_FromLong(it->isUsingEncoder()));
 		PyList_SET_ITEM(ret, idx++, tuple);
 	}
-	eDebug("[eStreamClient] getConnectedClients DONE");
 	return ret;
 }
 

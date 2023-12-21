@@ -466,8 +466,13 @@ eDVBUsbAdapter::eDVBUsbAdapter(int nr)
 		snprintf(filename, sizeof(filename), "/dev/misc/vtuner%d", vtunerid);
 		if (::access(filename, F_OK) < 0)
 		{
+			eDebug("[eDVBUsbAdapter] '%s' not found", filename);
 			snprintf(filename, sizeof(filename), "/dev/vtuner%d", vtunerid);
-			if (::access(filename, F_OK) < 0) break;
+			if (::access(filename, F_OK) < 0)
+			{
+				eDebug("[eDVBUsbAdapter] '%s' not found -> stop here!", filename);
+				break;
+			}
 		}
 		vtunerFd = open(filename, O_RDWR | O_CLOEXEC);
 		if (vtunerFd < 0)
@@ -1351,12 +1356,9 @@ RESULT eDVBResourceManager::allocateChannel(const eDVBChannelID &channelid, eUse
 		if (i->m_channel_id == channelid)
 		{
 			ePtr<iDVBFrontend> fe;
-			eDebug("[eDVBResourceManager] allocateChannel getFrontend");
 			if (!i->m_channel->getFrontend(fe))
 			{
-				eDebug("[eDVBResourceManager] allocateChannel readFrontendData");
 				int slotid = fe->readFrontendData(iFrontendInformation_ENUMS::frontendNumber);
-				eDebug("[eDVBResourceManager] allocateChannel frontendPreferenceAllowsChannelUse");
 				if (frontendPreferenceAllowsChannelUse(channelid,i->m_channel,simulate))
 				{
 					eDebugNoSimulate("[eDVBResourceManager] found shared channel.. i=%ld, frontend=%d (preferred=%d)",std::distance(active_channels.begin(), i),slotid,eDVBFrontend::getPreferredFrontend());
@@ -1369,8 +1371,6 @@ RESULT eDVBResourceManager::allocateChannel(const eDVBChannelID &channelid, eUse
 				}
 			}
 		}
-		eDebug("[eDVBResourceManager] 1");
-
 	}
 
 	/* no currently available channel is tuned to this channelid. create a new one, if possible. */
@@ -1381,16 +1381,12 @@ RESULT eDVBResourceManager::allocateChannel(const eDVBChannelID &channelid, eUse
 		return errNoChannelList;
 	}
 
-	eDebug("[eDVBResourceManager] 2");
-
 	ePtr<iDVBFrontendParameters> feparm;
 	if (m_list->getChannelFrontendData(channelid, feparm))
 	{
 		eDebugNoSimulate("[eDVBResourceManager] channel not found!");
 		return errChannelNotInList;
 	}
-
-	eDebug("[eDVBResourceManager] 3");
 
 	/* allocate a frontend. */
 
@@ -1405,8 +1401,6 @@ RESULT eDVBResourceManager::allocateChannel(const eDVBChannelID &channelid, eUse
 	RESULT res;
 	ePtr<eDVBChannel> ch = new eDVBChannel(this, fe);
 
-	eDebug("[eDVBResourceManager] 4");
-
 	res = ch->setChannel(channelid, feparm);
 	if (res)
 	{
@@ -1414,8 +1408,6 @@ RESULT eDVBResourceManager::allocateChannel(const eDVBChannelID &channelid, eUse
 		eDebugNoSimulate("[eDVBResourceManager] channel id not found!");
 		return errChidNotFound;
 	}
-
-	eDebug("[eDVBResourceManager] 5");
 
 	if (simulate)
 		channel = ch;
@@ -1431,7 +1423,6 @@ RESULT eDVBResourceManager::allocateChannel(const eDVBChannelID &channelid, eUse
 
 void eDVBResourceManager::DVBChannelStateChanged(iDVBChannel *chan)
 {
-	eDebug("[eDVBResourceManager] DVBChannelStateChanged");
 	int state=0;
 	chan->getState(state);
 	switch (state)
@@ -2477,20 +2468,12 @@ RESULT eDVBChannel::getDemux(ePtr<iDVBDemux> &demux, int cap)
 
 RESULT eDVBChannel::getFrontend(ePtr<iDVBFrontend> &frontend)
 {
-	eDebug("[eDVBChannel] getFrontend");
 	frontend = 0;
 	if (!m_frontend)
-	{
-		eDebug("[eDVBChannel] getFrontend !m_frontend");
 		return -ENODEV;
-	}
 	frontend = &m_frontend->get();
 	if (frontend)
-	{
-		eDebug("[eDVBChannel] getFrontend frontend get -> 0");
 		return 0;
-	}
-	eDebug("[eDVBChannel] getFrontend ENODEV");
 	return -ENODEV;
 }
 
