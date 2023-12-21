@@ -1351,8 +1351,11 @@ RESULT eDVBResourceManager::allocateChannel(const eDVBChannelID &channelid, eUse
 		if (i->m_channel_id == channelid)
 		{
 			ePtr<iDVBFrontend> fe;
+			eDebug("[eDVBResourceManager] allocateChannel getFrontend");
 			i->m_channel->getFrontend(fe);
+			eDebug("[eDVBResourceManager] allocateChannel readFrontendData");
 			int slotid = fe->readFrontendData(iFrontendInformation_ENUMS::frontendNumber);
+			eDebug("[eDVBResourceManager] allocateChannel frontendPreferenceAllowsChannelUse");
 			if (frontendPreferenceAllowsChannelUse(channelid,i->m_channel,simulate))
 			{
 				eDebugNoSimulate("[eDVBResourceManager] found shared channel.. i=%ld, frontend=%d (preferred=%d)",std::distance(active_channels.begin(), i),slotid,eDVBFrontend::getPreferredFrontend());
