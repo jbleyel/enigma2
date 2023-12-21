@@ -172,7 +172,6 @@ void eMainloop::removeSocketNotifier(eSocketNotifier *sn)
 
 int eMainloop::processOneEvent(long user_timeout, PyObject **res, ePyObject additional)
 {
-	eDebug("[eMainloop] processOneEvent");
 	int return_reason = 0;
 	if (additional && !PyDict_Check(additional))
 		eFatal("[eMainloop::processOneEvent] additional, but it's not dict");
@@ -297,7 +296,6 @@ int eMainloop::processOneEvent(long user_timeout, PyObject **res, ePyObject addi
 		else
 			return_reason = 2; /* don't assume the timeout has passed when we got a signal */
 	}
-	eDebug("[eMainloop] processOneEvent return_reason %d", return_reason);
 	return return_reason;
 }
 
