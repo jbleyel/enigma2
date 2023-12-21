@@ -2475,12 +2475,20 @@ RESULT eDVBChannel::getDemux(ePtr<iDVBDemux> &demux, int cap)
 
 RESULT eDVBChannel::getFrontend(ePtr<iDVBFrontend> &frontend)
 {
+	eDebug("[eDVBChannel] getFrontend");
 	frontend = 0;
 	if (!m_frontend)
+	{
+		eDebug("[eDVBChannel] getFrontend !m_frontend");
 		return -ENODEV;
+	}
 	frontend = &m_frontend->get();
 	if (frontend)
+	{
+		eDebug("[eDVBChannel] getFrontend frontend get -> 0");
 		return 0;
+	}
+	eDebug("[eDVBChannel] getFrontend ENODEV");
 	return -ENODEV;
 }
 
