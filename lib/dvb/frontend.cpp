@@ -1624,10 +1624,8 @@ void eDVBFrontend::calculateSignalQuality(int snr, int &signalquality, int &sign
 
 int eDVBFrontend::readFrontendData(int type)
 {
-	eDebug("[eDVBFrontend] readFrontendData type %d m_slotid %d", type, m_slotid);
 	char force_legacy_signal_stats[64];
 	sprintf(force_legacy_signal_stats, "config.Nims.%d.force_legacy_signal_stats", m_slotid);
-	eDebug("[eDVBFrontend] readFrontendData force_legacy_signal_stats %s", force_legacy_signal_stats);
 	switch(type)
 	{
 		case iFrontendInformation_ENUMS::bitErrorRate:  // N.B. This uses the legacy API. The DVB API 5.10 defines two different error rates which currently cannot be accessed from here
