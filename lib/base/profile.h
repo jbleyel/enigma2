@@ -135,7 +135,10 @@ public:
 	void close()
 	{
 		if (m_handle)
+		{
 			fclose(m_handle);
+			m_handle = 0;
+		}
 	}
 
 private:
