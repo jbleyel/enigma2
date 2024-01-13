@@ -14,8 +14,8 @@ from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Components.Task import job_manager
 from GlobalActions import globalActionMap
 import Screens.InfoBar
-from Screens.MessageBox import MessageBox
-from Screens.Screen import Screen
+from Screens.MessageBox import MessageBox, MessageBoxSummary
+from Screens.Screen import Screen, ScreenSummary
 from Tools.Directories import fileWriteLine, mediaFilesInUse
 import Tools.Notifications
 
@@ -105,7 +105,7 @@ def setLCDModeMinitTV(value):
 class Standby2(Screen):
 	def Power(self):
 		print("[Standby] leave standby")
-		BoxInfo.setItem("StandbyState", False)
+		BoxInfo.setMutableItem("StandbyState", False)
 
 		if exists("/usr/script/StandbyLeave.sh"):
 			Console().ePopen("/usr/script/StandbyLeave.sh &")
@@ -169,7 +169,7 @@ class Standby2(Screen):
 		self.avswitch = AVSwitch()
 
 		print("[Standby] enter standby")
-		BoxInfo.setItem("StandbyState", True)
+		BoxInfo.setMutableItem("StandbyState", True)
 
 		if exists("/usr/script/StandbyEnter.sh"):
 			Console().ePopen("/usr/script/StandbyEnter.sh &")
@@ -402,7 +402,9 @@ class TryQuitMainloop(MessageBox):
 				self.connected = True
 				self.onShow.append(self.__onShow)
 				self.onHide.append(self.__onHide)
+				self.isMessageBox = True
 				return
+		self.isMessageBox = False
 		self.skin = """<screen position="1310,0" size="0,0"/>"""
 		Screen.__init__(self, session)
 		self.close(True)
@@ -456,5 +458,5 @@ class TryQuitMainloop(MessageBox):
 		global inTryQuitMainloop
 		inTryQuitMainloop = False
 
-	def createSummary(self):  # Suppress the normal MessageBox ScreenSummary screen.
-		return None
+	def createSummary(self):
+		return MessageBoxSummary if self.isMessageBox else ScreenSummary

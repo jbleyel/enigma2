@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-10 10:52+0000\n"
+"POT-Creation-Date: 2024-01-02 17:36+0000\n"
 "PO-Revision-Date: 2019-07-27 12:19+0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -1175,10 +1175,6 @@ msgid "%s %s remote control (native)"
 msgstr "%s%s điều khiển từ xa (tự nhiên)"
 
 #, python-format
-msgid "%s ( %s Cards )"
-msgstr "%s (%s Thẻ)"
-
-#, python-format
 msgid "%s (%04o)"
 msgstr "%s (%04o)"
 
@@ -1307,9 +1303,6 @@ msgstr "Descramble & record ECM 'cung cấp tùy chọn để giải mã sau đ�
 msgid "'WeatherPlugin' is not installed!"
 msgstr "'Weatherplugin' chưa được cài đặt!"
 
-msgid "( All readers)"
-msgstr "(Tất cả độc giả)"
-
 #, python-format
 msgid "(Access to the '%s' commit log requires an Internet connection.)"
 msgstr ""
@@ -1323,9 +1316,6 @@ msgstr "(PiP)"
 
 msgid "(Radio)"
 msgstr " (Nghe đài)"
-
-msgid "(Show only reader:"
-msgstr "(Chỉ hiển thị người đọc:"
 
 msgid "(TV)"
 msgstr " (TRUYỀN HÌNH)"
@@ -1579,11 +1569,11 @@ msgstr "<Vị trí hẹn giờ cuối>"
 msgid "<Select a device>"
 msgstr ""
 
+msgid "<no log found>"
+msgstr ""
+
 msgid "A"
 msgstr "A"
-
-msgid "A background update check is in progress, please wait a few minutes and try again."
-msgstr "Việc kiểm tra cập nhật nền đang được tiến hành, vui lòng đợi vài phút và thử lại."
 
 msgid "A comma separated list of extensions to be used for 'My Extension' setting of 'Filter extension'. Enter the extension names without a leading dot (.)."
 msgstr ""
@@ -1735,15 +1725,6 @@ msgstr "Chuyển mã AC3plus"
 #, fuzzy
 msgid "AFL"
 msgstr "AFP"
-
-msgid "AFP"
-msgstr "AFP"
-
-msgid "AFP Actions"
-msgstr ""
-
-msgid "AFP Settings"
-msgstr "Cài đặt AFP"
 
 msgid "ARM"
 msgstr ""
@@ -2063,9 +2044,6 @@ msgstr "Tùy chọn động cơ bổ sung cho phép bạn nhập chi tiết từ
 
 msgid "Additional motor options allow you to enter details from your motor's specifications so Enigma can work out how long it will take to move to another satellite."
 msgstr "Các tùy chọn động cơ bổ sung cho phép bạn nhập thông tin chi tiết từ bảng thông số kỹ thuật của động cơ để enigma có thể biết được sẽ mất bao lâu để di chuyển đến vệ tinh khác."
-
-msgid "Address"
-msgstr "Địa chỉ IP"
 
 msgid "Adjust 3D settings"
 msgstr "Điều chỉnh cài đặt 3D"
@@ -2707,6 +2685,9 @@ msgstr ""
 msgid "AutoCam Setup Actions"
 msgstr ""
 
+msgid "AutoFS"
+msgstr ""
+
 msgid "AutoMountManager"
 msgstr "Trình quản lý tự động"
 
@@ -2745,6 +2726,9 @@ msgstr "Tự động bật phụ đề bên ngoài"
 
 msgid "Automatically update Client/Server View"
 msgstr "Tự động cập nhật Chế độ xem Máy khách / Máy chủ?"
+
+msgid "Automatically update Log-Fullscreen View"
+msgstr ""
 
 msgid "Autostart"
 msgstr "Tự động bắt đầu"
@@ -3307,12 +3291,6 @@ msgstr "CH"
 msgid "C-Band"
 msgstr "Băng tần C"
 
-msgid "CAID"
-msgstr "CAID"
-
-msgid "CAID:SrvID"
-msgstr "CAID: SrvID"
-
 msgid "CCD-Width"
 msgstr ""
 
@@ -3412,9 +3390,6 @@ msgstr "Khe CI: "
 
 msgid "CI+ Helper*"
 msgstr ""
-
-msgid "CIFS/Samba Settings"
-msgstr "Cài đặt CIFS / Samba"
 
 msgid "CPU"
 msgstr "CPU"
@@ -3702,12 +3677,6 @@ msgstr ""
 #, fuzzy
 msgid "Cape Verde"
 msgstr "Cabo Verde"
-
-msgid "Card infos (CCcam-Reader)"
-msgstr "Thẻ thông tin (CCcam-Reader)"
-
-msgid "Cards:"
-msgstr "Thẻ:"
 
 msgid "Cards: "
 msgstr "Thẻ: "
@@ -4110,6 +4079,9 @@ msgstr "Chọn bộ chỉnh nào để cấu hình."
 msgid "Christmas Island"
 msgstr "Đảo giáng sinh"
 
+msgid "Chrony"
+msgstr ""
+
 msgid "Church Slavic"
 msgstr ""
 
@@ -4176,10 +4148,6 @@ msgstr[0] ""
 
 msgid "Click the button on your remote you want to change."
 msgstr "Bấm vào điều khiển từ xa của bạn vào nút bạn muốn thay đổi"
-
-#, python-format
-msgid "Client Info ( Oscam-Version: %s )"
-msgstr "Thông tin khách hàng (Phiên bản Oscar:% s)"
 
 msgid "Client is streaming from this box!"
 msgstr ""
@@ -4371,9 +4339,6 @@ msgstr "Cấu hình"
 #, python-format
 msgid "Config file %s saved."
 msgstr "Cấu hình%s được lưu."
-
-msgid "Config file name (ok to change):"
-msgstr "Tên tệp cấu hình (ok để thay đổi):"
 
 #, fuzzy
 msgctxt "Abbreviation of 'Configurable'"
@@ -4767,6 +4732,9 @@ msgstr "Định cấu hình trình kết nối đầu ra video nào sẽ đượ
 msgid "Configuring"
 msgstr "Cấu hình"
 
+msgid "Configuring Service"
+msgstr ""
+
 msgid "ConflictTimer Actions"
 msgstr ""
 
@@ -5009,11 +4977,11 @@ msgid "Could not open the file %s!"
 msgstr "Không thể mở tệp% s!"
 
 #, python-format
-msgid "Could not record due to conflicting timer: %s"
+msgid "Could not record due to conflicting timer:%s"
 msgstr "Không thể ghi do bộ đếm thời gian xung đột%s"
 
 #, python-format
-msgid "Could not record due to invalid service: %s"
+msgid "Could not record due to invalid service:%s"
 msgstr "Không thể ghi do dịch vụ không hợp lệ%s"
 
 #, python-format
@@ -5117,6 +5085,9 @@ msgstr "Croatia"
 
 msgid "Croatian"
 msgstr "Tiếng Croatia"
+
+msgid "Cron"
+msgstr ""
 
 msgid "Cron Manager"
 msgstr "Quản lý cron"
@@ -5387,6 +5358,9 @@ msgid "Date"
 msgstr "Ngày"
 
 msgid "Date / Time"
+msgstr ""
+
+msgid "Date Time Input Actions"
 msgstr ""
 
 msgid "Date ascending"
@@ -6341,13 +6315,6 @@ msgid "Do you want the upgrade guide?"
 msgstr ""
 
 msgid ""
-"Do you want to also install samba client ?\n"
-"This allows you to mount your windows shares on this device."
-msgstr ""
-"Bạn có muốn cài đặt samba client không?\n"
-"Điều này cho phép bạn gắn kết chia sẻ cửa sổ của mình trên thiết bị này."
-
-msgid ""
 "Do you want to backup now?\n"
 "After pressing OK, please wait!"
 msgstr ""
@@ -6590,15 +6557,6 @@ msgstr " "
 msgid "ECM"
 msgstr ""
 
-msgid "ECM Statistics"
-msgstr "Thống kê ECM"
-
-msgid "ECM Time"
-msgstr "Giờ ECM"
-
-msgid "ECM avg"
-msgstr "ECM avg"
-
 msgid "ECM data will be included in the stream. This enables a client receiver to decode it."
 msgstr "Dữ liệu ECM sẽ được bao gồm trong luồng. Điều này cho phép một người nhận khách hàng giải mã nó."
 
@@ -6608,12 +6566,6 @@ msgstr ""
 #, python-format
 msgid "ECM information for '%s'"
 msgstr ""
-
-msgid "ECM last"
-msgstr "ECM cuối"
-
-msgid "ECM-Time"
-msgstr "Thời gian ECM"
 
 msgid "EJECTCD"
 msgstr "ĐỐI TƯỢNG"
@@ -6634,6 +6586,9 @@ msgid "EPG Channel/Service Selection"
 msgstr ""
 
 msgid "EPG Display Actions"
+msgstr ""
+
+msgid "EPG Jump"
 msgstr ""
 
 msgid "EPG Navigation Actions"
@@ -7882,12 +7837,6 @@ msgstr "FTA"
 msgid "FTP"
 msgstr "FTP"
 
-msgid "FTP Actions"
-msgstr ""
-
-msgid "FTP Settings"
-msgstr "Thiết lập FTP"
-
 msgid "Factory Reset"
 msgstr ""
 
@@ -8282,6 +8231,9 @@ msgstr ""
 #, fuzzy
 msgid "Football"
 msgstr "bóng đá"
+
+msgid "For how many minutes do you want to record?"
+msgstr "Bạn muốn ghi lại bao nhiêu phút?"
 
 msgid "Force AC3plus"
 msgstr "tác dụng AC3plus"
@@ -8990,6 +8942,9 @@ msgstr "Ẩn các dịch vụ khóa của cha mẹ"
 msgid "Hide player"
 msgstr "Ẩn người chơi"
 
+msgid "Hide softcam servername"
+msgstr ""
+
 #, fuzzy
 msgid "Hide the InfoBar"
 msgstr "Làm mờ Infobar trên ẩn"
@@ -9080,9 +9035,6 @@ msgstr "Honduras"
 msgid "Hong Kong"
 msgstr "Hong Kong"
 
-msgid "Hops"
-msgstr "Nhảy"
-
 msgid "Hops:"
 msgstr "Nhảy:"
 
@@ -9127,9 +9079,6 @@ msgstr "Giờ tối thiểu"
 
 msgid "Hours Minutes Seconds"
 msgstr "Giờ phút giây"
-
-msgid "How many minutes do you want to record?"
-msgstr "Bạn muốn ghi lại bao nhiêu phút?"
 
 msgid "Http(s) stream start delay"
 msgstr ""
@@ -9463,15 +9412,6 @@ msgstr "Không hoạt động"
 msgid "Inadyn"
 msgstr "Inadyn"
 
-msgid "Inadyn Actions"
-msgstr ""
-
-msgid "Inadyn Log"
-msgstr "Nhật ký đăng nhập"
-
-msgid "Inadyn Setting Actions"
-msgstr ""
-
 msgid "Inadyn Settings"
 msgstr "Cài đặt"
 
@@ -9655,9 +9595,6 @@ msgstr "ID luồng đầu vào"
 msgid "Input channel name."
 msgstr "Tên kênh đầu vào."
 
-msgid "Input config file name:"
-msgstr "Tên tập tin cấu hình đầu vào:"
-
 msgid "Input scroll position"
 msgstr ""
 
@@ -9711,6 +9648,9 @@ msgstr ""
 msgid "Installation finished."
 msgstr "Cài đặt xong."
 
+msgid "Installed"
+msgstr ""
+
 msgid "Installing"
 msgstr "Đang Cài đặt"
 
@@ -9740,6 +9680,9 @@ msgid "Installing plugins from feed ..."
 msgstr "Cài đặt plugin từ nguồn cấp dữ liệu ..."
 
 msgid "Instant Recording Actions"
+msgstr ""
+
+msgid "Instant Recording End Time"
 msgstr ""
 
 msgid "Instant record"
@@ -9898,14 +9841,32 @@ msgstr "Tổng quan về công việc"
 msgid "Jordan"
 msgstr "Jordan"
 
+msgid "Jump"
+msgstr ""
+
 msgid "Jump back 24 hours"
 msgstr "Quay trở lại 24 giờ"
+
+msgid "Jump back one day"
+msgstr ""
+
+msgid "Jump back one hour"
+msgstr ""
 
 msgid "Jump first press in channel selection"
 msgstr "Nhảy báo chí đầu tiên trong lựa chọn kênh"
 
 msgid "Jump forward 24 hours"
 msgstr "Nhảy về phía trước 24 giờ"
+
+msgid "Jump forward one day"
+msgstr ""
+
+msgid "Jump forward one hour"
+msgstr ""
+
+msgid "Jump time"
+msgstr ""
 
 msgid "Jump to beginning of list"
 msgstr "Chuyển đến đầu danh sách"
@@ -10179,9 +10140,6 @@ msgstr "Cộng hòa Dân chủ nhân dân Lào"
 
 msgid "Large"
 msgstr ""
-
-msgid "Last Request"
-msgstr "Yêu cầu cuối cùng."
 
 msgid "Last config"
 msgstr "Cấu hình cuối cùng"
@@ -10958,21 +10916,12 @@ msgstr "ở giữa"
 msgid "Middle - Lite image"
 msgstr ""
 
-msgid "Mini DLNA Actions"
-msgstr ""
-
-msgid "Mini DLNA Setting Actions"
-msgstr ""
-
 #, fuzzy
 msgid "Mini Series"
 msgstr "Tất cả các nhà cung cấp dịch vụ"
 
 msgid "MiniDLNA"
 msgstr "MiniDLNA"
-
-msgid "MiniDLNA Log"
-msgstr "Nhật ký MiniDLNA"
 
 msgid "MiniDLNA Settings"
 msgstr "Thiết lập MiniDLNA"
@@ -11521,12 +11470,6 @@ msgstr "KẾ TIẾP"
 msgid "NFS"
 msgstr "NFS"
 
-msgid "NFS Actions"
-msgstr ""
-
-msgid "NFS Settings"
-msgstr "Thiết lập NFS"
-
 msgid "NIM"
 msgstr ""
 
@@ -11677,6 +11620,9 @@ msgstr "Dịch vụ mạng"
 
 msgid "Network Settings"
 msgstr "Thiết lập mạng"
+
+msgid "Network Setup Actions"
+msgstr ""
 
 msgid "Network Test"
 msgstr "Kiểm tra mạng"
@@ -12274,6 +12220,27 @@ msgstr "Chế độ nút OK"
 msgid "OK, guide me through the upgrade process"
 msgstr "OK, hướng dẫn tôi qua quá trình nâng cấp"
 
+msgid "OSCam Info"
+msgstr "Thông tin OScam"
+
+msgid "OSCam Information"
+msgstr "Thông tin OScam"
+
+msgid "OSCam Information Settings"
+msgstr ""
+
+msgid "OSCam webif disabled"
+msgstr "oscam webif bị vô hiệu hóa"
+
+msgid "OSCamInfo Actions"
+msgstr ""
+
+msgid "OSCamInfo Log"
+msgstr ""
+
+msgid "OSCamInfo Log Actions"
+msgstr ""
+
 msgid "OSD"
 msgstr "OSD"
 
@@ -12294,15 +12261,6 @@ msgstr "Thiết lập OSD 3D"
 
 msgid "OSD name request"
 msgstr "Yêu cầu tên OSD"
-
-msgid "OScam Info"
-msgstr "Thông tin OScam"
-
-msgid "OScam Information"
-msgstr "Thông tin OScam"
-
-msgid "OScam webif disabled"
-msgstr "oscam webif bị vô hiệu hóa"
 
 msgid "OTT Model"
 msgstr ""
@@ -12403,7 +12361,13 @@ msgstr "Mở Tìm kiếm EPG ..."
 msgid "Open IMDb"
 msgstr "Mở IMDB ..."
 
+msgid "Open Log"
+msgstr ""
+
 msgid "Open MediaStream"
+msgstr ""
+
+msgid "Open Settings"
 msgstr ""
 
 msgid "Open Similar List Channel List"
@@ -12490,17 +12454,8 @@ msgstr ""
 msgid "OpenVPN"
 msgstr "OpenVPN"
 
-msgid "OpenVPN Actions"
-msgstr ""
-
-msgid "OpenVPN Settings"
-msgstr "Cài đặt OpenVPN"
-
 msgid "OpenViX Packages"
 msgstr ""
-
-msgid "OpenVpn Log"
-msgstr "Nhật ký OpenVpn"
 
 msgid "Operating LED status in deep standby mode"
 msgstr "Trạng thái đèn LED hoạt động ở chế độ chờ sâu"
@@ -12550,18 +12505,8 @@ msgstr ""
 msgid "Oromo"
 msgstr ""
 
-msgid "Oscam Info - Main Menu"
-msgstr "Thông tin Oscam - Menu chính"
-
-msgid "Oscam Info Settings"
-msgstr "Thông tin Oscam - Cấu hình"
-
-#, python-format
-msgid "Oscam Log ( Oscam-Version: %s )"
-msgstr "Nhật ký Oscam (Phiên bản Oscar:% s)"
-
-msgid "OscamInfo Mainmenu"
-msgstr "Bảng thông tin về oscam"
+msgid "Oscam Information"
+msgstr ""
 
 msgid "Ossetian / Ossetic"
 msgstr ""
@@ -12663,9 +12608,6 @@ msgstr "PC"
 #, fuzzy
 msgid "PGS file"
 msgstr "Tên tệp EPG"
-
-msgid "PID"
-msgstr "PID"
 
 msgid "PIN code needed"
 msgstr "Mã PIN cần thiết"
@@ -13059,20 +13001,11 @@ msgstr "Vui lòng thêm tiêu đề để biên dịch."
 msgid "Please be patient, a backup will now be made,\n"
 msgstr "Hãy kiên nhẫn, một bản sao lưu sẽ được thực hiện,\n"
 
-msgid "Please change recording endtime"
-msgstr "Vui lòng thay đổi thời gian ghi âm"
-
 msgid "Please check the manual of the receiver"
 msgstr "Vui lòng kiểm tra hướng dẫn của đầu thu"
 
-msgid "Please choose CCcam-Reader"
-msgstr "Vui lòng chọn CCcam-Reader"
-
 msgid "Please choose an extension..."
 msgstr "Vui lòng chọn một phần mở rộng ..."
-
-msgid "Please choose reader"
-msgstr "Vui lòng chọn người đọc"
 
 msgid "Please do not change any values unless you know what you are doing!"
 msgstr "Xin vui lòng không thay đổi bất kỳ giá trị trừ khi bạn biết những gì bạn đang làm!"
@@ -13840,9 +13773,6 @@ msgstr "Các nhà cung cấp"
 msgid "Providers:"
 msgstr "Các nhà cung cấp:"
 
-msgid "Providers: "
-msgstr "Các nhà cung cấp: "
-
 msgid "Proxy detected"
 msgstr ""
 
@@ -14035,24 +13965,13 @@ msgstr "Đọc Userdata từ oscam.conf"
 msgid "Reader"
 msgstr "Người đọc"
 
-msgid "Reader Statistics"
-msgstr "Thống kê độc giả"
-
 #, python-format
 msgid "Ready to install \"%s\" ?"
 msgstr "Sẵn sàng để cài đặt \"% s\"?"
 
 #, python-format
-msgid "Ready to install '%s'?"
-msgstr "Sẵn sàng để cài đặt% s?"
-
-#, python-format
 msgid "Ready to remove \"%s\" ?"
 msgstr "Sẵn sàng xóa \"% s\"?"
-
-#, python-format
-msgid "Ready to remove '%s'?"
-msgstr "Sẵn sàng để loại bỏ% s?"
 
 msgid "Real Life"
 msgstr ""
@@ -14166,7 +14085,7 @@ msgid "Record started! Stopping time shift now ..."
 msgstr "Ghi lại bắt đầu! Dừng timeshift ngay bây giờ ..."
 
 #, python-format
-msgid "Record time limited due to conflicting timer: %s"
+msgid "Record time limited due to conflicting timer:%s"
 msgstr "Ghi lại thời gian giới hạn do bộ đếm thời gian xung đột%s"
 
 msgid "Record write error (no space on disk?)"
@@ -14686,9 +14605,6 @@ msgstr "Đặt lại cài đặt nâng cao video về mặc định hệ thống
 msgid "Reset video enhancement settings to your last configuration?"
 msgstr "Đặt lại cài đặt nâng cao video về cấu hình cuối cùng của bạn?"
 
-msgid "Reshare"
-msgstr "Chia sẻ lại"
-
 msgid "Reshare:"
 msgstr "Chia sẻ lại:"
 
@@ -14978,9 +14894,6 @@ msgstr "Sum họp"
 msgid "SABnzbd"
 msgstr "SABnzbd"
 
-msgid "SABnzbd Actions"
-msgstr ""
-
 msgid "SABnzbd Settings"
 msgstr "Thiết lập SABnzbd"
 
@@ -14992,13 +14905,6 @@ msgstr "SATA"
 
 msgid "SATPI"
 msgstr ""
-
-msgid "SATPI Setting Actions"
-msgstr ""
-
-#, fuzzy
-msgid "SATPI Settings"
-msgstr "Cài đặt AFP"
 
 msgid "SCPC optimized search range"
 msgstr "Phạm vi tìm kiếm được tối ưu hóa SCPC"
@@ -15044,6 +14950,9 @@ msgstr "Tập tin thường xuyên"
 msgid "SSA file"
 msgstr ""
 
+msgid "SSH"
+msgstr ""
+
 msgid "SSID"
 msgstr ""
 
@@ -15075,17 +14984,11 @@ msgstr "Tthánh pierre và miquelon"
 msgid "Saint Vincent and the Grenadines"
 msgstr "Thánh vincent và Grenadines"
 
-msgid "Samba"
-msgstr "Samba"
-
-msgid "Samba Actions"
+msgid "Samba Client"
 msgstr ""
 
-msgid "Samba Log"
-msgstr "Nhật ký Samba"
-
-msgid "Samba Setup"
-msgstr "Cài đặt Samba"
+msgid "Samba Server"
+msgstr ""
 
 msgid "Same as in active"
 msgstr "Tương tự như trong hoạt động"
@@ -15541,6 +15444,9 @@ msgstr ""
 msgid "Select 'Yes' to hide channels without EPG data."
 msgstr "Nếu được đặt thành các kênh 'có' mà không có EPG sẽ không được hiển thị."
 
+msgid "Select 'Yes' to hide the server name and IP address of the server."
+msgstr ""
+
 #, python-format
 msgid "Select 'Yes' to include %s multiplexes in your search."
 msgstr "Chọn 'có' để bao gồm các ghép kênh %s trong tìm kiếm của bạn."
@@ -15723,6 +15629,9 @@ msgstr "Chọn kênh Quad"
 
 msgid "Select Satellites"
 msgstr "Chọn vệ tinh"
+
+msgid "Select Shares"
+msgstr ""
 
 msgid "Select Softcam"
 msgstr ""
@@ -15988,6 +15897,10 @@ msgstr "Chọn tần số  người dùng sẽ được chỉ định cho bộ c
 msgid "Select the Yes / True response"
 msgstr ""
 
+#, python-format
+msgid "Select the action for '%s'"
+msgstr ""
+
 msgid "Select the action to perform when the timer ends."
 msgstr ""
 
@@ -16206,6 +16119,12 @@ msgstr ""
 msgid "Select the time delay between each repeat of the button."
 msgstr ""
 
+msgid "Select the time to which the EPG should be positioned. Press LEFT/RIGHT to decrease/increase the time by an hour. Press PREV/NEXT to decrease/increase the time by a day."
+msgstr ""
+
+msgid "Select the time when this instant recording timer should end. Press LEFT/RIGHT to decrease/increase the time by a minute. Press PREV/NEXT to decrease/increase the time by an hour."
+msgstr ""
+
 msgid "Select the time when this timer should end."
 msgstr ""
 
@@ -16410,18 +16329,8 @@ msgstr "Tiếng Serbia"
 msgid "Serial No"
 msgstr "Không có nối tiếp"
 
-msgid "Serv.Name"
-msgstr "Serv.Name"
-
-#, python-format
-msgid "Server Info ( Oscam-Version: %s )"
-msgstr "Thông tin máy chủ (Phiên bản Oscam:% s)"
-
 msgid "Server down"
 msgstr "Máy chủ ngừng hoạt động"
-
-msgid "Server:"
-msgstr "Máy chủ:"
 
 msgid "Servers"
 msgstr "Máy chủ"
@@ -16609,6 +16518,9 @@ msgstr ""
 msgid "Set Scaling governor"
 msgstr ""
 
+msgid "Set Time"
+msgstr ""
+
 msgid "Set action for 'Info' key"
 msgstr "Đặt hành động cho khóa 'Thông tin'"
 
@@ -16789,9 +16701,6 @@ msgstr "Cài đặt"
 msgid "Setup - %s"
 msgstr "Cài đặt -% s"
 
-msgid "Setup AFP"
-msgstr "Thiết lập AFP"
-
 msgid "Setup Audio Sync"
 msgstr "Cài đặt đồng bộ hóa âm thanh"
 
@@ -16803,9 +16712,6 @@ msgstr "Thiết lập Audiomode"
 
 msgid "Setup Enigma2"
 msgstr "Cài đặt Enigma2"
-
-msgid "Setup FTP"
-msgstr "Thiết lập FTP"
 
 msgid "Setup Harddisk"
 msgstr "Cài đặt đĩa cứng"
@@ -16822,17 +16728,11 @@ msgstr "Cài đặt MiniDLNA"
 msgid "Setup Mounts"
 msgstr "Cài đặt gắn kết"
 
-msgid "Setup NFS"
-msgstr "Thiết lập NFS"
-
 msgid "Setup Network Services"
 msgstr "Cài đặt dịch vụ mạng"
 
 msgid "Setup Network Services (Samba, Ftp, NFS, ...)"
 msgstr "Thiết lập dịch vụ mạng (Samba, Ftp, NFS, ...)"
-
-msgid "Setup OpenVPN"
-msgstr "Thiết lập OpenVPN"
 
 msgid "Setup Plugin Browser"
 msgstr ""
@@ -16842,19 +16742,6 @@ msgstr ""
 
 msgid "Setup Plugins"
 msgstr "Cài đặt plugin"
-
-msgid "Setup SABnzbd"
-msgstr "Thiết lập SABnzbd"
-
-#, fuzzy
-msgid "Setup SATPI"
-msgstr "Thiết lập AFP"
-
-msgid "Setup Samba"
-msgstr "Cài đặt Samba"
-
-msgid "Setup Telnet"
-msgstr "Cài đặt Telnet"
 
 msgid "Setup Tuner"
 msgstr "Cài đặt bộ chỉnh"
@@ -16970,9 +16857,6 @@ msgstr "Cài đặt thiết bị vệ tinh của bạn"
 msgid "Seychelles"
 msgstr "Đảo Seychelles"
 
-msgid "Share Folders"
-msgstr "Chia sẻ thư mục"
-
 msgid "Share View"
 msgstr "Chia sẻ xem"
 
@@ -16981,6 +16865,9 @@ msgstr "Chia sẻ"
 
 msgid "Sharpness"
 msgstr "Độ sắc nét"
+
+msgid "ShellInABox"
+msgstr ""
 
 msgid "Shift"
 msgstr "Ca"
@@ -17012,9 +16899,6 @@ msgstr "Có nên thiết lập lại bộ đếm sự cố để ngăn khởi đ
 #, fuzzy
 msgid "Show"
 msgstr "Hiển thị EPG"
-
-msgid "Show /tmp/ecm.info"
-msgstr "Hiển thị /tmp/ecm.info"
 
 msgid "Show 1080p 24fps as"
 msgstr "Hiển thị 1080p 24 khung hình / giây"
@@ -17076,9 +16960,6 @@ msgstr ""
 
 msgid "Show CI messages"
 msgstr "Hiển thị tin nhắn CI"
-
-msgid "Show Clients"
-msgstr "Hiển thị khách hàng"
 
 msgid "Show Default Backup Files"
 msgstr "Hiển thị tập tin sao lưu mặc định"
@@ -17181,7 +17062,7 @@ msgstr "Hiển thị danh sách phim"
 msgid "Show Multi EPG"
 msgstr "Hiển thị nhiều EPG"
 
-msgid "Show OScam Info"
+msgid "Show OSCam Information"
 msgstr ""
 
 msgid "Show OScam/CCcam in Extension Menu"
@@ -17213,9 +17094,6 @@ msgstr ""
 
 msgid "Show RFmod setup..."
 msgstr "Hiển thị thiết lập RFmod ..."
-
-msgid "Show Readers/Proxies"
-msgstr "Hiển thị độc giả / Proxy"
 
 msgid "Show Record Movies"
 msgstr "Hiển thị phim ghi"
@@ -17637,7 +17515,7 @@ msgstr "Hiển thị EIT ngay bây giờ / tiếp theo trong infobar"
 msgid "Show the Logs Settings screen"
 msgstr ""
 
-msgid "Show the OScamInfo Screen"
+msgid "Show the OSCam information screen"
 msgstr ""
 
 #, fuzzy
@@ -18411,6 +18289,9 @@ msgstr "Chế độ bắt đầu"
 msgid "Start offline decode"
 msgstr "Bắt đầu giải mã ngoại tuyến"
 
+msgid "Start or Stop service"
+msgstr ""
+
 msgid "Start recording current event"
 msgstr ""
 
@@ -19168,17 +19049,11 @@ msgstr "Màu phụ đề Teletext"
 msgid "Telnet"
 msgstr "Telnet"
 
-msgid "Telnet Actions"
-msgstr ""
-
 msgid "Telnet Interface"
 msgstr "Giao diện Telnet"
 
 msgid "Telnet Port"
 msgstr "Cổng Telnet"
-
-msgid "Telnet Settings"
-msgstr "Thiết lập Telnet"
 
 msgid "Telugu"
 msgstr ""
@@ -20026,9 +19901,6 @@ msgstr ""
 msgid "Time Shift Settings"
 msgstr "Cài đặt thời gian"
 
-msgid "Time Update in Minutes:"
-msgstr "Cập nhật thời gian trong vài phút:"
-
 msgid "Time between slides in image viewer slide show."
 msgstr ""
 
@@ -20340,9 +20212,6 @@ msgstr "hàng đầu"
 
 msgid "Top and Bottom"
 msgstr "Trên và dưới"
-
-msgid "Total"
-msgstr "Toàn bộ"
 
 msgid "Total CPU benchmark"
 msgstr ""
@@ -20717,6 +20586,10 @@ msgstr "Không xác định"
 msgid "Unencrypted"
 msgstr "Không được mã hóa"
 
+#, python-format
+msgid "Unexpected error accessing WebIF: %s"
+msgstr ""
+
 msgid "UnhandledKey"
 msgstr "Không khóa"
 
@@ -20734,6 +20607,9 @@ msgstr "Uni cápLNB"
 
 msgid "Unicable Matrix"
 msgstr "Uni cáp Matrix"
+
+msgid "Uninstall"
+msgstr ""
 
 msgid "United Arab Emirates"
 msgstr "Các Tiểu Vương Quốc Ả Rập Thống Nhất"
@@ -20883,9 +20759,6 @@ msgstr "Cập nhật thất bại!"
 
 msgid "Update finished!"
 msgstr "Cập nhật xong!"
-
-msgid "Update interval (in seconds)"
-msgstr "Cập nhật khoảng thời gian (tính bằng giây)"
 
 msgid ""
 "Update succeeded!\n"
@@ -21282,9 +21155,6 @@ msgstr ""
 
 msgid "VOD"
 msgstr "VOD"
-
-msgid "VPN"
-msgstr "VPN"
 
 msgid "VPS Settings"
 msgstr ""
@@ -21741,18 +21611,6 @@ msgstr "Xem phim..."
 #, fuzzy
 msgid "Watch recordings"
 msgstr "Xem bản ghi ..."
-
-#, python-format
-msgid ""
-"We are really sorry. Your receiver encountered a software problem, and needs to be restarted.\n"
-"Please send the logfile %senigma2_crash_xxxxxx.log to www.opena.tv.\n"
-"Your receiver restarts in 10 seconds!\n"
-"Component: enigma2"
-msgstr ""
-"Chúng tôi thực sự xin lỗi. Đầu thu của bạn gặp sự cố phần mềm và cần được khởi động lại.\n"
-"Vui lòng gửi logfile% senigma2_crash_xxxxxx.log đến www.opena.tv.\n"
-"Máy thu của bạn khởi động lại sau 10 giây!\n"
-"Chào thân ái: enigma2"
 
 #, fuzzy
 msgid "Weather"
@@ -22417,14 +22275,6 @@ msgstr "Của bạn % s% s sẽ khởi động lại ..."
 
 #, python-format
 msgid ""
-"Your %s %s will be restarted after the installation of service\n"
-"Ready to install '%s'?"
-msgstr ""
-"Của bạn % s% s sẽ được khởi động lại sau khi cài đặt dịch vụ\n"
-"Sẵn sàng để cài đặt % s?"
-
-#, python-format
-msgid ""
 "Your %s %s will be restarted after the installation of service.\n"
 "\n"
 "Do you want to install now ?"
@@ -22438,18 +22288,6 @@ msgid ""
 "Your %s %s will be restarted after the removal of service\n"
 "Do you want to remove now ?"
 msgstr "Của % s% s bạn sẽ được khởi động lại sau khi xóa dịch vụ?"
-
-#, python-format
-msgid ""
-"Your %s %s will be restarted after the removal of service\n"
-"Do you want to remove now?"
-msgstr ""
-
-#, python-format
-msgid ""
-"Your %s %s will be restarted after the removal of service.\n"
-"Do you want to remove now?"
-msgstr ""
 
 msgid ""
 "Your Internet connection is not working!\n"
@@ -23648,12 +23486,6 @@ msgstr "turbo"
 msgid "uShare"
 msgstr "uShare"
 
-msgid "uShare Actions"
-msgstr ""
-
-msgid "uShare Log"
-msgstr "nhật ký uShare"
-
 msgid "uShare Name"
 msgstr "tên uShare"
 
@@ -23661,9 +23493,6 @@ msgid "uShare Port"
 msgstr "cổng uShare"
 
 msgid "uShare Selection Actions"
-msgstr ""
-
-msgid "uShare Setting Actions"
 msgstr ""
 
 msgid "uShare Settings"
@@ -23755,18 +23584,251 @@ msgstr "có (giữ thức ăn)"
 msgid "®"
 msgstr ""
 
+#~ msgid "A background update check is in progress, please wait a few minutes and try again."
+#~ msgstr "Việc kiểm tra cập nhật nền đang được tiến hành, vui lòng đợi vài phút và thử lại."
+
+#~ msgid "CIFS/Samba Settings"
+#~ msgstr "Cài đặt CIFS / Samba"
+
+#~ msgid "Config file name (ok to change):"
+#~ msgstr "Tên tệp cấu hình (ok để thay đổi):"
+
+#~ msgid ""
+#~ "Do you want to also install samba client ?\n"
+#~ "This allows you to mount your windows shares on this device."
+#~ msgstr ""
+#~ "Bạn có muốn cài đặt samba client không?\n"
+#~ "Điều này cho phép bạn gắn kết chia sẻ cửa sổ của mình trên thiết bị này."
+
+#~ msgid "FTP Settings"
+#~ msgstr "Thiết lập FTP"
+
+#~ msgid "Inadyn Log"
+#~ msgstr "Nhật ký đăng nhập"
+
+#~ msgid "Input config file name:"
+#~ msgstr "Tên tập tin cấu hình đầu vào:"
+
+#~ msgid "MiniDLNA Log"
+#~ msgstr "Nhật ký MiniDLNA"
+
+#~ msgid "NFS Settings"
+#~ msgstr "Thiết lập NFS"
+
+#~ msgid "OpenVPN Settings"
+#~ msgstr "Cài đặt OpenVPN"
+
+#~ msgid "OpenVpn Log"
+#~ msgstr "Nhật ký OpenVpn"
+
+#, python-format
+#~ msgid "Ready to remove '%s'?"
+#~ msgstr "Sẵn sàng để loại bỏ% s?"
+
+#, fuzzy
+#~ msgid "SATPI Settings"
+#~ msgstr "Cài đặt AFP"
+
+#~ msgid "Samba"
+#~ msgstr "Samba"
+
+#~ msgid "Samba Log"
+#~ msgstr "Nhật ký Samba"
+
+#~ msgid "Samba Setup"
+#~ msgstr "Cài đặt Samba"
+
+#~ msgid "Setup FTP"
+#~ msgstr "Thiết lập FTP"
+
+#~ msgid "Setup NFS"
+#~ msgstr "Thiết lập NFS"
+
+#~ msgid "Setup OpenVPN"
+#~ msgstr "Thiết lập OpenVPN"
+
+#~ msgid "Setup SABnzbd"
+#~ msgstr "Thiết lập SABnzbd"
+
+#, fuzzy
+#~ msgid "Setup SATPI"
+#~ msgstr "Thiết lập AFP"
+
+#~ msgid "Setup Samba"
+#~ msgstr "Cài đặt Samba"
+
+#~ msgid "Setup Telnet"
+#~ msgstr "Cài đặt Telnet"
+
+#~ msgid "Share Folders"
+#~ msgstr "Chia sẻ thư mục"
+
+#~ msgid "Telnet Settings"
+#~ msgstr "Thiết lập Telnet"
+
+#~ msgid "Time Update in Minutes:"
+#~ msgstr "Cập nhật thời gian trong vài phút:"
+
+#~ msgid "VPN"
+#~ msgstr "VPN"
+
+#, python-format
+#~ msgid ""
+#~ "Your %s %s will be restarted after the installation of service\n"
+#~ "Ready to install '%s'?"
+#~ msgstr ""
+#~ "Của bạn % s% s sẽ được khởi động lại sau khi cài đặt dịch vụ\n"
+#~ "Sẵn sàng để cài đặt % s?"
+
+#~ msgid "uShare Log"
+#~ msgstr "nhật ký uShare"
+
+#, python-format
+#~ msgid "%s ( %s Cards )"
+#~ msgstr "%s (%s Thẻ)"
+
+#~ msgid "( All readers)"
+#~ msgstr "(Tất cả độc giả)"
+
+#~ msgid "(Show only reader:"
+#~ msgstr "(Chỉ hiển thị người đọc:"
+
+#~ msgid "AFP"
+#~ msgstr "AFP"
+
+#~ msgid "AFP Settings"
+#~ msgstr "Cài đặt AFP"
+
+#~ msgid "Address"
+#~ msgstr "Địa chỉ IP"
+
+#~ msgid "CAID"
+#~ msgstr "CAID"
+
+#~ msgid "CAID:SrvID"
+#~ msgstr "CAID: SrvID"
+
+#~ msgid "Card infos (CCcam-Reader)"
+#~ msgstr "Thẻ thông tin (CCcam-Reader)"
+
+#~ msgid "Cards:"
+#~ msgstr "Thẻ:"
+
+#, python-format
+#~ msgid "Client Info ( Oscam-Version: %s )"
+#~ msgstr "Thông tin khách hàng (Phiên bản Oscar:% s)"
+
+#~ msgid "ECM Statistics"
+#~ msgstr "Thống kê ECM"
+
+#~ msgid "ECM Time"
+#~ msgstr "Giờ ECM"
+
+#~ msgid "ECM avg"
+#~ msgstr "ECM avg"
+
+#~ msgid "ECM last"
+#~ msgstr "ECM cuối"
+
+#~ msgid "ECM-Time"
+#~ msgstr "Thời gian ECM"
+
+#~ msgid "Hops"
+#~ msgstr "Nhảy"
+
+#~ msgid "Last Request"
+#~ msgstr "Yêu cầu cuối cùng."
+
+#~ msgid "Oscam Info - Main Menu"
+#~ msgstr "Thông tin Oscam - Menu chính"
+
+#~ msgid "Oscam Info Settings"
+#~ msgstr "Thông tin Oscam - Cấu hình"
+
+#, python-format
+#~ msgid "Oscam Log ( Oscam-Version: %s )"
+#~ msgstr "Nhật ký Oscam (Phiên bản Oscar:% s)"
+
+#~ msgid "OscamInfo Mainmenu"
+#~ msgstr "Bảng thông tin về oscam"
+
+#~ msgid "PID"
+#~ msgstr "PID"
+
+#~ msgid "Please choose CCcam-Reader"
+#~ msgstr "Vui lòng chọn CCcam-Reader"
+
+#~ msgid "Please choose reader"
+#~ msgstr "Vui lòng chọn người đọc"
+
+#~ msgid "Providers: "
+#~ msgstr "Các nhà cung cấp: "
+
+#~ msgid "Reader Statistics"
+#~ msgstr "Thống kê độc giả"
+
+#, python-format
+#~ msgid "Ready to install '%s'?"
+#~ msgstr "Sẵn sàng để cài đặt% s?"
+
+#~ msgid "Reshare"
+#~ msgstr "Chia sẻ lại"
+
+#~ msgid "Serv.Name"
+#~ msgstr "Serv.Name"
+
+#, python-format
+#~ msgid "Server Info ( Oscam-Version: %s )"
+#~ msgstr "Thông tin máy chủ (Phiên bản Oscam:% s)"
+
+#~ msgid "Server:"
+#~ msgstr "Máy chủ:"
+
+#~ msgid "Setup AFP"
+#~ msgstr "Thiết lập AFP"
+
+#~ msgid "Show /tmp/ecm.info"
+#~ msgstr "Hiển thị /tmp/ecm.info"
+
+#~ msgid "Show Clients"
+#~ msgstr "Hiển thị khách hàng"
+
+#~ msgid "Show Readers/Proxies"
+#~ msgstr "Hiển thị độc giả / Proxy"
+
+#~ msgid "Total"
+#~ msgstr "Toàn bộ"
+
+#~ msgid "Update interval (in seconds)"
+#~ msgstr "Cập nhật khoảng thời gian (tính bằng giây)"
+
+#~ msgid "Please change recording endtime"
+#~ msgstr "Vui lòng thay đổi thời gian ghi âm"
+
+#, python-format
+#~ msgid ""
+#~ "We are really sorry. Your receiver encountered a software problem, and needs to be restarted.\n"
+#~ "Please send the logfile %senigma2_crash_xxxxxx.log to www.opena.tv.\n"
+#~ "Your receiver restarts in 10 seconds!\n"
+#~ "Component: enigma2"
+#~ msgstr ""
+#~ "Chúng tôi thực sự xin lỗi. Đầu thu của bạn gặp sự cố phần mềm và cần được khởi động lại.\n"
+#~ "Vui lòng gửi logfile% senigma2_crash_xxxxxx.log đến www.opena.tv.\n"
+#~ "Máy thu của bạn khởi động lại sau 10 giây!\n"
+#~ "Chào thân ái: enigma2"
+
 #~ msgid "+24"
 #~ msgstr "+24"
 
 #~ msgid "-24"
 #~ msgstr "-24"
 
-#~ msgid ""
-#~ "A recording is currently running.\n"
-#~ "What do you want to do?"
-#~ msgstr ""
-#~ "Một bản ghi hiện đang chạy.\n"
-#~ "Bạn muốn làm gì?"
+msgid ""
+"A recording is currently running.\n"
+"What do you want to do?"
+msgstr ""
+"Một bản ghi hiện đang chạy.\n"
+"Bạn muốn làm gì?"
 
 #~ msgid "BouquetList"
 #~ msgstr "Danh sách kênh"
