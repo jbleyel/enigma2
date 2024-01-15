@@ -274,8 +274,7 @@ class Network:
 			elif self.regExpMatch(nameserverPatternv6, line) is not None:
 				self.nameservers.append(line.replace("nameserver ", ""))
 
-		print("[Network] resolv.conf")
-		print(self.nameservers)
+		# print "nameservers:", self.nameservers
 
 	def getConfiguredAdapters(self):
 		return self.configuredNetworkAdapters
