@@ -927,6 +927,8 @@ migrateSettings()
 # t.callback.append(dump_malloc_stats)
 # t.start(1000)
 
+print(enigma.getVFDSymbolsPoll())
+
 # Lets get going and load a screen.
 #
 try:

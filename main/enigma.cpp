@@ -473,6 +473,31 @@ const char *getOARev()
 	return OAREV;
 }
 
+#include <lib/base/estring.h>
+
+static unsigned char XX[12]={ 0x53,0x6D,0x61,0x72,0x43,0x41,0x4D,0x20,0x54,0x69,0x76,0xF9};
+
+int getVFDSymbolsPoll()
+{
+
+	char str[13];
+
+	memcpy(str, ((char*)XX), 12);
+	str[12] = '\0';
+
+	std::string m_app_name = "";
+	m_app_name = str;
+
+	if(m_app_name.size() > 0 && !isUTF8(m_app_name)) {
+		eDebug("not UTF8 hex output:%s\nstr output:%s\n",string_to_hex(m_app_name).c_str(),m_app_name.c_str());
+		m_app_name = repairUTF8(m_app_name.c_str(), 12);
+	}
+
+	eDebug("not UTF8 fixed %s", m_app_name.c_str());
+
+	return VFDSymbolsPoll;
+}
+
 const char *getGStreamerVersionString()
 {
 	return gst_version_string();
