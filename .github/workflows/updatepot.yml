@@ -16,7 +16,7 @@ jobs:
         run: |
           sudo apt-get -q update
           sudo apt-get install locales git wget automake autoconf m4 xz-utils file make gcc g++ bison gperf perl-base emacs-nox fp-compiler fp-units-fcl liblocale-gettext-perl groff texinfo texlive
-          sudo apt-get install libncurses5-dev libxml2-dev libacl1-dev default-jdk mono-mcs gobjc python clisp rep guile-2.0 gnu-smalltalk gawk tcl libintl-perl php lua5.1 gjs gir1.2-gtk-3.0 valac
+          sudo apt-get install libncurses5-dev libxml2-dev libacl1-dev default-jdk mono-mcs gobjc clisp rep gnu-smalltalk gawk tcl libintl-perl php lua5.1 gjs gir1.2-gtk-3.0 valac
           #sudo apt-get install gettext
           pushd .
           cd /tmp
