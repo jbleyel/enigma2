@@ -17,7 +17,7 @@ jobs:
           sudo apt-get -q update
           mkdir -p gettext
           cp po/gettext.tar ./gettext
-          tar -xvf ./gettext/gettext.tar
+          tar -xvf ./gettext/gettext.tar -C ./gettext
           sudo cp ./gettext/inst/lib/* /usr/lib
           sudo cp ./gettext/inst/bin/* /usr/bin
           sudo rm -rf ./gettext
