@@ -19,8 +19,8 @@ jobs:
           wget -O gettext.tar https://github.com/jbleyel/gettextbuild/raw/main/gettext.tar
           tar -xvf gettext.tar
           rm -rf inst/lib/gettext
-          sudo cp inst/lib /usr/lib
-          sudo cp inst/bin /usr/bin
+          sudo cp inst/lib/* /usr/lib
+          sudo cp inst/bin/* /usr/bin
           git config --global user.email "bot@openatv.com"
           git config --global user.name "atv enigma po Bot"
           git config advice.addignoredfile false
