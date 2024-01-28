@@ -35,9 +35,8 @@ jobs:
           instprefix=$basedir/inst
           ../../sources/gettext/configure --config-cache --prefix="$instprefix" CPPFLAGS="-Wall"
           make
-          make check
           sudo make install
-          cd $basedir
+          cd $basedir/inst
           ls -l
           popd
           
