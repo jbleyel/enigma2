@@ -15,39 +15,22 @@ jobs:
       - name: updatepot
         run: |
           sudo apt-get -q update
-          sudo apt-get install locales git wget automake autoconf m4 xz-utils file make gcc g++ bison gperf perl-base emacs-nox fp-compiler fp-units-fcl liblocale-gettext-perl groff texinfo texlive
-          sudo apt-get install libncurses5-dev libxml2-dev libacl1-dev default-jdk mono-mcs gobjc clisp rep gnu-smalltalk gawk tcl libintl-perl php lua5.1 gjs gir1.2-gtk-3.0 valac
-          #sudo apt-get install gettext
-          pushd .
-          cd /tmp
-          basedir=`pwd`
-          mkdir -p sources
-          cd sources
-          git clone --depth 1 https://git.savannah.gnu.org/git/gettext.git
-          cd gettext
-          date --utc --iso-8601 > .tarball-version
-          ./autopull.sh
-          ./autogen.sh
-          cd $basedir
-          rm -rf build
-          mkdir -p build/gettext
-          cd build/gettext
-          instprefix=$basedir/inst
-          ../../sources/gettext/configure --config-cache --prefix="$instprefix" CPPFLAGS="-Wall"
-          make
-          sudo make install
-          cd $basedir
-          tar -cf gettext.tar inst
-          sudo mv gettext.tar /
-          popd
-          rm -rf /tmp
+          sudo apt-get install wget
+          wget -O gettext.tar https://github.com/jbleyel/gettextbuild/raw/main/gettext.tar
+          tar -xvf gettext.tar
+          rm -rf inst/lib/gettext
+          sudo cp inst/lib /usr/lib
+          sudo cp inst/bin /usr/bin
           git config --global user.email "bot@openatv.com"
           git config --global user.name "atv enigma po Bot"
           git config advice.addignoredfile false
           git clean -fd
           git checkout master
+          cd po
+          ./updatepot.sh
+          cd ..
           git add -u
           git add * || :
-          git commit -m "gettext"
+          git commit -m "pot update"
           git remote add upstream https://${GITHUB_TOKEN}@github.com/jbleyel/enigma2.git > /dev/null 2>&1
           git push --quiet upstream master || echo "failed to push with error $?"
