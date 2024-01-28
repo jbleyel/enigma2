@@ -12,16 +12,10 @@ jobs:
         with:
           ref: 'master'
 
+      - uses: jbleyel/gettext-action@v1
+
       - name: updatepot
         run: |
-          sudo apt-get -q update
-          sudo apt-get install wget
-          mkdir -p gettext
-          wget -O ./gettext/gettext.tar.gz https://github.com/jbleyel/gettextbuild/raw/main/gettext.tar.gz
-          tar -xvf ./gettext/gettext.tar.gz -C ./gettext
-          sudo cp ./gettext/inst/lib/* /usr/lib
-          sudo cp ./gettext/inst/bin/* /usr/bin
-          sudo rm -rf ./gettext
           git config --global user.email "bot@openatv.com"
           git config --global user.name "atv enigma po Bot"
           git config advice.addignoredfile false
