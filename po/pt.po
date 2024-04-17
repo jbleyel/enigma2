@@ -1,20 +1,21 @@
 # openATV <openatv@gmail.com>, 2021.
 # Carlos Manuel Ferreira Alves <me@carlosmfalves.eu>, 2023.
 # Pedro Figueiredo <pabfig@sapo.pt>, 2023.
+# ssantos <ssantos@web.de>, 2024.
 msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-14 18:15+0000\n"
-"PO-Revision-Date: 2023-06-26 04:40+0000\n"
-"Last-Translator: Pedro Figueiredo <pabfig@sapo.pt>\n"
+"POT-Creation-Date: 2024-03-10 17:07+0000\n"
+"PO-Revision-Date: 2024-03-28 13:02+0000\n"
+"Last-Translator: ssantos <ssantos@web.de>\n"
 "Language-Team: Portuguese <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/pt/>\n"
 "Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18.1\n"
+"X-Generator: Weblate 5.5-dev\n"
 "X-Poedit-SourceCharset: iso-8859-15\n"
 
 msgid ""
@@ -964,6 +965,12 @@ msgid "%d ms"
 msgstr "%d ms"
 
 #, python-format
+msgid "%d package found."
+msgid_plural "%d packages found."
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "%d package has an update"
 msgid_plural "%d packages have updates."
 msgstr[0] ""
@@ -1190,11 +1197,6 @@ msgstr "controlo remoto de %s %s (nativo)"
 msgid "%s (%04o)"
 msgstr "%s (%04o)"
 
-#
-#, python-format
-msgid "%s (%s)"
-msgstr "%s (%s)"
-
 #, python-format
 msgid "%s - Setup"
 msgstr "%s - Configuração"
@@ -1262,10 +1264,6 @@ msgstr "%s%s(Por defeito: %s)"
 #, python-format
 msgid "%s/%s: %s"
 msgstr "%s/%s: %s"
-
-#, python-format
-msgid "%s: %s"
-msgstr "%s: %s"
 
 #, python-format
 msgid "%sMode for FHD (up to 1080p)"
@@ -1624,7 +1622,7 @@ msgid "A crash log was %s created in '%s'"
 msgstr "Um log de falhas foi %s criado em '%s'"
 
 msgid "A file from media is in use!"
-msgstr "Está a ser utilizado um arquivo multimédia!"
+msgstr "Está a ser utilizado um ficheiro multimédia!"
 
 #
 #, python-format
@@ -1903,6 +1901,9 @@ msgstr "Activo"
 
 msgid "Active clients"
 msgstr "Clientes activos"
+
+msgid "Active only"
+msgstr ""
 
 #
 msgid "Adapter Settings"
@@ -2323,7 +2324,7 @@ msgid "Allows you to enable/disable displaying icons on the front panel."
 msgstr "Permite activar/desactivar a apresentação de ícones no LCD."
 
 msgid "Allows you to hide the extensions of known file types."
-msgstr "Permite ocultar as extensões de tipos de arquivo conhecidos."
+msgstr "Permite ocultar as extensões de tipos de ficheiros conhecidos."
 
 msgid "Allows you to set the maximum size of the Debug log size (MB). When that size is reached, a new file will be created."
 msgstr "Permite-lhe definir o tamanho máximo do registo de depuração (MB). Quando esse tamanho for atingido, será criado um novo ficheiro."
@@ -3632,10 +3633,10 @@ msgid "Can not download EPG"
 msgstr "Não é possível descarregar o EPG"
 
 msgid "Can not download current region details"
-msgstr "Não é possível baixar os detalhes da região atual"
+msgstr "Não é possível descarregar os detalhes da região atual"
 
 msgid "Can not download list of regions"
-msgstr "Não é possível baixar a lista das regiões"
+msgstr "Não é possível descarregar a lista das regiões"
 
 msgid "Can not download timers"
 msgstr "Não é possível descarregar temporizadores"
@@ -3680,11 +3681,11 @@ msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
 msgstr ""
-"Não é possível reproduzir o próximo arquivo do time shift!\n"
+"Não é possível reproduzir o próximo ficheiro do time shift!\n"
 "Mude para a TV ao vivo e reiniciar o time shift?"
 
 msgid "Can't play the previous time shift file! You can try again."
-msgstr "Não é possível reproduzir o arquivo de time shift anterior! Você pode tentar novamente."
+msgstr "Não é possível reproduzir o ficheiro de time shift anterior! Pode tentar novamente."
 
 msgid "Can't unmount partition, make sure it is not being used for swap or record/time shift paths"
 msgstr ""
@@ -4185,7 +4186,7 @@ msgid "Choose the location where the EPG data will be stored when the %s %s is s
 msgstr "Escolha o local onde os dados EPG serão armazenados quando o %s %s for desligado. O local deve estar disponível no momento da inicialização."
 
 msgid "Choose the name of the file that holds the EPG data when the %s %s is shut down. This can be handy to differentiate between several boxes."
-msgstr "Escolha o nome do arquivo que contém os dados EPG quando o %s %s for desligado. Isso pode ser útil para diferenciar entre várias boxes."
+msgstr "Escolha o nome do ficheiro que contém os dados EPG quando o %s %s for desligado. Isso pode servir para diferenciar entre várias boxes."
 
 msgid "Choose the option to correct invalid EPG data."
 msgstr "Escolha a opção para corrigir dados EPG inválidos."
@@ -4952,7 +4953,7 @@ msgstr ""
 
 #, python-format
 msgid "Congratulations, you have successfully configured your %s %s for use with the IceTV Smart Recording service. Your IceTV guide will now download in the background."
-msgstr "Parabéns, você configurou com sucesso seu %s %s para uso com o serviço IceTV Smart Recording. Seu guia IceTV agora será baixado em segundo plano."
+msgstr "Parabéns, configurou com sucesso o seu %s %s para uso com o serviço IceTV Smart Recording. O seu guia IceTV agora será descarregado em segundo plano."
 
 #
 msgid "Connect"
@@ -6454,7 +6455,7 @@ msgid "Distribution build date"
 msgstr "Data da compilação da distribuição"
 
 msgid "Distribution file system"
-msgstr "Sistema de arquivos da distribuição"
+msgstr "Sistema de ficheiros da distribuição"
 
 msgid "Distribution folder"
 msgstr "Pasta da distribuição"
@@ -6775,7 +6776,7 @@ msgid "Downloading Image"
 msgstr "Descarregar imagem"
 
 msgid "Downloading latest update list.  Please wait..."
-msgstr "Baixando a lista de atualização mais recente. Por favor, aguarde..."
+msgstr "A descarregar a lista de atualização mais recente. Por favor, aguarde..."
 
 #
 msgid "Downloading plugin information. Please wait..."
@@ -7075,6 +7076,9 @@ msgstr "Activar %s pro:"
 #
 msgid "Enable 5V for active antenna"
 msgstr "Activar saída de 5V para a antena"
+
+msgid "Enable Autorecord"
+msgstr ""
 
 #
 msgid "Enable BT Audio"
@@ -7517,6 +7521,10 @@ msgstr "Entretenimento"
 msgid "Entitlements"
 msgstr ""
 
+#, python-format
+msgid "Entitlements for 'CAID %s'"
+msgstr ""
+
 msgid "Entry image and text"
 msgstr ""
 
@@ -7559,7 +7567,7 @@ msgstr ""
 
 #, python-format
 msgid "Error %d: System information file '%s' can't be read!  (%s)"
-msgstr "Erro %d: O arquivo de informações do sistema '%s' não pode ser lido!  (%s)"
+msgstr "Erro %d: O ficheiro de informações do sistema '%s' não pode ser lido!  (%s)"
 
 #, python-format
 msgid "Error %d: Unable to change password!  (%s)"
@@ -7574,11 +7582,19 @@ msgid "Error %d: Unable to create directory '%s'!  (%s)"
 msgstr ""
 
 #, python-format
+msgid "Error %d: Unable to create package directory '%s'!  (%s)"
+msgstr ""
+
+#, python-format
 msgid "Error %d: Unable to delete downloaded image '%s'!  (%s)"
 msgstr ""
 
 #, python-format
 msgid "Error %d: Unable to link '%s' as '%s'!  (%s)"
+msgstr ""
+
+#, python-format
+msgid "Error %d: Unable to read '%s'!  (%s)"
 msgstr ""
 
 #, python-format
@@ -9215,13 +9231,13 @@ msgid "Here can set the EPG will alway open at the current channel, the first ch
 msgstr ""
 
 msgid "Here you can browse (but not modify) the files that are added to the backupfile by default (E2-setup, channels, network)."
-msgstr "Aqui você pode procurar (mas não modificar) os arquivos que são adicionados ao arquivo copia de segurança por padrão (configuração E2, canais, rede)."
+msgstr "Aqui pode procurar (mas não modificar) os ficheiros adicionados ao ficheiro copia de segurança por padrão (configuração E2, canais, rede)."
 
 msgid "Here you can select which files should be excluded from the backup."
 msgstr "Aqui pode selecionar os ficheiros que devem ser excluídos da cópia de segurança."
 
 msgid "Here you can select which files should be updated with a online update"
-msgstr "Aqui você pode selecionar quais arquivos devem ser atualizados com uma atualização on-line"
+msgstr "Aqui pode selecionar quais ficheiros devem ser atualizados com uma atualização on-line"
 
 msgid "Here you can set what is called when pressing the 'Info' key."
 msgstr ""
@@ -9653,6 +9669,9 @@ msgstr ""
 
 msgid "If set to 'yes', allows you to use timeshift with alternative audio plugins."
 msgstr "Se definido como 'sim', permite que você use timeshift com plugins de áudio alternativos."
+
+msgid "If set to 'yes', enable autorecord for automatically background timeshift"
+msgstr ""
 
 msgid "If the deep standby workaround is enabled wait until the system time is synchronized. Depending on the requirement the device wake up will continuing after a maximum of 2 minutes."
 msgstr ""
@@ -10301,6 +10320,9 @@ msgid "Just zap"
 msgstr "Apenas zap"
 
 msgid "KA-SAT"
+msgstr ""
+
+msgid "KSymb/s"
 msgstr ""
 
 msgid "Kalaallisut / Greenlandic"
@@ -11091,7 +11113,7 @@ msgid "Manage the highlighted %s / list of %s"
 msgstr ""
 
 msgid "Manage your online update files"
-msgstr "Gerenciar seus arquivos de atualização online"
+msgstr "Gerir os seus ficheiros de atualização online"
 
 msgid "Manual"
 msgstr "Manual"
@@ -11512,9 +11534,6 @@ msgstr ""
 
 msgid "Mounts Devices"
 msgstr "Dispositivos de montagem"
-
-msgid "Mounts Settings"
-msgstr "Configurações de montagem"
 
 msgid "Move"
 msgstr "Mover"
@@ -12728,10 +12747,21 @@ msgstr ""
 msgid "OSCamInfo Actions"
 msgstr ""
 
-msgid "OSCamInfo Log"
+msgid "OSCamInfo Log Actions"
 msgstr ""
 
-msgid "OSCamInfo Log Actions"
+#, python-format
+msgid "OSCamInfo: %s Entitlements for '%s'"
+msgstr ""
+
+#, python-format
+msgid "OSCamInfo: Entitlements for '%s'"
+msgstr ""
+
+msgid "OSCamInfo: Information"
+msgstr ""
+
+msgid "OSCamInfo: Log"
 msgstr ""
 
 msgid "OSD"
@@ -13740,9 +13770,12 @@ msgstr ""
 msgid "Please wait while the feeds are reset (cleared and reloaded)..."
 msgstr ""
 
+msgid "Please wait while the file is read and processed..."
+msgstr ""
+
 #
 msgid "Please wait while the list downloads..."
-msgstr "Por favor, espere enquanto a lista é baixada..."
+msgstr "Por favor, espere enquanto a lista é descarregada..."
 
 msgid "Please wait while the plugin is installed."
 msgid_plural "Please wait while the plugins are installed."
@@ -14026,6 +14059,30 @@ msgstr ""
 
 msgid "Preferred tuner"
 msgstr "Sintonizador preferido"
+
+msgid "Preferred tuner ATSC"
+msgstr ""
+
+msgid "Preferred tuner ATSC for recordings"
+msgstr ""
+
+msgid "Preferred tuner DVB-C"
+msgstr ""
+
+msgid "Preferred tuner DVB-C for recordings"
+msgstr ""
+
+msgid "Preferred tuner DVB-S"
+msgstr ""
+
+msgid "Preferred tuner DVB-S for recordings"
+msgstr ""
+
+msgid "Preferred tuner DVB-T"
+msgstr ""
+
+msgid "Preferred tuner DVB-T for recordings"
+msgstr ""
 
 msgid "Preferred tuner for recordings"
 msgstr "Sintonizador preferido para gravações"
@@ -16213,7 +16270,7 @@ msgid "Select 'Yes' to show Softcam packages in the Download Plugins screen."
 msgstr ""
 
 msgid "Select 'Yes' to show directories at the top/start of the list, or select 'No' to show files first."
-msgstr "Selecione 'Sim' para mostrar os diretórios no topo/início da lista ou selecione 'Não' para mostrar os arquivos primeiro."
+msgstr "Selecione 'Sim' para mostrar os diretórios no topo/início da lista ou selecione 'Não' para mostrar os ficheiros primeiro."
 
 msgid "Select 'Yes' to show driver packages in the Download Plugins screen."
 msgstr ""
@@ -16264,6 +16321,12 @@ msgid "Select 'Yes' to show the current directory in the list of directories. No
 msgstr ""
 
 msgid "Select 'Yes' to show web link packages in the Download Plugins screen."
+msgstr ""
+
+msgid "Select 'Yes' to split tasks into separate actions."
+msgstr ""
+
+msgid "Select 'Yes' to use alternate GitHub feed IP addresses. This can be helpful if you use a VPN and the normal feeds can't be accessed via the published DNS names."
 msgstr ""
 
 msgid "Select 'Yes' to use signal values (SNR, etc) calculated from the older API V3. This API version has now been superseded."
@@ -17637,7 +17700,7 @@ msgid "Short filenames"
 msgstr "Nomes curtos de ficheiros"
 
 msgid "Short filenames with time"
-msgstr "Nomes de arquivos curtos com o tempo"
+msgstr "Nomes de ficheiros curtos com o tempo"
 
 msgid "Should the crash counter be reset to prevent a restart?"
 msgstr ""
@@ -17918,6 +17981,12 @@ msgstr "Apresentar um valor de cursor adicional"
 msgid "Show advanced settings"
 msgstr "Mostrar opções avançadas"
 
+msgid "Show all"
+msgstr ""
+
+msgid "Show all details"
+msgstr ""
+
 msgid "Show animation while busy"
 msgstr "Mostrar animação enquanto ocupado"
 
@@ -17979,6 +18048,9 @@ msgstr "Mostrar informação detalhada dos programas"
 
 msgid "Show detailed event info (setup in menu)"
 msgstr "Mostrar informações detalhadas do evento (configuração no menu)"
+
+msgid "Show details"
+msgstr ""
 
 msgid "Show details of highlighted task"
 msgstr ""
@@ -18391,7 +18463,7 @@ msgid "Shows Plugins Browser. Here you can setup installed Plugin"
 msgstr "Mostra o navegador de plugins. Aqui você pode configurar o Plugin instalado"
 
 msgid "Shows available plugins. Here you can download and install them"
-msgstr "Mostra os plugins disponíveis. Aqui você pode baixá-los e instalá-los"
+msgstr "Mostra os plugins disponíveis. Pode descarregá-los e instalá-los aqui"
 
 msgid "Shows available softcams. Here you can download and install them"
 msgstr "Mostra as softcams disponíveis. Aqui pode descarregá-los e instalá-los"
@@ -19008,6 +19080,9 @@ msgstr ""
 msgid "Split preview mode"
 msgstr "Dividir modo de pré-visualização"
 
+msgid "Split tasks"
+msgstr ""
+
 msgid "Splitscreen"
 msgstr "Dividir ecrã"
 
@@ -19589,7 +19664,7 @@ msgstr ""
 
 #
 msgid "Switch to file list"
-msgstr "Mudar para a lista de arquivos"
+msgstr "Mudar para a lista de ficheiro"
 
 msgid "Switch to file list panel"
 msgstr ""
@@ -19887,6 +19962,9 @@ msgstr ""
 
 #, python-format
 msgid "Temp directory (%s)"
+msgstr ""
+
+msgid "Temporary directory"
 msgstr ""
 
 #
@@ -20319,7 +20397,7 @@ msgid "There was an error downloading the region list"
 msgstr ""
 
 msgid "There was an error downloading the update list.  Please try again."
-msgstr "Ocorreu um erro ao transferir a lista de atualização.  Tente novamente."
+msgstr "Ocorreu um erro ao descarregar a lista de atualização.  Tente novamente."
 
 msgid "There was an error while trying to login."
 msgstr ""
@@ -21778,6 +21856,9 @@ msgstr ""
 msgid "Use a gateway"
 msgstr "Usar um gateway"
 
+msgid "Use alternate GitHub DNS"
+msgstr ""
+
 msgid "Use an alternative smaller screen."
 msgstr ""
 
@@ -22319,10 +22400,10 @@ msgstr ""
 msgid "Virtual KeyBoard"
 msgstr ""
 
-msgid "Virtual KeyBoard Actions"
+msgid "Virtual Keyboard Actions"
 msgstr ""
 
-msgid "Virtual KeyBoard Text:"
+msgid "Virtual Keyboard Text:"
 msgstr "Texto do teclado virtual:"
 
 msgid "Virtual Keyboard"
@@ -22474,6 +22555,9 @@ msgstr "Aviso"
 
 #, python-format
 msgid "Warning: %d feeds were unable to be reloaded!"
+msgstr ""
+
+msgid "Warning: Canceling this process will leave the feeds in an incomplete and unusable state!"
 msgstr ""
 
 msgid "Warning: Overrides are currently active!"
@@ -22750,6 +22834,12 @@ msgid "When enabled, the receiver will select an AC3 track (when available)."
 msgstr ""
 
 msgid "When enabled, the receiver will select an AC3+ track (when available)."
+msgstr ""
+
+msgid "When enabled, this setting has more weight than 'Preferred tuner for recordings'."
+msgstr ""
+
+msgid "When enabled, this setting has more weight than 'Preferred tuner'."
 msgstr ""
 
 msgid "When enabled, time shift starts automatically in background after specified time."
@@ -24569,35 +24659,17 @@ msgstr "sim (mantenha os feeds)"
 msgid "®"
 msgstr ""
 
-msgid "Preferred tuner DVB-S"
-msgstr ""
+#
+#, python-format
+#~ msgid "%s (%s)"
+#~ msgstr "%s (%s)"
 
-msgid "Preferred tuner DVB-S for recordings"
-msgstr ""
+#, python-format
+#~ msgid "%s: %s"
+#~ msgstr "%s: %s"
 
-msgid "Preferred tuner DVB-T"
-msgstr ""
-
-msgid "Preferred tuner DVB-T for recordings"
-msgstr ""
-
-msgid "Preferred tuner DVB-C"
-msgstr ""
-
-msgid "Preferred tuner DVB-C for recordings"
-msgstr ""
-
-msgid "When enabled, this setting has more weight than 'Preferred tuner'."
-msgstr ""
-
-msgid "When enabled, this setting has more weight than 'Preferred tuner for recordings'."
-msgstr ""
-
-msgid "Preferred tuner ATSC"
-msgstr ""
-
-msgid "Preferred tuner ATSC for recordings"
-msgstr ""
+#~ msgid "Mounts Settings"
+#~ msgstr "Configurações de montagem"
 
 #, python-format
 #~ msgid "%s  -  %s    (%s%d Min)"

@@ -305,9 +305,12 @@ class InfoBarAutoCam:
 	FILENAME = "/etc/enigma2/autocam"
 
 	def __init__(self):
-		self.autoCam = {}
 		self.currentCam = BoxInfo.getItem("CurrentSoftcam")
 		self.defaultCam = config.misc.autocamDefault.value or self.currentCam
+		self.reload()
+
+	def reload(self):
+		self.autoCam = {}
 		items = fileReadLines(self.FILENAME, default=[], source=self.__class__.__name__)
 		items = [item for item in items if item and "=" in item]
 		for item in items:
@@ -4206,6 +4209,18 @@ class InfoBarSubserviceSelection:
 	def playSubservice(self, ref):
 		if ref.getUnsignedData(6) == 0 and "%3a" not in ref.toString():
 			ref.setName("")
+		if ref.getPath():
+			wrappererror = None
+			for p in plugins.getPlugins(PluginDescriptor.WHERE_CHANNEL_ZAP):
+				(newurl, errormsg) = p(session=self.session, service=ref)
+				if errormsg:
+					wrappererror = _("Error getting link via %s\n%s") % (p.name, errormsg)
+					break
+				elif newurl:
+					ref.setAlternativeUrl(newurl)
+					break
+			if wrappererror:
+				Notifications.AddPopup(text=wrappererror, type=MessageBox.TYPE_ERROR, timeout=5, id="channelzapwrapper")
 		self.session.nav.playService(ref, checkParentalControl=False, adjust=False)
 
 	def changeSubservice(self, direction):

@@ -840,6 +840,9 @@ enigma.eProfileWrite("InitSkins")
 from skin import InitSkins
 InitSkins()
 
+from Components.ServiceList import InitServiceListSettings
+InitServiceListSettings()
+
 enigma.eProfileWrite("InitInputDevices")
 from Components.InputDevice import InitInputDevices
 InitInputDevices()
@@ -926,8 +929,6 @@ migrateSettings()
 # t = eTimer()
 # t.callback.append(dump_malloc_stats)
 # t.start(1000)
-
-print(enigma.getVFDSymbolsPoll())
 
 # Lets get going and load a screen.
 #

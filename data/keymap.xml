@@ -266,6 +266,10 @@
 		<key id="\x1b" mapto="cancel" flags="m" />
 	</map>
 
+	<map context="ShowVirtualKeyboardActions">
+		<key id="KEY_TEXT" mapto="showVirtualKeyboard" flags="m" />
+	</map>
+
 	<map context="TextEditActions">
 		<key id="KEY_BACK" mapto="backspace" flags="mr" />
 		<key id="KEY_LAST" mapto="backspace" flags="mr" />
@@ -617,6 +621,10 @@
 		<key id="KEY_GREEN" mapto="showSatellites" flags="m" />
 		<key id="KEY_YELLOW" mapto="showProviders" flags="m" />
 		<key id="KEY_BLUE" mapto="showFavourites" flags="m" />
+		<key id="KEY_F5" mapto="showAllServices" flags="m" />
+		<key id="KEY_F6" mapto="showSatellites" flags="m" />
+		<key id="KEY_F7" mapto="showProviders" flags="m" />
+		<key id="KEY_F8" mapto="showFavourites" flags="m" />
 		<key id="KEY_CHANNELUP" mapto="nextBouquet" flags="m" />
 		<key id="KEY_CHANNELDOWN" mapto="prevBouquet" flags="m" />
 		<key id="KEY_UP" mapto="keyUp" flags="mr"/>

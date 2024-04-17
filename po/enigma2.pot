@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-28 20:49+0000\n"
+"POT-Creation-Date: 2024-03-10 17:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1163,10 +1163,6 @@ msgid "%s (%04o)"
 msgstr ""
 
 #, python-format
-msgid "%s (%s)"
-msgstr ""
-
-#, python-format
 msgid "%s - Setup"
 msgstr ""
 
@@ -1229,10 +1225,6 @@ msgstr ""
 
 #, python-format
 msgid "%s/%s: %s"
-msgstr ""
-
-#, python-format
-msgid "%s: %s"
 msgstr ""
 
 #, python-format
@@ -1802,6 +1794,9 @@ msgid "Active"
 msgstr ""
 
 msgid "Active clients"
+msgstr ""
+
+msgid "Active only"
 msgstr ""
 
 msgid "Adapter Settings"
@@ -3902,12 +3897,6 @@ msgid "Choose how much EPG history, if any, to keep in the EPG cache. This histo
 msgstr ""
 
 msgid "Choose how often to connect to IceTV server to check for updates."
-msgstr ""
-
-msgid "Choose the Display Skin and press GREEN to activate the skin."
-msgstr ""
-
-msgid "Choose the OSD Skin and press GREEN to activate the skin."
 msgstr ""
 
 msgid "Choose the amount of additional slots."
@@ -6667,6 +6656,9 @@ msgstr ""
 msgid "Enable 5V for active antenna"
 msgstr ""
 
+msgid "Enable Autorecord"
+msgstr ""
+
 msgid "Enable BT Audio"
 msgstr ""
 
@@ -7086,6 +7078,10 @@ msgstr ""
 msgid "Entitlements"
 msgstr ""
 
+#, python-format
+msgid "Entitlements for 'CAID %s'"
+msgstr ""
+
 msgid "Entry image and text"
 msgstr ""
 
@@ -7142,11 +7138,19 @@ msgid "Error %d: Unable to create directory '%s'!  (%s)"
 msgstr ""
 
 #, python-format
+msgid "Error %d: Unable to create package directory '%s'!  (%s)"
+msgstr ""
+
+#, python-format
 msgid "Error %d: Unable to delete downloaded image '%s'!  (%s)"
 msgstr ""
 
 #, python-format
 msgid "Error %d: Unable to link '%s' as '%s'!  (%s)"
+msgstr ""
+
+#, python-format
+msgid "Error %d: Unable to read '%s'!  (%s)"
 msgstr ""
 
 #, python-format
@@ -9100,6 +9104,9 @@ msgid "If set to 'Yes' the same commands will be sent to the TV for deep standby
 msgstr ""
 
 msgid "If set to 'yes', allows you to use timeshift with alternative audio plugins."
+msgstr ""
+
+msgid "If set to 'yes', enable autorecord for automatically background timeshift"
 msgstr ""
 
 msgid "If the deep standby workaround is enabled wait until the system time is synchronized. Depending on the requirement the device wake up will continuing after a maximum of 2 minutes."
@@ -11950,10 +11957,21 @@ msgstr ""
 msgid "OSCamInfo Actions"
 msgstr ""
 
-msgid "OSCamInfo Log"
+msgid "OSCamInfo Log Actions"
 msgstr ""
 
-msgid "OSCamInfo Log Actions"
+#, python-format
+msgid "OSCamInfo: %s Entitlements for '%s'"
+msgstr ""
+
+#, python-format
+msgid "OSCamInfo: Entitlements for '%s'"
+msgstr ""
+
+msgid "OSCamInfo: Information"
+msgstr ""
+
+msgid "OSCamInfo: Log"
 msgstr ""
 
 msgid "OSD"
@@ -12892,6 +12910,9 @@ msgstr ""
 msgid "Please wait while the feeds are reset (cleared and reloaded)..."
 msgstr ""
 
+msgid "Please wait while the file is read and processed..."
+msgstr ""
+
 msgid "Please wait while the list downloads..."
 msgstr ""
 
@@ -13152,6 +13173,30 @@ msgid "Prefer subtitles stored by service"
 msgstr ""
 
 msgid "Preferred tuner"
+msgstr ""
+
+msgid "Preferred tuner ATSC"
+msgstr ""
+
+msgid "Preferred tuner ATSC for recordings"
+msgstr ""
+
+msgid "Preferred tuner DVB-C"
+msgstr ""
+
+msgid "Preferred tuner DVB-C for recordings"
+msgstr ""
+
+msgid "Preferred tuner DVB-S"
+msgstr ""
+
+msgid "Preferred tuner DVB-S for recordings"
+msgstr ""
+
+msgid "Preferred tuner DVB-T"
+msgstr ""
+
+msgid "Preferred tuner DVB-T for recordings"
 msgstr ""
 
 msgid "Preferred tuner for recordings"
@@ -15246,6 +15291,12 @@ msgstr ""
 msgid "Select 'Yes' to show web link packages in the Download Plugins screen."
 msgstr ""
 
+msgid "Select 'Yes' to split tasks into separate actions."
+msgstr ""
+
+msgid "Select 'Yes' to use alternate GitHub feed IP addresses. This can be helpful if you use a VPN and the normal feeds can't be accessed via the published DNS names."
+msgstr ""
+
 msgid "Select 'Yes' to use signal values (SNR, etc) calculated from the older API V3. This API version has now been superseded."
 msgstr ""
 
@@ -15271,9 +15322,6 @@ msgid "Select CAId"
 msgstr ""
 
 msgid "Select Device"
-msgstr ""
-
-msgid "Select Display Skin"
 msgstr ""
 
 msgid "Select Enigma2 Skin"
@@ -15313,9 +15361,6 @@ msgid "Select Satellites"
 msgstr ""
 
 msgid "Select Shares"
-msgstr ""
-
-msgid "Select Skin"
 msgstr ""
 
 msgid "Select Softcam"
@@ -16829,6 +16874,12 @@ msgstr ""
 msgid "Show advanced settings"
 msgstr ""
 
+msgid "Show all"
+msgstr ""
+
+msgid "Show all details"
+msgstr ""
+
 msgid "Show animation while busy"
 msgstr ""
 
@@ -16887,6 +16938,9 @@ msgid "Show detailed event info"
 msgstr ""
 
 msgid "Show detailed event info (setup in menu)"
+msgstr ""
+
+msgid "Show details"
 msgstr ""
 
 msgid "Show details of highlighted task"
@@ -17853,6 +17907,9 @@ msgstr ""
 msgid "Split preview mode"
 msgstr ""
 
+msgid "Split tasks"
+msgstr ""
+
 msgid "Splitscreen"
 msgstr ""
 
@@ -18678,6 +18735,9 @@ msgstr ""
 
 #, python-format
 msgid "Temp directory (%s)"
+msgstr ""
+
+msgid "Temporary directory"
 msgstr ""
 
 msgid "Tennis"
@@ -20440,6 +20500,9 @@ msgstr ""
 msgid "Use a gateway"
 msgstr ""
 
+msgid "Use alternate GitHub DNS"
+msgstr ""
+
 msgid "Use an alternative smaller screen."
 msgstr ""
 
@@ -20953,10 +21016,10 @@ msgstr ""
 msgid "Virtual KeyBoard"
 msgstr ""
 
-msgid "Virtual KeyBoard Actions"
+msgid "Virtual Keyboard Actions"
 msgstr ""
 
-msgid "Virtual KeyBoard Text:"
+msgid "Virtual Keyboard Text:"
 msgstr ""
 
 msgid "Virtual Keyboard"
@@ -21365,6 +21428,12 @@ msgid "When enabled, the receiver will select an AC3 track (when available)."
 msgstr ""
 
 msgid "When enabled, the receiver will select an AC3+ track (when available)."
+msgstr ""
+
+msgid "When enabled, this setting has more weight than 'Preferred tuner for recordings'."
+msgstr ""
+
+msgid "When enabled, this setting has more weight than 'Preferred tuner'."
 msgstr ""
 
 msgid "When enabled, time shift starts automatically in background after specified time."
