@@ -1002,6 +1002,17 @@ RESULT eServiceFactoryDVB::offlineOperations(const eServiceReference &ref, ePtr<
 
 RESULT eServiceFactoryDVB::lookupService(ePtr<eDVBService> &service, const eServiceReference &ref)
 {
+	if(!ref.alternativeurl.empty())
+	{
+		eServiceReferenceDVB m_alternative_ref = eServiceReferenceDVB(ref.alternativeurl);
+		int err;
+		if ((err = eDVBDB::getInstance()->getService((eServiceReferenceDVB&)m_alternative_ref, service)) != 0)
+		{
+			eTrace("[eServiceFactoryDVB] lookupService alternative service failed!");
+		}
+		else
+			return 0;
+	}
 	if (!ref.path.empty()) // playback
 	{
 		eDVBMetaParser parser;
