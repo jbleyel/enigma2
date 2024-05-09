@@ -222,7 +222,7 @@ def getButtonSetupFunctions():
 	ButtonSetupFunctions.append((_("Show Audioselection"), "Infobar/audioSelection", textInfoBar))
 	ButtonSetupFunctions.append((_("Enable digital downmix"), "Infobar/audioDownmixOn", textInfoBar))
 	ButtonSetupFunctions.append((_("Disable digital downmix"), "Infobar/audioDownmixOff", textInfoBar))
-	ButtonSetupFunctions.append((_("Switch to radio mode"), "Infobar/showRadio", textInfoBar))
+	ButtonSetupFunctions.append((_("Switch to Radio mode"), "Infobar/showRadio", textInfoBar))
 	ButtonSetupFunctions.append((_("Switch to TV mode"), "Infobar/showTv", textInfoBar))
 	ButtonSetupFunctions.append((_("Show servicelist or movies"), "Infobar/showServiceListOrMovies", textInfoBar))
 	ButtonSetupFunctions.append((_("Show movies"), "Infobar/showMovies", textInfoBar))
@@ -234,6 +234,7 @@ def getButtonSetupFunctions():
 	ButtonSetupFunctions.append((_("Start time shift"), "Infobar/startTimeshift", textInfoBar))
 	ButtonSetupFunctions.append((_("Stop time shift"), "Infobar/stopTimeshift", textInfoBar))
 	ButtonSetupFunctions.append((_("Start teletext"), "Infobar/startTeletext", textInfoBar))
+	ButtonSetupFunctions.append((_("Show subservices"), "Infobar/openSubservices", textInfoBar))
 	ButtonSetupFunctions.append((_("Show subservice selection"), "Infobar/subserviceSelection", textInfoBar))
 	ButtonSetupFunctions.append((_("Show subtitle selection"), "Infobar/subtitleSelection", textInfoBar))
 	ButtonSetupFunctions.append((_("Show subtitle quick menu"), "Infobar/subtitleQuickMenu", textInfoBar))
@@ -269,9 +270,7 @@ def getButtonSetupFunctions():
 	ButtonSetupFunctions.append((_("Network menu"), "Infobar/showNetworkMenu", textSetup))
 	ButtonSetupFunctions.append((_("Plugin Browser"), "Module/Screens.PluginBrowser/PluginBrowser", textSetup))
 	ButtonSetupFunctions.append((_("Channel Info"), "Module/Screens.Information/ServiceInformation", textSetup))
-	ButtonSetupFunctions.append((_("SkinSelector"), "Module/Screens.SkinSelector/SkinSelector", textSetup))
-	if BoxInfo.getItem("LCDSKINSetup"):
-		ButtonSetupFunctions.append((_("LCD SkinSelector"), "Module/Screens.SkinSelector/LcdSkinSelector", textSetup))
+	ButtonSetupFunctions.append((_("SkinSelection"), "Module/Screens.SkinSelection/SkinSelection", textSetup))
 	ButtonSetupFunctions.append((_("RecordTimer"), "Module/Screens.Timers/RecordTimerOverview", textSetup))
 	ButtonSetupFunctions.append((_("Open AutoTimer"), "Infobar/showAutoTimerList", textSetup))
 	for plugin in plugins.getPluginsForMenu("system"):

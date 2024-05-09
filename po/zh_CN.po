@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: openATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-23 18:23+0000\n"
+"POT-Creation-Date: 2024-05-05 12:54+0000\n"
 "PO-Revision-Date: 2023-08-11 04:46+0000\n"
 "Last-Translator: Mark Stone <grystyle@gmail.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/zh_Hans/>\n"
@@ -1173,6 +1173,10 @@ msgid "%s %s remote control (native)"
 msgstr "%s %s 远程控制(本机)"
 
 #, python-format
+msgid "%s %sB"
+msgstr ""
+
+#, python-format
 msgid "%s (%04o)"
 msgstr "%s (%04o)"
 
@@ -1876,10 +1880,10 @@ msgstr ""
 msgid "Add File Commander to the Main Menu list of options."
 msgstr ""
 
-msgid "Add HDMI IN to bouquet"
+msgid "Add HDMI-IN To Bouquet"
 msgstr ""
 
-msgid "Add Marker"
+msgid "Add Marker To Bouquet"
 msgstr "添加标记"
 
 msgid "Add New Quad Channel Entry"
@@ -1921,13 +1925,13 @@ msgstr "为当前事件添加换台定时器"
 msgid "Add a ZapTimer for next event"
 msgstr "添加下个事件切换定时器"
 
-msgid "Add a bouquet"
-msgstr ""
-
 msgid "Add a mark"
 msgstr "添加一个标记"
 
-msgid "Add a marker"
+msgid "Add a new bouquet"
+msgstr ""
+
+msgid "Add a new marker before the current service"
 msgstr ""
 
 msgid "Add a new tag"
@@ -1993,9 +1997,6 @@ msgstr "添加录制(不限时)"
 msgid "Add recording (Stop after current event)"
 msgstr "添加录制(当前事件后停止)"
 
-msgid "Add selected service to bouquet or alternative"
-msgstr ""
-
 msgid "Add service"
 msgstr "添加频道"
 
@@ -2009,6 +2010,9 @@ msgid "Add the current directory as a bookmark"
 msgstr ""
 
 msgid "Add the current service to the Volume Offsets list"
+msgstr ""
+
+msgid "Add the selected service to a bouquet or alternative"
 msgstr ""
 
 msgid "Add title"
@@ -2645,6 +2649,9 @@ msgstr "启动自动对焦..."
 msgid "Auto install log"
 msgstr "自动安装日志"
 
+msgid "Auto multi-selection"
+msgstr ""
+
 msgid "Auto shut down"
 msgstr ""
 
@@ -3124,6 +3131,9 @@ msgstr ""
 msgid "Bouquet Selector Navigation Actions"
 msgstr ""
 
+msgid "Bouquets"
+msgstr ""
+
 msgid "Bouvet Island"
 msgstr "布韦岛"
 
@@ -3593,6 +3603,9 @@ msgstr "取消选择"
 msgid "Cancel selection and exit"
 msgstr ""
 
+msgid "Cancel service selection and exit"
+msgstr ""
+
 msgid "Cancel the Reset Feeds command currently being processed"
 msgstr ""
 
@@ -3751,6 +3764,12 @@ msgstr "更换皮肤"
 msgid "Change step size"
 msgstr "更改步进大小"
 
+msgid "Change to Radio services mode"
+msgstr ""
+
+msgid "Change to TV services mode"
+msgstr ""
+
 msgid "Change to bouquet"
 msgstr "更改为自定义组"
 
@@ -3786,20 +3805,26 @@ msgstr "频道信息"
 msgid "Channel List"
 msgstr "频道列表"
 
-msgid "Channel List Context Menu"
-msgstr "频道列表上下文菜单"
-
-msgid "Channel List Context Menu Actions"
-msgstr ""
-
-msgid "Channel List Context Menu Navigation Actions"
-msgstr ""
-
 msgid "Channel List Menu"
 msgstr "频道列表菜单"
 
 msgid "Channel Selection"
 msgstr "频道选择"
+
+msgid "Channel Selection Actions"
+msgstr ""
+
+msgid "Channel Selection Context Menu"
+msgstr "频道列表上下文菜单"
+
+msgid "Channel Selection Context Menu Actions"
+msgstr ""
+
+msgid "Channel Selection Context Menu Navigation Actions"
+msgstr ""
+
+msgid "Channel Selection Navigation Actions"
+msgstr ""
 
 msgid "Channel Selection Settings"
 msgstr "频道选择设置"
@@ -4189,6 +4214,9 @@ msgid "Close the Kexec MultiBoot Manager"
 msgstr ""
 
 msgid "Close the Plugin Browser screen"
+msgstr ""
+
+msgid "Close the choice box"
 msgstr ""
 
 msgid "Close the current screen"
@@ -4904,7 +4932,7 @@ msgstr "烹饪"
 msgid "Copy"
 msgstr "复制"
 
-msgid "Copy To Bouquets"
+msgid "Copy To Bouquet"
 msgstr "复制到自定义组"
 
 msgid "Copy To Stream Relay"
@@ -5908,6 +5936,12 @@ msgstr "详情描述"
 msgid "Deselect"
 msgstr "取消选择"
 
+msgid "Deselect all"
+msgstr ""
+
+msgid "Deselect all lines"
+msgstr ""
+
 msgid "Deselect all related files"
 msgstr ""
 
@@ -6799,6 +6833,9 @@ msgstr "启用GStreamer调试日志*"
 
 msgid "Enable GStreamer pipeline graphs *"
 msgstr "启用GStreamer柱状图*"
+
+msgid "Enable IPv6"
+msgstr ""
 
 msgid "Enable IceTV"
 msgstr "启用IceTV"
@@ -7995,6 +8032,12 @@ msgid "File Commander Media Information Actions"
 msgstr ""
 
 msgid "File Commander Move"
+msgstr ""
+
+msgid "File Commander Navigation Actions"
+msgstr ""
+
+msgid "File Commander Selection Actions"
 msgstr ""
 
 msgid "File Commander Settings"
@@ -9254,9 +9297,6 @@ msgstr "如果设置为'是',则将向电视发送与在常规待机事件期间
 msgid "If set to 'yes', allows you to use timeshift with alternative audio plugins."
 msgstr ""
 
-msgid "If set to 'yes', enable autorecord for automatically background timeshift"
-msgstr "如果设置为'是',启用自动录制为自动时移的背景."
-
 msgid "If the deep standby workaround is enabled wait until the system time is synchronized. Depending on the requirement the device wake up will continuing after a maximum of 2 minutes."
 msgstr "如果启用了深度待机解决方法,则会等待系统时间同步.根据要求,设备唤醒将在最多2分钟后继续."
 
@@ -10014,6 +10054,9 @@ msgstr "用于DVB-T/T2频道的LCN插件"
 msgid "LCN rules:"
 msgstr "LCN规则:"
 
+msgid "LCN style QuickSelect entry selection"
+msgstr ""
+
 msgid "LED Brightness"
 msgstr ""
 
@@ -10154,6 +10197,9 @@ msgstr "频道名称左边"
 
 msgid "Left, wrapped"
 msgstr "左边,覆盖"
+
+msgid "Legacy mode"
+msgstr ""
 
 msgid "Leisure hobbies"
 msgstr "休闲爱好"
@@ -10869,9 +10915,6 @@ msgstr "最低年龄 %d 岁"
 msgid "Minimum send interval"
 msgstr "最小发送间隔"
 
-msgid "Mins"
-msgstr "分钟"
-
 msgid "Minutes"
 msgstr "分钟"
 
@@ -11170,6 +11213,18 @@ msgid "Move to last line / screen"
 msgstr "移动到最后一行/屏幕"
 
 msgid "Move to last line / screen in the panel"
+msgstr ""
+
+msgid "Move to next bouquet"
+msgstr ""
+
+msgid "Move to next marker"
+msgstr ""
+
+msgid "Move to previous bouquet"
+msgstr ""
+
+msgid "Move to previous marker"
 msgstr ""
 
 msgid "Move to the first item on the current line"
@@ -11939,10 +11994,10 @@ msgstr "否,从不"
 msgid "No, scan later manually"
 msgstr "否,稍后手动扫描"
 
-msgid "No, show always the plugin browser"
+msgid "No, show the Plugin Browser"
 msgstr "否,始终显示插件浏览器"
 
-msgid "No, show always the timer list"
+msgid "No, show the RecordTimer Overview"
 msgstr "否,总是显示定时器列表"
 
 msgid "NodeID"
@@ -12337,6 +12392,9 @@ msgid "Open the Plugin Browser settings screen"
 msgstr ""
 
 msgid "Open the VirtualKeyBoard for text entry"
+msgstr ""
+
+msgid "Open the context menu"
 msgstr ""
 
 msgid "Open the movie list"
@@ -12819,17 +12877,23 @@ msgstr "系统平台"
 msgid "Play"
 msgstr "播放"
 
-msgid "Play As Picture in Picture window"
-msgstr "以画中画播放"
-
 msgid "Play DVD"
 msgstr "播放DVD"
 
 msgid "Play DVDs"
 msgstr "播放DVD光盘"
 
-msgid "Play In Main window"
+msgid "Play In Main Window"
 msgstr "在主窗口播放"
+
+msgid "Play In PiP Window"
+msgstr "以画中画播放"
+
+msgid "Play Service With Stream Relay"
+msgstr ""
+
+msgid "Play Service Without Stream Relay"
+msgstr ""
 
 msgid "Play all audio files in the directory"
 msgstr ""
@@ -12889,6 +12953,9 @@ msgid "Play service without Stream Relay"
 msgstr ""
 
 msgid "Play the audio file"
+msgstr ""
+
+msgid "Play the selected service"
 msgstr ""
 
 msgid "Playback Settings"
@@ -13005,9 +13072,6 @@ msgstr "请选择一个播放列表..."
 
 msgid "Please select a resolution..."
 msgstr "请选择一个分辨率..."
-
-msgid "Please select a sub service..."
-msgstr "请选择一个子频道..."
 
 msgid "Please select an aspect ratio..."
 msgstr "请选择宽高比..."
@@ -13804,9 +13868,6 @@ msgstr "快捷启动菜单"
 msgid "Quick Menu..."
 msgstr "快速导航菜单..."
 
-msgid "Quick zap"
-msgstr "快速切换"
-
 msgid "QuickEPG mode"
 msgstr "快捷EPG模式"
 
@@ -13885,6 +13946,9 @@ msgstr ""
 msgid "Radio Channel Selection"
 msgstr "电台频道选择"
 
+msgid "Radio Channel Selection Actions"
+msgstr ""
+
 msgid "Random"
 msgstr "随机"
 
@@ -13935,9 +13999,6 @@ msgstr "是否关闭而不保存设置？"
 
 msgid "Really delete this entry?"
 msgstr "是否删除这个条目？"
-
-msgid "Really exit the subservices quickzap?"
-msgstr "是否要退出子频道快速切换?"
 
 msgid "Really reboot into Recovery Mode?"
 msgstr "是否重新启动进入恢复模式?"
@@ -14363,9 +14424,6 @@ msgstr "从书签中删除选定的文件夹"
 msgid "Remove plugins ..."
 msgstr ""
 
-msgid "Remove selected service"
-msgstr ""
-
 msgid "Remove service from AutoCam"
 msgstr ""
 
@@ -14382,6 +14440,9 @@ msgid "Remove the current bookmark"
 msgstr ""
 
 msgid "Remove the selected plugin / list of plugins"
+msgstr ""
+
+msgid "Remove the selected service"
 msgstr ""
 
 msgid "Remove timer"
@@ -14423,10 +14484,10 @@ msgstr "重命名新事件的名称和描述"
 msgid "Rename only highlighted file"
 msgstr ""
 
-msgid "Rename selected service"
+msgid "Rename the proposed file to be created"
 msgstr ""
 
-msgid "Rename the proposed file to be created"
+msgid "Rename the selected service"
 msgstr ""
 
 msgid "Rename this tag"
@@ -14515,6 +14576,9 @@ msgstr ""
 
 msgid "Reset and renumerate title names"
 msgstr "重置并重新计算标题名称"
+
+msgid "Reset entries to their default values"
+msgstr ""
 
 msgid "Reset executable mode (644)"
 msgstr ""
@@ -15335,6 +15399,9 @@ msgstr ""
 msgid "Select 'Yes' to continuously display all images in a loop, or select 'No' to display all images once and then stop."
 msgstr ""
 
+msgid "Select 'Yes' to disable multi-selection mode after each operation. Select 'No' to leave multi-selection mode active and the selections unchanged."
+msgstr ""
+
 msgid "Select 'Yes' to display a small TV image (PiG - Picture in Graphic) within the EPG screen."
 msgstr "如果设置为'是',显示EPG小电视屏幕."
 
@@ -15497,6 +15564,12 @@ msgstr ""
 msgid "Select 'Yes' to split tasks into separate actions."
 msgstr ""
 
+msgid "Select 'Yes' to use alternate GitHub feed IP addresses. This can be helpful if you use a VPN and the normal feeds can't be accessed via the published DNS names."
+msgstr ""
+
+msgid "Select 'Yes' to use legacy navigation where CH+/- swaps the active column. Select 'No' to use the newer unified navigation option for consistent navigation with other screens where LEFT/RIGHT swaps the active column and CH+/- pages up and down the list."
+msgstr ""
+
 msgid "Select 'Yes' to use signal values (SNR, etc) calculated from the older API V3. This API version has now been superseded."
 msgstr "如果设置为'是',信号值(信噪比等)将根据API v3计算. 这是一个旧的API版本,现已被取代."
 
@@ -15649,6 +15722,12 @@ msgstr "选择定时器 %s 的操作:"
 msgid "Select additional files to backup"
 msgstr "选择额外的文件来备份"
 
+msgid "Select all"
+msgstr ""
+
+msgid "Select all lines"
+msgstr ""
+
 msgid "Select all related files"
 msgstr ""
 
@@ -15789,6 +15868,9 @@ msgstr "选择要添加的频道..."
 
 msgid "Select sort method:"
 msgstr "选择排序方法:"
+
+msgid "Select subservices"
+msgstr ""
 
 msgid "Select system information to view:"
 msgstr ""
@@ -16335,17 +16417,8 @@ msgstr ""
 msgid "Service and PID information for '%s'"
 msgstr ""
 
-msgid "Service cant been added to the favorites."
-msgstr "频道无法添加到收藏夹."
-
 msgid "Service font size"
 msgstr "频道字体大小"
-
-msgid "Service has been added to the favorites."
-msgstr "频道已添加到收藏夹."
-
-msgid "Service has been added to the selected bouquet."
-msgstr "频道已添加到选择的自定义组."
 
 msgid "Service info"
 msgstr "频道信息"
@@ -16537,6 +16610,9 @@ msgstr "设置前端显示屏上文本的滚动速度,用于某些皮肤中的�
 msgid "Set the scrolling speed of text on the front display."
 msgstr "设置前端显示屏上文本的滚动速度."
 
+msgid "Set the style of the channel list."
+msgstr ""
+
 msgid "Set the time before checking video source for resolution information."
 msgstr "设置在检查视频源以获取分辨率信息之前的时间."
 
@@ -16586,6 +16662,9 @@ msgstr ""
 msgid "Set to 'Disabled' to replace underscore characters, '_', in file and directory names with spaces."
 msgstr ""
 
+msgid "Set to 'Yes', to enable automatic recording of the background timeshift buffer."
+msgstr "如果设置为'是',启用自动录制为自动时移的背景."
+
 msgid "Set to the desired primetime (hour)."
 msgstr "设置所需的黄金时段(小时)."
 
@@ -16627,9 +16706,6 @@ msgstr "设置"
 
 msgid "Settings mode"
 msgstr "设置模式"
-
-msgid "Settings..."
-msgstr "设置..."
 
 msgid "Setup"
 msgstr "设置"
@@ -17062,6 +17138,9 @@ msgstr ""
 msgid "Show Source packages"
 msgstr ""
 
+msgid "Show Subservices Of Active Service"
+msgstr ""
+
 msgid "Show System Plugin packages"
 msgstr ""
 
@@ -17099,6 +17178,9 @@ msgid "Show advanced settings"
 msgstr "显示高级设置"
 
 msgid "Show all"
+msgstr ""
+
+msgid "Show all available services"
 msgstr ""
 
 msgid "Show all details"
@@ -17244,6 +17326,15 @@ msgid "Show job tasks in Extension Menu"
 msgstr "在扩展中显示工作任务"
 
 msgid "Show last image"
+msgstr ""
+
+msgid "Show list of bouquets"
+msgstr ""
+
+msgid "Show list of providers"
+msgstr ""
+
+msgid "Show list of transponders"
 msgstr ""
 
 msgid "Show live TV when movie stopped"
@@ -17420,7 +17511,13 @@ msgstr "切换到直播电视时显示信息状态"
 msgid "Show subservice selection"
 msgstr "显示子频道选择"
 
+msgid "Show subservices"
+msgstr ""
+
 msgid "Show subservices *"
+msgstr ""
+
+msgid "Show subservices of the active service"
 msgstr ""
 
 msgid "Show subtitle quick menu"
@@ -18432,6 +18529,9 @@ msgstr ""
 msgid "Stream Relay URL"
 msgstr ""
 
+msgid "Stream Relay is active, please switch to a none Stream Relay channel."
+msgstr ""
+
 msgid "Stream Relay port"
 msgstr ""
 
@@ -18479,14 +18579,14 @@ msgstr "精确DLNA"
 msgid "Stripes"
 msgstr "条纹"
 
+msgid "Style"
+msgstr ""
+
 msgid "Style:"
 msgstr "样式:"
 
-msgid "Sub Service Actions"
-msgstr "子频道操作"
-
-msgid "Subservice list..."
-msgstr "子频道列表..."
+msgid "Subservice Actions"
+msgstr ""
 
 msgid "Subservice mode (GREEN button)"
 msgstr "子频道模式(绿色键)"
@@ -18671,6 +18771,9 @@ msgstr "切换到HDMI输入模式"
 msgid "Switch to Radio"
 msgstr "切换到收音机"
 
+msgid "Switch to Radio mode"
+msgstr "切换到广播模式"
+
 msgid "Switch to TV"
 msgstr "切换到电视"
 
@@ -18692,9 +18795,6 @@ msgstr "切换到下一个EPG事件"
 msgid "Switch to next channel in history"
 msgstr "切换到下一个历史频道"
 
-msgid "Switch to next sub service"
-msgstr "切换到下一个子频道"
-
 msgid "Switch to play list"
 msgstr "切换到播放列表"
 
@@ -18706,12 +18806,6 @@ msgstr "切换到上一个频道"
 
 msgid "Switch to previous channel in history"
 msgstr "切换到上一个历史频道"
-
-msgid "Switch to previous sub service"
-msgstr "切换到上一个子频道"
-
-msgid "Switch to radio mode"
-msgstr "切换到广播模式"
 
 msgid "Switch to the available RADIO services"
 msgstr ""
@@ -18967,6 +19061,9 @@ msgstr "泰卢固语"
 
 #, python-format
 msgid "Temp directory (%s)"
+msgstr ""
+
+msgid "Temporary directory"
 msgstr ""
 
 msgid "Tennis"
@@ -19518,7 +19615,7 @@ msgstr "此选项允许您选择如何在待机中显示时间或不显示"
 msgid "This option allows you choose the background color of transparent picons."
 msgstr "此选项允许您选择带透明台标的背景颜色 ."
 
-msgid "This option allows you choose the option for subservice indicator or selection."
+msgid "This option allows you choose the option for Subservice indicator or selection."
 msgstr ""
 
 msgid "This option allows you enable smoothing filter to control the dithering process."
@@ -20059,9 +20156,6 @@ msgstr ""
 msgid "Toggle move mode"
 msgstr ""
 
-msgid "Toggle move mode selection"
-msgstr ""
-
 msgid "Toggle multi-selection mode"
 msgstr ""
 
@@ -20070,6 +20164,9 @@ msgstr "切换在现有文本之前插入或覆盖现有文本的新文本"
 
 msgid "Toggle selection of the current tag"
 msgstr "切换当前标签的选择"
+
+msgid "Toggle selections"
+msgstr ""
 
 msgid "Toggle service name display"
 msgstr "切换服务名称显示"
@@ -20797,6 +20894,9 @@ msgstr ""
 msgid "Use a gateway"
 msgstr "使用网关"
 
+msgid "Use alternate GitHub DNS"
+msgstr ""
+
 msgid "Use an alternative smaller screen."
 msgstr "使用备选屏幕"
 
@@ -20850,6 +20950,9 @@ msgstr "使用界面"
 
 msgid "Use key map *"
 msgstr "使用键盘映射 *"
+
+msgid "Use legacy navigation"
+msgstr ""
 
 msgid "Use logarithmic steps"
 msgstr ""
@@ -21255,7 +21358,7 @@ msgstr "视图"
 msgid "View File"
 msgstr ""
 
-msgid "View Rass interactive..."
+msgid "View Rass interactive"
 msgstr "查看Rass互动..."
 
 msgid "View as grid"
@@ -21307,17 +21410,14 @@ msgstr "维尔京群岛(英属)"
 msgid "Virgin Islands (US)"
 msgstr "维尔京群岛(美国)"
 
-msgid "Virtual KeyBoard"
-msgstr ""
+msgid "Virtual Keyboard"
+msgstr "虚拟键盘"
 
 msgid "Virtual Keyboard Actions"
 msgstr ""
 
 msgid "Virtual Keyboard Text:"
 msgstr "虚拟键盘文本:"
-
-msgid "Virtual Keyboard"
-msgstr "虚拟键盘"
 
 msgid "Visual impaired commentary"
 msgstr "视障评论"
@@ -21973,12 +22073,6 @@ msgstr "是,备份我的设置!"
 msgid "Yes, but don't save time shift as movie"
 msgstr "是,但不保存时移作为电影"
 
-msgid "Yes, but if not available show the plugin browser"
-msgstr "是,但如果不可用,请显示插件浏览器"
-
-msgid "Yes, but if not available show the timer list"
-msgstr "是,但如果不可用,则显示定时器列表"
-
 msgid "Yes, but save time shift as movie and continue recording"
 msgstr "是,但保存时移为影片并继续录制"
 
@@ -22005,6 +22099,12 @@ msgstr "是,马上恢复设置"
 
 msgid "Yes, returning to movie list"
 msgstr "是,回到电影列表"
+
+msgid "Yes, show Plugin Browser if unavailable"
+msgstr "是,但如果不可用,请显示插件浏览器"
+
+msgid "Yes, show RecordTimer if unavailable"
+msgstr "是,但如果不可用,则显示定时器列表"
 
 msgid "Yes, shut down now."
 msgstr "是,现在关机."
@@ -22504,12 +22604,6 @@ msgstr "读卡器"
 
 msgid "cartoon/puppets"
 msgstr "动画/木偶"
-
-msgid "change Volume down"
-msgstr "音量减小"
-
-msgid "change Volume up"
-msgstr "音量增大"
 
 msgid "chapters"
 msgstr "剧集"
@@ -23422,6 +23516,48 @@ msgstr "是(保持订阅源)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Settings..."
+#~ msgstr "设置..."
+
+#~ msgid "Mins"
+#~ msgstr "分钟"
+
+#~ msgid "Please select a sub service..."
+#~ msgstr "请选择一个子频道..."
+
+#~ msgid "Quick zap"
+#~ msgstr "快速切换"
+
+#~ msgid "Really exit the subservices quickzap?"
+#~ msgstr "是否要退出子频道快速切换?"
+
+#~ msgid "Service cant been added to the favorites."
+#~ msgstr "频道无法添加到收藏夹."
+
+#~ msgid "Service has been added to the favorites."
+#~ msgstr "频道已添加到收藏夹."
+
+#~ msgid "Service has been added to the selected bouquet."
+#~ msgstr "频道已添加到选择的自定义组."
+
+#~ msgid "Sub Service Actions"
+#~ msgstr "子频道操作"
+
+#~ msgid "Subservice list..."
+#~ msgstr "子频道列表..."
+
+#~ msgid "Switch to next sub service"
+#~ msgstr "切换到下一个子频道"
+
+#~ msgid "Switch to previous sub service"
+#~ msgstr "切换到上一个子频道"
+
+#~ msgid "change Volume down"
+#~ msgstr "音量减小"
+
+#~ msgid "change Volume up"
+#~ msgstr "音量增大"
 
 #, python-format
 #~ msgid "%s (%s)"

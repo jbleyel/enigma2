@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-10 17:07+0000\n"
-"PO-Revision-Date: 2024-03-13 18:01+0000\n"
+"POT-Creation-Date: 2024-05-05 12:54+0000\n"
+"PO-Revision-Date: 2024-04-22 09:31+0000\n"
 "Last-Translator: Marián Hikaník <podnety@mojepreklady.net>\n"
 "Language-Team: Slovak <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/sk/>\n"
 "Language: sk\n"
@@ -1207,6 +1207,10 @@ msgid "%s %s remote control (native)"
 msgstr "%s %s diaľkové ovládanie (originálne)"
 
 #, python-format
+msgid "%s %sB"
+msgstr "%s %sB"
+
+#, python-format
 msgid "%s (%04o)"
 msgstr "%s (%04o)"
 
@@ -1905,10 +1909,10 @@ msgstr "Pridať Správcu súborov do zoznamu možností menu rozšírení."
 msgid "Add File Commander to the Main Menu list of options."
 msgstr "Pridať Správcu súborov do zoznamu možností hlavného menu."
 
-msgid "Add HDMI IN to bouquet"
+msgid "Add HDMI-IN To Bouquet"
 msgstr "Pridať HDMI vstup do prehľadu"
 
-msgid "Add Marker"
+msgid "Add Marker To Bouquet"
 msgstr "Pridať značku"
 
 msgid "Add New Quad Channel Entry"
@@ -1950,13 +1954,13 @@ msgstr "Pridať časovač prepnutia pre aktuálnu udalosť"
 msgid "Add a ZapTimer for next event"
 msgstr "Pridať časovač prepnutia pre ďalšiu udalosť"
 
-msgid "Add a bouquet"
-msgstr "Pridať prehľad"
-
 msgid "Add a mark"
 msgstr "Pridať značku"
 
-msgid "Add a marker"
+msgid "Add a new bouquet"
+msgstr "Pridať prehľad"
+
+msgid "Add a new marker before the current service"
 msgstr "Pridať značku"
 
 msgid "Add a new tag"
@@ -2022,9 +2026,6 @@ msgstr "Pridať nahrávanie (bez obmedzenia)"
 msgid "Add recording (Stop after current event)"
 msgstr "Pridať nahrávanie (ukončiť po tejto udalosti)"
 
-msgid "Add selected service to bouquet or alternative"
-msgstr "Pridať vybranú službu do prehľadu alebo ako alternatívu"
-
 msgid "Add service"
 msgstr "Pridať stanicu"
 
@@ -2039,6 +2040,9 @@ msgstr "Pridať aktuálny priečinok ako záložku"
 
 msgid "Add the current service to the Volume Offsets list"
 msgstr "Pridať aktuálnu stanicu do zoznamu pre posun hlasitosti"
+
+msgid "Add the selected service to a bouquet or alternative"
+msgstr "Pridať vybranú službu do prehľadu alebo ako alternatívu"
 
 msgid "Add title"
 msgstr "Pridať titul"
@@ -2674,6 +2678,9 @@ msgstr "Auto fokus začal..."
 msgid "Auto install log"
 msgstr "Denník automatickej inštalácie"
 
+msgid "Auto multi-selection"
+msgstr ""
+
 msgid "Auto shut down"
 msgstr "Automatické vypnutie"
 
@@ -3153,6 +3160,9 @@ msgstr "Akcie pre nástroj na výber prehľadu"
 msgid "Bouquet Selector Navigation Actions"
 msgstr "Akcie pre navigovanie nástroja na výber prehľadu"
 
+msgid "Bouquets"
+msgstr "Prehľady"
+
 msgid "Bouvet Island"
 msgstr "Bouvetov ostrov"
 
@@ -3622,6 +3632,9 @@ msgstr "Zrušiť výber"
 msgid "Cancel selection and exit"
 msgstr "Zrušiť výber a ukončiť"
 
+msgid "Cancel service selection and exit"
+msgstr "Zrušiť výber stanice a ukončiť"
+
 msgid "Cancel the Reset Feeds command currently being processed"
 msgstr "Zrušiť aktuálne prebiehajúci príkaz na reset zdrojov"
 
@@ -3780,6 +3793,12 @@ msgstr "Zmeniť vzhľad"
 msgid "Change step size"
 msgstr "Zmeniť veľkosť kroku"
 
+msgid "Change to Radio services mode"
+msgstr "Zmeniť na režim pre rádiové služby"
+
+msgid "Change to TV services mode"
+msgstr "Zmeniť na režim pre TV služby"
+
 msgid "Change to bouquet"
 msgstr "Zmeniť na prehľad"
 
@@ -3815,20 +3834,26 @@ msgstr "Info o programe"
 msgid "Channel List"
 msgstr "Zoznam kanálov"
 
-msgid "Channel List Context Menu"
-msgstr "Kontextové menu pre zoznam kanálov"
-
-msgid "Channel List Context Menu Actions"
-msgstr "Akcie pre kontextové menu zoznamu kanálov"
-
-msgid "Channel List Context Menu Navigation Actions"
-msgstr "Navigačné akcie pre kontextové menu zoznamu kanálov"
-
 msgid "Channel List Menu"
 msgstr "Menu zoznamu kanálov"
 
 msgid "Channel Selection"
 msgstr "Výber prehľadu"
+
+msgid "Channel Selection Actions"
+msgstr "Akcie pre výber kanála"
+
+msgid "Channel Selection Context Menu"
+msgstr "Kontextové menu pre zoznam kanálov"
+
+msgid "Channel Selection Context Menu Actions"
+msgstr "Akcie pre kontextové menu zoznamu kanálov"
+
+msgid "Channel Selection Context Menu Navigation Actions"
+msgstr "Navigačné akcie pre kontextové menu zoznamu kanálov"
+
+msgid "Channel Selection Navigation Actions"
+msgstr "Akcie navigácie pre výber kanála"
 
 msgid "Channel Selection Settings"
 msgstr "Nastavenia výberu staníc"
@@ -4220,6 +4245,9 @@ msgstr "Zatvoriť správcu MultiBoot Kexec"
 
 msgid "Close the Plugin Browser screen"
 msgstr "Zatvoriť obrazovku prehliadača pluginov"
+
+msgid "Close the choice box"
+msgstr "Zatvoriť box s výberom"
 
 msgid "Close the current screen"
 msgstr "Zatvoriť aktuálnu obrazovku"
@@ -4938,7 +4966,7 @@ msgstr "Varenie"
 msgid "Copy"
 msgstr "Kopírovať"
 
-msgid "Copy To Bouquets"
+msgid "Copy To Bouquet"
 msgstr "Kopírovať do prehľadov"
 
 msgid "Copy To Stream Relay"
@@ -5944,6 +5972,12 @@ msgstr "Popis"
 msgid "Deselect"
 msgstr "Zrušiť výber"
 
+msgid "Deselect all"
+msgstr ""
+
+msgid "Deselect all lines"
+msgstr ""
+
 msgid "Deselect all related files"
 msgstr "Zrušiť výber všetkých súvisiacich súborov"
 
@@ -6838,6 +6872,9 @@ msgstr "Zapnúť denník pre ladenie GStreamera *"
 
 msgid "Enable GStreamer pipeline graphs *"
 msgstr "Zapnúť zreťazené grafy pre GStreamer *"
+
+msgid "Enable IPv6"
+msgstr "Zapnúť IPv6"
 
 msgid "Enable IceTV"
 msgstr "Zapnúť IceTV"
@@ -8039,6 +8076,12 @@ msgstr "Správca súborov: akcie pre informácie o médiu"
 
 msgid "File Commander Move"
 msgstr "Správca súborov: presunutie"
+
+msgid "File Commander Navigation Actions"
+msgstr ""
+
+msgid "File Commander Selection Actions"
+msgstr ""
 
 msgid "File Commander Settings"
 msgstr "Správca súborov: nastavenia"
@@ -9297,9 +9340,6 @@ msgstr "Ak je vybraná možnosť 'Áno', počas vypnutia sa do televízora odosi
 msgid "If set to 'yes', allows you to use timeshift with alternative audio plugins."
 msgstr "Ak je táto možnosť nastavená na 'Áno', môže sa timeshift používať s alternatívnymi audio pluginmi."
 
-msgid "If set to 'yes', enable autorecord for automatically background timeshift"
-msgstr "Ak je nastavené na 'áno', zapne sa automatické nahrávanie pre automatický timeshift na pozadí"
-
 msgid "If the deep standby workaround is enabled wait until the system time is synchronized. Depending on the requirement the device wake up will continuing after a maximum of 2 minutes."
 msgstr "Ak je aktivované náhradné riešenie pre vypnutie, čaká sa, kým sa nesynchronizuje systémový čas. V závislosti od požiadavky zariadenia sa v prebúdzaní pokračuje maximálne 2 minúty."
 
@@ -10058,6 +10098,9 @@ msgstr "LCN plugin pre služby DVB-T/T2"
 msgid "LCN rules:"
 msgstr "Pravidlá LCN:"
 
+msgid "LCN style QuickSelect entry selection"
+msgstr "Štýl LCN – výber záznamu QuickSelect"
+
 msgid "LED Brightness"
 msgstr "Jas LED"
 
@@ -10198,6 +10241,9 @@ msgstr "Vľavo od názvu stanice"
 
 msgid "Left, wrapped"
 msgstr "Doľava, zalomené"
+
+msgid "Legacy mode"
+msgstr ""
 
 msgid "Leisure hobbies"
 msgstr "Voľný čas, koníčky"
@@ -10914,9 +10960,6 @@ msgstr "Minimálny vek: %d rokov"
 msgid "Minimum send interval"
 msgstr "Minimálny interval posielania"
 
-msgid "Mins"
-msgstr "Minúty"
-
 msgid "Minutes"
 msgstr "min"
 
@@ -11216,6 +11259,18 @@ msgstr "Presunúť na posledný riadok / obrazovku"
 
 msgid "Move to last line / screen in the panel"
 msgstr "Presunúť na posledný riadok/obrazovku v paneli"
+
+msgid "Move to next bouquet"
+msgstr "Presunúť na ďalší prehľad"
+
+msgid "Move to next marker"
+msgstr "Presunúť na ďalšiu značku"
+
+msgid "Move to previous bouquet"
+msgstr "Presunúť na predchádzajúci prehľad"
+
+msgid "Move to previous marker"
+msgstr "Presunúť na predchádzajúcu značku"
 
 msgid "Move to the first item on the current line"
 msgstr "Presunúť na prvú položku na aktuálnom riadku"
@@ -11987,10 +12042,10 @@ msgstr "Nie, nikdy"
 msgid "No, scan later manually"
 msgstr "Nie, neskôr vyhľadať ručne"
 
-msgid "No, show always the plugin browser"
+msgid "No, show the Plugin Browser"
 msgstr "Nie, vždy zobraziť prehliadač pluginov"
 
-msgid "No, show always the timer list"
+msgid "No, show the RecordTimer Overview"
 msgstr "Nie, vždy zobraziť zoznam časovačov"
 
 msgid "NodeID"
@@ -12386,6 +12441,9 @@ msgstr "Otvoriť obrazovku s nastaveniami prehliadača pluginov"
 
 msgid "Open the VirtualKeyBoard for text entry"
 msgstr "Otvoriť virtuálnu klávesnicu pre zadanie textu"
+
+msgid "Open the context menu"
+msgstr "Otvoriť kontextové menu"
 
 msgid "Open the movie list"
 msgstr "Otvoriť zoznam filmov"
@@ -12867,17 +12925,23 @@ msgstr "Platforma"
 msgid "Play"
 msgstr "Prehrať"
 
-msgid "Play As Picture in Picture window"
-msgstr "Prehrať ako v okne PiP"
-
 msgid "Play DVD"
 msgstr "Prehrať DVD"
 
 msgid "Play DVDs"
 msgstr "Prehrať DVD"
 
-msgid "Play In Main window"
+msgid "Play In Main Window"
 msgstr "Prehrať v hlavnom okne"
+
+msgid "Play In PiP Window"
+msgstr "Prehrať ako v okne PiP"
+
+msgid "Play Service With Stream Relay"
+msgstr "Prehrať službu/stanicu s prenosom streamu"
+
+msgid "Play Service Without Stream Relay"
+msgstr "Prehrať službu/stanicu bez prenosu streamu"
 
 msgid "Play all audio files in the directory"
 msgstr "Prehrať všetky zvukové súbory v priečinku"
@@ -12938,6 +13002,9 @@ msgstr "Prehrať službu bez prenosu streamu"
 
 msgid "Play the audio file"
 msgstr "Prehrať zvukový súbor"
+
+msgid "Play the selected service"
+msgstr "Prehrať vybranú službu"
 
 msgid "Playback Settings"
 msgstr "Nastavenia prehrávania"
@@ -13053,9 +13120,6 @@ msgstr "Prosím, vyberte playlist…"
 
 msgid "Please select a resolution..."
 msgstr "Prosím, vyberte rozlíšenie…"
-
-msgid "Please select a sub service..."
-msgstr "Prosím, vyberte podradenú stanicu…"
 
 msgid "Please select an aspect ratio..."
 msgstr "Prosím, vyberte pomer strán…"
@@ -13857,9 +13921,6 @@ msgstr "Rýchle menu"
 msgid "Quick Menu..."
 msgstr "Rýchle menu…"
 
-msgid "Quick zap"
-msgstr "Rýchle prepínanie"
-
 msgid "QuickEPG mode"
 msgstr "RýchlyEPG režim"
 
@@ -13938,6 +13999,9 @@ msgstr "Rádio"
 msgid "Radio Channel Selection"
 msgstr "Výber rádiového kanála"
 
+msgid "Radio Channel Selection Actions"
+msgstr "Akcie pre výber rádiového kanála"
+
 msgid "Random"
 msgstr "Náhodne"
 
@@ -13988,9 +14052,6 @@ msgstr "Naozaj zatvoriť bez uloženia nastavení?"
 
 msgid "Really delete this entry?"
 msgstr "Naozaj vymazať tento záznam?"
-
-msgid "Really exit the subservices quickzap?"
-msgstr "Naozaj ukončiť rýchle prepínanie podradených staníc?"
 
 msgid "Really reboot into Recovery Mode?"
 msgstr "Naozaj reštartovať do núdzového režimu?"
@@ -14416,9 +14477,6 @@ msgstr "Odstrániť vybraný priečinok zo záložiek"
 msgid "Remove plugins ..."
 msgstr "Odstrániť pluginy…"
 
-msgid "Remove selected service"
-msgstr "Odstrániť vybranú stanicu/službu"
-
 msgid "Remove service from AutoCam"
 msgstr "Odstrániť stanicu z AutoCamu"
 
@@ -14436,6 +14494,9 @@ msgstr "Odstrániť aktuálnu záložku"
 
 msgid "Remove the selected plugin / list of plugins"
 msgstr "Odstrániť vybraný plugin/zoznam pluginov"
+
+msgid "Remove the selected service"
+msgstr "Odstrániť vybranú stanicu/službu"
 
 msgid "Remove timer"
 msgstr "Odstrániť časovač"
@@ -14476,11 +14537,11 @@ msgstr "Premenovať názov a popis pre nové udalosti"
 msgid "Rename only highlighted file"
 msgstr "Premenovať len zvýraznený súbor"
 
-msgid "Rename selected service"
-msgstr "Premenovať vybranú stanicu/službu"
-
 msgid "Rename the proposed file to be created"
 msgstr "Premenovať navrhovaný vytváraný súbor"
+
+msgid "Rename the selected service"
+msgstr "Premenovať vybranú stanicu/službu"
 
 msgid "Rename this tag"
 msgstr "Premenovať tento tag"
@@ -14568,6 +14629,9 @@ msgstr "Obnoviť poradie"
 
 msgid "Reset and renumerate title names"
 msgstr "Reset a prečíslovať názvy titulov"
+
+msgid "Reset entries to their default values"
+msgstr ""
 
 msgid "Reset executable mode (644)"
 msgstr "Resetovať spustiteľný režim (644)"
@@ -15390,6 +15454,9 @@ msgstr "Ak je nastavené 'Áno', pri aktivácii časovača sa skontroluje, či z
 msgid "Select 'Yes' to continuously display all images in a loop, or select 'No' to display all images once and then stop."
 msgstr "Ak chcete obrázky zobrazovať v nekonečnej slučke, vyberte možnosť 'Áno'. Pri možnosti 'Nie' sa obrázky zobrazia len raz a prehliadanie sa zastaví."
 
+msgid "Select 'Yes' to disable multi-selection mode after each operation. Select 'No' to leave multi-selection mode active and the selections unchanged."
+msgstr ""
+
 msgid "Select 'Yes' to display a small TV image (PiG - Picture in Graphic) within the EPG screen."
 msgstr "Ak je nastavené na 'Áno', zobrazí sa v EPG malý náhľad TV obrazovky."
 
@@ -15555,6 +15622,9 @@ msgstr "Pre rozdelenie úloh na osobitné akcie, vyberte možnosť 'Áno'."
 msgid "Select 'Yes' to use alternate GitHub feed IP addresses. This can be helpful if you use a VPN and the normal feeds can't be accessed via the published DNS names."
 msgstr "Ak chcete použiť alternatívne IP adresy feedu na portáli GitHub, vyberte možnosť 'Áno'. Môže to pomôcť vtedy, keď používate VPN a nie je možný prístup k bežným zdrojom informácií pomocou zverejnených DNS mien."
 
+msgid "Select 'Yes' to use legacy navigation where CH+/- swaps the active column. Select 'No' to use the newer unified navigation option for consistent navigation with other screens where LEFT/RIGHT swaps the active column and CH+/- pages up and down the list."
+msgstr ""
+
 msgid "Select 'Yes' to use signal values (SNR, etc) calculated from the older API V3. This API version has now been superseded."
 msgstr "Ak je nastavené na 'áno', hodnoty signálu (SNR atď.) sa budú vypočítavať z API V3. Je to staršia verzia API, ktorá je v súčasnosti už nahradená."
 
@@ -15707,6 +15777,12 @@ msgstr "Vyberte akciu pre časovač %s:"
 msgid "Select additional files to backup"
 msgstr "Výber ďalších súborov, ktoré sa majú zálohovať"
 
+msgid "Select all"
+msgstr ""
+
+msgid "Select all lines"
+msgstr ""
+
 msgid "Select all related files"
 msgstr "Vyberte všetky súvisiace súbory"
 
@@ -15847,6 +15923,9 @@ msgstr "Vyberte stanicu, ktorá sa má pridať…"
 
 msgid "Select sort method:"
 msgstr "Vyberte spôsob zoraďovania:"
+
+msgid "Select subservices"
+msgstr "Vybrať podradené služby"
 
 msgid "Select system information to view:"
 msgstr "Vyberte systémovú informáciu, ktorá sa má zobraziť:"
@@ -16402,17 +16481,8 @@ msgstr "Informácia o službe a PID"
 msgid "Service and PID information for '%s'"
 msgstr "Informácia o službe a PID pre '%s'"
 
-msgid "Service cant been added to the favorites."
-msgstr "Stanicu nie je možné pridať do obľúbených."
-
 msgid "Service font size"
 msgstr "Veľkosť písma pre stanicu"
-
-msgid "Service has been added to the favorites."
-msgstr "Stanica bola pridaná do obľúbených."
-
-msgid "Service has been added to the selected bouquet."
-msgstr "Stanica bola pridaná do vybraného prehľadu."
 
 msgid "Service info"
 msgstr "Informácie o stanici"
@@ -16604,6 +16674,9 @@ msgstr "Nastavte rýchlosť rolovania textu na prednom displeji. Túto voľbu vy
 msgid "Set the scrolling speed of text on the front display."
 msgstr "Nastavte rýchlosť rolovania textu na prednom displeji."
 
+msgid "Set the style of the channel list."
+msgstr ""
+
 msgid "Set the time before checking video source for resolution information."
 msgstr "Nastavenie času pred kontrolou zdroja videa na informácie o rozlíšení."
 
@@ -16656,6 +16729,9 @@ msgstr "Nastaviť možnosti pre čas"
 msgid "Set to 'Disabled' to replace underscore characters, '_', in file and directory names with spaces."
 msgstr "Ak sa majú v názvoch priečinkov súborov nahradiť znaky popdčiarknutia '_' medzerami, nastavte túto voľbu na 'Zakázané'."
 
+msgid "Set to 'Yes', to enable automatic recording of the background timeshift buffer."
+msgstr "Ak je nastavené na 'áno', zapne sa automatické nahrávanie pre automatický timeshift na pozadí"
+
 msgid "Set to the desired primetime (hour)."
 msgstr "Nastavte požadovaný hlavný vysielací čas – primetime (h)."
 
@@ -16700,9 +16776,6 @@ msgstr "Nastavenia"
 
 msgid "Settings mode"
 msgstr "Režim nastavovania"
-
-msgid "Settings..."
-msgstr "Nastavenia…"
 
 msgid "Setup"
 msgstr "Nastavenia"
@@ -17135,6 +17208,9 @@ msgstr "Zobraziť balíčky obsahujúce softcam"
 msgid "Show Source packages"
 msgstr "Zobraziť zdrojové balíčky"
 
+msgid "Show Subservices Of Active Service"
+msgstr "Zobraziť podradené služby aktívnej služby/stanice"
+
 msgid "Show System Plugin packages"
 msgstr "Zobraziť balíčky systémových pluginov"
 
@@ -17173,6 +17249,9 @@ msgstr "Zobraziť pokročilé nastavenia"
 
 msgid "Show all"
 msgstr "Zobraziť všetko"
+
+msgid "Show all available services"
+msgstr "Zobraziť všetky dostupné služby/stanice"
 
 msgid "Show all details"
 msgstr "Zobraziť všetky podrobnosti"
@@ -17318,6 +17397,15 @@ msgstr "Zobraziť úlohy v rozšíreniach"
 
 msgid "Show last image"
 msgstr "Zobraziť posledný obrázok/image"
+
+msgid "Show list of bouquets"
+msgstr "Zobraziť zoznam prehľadov"
+
+msgid "Show list of providers"
+msgstr "Zobraziť zoznam poskytovateľov"
+
+msgid "Show list of transponders"
+msgstr "Zobraziť zoznam transpondérov"
 
 msgid "Show live TV when movie stopped"
 msgstr "Zobraziť živé TV vysielanie pri zastavení filmu"
@@ -17493,8 +17581,14 @@ msgstr "Zobraziť stavové správy pri prepnutí na live TV"
 msgid "Show subservice selection"
 msgstr "Zobraziť výber podradenej stanice/služby"
 
+msgid "Show subservices"
+msgstr "Zobraziť podradené služby/stanice"
+
 msgid "Show subservices *"
 msgstr "Ukázať podradené stanice *"
+
+msgid "Show subservices of the active service"
+msgstr "Zobraziť podradené služby aktívnej služby/stanice"
 
 msgid "Show subtitle quick menu"
 msgstr "Zobraziť rýchle menu titulkov"
@@ -18506,6 +18600,9 @@ msgstr "Akcie nastavenia prenosu streamu"
 msgid "Stream Relay URL"
 msgstr "Adresa URL pre prenos streamu"
 
+msgid "Stream Relay is active, please switch to a none Stream Relay channel."
+msgstr ""
+
 msgid "Stream Relay port"
 msgstr "Port pre prenos streamu"
 
@@ -18553,14 +18650,14 @@ msgstr "Striktné DLNA"
 msgid "Stripes"
 msgstr "Pruhy"
 
+msgid "Style"
+msgstr ""
+
 msgid "Style:"
 msgstr "Štýl:"
 
-msgid "Sub Service Actions"
-msgstr "Akcie podradenej stanice/služby"
-
-msgid "Subservice list..."
-msgstr "Zoznam podradených staníc/služieb…"
+msgid "Subservice Actions"
+msgstr "Akcie pre podradenú službu/stanicu"
 
 msgid "Subservice mode (GREEN button)"
 msgstr "Režim podradenej stanice/služby (zelené tlačidlo)"
@@ -18745,6 +18842,9 @@ msgstr "Prepnúť na režim HDMI In"
 msgid "Switch to Radio"
 msgstr "Prepnúť na rádio"
 
+msgid "Switch to Radio mode"
+msgstr "Prepnúť na režim Rádio"
+
 msgid "Switch to TV"
 msgstr "Prepnúť na TV"
 
@@ -18766,9 +18866,6 @@ msgstr "Prepnúť na ďalšiu udalosť v EPG"
 msgid "Switch to next channel in history"
 msgstr "Prepnúť na ďalší kanál v histórii"
 
-msgid "Switch to next sub service"
-msgstr "Prepnúť na ďalšiu podradenú stanicu"
-
 msgid "Switch to play list"
 msgstr "Prepnúť na playlist"
 
@@ -18780,12 +18877,6 @@ msgstr "Prepnúť na predchádzajúci kanál"
 
 msgid "Switch to previous channel in history"
 msgstr "Prepnúť na predchádzajúci kanál v histórii"
-
-msgid "Switch to previous sub service"
-msgstr "Prepnúť na predchádzajúcu podradenú stanicu"
-
-msgid "Switch to radio mode"
-msgstr "Prepnúť na režim Rádio"
 
 msgid "Switch to the available RADIO services"
 msgstr "Prepnúť na dostupné RÁDIO stanice"
@@ -19628,7 +19719,7 @@ msgstr "Zobrazenie/nezobrazenie času v pohotovostnom režime."
 msgid "This option allows you choose the background color of transparent picons."
 msgstr "Výber farby pozadia priehľadných pikon."
 
-msgid "This option allows you choose the option for subservice indicator or selection."
+msgid "This option allows you choose the option for Subservice indicator or selection."
 msgstr "Voľby pre zobrazenie alebo výber podradenej služby."
 
 msgid "This option allows you enable smoothing filter to control the dithering process."
@@ -20171,9 +20262,6 @@ msgstr "Zapnúť/vypnúť presúvanie položky"
 msgid "Toggle move mode"
 msgstr "Prepnúť režim presunu"
 
-msgid "Toggle move mode selection"
-msgstr "Prepnúť výber režimu presunu"
-
 msgid "Toggle multi-selection mode"
 msgstr "Prepnúť režim viacnásobného výberu"
 
@@ -20182,6 +20270,9 @@ msgstr "Prepnúť vkladanie nového textu dopredu alebo prepisovanie existujúce
 
 msgid "Toggle selection of the current tag"
 msgstr "Prepnúť výber aktuálneho tagu"
+
+msgid "Toggle selections"
+msgstr ""
 
 msgid "Toggle service name display"
 msgstr "Prepnúť zobrazenie názvu stanice/služby"
@@ -20969,6 +21060,9 @@ msgstr "Použiť rozhranie"
 msgid "Use key map *"
 msgstr "Použiť mapu tlačidiel *"
 
+msgid "Use legacy navigation"
+msgstr ""
+
 msgid "Use logarithmic steps"
 msgstr "Použiť logaritmické kroky"
 
@@ -21404,8 +21498,8 @@ msgstr "Náhľad"
 msgid "View File"
 msgstr "Zobraziť súbor"
 
-msgid "View Rass interactive..."
-msgstr "Zobraziť Rass interaktívne..."
+msgid "View Rass interactive"
+msgstr "Zobraziť Rass interaktívne"
 
 msgid "View as grid"
 msgstr "Zobraziť ako mriežku"
@@ -21456,7 +21550,7 @@ msgstr "Panenské ostrovy (britské)"
 msgid "Virgin Islands (US)"
 msgstr "Panenské ostrovy (US)"
 
-msgid "Virtual KeyBoard"
+msgid "Virtual Keyboard"
 msgstr "Virtuálna klávesnica"
 
 msgid "Virtual Keyboard Actions"
@@ -21464,9 +21558,6 @@ msgstr "Akcie virtuálnej klaávesnice"
 
 msgid "Virtual Keyboard Text:"
 msgstr "Text virtuálnej klávesnice:"
-
-msgid "Virtual Keyboard"
-msgstr "Virtuálna klávesnica"
 
 msgid "Visual impaired commentary"
 msgstr "Komentár pre zrakovo postihnutých"
@@ -22128,12 +22219,6 @@ msgstr "Áno, zálohovať nastavenia!"
 msgid "Yes, but don't save time shift as movie"
 msgstr "Áno, neukladať timeshift ako film"
 
-msgid "Yes, but if not available show the plugin browser"
-msgstr "Áno, ale ak nie je dostupné, zobraziť prehliadač pluginov"
-
-msgid "Yes, but if not available show the timer list"
-msgstr "Áno, ale ak nie je dostupné, zobraziť zoznam časovačov"
-
 msgid "Yes, but save time shift as movie and continue recording"
 msgstr "Áno, uložiť timeshift ako film a pokračovať v nahrávaní"
 
@@ -22160,6 +22245,12 @@ msgstr "Áno, obnoviť nastavenia hneď"
 
 msgid "Yes, returning to movie list"
 msgstr "Áno, vrátiť sa do zoznamu filmov"
+
+msgid "Yes, show Plugin Browser if unavailable"
+msgstr "Áno, ale ak nie je dostupné, zobraziť prehliadač pluginov"
+
+msgid "Yes, show RecordTimer if unavailable"
+msgstr "Áno, ale ak nie je dostupné, zobraziť zoznam časovačov"
 
 msgid "Yes, shut down now."
 msgstr "Áno, vypnúť hneď."
@@ -22661,12 +22752,6 @@ msgstr "čítačka kariet"
 
 msgid "cartoon/puppets"
 msgstr "rozprávka/bábky"
-
-msgid "change Volume down"
-msgstr "zmena poklesu hlasitosti"
-
-msgid "change Volume up"
-msgstr "zmena zvýšenia hlasitosti"
 
 msgid "chapters"
 msgstr "kapitoly"
@@ -23580,6 +23665,51 @@ msgstr "áno (zachovať zdroje)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Settings..."
+#~ msgstr "Nastavenia…"
+
+#~ msgid "Mins"
+#~ msgstr "Minúty"
+
+#~ msgid "Please select a sub service..."
+#~ msgstr "Prosím, vyberte podradenú stanicu…"
+
+#~ msgid "Quick zap"
+#~ msgstr "Rýchle prepínanie"
+
+#~ msgid "Really exit the subservices quickzap?"
+#~ msgstr "Naozaj ukončiť rýchle prepínanie podradených staníc?"
+
+#~ msgid "Service cant been added to the favorites."
+#~ msgstr "Stanicu nie je možné pridať do obľúbených."
+
+#~ msgid "Service has been added to the favorites."
+#~ msgstr "Stanica bola pridaná do obľúbených."
+
+#~ msgid "Service has been added to the selected bouquet."
+#~ msgstr "Stanica bola pridaná do vybraného prehľadu."
+
+#~ msgid "Sub Service Actions"
+#~ msgstr "Akcie podradenej stanice/služby"
+
+#~ msgid "Subservice list..."
+#~ msgstr "Zoznam podradených staníc/služieb…"
+
+#~ msgid "Switch to next sub service"
+#~ msgstr "Prepnúť na ďalšiu podradenú stanicu"
+
+#~ msgid "Switch to previous sub service"
+#~ msgstr "Prepnúť na predchádzajúcu podradenú stanicu"
+
+#~ msgid "Virtual KeyBoard"
+#~ msgstr "Virtuálna klávesnica"
+
+#~ msgid "change Volume down"
+#~ msgstr "zmena poklesu hlasitosti"
+
+#~ msgid "change Volume up"
+#~ msgstr "zmena zvýšenia hlasitosti"
 
 #, python-format
 #~ msgid "%s (%s)"

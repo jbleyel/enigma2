@@ -1,6 +1,5 @@
 from Components.Converter.Converter import Converter
 from enigma import eAVControl, iServiceInformation, iPlayableService, eServiceReference
-from Screens.InfoBarGenerics import hasActiveSubservicesForCurrentChannel
 from Components.Element import cached
 from Components.Converter.Poll import Poll
 from Tools.Transponder import ConvertToHumanReadable
@@ -100,6 +99,7 @@ class ServiceInfo(Poll, Converter):
 			"IsHDHDR": (self.IS_HDHDR, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged,)),
 		}[type]
 		self.interesting_events += (iPlayableService.evStart,)
+		self.instanceInfoBarSubserviceSelection = None
 
 	def _isHDMIIn(self, info):
 		return eServiceReference(info.getInfoString(iServiceInformation.sServiceref)).type == eServiceReference.idServiceHDMIIn
@@ -208,18 +208,7 @@ class ServiceInfo(Poll, Converter):
 		video_aspect = None
 		video_height = self._getVideoHeight(info)
 		video_width = self._getVideoWidth(info)
-
-		f = None
-		if path.exists("/proc/stb/vmpeg/0/aspect"):
-			f = open("/proc/stb/vmpeg/0/aspect")
-		elif path.exists("/sys/class/video/screen_mode"):
-			f = open("/sys/class/video/screen_mode")
-		if f:
-			try:
-				video_aspect = int(f.read())
-			except Exception:
-				pass
-			f.close()
+		video_aspect = eAVControl.getInstance().getAspect(0)
 
 		if not video_height:
 			video_height = int(info.getInfo(iServiceInformation.sVideoHeight))
@@ -256,7 +245,11 @@ class ServiceInfo(Poll, Converter):
 		elif self.type == self.IS_NOT_WIDESCREEN:
 			return video_aspect not in WIDESCREEN
 		elif self.type == self.SUBSERVICES_AVAILABLE:
-			return hasActiveSubservicesForCurrentChannel(info.getInfoString(iServiceInformation.sServiceref))
+			if self.instanceInfoBarSubserviceSelection is None:
+				from Screens.InfoBarGenerics import instanceInfoBarSubserviceSelection  # This must be here as the class won't be initialized at module load time.
+				self.instanceInfoBarSubserviceSelection = instanceInfoBarSubserviceSelection
+			if self.instanceInfoBarSubserviceSelection:
+				return self.instanceInfoBarSubserviceSelection.hasActiveSubservicesForCurrentService(info.getInfoString(iServiceInformation.sServiceref))
 		elif self.type == self.HAS_HBBTV:
 			return info.getInfoString(iServiceInformation.sHBBTVUrl) != ""
 		elif self.type == self.AUDIOTRACKS_AVAILABLE:

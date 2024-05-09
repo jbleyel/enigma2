@@ -183,3 +183,5 @@ class MultiPixmap(Pixmap):
 				self.instance.setPixmap(self.pixmaps[index])
 			else:
 				print("[Pixmap] setPixmapNum(%d) failed!  Defined pixmaps: %s." % (index, str(self.pixmaps)))
+				import traceback
+				traceback.print_stack()

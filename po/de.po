@@ -16,16 +16,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tuxbox-enigma 0.0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-27 11:07+0000\n"
-"PO-Revision-Date: 2024-02-27 18:42+0000\n"
-"Last-Translator: Makumbo <tokioplo@web.de>\n"
+"POT-Creation-Date: 2024-05-05 12:54+0000\n"
+"PO-Revision-Date: 2024-05-08 12:26+0000\n"
+"Last-Translator: jbleyel <jbleyel@gmx.net>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.5-dev\n"
+"X-Generator: Weblate 5.5.4-rc\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 msgid ""
@@ -1195,6 +1195,10 @@ msgid "%s %s remote control (native)"
 msgstr "%s %s Fernbedienung (nativ)"
 
 #, python-format
+msgid "%s %sB"
+msgstr "%s %sB"
+
+#, python-format
 msgid "%s (%04o)"
 msgstr "%s (%04o)"
 
@@ -1980,11 +1984,11 @@ msgstr "File Commander zur Liste der Optionen im Menü Erweiterungen hinzufügen
 msgid "Add File Commander to the Main Menu list of options."
 msgstr "File Commander zur Liste der Optionen im Hauptmenü hinzufügen."
 
-msgid "Add HDMI IN to bouquet"
+msgid "Add HDMI-IN To Bouquet"
 msgstr "HDMI-IN zu Bouquet hinzufügen"
 
 #
-msgid "Add Marker"
+msgid "Add Marker To Bouquet"
 msgstr "Marker einfügen"
 
 msgid "Add New Quad Channel Entry"
@@ -2029,14 +2033,14 @@ msgstr "Umschalttimer für aktuelles Programm hinzufügen"
 msgid "Add a ZapTimer for next event"
 msgstr "Neuen Umschalttimer für das nächste Programm hinzufügen"
 
-msgid "Add a bouquet"
-msgstr "Bouquet hinzufügen"
-
 #
 msgid "Add a mark"
 msgstr "Marker hinzufügen"
 
-msgid "Add a marker"
+msgid "Add a new bouquet"
+msgstr "Bouquet hinzufügen"
+
+msgid "Add a new marker before the current service"
 msgstr "Marker hinzufügen"
 
 msgid "Add a new tag"
@@ -2092,7 +2096,7 @@ msgstr "Neuen Tag hinzufügen"
 
 #
 msgid "Add provider"
-msgstr "Provider hinzufügen"
+msgstr "Anbieter hinzufügen"
 
 #
 msgid "Add recording (Enter recording duration)"
@@ -2110,9 +2114,6 @@ msgstr "Aufnahme hinzufügen (unbegrenzt)"
 msgid "Add recording (Stop after current event)"
 msgstr "Aufnahme hinzufügen (aktuelle Sendung)"
 
-msgid "Add selected service to bouquet or alternative"
-msgstr "Gewählten Kanal zum Bouquet hinzufügen"
-
 #
 msgid "Add service"
 msgstr "Kanal hinzufügen"
@@ -2128,6 +2129,9 @@ msgstr "Das aktuelle Verzeichnis als Lesezeichen hinzufügen"
 
 msgid "Add the current service to the Volume Offsets list"
 msgstr "Aktuellen Sender zur Liste der Lautstärke-Offsets hinzufügen"
+
+msgid "Add the selected service to a bouquet or alternative"
+msgstr "Gewählten Sender zum Bouquet hinzufügen"
 
 #
 msgid "Add title"
@@ -2800,6 +2804,9 @@ msgstr "Autofokus startet..."
 msgid "Auto install log"
 msgstr "Autoinstall-Log"
 
+msgid "Auto multi-selection"
+msgstr "Auto-Multiauswahl"
+
 msgid "Auto shut down"
 msgstr "Automatisches Herunterfahren"
 
@@ -3308,6 +3315,9 @@ msgstr "Favoritenauswahl Aktionen"
 msgid "Bouquet Selector Navigation Actions"
 msgstr "Favoritenauswahl Navigationsaktionen"
 
+msgid "Bouquets"
+msgstr "Favoriten"
+
 msgid "Bouvet Island"
 msgstr "Bouvet Insel"
 
@@ -3796,6 +3806,9 @@ msgstr "Auswahl abbrechen"
 msgid "Cancel selection and exit"
 msgstr "Auswahl abbrechen und beenden"
 
+msgid "Cancel service selection and exit"
+msgstr "Senderauswahl abbrechen und beenden"
+
 msgid "Cancel the Reset Feeds command currently being processed"
 msgstr "Das aktuell laufende Zurücksetzen der Feeds abbrechen"
 
@@ -3964,6 +3977,12 @@ msgstr "Wechsle Skin"
 msgid "Change step size"
 msgstr "Schrittweite ändern"
 
+msgid "Change to Radio services mode"
+msgstr "Wechsel zum Radiomodus"
+
+msgid "Change to TV services mode"
+msgstr "Wechsel zum TV Modus"
+
 msgid "Change to bouquet"
 msgstr "Zum Bouquet wechseln"
 
@@ -4000,21 +4019,27 @@ msgstr "Programm-Informationen"
 msgid "Channel List"
 msgstr "Senderliste"
 
-msgid "Channel List Context Menu"
-msgstr "Kontextmenü der Senderliste"
-
-msgid "Channel List Context Menu Actions"
-msgstr "Kontextmenü-Aktionen der Senderliste"
-
-msgid "Channel List Context Menu Navigation Actions"
-msgstr "Senderliste-Kontextmenü Navigations Aktionen"
-
 #
 msgid "Channel List Menu"
 msgstr "Senderliste-Menü"
 
 msgid "Channel Selection"
 msgstr "Senderliste"
+
+msgid "Channel Selection Actions"
+msgstr "Senderlisten Aktionen"
+
+msgid "Channel Selection Context Menu"
+msgstr "Kontextmenü der Senderliste"
+
+msgid "Channel Selection Context Menu Actions"
+msgstr "Kontextmenü-Aktionen der Senderliste"
+
+msgid "Channel Selection Context Menu Navigation Actions"
+msgstr "Senderliste-Kontextmenü Navigationsaktionen"
+
+msgid "Channel Selection Navigation Actions"
+msgstr "Senderlisten Navigationsaktionen"
 
 #
 msgid "Channel Selection Settings"
@@ -4175,7 +4200,7 @@ msgid "Choice List Actions"
 msgstr "Auswahlisten-Aktionen"
 
 msgid "Choice List Navigation Actions"
-msgstr "Auswahlisten-Navigations-Aktionen"
+msgstr "Auswahlisten-Navigationsaktionen"
 
 msgid "Choice List Order Actions"
 msgstr "Auswahlisten-Sortier-Aktionen"
@@ -4430,6 +4455,9 @@ msgstr "Kexec MultiBoot Verwaltung beenden"
 
 msgid "Close the Plugin Browser screen"
 msgstr "Plugin-Manager beenden"
+
+msgid "Close the choice box"
+msgstr "Auswahlbox schliessen"
 
 msgid "Close the current screen"
 msgstr "Aktuellen Bildschirm schließen"
@@ -5196,7 +5224,7 @@ msgid "Copy"
 msgstr "Kopieren"
 
 #
-msgid "Copy To Bouquets"
+msgid "Copy To Bouquet"
 msgstr "In Favoriten kopieren"
 
 msgid "Copy To Stream Relay"
@@ -5943,7 +5971,7 @@ msgid "Defaults"
 msgstr "Standard"
 
 msgid "Define Softcam For This Provider"
-msgstr "Definiere Softcam für diesen Provider"
+msgstr "Definiere Softcam für diesen Anbieter"
 
 msgid "Define Softcam For This Service"
 msgstr "Definiere Softcam für diesen Sender"
@@ -6237,6 +6265,12 @@ msgstr "Beschreibung"
 
 msgid "Deselect"
 msgstr "Abwählen"
+
+msgid "Deselect all"
+msgstr "Alle abwählen"
+
+msgid "Deselect all lines"
+msgstr "Alle abwählen"
 
 msgid "Deselect all related files"
 msgstr "Auswahl aller zugehörigen Dateien aufheben"
@@ -7201,6 +7235,9 @@ msgstr "GStreamer Debug-Log aktivieren *"
 
 msgid "Enable GStreamer pipeline graphs *"
 msgstr "GStreamer Pipeline Graphs aktivieren *"
+
+msgid "Enable IPv6"
+msgstr "IPv6 aktivieren"
 
 msgid "Enable IceTV"
 msgstr "IceTV aktivieren"
@@ -8457,6 +8494,12 @@ msgstr "File Commander Medien-Informationen-Optionen"
 
 msgid "File Commander Move"
 msgstr "File Commander Bewegen"
+
+msgid "File Commander Navigation Actions"
+msgstr "File Commander Navigations-Aktionen"
+
+msgid "File Commander Selection Actions"
+msgstr "File Commander Auswahl-Aktionen"
 
 msgid "File Commander Settings"
 msgstr "File Commander Einstellungen"
@@ -9776,9 +9819,6 @@ msgstr "Bei 'Ja' werden bei Deep-Standby-Ereignissen dieselben Befehle an das Fe
 msgid "If set to 'yes', allows you to use timeshift with alternative audio plugins."
 msgstr "Bei 'Ja' kann Timeshift mit alternativen Audio-Plugins verwendet werden."
 
-msgid "If set to 'yes', enable autorecord for automatically background timeshift"
-msgstr "'Ja' aktiviert die automatische Aufnahme für Timeshift im Hintergrund."
-
 msgid "If the deep standby workaround is enabled wait until the system time is synchronized. Depending on the requirement the device wake up will continuing after a maximum of 2 minutes."
 msgstr "Wenn der Deep-Standby-Workaround aktiviert ist, wird gewartet, bis die Systemzeit synchronisiert wurde. Je nach Erfordernis wird das Aufwecken der Geräte in maximal 2 Minuten fortgesetzt."
 
@@ -10366,7 +10406,7 @@ msgid "Jump back one hour"
 msgstr "Springe eine Stunde zurück"
 
 msgid "Jump first press in channel selection"
-msgstr "Springe zuerst in Programmauswahl"
+msgstr "Zuerst in Programmauswahl springen"
 
 msgid "Jump forward 24 hours"
 msgstr "Springe 24 Stunden vorwärts"
@@ -10580,6 +10620,9 @@ msgstr "LCN-Plugin für DVB-T/T2-Dienste"
 msgid "LCN rules:"
 msgstr "LCN-Regeln:"
 
+msgid "LCN style QuickSelect entry selection"
+msgstr "Schnellauswahl via Sendernummer"
+
 msgid "LED Brightness"
 msgstr "LED-Helligkeit"
 
@@ -10729,6 +10772,9 @@ msgstr "Links vom Sendernamen"
 
 msgid "Left, wrapped"
 msgstr "Links, umgebrochen"
+
+msgid "Legacy mode"
+msgstr "Alter Modus"
 
 msgid "Leisure hobbies"
 msgstr "Freizeit Hobbys"
@@ -11499,9 +11545,6 @@ msgstr "Mindestalter %d Jahre"
 msgid "Minimum send interval"
 msgstr "Minimaler Sendeintervall"
 
-msgid "Mins"
-msgstr "Minuten"
-
 #
 msgid "Minutes"
 msgstr "Minuten"
@@ -11830,6 +11873,18 @@ msgstr "Zur letzten Zeile / Bildschirm wechseln"
 
 msgid "Move to last line / screen in the panel"
 msgstr "Zur letzten Zeile / Bildschirm wechseln"
+
+msgid "Move to next bouquet"
+msgstr "Zu den nächsten Favoriten springen"
+
+msgid "Move to next marker"
+msgstr "Zum nächsten Marker springen"
+
+msgid "Move to previous bouquet"
+msgstr "Zu den vorherigen Favoriten springen"
+
+msgid "Move to previous marker"
+msgstr "Zum vorherigen Marker springen"
 
 msgid "Move to the first item on the current line"
 msgstr "Zum ersten Eintrag der aktuellen Zeile gehen"
@@ -12678,10 +12733,10 @@ msgstr "Nein, niemals"
 msgid "No, scan later manually"
 msgstr "Nein, Suchlauf später manuell durchführen."
 
-msgid "No, show always the plugin browser"
+msgid "No, show the Plugin Browser"
 msgstr "Nein, immer den Plugin-Manager anzeigen"
 
-msgid "No, show always the timer list"
+msgid "No, show the RecordTimer Overview"
 msgstr "Nein, immer die Timerliste anzeigen"
 
 msgid "NodeID"
@@ -13111,6 +13166,9 @@ msgstr "Plugin-Manager Einstellungen"
 
 msgid "Open the VirtualKeyBoard for text entry"
 msgstr "Die virtuelle Tastatur zur Texteingabe öffnen"
+
+msgid "Open the context menu"
+msgstr "Kontextmenü öffnen"
 
 #
 msgid "Open the movie list"
@@ -13626,17 +13684,23 @@ msgstr "Plattform"
 msgid "Play"
 msgstr "Abspielen"
 
-msgid "Play As Picture in Picture window"
-msgstr "Als Bild-im-Bild wiedergeben"
-
 msgid "Play DVD"
 msgstr "DVD abspielen"
 
 msgid "Play DVDs"
 msgstr "DVDs abspielen"
 
-msgid "Play In Main window"
+msgid "Play In Main Window"
 msgstr "Im Hauptfenster abspielen"
+
+msgid "Play In PiP Window"
+msgstr "Als Bild-im-Bild wiedergeben"
+
+msgid "Play Service With Stream Relay"
+msgstr "Sender mit Stream Relay abspielen"
+
+msgid "Play Service Without Stream Relay"
+msgstr "Sender ohne Stream Relay abspielen"
 
 msgid "Play all audio files in the directory"
 msgstr "Alle Audiodateien des Verzeichnisses abspielen"
@@ -13696,16 +13760,19 @@ msgid "Play selected service in a PiP window"
 msgstr "Gewählten Kanal ins Bild-im-Bild Fenster"
 
 msgid "Play selected service on the main screen"
-msgstr "Gewählten Kanal auf den Hauptbildschirm"
+msgstr "Gewählten Sender auf den Hauptbildschirm"
 
 msgid "Play service with Stream Relay"
 msgstr "Sender mit Stream Relay abspielen"
 
 msgid "Play service without Stream Relay"
-msgstr "Sender nicht mit Stream Relay abspielen"
+msgstr "Sender ohne Stream Relay abspielen"
 
 msgid "Play the audio file"
 msgstr "Die Audiodatei abspielen"
+
+msgid "Play the selected service"
+msgstr "Gewählten Sender abspielen"
 
 msgid "Playback Settings"
 msgstr "Wiedergabe"
@@ -13837,9 +13904,6 @@ msgstr "Bitte eine Playlist auswählen..."
 #
 msgid "Please select a resolution..."
 msgstr "Bitte eine Auflösung auswählen..."
-
-msgid "Please select a sub service..."
-msgstr "Einen Unterkanal auswählen..."
 
 # ******************************************************************************
 msgid "Please select an aspect ratio..."
@@ -14354,7 +14418,7 @@ msgid "Press OK to select a group of satellites to configure in one block."
 msgstr "OK drücken, um eine Gruppe von Satelliten auszuwählen, die in einem Block konfiguriert werden sollen."
 
 msgid "Press OK to select a provider."
-msgstr "OK drücken, um einen Provider auszuwählen."
+msgstr "OK drücken, um einen Anbieter auszuwählen."
 
 #
 msgid "Press OK to select a service."
@@ -14599,7 +14663,7 @@ msgstr "Prov"
 
 #
 msgid "Provider"
-msgstr "Provider"
+msgstr "Anbieter"
 
 msgid "Provider Name: "
 msgstr "Name Provider: "
@@ -14713,9 +14777,6 @@ msgstr "Schnellstartmenü"
 msgid "Quick Menu..."
 msgstr "Schnellstartmenü..."
 
-msgid "Quick zap"
-msgstr "QuickZap"
-
 msgid "QuickEPG mode"
 msgstr "Grafischen Infoleisten-EPG aufrufen"
 
@@ -14794,7 +14855,10 @@ msgid "Radio"
 msgstr "Radio"
 
 msgid "Radio Channel Selection"
-msgstr "Radio-Senderliste"
+msgstr "Radio Senderliste"
+
+msgid "Radio Channel Selection Actions"
+msgstr "Radio Senderlisten Aktionen"
 
 #
 msgid "Random"
@@ -14851,10 +14915,6 @@ msgstr "Wirklich ohne Sichern beenden?"
 
 msgid "Really delete this entry?"
 msgstr "Sendergruppe wirklich löschen?"
-
-#
-msgid "Really exit the subservices quickzap?"
-msgstr "Unterkanal-QuickZap wirklich beenden?"
 
 msgid "Really reboot into Recovery Mode?"
 msgstr "Wirklich einen Neustart in den Wartungsmodus durchführen?"
@@ -15272,7 +15332,7 @@ msgid "Remove all network mount data"
 msgstr "Lösche alle Netzwerk-Mount Daten"
 
 msgid "Remove all other data"
-msgstr "Lösche alle anderen Daten"
+msgstr "Alle anderen Daten löschen"
 
 msgid "Remove all plugin setting data"
 msgstr "Lösche alle Plugin-Einstellungs Daten"
@@ -15309,9 +15369,6 @@ msgstr "Ausgewählten Ordner aus Lesezeichen entfernen"
 msgid "Remove plugins ..."
 msgstr "Entferne Plugins..."
 
-msgid "Remove selected service"
-msgstr "Gewählten Kanal entfernen"
-
 msgid "Remove service from AutoCam"
 msgstr "Sender von AutoCam entfernen"
 
@@ -15329,6 +15386,9 @@ msgstr "Aktuelles Lesezeichen entfernen"
 
 msgid "Remove the selected plugin / list of plugins"
 msgstr "Gewähltes Plugin oder Pluginliste entfernen"
+
+msgid "Remove the selected service"
+msgstr "Gewählten Sender entfernen"
 
 #
 msgid "Remove timer"
@@ -15374,11 +15434,11 @@ msgstr "Namen und Beschreibung für neue Aufnahmen anpassen"
 msgid "Rename only highlighted file"
 msgstr "Nur die markierte Datei umbenennen"
 
-msgid "Rename selected service"
-msgstr "Gewählten Kanal umbenennen"
-
 msgid "Rename the proposed file to be created"
 msgstr "Die vorgeschlagene zu erstellende Datei umbenennen"
+
+msgid "Rename the selected service"
+msgstr "Gewählten Sender umbenennen"
 
 msgid "Rename this tag"
 msgstr "Tag umbenennen"
@@ -15478,6 +15538,9 @@ msgstr "Standardsortierung"
 #
 msgid "Reset and renumerate title names"
 msgstr "Titelnamen zurücksetzen und neu nummerieren"
+
+msgid "Reset entries to their default values"
+msgstr "Alle Einträge auf Standardwerte zurücksetzen"
 
 msgid "Reset executable mode (644)"
 msgstr "Ausführbaren Modus zurücksetzen (644)"
@@ -16369,6 +16432,9 @@ msgstr "'Ja' auswählen, um zu prüfen, ob zum Zeitpunkt der Aktivierung des Tim
 msgid "Select 'Yes' to continuously display all images in a loop, or select 'No' to display all images once and then stop."
 msgstr "'Ja' auswählen, um alle Bilder in einer sich wiederholenden Schleife anzuzeigen. 'Nein' zeigt alle Bilder nur ein Mal und beendet dann die Anzeige."
 
+msgid "Select 'Yes' to disable multi-selection mode after each operation. Select 'No' to leave multi-selection mode active and the selections unchanged."
+msgstr "'Ja', um den Multi-Selektion-Modus nach jeder Operation zu beenden. 'Nein', um ihn aktiv zu belassen."
+
 msgid "Select 'Yes' to display a small TV image (PiG - Picture in Graphic) within the EPG screen."
 msgstr "Bei 'Ja' wird ein kleines TV-Bild (PiG) im EPG angezeigt."
 
@@ -16537,6 +16603,9 @@ msgstr "Bei 'Ja' werden die Aufgaben in separate Aktionen aufgeteilt."
 msgid "Select 'Yes' to use alternate GitHub feed IP addresses. This can be helpful if you use a VPN and the normal feeds can't be accessed via the published DNS names."
 msgstr "'Ja' auswählen, um eine alternative GitHub-DNS Feed IP-Adresse zu verwenden. Das kann helfen, wenn ein VPN benutzt wird, aber die normalen Feeds nicht mittels dem angegebenen DNS-Namen angesprochen werden können."
 
+msgid "Select 'Yes' to use legacy navigation where CH+/- swaps the active column. Select 'No' to use the newer unified navigation option for consistent navigation with other screens where LEFT/RIGHT swaps the active column and CH+/- pages up and down the list."
+msgstr "'Ja', um die alte Navigation zu verwenden, bei der CH+/- die aktive Spalte tauscht. 'Nein', um die neue, mit anderen Screens einheitliche Navigation zu verwenden, bei der LINKS/RECHTS die aktive Spalte und CH+/- seitenweise tauschen."
+
 msgid "Select 'Yes' to use signal values (SNR, etc) calculated from the older API V3. This API version has now been superseded."
 msgstr "Bei 'Ja' werden die Signalwerte (SNR usw.) aus API V3 berechnet. Dies ist eine alte API-Version, die jetzt ersetzt wurde."
 
@@ -16696,6 +16765,12 @@ msgstr "Aktion für Timer %s auswählen:"
 msgid "Select additional files to backup"
 msgstr "Dateien auswählen, die zusätzlich gesichert werden"
 
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgid "Select all lines"
+msgstr "Alle auswählen"
+
 msgid "Select all related files"
 msgstr "Alle zugehörigen Dateien auswählen"
 
@@ -16826,7 +16901,7 @@ msgstr "Nur markierte Datei auswählen"
 
 #
 msgid "Select provider to add..."
-msgstr "Provider zum Hinzufügen auswählen..."
+msgstr "Anbieter zum Hinzufügen auswählen..."
 
 #
 msgid "Select refresh rate"
@@ -16844,6 +16919,9 @@ msgstr "Programm zum Hinzufügen auswählen..."
 
 msgid "Select sort method:"
 msgstr "Sortiermethode auswählen:"
+
+msgid "Select subservices"
+msgstr "Wähle Unterkanäle"
 
 msgid "Select system information to view:"
 msgstr "Die anzuzeigenden System-Informationen auswählen:"
@@ -17425,20 +17503,8 @@ msgstr "Sender- und PID-Information"
 msgid "Service and PID information for '%s'"
 msgstr "Sender- und PID-Information für '%s'"
 
-#
-msgid "Service cant been added to the favorites."
-msgstr "Kanal kann nicht zu den Favoriten hinzugefügt werden!"
-
 msgid "Service font size"
 msgstr "Schriftgröße für Sendernamen"
-
-#
-msgid "Service has been added to the favorites."
-msgstr "Kanal wurde den Favoriten zugefügt."
-
-#
-msgid "Service has been added to the selected bouquet."
-msgstr "Kanal wurde dem gewählten Bouquet zugefügt."
 
 msgid "Service info"
 msgstr "Senderinfos"
@@ -17658,6 +17724,9 @@ msgstr "Die Scrollgeschwindigkeit für Text im Display einstellen (wird vom Soft
 msgid "Set the scrolling speed of text on the front display."
 msgstr "Die Scrollgeschwindigkeit für Text im Display einstellen."
 
+msgid "Set the style of the channel list."
+msgstr "Stil der Senderliste auswählen."
+
 msgid "Set the time before checking video source for resolution information."
 msgstr "Die Verzögerungszeit einstellen, bevor die automatische Auflösung die Videoquelle prüft."
 
@@ -17710,6 +17779,9 @@ msgstr "Zeitoptionen einstellen"
 msgid "Set to 'Disabled' to replace underscore characters, '_', in file and directory names with spaces."
 msgstr "Bei 'Nein' werden Unterstriche in Dateien und Verzeichnissen durch Leerzeichen ersetzt."
 
+msgid "Set to 'Yes', to enable automatic recording of the background timeshift buffer."
+msgstr "'Ja' aktiviert die automatische Aufnahme für Timeshift im Hintergrund."
+
 msgid "Set to the desired primetime (hour)."
 msgstr "Die Stunde der Primetime einstellen."
 
@@ -17755,9 +17827,6 @@ msgstr "Einstellungen"
 
 msgid "Settings mode"
 msgstr "Einstellungsansicht"
-
-msgid "Settings..."
-msgstr "Einstellungen..."
 
 #
 msgid "Setup"
@@ -18220,6 +18289,9 @@ msgstr "Softcam-Pakete anzeigen"
 msgid "Show Source packages"
 msgstr "Source-Pakete anzeigen"
 
+msgid "Show Subservices Of Active Service"
+msgstr "Unterkanäle vom aktiven Sender anzeigen"
+
 msgid "Show System Plugin packages"
 msgstr "Systemplugins anzeigen"
 
@@ -18261,6 +18333,9 @@ msgstr "Erweiterte Einstellungen anzeigen"
 
 msgid "Show all"
 msgstr "Alles anzeigen"
+
+msgid "Show all available services"
+msgstr "Alle verfügbaren Sender anzeigen"
 
 msgid "Show all details"
 msgstr "Alle Details anzeigen"
@@ -18411,6 +18486,15 @@ msgstr "Jobaufgaben in Erweiterungen anzeigen"
 
 msgid "Show last image"
 msgstr "Letztes Bild anzeigen"
+
+msgid "Show list of bouquets"
+msgstr "Liste der Favoriten anzeigen"
+
+msgid "Show list of providers"
+msgstr "Liste der Anbieter anzeigen"
+
+msgid "Show list of transponders"
+msgstr "Empfangslisten anzeigen"
 
 msgid "Show live TV when movie stopped"
 msgstr "Live-TV nach Filmende anzeigen"
@@ -18597,8 +18681,14 @@ msgstr "Statusmeldungen beim Umschalten auf Live-TV anzeigen"
 msgid "Show subservice selection"
 msgstr "Unterkanalmenü"
 
+msgid "Show subservices"
+msgstr "Unterkanäle anzeigen"
+
 msgid "Show subservices *"
 msgstr "Unterkanäle anzeigen *"
+
+msgid "Show subservices of the active service"
+msgstr "Unterkanäle vom aktiven Sender anzeigen"
 
 msgid "Show subtitle quick menu"
 msgstr "Untertitel-Schnellstartmenü"
@@ -19669,6 +19759,9 @@ msgstr "Stream Relay Einstellungsaktionen"
 msgid "Stream Relay URL"
 msgstr "Stream Relay URL"
 
+msgid "Stream Relay is active, please switch to a none Stream Relay channel."
+msgstr "Stream Relay ist aktiv. Bitte zu einem Sender ohne Stream Relay wechseln."
+
 msgid "Stream Relay port"
 msgstr "Stream Relay Port"
 
@@ -19716,15 +19809,14 @@ msgstr "Striktes DLNA"
 msgid "Stripes"
 msgstr "Streifen"
 
+msgid "Style"
+msgstr "Stil"
+
 msgid "Style:"
 msgstr "Farbe:"
 
-# UsageConfig.py:295
-msgid "Sub Service Actions"
-msgstr "Unterkanal-Aktionen"
-
-msgid "Subservice list..."
-msgstr "Liste der Unterkanäle..."
+msgid "Subservice Actions"
+msgstr "Unterkanal Aktionen"
 
 msgid "Subservice mode (GREEN button)"
 msgstr "Taste GRÜN - Unterkanal-Modus"
@@ -19923,6 +20015,9 @@ msgstr "Umschalten in den HDMI-IN-Modus"
 msgid "Switch to Radio"
 msgstr "Auf Radio umschalten"
 
+msgid "Switch to Radio mode"
+msgstr "In den Radiomodus umschalten"
+
 msgid "Switch to TV"
 msgstr "Auf TV umschalten"
 
@@ -19947,10 +20042,6 @@ msgstr "Zum nächsten EPG-Ereignis wechseln"
 msgid "Switch to next channel in history"
 msgstr "Zum nächsten Sender in der Historie wechseln"
 
-#
-msgid "Switch to next sub service"
-msgstr "Zum nächsten Unterkanal schalten"
-
 # Mediaplayer Filelist Menue
 msgid "Switch to play list"
 msgstr "Zur Playlist wechseln"
@@ -19966,13 +20057,6 @@ msgstr "Zum vorherigen Sender wechseln"
 #
 msgid "Switch to previous channel in history"
 msgstr "Zum vorherigen Sender in der Historie wechseln"
-
-#
-msgid "Switch to previous sub service"
-msgstr "Zum vorherigen Unterkanal schalten"
-
-msgid "Switch to radio mode"
-msgstr "In den Radiomodus umschalten"
 
 msgid "Switch to the available RADIO services"
 msgstr "Wechsel zu den verfügbaren Radio-Sendern"
@@ -20239,6 +20323,9 @@ msgstr "Telugu"
 #, python-format
 msgid "Temp directory (%s)"
 msgstr "Temporäres Verzeichnis ('%s')"
+
+msgid "Temporary directory"
+msgstr "Temporäres Verzeichnis"
 
 #
 msgid "Tennis"
@@ -20845,8 +20932,8 @@ msgstr "Die Anzeige der Uhrzeit im Standby einstellen."
 msgid "This option allows you choose the background color of transparent picons."
 msgstr "Die Hintergrundfarbe von transparenten Senderlogos (Picons) einstellen."
 
-msgid "This option allows you choose the option for subservice indicator or selection."
-msgstr "Anzeige oder Auswahl für Unterkanäle."
+msgid "This option allows you choose the option for Subservice indicator or selection."
+msgstr "Unterkanäle anzeigen oder auswählen."
 
 # VideoEnhancement
 msgid "This option allows you enable smoothing filter to control the dithering process."
@@ -21438,9 +21525,6 @@ msgid "Toggle item move mode on/off"
 msgstr "Verschiebemodus Ein/Aus umschalten"
 
 msgid "Toggle move mode"
-msgstr "Verschiebemodus aktivieren / deaktivieren"
-
-msgid "Toggle move mode selection"
 msgstr "Verschiebemodus umschalten"
 
 msgid "Toggle multi-selection mode"
@@ -21452,6 +21536,9 @@ msgstr "Zwischen Einfüge- und Überschreibungsmodus umschalten"
 
 msgid "Toggle selection of the current tag"
 msgstr "Aktuelle Tagauswahl umschalten"
+
+msgid "Toggle selections"
+msgstr "Auswahl umschalten"
 
 msgid "Toggle service name display"
 msgstr "Anzeige des Sendernamens ein- und ausschalten"
@@ -22298,6 +22385,9 @@ msgstr "Netzwerkadapter aktivieren"
 msgid "Use key map *"
 msgstr "Tastaturbelegung *"
 
+msgid "Use legacy navigation"
+msgstr "Alte Navigation verwenden"
+
 msgid "Use logarithmic steps"
 msgstr "Logarithmische Schritte verwenden"
 
@@ -22755,8 +22845,8 @@ msgid "View File"
 msgstr "Datei anzeigen"
 
 #
-msgid "View Rass interactive..."
-msgstr "RaSS Interaktiv anzeigen..."
+msgid "View Rass interactive"
+msgstr "RaSS Interaktiv anzeigen"
 
 msgid "View as grid"
 msgstr "Als Kacheln anzeigen"
@@ -22811,7 +22901,7 @@ msgstr "Jungferninseln (Britisch)"
 msgid "Virgin Islands (US)"
 msgstr "Jungferninseln (US)"
 
-msgid "Virtual KeyBoard"
+msgid "Virtual Keyboard"
 msgstr "Virtuelle Tastatur"
 
 msgid "Virtual Keyboard Actions"
@@ -22819,9 +22909,6 @@ msgstr "Virtuelle Tastatur Aktionen"
 
 msgid "Virtual Keyboard Text:"
 msgstr "Text der virtuellen Tastatur:"
-
-msgid "Virtual Keyboard"
-msgstr "Virtuelle Tastatur"
 
 msgid "Visual impaired commentary"
 msgstr "Kommentare für Sehbehinderte"
@@ -23533,12 +23620,6 @@ msgstr "Ja, die Einstellungen sichern!"
 msgid "Yes, but don't save time shift as movie"
 msgstr "Ja, nicht als Aufnahme speichern."
 
-msgid "Yes, but if not available show the plugin browser"
-msgstr "Wenn nicht verfügbar zum Plugin-Manager"
-
-msgid "Yes, but if not available show the timer list"
-msgstr "Wenn nicht verfügbar zur Timerliste"
-
 msgid "Yes, but save time shift as movie and continue recording"
 msgstr "Ja, als Aufnahme speichern und weiter aufnehmen."
 
@@ -23571,6 +23652,12 @@ msgstr "Ja, die Einstellungen jetzt wiederherstellen"
 #
 msgid "Yes, returning to movie list"
 msgstr "Ja, und zurück zur Filmauswahl"
+
+msgid "Yes, show Plugin Browser if unavailable"
+msgstr "Wenn nicht verfügbar zum Plugin-Manager"
+
+msgid "Yes, show RecordTimer if unavailable"
+msgstr "Wenn nicht verfügbar zur Timerliste"
 
 msgid "Yes, shut down now."
 msgstr "Ja, jetzt herunterfahren."
@@ -24109,12 +24196,6 @@ msgstr "Kartenleser"
 
 msgid "cartoon/puppets"
 msgstr "Zeichentrick/Puppen"
-
-msgid "change Volume down"
-msgstr "Lautstärke verringern"
-
-msgid "change Volume up"
-msgstr "Lautstärke erhöhen"
 
 #
 msgid "chapters"
@@ -25121,6 +25202,58 @@ msgstr "Ja (Feeds beibehalten)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Settings..."
+#~ msgstr "Einstellungen..."
+
+#~ msgid "Mins"
+#~ msgstr "Minuten"
+
+#~ msgid "Please select a sub service..."
+#~ msgstr "Einen Unterkanal auswählen..."
+
+#~ msgid "Quick zap"
+#~ msgstr "QuickZap"
+
+#
+#~ msgid "Really exit the subservices quickzap?"
+#~ msgstr "Unterkanal-QuickZap wirklich beenden?"
+
+#
+#~ msgid "Service cant been added to the favorites."
+#~ msgstr "Kanal kann nicht zu den Favoriten hinzugefügt werden!"
+
+#
+#~ msgid "Service has been added to the favorites."
+#~ msgstr "Kanal wurde den Favoriten zugefügt."
+
+#
+#~ msgid "Service has been added to the selected bouquet."
+#~ msgstr "Kanal wurde dem gewählten Bouquet zugefügt."
+
+# UsageConfig.py:295
+#~ msgid "Sub Service Actions"
+#~ msgstr "Unterkanal-Aktionen"
+
+#~ msgid "Subservice list..."
+#~ msgstr "Liste der Unterkanäle..."
+
+#
+#~ msgid "Switch to next sub service"
+#~ msgstr "Zum nächsten Unterkanal schalten"
+
+#
+#~ msgid "Switch to previous sub service"
+#~ msgstr "Zum vorherigen Unterkanal schalten"
+
+#~ msgid "Virtual KeyBoard"
+#~ msgstr "Virtuelle Tastatur"
+
+#~ msgid "change Volume down"
+#~ msgstr "Lautstärke verringern"
+
+#~ msgid "change Volume up"
+#~ msgstr "Lautstärke erhöhen"
 
 #, python-format
 #~ msgid "%s (%s)"
