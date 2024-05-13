@@ -39,6 +39,7 @@ class eDVBDB: public iDVBChannelList
 private:
 	void loadServiceListV5(FILE * f);
 public:
+	std::vector<ePtr<eDVBService>> iptv_services;
 // iDVBChannelList
 	RESULT removeFlags(unsigned int flagmask, int dvb_namespace=-1, int tsid=-1, int onid=-1, unsigned int orb_pos=0xFFFFFFFF);
 	RESULT removeServices(int dvb_namespace=-1, int tsid=-1, int onid=-1, unsigned int orb_pos=0xFFFFFFFF);
@@ -74,10 +75,14 @@ public:
 	RESULT getBouquet(const eServiceReference &ref, eBouquet* &bouquet);
 //////
 	void loadBouquet(const char *path);
+	void loadSubservices();
 	void searchAllReferences(std::vector<eServiceReference> &result, int tsid, int onid, int sid);
 	eDVBDB();
 	virtual ~eDVBDB();
 	int renumberBouquet(eBouquet &bouquet, int startChannelNum = 1);
+	void loadIPTVCachefile(const char *);
+	void parseIPTVServiceData(ePtr<eDVBService> s, std::string str);
+	void saveIptvServicelist(const char *file);
 #endif
 	eServiceReference searchReference(int tsid, int onid, int sid);
 	void setNumberingMode(bool numberingMode);
@@ -87,6 +92,7 @@ public:
 	static eDVBDB *getInstance() { return instance; }
 	void reloadServicelist();
 	void saveServicelist();
+	void saveIptvServicelist();
 	void saveServicelist(const char *file);
 	void reloadBouquets();
 	bool isValidService(int tsid, int onid, int sid);

@@ -1002,19 +1002,25 @@ RESULT eServiceFactoryDVB::offlineOperations(const eServiceReference &ref, ePtr<
 
 RESULT eServiceFactoryDVB::lookupService(ePtr<eDVBService> &service, const eServiceReference &ref)
 {
-	if(!ref.alternativeurl.empty())
-	{
-		eServiceReferenceDVB m_alternative_ref = eServiceReferenceDVB(ref.alternativeurl);
-		int err;
-		if ((err = eDVBDB::getInstance()->getService((eServiceReferenceDVB&)m_alternative_ref, service)) != 0)
-		{
-			eTrace("[eServiceFactoryDVB] lookupService alternative service failed!");
-		}
-		else
-			return 0;
-	}
 	if (!ref.path.empty()) // playback
 	{
+		if(!ref.alternativeurl.empty()) // check StreamRelay
+		{
+			eTrace("[eServiceFactoryDVB] lookupService for: %s / alternative: %s", ref.toString().c_str(), ref.alternativeurl.c_str());
+			eServiceReferenceDVB m_alternative_ref = eServiceReferenceDVB(ref.alternativeurl);
+			if(m_alternative_ref.valid()) // Get the origial eDVBService only if alternativeurl is a valid sref
+			{
+				int err;
+				if ((err = eDVBDB::getInstance()->getService((eServiceReferenceDVB&)m_alternative_ref, service)) != 0)
+				{
+					eTrace("[eServiceFactoryDVB] lookupService getService for alternativeurl failed!");
+					return err;
+				}
+				eTrace("[eServiceFactoryDVB] lookupService success for: %s / alternative: %s", ref.toString().c_str(), ref.alternativeurl.c_str());
+				return 0;
+			}
+		}
+
 		eDVBMetaParser parser;
 		int ret=parser.parseFile(ref.path);
 		service = new eDVBService;

@@ -431,6 +431,24 @@ void eDVBService::setCacheEntry(cacheID id, int pid)
 		initCache();
 	if (id < cacheMax)
 		m_cache[id] = pid;
+
+	if (!m_reference_str.empty()) {
+		bool hasFoundItem = false;
+		std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
+		for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it) {
+			if (m_reference_str.find((*it)->m_reference_str) != std::string::npos) {
+				hasFoundItem = true;
+				(*it)->setCacheEntry(id, pid);
+				break;
+			}
+		}
+		if (!hasFoundItem) {
+			ePtr<eDVBService> s = new eDVBService;
+			s->m_reference_str = eServiceReference(m_reference_str).toReferenceString();
+			s->setCacheEntry(id, pid);
+			iptv_services.push_back(s);
+		}
+	}
 }
 
 DEFINE_REF(eDVBDB);
@@ -439,6 +457,68 @@ void eDVBDB::reloadServicelist()
 {
 	m_services.clear();
 	loadServicelist(eEnv::resolve("${sysconfdir}/enigma2/lamedb").c_str());
+}
+
+void eDVBDB::loadIPTVCachefile(const char *file)
+{
+	CFile f(file, "rt");
+	if (!f) {
+		eDebug("[eDVBDB] can't open %s: %m", file);
+		return;
+	}
+	iptv_services.clear();
+	int scount=0;
+	char line[1024];
+	while (fgets(line, 1024, f)) {
+		int len = strlen(line);
+		if (!len) continue;
+		if (line[len - 1] == '\n')
+			line[len - 1] = '\0';
+		if (!strncmp(line, "s:", 2)) {		// Service data
+			// s:serviceref[,servicedata]
+			char * sname = strchr(line, ',');
+			if (!sname)
+				continue;
+			*sname = '\0';
+			sname += 2;	// skip '"'
+			char * sdata = strchr(sname, '"');
+			if (!sdata)
+				continue;
+			*sdata++ = '\0';  // end string on '"'
+			ePtr<eDVBService> s = new eDVBService;
+			s->m_reference_str = line + 2;
+			if (*sdata++ == ',') // expect a ',' or '\0'.
+				parseIPTVServiceData(s, sdata);
+			iptv_services.push_back(s);
+			scount ++;
+		}
+	}
+	eDebug("[eDVBDB] loaded %d iptv channels from cache file.", scount);
+}
+
+void eDVBDB::parseIPTVServiceData(ePtr<eDVBService> s, std::string str)
+{
+	while ((!str.empty()) && str[1]==':')
+	{
+		size_t c=str.find(',');
+		char p=str[0];
+		std::string v;
+		if (c == std::string::npos)
+		{
+			v=str.substr(2);
+			str="";
+		} else
+		{
+			v=str.substr(2, c-2);
+			str=str.substr(c+1);
+		}
+		if (p == 'c')
+		{
+			int cid, val;
+			sscanf(v.c_str(), "%02d%x", &cid, &val);
+			s->setCacheEntry((eDVBService::cacheID)cid,val);
+		}
+	}
 }
 
 void eDVBDB::parseServiceData(ePtr<eDVBService> s, std::string str)
@@ -1074,6 +1154,39 @@ void eDVBDB::saveServicelist()
 	saveServicelist(eEnv::resolve("${sysconfdir}/enigma2/lamedb").c_str());
 }
 
+void eDVBDB::saveIptvServicelist()
+{
+	saveIptvServicelist(eEnv::resolve("${sysconfdir}/enigma2/iptvcache").c_str());
+}
+
+void eDVBDB::saveIptvServicelist(const char *file)
+{
+	std::string filename = file;
+
+	CFile f((filename + ".writing").c_str(), "w");
+	if (!f)
+		eFatal("[eDVBDB] couldn't save iptv cache file!");
+	else
+	{
+		for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it)
+		{
+			fprintf(f, "s:%s", (*it)->m_reference_str.c_str());
+			for (int x=0; x < eDVBService::cacheMax; ++x)
+			{
+				// write cached pids
+				int entry = (*it)->getCacheEntry((eDVBService::cacheID)x);
+				if (entry != -1) {
+					fprintf(f, ",c:%02d%x", x, entry);
+				}
+			}
+			fprintf(f, "\n");
+		}
+		f.sync();
+		rename((filename + ".writing").c_str(), filename.c_str());
+	}
+
+}
+
 void eDVBDB::loadBouquet(const char *path)
 {
 	std::vector<std::string> userbouquetsfiles;
@@ -1280,11 +1393,86 @@ void eDVBDB::loadBouquet(const char *path)
 	eDebug("[eDVBDB] %d entries in Bouquet %s", entries, bouquet_name.c_str());
 }
 
+void eDVBDB::loadSubservices()
+{
+
+	 // currenly only for tv
+	std::string groupservices = eEnv::resolve("${sysconfdir}/enigma2/groupservices");
+
+	CFile fp(groupservices, "rt");
+	std::vector<std::string> subservicebouquets;
+	int entries = 0;
+	eBouquet &bouquet;
+	std::list<eServiceReference> &list;
+	
+	if (fp)
+	{
+		size_t linesize = 256;
+		char *line = (char*)malloc(linesize);
+		while (1)
+		{
+			int len;
+			if ((len = getline(&line, &linesize, fp)) < 2) break;
+			/* strip newline */
+			line[--len] = 0;
+			/* strip carriage return (when found) */
+			if (line[len - 1] == '\r') line[--len] = 0;
+
+			if (!strncmp(line, "#", 1))
+			{
+				std::string name = line+1;
+				bouquet = m_bouquets[name];
+				bouquet.m_bouquet_name=name;
+				subservicebouquets.push_back("subservice." + to_string() + ".tv")
+				list = bouquet.m_services;
+				list.clear();
+				entries ++;
+			}
+			else if
+			{
+				eServiceReference tmp(line);
+				if ( tmp.flags&eServiceReference::canDescent )
+				{
+					size_t pos = tmp.path.rfind('/');
+					char buf[256];
+					std::string path = tmp.path;
+					if ( pos != std::string::npos )
+						path.erase(0, pos+1);
+					if (path.empty())
+					{
+						eDebug("[eDVBDB] Bouquet load failed.. no filename given..");
+						continue;
+					}
+				}
+				list.push_back(tmp);
+			}
+		}
+		free(line);
+	}
+
+	if (subservicebouquets.size())
+	{
+		bouquet = m_bouquets["subservices"];
+		list = bouquet.m_services;
+		list.clear();
+		char buf[256];
+
+		for(unsigned int i=0; i<subservicebouquets.size(); ++i)
+		{
+			snprintf(buf, sizeof(buf), "1:7:1:0:0:0:0:0:0:0:FROM BOUQUET \"%s\" ORDER BY bouquet", subservicebouquets[i].c_str());
+			eServiceReference tmp(buf);
+			list.push_back(tmp);
+		}
+	}
+
+}
+
 void eDVBDB::reloadBouquets()
 {
 	m_bouquets.clear();
 	loadBouquet("bouquets.tv");
 	loadBouquet("bouquets.radio");
+	loadSubservices();
 	// create default bouquets when missing
 	if ( m_bouquets.find("userbouquet.favourites.tv") == m_bouquets.end() )
 	{
@@ -1388,6 +1576,7 @@ eDVBDB::eDVBDB()
 {
 	instance = this;
 	reloadServicelist();
+	loadIPTVCachefile(eEnv::resolve("${sysconfdir}/enigma2/iptvcache").c_str());
 }
 
 PyObject *eDVBDB::readSatellites(ePyObject sat_list, ePyObject sat_dict, ePyObject tp_dict)
