@@ -9,6 +9,7 @@
 #include <lib/base/eerror.h>
 #include <lib/base/estring.h>
 #include <lib/base/nconfig.h>
+#include <lib/base/esimpleconfig.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <dvbsi++/service_description_section.h>
@@ -125,6 +126,12 @@ RESULT eBouquet::moveService(const eServiceReference &ref, unsigned int pos)
 
 RESULT eBouquet::flushChanges()
 {
+
+	if (m_filename.empty())
+	{
+		return eDVBDB::getInstance()->saveSubservices();
+	}
+
 	std::string filename = eEnv::resolve("${sysconfdir}/enigma2/" + m_filename);
 	{
 		CFile f((filename + ".writing").c_str(), "w");
@@ -237,9 +244,6 @@ int eDVBService::isPlayable(const eServiceReference &ref, const eServiceReferenc
 	if (!ignore.alternativeurl.empty())
 		return 1;
 
-	eDebug("[eDVBService] isPlayable ref %s / ignore %s", ref.toString().c_str(),ignore.toString().c_str());
-	eDebug("[eDVBService] isPlayable ref alter %s / ignore alter %s", ref.alternativeurl.c_str(),ignore.alternativeurl.c_str());
-
 	ePtr<eDVBResourceManager> res_mgr;
 	bool remote_fallback_enabled = eConfigManager::getConfigBoolValue("config.usage.remote_fallback_enabled", false);
 
@@ -252,8 +256,6 @@ int eDVBService::isPlayable(const eServiceReference &ref, const eServiceReferenc
 
 		((const eServiceReferenceDVB&)ref).getChannelID(chid);
 		((const eServiceReferenceDVB&)ignore).getChannelID(chid_ignore);
-
-		eDebug("[eDVBService] isPlayable canAllocateChannel chid %s / chid_ignore %s", chid.toString().c_str(),chid_ignore.toString().c_str());
 
 		if (res_mgr->canAllocateChannel(chid, chid_ignore, system, simulate))
 		{
@@ -1393,17 +1395,49 @@ void eDVBDB::loadBouquet(const char *path)
 	eDebug("[eDVBDB] %d entries in Bouquet %s", entries, bouquet_name.c_str());
 }
 
-void eDVBDB::loadSubservices()
+void eDVBDB::loadSubservices(int config)
 {
 
-	 // currenly only for tv
-	std::string groupservices = eEnv::resolve("${sysconfdir}/enigma2/groupservices");
+	int showInfoBarSubservices = config == -1 ? eSimpleConfig::getInt("config.usage.showInfoBarSubservices", 1) : config;
 
-	CFile fp(groupservices, "rt");
+	m_subserviceList.clear();
+
+	if(showInfoBarSubservices == 0)
+	{
+		eBouquet &bouquetsRef = m_bouquets["subservices.tv"];
+
+		for (std::list<eServiceReference>::iterator i(bouquetsRef.m_services.begin()); i != bouquetsRef.m_services.end(); ++i)
+		{
+			eServiceReference tmp = *i;
+			m_bouquets.erase(tmp.name);
+		}
+		m_bouquets.erase("subservices.tv");
+		return;
+	}
+
+	// currenly only for tv
+	std::string subservices = eEnv::resolve("${sysconfdir}/enigma2/groupedservices");
+
+	bool userDefined = true;
+	if (access(subservices.c_str(), R_OK) != 0)
+	{
+		subservices = eEnv::resolve("${datadir}/enigma2/groupedservices");
+		userDefined = false;
+	}
+
+	CFile fp(subservices, "rt");
+
+	if (!fp) {
+		eDebug("[eDVBDB] can't open %s: %m", subservices.c_str());
+		return;
+	}
+
+	eDebug("[eDVBDB] loading subservices %s", subservices.c_str());
+
 	std::vector<std::string> subservicebouquets;
-	int entries = 0;
-	eBouquet &bouquet;
-	std::list<eServiceReference> &list;
+	int entries = -1;
+	eBouquet *bouquetRef;
+	std::list<eServiceReference> *listRef;
 	
 	if (fp)
 	{
@@ -1420,31 +1454,23 @@ void eDVBDB::loadSubservices()
 
 			if (!strncmp(line, "#", 1))
 			{
-				std::string name = line+1;
-				bouquet = m_bouquets[name];
-				bouquet.m_bouquet_name=name;
-				subservicebouquets.push_back("subservice." + to_string() + ".tv")
-				list = bouquet.m_services;
-				list.clear();
 				entries ++;
+				std::string name = line+1;
+				eDebug("[eDVBDB] add subservices group %s", name.c_str());
+				std::string bqname = "subservices." + std::to_string(entries) + ".tv";
+
+				bouquetRef = &m_bouquets[bqname];
+				bouquetRef->m_bouquet_name=name;
+				bouquetRef->m_filename = "";
+				subservicebouquets.push_back(bqname);
+				listRef = &bouquetRef->m_services;
+				listRef->clear();
 			}
-			else if
+			else// if (!strncmp(line, "1:", 2))
 			{
 				eServiceReference tmp(line);
-				if ( tmp.flags&eServiceReference::canDescent )
-				{
-					size_t pos = tmp.path.rfind('/');
-					char buf[256];
-					std::string path = tmp.path;
-					if ( pos != std::string::npos )
-						path.erase(0, pos+1);
-					if (path.empty())
-					{
-						eDebug("[eDVBDB] Bouquet load failed.. no filename given..");
-						continue;
-					}
-				}
-				list.push_back(tmp);
+				m_subserviceList[tmp.toString()] = entries;
+				listRef->push_back(tmp);
 			}
 		}
 		free(line);
@@ -1452,27 +1478,136 @@ void eDVBDB::loadSubservices()
 
 	if (subservicebouquets.size())
 	{
-		bouquet = m_bouquets["subservices"];
-		list = bouquet.m_services;
-		list.clear();
+
+		bouquetRef = &m_bouquets["subservices.tv"];
+		bouquetRef->m_bouquet_name = "subservices";
+		bouquetRef->m_filename = (userDefined) ? "subservices.tv" : "";
+		listRef = &bouquetRef->m_services;
+		listRef->clear();
 		char buf[256];
 
 		for(unsigned int i=0; i<subservicebouquets.size(); ++i)
 		{
 			snprintf(buf, sizeof(buf), "1:7:1:0:0:0:0:0:0:0:FROM BOUQUET \"%s\" ORDER BY bouquet", subservicebouquets[i].c_str());
 			eServiceReference tmp(buf);
-			list.push_back(tmp);
+			tmp.setName(subservicebouquets[i].c_str());
+			listRef->push_back(tmp);
 		}
 	}
 
+	if (subservicebouquets.size())
+	{
+
+		bouquetRef = &m_bouquets["subservices.tv"];
+		eDebug("[eDVBDB] subservices.tv size: %d", bouquetRef->m_services.size());
+		char buf[256];
+		for(unsigned int i=0; i<subservicebouquets.size(); ++i)
+		{
+			bouquetRef = &m_bouquets[subservicebouquets[i].c_str()];
+			eDebug("[eDVBDB] %s size: %d",subservicebouquets[i].c_str(), bouquetRef->m_services.size());
+			
+		}
+	}
+
+
+}
+
+int eDVBDB::saveSubservices()
+{
+
+	std::string filename = eEnv::resolve("${sysconfdir}/enigma2/groupedservices");
+	{
+		CFile f((filename + ".writing").c_str(), "w");
+		if (!f)
+			goto err;
+
+		eBouquet &bouquetsRef = m_bouquets["subservices.tv"];
+
+		for (std::list<eServiceReference>::iterator i(bouquetsRef.m_services.begin()); i != bouquetsRef.m_services.end(); ++i)
+		{
+			eServiceReference tmp = *i;
+			eBouquet &bouquetRef = m_bouquets[tmp.name];
+			if ( fprintf(f, "#NAME %s\r\n", bouquetRef.m_bouquet_name.c_str()) < 0 )
+				goto err;
+
+			for (std::list<eServiceReference>::iterator l(bouquetsRef.m_services.begin()); l != bouquetsRef.m_services.end(); ++l)
+			{
+				eServiceReference tmps = *l;
+				if ( fprintf(f, "%s\r\n", tmps.toString().c_str()) < 0 )
+					goto err;
+			}
+
+		}
+		f.sync();
+	}
+	// TODO DEBUG
+	//rename((filename + ".writing").c_str(), filename.c_str());
+
+err:
+	eDebug("[eBouquet] couldn't write file %s", filename.c_str());
+	return -1;
+
+}
+
+int eDVBDB::getSubserviceGroup(const eServiceReference &service)
+{
+	int group = -1;
+	int showInfoBarSubservices = eSimpleConfig::getInt("config.usage.showInfoBarSubservices", 1);
+	if(showInfoBarSubservices > 0)
+	{
+		std::string sref = service.toString();
+		if (sref.find("%3a") != std::string::npos)
+			sref = service.toCompareString();
+
+		if(m_subserviceList.size())
+		{
+			std::map<std::string,int>::iterator i = m_subserviceList.find(sref);
+			if(i != m_subserviceList.end())
+			{
+				group = i->second;
+				bool found = false;
+				if (showInfoBarSubservices == 1)
+				{
+					std::string bqname = "subservices." + std::to_string(group) + ".tv";
+					eBouquet &bouquet = m_bouquets[bqname];
+					std::list<eServiceReference> &list = bouquet.m_services;
+					for (std::list<eServiceReference>::iterator it = list.begin(); it != list.end(); ++it)
+					{
+						ePtr<eServiceEvent> ptr = nullptr;
+						eServiceReferenceDVB &ref = (eServiceReferenceDVB&) *it;
+						eEPGCache::getInstance()->lookupEventTime(ref, -1, ptr);
+						if(ptr)
+						{
+							std::string title = ptr->getEventName();
+							if (sref.find("Sendepause") != std::string::npos)
+							{
+								found = true;
+								break;
+							}
+						}
+					}
+
+					if(!found)
+						return -1;
+				}
+			}
+		}
+	}
+	return group;
+
+}
+
+int eDVBDB::getSubserviceGroup(const std::string &service)
+{
+	return getSubserviceGroup(eServiceReference(service));
 }
 
 void eDVBDB::reloadBouquets()
 {
 	m_bouquets.clear();
+	loadSubservices();
 	loadBouquet("bouquets.tv");
 	loadBouquet("bouquets.radio");
-	loadSubservices();
 	// create default bouquets when missing
 	if ( m_bouquets.find("userbouquet.favourites.tv") == m_bouquets.end() )
 	{

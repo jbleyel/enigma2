@@ -8,6 +8,7 @@
 #include <lib/base/object.h>
 #include <lib/dvb/epgcache.h>
 #include <lib/dvb/decoder.h>
+#include <lib/dvb/db.h>
 #include <lib/components/file_eraser.h>
 #include <lib/gui/esubtitle.h>
 #include <lib/service/servicemp3.h>
@@ -529,6 +530,20 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	m_decoder = NULL;
 	m_subs_to_pull_handler_id = m_notify_source_handler_id = m_notify_element_added_handler_id = 0;
 
+	 // TODO IPTV
+	std::string sref = ref.toString();
+	if (!sref.empty()) {
+		std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
+		for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it) {
+			if (sref.find((*it)->m_reference_str) != std::string::npos) {
+				m_currentAudioStream = (*it)->getCacheEntry( eDVBService::cMPEGAPID);
+				m_currentSubtitleStream = (*it)->getCacheEntry(  eDVBService::cSUBTITLE);
+				m_cachedSubtitleStream = m_currentSubtitleStream;
+				break;
+			}
+		}
+	}
+
 	CONNECT(m_subtitle_sync_timer->timeout, eServiceMP3::pushSubtitles);
 	CONNECT(m_pump.recv_msg, eServiceMP3::gstPoll);
 	CONNECT(m_nownext_timer->timeout, eServiceMP3::updateEpgCacheNowNext);
@@ -972,6 +987,25 @@ void eServiceMP3::updateEpgCacheNowNext()
 DEFINE_REF(eServiceMP3);
 
 DEFINE_REF(GstMessageContainer);
+
+void eServiceMP3::setCacheEntry(bool isAudio, int pid)
+{
+	bool hasFoundItem = false;
+	std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
+	for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it) {
+		if (m_ref.toString().find((*it)->m_reference_str) != std::string::npos) {
+			hasFoundItem = true;
+			(*it)->setCacheEntry( isAudio ? eDVBService::cMPEGAPID : eDVBService::cSUBTITLE, pid);
+			break;
+		}
+	}
+	if (!hasFoundItem) {
+		ePtr<eDVBService> s = new eDVBService;
+		s->m_reference_str = m_ref.toReferenceString();
+		s->setCacheEntry( isAudio ? eDVBService::cMPEGAPID : eDVBService::cSUBTITLE, pid);
+		iptv_services.push_back(s);
+	}
+}
 
 RESULT eServiceMP3::connectEvent(const sigc::slot2<void,iPlayableService*,int> &event, ePtr<eConnection> &connection)
 {
@@ -1652,6 +1686,21 @@ std::string eServiceMP3::getInfoString(int w)
 		}
 	}
 
+	if (w == sVideoInfo)
+	{
+		char buff[100];
+		snprintf(buff, sizeof(buff), "%d|%d|%d|%d|%d|%d",
+				m_width,
+				m_height,
+				m_framerate,
+				m_progressive,
+				m_aspect,
+				m_gamma
+				);
+		std::string videoInfo = buff;
+		return videoInfo;
+	}
+
 	if ( !m_stream_tags && w < sUser && w > 26 )
 		return "";
 	const gchar *tag = 0;
@@ -1922,6 +1971,7 @@ int eServiceMP3::selectAudioStream(int i)
 	{
 		eDebug ("[eServiceMP3] switched to audio stream %d", current_audio);
 		m_currentAudioStream = i;
+		setCacheEntry(true, i);
 		return 0;
 	}
 	return -1;
@@ -2823,6 +2873,8 @@ audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
 
 	else if ( gst_structure_has_name (structure, "audio/x-ac3") || gst_structure_has_name (structure, "audio/ac3") )
 		return atAC3;
+	else if ( gst_structure_has_name (structure, "truehd") || gst_structure_has_name (structure, "audio/ac3") )
+		return atAC3;
 	else if ( gst_structure_has_name (structure, "audio/x-dts") || gst_structure_has_name (structure, "audio/dts") )
 		return atDTS;
 	else if ( gst_structure_has_name (structure, "audio/x-raw") )
@@ -3132,6 +3184,7 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser *user, struct SubtitleTrack &t
 		m_decoder_time_valid_state = 0;
 		m_currentSubtitleStream = track.pid;
 		m_cachedSubtitleStream = m_currentSubtitleStream;
+		setCacheEntry(false, track.pid);
 		g_object_set (m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
 		m_subtitle_widget = user;
@@ -3161,6 +3214,7 @@ RESULT eServiceMP3::disableSubtitles()
 	eDebug("[eServiceMP3] disableSubtitles");
 	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = m_currentSubtitleStream;
+	setCacheEntry(false, -1);
 	g_object_set (m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 	m_subtitle_sync_timer->stop();
 	m_subtitle_pages.clear();

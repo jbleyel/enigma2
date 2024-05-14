@@ -38,8 +38,8 @@ class eDVBDB: public iDVBChannelList
 #endif
 private:
 	void loadServiceListV5(FILE * f);
+	std::map<std::string, int> m_subserviceList;
 public:
-	std::vector<ePtr<eDVBService>> iptv_services;
 // iDVBChannelList
 	RESULT removeFlags(unsigned int flagmask, int dvb_namespace=-1, int tsid=-1, int onid=-1, unsigned int orb_pos=0xFFFFFFFF);
 	RESULT removeServices(int dvb_namespace=-1, int tsid=-1, int onid=-1, unsigned int orb_pos=0xFFFFFFFF);
@@ -47,6 +47,8 @@ public:
 	PyObject *getFlag(const eServiceReference &service);
 	PyObject *getCachedPid(const eServiceReference &service, int id);
 	bool isCrypted(const eServiceReference &service);
+	int getSubserviceGroup(const eServiceReference &service);
+	int getSubserviceGroup(const std::string &service);
 	bool hasCAID(const eServiceReference &service, unsigned int caid);
 	RESULT addCAID(const eServiceReference &service, unsigned int caid);
 	RESULT addFlag(const eServiceReference &service, unsigned int flagmask);
@@ -75,7 +77,8 @@ public:
 	RESULT getBouquet(const eServiceReference &ref, eBouquet* &bouquet);
 //////
 	void loadBouquet(const char *path);
-	void loadSubservices();
+	void loadSubservices(int config=-1);
+	int saveSubservices();
 	void searchAllReferences(std::vector<eServiceReference> &result, int tsid, int onid, int sid);
 	eDVBDB();
 	virtual ~eDVBDB();
@@ -83,6 +86,7 @@ public:
 	void loadIPTVCachefile(const char *);
 	void parseIPTVServiceData(ePtr<eDVBService> s, std::string str);
 	void saveIptvServicelist(const char *file);
+	std::vector<ePtr<eDVBService>> iptv_services;
 #endif
 	eServiceReference searchReference(int tsid, int onid, int sid);
 	void setNumberingMode(bool numberingMode);

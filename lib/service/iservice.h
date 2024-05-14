@@ -413,6 +413,8 @@ public:
 		sCenterDVBSubs,
 
 		sGamma,
+		sVideoInfo,
+		sSubServices,
 
 		sUser = 0x100
 	};

@@ -1906,6 +1906,10 @@ RESULT eDVBServicePlay::getEvent(ePtr<eServiceEvent> &evt, int nownext)
 
 int eDVBServicePlay::getInfo(int w)
 {
+
+	if (w == sSubServices)
+		return eDVBDB::getInstance()->getSubserviceGroup(m_reference);
+
 	eDVBServicePMTHandler::program program;
 
 	if (w == sCAIDs || w == sCAIDPIDs)
@@ -2103,6 +2107,24 @@ std::string eDVBServicePlay::getInfoString(int w)
 		std::string demux;
 		demux += h.getDemuxID() + '0';
 		return demux;
+	}
+	case sVideoInfo:
+	{
+		std::string videoInfo;
+		if (m_decoder)
+		{
+			char buff[100];
+			snprintf(buff, sizeof(buff), "%d|%d|%d|%d|%d|%d",
+					m_decoder->getVideoWidth(),
+					m_decoder->getVideoHeight(),
+					m_decoder->getVideoFrameRate(),
+					m_decoder->getVideoProgressive(),
+					m_decoder->getVideoAspect(),
+					m_decoder->getVideoGamma()
+				 );
+			videoInfo = buff;
+		}
+		return videoInfo;
 	}
 	default:
 		break;
