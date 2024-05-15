@@ -1203,7 +1203,7 @@ void eDVBDB::loadBouquet(const char *path)
 		DIR *dir = opendir(p.c_str());
 		if (!dir)
 		{
-			eDebug("[eDVBDB] Cannot open directory where the userbouquets should be expected..");
+			eDebug("[eDVBDB] Error: Cannot open directory '%s' where the userbouquets should be expected.", p.c_str());
 			return;
 		}
 		dirent *entry;
@@ -1219,7 +1219,7 @@ void eDVBDB::loadBouquet(const char *path)
 	std::string bouquet_name = path;
 	if (!bouquet_name.length())
 	{
-		eDebug("[eDVBDB] Bouquet load failed.. no path given..");
+		eDebug("[eDVBDB] Error: Bouquet load failed. 'No path given.'");
 		return;
 	}
 	size_t pos = bouquet_name.rfind('/');
@@ -1227,7 +1227,7 @@ void eDVBDB::loadBouquet(const char *path)
 		bouquet_name.erase(0, pos+1);
 	if (bouquet_name.empty())
 	{
-		eDebug("[eDVBDB] Bouquet load failed.. no filename given..");
+		eDebug("[eDVBDB] Error: Bouquet load failed. 'No filename given'");
 		return;
 	}
 	eBouquet &bouquet = m_bouquets[bouquet_name];
@@ -1244,7 +1244,10 @@ void eDVBDB::loadBouquet(const char *path)
 
 	for(int index = 0; searchpath[index]; index++)
 	{
-		file_path = enigma_conf + searchpath[index] + "/" + path;
+		if(index < 2)
+			file_path = enigma_conf + searchpath[index] + "/" + path;
+		else
+			file_path = enigma_conf + path;
 
 		if (!access(file_path.c_str(), R_OK))
 		{
@@ -1276,13 +1279,13 @@ void eDVBDB::loadBouquet(const char *path)
 			}
 			else
 			{
-				eDebug("[eDVBDB] can't load bouquet %s",path);
+				eDebug("[eDVBDB] can't load bouquet %s", path);
 				return;
 			}
 		}
 	}
 
-	eDebug("[eDVBDB] loading bouquet... %s", file_path.c_str());
+	eDebug("[eDVBDB] loading bouquet %s", file_path.c_str());
 	CFile fp(file_path, "rt");
 
 	if (fp)
@@ -1499,16 +1502,14 @@ void eDVBDB::loadSubservices(int config)
 	{
 
 		bouquetRef = &m_bouquets["subservices.tv"];
-		eDebug("[eDVBDB] subservices.tv size: %d", bouquetRef->m_services.size());
+		eDebug("[eDVBDB] loading %d subservice bouquet(s)", bouquetRef->m_services.size());
 		char buf[256];
 		for(unsigned int i=0; i<subservicebouquets.size(); ++i)
 		{
 			bouquetRef = &m_bouquets[subservicebouquets[i].c_str()];
-			eDebug("[eDVBDB] %s size: %d",subservicebouquets[i].c_str(), bouquetRef->m_services.size());
-			
+			eDebug("[eDVBDB] loading subservice bouquet %s / Name: %s / size: %d",subservicebouquets[i].c_str(), bouquetRef->m_bouquet_name.c_str(), bouquetRef->m_services.size());
 		}
 	}
-
 
 }
 
@@ -1551,13 +1552,17 @@ err:
 
 int eDVBDB::getSubserviceGroup(const eServiceReference &service)
 {
+	eDebug("[eBouquet] getSubserviceGroup for %s", service.toString().c_str());
 	int group = -1;
 	int showInfoBarSubservices = eSimpleConfig::getInt("config.usage.showInfoBarSubservices", 1);
+	eDebug("[eBouquet] showInfoBarSubservices %d", showInfoBarSubservices);
 	if(showInfoBarSubservices > 0)
 	{
 		std::string sref = service.toString();
 		if (sref.find("%3a") != std::string::npos)
 			sref = service.toCompareString();
+
+		eDebug("[eBouquet] sref %s", sref.c_str());
 
 		if(m_subserviceList.size())
 		{
@@ -1565,6 +1570,7 @@ int eDVBDB::getSubserviceGroup(const eServiceReference &service)
 			if(i != m_subserviceList.end())
 			{
 				group = i->second;
+				eDebug("[eBouquet] found group %d", group);
 				bool found = false;
 				if (showInfoBarSubservices == 1)
 				{
@@ -1575,10 +1581,12 @@ int eDVBDB::getSubserviceGroup(const eServiceReference &service)
 					{
 						ePtr<eServiceEvent> ptr = nullptr;
 						eServiceReferenceDVB &ref = (eServiceReferenceDVB&) *it;
+						eDebug("[eBouquet] get event for %s", ref.toString().c_str());
 						eEPGCache::getInstance()->lookupEventTime(ref, -1, ptr);
 						if(ptr)
 						{
 							std::string title = ptr->getEventName();
+							eDebug("[eBouquet] get event found : %s", title.c_str());
 							if (sref.find("Sendepause") != std::string::npos)
 							{
 								found = true;
