@@ -9,7 +9,6 @@
 #include <lib/base/eerror.h>
 #include <lib/base/estring.h>
 #include <lib/base/nconfig.h>
-#include <lib/base/esimpleconfig.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <dvbsi++/service_description_section.h>
@@ -126,7 +125,6 @@ RESULT eBouquet::moveService(const eServiceReference &ref, unsigned int pos)
 
 RESULT eBouquet::flushChanges()
 {
-
 	std::string filename = eEnv::resolve("${sysconfdir}/enigma2/" + m_filename);
 	{
 		CFile f((filename + ".writing").c_str(), "w");
@@ -1392,7 +1390,6 @@ void eDVBDB::loadBouquet(const char *path)
 	}
 	eDebug("[eDVBDB] %d entries in Bouquet %s", entries, bouquet_name.c_str());
 }
-
 
 void eDVBDB::reloadBouquets()
 {
