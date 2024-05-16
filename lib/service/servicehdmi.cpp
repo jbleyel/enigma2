@@ -9,6 +9,7 @@
 #include <lib/service/servicehdmi.h>
 #include <lib/service/service.h>
 #include <lib/driver/avcontrol.h>
+#include <lib/base/modelinformation.h>
 
 #include <string>
 
@@ -106,7 +107,7 @@ long long eStaticServiceHDMIInfo::getFileSize(const eServiceReference &ref)
 eServiceHDMI::eServiceHDMI(eServiceReference ref)
  : m_ref(ref), m_decoder_index(0), m_noaudio(false)
 {
-
+	m_b_hdmiin_fhd = modelinformation.getValue("hdmifhdin") == "True";
 }
 
 eServiceHDMI::~eServiceHDMI()
@@ -173,6 +174,16 @@ RESULT eServiceHDMI::getName(std::string &name)
 
 int eServiceHDMI::getInfo(int w)
 {
+	switch (w)
+	{
+		case sVideoHeight: return m_b_hdmiin_fhd ? 1080 : 720;
+		case sVideoWidth: return m_b_hdmiin_fhd ? 1920 : 1280;
+		case sFrameRate: return 50;
+		case sProgressive: return 1;
+		case sGamma: return 0;
+		case sAspect: return 1;
+	}
+
 	return resNA;
 }
 
