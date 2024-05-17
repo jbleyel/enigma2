@@ -49,6 +49,7 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Build enigma2 dependencies, gcc-${{ matrix.gcc }}
+        id: depends
         env:
           CC: "gcc-${{ matrix.gcc }}"
           CXX: "g++-${{ matrix.gcc }}"
@@ -78,7 +79,11 @@ jobs:
           make
           sudo make install
           popd
-
+      - name: Check on failures
+        if: steps.depends.outputs.status == 'failure'
+        run: |
+          cat /tmp/libdvbsi/config.log
+          exit 1
       - name: Build enigma2
         env:
           CC: "gcc-${{ matrix.gcc }}"
