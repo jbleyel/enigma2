@@ -107,6 +107,7 @@ long long eStaticServiceHDMIInfo::getFileSize(const eServiceReference &ref)
 eServiceHDMI::eServiceHDMI(eServiceReference ref)
  : m_ref(ref), m_decoder_index(0), m_noaudio(false)
 {
+	eModelInformation &modelinformation = eModelInformation::getInstance();
 	m_b_hdmiin_fhd = modelinformation.getValue("hdmifhdin") == "True";
 }
 

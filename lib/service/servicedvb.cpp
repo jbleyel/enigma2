@@ -1906,7 +1906,6 @@ RESULT eDVBServicePlay::getEvent(ePtr<eServiceEvent> &evt, int nownext)
 
 int eDVBServicePlay::getInfo(int w)
 {
-
 	eDVBServicePMTHandler::program program;
 
 	if (w == sCAIDs || w == sCAIDPIDs)
