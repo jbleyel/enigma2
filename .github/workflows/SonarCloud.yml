@@ -1,7 +1,7 @@
 name: SonarCloud
 on:
   push:
-    branches: [ 7.3, master ]
+    branches: [ master ]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
 #      SONAR_SCANNER_VERSION: 4.7.0.2747
 #      SONAR_SERVER_URL: "https://sonarcloud.io"
