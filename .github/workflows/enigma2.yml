@@ -50,6 +50,7 @@ jobs:
 
       - name: Build enigma2 dependencies, gcc-${{ matrix.gcc }}
         id: depends
+        continue-on-error: true
         env:
           CC: "gcc-${{ matrix.gcc }}"
           CXX: "g++-${{ matrix.gcc }}"
@@ -80,7 +81,7 @@ jobs:
           sudo make install
           popd
       - name: Check on failures
-        if: steps.depends.outputs.status == 'failure'
+        if: steps.depends.outcome != 'success'
         run: |
           cat /tmp/libdvbsi/config.log
           exit 1
