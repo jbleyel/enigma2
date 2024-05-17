@@ -1907,9 +1907,6 @@ RESULT eDVBServicePlay::getEvent(ePtr<eServiceEvent> &evt, int nownext)
 int eDVBServicePlay::getInfo(int w)
 {
 
-	if (w == sSubServices)
-		return eDVBDB::getInstance()->getSubserviceGroup(m_reference);
-
 	eDVBServicePMTHandler::program program;
 
 	if (w == sCAIDs || w == sCAIDPIDs)
