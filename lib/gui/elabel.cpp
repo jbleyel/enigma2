@@ -74,13 +74,21 @@ int eLabel::event(int event, void *data, void *data2)
 
 		if (m_have_shadow_color)
 		{
+
+			eDebug("[DEBUG] Lable shaddow 1")
+
 			if (!m_have_foreground_color)
 				style->setStyle(painter, eWindowStyle::styleLabel);
 			else
 				painter.setForegroundColor(m_foreground_color);
+
+			eDebug("[DEBUG] Lable shaddow 2")
 			painter.setBackgroundColor(m_shadow_color);
 			int m_dummy_offset = 0;
+
+			eDebug("[DEBUG] Lable shaddow 3")
 			painter.renderText(position, m_text, flags, gRGB(), 0, m_pos, &m_dummy_offset, m_tab_width);
+			eDebug("[DEBUG] Lable shaddow 4")
 		}
 
 		return 0;
