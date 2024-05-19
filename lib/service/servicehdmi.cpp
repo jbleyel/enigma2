@@ -134,6 +134,8 @@ RESULT eServiceHDMI::start()
 	m_decoder->play();
 #endif
 	m_event(this, evStart);
+	m_event((iPlayableService*)this, evVideoSizeChanged);
+	m_event((iPlayableService*)this, evVideoGammaChanged);
 	return 0;
 }
 
@@ -192,6 +194,16 @@ std::string eServiceHDMI::getInfoString(int w)
 {
 	switch (w)
 	{
+	case sVideoInfo:
+	{
+		char buff[100];
+		snprintf(buff, sizeof(buff), "%d|%d|50|1|0|1",
+				m_b_hdmiin_fhd ? 1080 : 720,
+				m_b_hdmiin_fhd ? 1920 : 1280
+				);
+		std::string videoInfo = buff;
+		return videoInfo;
+	}
 	case sServiceref:
 		return m_ref.toString();
 	default:
