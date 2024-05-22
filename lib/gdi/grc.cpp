@@ -800,7 +800,6 @@ gDC::~gDC()
 
 void gDC::exec(const gOpcode *o)
 {
-	eDebug("gDC::exec o->opcode %d" , o->opcode);
 	switch (o->opcode)
 	{
 	case gOpcode::setBackgroundColor:
@@ -1038,6 +1037,7 @@ void gDC::exec(const gOpcode *o)
 		break;
 	case gOpcode::blit:
 	{
+		eDebug("gDC::exec blit 1");
 #ifdef GFX_DEBUG_DRAWRECT
 		Stopwatch s;
 #endif
@@ -1055,6 +1055,7 @@ void gDC::exec(const gOpcode *o)
 			clip = m_current_clip;
 		if (!o->parm.blit->pixmap->surface->transparent)
 			o->parm.blit->flags &=~(gPixmap::blitAlphaTest|gPixmap::blitAlphaBlend);
+		eDebug("gDC::exec blit 2");
 		m_pixmap->blit(*o->parm.blit->pixmap, o->parm.blit->position, clip, m_radius, m_radius_edges, o->parm.blit->flags);
 #ifdef GFX_DEBUG_DRAWRECT
 		if(m_radius)
@@ -1069,8 +1070,10 @@ void gDC::exec(const gOpcode *o)
 #endif
 		m_radius = 0;
 		m_radius_edges = 0;
+		eDebug("gDC::exec blit 3");
 		o->parm.blit->pixmap->Release();
 		delete o->parm.blit;
+		eDebug("gDC::exec blit 4");
 		break;
 	}
 	case gOpcode::rectangle:
