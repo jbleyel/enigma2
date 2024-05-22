@@ -1069,10 +1069,7 @@ void gDC::exec(const gOpcode *o)
 		m_radius = 0;
 		m_radius_edges = 0;
 		o->parm.blit->pixmap->Release();
-		if(o->parm.blit)
-			delete o->parm.blit;
-		else
-			eDebug("Error: gDC::exec gOpcode::blit free");
+		delete o->parm.blit;
 		break;
 	}
 	case gOpcode::rectangle:
