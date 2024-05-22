@@ -105,7 +105,7 @@ void gRC::submit(const gOpcode &o)
 #endif
 			// eDebug("[gRC] Render buffer full.");
 			// fflush(stdout);
-			usleep(1000); // wait 1 msec
+			usleep(2000); // wait 1 msec
 			continue;
 		}
 		int free = rp - wp;
@@ -1068,11 +1068,10 @@ void gDC::exec(const gOpcode *o)
 #endif
 		m_radius = 0;
 		m_radius_edges = 0;
-		eDebug("gDC::exec blit 1");
 		o->parm.blit->pixmap->Release();
-		eDebug("gDC::exec blit 2");
+		eDebug("gDC::exec blit 1");
 		delete o->parm.blit;
-		eDebug("gDC::exec blit 3");
+		eDebug("gDC::exec blit 2");
 		break;
 	}
 	case gOpcode::rectangle:
