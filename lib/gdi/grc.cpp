@@ -103,9 +103,9 @@ void gRC::submit(const gOpcode &o)
 #else
 			thread();
 #endif
-			// eDebug("[gRC] Render buffer full.");
+			eDebug("[gRC] Render buffer full.");
 			// fflush(stdout);
-			usleep(2000); // wait 1 msec
+			usleep(1000); // wait 1 msec
 			continue;
 		}
 		int free = rp - wp;
