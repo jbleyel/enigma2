@@ -800,6 +800,7 @@ gDC::~gDC()
 
 void gDC::exec(const gOpcode *o)
 {
+	eDebug("gDC::exec o->opcode %d" , o->opcode);
 	switch (o->opcode)
 	{
 	case gOpcode::setBackgroundColor:
