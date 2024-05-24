@@ -2,6 +2,11 @@ AC_INIT([enigma2],[7.4],[https://www.opena.tv])
 AM_INIT_AUTOMAKE([dist-bzip2 no-define tar-pax -Wno-portability])
 AC_CONFIG_HEADERS([enigma2_config.h])
 
+# Seems libtool doesn't honors ARFLAGS, but statically set AR_FLAGS=cru
+# This causes a few warnings on build:
+#   "ar u modifier ignored since D is the default (see U)"
+m4_divert_text([DEFAULTS], [: "${ARFLAGS=cr} ${AR_FLAGS=cr}"])
+
 # Silent rules are available since 1.11, but older versions
 # are still in use. So don't use them unconditionally.
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -11,9 +16,6 @@ AC_SYS_LARGEFILE
 
 AC_PROG_CC
 AC_PROG_CXX
-
-# Silence warning: ar: 'u' modifier ignored since 'D' is the default
-AC_SUBST(AR_FLAGS, [cr])
 
 m4_ifdef([LT_INIT], [LT_INIT], [AC_PROG_LIBTOOL])
 AC_CONFIG_MACRO_DIR([m4])
