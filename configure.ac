@@ -11,8 +11,10 @@ AC_SYS_LARGEFILE
 
 AC_PROG_CC
 AC_PROG_CXX
-AR_FLAGS="cr"
-AC_SUBST(AR_FLAGS)
+
+# Silence warning: ar: 'u' modifier ignored since 'D' is the default
+AC_SUBST(AR_FLAGS, [cr])
+
 m4_ifdef([LT_INIT], [LT_INIT], [AC_PROG_LIBTOOL])
 AC_CONFIG_MACRO_DIR([m4])
 AC_OPENMP()
