@@ -78,7 +78,11 @@ def InitUsageConfig():
 		("small", _("Small")),
 		("large", _("Large"))
 	])
-	config.usage.sort_extensionslist = ConfigYesNo(default=False)
+	config.usage.sortExtensionslist = ConfigSelection(default="", choices=[
+		("alpha", _("Alphabetical")),
+		("", _("Default")),
+		("user", _("User defined"))
+	])
 	config.usage.show_restart_network_extensionslist = ConfigYesNo(default=True)
 	config.usage.sort_pluginlist = ConfigYesNo(default=True)
 	config.usage.helpSortOrder = ConfigSelection(default="headings+alphabetic", choices=[
@@ -1571,7 +1575,7 @@ def InitUsageConfig():
 		("ltz", _("Luxembourgish")),
 		("nor", _("Norwegian")),
 		("pol", _("Polish")),
-		("por dub Dub DUB ud1", _("Portuguese")),
+		("por dub Dub DUB ud1 LEG", _("Portuguese")),
 		("fas per fa pes", _("Persian")),
 		("ron rum", _("Romanian")),
 		("rus", _("Russian")),

@@ -3149,7 +3149,7 @@ void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
 		if (!m_noaudio)
 			m_decoder->setAudioChannel(achannel);
 
-		if (mustPlay && m_decode_demux && m_decoder_index == 0)
+		if (mustPlay && m_decode_demux && m_decoder_index == 0 && m_reference.path.empty())
 		{
 			m_teletext_parser = new eDVBTeletextParser(m_decode_demux);
 			m_teletext_parser->connectNewStream(sigc::mem_fun(*this, &eDVBServicePlay::newSubtitleStream), m_new_subtitle_stream_connection);
