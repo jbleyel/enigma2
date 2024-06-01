@@ -1262,6 +1262,9 @@ void gDC::setSpinner(eRect pos, ePtr<gPixmap> *pic, int len)
 
 	for (i = 0; i < len; ++i)
 		m_spinner_pic[i] = pic[i];
+	
+	eDebug("[gRC] setSpinner x=%d, y=%d / count=%d", pos.x(), pos.y(), len);
+
 }
 
 DEFINE_REF(gDC);

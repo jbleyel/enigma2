@@ -341,13 +341,15 @@ int main(int argc, char **argv)
 
 	std::string active_skin = getConfigCurrentSpinner("config.skin.primary_skin");
 	std::string spinnerPostion = eSimpleConfig::getString("config.misc.spinnerPosition", "100,100");
+	eDebug("[Enigma] DEBUG Loading spinners. %s", spinnerPostion.c_str());
 	int spinnerPostionX, spinnerPostionY;
 	if (sscanf(spinnerPostion.c_str(), "%d,%d", &spinnerPostionX, &spinnerPostionY) != 2)
 	{
 		spinnerPostionX = spinnerPostionY = 100;
+		eDebug("[Enigma] Error: config.misc.spinnerPosition wrong / %s", spinnerPostion.c_str());
 	}
 
-	eDebug("[Enigma] Loading spinners.");
+	eDebug("[Enigma] Loading spinners. %d/%d", spinnerPostionX, spinnerPostionY);
 	{
 #define MAX_SPINNER 64
 		int i = 0;
@@ -396,7 +398,7 @@ int main(int argc, char **argv)
 			}
 			i++;
 		}
-		eDebug("[Enigma] Found %d spinners.", i);
+		eDebug("[Enigma] Found %d spinners. Position %d/%d", i, spinnerPostionX, spinnerPostionY);
 		if (i == 0)
 			my_dc->setSpinner(eRect(spinnerPostionX, spinnerPostionY, 0, 0), wait, 1);
 		else
