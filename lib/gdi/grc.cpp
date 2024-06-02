@@ -1269,7 +1269,7 @@ void gDC::setSpinnerScale(float scale)
 {
 	int x = (int)(float)m_spinner_pos_original.x() * scale;
 	int y = (int)(float)m_spinner_pos_original.y() * scale;
-	m_spinner_pos = eRect(eRect(ePoint(x, y), m_spinner_pos_original.size()))
+	m_spinner_pos = eRect(eRect(ePoint(x, y), m_spinner_pos_original.size()));
 }
 
 
