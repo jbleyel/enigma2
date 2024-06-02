@@ -1250,6 +1250,7 @@ void gDC::setSpinner(eRect pos, ePtr<gPixmap> *pic, int len)
 	m_spinner_saved = new gPixmap(pos.size(), m_pixmap->surface->bpp);
 	m_spinner_temp = new gPixmap(pos.size(), m_pixmap->surface->bpp);
 	m_spinner_pos = pos;
+	m_spinner_pos_original = pos;
 
 	m_spinner_i = 0;
 	m_spinner_num = len;
@@ -1262,10 +1263,15 @@ void gDC::setSpinner(eRect pos, ePtr<gPixmap> *pic, int len)
 
 	for (i = 0; i < len; ++i)
 		m_spinner_pic[i] = pic[i];
-	
-	eDebug("[gRC] setSpinner x=%d, y=%d / count=%d", pos.x(), pos.y(), len);
-
 }
+
+void gDC::setSpinnerScale(float scale)
+{
+	int x = (int)(float)m_spinner_pos_original.x() * scale;
+	int y = (int)(float)m_spinner_pos_original.y() * scale;
+	m_spinner_pos = eRect(eRect(ePoint(x, y), m_spinner_pos_original.size()))
+}
+
 
 DEFINE_REF(gDC);
 
