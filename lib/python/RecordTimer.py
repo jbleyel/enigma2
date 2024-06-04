@@ -756,6 +756,11 @@ class RecordTimerEntry(TimerEntry):
 				self.end = int(time()) + 5  # DEBUG: Check that this is the bug for 0Byte recordings!
 				self.backoff = 0
 				return True
+			if self.justplay and Screens.Standby.inStandby:
+				# Do nothing if in standby
+				self.state = self.StateRunning
+				self.backoff = 0
+				return True
 			if self.always_zap:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("zapandrecordtimer")
 				if Screens.Standby.inStandby:
