@@ -5,12 +5,13 @@ from os.path import exists, isfile, join as pathjoin, normpath, splitext
 from sys import maxsize
 from time import time
 
-from enigma import Misc_Options, RT_HALIGN_CENTER, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, RT_WRAP, eBackgroundFileEraser, eDVBDB, eDVBFrontend, eEnv, eEPGCache, eServiceEvent, setEnableTtCachingOnOff, setPreferredTuner, setSpinnerOnOff, setTunerTypePriorityOrder
+from enigma import Misc_Options, RT_HALIGN_CENTER, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, RT_WRAP, eActionMap, eBackgroundFileEraser, eDVBDB, eDVBFrontend, eEnv, eEPGCache, eServiceEvent, eSubtitleSettings, eSettings, setEnableTtCachingOnOff, setPreferredTuner, setSpinnerOnOff, setTunerTypePriorityOrder
 
 from keyids import KEYIDS
 from skin import parameters
 from Components.config import ConfigBoolean, ConfigClock, ConfigDirectory, ConfigDictionarySet, ConfigFloat, ConfigInteger, ConfigIP, ConfigLocations, ConfigNumber, ConfigSelectionNumber, ConfigPassword, ConfigSequence, ConfigSelection, ConfigSet, ConfigSlider, ConfigSubsection, ConfigText, ConfigYesNo, NoSave, config
 from Components.Harddisk import harddiskmanager
+from Components.International import international
 from Components.NimManager import nimmanager
 from Components.ServiceList import refreshServiceList
 from Components.SystemInfo import BoxInfo
@@ -536,20 +537,24 @@ def InitUsageConfig():
 	config.usage.on_long_powerpress = ConfigSelection(default="show_menu", choices=choiceList)
 	config.usage.on_short_powerpress = ConfigSelection(default="standby", choices=choiceList)
 
-	config.usage.long_press_emulation_key = ConfigSelection(default="0", choices=[
-		("0", _("None")),
-		(str(KEYIDS["KEY_TV"]), _("TV")),
-		(str(KEYIDS["KEY_RADIO"]), _("RADIO")),
-		(str(KEYIDS["KEY_AUDIO"]), _("Audio")),
-		(str(KEYIDS["KEY_VIDEO"]), _("List/Fav")),
-		(str(KEYIDS["KEY_HOME"]), _("Home")),
-		(str(KEYIDS["KEY_END"]), _("End")),
-		(str(KEYIDS["KEY_HELP"]), _("Help")),
-		(str(KEYIDS["KEY_INFO"]), _("Info (EPG)")),
-		(str(KEYIDS["KEY_TEXT"]), _("Teletext")),
-		(str(KEYIDS["KEY_SUBTITLE"]), _("Subtitle")),
-		(str(KEYIDS["KEY_FAVORITES"]), _("Favorites"))
+	def setLongPressedEmulationKey(configElement):
+		eActionMap.getInstance().setLongPressedEmulationKey(configElement.value)
+
+	config.usage.long_press_emulation_key = ConfigSelection(default=0, choices=[
+		(0, _("None")),
+		(KEYIDS["KEY_TV"], _("TV")),
+		(KEYIDS["KEY_RADIO"], _("RADIO")),
+		(KEYIDS["KEY_AUDIO"], _("Audio")),
+		(KEYIDS["KEY_VIDEO"], _("List/Fav")),
+		(KEYIDS["KEY_HOME"], _("Home")),
+		(KEYIDS["KEY_END"], _("End")),
+		(KEYIDS["KEY_HELP"], _("Help")),
+		(KEYIDS["KEY_INFO"], _("Info (EPG)")),
+		(KEYIDS["KEY_TEXT"], _("Teletext")),
+		(KEYIDS["KEY_SUBTITLE"], _("Subtitle")),
+		(KEYIDS["KEY_FAVORITES"], _("Favorites"))
 	])
+	config.usage.long_press_emulation_key.addNotifier(setLongPressedEmulationKey)
 
 	config.usage.alternatives_priority = ConfigSelection(default="0", choices=[
 		("0", "DVB-S/-C/-T"),
@@ -561,10 +566,46 @@ def InitUsageConfig():
 		("127", _("No priority"))
 	])
 
-	config.usage.remote_fallback_enabled = ConfigYesNo(default=False)
-	config.usage.remote_fallback = ConfigText(default="http://IP-ADRESS:8001", visible_width=50, fixed_size=False)
+	def setRemoteFallbackEnabled(configElement):
+		eSettings.setRemoteFallbackEnabled(configElement.value)
 
-	config.usage.http_startdelay = ConfigSelection(default="0", choices=[("0", _("Disabled"))] + [(str(x), _("%d ms") % x) for x in (10, 50, 100, 500, 1000, 2000)])
+	config.usage.remote_fallback_enabled = ConfigYesNo(default=False)
+	config.usage.remote_fallback_enabled.addNotifier(setRemoteFallbackEnabled)
+
+	def remote_fallback_changed(configElement):
+		if configElement.value:
+			configElement.value = "%s%s" % (not configElement.value.startswith("http://") and "http://" or "", configElement.value)
+			configElement.value = "%s%s" % (configElement.value, configElement.value.count(":") == 1 and ":8001" or "")
+	config.usage.remote_fallback = ConfigText(default="", fixed_size=False)
+	config.usage.remote_fallback.addNotifier(remote_fallback_changed, immediate_feedback=False)
+	config.usage.remote_fallback_import_url = ConfigText(default="", fixed_size=False)
+	config.usage.remote_fallback_import_url.addNotifier(remote_fallback_changed, immediate_feedback=False)
+	config.usage.remote_fallback_alternative = ConfigYesNo(default=False)
+	config.usage.remote_fallback_dvb_t = ConfigText(default="", fixed_size=False)
+	config.usage.remote_fallback_dvb_t.addNotifier(remote_fallback_changed, immediate_feedback=False)
+	config.usage.remote_fallback_dvb_c = ConfigText(default="", fixed_size=False)
+	config.usage.remote_fallback_dvb_c.addNotifier(remote_fallback_changed, immediate_feedback=False)
+	config.usage.remote_fallback_atsc = ConfigText(default="", fixed_size=False)
+	config.usage.remote_fallback_atsc.addNotifier(remote_fallback_changed, immediate_feedback=False)
+	config.usage.remote_fallback_import = ConfigSelection(default="", choices=[("", _("No")), ("channels", _("Channels only")), ("channels_epg", _("Channels and EPG")), ("epg", _("EPG only"))])
+	config.usage.remote_fallback_import_restart = ConfigYesNo(default=False)
+	config.usage.remote_fallback_import_standby = ConfigYesNo(default=False)
+	config.usage.remote_fallback_ok = ConfigYesNo(default=False)
+	config.usage.remote_fallback_nok = ConfigYesNo(default=False)
+	config.usage.remote_fallback_extension_menu = ConfigYesNo(default=False)
+	config.usage.remote_fallback_external_timer = ConfigYesNo(default=False)
+	config.usage.remote_fallback_external_timer_default = ConfigYesNo(default=True)
+	config.usage.remote_fallback_openwebif_customize = ConfigYesNo(default=False)
+	config.usage.remote_fallback_openwebif_userid = ConfigText(default="root")
+	config.usage.remote_fallback_openwebif_password = ConfigPassword(default="default")
+	config.usage.remote_fallback_openwebif_port = ConfigInteger(default=80, limits=(0, 65535))
+	config.usage.remote_fallback_dvbt_region = ConfigText(default="fallback DVB-T/T2 Europe")
+
+	def setHttpStartDelay(configElement):
+		eSettings.setHttpStartDelay(configElement.value)
+
+	config.usage.http_startdelay = ConfigSelection(default=0, choices=[(0, _("Disabled"))] + [(x, _("%d ms") % x) for x in (10, 50, 100, 500, 1000, 2000)])
+	config.usage.http_startdelay.addNotifier(setHttpStartDelay)
 
 	config.usage.alternateGitHubDNS = ConfigYesNo(default=False)
 
@@ -806,7 +847,13 @@ def InitUsageConfig():
 	config.usage.frontend_priority_strictly.addNotifier(PreferredTunerChanged)
 
 	config.usage.hide_zap_errors = ConfigYesNo(default=True)
+
+	def setUseCIAssignment(configElement):
+		eSettings.setUseCIAssignment(configElement.value)
+
 	config.misc.use_ci_assignment = ConfigYesNo(default=True)
+	config.misc.use_ci_assignment.addNotifier(setUseCIAssignment)
+
 	config.usage.hide_ci_messages = ConfigYesNo(default=False)
 	config.usage.show_cryptoinfo = ConfigSelection(default=2, choices=[
 		(0, _("Off")),
@@ -1262,8 +1309,6 @@ def InitUsageConfig():
 	config.misc.epgratingcountry = ConfigSelection(default="", choices=choiceList)
 	config.misc.epggenrecountry = ConfigSelection(default="", choices=choiceList)
 
-	config.misc.showradiopic = ConfigYesNo(default=True)
-
 	def setHDDStandby(configElement):
 		for hdd in harddiskmanager.HDDList():
 			hdd[1].setIdleTime(int(configElement.value))
@@ -1481,72 +1526,227 @@ def InitUsageConfig():
 	])
 
 	config.subtitles = ConfigSubsection()
-	config.subtitles.ttx_subtitle_colors = ConfigSelection(default="1", choices=[
-		("0", _("Original")),
-		("1", _("White")),
-		("2", _("Yellow"))
+
+	def setTTXSubtitleColors(configElement):
+		eSubtitleSettings.setTTXSubtitleColors(configElement.value)
+
+	config.subtitles.ttx_subtitle_colors = ConfigSelection(default=1, choices=[
+		(0, _("Original")),
+		(1, _("White")),
+		(2, _("Yellow"))
 	])
+	config.subtitles.ttx_subtitle_colors.addNotifier(setTTXSubtitleColors)
+
+	def setTTXSubtitleOriginalPosition(configElement):
+		eSubtitleSettings.setTTXSubtitleOriginalPosition(configElement.value)
+
 	config.subtitles.ttx_subtitle_original_position = ConfigYesNo(default=False)
-	config.subtitles.subtitle_position = ConfigSelection(default="50", choices=[(str(x), _("%d Pixels") % x) for x in list(range(0, 91, 10)) + list(range(100, 451, 50))])
+	config.subtitles.ttx_subtitle_original_position.addNotifier(setTTXSubtitleOriginalPosition)
+
+	def setSubtitlePosition(configElement):
+		eSubtitleSettings.setSubtitlePosition(configElement.value)
+
+	config.subtitles.subtitle_position = ConfigSelection(default=50, choices=[(x, _("%d Pixels") % x) for x in list(range(0, 91, 10)) + list(range(100, 451, 50))])
+	config.subtitles.subtitle_position.addNotifier(setSubtitlePosition)
+
+	def setSubtitleAligment(configElement):
+		aligments = {
+			"left": 1,
+			"center": 4,
+			"right": 2
+		}
+		eSubtitleSettings.setSubtitleAligment(aligments.get(configElement.value, 4))
+
 	config.subtitles.subtitle_alignment = ConfigSelection(default="center", choices=[
 		("left", _("Left")),
 		("center", _("Center")),
 		("right", _("Right"))
 	])
+	config.subtitles.subtitle_alignment.addNotifier(setSubtitleAligment)
+
+	def setSubtitleReWrap(configElement):
+		eSubtitleSettings.setSubtitleReWrap(configElement.value)
+
 	config.subtitles.subtitle_rewrap = ConfigYesNo(default=False)
+	config.subtitles.subtitle_rewrap.addNotifier(setSubtitleReWrap)
+
+	def setSubtitleColoriseDialogs(configElement):
+		eSubtitleSettings.setSubtitleColoriseDialogs(configElement.value)
+
 	config.subtitles.colourise_dialogs = ConfigYesNo(default=False)
-	config.subtitles.subtitle_borderwidth = ConfigSelection(default="3", choices=[(str(x), str(x)) for x in range(1, 6)])
-	config.subtitles.subtitle_fontsize = ConfigSelection(default="40", choices=[(str(x), str(x)) for x in range(16, 101) if not x % 2])
+	config.subtitles.colourise_dialogs.addNotifier(setSubtitleColoriseDialogs)
+
+	def setSubtitleBorderWith(configElement):
+		eSubtitleSettings.setSubtitleBorderWith(configElement.value)
+
+	config.subtitles.subtitle_borderwidth = ConfigSelection(default=3, choices=[(x, str(x)) for x in range(1, 6)])
+	config.subtitles.subtitle_borderwidth.addNotifier(setSubtitleBorderWith)
+
+	def setSubtitleFontSize(configElement):
+		eSubtitleSettings.setSubtitleFontSize(configElement.value)
+
+	config.subtitles.subtitle_fontsize = ConfigSelection(default=40, choices=[(x, str(x)) for x in range(16, 101) if not x % 2])
+	config.subtitles.subtitle_fontsize.addNotifier(setSubtitleFontSize)
+
+	def setSubtitleBacktrans(configElement):
+		eSubtitleSettings.setSubtitleBacktrans(configElement.value)
+
 	choiceList = [
-		("0", _("No transparency")),
-		("12", "5%"),
-		("25", "10%"),
-		("38", "15%"),
-		("50", "20%"),
-		("75", "30%"),
-		("100", "40%"),
-		("125", "50%"),
-		("150", "60%"),
-		("175", "70%"),
-		("200", "80%"),
-		("225", "90%"),
-		("255", _("Full transparency"))]
-	config.subtitles.subtitles_backtrans = ConfigSelection(default="255", choices=choiceList)
-	config.subtitles.dvb_subtitles_backtrans = ConfigSelection(default="0", choices=choiceList)
+		(0, _("No transparency")),
+		(12, "5%"),
+		(25, "10%"),
+		(38, "15%"),
+		(50, "20%"),
+		(75, "30%"),
+		(100, "40%"),
+		(125, "50%"),
+		(150, "60%"),
+		(175, "70%"),
+		(200, "80%"),
+		(225, "90%"),
+		(255, _("Full transparency"))]
+	config.subtitles.subtitles_backtrans = ConfigSelection(default=255, choices=choiceList)
+	config.subtitles.subtitles_backtrans.addNotifier(setSubtitleBacktrans)
+
+	def setDVBSubtitleBacktrans(configElement):
+		eSubtitleSettings.setDVBSubtitleBacktrans(configElement.value)
+
+	config.subtitles.dvb_subtitles_backtrans = ConfigSelection(default=0, choices=choiceList)
+	config.subtitles.dvb_subtitles_backtrans.addNotifier(setDVBSubtitleBacktrans)
 
 	choiceList = []
 	for x in range(-54000000, 54045000, 45000):
 		if x == 0:
-			choiceList.append(("0", _("No delay")))
+			choiceList.append((0, _("No delay")))
 		else:
-			choiceList.append((str(x), _("%2.1f Seconds") % (x / 90000.0)))
-	config.subtitles.subtitle_noPTSrecordingdelay = ConfigSelection(default="315000", choices=choiceList)
+			choiceList.append((x, _("%2.1f Seconds") % (x / 90000.0)))
+
+	def setSubtitleNoPTSDelay(configElement):
+		eSubtitleSettings.setSubtitleNoPTSDelay(configElement.value)
+
+	config.subtitles.subtitle_noPTSrecordingdelay = ConfigSelection(default=315000, choices=choiceList)
+	config.subtitles.subtitle_noPTSrecordingdelay.addNotifier(setSubtitleNoPTSDelay)
+
+	def setSubtitleBadTimingDelay(configElement):
+		eSubtitleSettings.setSubtitleBadTimingDelay(configElement.value)
+
+	config.subtitles.subtitle_bad_timing_delay = ConfigSelection(default=0, choices=choiceList)
+	config.subtitles.subtitle_bad_timing_delay.addNotifier(setSubtitleBadTimingDelay)
+
+	def setPangoSubtitleDelay(configElement):
+		eSubtitleSettings.setPangoSubtitleDelay(configElement.value)
+
+	config.subtitles.pango_subtitles_delay = ConfigSelection(default=0, choices=choiceList)
+	config.subtitles.pango_subtitles_delay.addNotifier(setPangoSubtitleDelay)
+
+	def setDVBSubtitleYellow(configElement):
+		eSubtitleSettings.setDVBSubtitleYellow(configElement.value)
 
 	config.subtitles.dvb_subtitles_yellow = ConfigYesNo(default=False)
-	config.subtitles.dvb_subtitles_original_position = ConfigSelection(default="0", choices=[
-		("0", _("Original")),
-		("1", _("Fixed")),
-		("2", _("Relative"))
+	config.subtitles.dvb_subtitles_yellow.addNotifier(setDVBSubtitleYellow)
+
+	def setDVBSubtitleOriginalPosition(configElement):
+		eSubtitleSettings.setDVBSubtitleOriginalPosition(configElement.value)
+
+	config.subtitles.dvb_subtitles_original_position = ConfigSelection(default=0, choices=[
+		(0, _("Original")),
+		(1, _("Fixed")),
+		(2, _("Relative"))
 	])
+	config.subtitles.dvb_subtitles_original_position.addNotifier(setDVBSubtitleOriginalPosition)
+
+	def setDVBSubtitleCentered(configElement):
+		eSubtitleSettings.setDVBSubtitleCentered(configElement.value)
+
 	config.subtitles.dvb_subtitles_centered = ConfigYesNo(default=False)
-	config.subtitles.subtitle_bad_timing_delay = ConfigSelection(default="0", choices=choiceList)
-	config.subtitles.pango_subtitle_colors = ConfigSelection(default="1", choices=[
-		("0", _("Alternative")),
-		("1", _("White")),
-		("2", _("Yellow"))
+	config.subtitles.dvb_subtitles_centered.addNotifier(setDVBSubtitleCentered)
+
+	def setPangoSubtitleColors(configElement):
+		eSubtitleSettings.setPangoSubtitleColors(configElement.value)
+
+	config.subtitles.pango_subtitle_colors = ConfigSelection(default=1, choices=[
+		(0, _("Alternative")),
+		(1, _("White")),
+		(2, _("Yellow"))
 	])
+	config.subtitles.pango_subtitle_colors.addNotifier(setPangoSubtitleColors)
+
+	def setPangoSubtitleFontWitch(configElement):
+		eSubtitleSettings.setPangoSubtitleFontWitch(configElement.value)
+
 	config.subtitles.pango_subtitle_fontswitch = ConfigYesNo(default=True)
-	config.subtitles.pango_subtitles_delay = ConfigSelection(default="0", choices=choiceList)
-	config.subtitles.pango_subtitles_fps = ConfigSelection(default="1", choices=[
-		("1", _("Original")),
-		("23976", _("23.976")),
-		("24000", _("24")),
-		("25000", _("25")),
-		("29970", _("29.97")),
-		("30000", _("30"))
+	config.subtitles.pango_subtitle_fontswitch.addNotifier(setPangoSubtitleFontWitch)
+
+	def setPangoSubtitleFPS(configElement):
+		eSubtitleSettings.setPangoSubtitleFPS(configElement.value)
+
+	config.subtitles.pango_subtitles_fps = ConfigSelection(default=1, choices=[
+		(1, _("Original")),
+		(23976, "23.976"),
+		(24000, "24"),
+		(25000, "25"),
+		(29970, "29.97"),
+		(30000, "30")
 	])
+	config.subtitles.pango_subtitles_fps.addNotifier(setPangoSubtitleFPS)
+
+	def setPangoSubtitleRemovehi(configElement):
+		eSubtitleSettings.setPangoSubtitleRemovehi(configElement.value)
+
 	config.subtitles.pango_subtitle_removehi = ConfigYesNo(default=False)
+	config.subtitles.pango_subtitle_removehi.addNotifier(setPangoSubtitleRemovehi)
+
+	def setPangoSubtitleAutoRun(configElement):
+		eSubtitleSettings.setPangoSubtitleAutoRun(configElement.value)
+
 	config.subtitles.pango_autoturnon = ConfigYesNo(default=True)
+	config.subtitles.pango_autoturnon.addNotifier(setPangoSubtitleAutoRun)
+
+	# AI start
+	def setAiEnabled(configElement):
+		eSubtitleSettings.setAiEnabled(configElement.value)
+
+	config.subtitles.ai_enabled = ConfigYesNo(default=False)
+	config.subtitles.ai_enabled.addNotifier(setAiEnabled)
+
+	def setAiSubscriptionCode(configElement):
+		eSubtitleSettings.setAiSubscriptionCode(str(configElement.value))
+
+	config.subtitles.ai_subscription_code = ConfigNumber(default=15)
+	config.subtitles.ai_subscription_code.addNotifier(setAiSubscriptionCode)
+
+	def setAiSubtitleColors(configElement):
+		eSubtitleSettings.setAiSubtitleColors(configElement.value)
+
+	config.subtitles.ai_subtitle_colors = ConfigSelection(default=1, choices=[
+		(1, _("White")),
+		(2, _("Yellow"))
+	])
+	config.subtitles.ai_subtitle_colors.addNotifier(setAiSubtitleColors)
+
+	langsAI = ['af', 'sq', 'am', 'ar', 'hy', 'az', 'eu', 'be', 'bn', 'bs', 'bg', 'ca', 'zh', 'co', 'hr', 'cs', 'da', 'nl', 'en', 'eo', 'fr', 'fi', 'fy', 'gl', 'ka', 'de', 'el', 'ht', 'ha', 'hu', 'is', 'ig', 'ga', 'it', 'ja', 'jv', 'kn', 'kk', 'km', 'rw', 'ko', 'ku', 'ky', 'lo', 'la', 'lv', 'lt', 'lb', 'mk', 'mg', 'ms', 'mt', 'mi', 'mr', 'mn', 'no', 'ny', 'or', 'ps', 'fa', 'pl', 'pt', 'ro', 'ru', 'sm', 'gd', 'sr', 'st', 'sn', 'sk', 'sl', 'so', 'es', 'su', 'sw', 'sv', 'tl', 'tg', 'te', 'th', 'tr', 'tk', 'uk', 'ur', 'ug', 'uz', 'cy', 'xh', 'yi', 'yo', 'zu']
+	langsAI = [(x, international.LANGUAGE_DATA[x][1]) for x in langsAI]
+	langsAI.append(("zh-CN", _("Chinese (Simplified)")))
+	langsAI.append(("ceb", _("Cebuano")))
+	langsAI.append(("haw", _("Hawaiian")))
+	langsAI.append(("iw", _("Hebrew")))
+	langsAI.append(("hmn", _("Hmong")))
+	langsAI.append(("ckb", _("Kurdish (Sorani)")))
+	langsAI.sort(key=lambda x: x[1])
+
+	default = config.misc.locale.value
+	default = default.split("_")[0] if "_" in default else default
+	if default == "zh":
+		default = "zh-CN"
+	if default not in [x[0] for x in langsAI]:
+		default = "en"
+
+	def setAiTranslateTo(configElement):
+		eSubtitleSettings.setAiTranslateTo(configElement.value)
+
+	config.subtitles.ai_translate_to = ConfigSelection(default=default, choices=langsAI)
+	config.subtitles.ai_translate_to.addNotifier(setAiTranslateTo)
+	# AI end
 
 	config.autolanguage = ConfigSubsection()
 	languageChoiceList = [
@@ -1618,6 +1818,8 @@ def InitUsageConfig():
 		config.autolanguage.audio_autoselect2.setChoices([x for x in languageChoiceList if x[0] and x[0] not in getselectedlanguages((1, 3, 4)) or not x[0] and not config.autolanguage.audio_autoselect3.value])
 		config.autolanguage.audio_autoselect3.setChoices([x for x in languageChoiceList if x[0] and x[0] not in getselectedlanguages((1, 2, 4)) or not x[0] and not config.autolanguage.audio_autoselect4.value])
 		config.autolanguage.audio_autoselect4.setChoices([x for x in languageChoiceList if x[0] and x[0] not in getselectedlanguages((1, 2, 3)) or not x[0]])
+		eSettings.setAudioLanguages(config.autolanguage.audio_autoselect1.value, config.autolanguage.audio_autoselect2.value, config.autolanguage.audio_autoselect3.value, config.autolanguage.audio_autoselect4.value)
+
 	config.autolanguage.audio_autoselect1 = ConfigSelection(default="", choices=languageChoiceList)
 	config.autolanguage.audio_autoselect2 = ConfigSelection(default="", choices=languageChoiceList)
 	config.autolanguage.audio_autoselect3 = ConfigSelection(default="", choices=languageChoiceList)
@@ -1626,9 +1828,24 @@ def InitUsageConfig():
 	config.autolanguage.audio_autoselect2.addNotifier(autolanguage, initial_call=False)
 	config.autolanguage.audio_autoselect3.addNotifier(autolanguage, initial_call=False)
 	config.autolanguage.audio_autoselect4.addNotifier(autolanguage)
+
+	def setAudioDefaultAC3(configElement):
+		eSettings.setAudioDefaultAC3(configElement.value)
+
 	config.autolanguage.audio_defaultac3 = ConfigYesNo(default=False)
+	config.autolanguage.audio_defaultac3.addNotifier(setAudioDefaultAC3)
+
+	def setAudioDefaultDDP(configElement):
+		eSettings.setAudioDefaultDDP(configElement.value)
+
 	config.autolanguage.audio_defaultddp = ConfigYesNo(default=False)
+	config.autolanguage.audio_defaultddp.addNotifier(setAudioDefaultDDP)
+
+	def setAudioUseCache(configElement):
+		eSettings.setAudioUseCache(configElement.value)
+
 	config.autolanguage.audio_usecache = ConfigYesNo(default=True)
+	config.autolanguage.audio_usecache.addNotifier(setAudioUseCache)
 
 	def getselectedsublanguages(range):
 		return [eval("config.autolanguage.subtitle_autoselect%x.value" % x) for x in range]
@@ -1638,13 +1855,19 @@ def InitUsageConfig():
 		config.autolanguage.subtitle_autoselect2.setChoices([x for x in subtitleChoiceList if x[0] and x[0] not in getselectedsublanguages((1, 3, 4)) or not x[0] and not config.autolanguage.subtitle_autoselect3.value])
 		config.autolanguage.subtitle_autoselect3.setChoices([x for x in subtitleChoiceList if x[0] and x[0] not in getselectedsublanguages((1, 2, 4)) or not x[0] and not config.autolanguage.subtitle_autoselect4.value])
 		config.autolanguage.subtitle_autoselect4.setChoices([x for x in subtitleChoiceList if x[0] and x[0] not in getselectedsublanguages((1, 2, 3)) or not x[0]])
-		choiceList = [("0", _("None"))]
+		choiceList = [(0, _("None"))]
 		for y in list(range(1, 15 if config.autolanguage.subtitle_autoselect4.value else (7 if config.autolanguage.subtitle_autoselect3.value else (4 if config.autolanguage.subtitle_autoselect2.value else (2 if config.autolanguage.subtitle_autoselect1.value else 0))))):
-			choiceList.append((str(y), ", ".join([eval("config.autolanguage.subtitle_autoselect%x.getText()" % x) for x in (y & 1, y & 2, y & 4 and 3, y & 8 and 4) if x])))
+			choiceList.append((y, ", ".join([eval("config.autolanguage.subtitle_autoselect%x.getText()" % x) for x in (y & 1, y & 2, y & 4 and 3, y & 8 and 4) if x])))
 		if config.autolanguage.subtitle_autoselect3.value:
-			choiceList.append((str(y + 1), _("All")))
-		config.autolanguage.equal_languages.setChoices(default="0", choices=choiceList)
-	config.autolanguage.equal_languages = ConfigSelection(default="0", choices=[str(x) for x in range(0, 16)])
+			choiceList.append((y + 1, _("All")))
+		config.autolanguage.equal_languages.setChoices(default=0, choices=choiceList)
+		eSubtitleSettings.setSubtitleLanguages(config.autolanguage.subtitle_autoselect1.value, config.autolanguage.subtitle_autoselect2.value, config.autolanguage.subtitle_autoselect3.value, config.autolanguage.subtitle_autoselect4.value)
+
+	def setSubtitleEqualLanguages(configElement):
+		eSubtitleSettings.setSubtitleEqualLanguages(configElement.value)
+
+	config.autolanguage.equal_languages = ConfigSelection(default=0, choices=[x for x in range(0, 16)])
+	config.autolanguage.equal_languages.addNotifier(setSubtitleEqualLanguages)
 	config.autolanguage.subtitle_autoselect1 = ConfigSelection(default="", choices=subtitleChoiceList)
 	config.autolanguage.subtitle_autoselect2 = ConfigSelection(default="", choices=subtitleChoiceList)
 	config.autolanguage.subtitle_autoselect3 = ConfigSelection(default="", choices=subtitleChoiceList)
@@ -1653,10 +1876,26 @@ def InitUsageConfig():
 	config.autolanguage.subtitle_autoselect2.addNotifier(autolanguagesub, initial_call=False)
 	config.autolanguage.subtitle_autoselect3.addNotifier(autolanguagesub, initial_call=False)
 	config.autolanguage.subtitle_autoselect4.addNotifier(autolanguagesub)
+
+	def setSubtitleHearingImpaired(configElement):
+		eSubtitleSettings.setSubtitleHearingImpaired(configElement.value)
 	config.autolanguage.subtitle_hearingimpaired = ConfigYesNo(default=False)
+	config.autolanguage.subtitle_hearingimpaired.addNotifier(setSubtitleHearingImpaired)
+
+	def setSubtitleDefaultImpaired(configElement):
+		eSubtitleSettings.setSubtitleDefaultImpaired(configElement.value)
 	config.autolanguage.subtitle_defaultimpaired = ConfigYesNo(default=False)
+	config.autolanguage.subtitle_defaultimpaired.addNotifier(setSubtitleDefaultImpaired)
+
+	def setSubtitleDefaultDVB(configElement):
+		eSubtitleSettings.setSubtitleDefaultDVB(configElement.value)
 	config.autolanguage.subtitle_defaultdvb = ConfigYesNo(default=False)
+	config.autolanguage.subtitle_defaultdvb.addNotifier(setSubtitleDefaultDVB)
+
+	def setSubtitleUseCache(configElement):
+		eSubtitleSettings.setSubtitleUseCache(configElement.value)
 	config.autolanguage.subtitle_usecache = ConfigYesNo(default=True)
+	config.autolanguage.subtitle_usecache.addNotifier(setSubtitleUseCache)
 
 	config.logmanager = ConfigSubsection()
 	config.logmanager.showinextensions = ConfigYesNo(default=False)
@@ -2027,10 +2266,11 @@ def InitUsageConfig():
 	# The following code temporarily maintains the deprecated timeshift_path so it is available for external plug ins.
 	config.usage.timeshift_path = NoSave(ConfigText(default=config.timeshift.path.value))
 
-	def updateOldTimeshiftPath(configElement):
+	def setTimeshiftPath(configElement):
 		config.usage.timeshift_path.value = configElement.value
+		eSettings.setTimeshiftPath(configElement.value)
 
-	config.timeshift.path.addNotifier(updateOldTimeshiftPath, immediate_feedback=False)
+	config.timeshift.path.addNotifier(setTimeshiftPath)
 
 
 def calcFrontendPriorityIntval(config_priority, config_priority_multiselect, config_priority_strictly):
