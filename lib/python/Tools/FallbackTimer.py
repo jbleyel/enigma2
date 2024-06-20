@@ -193,7 +193,7 @@ class FallbackTimerClass(TimerObject):
 		self.descramble = timerdict.get("descramble", 1)
 		self.record_ecm = timerdict.get("record_ecm", 0)
 		self.always_zap = timerdict.get("always_zap", 0)
-		self.isAutotimer = timerdict.get("isAutoTimer", 0)
+		self.isAutoTimer = timerdict.get("isAutoTimer", 0)
 		self.ice_timer_id = timerdict.get("ice_timer_id", 0)
 		if self.ice_timer_id == -1:
 			self.ice_timer_id = 0
@@ -205,12 +205,12 @@ class FallbackTimerClass(TimerObject):
 		if marginAfter == -1:
 			marginAfter = (getattr(config.recording, "zap_margin_after" if justplay else "margin_after").value * 60)
 		self.marginAfter = marginAfter
-		self.eventbegin = timerdict.get("eventbegin", 0)
-		if self.eventbegin == 0:
-			self.eventbegin = begin + marginBefore
-		self.eventend = timerdict.get("eventend", 0)
-		if self.eventend == 0:
-			self.eventend = end - marginAfter
+		self.eventBegin = timerdict.get("eventbegin", 0)
+		if self.eventBegin == 0:
+			self.eventBegin = begin + marginBefore
+		self.eventEnd = timerdict.get("eventend", 0)
+		if self.eventEnd == 0:
+			self.eventEnd = end - marginAfter
 		self.hasEndTime = timerdict.get("hasEndTime", False)
 		self.rename_repeat = timerdict.get("rename_repeat", True)
 
@@ -233,6 +233,7 @@ class FallbackTimerClass(TimerObject):
 		# self.zap_wakeup = False
 		# self.pipzap = False
 		self.repeatedbegindate = begin
+		self.failed = self.state == 4
 
 	def setServiceRef(self, sref):
 		self.serviceRef = sref

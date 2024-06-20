@@ -338,7 +338,7 @@
 			<if conditional="self.avahiselect.value == 'ip'">
 				<item text="Fallback remote receiver IP" description="IP of fallback remote receiver">self.ip</item>
 				<item text="Fallback remote receiver Port" description="Port of fallback remote receiver">self.port</item>
-			<else />
+			<elif conditional="self.avahiselect.value == 'url'"/>
 				<item text="Fallback remote receiver URL" description="URL of fallback remote receiver">config.usage.remote_fallback</item>
 			</if>
 			<if conditional="config.usage.remote_fallback_import.value">
@@ -346,7 +346,7 @@
 				<if conditional="self.avahiselect_seperate.value == 'ip'">
 					<item text="Fallback remote receiver IP" description="IP of fallback remote receiver">self.ip_seperate</item>
 					<item text="Fallback remote receiver Port" description="Port of fallback remote receiver">self.port_seperate</item>
-				<else />
+				<elif conditional="self.avahiselect_seperate.value == 'url'"/>
 					<item text="Fallback remote receiver URL" description="URL of fallback remote receiver">config.usage.remote_fallback_import_url</item>
 				</if>
 				<item text="Also import at reboot/restart enigma2" description="Import channels and/or EPG from remote receiver URL when receiver or enigma2 is restarted">config.usage.remote_fallback_import_restart</item>
@@ -368,21 +368,21 @@
 					<if conditional="self.avahi_dvb_t.value == 'ip'">
 						<item text="Fallback remote receiver IP" description="IP of fallback remote receiver">self.ip_dvb_t</item>
 						<item text="Fallback remote receiver Port" description="Port of fallback remote receiver">self.port_dvb_t</item>
-					<else />
+					<elif conditional="self.avahi_dvb_t.value == 'url'"/>
 						<item text="Fallback remote receiver URL" description="URL of fallback remote receiver">config.usage.remote_fallback_dvb_t</item>
 					</if>
 					<item text="Fallback remote receiver for DVB-C" description="Destination of fallback remote receiver for DVB-C">self.avahi_dvb_c</item>
 					<if conditional="self.avahi_dvb_c.value == 'ip'">
 						<item text="Fallback remote receiver IP" description="IP of fallback remote receiver">self.ip_dvb_c</item>
 						<item text="Fallback remote receiver Port" description="Port of fallback remote receiver">self.port_dvb_c</item>
-					<else />
+					<elif conditional="self.avahi_dvb_c.value == 'url'"/>
 						<item text="Fallback remote receiver URL" description="URL of fallback remote receiver">config.usage.remote_fallback_dvb_c</item>
 					</if>
 					<item text="Fallback remote receiver for ATSC" description="Destination of fallback remote receiver for ATSC">self.avahi_atsc</item>
 					<if conditional="self.avahi_atsc.value == 'ip'">
 						<item text="Fallback remote receiver IP" description="IP of fallback remote receiver">self.ip_atsc</item>
 						<item text="Fallback remote receiver Port" description="Port of fallback remote receiver">self.port_atsc</item>
-					<else />
+					<elif conditional="self.avahi_atsc.value == 'url'"/>
 						<item text="Fallback remote receiver URL" description="URL of fallback remote receiver">config.usage.remote_fallback_atsc</item>
 					</if>
 				</if>
