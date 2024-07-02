@@ -35,7 +35,7 @@ class MultiContentTemplateParser(TemplateParser):
 				context = SkinContext(context, "0,0", f"{itemWidth},{itemHeight}")
 				for element in list(mode):
 					processor = self.processors.get(element.tag, self.processNone)
-					newItems = processor(element, context, excludeItemValues=[], includeItemValues=[])
+					newItems = processor(element, context, excludeItemIndexes=[], includeItemIndexes=[])
 					if newItems:
 						items += newItems
 				newItems = []
