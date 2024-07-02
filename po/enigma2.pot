@@ -7111,7 +7111,7 @@ msgstr ""
 msgid "Enter your personal feed URL to allow you to select packages from your personal feed."
 msgstr ""
 
-msgid "Enter your subscription code, the unified code for trail is 15."
+msgid "Enter your subscription code, the unified code for trial is 15."
 msgstr ""
 
 msgid "Entertainment"
@@ -7777,6 +7777,9 @@ msgid "Fallback remote receiver for DVB-C"
 msgstr ""
 
 msgid "Fallback remote receiver for DVB-T"
+msgstr ""
+
+msgid "Fallback Timer"
 msgstr ""
 
 msgid "Fallback tuner setup"
