@@ -1800,7 +1800,7 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 						continue;
 					if (!(px && py && pwidth && pheight && pfilled_perc, ppixmap))
 					{
-						eDebug("[eListboxPythonMultiContent] tuple too small (must be (TYPE_PROGRESS_PIXMAP, x, y, width, height, filled percent, pixmap, [,borderWidth, color, colorSelected, backColor, backColorSelected]))");
+						eDebug("[eListboxPythonMultiContent] tuple too small (must be (TYPE_PROGRESS_PIXMAP, x, y, width, height, filled percent, pixmap, [,borderWidth, color, colorSelected, backColor, backColorSelected, borderColor, borderColorSelected]))");
 						goto error_out;
 					}
 				}
@@ -1836,17 +1836,17 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 						pbackColorSelected = ePyObject();
 				}
 
+				if (size > idx)
+					pborderColor = lookupColor(PyTuple_GET_ITEM(item, idx++), data);
+
+				if (size > idx)
+					pborderColorSelected = lookupColor(PyTuple_GET_ITEM(item, idx++), data);
+
 				int radius = 0;
 				int edges = 0;
 
 				if (type == TYPE_PROGRESS)
 				{
-					if (size > idx)
-						pborderColor = lookupColor(PyTuple_GET_ITEM(item, idx++), data);
-
-					if (size > idx)
-						pborderColorSelected = lookupColor(PyTuple_GET_ITEM(item, idx++), data);
-
 					if (size > idx)
 						pstartColor = lookupColor(PyTuple_GET_ITEM(item, idx++), data);
 
