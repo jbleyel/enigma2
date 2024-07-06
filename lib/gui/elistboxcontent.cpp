@@ -1782,14 +1782,14 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 						  pheight = PyTuple_GET_ITEM(item, 4),
 						  pfilled_perc = PyTuple_GET_ITEM(item, 5),
 						  ppixmap, pborderWidth, pforeColor, pforeColorSelected, pbackColor, pbackColorSelected,
-						  pstartColor, pmidColor, pendColor, pstartColorSelected, pmidColorSelected, pendColorSelected;
+						  pstartColor, pmidColor, pendColor, pstartColorSelected, pmidColorSelected, pendColorSelected, pborderColor, pborderColorSelected;
 
 				int idx = 6;
 				if (type == TYPE_PROGRESS)
 				{
 					if (!(px && py && pwidth && pheight && pfilled_perc))
 					{
-						eDebug("[eListboxPythonMultiContent] tuple too small (must be (TYPE_PROGRESS, x, y, width, height, filled percent [, borderWidth, color, colorSelected, backColor, backColorSelected]))");
+						eDebug("[eListboxPythonMultiContent] tuple too small (must be (TYPE_PROGRESS, x, y, width, height, filled percent [, borderWidth, color, colorSelected, backColor, backColorSelected, borderColor, borderColorSelected]))");
 						goto error_out;
 					}
 				}
@@ -1841,6 +1841,12 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 
 				if (type == TYPE_PROGRESS)
 				{
+					if (size > idx)
+						pborderColor = lookupColor(PyTuple_GET_ITEM(item, idx++), data);
+
+					if (size > idx)
+						pborderColorSelected = lookupColor(PyTuple_GET_ITEM(item, idx++), data);
+
 					if (size > idx)
 						pstartColor = lookupColor(PyTuple_GET_ITEM(item, idx++), data);
 
@@ -1966,6 +1972,11 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 					}
 					else
 					{
+						if (pborderColor) {
+							uint32_t color = PyLong_AsUnsignedLongMask(selected ? pborderColorSelected : pborderColor);
+							painter.setForegroundColor(gRGB(color));
+						}
+
 						rect.setRect(x, y, width, bwidth);
 						painter.fill(rect);
 
@@ -1977,6 +1988,23 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 
 						rect.setRect(x + width - bwidth, y + bwidth, bwidth, height - bwidth);
 						painter.fill(rect);
+
+						if (pborderColor) {
+							if (selected && pforeColorSelected)
+							{
+								uint32_t color = PyLong_AsUnsignedLongMask(pforeColorSelected);
+								painter.setForegroundColor(gRGB(color));
+							}
+							else if (pforeColor)
+							{
+								uint32_t color = PyLong_AsUnsignedLongMask(pforeColor);
+								painter.setForegroundColor(gRGB(color));
+							}
+							else
+							{
+								painter.setForegroundColor(defaultForeColor);
+							}
+						}
 					}
 				}
 

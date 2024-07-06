@@ -11,6 +11,7 @@ from Tools.TextBoundary import getTextBoundarySize
 
 def InitServiceListSettings():
 	config.channelSelection = ConfigSubsection()
+	config.channelSelection.showChannelNumber = ConfigYesNo(default=True)
 	config.channelSelection.showPicon = ConfigYesNo(default=False)
 	config.channelSelection.showServiceTypeIcon = ConfigYesNo(default=False)
 	config.channelSelection.showCryptoIcon = ConfigYesNo(default=False)
