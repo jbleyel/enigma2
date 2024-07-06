@@ -1973,7 +1973,7 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 					else
 					{
 						if (pborderColor) {
-							uint32_t color = PyLong_AsUnsignedLongMask(selected ? pborderColorSelected : pborderColor);
+							uint32_t color = PyLong_AsUnsignedLongMask((selected && pborderColorSelected) ? pborderColorSelected : pborderColor);
 							painter.setForegroundColor(gRGB(color));
 						}
 
