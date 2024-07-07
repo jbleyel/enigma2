@@ -7,6 +7,7 @@ from enigma import eServiceCenter, eServiceReference, eTimer, getBestPlayableSer
 import NavigationInstance
 import PowerTimer
 import RecordTimer
+import Janitor
 import ServiceReference
 from Components.config import config
 from Components.ImportChannels import ImportChannels
@@ -60,14 +61,17 @@ class Navigation:
 			if self.RecordTimer:
 				break
 		self.PowerTimer = PowerTimer.PowerTimer()  # Initialize PowerTimer before RecordTimer.loadTimers.
+		self.Janitor = Janitor.Janitor()  # Initialize Janitor before RecordTimer.loadTimers.
 		if not self.RecordTimer:
 			self.RecordTimer = RecordTimer.RecordTimer()
 			self.RecordTimer.loadTimers()  # Call loadTimers after initialize of self.RecordTimer.
 			self.isRecordTimerImageStandard = True
 		self.PowerTimer.loadTimers()  # Call loadTimers after initialize of self.PowerTimer.
+		self.Janitor.loadTimers()  # Call loadTimers after initialize of self.Janitor.
 		self.__wasTimerWakeup = False
 		self.__wasRecTimerWakeup = False
 		self.__wasPowerTimerWakeup = False
+		self.__wasJanitorWakeup = False
 		if not exists("/etc/enigma2/.deep"):  # Flag file comes from "/usr/bin/enigma2.sh".
 			print("=" * 100)
 			print("[Navigation] Receiver did not start from Deep Standby. Skip wake up detection.")
@@ -184,7 +188,9 @@ class Navigation:
 					print(f"[Navigation] Timer starts at '{ctime(self.timertime)}'.")
 				print("[Navigation] Was power timer wakeup is True.")
 				self.__wasPowerTimerWakeup = True
+				self.__wasJanitorWakeup = True
 				fileWriteLine(PowerTimer.TIMER_FLAG_FILE, "1", source=MODULE_NAME)
+				fileWriteLine(Janitor.TIMER_FLAG_FILE, "1", source=MODULE_NAME)
 			# Plugin timer.
 			elif self.wakeuptyp == 3:
 				if not self.forcerecord:
@@ -236,6 +242,9 @@ class Navigation:
 
 	def wasPowerTimerWakeup(self):
 		return self.__wasPowerTimerWakeup
+
+	def wasJanitorWakeup(self):
+		return self.__wasJanitorWakeup
 
 	def TimeSynctimer(self):
 		now = time()
@@ -466,6 +475,7 @@ class Navigation:
 	def shutdown(self):
 		self.RecordTimer.shutdown()
 		self.PowerTimer.shutdown()
+		self.Janitor.shutdown()
 		self.ServiceHandler = None
 		self.pnav = None
 

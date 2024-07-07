@@ -477,6 +477,10 @@ def runScreenTest():
 	tmp = session.nav.PowerTimer.getNextPowerManagerTime(getNextStbPowerOn=True)
 	nextPowerTime = tmp[0]
 	nextPowerTimeInStandby = tmp[1]
+	# Janitor timer.
+	tmp = session.nav.Janitor.getNextPowerManagerTime(getNextStbPowerOn=True)
+	nextJanitor = tmp[0]
+	nextJanitorInStandby = tmp[1]
 	# Plugin timer.
 	tmp = plugins.getNextWakeupTime(getPluginIdent=True)
 	nextPluginTime = tmp[0]
@@ -509,7 +513,8 @@ def runScreenTest():
 		(nextRecordTime, 0, nextRecordTimeInStandby),
 		(nextZapTime, 1, nextZapTimeInStandby),
 		(nextPowerTime, 2, nextPowerTimeInStandby),
-		(nextPluginTime, 3, nextPluginTimeInStandby)
+		(nextJanitor, 3, nextJanitorInStandby),
+		(nextPluginTime, 4, nextPluginTimeInStandby)
 	) if x[0] != -1]
 	wakeupList.sort()
 	print("=" * 100)
@@ -537,7 +542,8 @@ def runScreenTest():
 			0: "record-timer",
 			1: "zap-timer",
 			2: "power-timer",
-			3: "plugin-timer"
+			3: "janitor",
+			4: "plugin-timer"
 		}[startTime[1]], nextPluginName, {
 			0: "and starts normal",
 			1: "and starts in standby"
