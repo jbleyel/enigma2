@@ -76,7 +76,7 @@
 	</setup>
 	<setup key="ChannelSelection" title="Channel Selection Settings" showOpenWebif="1">
 		<item level="0" text="Include CI assignment" description="Set CI assignment for detection of available services.">config.misc.use_ci_assignment</item>
-		<item level="1" text="Alternative numbering mode" description="When enabled, channel numbering will start at '1' for each bouquet.">config.usage.alternative_number_mode</item>
+		<item level="1" text="Numbering mode" description="Select 'Unique numbering' to assign unique numbers for every service in every bouquet. Use 'Bouquets start at 1' to start numbering each bouquet from 1. Use 'LCN numbering' to use consistent service LCNs where ever that service is used.">config.usage.numberMode</item>
 		<item level="1" text="Always show bouquets" description="Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet.">config.usage.show_bouquetalways</item>
 		<item level="1" text="Change bouquets in quickzap" description="When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels.">config.usage.quickzap_bouquet_change</item>
 		<item level="1" text="Channel list preview" description="Select 'Yes' to enable preview of channels while in the EPG list. Press 'OK' to preview the currently selected channel. Press 'OK' again to exit the EPG and zap to the selected channel. Press 'EXIT' to exit the EPG and return to the previously selected channel.">config.usage.servicelistpreview_mode</item>
@@ -91,11 +91,11 @@
 		<item level="1" text="Hide number markers" description="When enabled, number markers will be hidden.">config.usage.hide_number_markers</item>
 		<item level="1" text="Enable panic button" description="When enabled, pressing '0' will zap you to the first channel in your first bouquet and delete your zap-history.">config.usage.panicbutton</item>
 		<item level="1" text="Panic channel" description="Pressing the panic button will zap you to this channel number in your first bouquet.">config.usage.panicchannel</item>
-		<item level="2" text="show picons in quickzap" description="Configure if service picons will be shown in quickzap.">config.usage.numzappicon</item>
+		<item level="2" text="Show picons in quickzap" description="Configure if service picons will be shown in quickzap.">config.usage.numzappicon</item>
 		<item level="1" text="Jump first press in channel selection" description="This option allows you to choose what the first button press jumps to in channel list screen, (so pressing '2' jumps to 'A' or '2' first), when 'Quick Actions' preset actions are performed. ">config.usage.show_channel_jump_in_servicelist</item>
 		<if conditional="config.channelSelection.screenStyle.value == ''">
 			<item level="0" text="Show channel numbers in channel selection" description="When enabled, show channel numbers in the channel selection screen.">config.usage.show_channel_numbers_in_servicelist</item>
-			<item level="1" text="show picons in service list" description="Configure if service picons will be shown in the service list.">config.usage.service_icon_enable</item>
+			<item level="1" text="Show picons in service list" description="Configure if service picons will be shown in the service list.">config.usage.service_icon_enable</item>
 			<item level="1" text="Service picons aspect ratio" description="Set the aspect ratio of the service picons." requires="config.usage.service_icon_enable">config.usage.servicelist_picon_ratio</item>
 			<item level="1" text="Service picons downsize" description="Reduce the size of the service picons for more line spacing between them." requires="config.usage.service_icon_enable">config.usage.servicelist_picon_downsize</item>
 			<item level="1" text="Show service type icons" description="Configure if and how service type icons will be shown.">config.usage.servicetype_icon_mode</item>
@@ -115,8 +115,8 @@
 			<item level="1" text="Progress info font size" description="This allows you change the font size relative to skin size, so 1 increases by 1 point size, and -1 decreases by 1 point size.">config.usage.progressinfo_fontsize</item>
 		<else />
 			<item level="0" text="Show channel numbers in channel selection" description="When enabled, show channel numbers in the channel selection screen.">config.channelSelection.showNumber</item>
-			<item level="1" text="Show LCN in channel selection" description="When enabled, show LCN in the channel selection screen.">config.channelSelection.showLCN</item>
-			<item level="1" text="show picons in service list" description="Configure if service picons will be shown in the service list.">config.channelSelection.showPicon</item>
+			<item level="1" text="Show picons in service list" description="Configure if service picons will be shown in the service list.">config.channelSelection.showPicon</item>
+			<item level="1" text="Service picons aspect ratio" description="Set the aspect ratio of the service picons." requires="config.channelSelection.showPicon">config.channelSelection.piconRatio</item>
 			<item level="1" text="Show service type icons" description="Configure if service type icons will be shown.">config.channelSelection.showServiceTypeIcon</item>
 			<item level="1" text="Show crypto icons" description="Configure if crypto icons will be shown in the channel selection list.">config.channelSelection.showCryptoIcon</item>
 			<item level="1" text="Show record indicator" description="Configure if and how the record indicator will be shown in the channel selection list.">config.channelSelection.recordIndicatorMode</item>

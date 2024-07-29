@@ -351,6 +351,8 @@ public:
 	std::string m_provider_name;
 	std::string m_default_authority;
 	uint32_t m_aus_da_flag;
+	int m_lcn;
+	int getLCN() { return m_lcn; }
 
 	void genSortName();
 

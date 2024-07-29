@@ -201,6 +201,30 @@ def loadSkin(filename, scope=SCOPE_SKINS, desktop=getDesktop(GUI_SKIN_ID), scree
 	return False
 
 
+def reloadSkins():
+	global colors, domScreens, fonts, menus, parameters, setups, switchPixmap
+	domScreens.clear()
+	colors.clear()
+	colors = {
+		"key_back": gRGB(0x00313131),
+		"key_blue": gRGB(0x0018188B),
+		"key_green": gRGB(0x001F771F),
+		"key_red": gRGB(0x009F1313),
+		"key_text": gRGB(0x00FFFFFF),
+		"key_yellow": gRGB(0x00A08500)
+	}
+	fonts.clear()
+	fonts = {
+		"Body": ("Regular", 18, 22, 16),
+		"ChoiceList": ("Regular", 20, 24, 18)
+	}
+	menus.clear()
+	parameters.clear()
+	setups.clear()
+	switchPixmap.clear()
+	InitSkins()
+
+
 # Method to load a skinTemplates.xml if one exists or load the templates from the screens.
 #
 def loadSkinTemplates(skinTemplatesFileName):
@@ -234,30 +258,6 @@ def loadSkinTemplates(skinTemplatesFileName):
 def reloadSkinTemplates():
 	skinTemplatesFileName = resolveFilename(SCOPE_SKINS, pathjoin(dirname(currentPrimarySkin), "skinTemplates.xml"))
 	loadSkinTemplates(skinTemplatesFileName)
-
-
-def reloadSkins():
-	global colors, domScreens, fonts, menus, parameters, setups, switchPixmap
-	domScreens.clear()
-	colors.clear()
-	colors = {
-		"key_back": gRGB(0x00313131),
-		"key_blue": gRGB(0x0018188B),
-		"key_green": gRGB(0x001F771F),
-		"key_red": gRGB(0x009F1313),
-		"key_text": gRGB(0x00FFFFFF),
-		"key_yellow": gRGB(0x00A08500)
-	}
-	fonts.clear()
-	fonts = {
-		"Body": ("Regular", 18, 22, 16),
-		"ChoiceList": ("Regular", 20, 24, 18)
-	}
-	menus.clear()
-	parameters.clear()
-	setups.clear()
-	switchPixmap.clear()
-	InitSkins()
 
 
 def addCallback(callback):
@@ -497,10 +497,10 @@ def parseGradient(value):
 
 def parseHorizontalAlignment(value):
 	options = {
-		"left": 0,
-		"center": 1,
-		"right": 2,
-		"block": 3
+		"left": 0,  # RT_HALIGN_LEFT,
+		"center": 1,  # RT_HALIGN_CENTER,
+		"right": 2,  # RT_HALIGN_RIGHT,
+		"block": 3  # RT_HALIGN_BLOCK
 	}
 	return parseOptions(options, "horizontalAlignment", value, 0)
 
@@ -773,10 +773,10 @@ def parsePadding(attribute, value):
 
 def parseVerticalAlignment(value):
 	options = {
-		"top": 0,
-		"center": 1,
-		"middle": 1,
-		"bottom": 2
+		"top": 0,  # RT_VALIGN_TOP,
+		"center": 1,  # RT_VALIGN_CENTER,
+		"middle": 1,  # RT_VALIGN_CENTER,
+		"bottom": 2  # RT_VALIGN_BOTTOM
 	}
 	return parseOptions(options, "verticalAlignment", value, 1)
 
@@ -786,10 +786,10 @@ def parseWrap(value):
 		"noWrap": 0,
 		"off": 0,
 		"0": 0,
-		"wrap": 1,
-		"on": 1,
-		"1": 1,
-		"ellipsis": 2
+		"wrap": 1,  # RT_WRAP,
+		"on": 1,  # RT_WRAP,
+		"1": 1,  # RT_WRAP,
+		"ellipsis": 2  # RT_ELLIPSIS
 	}
 	return parseOptions(options, "wrap", value, 0)
 
@@ -815,9 +815,11 @@ def collectAttributes(skinAttributes, node, context, skinPath=None, ignore=(), f
 			if attrib in filenames:
 				# DEBUG: Why does a SCOPE_LCDSKIN image replace the GUI image?!?!?!
 				pngFile = resolveFilename(SCOPE_GUISKIN, value, path_prefix=skinPath)
-				if not isfile(pngFile) and isfile(resolveFilename(SCOPE_LCDSKIN, value, path_prefix=skinPath)):
-					pngFile = resolveFilename(SCOPE_LCDSKIN, value, path_prefix=skinPath)
-				newValue = pngFile
+				if isfile(pngFile):
+					newValue = pngFile
+				else:
+					lcdFile = resolveFilename(SCOPE_LCDSKIN, value, path_prefix=skinPath)
+					newValue = lcdFile if isfile(lcdFile) else pngFile
 			# Bit of a hack this, really.  When a window has a flag (e.g. wfNoBorder)
 			# it needs to be set at least before the size is set, in order for the
 			# window dimensions to be calculated correctly in all situations.
@@ -931,6 +933,9 @@ class AttributeParser:
 
 	def backgroundPixmap(self, value):
 		self.guiObject.setBackgroundPixmap(parsePixmap(value, self.desktop))
+
+	def base(self, value):
+		pass
 
 	def borderColor(self, value):
 		self.guiObject.setBorderColor(parseColor(value, 0x00FFFFFF))
@@ -1058,6 +1063,9 @@ class AttributeParser:
 	def itemWidth(self, value):
 		# print(f"[Skin] DEBUG: Scale itemWidth {int(value)} -> {self.applyHorizontalScale(value)}.")
 		self.guiObject.setItemWidth(self.applyHorizontalScale(value))
+
+	def label(self, value):
+		pass
 
 	def listOrientation(self, value):  # Used by eListBox.
 		self.guiObject.setOrientation(parseListOrientation(value))
@@ -1292,11 +1300,6 @@ class AttributeParser:
 
 def applyAllAttributes(guiObject, desktop, attributes, scale=((1, 1), (1, 1))):
 	AttributeParser(guiObject, desktop, scale).applyAll(attributes)
-
-
-def reloadWindowStyles():
-	for screenID in windowStyles:
-		loadSingleSkinData(*windowStyles[screenID])
 
 
 def loadSingleSkinData(desktop, screenID, domSkin, pathSkin, scope=SCOPE_GUISKIN):
@@ -1547,6 +1550,11 @@ def loadSingleSkinData(desktop, screenID, domSkin, pathSkin, scope=SCOPE_GUISKIN
 		getDesktop(parseInteger(tag.attrib.get("id", GUI_SKIN_ID))).setMargins(rectange)
 
 
+def reloadWindowStyles():
+	for screenID in windowStyles:
+		loadSingleSkinData(*windowStyles[screenID])
+
+
 class additionalWidget:
 	def __init__(self):
 		pass
@@ -1687,10 +1695,10 @@ class SkinContextVertical(SkinContext):
 			width = parseCoordinate(width, self.w, 0, font, self.scale[0])
 			height = parseCoordinate(height, self.h, 0, font, self.scale[1])
 			left = self.x
-			p = pos.split(",")
-			if len(p) == 2 and p[1] in ("top", "bottom") and p[0].isdigit():
-				left += int(int(p[0]) * self.scale[0][0] / self.scale[0][1])
-				pos = p[1]
+			positions = pos.split(",")
+			if len(positions) == 2 and positions[1] in ("top", "bottom") and positions[0].isdigit():
+				left += int(int(positions[0]) * self.scale[0][0] / self.scale[0][1])
+				pos = positions[1]
 			if pos == "bottom":
 				if self.bottomCount:
 					self.by -= self.spacing
@@ -1736,10 +1744,10 @@ class SkinContextHorizontal(SkinContext):
 			width = parseCoordinate(width, self.w, 0, font, self.scale[0])
 			height = parseCoordinate(height, self.h, 0, font, self.scale[1])
 			top = self.y
-			p = pos.split(",")
-			if len(p) == 2 and p[0] in ("left", "right") and p[1].isdigit():
-				top += int(int(p[1]) * self.scale[0][0] / self.scale[0][1])
-				pos = p[0]
+			positions = pos.split(",")
+			if len(positions) == 2 and positions[0] in ("left", "right") and positions[1].isdigit():
+				top += int(int(positions[1]) * self.scale[0][0] / self.scale[0][1])
+				pos = positions[0]
 			if pos == "left":
 				pos = (self.x, top)
 				size = (width, height)
@@ -1777,15 +1785,6 @@ class TemplateParser():
 			"panel": self.processPanel
 		}
 
-	def resolvePixmap(self, pixmap):
-		if isinstance(pixmap, str):
-			try:
-				return LoadPixmap(resolveFilename(SCOPE_GUISKIN, pixmap))
-			except Exception as err:
-				print(f"[MultiContent] Error: Invalid image extension!  ({str(err)})")
-			return None
-		return pixmap
-
 	def resolveColor(self, color):
 		if isinstance(color, str):
 			try:
@@ -1796,6 +1795,15 @@ class TemplateParser():
 				print("[MultiContent] Error: Resolve color '{str(err)}'!")
 			return None
 		return color
+
+	def resolvePixmap(self, pixmap):
+		if isinstance(pixmap, str):
+			try:
+				return LoadPixmap(resolveFilename(SCOPE_GUISKIN, pixmap))
+			except Exception as err:
+				print(f"[MultiContent] Error: Invalid image extension!  ({str(err)})")
+			return None
+		return pixmap
 
 	def readTemplate(self, templateName):  # Override in child class.
 		pass
@@ -1825,8 +1833,10 @@ class TemplateParser():
 			alphaBlend = gradientData[4]
 		return direction, alphaBlend, gradientStart, gradientEnd, gradientMid, gradientStartSelected, gradientEndSelected, gradientMidSelected
 
-	def collectColors(self, attributes):
-		for color in ("backgroundColor", "backgroundColorMarked", "backgroundColorMarkedAndSelected", "backgroundColorSelected", "borderColor", "foregroundColor", "foregroundColorMarked", "foregroundColorMarkedAndSelected", "foregroundColorSelected"):
+	def collectColors(self, attributes, widgetColors=None):
+		if widgetColors is None:
+			widgetColors = ()
+		for color in ("backgroundColor", "backgroundColorMarked", "backgroundColorMarkedAndSelected", "backgroundColorSelected", "borderColor", "foregroundColor", "foregroundColorMarked", "foregroundColorMarkedAndSelected", "foregroundColorSelected") + widgetColors:
 			translatedColor = self.resolveColor(attributes.get(color))
 			if translatedColor is not None:
 				attributes[color] = translatedColor
@@ -1834,25 +1844,26 @@ class TemplateParser():
 
 	def collectAttributes(self, node, context, ignore=(), excludeItemIndexes=None, includeItemIndexes=None):
 		horizontalAlignments = {
-			"left": 1,
-			"center": 4,
-			"right": 2,
-			"block": 8
+			# "bidi": 0,  # RT_HALIGN_BIDI,
+			"left": 1,  # RT_HALIGN_LEFT,
+			"center": 4,  # RT_HALIGN_CENTER,
+			"right": 2,  # RT_HALIGN_RIGHT,
+			"block": 8  # RT_HALIGN_BLOCK
 		}
 		verticalAlignments = {
-			"top": 0,
-			"center": 16,
-			"middle": 16,
-			"bottom": 32
+			"top": 0,  # RT_VALIGN_TOP,
+			"center": 16,  # RT_VALIGN_CENTER,
+			"middle": 16,  # RT_VALIGN_CENTER,
+			"bottom": 32  # RT_VALIGN_BOTTOM
 		}
 		wraps = {
 			"noWrap": 0,
 			"off": 0,
 			"0": 0,
-			"wrap": 64,
-			"on": 64,
-			"1": 64,
-			"ellipsis": 128
+			"wrap": 64,  # RT_WRAP,
+			"on": 64,  # RT_WRAP,
+			"1": 64,  # RT_WRAP,
+			"ellipsis": 128  # RT_ELLIPSIS
 		}
 		pixmapTypes = {
 			"blend": eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND,
@@ -1864,17 +1875,16 @@ class TemplateParser():
 		itemIndex = ""
 		for attrib, value in node.items():  # Walk all attributes.
 			if attrib not in ignore:
-				newValue = value
 				match attrib:
 					case "position":
-						pos = newValue
+						pos = value
 					case "size":
-						size = newValue
+						size = value
 					case "index":
 						itemIndex = value
-						skinAttributes.append((attrib, newValue))
+						skinAttributes.append((attrib, value))
 					case _:
-						skinAttributes.append((attrib, newValue))
+						skinAttributes.append((attrib, value))
 		if itemIndex and includeItemIndexes and itemIndex not in includeItemIndexes:
 			return []
 		if itemIndex and excludeItemIndexes and itemIndex in excludeItemIndexes:
@@ -1904,7 +1914,21 @@ class TemplateParser():
 		if self.debug:
 			print(f"[TemplateParser] processPanel DEBUG: Position={widget.attrib.get("position")}, Size={widget.attrib.get("size")}.")
 			print(f"[TemplateParser] processPanel DEBUG: Parent x={context.x}, width={context.w}.")
-		pos = [int(x.strip()) for x in widget.attrib.get("position").split(",")]
+		position = widget.attrib.get("position")
+		if "left" in position or "right" in position:
+			pos = position.split(",")
+			top = 0
+			if len(pos) == 2 and pos[0] in ("left", "right") and pos[1].isdigit():
+				top = pos[1]
+			position = (context.x, top)
+		elif "top" in position or "bottom" in position:
+			pos = position.split(",")
+			left = 0
+			if len(pos) == 2 and pos[1] in ("top", "bottom") and pos[0].isdigit():
+				left = pos[0]
+			position = (left, context.y)
+		else:
+			position = [int(x.strip()) for x in widget.attrib.get("position").split(",")]
 		layout = widget.attrib.get("layout")
 		classes = {
 			"stack": SkinContextStack,
@@ -1916,8 +1940,8 @@ class TemplateParser():
 		newContext.spacing = int(widget.attrib.get("spacing", "0"))
 		if self.debug:
 			print(f"[TemplateParser] processPanel DEBUG: Parent x={newContext.x}, width={newContext.w}.")
-		newContext.x = pos[0]
-		newContext.y = pos[1]
+		newContext.x = position[0]
+		newContext.y = position[1]
 		if layout == "horizontal":
 			newContext.w -= newContext.x  # I have no idea why this is needed!
 		if self.debug:
@@ -1933,7 +1957,7 @@ class TemplateParser():
 				if item.get("autoGrow", ""):
 					oldSize = [int(x.strip()) for x in item["size"].split(",")]
 					width = oldSize[0] + newContext.w
-					item["size"] = f"{width},{oldSize[1]}"
+					item["size"] = SizeTuple((width, oldSize[1]))
 					if self.debug:
 						print(f"[TemplateParser] DEBUG: autoGrow context={newContext.w}, oldSize={oldSize}, newsize={item["size"]}.")
 					break

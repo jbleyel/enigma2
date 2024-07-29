@@ -31,13 +31,16 @@ class eDVBDB: public iDVBChannelList
 
 	std::map<std::string, eBouquet> m_bouquets;
 
-	bool m_numbering_mode, m_load_unlinked_userbouquets;
+	bool m_load_unlinked_userbouquets;
+	int m_numbering_mode;
+	int m_max_number;
 #ifdef SWIG
 	eDVBDB();
 	~eDVBDB();
 #endif
 private:
 	void loadServiceListV5(FILE * f);
+	std::map<eServiceReferenceDVB, int> m_lcnmap;
 public:
 // iDVBChannelList
 	RESULT removeFlags(unsigned int flagmask, int dvb_namespace=-1, int tsid=-1, int onid=-1, unsigned int orb_pos=0xFFFFFFFF);
@@ -84,7 +87,7 @@ public:
 	std::vector<ePtr<eDVBService>> iptv_services;
 #endif
 	eServiceReference searchReference(int tsid, int onid, int sid);
-	void setNumberingMode(bool numberingMode);
+	void setNumberingMode(int numberingMode);
 	void setLoadUnlinkedUserbouquets(bool value) { m_load_unlinked_userbouquets=value; }
 	void renumberBouquet();
 	void loadServicelist(const char *filename);
@@ -96,6 +99,7 @@ public:
 	void reloadBouquets();
 	bool isValidService(int tsid, int onid, int sid);
 	void parseServiceData(ePtr<eDVBService> s, std::string str);
+	int getMaxNumber() const { return m_max_number; }
 };
 
 #ifndef SWIG
