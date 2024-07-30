@@ -8,6 +8,74 @@
 #include <set>
 #include <vector>
 class ServiceDescriptionSection;
+
+struct LCNData
+{
+	int SIGNAL;
+	int LCN_BROADCAST;
+	int LCN_SCANNED;
+	int LCN_GUI;
+	char PROVIDER[256];
+	char PROVIDER_GUI[256];
+	char SERVICENAME[256];
+	char SERVICENAME_GUI[256];
+
+	eServiceReferenceDVB parse(const char* line, int version)
+	{
+		int ns;
+		int onid;
+		int tsid;
+		int sid;
+		LCN_BROADCAST = 0;
+		LCN_GUI = 0;
+		LCN_SCANNED = 0;
+		SIGNAL = -1;
+		PROVIDER[0] = '\0';
+		PROVIDER_GUI[0] = '\0';
+		SERVICENAME[0] = '\0';
+		SERVICENAME_GUI[0] = '\0';
+
+		if(version == 1)
+		{
+			if(sscanf(line, "%x:%x:%x:%x:%d:%d",&ns, &onid, &tsid, &sid, &LCN_BROADCAST, &SIGNAL) == 6)
+			{
+				if(SIGNAL > 0) {
+					eServiceReferenceDVB s = eServiceReferenceDVB(eDVBNamespace(ns), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
+					return s;
+				}
+			}
+			return eServiceReferenceDVB();
+		}
+
+		if(sscanf(line, "%x:%x:%x:%x:%d:%d:%d:%d:%s:%s:%s:%s",&sid, &tsid, &onid, &ns, &SIGNAL, &LCN_BROADCAST, &LCN_SCANNED, &LCN_GUI, PROVIDER, PROVIDER_GUI ,SERVICENAME, SERVICENAME_GUI) == 12)
+		{
+			if(SIGNAL > 0) {
+				eServiceReferenceDVB s = eServiceReferenceDVB(eDVBNamespace(ns), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
+				return s;
+			}
+		}
+		return eServiceReferenceDVB();
+
+	}
+
+	int getLCN()
+	{
+		return (LCN_GUI != 0) ? LCN_GUI : (LCN_SCANNED =! 0) ? LCN_SCANNED : LCN_BROADCAST;
+	}
+	
+	void Update(uint16_t lcn, uint32_t signal)
+	{
+		LCN_BROADCAST = lcn;
+		SIGNAL = signal;
+	}
+
+	void resetSignal()
+	{
+		SIGNAL = 0;
+	}
+
+};
+
 #endif
 
 class eDVBDB: public iDVBChannelList
@@ -40,7 +108,7 @@ class eDVBDB: public iDVBChannelList
 #endif
 private:
 	void loadServiceListV5(FILE * f);
-	std::map<eServiceReferenceDVB, int> m_lcnmap;
+	std::map<eServiceReferenceDVB, LCNData> m_lcnmap;
 public:
 // iDVBChannelList
 	RESULT removeFlags(unsigned int flagmask, int dvb_namespace=-1, int tsid=-1, int onid=-1, unsigned int orb_pos=0xFFFFFFFF);
@@ -85,6 +153,10 @@ public:
 	void parseIPTVServiceData(ePtr<eDVBService> s, std::string str);
 	void saveIptvServicelist(const char *file);
 	std::vector<ePtr<eDVBService>> iptv_services;
+	void addLcnToDB(int ns, int onid, int tsid, int sid, uint16_t lcn, uint32_t signal);
+	void resetLcnDB();
+	void saveLcnDB();
+
 #endif
 	eServiceReference searchReference(int tsid, int onid, int sid);
 	void setNumberingMode(int numberingMode);
