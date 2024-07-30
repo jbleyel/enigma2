@@ -987,17 +987,11 @@ void eDVBScan::channelDone()
 						//case HD_SIMULCAST_LOGICAL_CHANNEL_DESCRIPTOR:
 						case LOGICAL_CHANNEL_DESCRIPTOR:
 						{
-							SCAN_eDebug("LOGICAL_CHANNEL_DESCRIPTOR System %d", system);
-							
 							if (system != iDVBFrontend::feTerrestrial && system != iDVBFrontend::feCable)
 								break; // when current locked transponder is no terrestrial or cable transponder ignore this descriptor
 
-							SCAN_eDebug("LOGICAL_CHANNEL_DESCRIPTOR 2 / ns %08x", ns.get());
-
 							if (ns.get() == 0)
 								break; // invalid namespace
-
-							SCAN_eDebug("LOGICAL_CHANNEL_DESCRIPTOR 3");
 
 							int signal = 0;
 							ePtr<iDVBFrontend> fe;
@@ -1005,16 +999,12 @@ void eDVBScan::channelDone()
 							if (!m_channel->getFrontend(fe))
 								signal = fe->readFrontendData(iFrontendInformation_ENUMS::signalQuality);
 
-							SCAN_eDebug("LOGICAL_CHANNEL_DESCRIPTOR 4 / signal %d", signal);
-
 							LogicalChannelDescriptor &d = (LogicalChannelDescriptor&)**desc;
 							for (LogicalChannelListConstIterator it = d.getChannelList()->begin(); it != d.getChannelList()->end(); it++)
 							{
-								SCAN_eDebug("LogicalChannel");
 								LogicalChannel *ch = *it;
 								if (ch->getVisibleServiceFlag())
 								{
-
 									eDVBDB::getInstance()->addLcnToDB(ns.get(), onid.get(), tsid.get(), ch->getServiceId(), ch->getLogicalChannelNumber(), signal);
 									m_updateLCN = true;
 									SCAN_eDebug("NAMESPACE: %08x TSID: %04x ONID: %04x SID: %04x LCN: %05d SIGNAL: %08d", ns.get(), onid.get(), tsid.get(), ch->getServiceId(), ch->getLogicalChannelNumber(), signal);

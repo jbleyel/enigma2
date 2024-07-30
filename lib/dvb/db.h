@@ -20,12 +20,8 @@ struct LCNData
 	char SERVICENAME[256];
 	char SERVICENAME_GUI[256];
 
-	eServiceReferenceDVB parse(const char* line, int version)
+	LCNData()
 	{
-		int ns;
-		int onid;
-		int tsid;
-		int sid;
 		LCN_BROADCAST = 0;
 		LCN_GUI = 0;
 		LCN_SCANNED = 0;
@@ -34,6 +30,14 @@ struct LCNData
 		PROVIDER_GUI[0] = '\0';
 		SERVICENAME[0] = '\0';
 		SERVICENAME_GUI[0] = '\0';
+	}
+
+	eServiceReferenceDVB parse(const char* line, int version)
+	{
+		int ns;
+		int onid;
+		int tsid;
+		int sid;
 
 		if(version == 1)
 		{
