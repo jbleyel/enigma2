@@ -983,7 +983,7 @@ void eDVBScan::channelDone()
 						//case HD_SIMULCAST_LOGICAL_CHANNEL_DESCRIPTOR:
 						case LOGICAL_CHANNEL_DESCRIPTOR:
 						{
-							if (system != iDVBFrontend::feTerrestrial || system != iDVBFrontend::feCable)
+							if (system != iDVBFrontend::feTerrestrial && system != iDVBFrontend::feCable)
 								break; // when current locked transponder is no terrestrial or cable transponder ignore this descriptor
 								
 							if (ns.get() == 0)
@@ -995,7 +995,6 @@ void eDVBScan::channelDone()
 							if (!m_channel->getFrontend(fe))
 								signal = fe->readFrontendData(iFrontendInformation_ENUMS::signalQuality);
 
-							SCAN_eDebug("LOGICAL_CHANNEL_DESCRIPTOR");
 
 							LogicalChannelDescriptor &d = (LogicalChannelDescriptor&)**desc;
 							for (LogicalChannelListConstIterator it = d.getChannelList()->begin(); it != d.getChannelList()->end(); it++)
