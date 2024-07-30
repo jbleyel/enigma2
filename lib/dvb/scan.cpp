@@ -978,10 +978,9 @@ void eDVBScan::channelDone()
 				for (DescriptorConstIterator desc = (*tsinfo)->getDescriptors()->begin();
 					desc != (*tsinfo)->getDescriptors()->end(); ++desc)
 				{
-					SCAN_eDebug("DescriptorConstIterator TAG:%d" , (*desc)->getTag());
 					switch ((*desc)->getTag())
 					{
-						case HD_SIMULCAST_LOGICAL_CHANNEL_DESCRIPTOR:
+						//case HD_SIMULCAST_LOGICAL_CHANNEL_DESCRIPTOR:
 						case LOGICAL_CHANNEL_DESCRIPTOR:
 						{
 							if (system != iDVBFrontend::feTerrestrial || system != iDVBFrontend::feCable)
@@ -995,10 +994,13 @@ void eDVBScan::channelDone()
 							
 							if (!m_channel->getFrontend(fe))
 								signal = fe->readFrontendData(iFrontendInformation_ENUMS::signalQuality);
-							
+
+							SCAN_eDebug("LOGICAL_CHANNEL_DESCRIPTOR");
+
 							LogicalChannelDescriptor &d = (LogicalChannelDescriptor&)**desc;
 							for (LogicalChannelListConstIterator it = d.getChannelList()->begin(); it != d.getChannelList()->end(); it++)
 							{
+								SCAN_eDebug("LogicalChannel");
 								LogicalChannel *ch = *it;
 								if (ch->getVisibleServiceFlag())
 								{
