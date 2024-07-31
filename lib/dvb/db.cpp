@@ -7,7 +7,6 @@
 #include <lib/base/cfile.h>
 #include <lib/base/eenv.h>
 #include <lib/base/eerror.h>
-#include <lib/base/estring.h>
 #include <lib/base/esettings.h>
 #include <lib/base/esimpleconfig.h>
 #include <libxml/parser.h>
@@ -818,7 +817,7 @@ void eDVBDB::saveLcnDB()
 				int onid = key.getOriginalNetworkID().get();
 				int ns = key.getDVBNamespace().get();
 				
-				fprintf(lf, "%X:%X:%X:%X:%d:%d:%d:%d:%s:%s:%s:%s\n",sid, tsid, onid, ns, value.SIGNAL, value.LCN_BROADCAST, value.LCN_SCANNED, value.LCN_GUI, value.PROVIDER, value.PROVIDER_GUI ,value.SERVICENAME, value.SERVICENAME_GUI);
+				fprintf(lf, "%X:%X:%X:%X:%d:%d:%d:%d:%s:%s:%s:%s\n",sid, tsid, onid, ns, value.SIGNAL, value.LCN_BROADCAST, value.LCN_SCANNED, value.LCN_GUI, value.PROVIDER.c_str(), value.PROVIDER_GUI.c_str() ,value.SERVICENAME.c_str(), value.SERVICENAME_GUI.c_str());
 			}
 		}
 	}
@@ -875,6 +874,12 @@ void eDVBDB::loadServicelist(const char *file)
 
 		}
 		eDebug("[eDVBDB] Reading lcn db version %d done. %lu services found.", lcnversion, m_lcnmap.size());
+	}
+
+	if(lcnversion == 1)
+	{
+		eDebug("[eDVBDB] save updated lcn db");
+		saveLcnDB();
 	}
 
 	int version;

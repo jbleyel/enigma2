@@ -5,6 +5,7 @@
 #include <lib/dvb/idvb.h>
 #include <lib/dvb/frontend.h>
 #include <lib/base/eptrlist.h>
+#include <lib/base/estring.h>
 #include <set>
 #include <vector>
 class ServiceDescriptionSection;
@@ -15,10 +16,10 @@ struct LCNData
 	int LCN_BROADCAST;
 	int LCN_SCANNED;
 	int LCN_GUI;
-	char PROVIDER[256];
-	char PROVIDER_GUI[256];
-	char SERVICENAME[256];
-	char SERVICENAME_GUI[256];
+	std::string PROVIDER;
+	std::string PROVIDER_GUI;
+	std::string SERVICENAME;
+	std::string SERVICENAME_GUI;
 
 	LCNData()
 	{
@@ -26,10 +27,10 @@ struct LCNData
 		LCN_GUI = 0;
 		LCN_SCANNED = 0;
 		SIGNAL = -1;
-		PROVIDER[0] = '\0';
-		PROVIDER_GUI[0] = '\0';
-		SERVICENAME[0] = '\0';
-		SERVICENAME_GUI[0] = '\0';
+		PROVIDER = "";
+		PROVIDER_GUI = "";
+		SERVICENAME = "";
+		SERVICENAME_GUI = "";
 	}
 
 	eServiceReferenceDVB parse(const char* line, int version)
@@ -38,6 +39,7 @@ struct LCNData
 		int onid;
 		int tsid;
 		int sid;
+		char buffer[2048];
 
 		if(version == 1)
 		{
@@ -51,8 +53,18 @@ struct LCNData
 			return eServiceReferenceDVB();
 		}
 
-		if(sscanf(line, "%x:%x:%x:%x:%d:%d:%d:%d:%s:%s:%s:%s",&sid, &tsid, &onid, &ns, &SIGNAL, &LCN_BROADCAST, &LCN_SCANNED, &LCN_GUI, PROVIDER, PROVIDER_GUI ,SERVICENAME, SERVICENAME_GUI) == 12)
+		if(sscanf(line, "%x:%x:%x:%x:%d:%d:%d:%d:%s",&sid, &tsid, &onid, &ns, &SIGNAL, &LCN_BROADCAST, &LCN_SCANNED, &LCN_GUI, buffer) == 9)
 		{
+
+			auto Data = split(buffer, ":");
+			if(Data.size() == 4)
+			{
+				PROVIDER = Data[0];
+				PROVIDER_GUI = Data[1];
+				SERVICENAME = Data[2];
+				SERVICENAME_GUI = Data[3];
+			}
+
 			if(SIGNAL > 0) {
 				eServiceReferenceDVB s = eServiceReferenceDVB(eDVBNamespace(ns), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
 				return s;
