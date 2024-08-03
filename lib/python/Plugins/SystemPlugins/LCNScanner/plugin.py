@@ -1,4 +1,5 @@
 # Based on a plugin from Sif Team.
+# This version created by IanSav and the OpenATV team.
 
 from os.path import join
 from sys import maxsize
@@ -19,10 +20,10 @@ MODULE_NAME = __name__.split(".")[-1]
 
 class LCNScanner:
 	MODE_TV = "1:7:1:0:0:0:0:0:0:0:(type == 1) || (type == 17) || (type == 22) || (type == 25) || (type == 134) || (type == 195)"
-	MODE_RADIO = "1:7:2:0:0:0:0:0:0:0:(type == 2)"
+	MODE_RADIO = "1:7:2:0:0:0:0:0:0:0:(type == 2) || (type == 10)"
 	MODES = {
 		"TV": (1, 17, 22, 25, 134, 195),
-		"Radio": (2)
+		"Radio": (2, 10)
 	}
 
 	OLDDB_NAMESPACE = 0
@@ -57,40 +58,42 @@ class LCNScanner:
 	LCNS_SERVICENAME = 9
 	LCNS_SERVICENAME_GUI = 10
 
-	SERVICE_MODE = 0
-	SERVICE_SERVICEREFERENCE = 1
-	SERVICE_NAME = 2
+	SERVICE_SERVICEREFERENCE = 0
+	SERVICE_NAME = 1
 
 	def __init__(self):
-		def readBouquetList(mode, default):
-			bouquetList = {}
-			bouquets = fileReadLines(join(self.configPath, f"bouquets.{mode}"), default=[], source=MODULE_NAME)
-			for bouquet in bouquets:
-				if bouquet[:8] != "#SERVICE":
-					continue
-				data = bouquet.strip().split(":")[-1]
-				bouquetFile = None
-				if data[:13] == "FROM BOUQUET ":
-					endPos = data.find(" ", 13)
-					bouquetFile = data if endPos == -1 else data[13:endPos].strip("\"")
-				else:
-					bouquetFile = data
-				if bouquetFile:
-					bouquetLines = fileReadLines(join(self.configPath, bouquetFile), default=[], source=MODULE_NAME)
-					for bouquetLine in bouquetLines:
-						if bouquetLine[:6] == "#NAME ":
-							bouquetList[bouquetFile] = bouquetLine[6:]
-							break
-				if default[0] not in bouquetList.keys():
-					bouquetList[default[0]] = default[1]
-			return bouquetList
+		# This code is not currently needed but is being kept in case needs change.
+		# def readBouquet(mode):
+		# 	bouquetList = {}
+		# 	bouquets = fileReadLines(join(self.configPath, f"bouquets.{mode}"), default=[], source=MODULE_NAME)
+		# 	for bouquet in bouquets:
+		# 		if bouquet[:8] != "#SERVICE":
+		# 			continue
+		# 		data = bouquet.strip().split(":")[-1]
+		# 		bouquetFile = None
+		# 		if data[:13] == "FROM BOUQUET ":
+		# 			endPos = data.find(" ", 13)
+		# 			bouquetFile = data if endPos == -1 else data[13:endPos].strip("\"")
+		# 		else:
+		# 			bouquetFile = data
+		# 		if bouquetFile:
+		# 			bouquetLines = fileReadLines(join(self.configPath, bouquetFile), default=[], source=MODULE_NAME)
+		# 			for bouquetLine in bouquetLines:
+		# 				if bouquetLine[:6] == "#NAME ":
+		# 					bouquetList[bouquetFile] = bouquetLine[6:]
+		# 					break
+		# 	return bouquetList
 
 		self.configPath = resolveFilename(SCOPE_CONFIG)
-		self.bouquetListTV = readBouquetList("tv", ("userbouquet.terrestrial_lcn.tv", "Terrestrial TV LCN"))
-		self.bouquetListRadio = readBouquetList("radio", ("userbouquet.terrestrial_lcn.radio", "Terrestrial Radio LCN"))
-		self.bouquetList = self.bouquetListTV | self.bouquetListRadio
-		if "userbouquet.terrestrial_lcn" not in self.bouquetList.keys():
-			self.bouquetList["userbouquet.terrestrial_lcn"] = "Terrestrial LCN"
+		# This code is not currently needed but is being kept in case needs change.
+		# bouquetTV = readBouquet("tv")
+		# bouquetRadio = readBouquet("radio")
+		# cableBouquetTV = bouquetTV if "userbouquet.cable_lcn.tv" in bouquetTV else bouquetTV | {"userbouquet.cable_lcn.tv": "Cable TV LCN"}
+		# cableBouquetRadio = bouquetRadio if "userbouquet.cable_lcn.radio" in bouquetRadio else bouquetRadio | {"userbouquet.cable_lcn.radio": "Cable Radio LCN"}
+		# satelliteBouquetTV = bouquetTV if "userbouquet.satellite_lcn.tv" in bouquetTV else bouquetTV | {"userbouquet.satellite_lcn.tv": "Satellite TV LCN"}
+		# satelliteBouquetRadio = bouquetRadio if "userbouquet.satellite_lcn.radio" in bouquetRadio else bouquetRadio | {"userbouquet.satellite_lcn.radio": "Satellite Radio LCN"}
+		# terrestrialBouquetTV = bouquetTV if "userbouquet.terrestrial_lcn.tv" in bouquetTV else bouquetTV | {"userbouquet.terrestrial_lcn.tv": "Terrestrial TV LCN"}
+		# terrestrialBouquetRadio = bouquetRadio if "userbouquet.terrestrial_lcn.radio" in bouquetRadio else bouquetRadio | {"userbouquet.terrestrial_lcn.radio": "Terrestrial Radio LCN"}
 		self.ruleList = {}
 		self.rulesDom = fileReadXML(resolveFilename(SCOPE_PLUGIN_ABSOLUTE, "rules.xml"), default="<rulesxml />", source=MODULE_NAME)
 		if self.rulesDom is not None:
@@ -105,14 +108,17 @@ class LCNScanner:
 					self.ruleList[name] = name
 					rulesIndex += 1
 		config.plugins.LCNScanner = ConfigSubsection()
-		config.plugins.LCNScanner.singleBouquet = ConfigYesNo(default=False)
-		config.plugins.LCNScanner.bouquet = ConfigSelection(default="userbouquet.terrestrial_lcn", choices=self.bouquetList)
-		config.plugins.LCNScanner.bouquetTV = ConfigSelection(default="userbouquet.terrestrial_lcn.tv", choices=self.bouquetListTV)
-		config.plugins.LCNScanner.bouquetRadio = ConfigSelection(default="userbouquet.terrestrial_lcn.radio", choices=self.bouquetListRadio)
+		# This code is not currently needed but is being kept in case needs change.
+		# config.plugins.LCNScanner.cableBouquetTV = ConfigSelection(default="userbouquet.cable_lcn.tv", choices=cableBouquetTV)
+		# config.plugins.LCNScanner.cableBouquetRadio = ConfigSelection(default="userbouquet.cable_lcn.radio", choices=cableBouquetRadio)
+		# config.plugins.LCNScanner.satelliteBouquetTV = ConfigSelection(default="userbouquet.satellite_lcn.tv", choices=satelliteBouquetTV)
+		# config.plugins.LCNScanner.satelliteBouquetRadio = ConfigSelection(default="userbouquet.satellite_lcn.radio", choices=satelliteBouquetRadio)
+		# config.plugins.LCNScanner.terrestrialBouquetTV = ConfigSelection(default="userbouquet.terrestrial_lcn.tv", choices=terrestrialBouquetTV)
+		# config.plugins.LCNScanner.terrestrialBouquetRadio = ConfigSelection(default="userbouquet.terrestrial_lcn.radio", choices=terrestrialBouquetRadio)
 		config.plugins.LCNScanner.rules = ConfigSelection(default="Default", choices=self.ruleList)
-		config.plugins.LCNScanner.useSpacerLines = ConfigYesNo(default=True)
+		config.plugins.LCNScanner.useSpacerLines = ConfigYesNo(default=False)
 		config.plugins.LCNScanner.addServiceNames = ConfigYesNo(default=False)
-		config.plugins.LCNScanner.useDescriptionLines = ConfigYesNo(default=True)
+		config.plugins.LCNScanner.useDescriptionLines = ConfigYesNo(default=False)
 
 	def lcnScan(self, verbose=False, callback=None):
 		def getModes(element):
@@ -135,9 +141,10 @@ class LCNScanner:
 			for lcn in fileReadLines(join(self.configPath, "lcndb"), default=[], source=MODULE_NAME):
 				if lcn not in lcndb:
 					lcndb.append(lcn)
-					# print(f"[LCNScanner] DEBUG: lcndb line '{lcn}' loaded.")
 				else:
 					print(f"[LCNScanner] Error: Duplicated line detected in lcndb!  ({lcn}).")
+			# for lcn in lcndb:
+			# 	print(f"[LCNScanner] DEBUG: LCN '{lcn}'.")
 			return lcndb
 
 		def loadServices(mode):
@@ -152,7 +159,7 @@ class LCNScanner:
 			serviceList = serviceHandler.list(eServiceReference(reference))
 			if serviceList:
 				for service in serviceList.getContent("SN", True):
-					services[":".join(service[0].split(":")[3:7])] = (mode, service[0], service[1])
+					services[":".join(service[self.SERVICE_SERVICEREFERENCE].split(":")[3:7])] = (service[self.SERVICE_SERVICEREFERENCE], service[self.SERVICE_NAME])
 			# for service in services.keys():
 			# 	print(f"[LCNScanner] DEBUG: Service '{service}' -> {services[service]}.")
 			return services
@@ -248,6 +255,7 @@ class LCNScanner:
 				if service in services:  # Check if the service represented by this LCN entry is still a valid service.
 					if lcn in lcnCache:  # Check if the LCN already exists.
 						if data[self.LCNS_TRIPLET] == lcnCache[lcn][self.LCNS_TRIPLET] and data[self.LCNS_SIGNAL] > lcnCache[lcn][self.LCNS_SIGNAL]:
+							data[self.LCNS_LCN_SCANNED] = data[self.LCNS_LCN_BROADCAST]
 							lcnCache[lcn] = data  # Replace the existing weaker signal with the stronger one.
 						elif scannerLCN > scannerLast:  # Check if there is no more space for duplicates.
 							print(f"[LCNScanner] Warning: Duplicate LCN {lcn} found for servine '{data[self.LCNS_SERVICEREFERENCE]}' but duplicate LCN range exhausted!")
@@ -255,10 +263,10 @@ class LCNScanner:
 							print(f"[LCNScanner] Duplicate LCN found, renumbering {lcn} to {scannerLCN}.")
 							lcn = scannerLCN
 							data[self.LCNS_LCN_SCANNED] = lcn
-							data[self.LCNS_LCN_BROADCAST] = lcn  # DEBUG!
 							lcnCache[lcn] = data
 							scannerLCN += 1
 					else:
+						data[self.LCNS_LCN_SCANNED] = data[self.LCNS_LCN_BROADCAST]
 						lcnCache[lcn] = data
 				elif len(serviceReference) > 2 and serviceReference[2] in self.MODES[mode]:  # Skip all LCN entries of the same type that are not a valid service.
 					print(f"[LCNScanner] Service '{service}' with LCN {lcn} not a valid {mode} service!")
@@ -266,19 +274,17 @@ class LCNScanner:
 				else:
 					continue
 				for renumber in renumbers[mode]:  # Process the LCN renumbering rules.
-					if renumber[0][0] < lcn < renumber[0][1]:
+					if renumber[0][0] <= lcn <= renumber[0][1]:
 						try:
-							lcnOriginal = lcn
+							startingLCN = lcn
 							lcn = int(eval(renumber[1].replace("LCN", str(lcn))))
-							print(f"[LCNScanner] DEBUG: LCN={lcnOriginal}, NewLCN={lcn}, Range={renumber[0][0]}-{renumber[0][1]}, Formula='{renumber[1]}'.")
+							print(f"[LCNScanner] DEBUG: LCN={startingLCN}, NewLCN={lcn}, Range={renumber[0][0]}-{renumber[0][1]}, Formula='{renumber[1]}'.")
 							if lcn in lcnCache:
-								print(f"[LCNScanner] Renumbered LCN is a duplicated LCN, renumbering {lcn} to {scannerLCN}.")
+								print(f"[LCNScanner] Renumbered LCN {startingLCN} is now a duplicated LCN {lcn}, renumbering {startingLCN} to {scannerLCN}.")
 								data[self.LCNS_LCN_SCANNED] = scannerLCN
-								data[self.LCNS_LCN_BROADCAST] = scannerLCN  # DEBUG!
 								scannerLCN += 1
 							else:
 								data[self.LCNS_LCN_SCANNED] = lcn
-								data[self.LCNS_LCN_BROADCAST] = lcn  # DEBUG!
 						except ValueError as err:
 							print(f"[LCNScanner] Error: LCN renumber formula '{renumber[1]}' is invalid!  ({err})")
 				serviceLCNs[lcn] = tuple(data)
@@ -335,6 +341,8 @@ class LCNScanner:
 					bouquet.append(f"#DESCRIPTION {name}")
 			# Save bouquet and, if required, add this bouquet to the list of bouquets.
 			extension = mode.lower()
+			# This code is not currently needed but is being kept in case needs change.
+			# bouquetName = getattr(config.plugins.LCNScanner, f"{medium.lower()}Bouquet{mode}", f"userbouquet.{medium.lower()}_lcn.{mode}").value
 			bouquetName = f"userbouquet.{medium.lower()}_lcn.{extension}"
 			bouquetsPath = join(self.configPath, bouquetName)
 			if fileWriteLines(bouquetsPath, bouquet, source=MODULE_NAME):
@@ -354,9 +362,15 @@ class LCNScanner:
 				else:
 					print(f"[LCNScanner] Error: Bouquet '{bouquetName}' could not be added to '{bouquetsPath}'!")
 
+		def buildLCNs(lcndb, serviceLCNs):
+			for lcn in sorted(serviceLCNs.keys()):
+				data = []
+				for field in (self.LCNS_TRIPLET, self.LCNS_SIGNAL, self.LCNS_LCN_BROADCAST, self.LCNS_LCN_SCANNED, self.LCNS_LCN_GUI, self.LCNS_PROVIDER, self.LCNS_PROVIDER_GUI, self.LCNS_SERVICENAME, self.LCNS_SERVICENAME_GUI):
+					data.append(str(serviceLCNs[lcn][field]))
+				lcndb.append(":".join(data))
+			return lcndb
+
 		print("[LCNScanner] LCN scan started.")
-		rules = config.plugins.LCNScanner.rules.value if config.plugins.LCNScanner.rules.value in self.ruleList.keys() else self.ruleList[0][0]
-		bouquet = config.plugins.LCNScanner.bouquetTV.value if config.plugins.LCNScanner.bouquetTV.value in self.bouquetListTV.keys() else self.ruleList[0][0]
 		duplicate = {
 			"TV": [99000, maxsize],
 			"Radio": [99000, maxsize]
@@ -369,6 +383,7 @@ class LCNScanner:
 			"TV": {},
 			"Radio": {}
 		}
+		rules = config.plugins.LCNScanner.rules.value if config.plugins.LCNScanner.rules.value in self.ruleList.keys() else self.ruleList[0][0]
 		dom = self.rulesDom.findall(f".//rules[@name='{rules}']/rule[@type='duplicate']")
 		if dom is not None:
 			for element in dom:
@@ -420,31 +435,52 @@ class LCNScanner:
 							print(f"[LCNScanner] Error: Invalid marker LCN '{lcn}' specified!  ({err})")
 		# The actual scanning process starts here.
 		lcndb = loadLCNs()
+		lcns = []
 		for mode in ("TV", "Radio"):
 			services = loadServices(mode)
 			cableLCNs, satelliteLCNs, terrestrialLCNs = matchLCNsAndServices(mode, lcndb, services, duplicate, renumbers)
 			if cableLCNs or satelliteLCNs or terrestrialLCNs:
 				if cableLCNs:
 					writeBouquet(mode, "Cable", cableLCNs, markers)
+					lcns = buildLCNs(lcns, cableLCNs)
 				if satelliteLCNs:
 					writeBouquet(mode, "Satellite", satelliteLCNs, markers)
+					lcns = buildLCNs(lcns, satelliteLCNs)
 				if terrestrialLCNs:
 					writeBouquet(mode, "Terrestrial", terrestrialLCNs, markers)
+					lcns = buildLCNs(lcns, terrestrialLCNs)
 			elif verbose:
 				self.session.open(MessageBox, _("No valid entries found in the LCN database. Run a service scan."), MessageBox.TYPE_INFO, windowTitle=self.getTitle())
+		if lcns:
+			lcns.insert(0, "#SID:TSID:ONID:NAMESPACE:SIGNAL:LCN_BROADCAST:LCN_SCANNED:LCN_GUI:PROVIDER:PROVIDER_GUI:SERVICENAME:SERVICENAME_GUI")
+			lcns.insert(0, "#VERSION 2")
+			if fileWriteLines(join(self.configPath, "lcndb"), lcns, source=MODULE_NAME):
+				print("[LCNScanner] The 'lcndb' file has been updated.")
+			else:
+				print("[LCNScanner] Error: The 'lcndb' file could not be updated!")
 		eDVBDB.getInstance().reloadBouquets()
 		print("[LCNScanner] LCN scan finished.")
 		if callback and callable(callback):
 			callback()
 
 	def keySave(self):  # ServiceScan.py calls this method to perform an LCN scan.
-		self.lcnScan(verbose=True)
+		def performScan():
+			self.lcnScan(verbose=True, callback=keyScanCallback)
+
+		def keyScanCallback():
+			Processing.instance.hideProgress()
+
+		Processing.instance.setDescription(_("Please wait while LCN bouquets are created/updated..."))
+		Processing.instance.showProgress(endless=True)
+		self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
+		self.timer.callback.append(performScan)
+		self.timer.start(0, True)  # Yield to the idle loop to allow a screen update.
 
 
 class LCNScannerSetup(LCNScanner, Setup):
 	def __init__(self, session):
 		LCNScanner.__init__(self)
-		Setup.__init__(self, session=session, setup="LCNScanner", plugin="SystemPlugins/LCNScannerNew")
+		Setup.__init__(self, session=session, setup="LCNScanner", plugin="SystemPlugins/LCNScanner")
 		self["key_yellow"] = StaticText(_("Scan"))
 		self["scanActions"] = HelpableActionMap(self, "ColorActions", {
 			"yellow": (self.keyScan, _("Scan for terrestrial LCNs and create LCN bouquets"))
@@ -471,13 +507,7 @@ def main(session, **kwargs):
 
 
 def menu(menuid, **kwargs):
-	def run(arg):
-		Processing.instance.setDescription(_("Please wait while LCN bouquets are created/updated..."))
-		Processing.instance.showProgress(endless=True)
-		LCNScanner().lcnScan()
-		Processing.instance.hideProgress()
-
-	return [("LCN Scanner Test", run, "LCNScanner", None)] if menuid == "scan" else []
+	return [("LCN Scanner", main, "LCNScanner", None)] if menuid == "scan" else []
 
 
 def Plugins(**kwargs):
