@@ -798,7 +798,9 @@ void eDVBDB::resetLcnDB()
 {
 	for (auto &kv : m_lcnmap)
 	{
+		eDebug("[eDVBDB] resetLcnDB 1 LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", kv.second.LCN_BROADCAST, kv.second.LCN_SCANNED, kv.second.LCN_GUI);
 		kv.second.FOUND = false;
+		eDebug("[eDVBDB] resetLcnDB 2 LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", kv.second.LCN_BROADCAST, kv.second.LCN_SCANNED, kv.second.LCN_GUI);
 	}
 }
 
@@ -822,14 +824,15 @@ void eDVBDB::addLcnToDB(int ns, int onid, int tsid, int sid, uint16_t lcn, uint3
 	std::map<eServiceReferenceDVB, LCNData>::iterator it = m_lcnmap.find(s);
 	if (it != m_lcnmap.end())
 	{
+		eDebug("[eDVBDB] addLcnToDB update 1 LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", it->second.LCN_BROADCAST, it->second.LCN_SCANNED, it->second.LCN_GUI);
 		it->second.Update(lcn, signal);
-		eDebug("[eDVBDB] addLcnToDB update LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", it->second.LCN_BROADCAST, it->second.LCN_SCANNED, it->second.LCN_GUI);
+		eDebug("[eDVBDB] addLcnToDB update 2 LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", it->second.LCN_BROADCAST, it->second.LCN_SCANNED, it->second.LCN_GUI);
 	}
 	else
 	{
 		LCNData lcndata;
 		lcndata.Update(lcn, signal);
-		eDebug("[eDVBDB] addLcnToDB update LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", lcndata.LCN_BROADCAST, lcndata.LCN_SCANNED, lcndata.LCN_GUI);
+		eDebug("[eDVBDB] addLcnToDB new LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", lcndata.LCN_BROADCAST, lcndata.LCN_SCANNED, lcndata.LCN_GUI);
 		m_lcnmap.insert(std::pair<eServiceReferenceDVB, LCNData>(s, lcndata));
 	}
 }
