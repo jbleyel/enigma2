@@ -513,5 +513,5 @@ def menu(menuid, **kwargs):
 def Plugins(**kwargs):
 	return [
 		PluginDescriptor(where=[PluginDescriptor.WHERE_MENU], description=_("LCN Scanner plugin for DVB-T/T2 services"), needsRestart=False, fnc=menu),
-		PluginDescriptor(name=_("LCN Scanner"), where=[PluginDescriptor.WHERE_PLUGINMENU], description=_("LCN Scanner for DVB-T/T2 services"), icon="LCNScanner.png", fnc=main)
+		# PluginDescriptor(name=_("LCN Scanner"), where=[PluginDescriptor.WHERE_PLUGINMENU], description=_("LCN Scanner for DVB-T/T2 services"), icon="LCNScanner.png", fnc=main)
 	]

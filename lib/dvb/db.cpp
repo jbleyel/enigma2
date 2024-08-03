@@ -854,8 +854,6 @@ void eDVBDB::loadServicelist(const char *file)
 			if (!fgets(line, sizeof(line), lf))
 				break;
 
-			eDebug("[eDVBDB] lcn db line %s", line);
-
 			if (lcnversion == 0)
 			{
 				if(!sscanf(line, "#VERSION %d",&lcnversion))

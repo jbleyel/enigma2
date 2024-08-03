@@ -1,16 +1,25 @@
 <rulesxml>
 	<rules name="Default">
-		<!-- No "renumber" rules, keep the exact order from original LCN. -->
 		<rule type="duplicate" mode="All" range="10001">Duplicates</rule>
 	</rules>
 	<rules name="Australia">
-		<!-- No "renumber" rules, keep the exact order from original LCN. -->
 		<rule type="duplicate" mode="All" range="350-399">Duplicated Services</rule>
+		<!-- This data is only for testing.
 		<rule type="renumber" mode="Radio" range="25-29">LCN + 180</rule>
 		<rule type="marker" mode="TV" position="10">Marker at 10</rule>
+		-->
+	</rules>
+	<rules name="Germany">
+		<rule type="duplicate" mode="All" range="900-999">Duplicated Services</rule>
+		<rule type="marker" mode="TV" position="220">Sky</rule>
+		<rule type="marker" mode="TV" position="240">Sport</rule>
+		<rule type="marker" mode="TV" position="301">SD</rule>
+		<rule type="marker" mode="TV" position="329">Regional</rule>
+		<rule type="marker" mode="TV" position="570">International</rule>
+		<rule type="marker" mode="TV" position="700">Sky Movie</rule>
+		<rule type="marker" mode="TV" position="750">Sky Sport</rule>
 	</rules>
 	<rules name="Italia">
-		<!-- "renumber" rules are applied sequentially keeping the original order. -->
 		<rule type="duplicate" mode="All" range="16635">Duplicati</rule>
 		<!--
 		<rule type="renumber" mode="TV" range="0-99999">LCN * 10</rule>
@@ -25,15 +34,5 @@
 		<rule type="marker" mode="TV" position="655">Musica</rule>
 		<rule type="marker" mode="TV" position="2995">Pay TV</rule>
 		<rule type="marker" mode="TV" position="7995">Servizi On Demand</rule>
-	</rules>
-	<rules>
-		<!-- No "renumber" rules, keep the exact order from original LCN. -->
-		<rule type="marker" mode="TV" position="10">Marker at 10</rule>
-		<rule type="marker" mode="TV" position="350">Duplicates</rule>
-	</rules>
-	<rules>
-		<!-- No "renumber" rules, keep the exact order from original LCN. -->
-		<rule type="marker" mode="TV" position="10">Marker at 10</rule>
-		<rule type="marker" mode="TV" position="350">Duplicates</rule>
 	</rules>
 </rulesxml>
