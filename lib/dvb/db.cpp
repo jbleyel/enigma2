@@ -796,8 +796,9 @@ void eDVBDB::loadServiceListV5(FILE * f)
 
 void eDVBDB::resetLcnDB()
 {
-	for (auto& kv : m_lcnmap) {
-		kv.second.resetSignal();
+	for (auto &kv : m_lcnmap)
+	{
+		kv.second.FOUND = false;
 	}
 }
 
@@ -805,23 +806,14 @@ void eDVBDB::saveLcnDB()
 {
 	std::string lfname = eEnv::resolve("${sysconfdir}/enigma2/lcndb");
 	CFile lf(lfname, "w");
-	if(lf)
+	if (lf)
 	{
 		fprintf(lf, "#VERSION 2\n");
-		for (const auto& [key, value] : m_lcnmap) {
-
-			if(value.SIGNAL)
-			{
-				int sid = key.getServiceID().get();
-				int tsid = key.getTransportStreamID().get();
-				int onid = key.getOriginalNetworkID().get();
-				int ns = key.getDVBNamespace().get();
-				
-				fprintf(lf, "%X:%X:%X:%X:%d:%d:%d:%d:%s:%s:%s:%s\n",sid, tsid, onid, ns, value.SIGNAL, value.LCN_BROADCAST, value.LCN_SCANNED, value.LCN_GUI, value.PROVIDER.c_str(), value.PROVIDER_GUI.c_str() ,value.SERVICENAME.c_str(), value.SERVICENAME_GUI.c_str());
-			}
+		for (auto &[key, value] : m_lcnmap)
+		{
+			value.write(lf, key);
 		}
 	}
-
 }
 
 void eDVBDB::addLcnToDB(int ns, int onid, int tsid, int sid, uint16_t lcn, uint32_t signal)
@@ -831,10 +823,13 @@ void eDVBDB::addLcnToDB(int ns, int onid, int tsid, int sid, uint16_t lcn, uint3
 	if (it != m_lcnmap.end())
 	{
 		it->second.Update(lcn, signal);
+		eDebug("[eDVBDB] addLcnToDB update LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", it->second.LCN_BROADCAST, it->second.LCN_SCANNED, it->second.LCN_GUI);
 	}
-	else {
+	else
+	{
 		LCNData lcndata;
 		lcndata.Update(lcn, signal);
+		eDebug("[eDVBDB] addLcnToDB update LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", lcndata.LCN_BROADCAST, lcndata.LCN_SCANNED, lcndata.LCN_GUI);
 		m_lcnmap.insert(std::pair<eServiceReferenceDVB, LCNData>(s, lcndata));
 	}
 }
@@ -860,6 +855,8 @@ void eDVBDB::loadServicelist(const char *file)
 		{
 			if (!fgets(line, sizeof(line), lf))
 				break;
+
+			eDebug("[eDVBDB] lcn db line %s", line);
 
 			if (lcnversion == 0)
 			{

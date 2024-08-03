@@ -16,6 +16,7 @@ struct LCNData
 	int LCN_BROADCAST;
 	int LCN_SCANNED;
 	int LCN_GUI;
+	bool FOUND;
 	std::string PROVIDER;
 	std::string PROVIDER_GUI;
 	std::string SERVICENAME;
@@ -31,9 +32,10 @@ struct LCNData
 		PROVIDER_GUI = "";
 		SERVICENAME = "";
 		SERVICENAME_GUI = "";
+		FOUND = true;
 	}
 
-	eServiceReferenceDVB parse(const char* line, int version)
+	eServiceReferenceDVB parse(const char *line, int version)
 	{
 		int ns;
 		int onid;
@@ -41,55 +43,54 @@ struct LCNData
 		int sid;
 		char buffer[2048];
 
-		if(version == 1)
+		// will be removed
+		if (version == 1)
 		{
-			if(sscanf(line, "%x:%x:%x:%x:%d:%d",&ns, &onid, &tsid, &sid, &LCN_BROADCAST, &SIGNAL) == 6)
-			{
-				if(SIGNAL > 0) {
-					eServiceReferenceDVB s = eServiceReferenceDVB(eDVBNamespace(ns), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
-					return s;
-				}
-			}
-			return eServiceReferenceDVB();
+			if (sscanf(line, "%x:%x:%x:%x:%d:%d", &ns, &onid, &tsid, &sid, &LCN_BROADCAST, &SIGNAL) == 6)
+				return eServiceReferenceDVB(eDVBNamespace(ns), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
+			else
+				return eServiceReferenceDVB();
 		}
 
-		if(sscanf(line, "%x:%x:%x:%x:%d:%d:%d:%d:%s",&sid, &tsid, &onid, &ns, &SIGNAL, &LCN_BROADCAST, &LCN_SCANNED, &LCN_GUI, buffer) == 9)
+		if (sscanf(line, "%x:%x:%x:%x:%d:%d:%d:%d:%s", &sid, &tsid, &onid, &ns, &SIGNAL, &LCN_BROADCAST, &LCN_SCANNED, &LCN_GUI, buffer) == 9)
 		{
-
 			auto Data = split(buffer, ":");
-			if(Data.size() == 4)
+			if (Data.size() == 4)
 			{
 				PROVIDER = Data[0];
 				PROVIDER_GUI = Data[1];
 				SERVICENAME = Data[2];
 				SERVICENAME_GUI = Data[3];
 			}
-
-			if(SIGNAL > 0) {
-				eServiceReferenceDVB s = eServiceReferenceDVB(eDVBNamespace(ns), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
-				return s;
-			}
+			return eServiceReferenceDVB(eDVBNamespace(ns), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
 		}
 		return eServiceReferenceDVB();
-
 	}
 
 	int getLCN()
 	{
-		return (LCN_GUI != 0) ? LCN_GUI : (LCN_SCANNED =! 0) ? LCN_SCANNED : LCN_BROADCAST;
+		return (LCN_GUI != 0) ? LCN_GUI : (LCN_SCANNED = !0) ? LCN_SCANNED : LCN_BROADCAST;
 	}
-	
+
 	void Update(uint16_t lcn, uint32_t signal)
 	{
 		LCN_BROADCAST = lcn;
 		SIGNAL = signal;
+		FOUND = true;
 	}
 
-	void resetSignal()
+	void write(FILE *lf, const eServiceReferenceDVB &key)
 	{
-		SIGNAL = 0;
+		if (FOUND)
+		{
+			int sid = key.getServiceID().get();
+			int tsid = key.getTransportStreamID().get();
+			int onid = key.getOriginalNetworkID().get();
+			int ns = key.getDVBNamespace().get();
+			eDebug("[eDVBDB] LCNData write %X:%X:%X:%X: LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", sid, tsid, onid, ns, LCN_BROADCAST, LCN_SCANNED, LCN_GUI);
+			fprintf(lf, "%X:%X:%X:%X:%d:%d:%d:%d:%s:%s:%s:%s\n", sid, tsid, onid, ns, SIGNAL, LCN_BROADCAST, LCN_SCANNED, LCN_GUI, PROVIDER.c_str(), PROVIDER_GUI.c_str(), SERVICENAME.c_str(), SERVICENAME_GUI.c_str());
+		}
 	}
-
 };
 
 #endif
