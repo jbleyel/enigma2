@@ -3142,7 +3142,8 @@ class ExtensionsList(ChoiceBox):
 		extensionListAll = []
 		for extension in extensions:
 			if extension[0] == 0:  # EXTENSION_SINGLE
-				extensionListAll.append((extension[1][0](), extension[1], extension[2], colorKeys.get(extension[2], 0)))
+				if extension[1][2]():
+					extensionListAll.append((extension[1][0](), extension[1], extension[2], colorKeys.get(extension[2], 0)))
 			else:
 				for subExtension in extension[1]():
 					extensionListAll.append((subExtension[0][0](), subExtension[0], subExtension[1], colorKeys.get(subExtension[1], 0)))
