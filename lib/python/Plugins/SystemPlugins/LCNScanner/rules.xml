@@ -4,10 +4,8 @@
 	</rules>
 	<rules name="Australia">
 		<rule type="duplicate" mode="All" range="350-399">Duplicated Services</rule>
-		<!-- This data is only for testing.
 		<rule type="renumber" mode="Radio" range="25-29">LCN + 180</rule>
 		<rule type="marker" mode="TV" position="10">Marker at 10</rule>
-		-->
 	</rules>
 	<rules name="Germany">
 		<rule type="duplicate" mode="All" range="900-999">Duplicated Services</rule>

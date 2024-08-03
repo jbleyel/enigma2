@@ -8,6 +8,7 @@ from enigma import eDVBDB, eServiceCenter, eServiceReference, eTimer
 
 from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigSelection, ConfigSubsection, ConfigYesNo, config
+from Components.PluginComponent import plugins
 from Components.Sources.StaticText import StaticText
 from Plugins.Plugin import PluginDescriptor
 from Screens.MessageBox import MessageBox
@@ -16,6 +17,10 @@ from Screens.Setup import Setup
 from Tools.Directories import SCOPE_CONFIG, SCOPE_PLUGIN_ABSOLUTE, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 
 MODULE_NAME = __name__.split(".")[-1]
+
+config.plugins.LCNScanner = ConfigSubsection()
+config.plugins.LCNScanner.showInPluginsList = ConfigYesNo(default=False)
+config.plugins.LCNScanner.showInPluginsList.addNotifier(plugins.reloadPlugins, initial_call=False, immediate_feedback=False)
 
 
 class LCNScanner:
@@ -58,8 +63,9 @@ class LCNScanner:
 	LCNS_SERVICENAME = 9
 	LCNS_SERVICENAME_GUI = 10
 
-	SERVICE_SERVICEREFERENCE = 0
-	SERVICE_NAME = 1
+	SERVICE_PROVIDER = 0
+	SERVICE_SERVICEREFERENCE = 1
+	SERVICE_NAME = 2
 
 	def __init__(self):
 		# This code is not currently needed but is being kept in case needs change.
@@ -107,7 +113,6 @@ class LCNScanner:
 					rules.set("name", name)
 					self.ruleList[name] = name
 					rulesIndex += 1
-		config.plugins.LCNScanner = ConfigSubsection()
 		# This code is not currently needed but is being kept in case needs change.
 		# config.plugins.LCNScanner.cableBouquetTV = ConfigSelection(default="userbouquet.cable_lcn.tv", choices=cableBouquetTV)
 		# config.plugins.LCNScanner.cableBouquetRadio = ConfigSelection(default="userbouquet.cable_lcn.radio", choices=cableBouquetRadio)
@@ -144,7 +149,7 @@ class LCNScanner:
 				else:
 					print(f"[LCNScanner] Error: Duplicated line detected in lcndb!  ({lcn}).")
 			# for lcn in lcndb:
-			# 	print(f"[LCNScanner] DEBUG: LCN '{lcn}'.")
+			# 	print(f"[LCNScanner] loadLCNs DEBUG: LCN '{lcn}'.")
 			return lcndb
 
 		def loadServices(mode):
@@ -153,15 +158,17 @@ class LCNScanner:
 			serviceHandler = eServiceCenter.getInstance()
 			match mode:
 				case "TV":
-					reference = f"{self.MODE_TV} ORDER BY name"
+					providerQuery = f"{self.MODE_TV} FROM PROVIDERS ORDER BY name"
 				case "Radio":
-					reference = f"{self.MODE_RADIO} ORDER BY name"
-			serviceList = serviceHandler.list(eServiceReference(reference))
-			if serviceList:
-				for service in serviceList.getContent("SN", True):
-					services[":".join(service[self.SERVICE_SERVICEREFERENCE].split(":")[3:7])] = (service[self.SERVICE_SERVICEREFERENCE], service[self.SERVICE_NAME])
-			# for service in services.keys():
-			# 	print(f"[LCNScanner] DEBUG: Service '{service}' -> {services[service]}.")
+					providerQuery = f"{self.MODE_RADIO} FROM PROVIDERS ORDER BY name"
+			providers = serviceHandler.list(eServiceReference(providerQuery))
+			if providers:
+				for serviceQuery, providerName in providers.getContent("SN", True):
+					serviceList = serviceHandler.list(eServiceReference(serviceQuery))
+					for serviceReference, serviceName in serviceList.getContent("SN", True):
+						services[":".join(serviceReference.split(":")[3:7])] = (providerName, serviceReference, serviceName)
+			# for service in sorted(services.keys()):
+			# 	print(f"[LCNScanner] loadServices DEBUG: Service '{service}' -> {services[service]}.")
 			return services
 
 		def matchLCNsAndServices(mode, lcndb, services, duplicate, renumbers):
@@ -195,7 +202,7 @@ class LCNScanner:
 							int(item[self.OLDDB_LCN]),
 							0,
 							0,
-							"",  # TODO: Get the provider name from the service reference.
+							services[service][self.SERVICE_PROVIDER] if service in services else "",
 							"",
 							services[service][self.SERVICE_NAME] if service in services else "",
 							""
@@ -223,7 +230,7 @@ class LCNScanner:
 							int(item[self.DB_LCN_BROADCAST]),
 							int(item[self.DB_LCN_SCANNED]),
 							int(item[self.DB_LCN_GUI]),
-							item[self.DB_PROVIDER],  # TODO: Get the provider name from the service reference.
+							services[service][self.SERVICE_PROVIDER] if service in services else "",
 							item[self.DB_PROVIDER_GUI],
 							services[service][self.SERVICE_NAME] if service in services else "",
 							item[self.DB_SERVICENAME_GUI]
@@ -278,7 +285,7 @@ class LCNScanner:
 						try:
 							startingLCN = lcn
 							lcn = int(eval(renumber[1].replace("LCN", str(lcn))))
-							print(f"[LCNScanner] DEBUG: LCN={startingLCN}, NewLCN={lcn}, Range={renumber[0][0]}-{renumber[0][1]}, Formula='{renumber[1]}'.")
+							print(f"[LCNScanner] LCN {startingLCN} is renumbered to {lcn} via rule range {renumber[0][0]}-{renumber[0][1]} and formula='{renumber[1]}'.")
 							if lcn in lcnCache:
 								print(f"[LCNScanner] Renumbered LCN {startingLCN} is now a duplicated LCN {lcn}, renumbering {startingLCN} to {scannerLCN}.")
 								data[self.LCNS_LCN_SCANNED] = scannerLCN
@@ -289,11 +296,11 @@ class LCNScanner:
 							print(f"[LCNScanner] Error: LCN renumber formula '{renumber[1]}' is invalid!  ({err})")
 				serviceLCNs[lcn] = tuple(data)
 			# for lcn in sorted(cableLCNs.keys()):
-			# 	print(f"[LCNScanner] DEBUG: Cable LCN '{lcn}' -> {cableLCNs[lcn]}.")
+			# 	print(f"[LCNScanner] matchLCNsAndServices DEBUG: Cable LCN '{lcn}' -> {cableLCNs[lcn]}.")
 			# for lcn in sorted(satelliteLCNs.keys()):
-			# 	print(f"[LCNScanner] DEBUG: Satellite LCN '{lcn}' -> {satelliteLCNs[lcn]}.")
+			# 	print(f"[LCNScanner] matchLCNsAndServices DEBUG: Satellite LCN '{lcn}' -> {satelliteLCNs[lcn]}.")
 			# for lcn in sorted(terrestrialLCNs.keys()):
-			# 	print(f"[LCNScanner] DEBUG: Terrestrial LCN '{lcn}' -> {terrestrialLCNs[lcn]}.")
+			# 	print(f"[LCNScanner] matchLCNsAndServices DEBUG: Terrestrial LCN '{lcn}' -> {terrestrialLCNs[lcn]}.")
 			return (cableLCNs, satelliteLCNs, terrestrialLCNs)
 
 		def matchServices(services, lcns):
@@ -362,11 +369,15 @@ class LCNScanner:
 				else:
 					print(f"[LCNScanner] Error: Bouquet '{bouquetName}' could not be added to '{bouquetsPath}'!")
 
-		def buildLCNs(lcndb, serviceLCNs):
+		def buildLCNs(serviceLCNs):
+			lcndb = []
 			for lcn in sorted(serviceLCNs.keys()):
 				data = []
-				for field in (self.LCNS_TRIPLET, self.LCNS_SIGNAL, self.LCNS_LCN_BROADCAST, self.LCNS_LCN_SCANNED, self.LCNS_LCN_GUI, self.LCNS_PROVIDER, self.LCNS_PROVIDER_GUI, self.LCNS_SERVICENAME, self.LCNS_SERVICENAME_GUI):
+				# This code is not currently supported but is being kept in case this changes.
+				# for field in (self.LCNS_TRIPLET, self.LCNS_SIGNAL, self.LCNS_LCN_BROADCAST, self.LCNS_LCN_SCANNED, self.LCNS_LCN_GUI, self.LCNS_PROVIDER, self.LCNS_PROVIDER_GUI, self.LCNS_SERVICENAME, self.LCNS_SERVICENAME_GUI):
+				for field in (self.LCNS_TRIPLET, self.LCNS_SIGNAL, self.LCNS_LCN_BROADCAST, self.LCNS_LCN_SCANNED, self.LCNS_LCN_GUI):
 					data.append(str(serviceLCNs[lcn][field]))
+				data.extend(["", "", "", ""])  # This keeps the record length as defined while all the fields are not available.
 				lcndb.append(":".join(data))
 			return lcndb
 
@@ -442,28 +453,30 @@ class LCNScanner:
 			if cableLCNs or satelliteLCNs or terrestrialLCNs:
 				if cableLCNs:
 					writeBouquet(mode, "Cable", cableLCNs, markers)
-					lcns = buildLCNs(lcns, cableLCNs)
+					lcns += buildLCNs(cableLCNs)
 				if satelliteLCNs:
 					writeBouquet(mode, "Satellite", satelliteLCNs, markers)
-					lcns = buildLCNs(lcns, satelliteLCNs)
+					lcns += buildLCNs(satelliteLCNs)
 				if terrestrialLCNs:
 					writeBouquet(mode, "Terrestrial", terrestrialLCNs, markers)
-					lcns = buildLCNs(lcns, terrestrialLCNs)
+					lcns += buildLCNs(terrestrialLCNs)
 			elif verbose:
 				self.session.open(MessageBox, _("No valid entries found in the LCN database. Run a service scan."), MessageBox.TYPE_INFO, windowTitle=self.getTitle())
 		if lcns:
-			lcns.insert(0, "#SID:TSID:ONID:NAMESPACE:SIGNAL:LCN_BROADCAST:LCN_SCANNED:LCN_GUI:PROVIDER:PROVIDER_GUI:SERVICENAME:SERVICENAME_GUI")
+			# This code is not currently supported but is being kept in case this changes.
+			# lcns.insert(0,"#SID:TSID:ONID:NAMESPACE:SIGNAL:LCN_BROADCAST:LCN_SCANNED:LCN_GUI:PROVIDER:PROVIDER_GUI:SERVICENAME:SERVICENAME_GUI")
 			lcns.insert(0, "#VERSION 2")
 			if fileWriteLines(join(self.configPath, "lcndb"), lcns, source=MODULE_NAME):
 				print("[LCNScanner] The 'lcndb' file has been updated.")
 			else:
 				print("[LCNScanner] Error: The 'lcndb' file could not be updated!")
+			eDVBDB.getInstance().reloadServicelist()
 		eDVBDB.getInstance().reloadBouquets()
 		print("[LCNScanner] LCN scan finished.")
 		if callback and callable(callback):
 			callback()
 
-	def keySave(self):  # ServiceScan.py calls this method to perform an LCN scan.
+	def buildAfterScan(self):  # ServiceScan.py calls this method to perform an LCN scan.
 		def performScan():
 			self.lcnScan(verbose=True, callback=keyScanCallback)
 
@@ -511,7 +524,8 @@ def menu(menuid, **kwargs):
 
 
 def Plugins(**kwargs):
-	return [
-		PluginDescriptor(where=[PluginDescriptor.WHERE_MENU], description=_("LCN Scanner plugin for DVB-T/T2 services"), needsRestart=False, fnc=menu),
-		# PluginDescriptor(name=_("LCN Scanner"), where=[PluginDescriptor.WHERE_PLUGINMENU], description=_("LCN Scanner for DVB-T/T2 services"), icon="LCNScanner.png", fnc=main)
-	]
+	pluginList = []
+	pluginList.append(PluginDescriptor(where=[PluginDescriptor.WHERE_MENU], description=_("LCN Scanner plugin for DVB-T/T2 services"), needsRestart=False, fnc=menu))
+	if config.plugins.LCNScanner.showInPluginsList.value:
+		pluginList.append(PluginDescriptor(name=_("LCN Scanner"), where=[PluginDescriptor.WHERE_PLUGINMENU], description=_("LCN Scanner for DVB-T/T2 services"), icon="LCNScanner.png", fnc=main))
+	return pluginList

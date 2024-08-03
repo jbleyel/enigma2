@@ -56,6 +56,44 @@ class ServiceScanSummary(Screen):
 
 
 class ServiceScan(Screen):
+	def __init__(self, session, scanList):
+		Screen.__init__(self, session)
+		self["Title"] = Label(_("Scanning..."))
+		self.scanList = scanList
+		if hasattr(session, 'infobar'):
+			self.currentInfobar = Screens.InfoBar.InfoBar.instance
+			if self.currentInfobar:
+				self.currentServiceList = self.currentInfobar.servicelist
+				if self.session.pipshown and self.currentServiceList:
+					if self.currentServiceList.dopipzap:
+						self.currentServiceList.togglePipzap()
+					if hasattr(self.session, 'pip'):
+						del self.session.pip
+					self.session.pipshown = False
+		else:
+			self.currentInfobar = None
+		self.session.nav.stopService()
+		self["scan_progress"] = ProgressBar()
+		self["scan_state"] = Label(_("scan state"))
+		self["network"] = Label()
+		self["transponder"] = Label()
+		self["pass"] = Label("")
+		self["servicelist"] = FIFOList(len=10)
+		self["FrontendInfo"] = FrontendInfo()
+		self["key_red"] = Label(_("Cancel"))
+		self["key_green"] = Label(_("OK"))
+		self["actions"] = ActionMap(["SetupActions", "MenuActions"], {
+			"up": self.up,
+			"down": self.down,
+			"ok": self.ok,
+			"save": self.ok,
+			"cancel": self.cancel,
+			"menu": self.doCloseRecursive
+		}, -2)
+		self.setTitle(_("Service Scan"))
+		self.onFirstExecBegin.append(self.doServiceScan)
+		self.scanTimer = eTimer()
+		self.scanTimer.callback.append(self.scanPoll)
 
 	def up(self):
 		self["servicelist"].up()
@@ -72,12 +110,10 @@ class ServiceScan(Screen):
 	def ok(self):
 		if self["scan"].isDone():
 			try:
-				from Plugins.SystemPlugins.LCNScanner.plugin import LCNBuildHelper
-				lcn = LCNBuildHelper()
-				lcn.buildAfterScan()
-			except Exception as e:
-				print(e)
-
+				from Plugins.SystemPlugins.LCNScanner.plugin import LCNScanner
+				lcn = LCNScanner().buildAfterScan(self)
+			except Exception as err:
+				print(err)
 			if self.currentInfobar.__class__.__name__ == "InfoBar":
 				selectedService = self["servicelist"].getCurrentSelection()
 				if selectedService and self.currentServiceList is not None:
@@ -106,52 +142,6 @@ class ServiceScan(Screen):
 		if self.currentInfobar.__class__.__name__ == "InfoBar":
 			self.close(returnValue)
 		self.close()
-
-	def __init__(self, session, scanList):
-		Screen.__init__(self, session)
-
-		self["Title"] = Label(_("Scanning..."))
-		self.scanList = scanList
-
-		if hasattr(session, 'infobar'):
-			self.currentInfobar = Screens.InfoBar.InfoBar.instance
-			if self.currentInfobar:
-				self.currentServiceList = self.currentInfobar.servicelist
-				if self.session.pipshown and self.currentServiceList:
-					if self.currentServiceList.dopipzap:
-						self.currentServiceList.togglePipzap()
-					if hasattr(self.session, 'pip'):
-						del self.session.pip
-					self.session.pipshown = False
-		else:
-			self.currentInfobar = None
-
-		self.session.nav.stopService()
-
-		self["scan_progress"] = ProgressBar()
-		self["scan_state"] = Label(_("scan state"))
-		self["network"] = Label()
-		self["transponder"] = Label()
-
-		self["pass"] = Label("")
-		self["servicelist"] = FIFOList(len=10)
-		self["FrontendInfo"] = FrontendInfo()
-		self["key_red"] = Label(_("Cancel"))
-		self["key_green"] = Label(_("OK"))
-
-		self["actions"] = ActionMap(["SetupActions", "MenuActions"],
-		{
-			"up": self.up,
-			"down": self.down,
-			"ok": self.ok,
-			"save": self.ok,
-			"cancel": self.cancel,
-			"menu": self.doCloseRecursive
-		}, -2)
-		self.setTitle(_("Service scan"))
-		self.onFirstExecBegin.append(self.doServiceScan)
-		self.scanTimer = eTimer()
-		self.scanTimer.callback.append(self.scanPoll)
 
 	def scanPoll(self):
 		if self["scan"].isDone():

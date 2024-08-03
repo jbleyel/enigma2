@@ -1,5 +1,6 @@
 <setupxml>
 	<setup key="LCNScanner" title="LCN Scanner Settings" showOpenWebif="1">
+		<item level="0" text="Show in Plugin Browser" description="Select 'Yes' to show this plugin in the Plugin Browser.">config.plugins.LCNScanner.showInPluginsList</item>
 		<!-- These options are not currently needed but are being kept in case needs change.
 		<item level="0" text="Cable TV bouquet" description="Cable TV bouquet to be used to store the scanned cable TV services.">config.plugins.LCNScanner.cableBouquetTV</item>
 		<item level="0" text="Cable Radio bouquet" description="Cable Radio bouquet to be used to store the scanned cable Radio services.">config.plugins.LCNScanner.cableBouquetRadio</item>

@@ -1007,7 +1007,7 @@ void eDVBScan::channelDone()
 								{
 									eDVBDB::getInstance()->addLcnToDB(ns.get(), onid.get(), tsid.get(), ch->getServiceId(), ch->getLogicalChannelNumber(), signal);
 									m_updateLCN = true;
-									SCAN_eDebug("NAMESPACE: %08x TSID: %04x ONID: %04x SID: %04x LCN: %05d SIGNAL: %08d", ns.get(), onid.get(), tsid.get(), ch->getServiceId(), ch->getLogicalChannelNumber(), signal);
+									SCAN_eDebug("NAMESPACE: %08x ONID: %04x TSID: %04x SID: %04x LCN: %05d SIGNAL: %08d", ns.get(), onid.get(), tsid.get(), ch->getServiceId(), ch->getLogicalChannelNumber(), signal);
 								}
 							}
 							break;
@@ -1016,7 +1016,7 @@ void eDVBScan::channelDone()
 						{
 							PrivateDataSpecifierDescriptor &d = (PrivateDataSpecifierDescriptor&)**desc;
 							uint32_t priv = d.getPrivateDataSpecifier();
-							SCAN_eDebug("[eDVBScan]   NIT TS private %08x", priv);
+							SCAN_eDebug("[eDVBScan] NIT TS private %08x", priv);
 							// ZZ if (priv >= 0x3200 && priv <= 0x320f)
 							if (priv)
 							{
