@@ -1,0 +1,15 @@
+<setupxml>
+	<setup key="LCNScanner" title="LCN Scanner Settings" showOpenWebif="1">
+		<!--item level="0" text="Create a single LCN bouquet file" description="Select 'Yes' to create a single LCN bouquet that includes all services. Select 'No' to create separate TV and Radio bouquets.">config.plugins.LCNScanner.singleBouquet</item-->
+		<if conditional="config.plugins.LCNScanner.singleBouquet.value">
+			<item level="0" text="Terrestrial bouquet" description="Terrestrial bouquet to be used to store all the scanned services.">config.plugins.LCNScanner.bouquet</item>
+		<else />
+			<item level="0" text="Terrestrial TV bouquet" description="Terrestrial TV bouquet to be used to store the scanned TV services.">config.plugins.LCNScanner.bouquetTV</item>
+			<item level="0" text="Terrestrial radio bouquet" description="Terrestrial Radio bouquet to be used to store the scanned Radio services.">config.plugins.LCNScanner.bouquetRadio</item>
+		</if>
+		<item level="0" text="LCN rules" description="Select the list of LCN rules to be applied to the scan.">config.plugins.LCNScanner.rules</item>
+		<item level="0" text="Use spacer lines" description="Use spacer lines to pad the bouquet to make the #SERVICE line numbers match the LCN.">config.plugins.LCNScanner.useSpacerLines</item>
+		<item level="0" text="Add service names" description="Add service names to each #SERVICE entry.">config.plugins.LCNScanner.addServiceNames</item>
+		<item level="0" text="Use description lines" description="Also use a #DESCRIPTION line after each #SERVICE line to hold the service's name." conditional="config.plugins.LCNScanner.addServiceNames.value">config.plugins.LCNScanner.useDescriptionLines</item>
+	</setup>
+</setupxml>

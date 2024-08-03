@@ -178,7 +178,7 @@ def InitUsageConfig():
 
 	def setNumberModeChange(configElement):
 		eDVBDB.getInstance().setNumberingMode(configElement.value)
-		config.usage.alternative_number_mode.value = config.usage.numberMode != 0
+		config.usage.alternative_number_mode.value = config.usage.numberMode.value != 0
 		refreshServiceList()
 
 	config.usage.numberMode = ConfigSelection(default=0, choices=[
@@ -189,7 +189,7 @@ def InitUsageConfig():
 	config.usage.numberMode.addNotifier(setNumberModeChange, initial_call=False)
 
 	# Fallback old settigs will be removed later because this setting is probably used in plugins
-	config.usage.alternative_number_mode = ConfigYesNo(default=config.usage.numberMode != 0)
+	config.usage.alternative_number_mode = ConfigYesNo(default=config.usage.numberMode.value != 0)
 
 	config.usage.hide_number_markers = ConfigYesNo(default=True)
 	config.usage.hide_number_markers.addNotifier(refreshServiceList)
@@ -606,7 +606,7 @@ def InitUsageConfig():
 	config.usage.remote_fallback_openwebif_userid = ConfigText(default="root")
 	config.usage.remote_fallback_openwebif_password = ConfigPassword(default="default")
 	config.usage.remote_fallback_openwebif_port = ConfigInteger(default=80, limits=(0, 65535))
-	config.usage.remote_fallback_dvbt_region = ConfigText(default="fallback DVB-T/T2 Europe")
+	config.usage.remote_fallback_dvbt_region = ConfigText(default="Fallback DVB-T/T2 Europe")
 
 	def setHttpStartDelay(configElement):
 		eSettings.setHttpStartDelay(configElement.value)

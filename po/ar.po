@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-10 17:04+0000\n"
+"POT-Creation-Date: 2024-07-29 19:27+0000\n"
 "PO-Revision-Date: 2024-02-10 07:43+0000\n"
 "Last-Translator: \"Mahmoud Habls (7OODA)\" <adhoda4@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/ar/>\n"
@@ -1345,7 +1345,7 @@ msgid "%s has been disabled."
 msgstr ""
 
 #, python-format
-msgid "%s imported from fallback tuner"
+msgid "%s imported from remote receiver."
 msgstr ""
 
 #. TRANSLATORS: The satellite with name '%s' is no longer used after a configuration change. The user is asked whether or not the satellite should be deleted.
@@ -2483,9 +2483,6 @@ msgstr "[تحرير البديل]"
 msgid "Alternative URLs for DVB-T/C or ATSC"
 msgstr ""
 
-msgid "Alternative numbering mode"
-msgstr "وضع الأرقام البديلة"
-
 msgid "Alternative radio mode"
 msgstr ""
 
@@ -3361,6 +3358,9 @@ msgid "Bouquet Selector Navigation Actions"
 msgstr ""
 
 msgid "Bouquets"
+msgstr ""
+
+msgid "Bouquets start at 1"
 msgstr ""
 
 msgid "Bouvet Island"
@@ -7822,10 +7822,19 @@ msgid ""
 "%s"
 msgstr ""
 
+msgid "Error moving 'epg.dat' to its destination!"
+msgstr ""
+
 msgid "Error opening recording file"
 msgstr ""
 
 msgid "Error reading webpage!"
+msgstr ""
+
+msgid "Error retrieving 'epg.dat' from the remote receiver!"
+msgstr ""
+
+msgid "Error retrieving location of 'epg.dat' on the remote receiver!"
 msgstr ""
 
 msgid "Error text:"
@@ -7835,22 +7844,16 @@ msgstr ""
 msgid "Error unzipping image '%s'!"
 msgstr ""
 
-msgid "Error when writing epg.dat on the fallback receiver"
-msgstr ""
-
-msgid "Error while moving epg.dat to its destination"
-msgstr ""
-
-msgid "Error while retrieving epg.dat from the fallback receiver"
-msgstr ""
-
 #, python-format
 msgid ""
 "Error while retrieving fallback timer information\n"
 "%s"
 msgstr ""
 
-msgid "Error while retrieving location of epg.dat on the fallback receiver"
+msgid "Error writing '/etc/enigma2/epg.dat' on the remote receiver!"
+msgstr ""
+
+msgid "Error writing 'epg.dat' on the remote receiver!"
 msgstr ""
 
 msgid "Error, unknown Result!"
@@ -9631,7 +9634,7 @@ msgstr ""
 msgid "I/O priority for scripts"
 msgstr ""
 
-msgid "I55SE/H7/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
 msgstr ""
 
 msgid "IMDb Details"
@@ -9928,10 +9931,6 @@ msgid "Import channels and/or EPG from remote receiver URL when receiver is boot
 msgstr ""
 
 msgid "Import channels and/or EPG from remote receiver URL when receiver or enigma2 is restarted"
-msgstr ""
-
-#, python-format
-msgid "Import from fallback tuner failed, %s"
 msgstr ""
 
 msgid "Import from remote receiver URL"
@@ -10633,6 +10632,9 @@ msgid "LCD scroll speed"
 msgstr ""
 
 msgid "LCD/Front panel *"
+msgstr ""
+
+msgid "LCN numbering"
 msgstr ""
 
 msgid "LCN plugin for DVB-T/T2 services"
@@ -11590,6 +11592,9 @@ msgstr ""
 msgid "Miscellaneous"
 msgstr ""
 
+msgid "Miscellaneous languages"
+msgstr ""
+
 msgid "Misconfiguration in channel allocation"
 msgstr ""
 
@@ -11769,6 +11774,9 @@ msgstr ""
 msgid "Move down a screen"
 msgstr ""
 
+msgid "Move down a screen / Move to next item"
+msgstr ""
+
 msgid "Move down a screen in the panel"
 msgstr ""
 
@@ -11918,10 +11926,16 @@ msgstr ""
 msgid "Move to the next category in the list"
 msgstr ""
 
+msgid "Move to the next item"
+msgstr ""
+
 msgid "Move to the next item in the list"
 msgstr ""
 
 msgid "Move to the previous category in the list"
+msgstr ""
+
+msgid "Move to the previous item"
 msgstr ""
 
 msgid "Move to the previous item in list"
@@ -11941,6 +11955,9 @@ msgid "Move up a page / screen"
 msgstr ""
 
 msgid "Move up a screen"
+msgstr ""
+
+msgid "Move up a screen / Move to previous item"
 msgstr ""
 
 msgid "Move up a screen in the panel"
@@ -12463,6 +12480,9 @@ msgstr "نيوي"
 msgid "No"
 msgstr "لا"
 
+msgid "No 'epg.dat' file found on the remote receiver!"
+msgstr ""
+
 #
 msgid "No (supported) DVDROM found!"
 msgstr "لايوجد سواقة ديفيدي مدعومه!"
@@ -12535,9 +12555,6 @@ msgid "No displayable files on this medium found!"
 msgstr "لا يوجد ملفات للعرض على هذا الوسيط !"
 
 msgid "No entry in lcn db. Please do a service scan."
-msgstr ""
-
-msgid "No epg.dat file found on the fallback receiver"
 msgstr ""
 
 #
@@ -12893,6 +12910,9 @@ msgid "Number of rows to display."
 msgstr ""
 
 msgid "Number or SMS style data entry"
+msgstr ""
+
+msgid "Numbering mode"
 msgstr ""
 
 msgid "OEM model"
@@ -16282,6 +16302,9 @@ msgstr "حدد 'الاستقطاب' في حالة استخدام لاقط 'عا�
 msgid "Select 'Provider' to scan from the predefined list of cable multiplexes. Select 'Bands' to only scan certain parts of the spectrum. Select 'Steps' to scan in steps of a particular frequency bandwidth."
 msgstr "حدد 'مزود الخدمة' للبحث من القائمة المحددة مسبقًا للكيابل المتعددة. حدد 'النطاقات' لفحص أجزاء معينة فقط من الطيف. حدد 'خطوات' للبحث في خطوط عرض النطاق الترددي المحدد."
 
+msgid "Select 'Unique numbering' to assign unique numbers for every service in every bouquet. Use 'Bouquets start at 1' to start numbering each bouquet from 1. Use 'LCN numbering' to use consistent service LCNs where ever that service is used."
+msgstr ""
+
 msgid "Select 'Yes' if an end time is required for this timer."
 msgstr ""
 
@@ -17998,9 +18021,6 @@ msgstr "معلومات"
 msgid "Show Kernel packages"
 msgstr ""
 
-msgid "Show LCN in channel selection"
-msgstr ""
-
 #, fuzzy
 msgid "Show Live in MiniTV"
 msgstr "إظهار شريط المعلومات"
@@ -18398,6 +18418,16 @@ msgstr "شاهد شريط المعلومات عند تغيير الحدث"
 
 msgid "Show picon background color"
 msgstr ""
+
+#
+#, fuzzy
+msgid "Show picons in quickzap"
+msgstr "قناه غير موجوده فى قائمة الخدمات"
+
+#
+#, fuzzy
+msgid "Show picons in service list"
+msgstr "قناه غير موجوده فى قائمة الخدمات"
 
 msgid "Show picture information"
 msgstr ""
@@ -21770,6 +21800,9 @@ msgstr ""
 msgid "Uninstall"
 msgstr ""
 
+msgid "Unique numbering"
+msgstr ""
+
 msgid "United Arab Emirates"
 msgstr "الإمارات العربية المتحدة"
 
@@ -22971,9 +23004,6 @@ msgstr ""
 msgid "When enabled, authentication is required to watch http streams."
 msgstr "عند التمكين، يلزم المصادقة لمشاهدة روابط قنوات التدفق."
 
-msgid "When enabled, channel numbering will start at '1' for each bouquet."
-msgstr ""
-
 msgid "When enabled, content with an aspect ratio of 4:3 will be stretched to fit the screen."
 msgstr "عند التمكين، سيتم توسيع المحتوى الذي يحتوي على نسبة عرض إلى الارتفاع 4: 3 لتتناسب مع الشاشة."
 
@@ -23012,9 +23042,6 @@ msgstr ""
 
 msgid "When enabled, reformat subtitles to match the width of the screen."
 msgstr "عند التمكين، سيعمل تهئية لعرض خط الترجمة لكي يطابق عرض الشاشة."
-
-msgid "When enabled, show LCN in the channel selection screen."
-msgstr ""
 
 msgid "When enabled, show channel numbers in the channel selection screen."
 msgstr "عند التمكين، سيعرض أرقام القنوات في شاشة اختيار القناة."
@@ -24509,16 +24536,6 @@ msgstr ""
 msgid "show cards with uphop 9"
 msgstr ""
 
-#
-#, fuzzy
-msgid "Show picons in quickzap"
-msgstr "قناه غير موجوده فى قائمة الخدمات"
-
-#
-#, fuzzy
-msgid "Show picons in service list"
-msgstr "قناه غير موجوده فى قائمة الخدمات"
-
 msgid "show program information..."
 msgstr ""
 
@@ -24769,6 +24786,9 @@ msgstr "نعم (الاحتفاظ بها)"
 
 msgid "®"
 msgstr ""
+
+#~ msgid "Alternative numbering mode"
+#~ msgstr "وضع الأرقام البديلة"
 
 #, fuzzy
 #~ msgid "Installing feeds from IPK ..."
