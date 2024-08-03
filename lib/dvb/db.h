@@ -54,6 +54,7 @@ struct LCNData
 
 		if (sscanf(line, "%x:%x:%x:%x:%d:%d:%d:%d:%s", &sid, &tsid, &onid, &ns, &SIGNAL, &LCN_BROADCAST, &LCN_SCANNED, &LCN_GUI, buffer) == 9)
 		{
+			eDebug("[eDVBDB] LCNData parse %X:%X:%X:%X: LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", sid, tsid, onid, ns, LCN_BROADCAST, LCN_SCANNED, LCN_GUI);
 			auto Data = split(buffer, ":");
 			if (Data.size() == 4)
 			{
