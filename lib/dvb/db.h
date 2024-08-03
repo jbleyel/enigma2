@@ -56,7 +56,7 @@ public:
 
 		if (sscanf(line, "%x:%x:%x:%x:%d:%d:%d:%d:%s", &sid, &tsid, &onid, &ns, &SIGNAL, &LCN_BROADCAST, &LCN_SCANNED, &LCN_GUI, buffer) == 9)
 		{
-			eDebug("[eDVBDB] LCNData parse %X:%X:%X:%X: LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", sid, tsid, onid, ns, LCN_BROADCAST, LCN_SCANNED, LCN_GUI);
+			// eDebug("[eDVBDB] LCNData parse %X:%X:%X:%X: LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", sid, tsid, onid, ns, LCN_BROADCAST, LCN_SCANNED, LCN_GUI);
 			auto Data = split(buffer, ":");
 			if (Data.size() == 4)
 			{
@@ -72,7 +72,7 @@ public:
 
 	int getLCN()
 	{
-		return (LCN_GUI != 0) ? LCN_GUI : (LCN_SCANNED = !0) ? LCN_SCANNED : LCN_BROADCAST;
+		return (LCN_GUI != 0) ? LCN_GUI : (LCN_SCANNED != 0) ? LCN_SCANNED : LCN_BROADCAST;
 	}
 
 	void Update(uint16_t lcn, uint32_t signal)
@@ -90,19 +90,14 @@ public:
 			int tsid = key.getTransportStreamID().get();
 			int onid = key.getOriginalNetworkID().get();
 			int ns = key.getDVBNamespace().get();
-			eDebug("[eDVBDB] LCNData write %X:%X:%X:%X: LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", sid, tsid, onid, ns, LCN_BROADCAST, LCN_SCANNED, LCN_GUI);
+			// eDebug("[eDVBDB] LCNData write %X:%X:%X:%X: LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", sid, tsid, onid, ns, LCN_BROADCAST, LCN_SCANNED, LCN_GUI);
 			fprintf(lf, "%X:%X:%X:%X:%d:%d:%d:%d:%s:%s:%s:%s\n", sid, tsid, onid, ns, SIGNAL, LCN_BROADCAST, LCN_SCANNED, LCN_GUI, PROVIDER.c_str(), PROVIDER_GUI.c_str(), SERVICENAME.c_str(), SERVICENAME_GUI.c_str());
 		}
 	}
 
-	void reset()
+	void resetFound()
 	{
 		FOUND = false;
-	}
-
-	void DumpLCN(std::string txt)
-	{
-		eDebug("[eDVBDB] %s LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", txt.c_str() ,LCN_BROADCAST, LCN_SCANNED, LCN_GUI);
 	}
 
 };

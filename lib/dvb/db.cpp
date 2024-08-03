@@ -798,14 +798,7 @@ void eDVBDB::resetLcnDB()
 {
 	for (auto &kv : m_lcnmap)
 	{
-		kv.second.DumpLCN("[eDVBDB] dump");
-	}
-
-	for (auto &kv : m_lcnmap)
-	{
-		kv.second.DumpLCN("[eDVBDB] resetLcnDB 1");
-		kv.second.reset();
-		kv.second.DumpLCN("[eDVBDB] resetLcnDB 2");
+		kv.second.resetFound();
 	}
 }
 
@@ -829,15 +822,12 @@ void eDVBDB::addLcnToDB(int ns, int onid, int tsid, int sid, uint16_t lcn, uint3
 	std::map<eServiceReferenceDVB, LCNData>::iterator it = m_lcnmap.find(s);
 	if (it != m_lcnmap.end())
 	{
-		it->second.DumpLCN("[eDVBDB] addLcnToDB update 1");
 		it->second.Update(lcn, signal);
-		it->second.DumpLCN("[eDVBDB] addLcnToDB update 2");
 	}
 	else
 	{
 		LCNData lcndata;
 		lcndata.Update(lcn, signal);
-		lcndata.DumpLCN("[eDVBDB] addLcnToDB new");
 		m_lcnmap.insert(std::pair<eServiceReferenceDVB, LCNData>(s, lcndata));
 	}
 }
@@ -887,14 +877,6 @@ void eDVBDB::loadServicelist(const char *file)
 	{
 		eDebug("[eDVBDB] save updated lcn db");
 		saveLcnDB();
-	}
-
-	if(lcnversion == 2)
-	{
-		for (auto &kv : m_lcnmap)
-		{
-			kv.second.DumpLCN("[eDVBDB] list");
-		}
 	}
 
 	int version;
