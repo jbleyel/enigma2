@@ -12,21 +12,23 @@ class ServiceDescriptionSection;
 
 struct LCNData
 {
+private:
+	bool FOUND;
 	int SIGNAL;
 	int LCN_BROADCAST;
-	int LCN_SCANNED;
 	int LCN_GUI;
-	bool FOUND;
+	int LCN_SCANNED;
 	std::string PROVIDER;
 	std::string PROVIDER_GUI;
 	std::string SERVICENAME;
 	std::string SERVICENAME_GUI;
 
+public:
 	LCNData()
 	{
 		LCN_BROADCAST = 0;
-		LCN_GUI = 0;
 		LCN_SCANNED = 0;
+		LCN_GUI = 0;
 		SIGNAL = -1;
 		PROVIDER = "";
 		PROVIDER_GUI = "";
@@ -92,6 +94,17 @@ struct LCNData
 			fprintf(lf, "%X:%X:%X:%X:%d:%d:%d:%d:%s:%s:%s:%s\n", sid, tsid, onid, ns, SIGNAL, LCN_BROADCAST, LCN_SCANNED, LCN_GUI, PROVIDER.c_str(), PROVIDER_GUI.c_str(), SERVICENAME.c_str(), SERVICENAME_GUI.c_str());
 		}
 	}
+
+	void reset()
+	{
+		FOUND = false;
+	}
+
+	void DumpLCN(std::string txt)
+	{
+		eDebug("[eDVBDB] %s LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", txt.c_str() ,LCN_BROADCAST, LCN_SCANNED, LCN_GUI);
+	}
+
 };
 
 #endif

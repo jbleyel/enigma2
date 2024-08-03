@@ -798,9 +798,14 @@ void eDVBDB::resetLcnDB()
 {
 	for (auto &kv : m_lcnmap)
 	{
-		eDebug("[eDVBDB] resetLcnDB 1 LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", kv.second.LCN_BROADCAST, kv.second.LCN_SCANNED, kv.second.LCN_GUI);
-		kv.second.FOUND = false;
-		eDebug("[eDVBDB] resetLcnDB 2 LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", kv.second.LCN_BROADCAST, kv.second.LCN_SCANNED, kv.second.LCN_GUI);
+		kv.second.DumpLCN("[eDVBDB] dump");
+	}
+
+	for (auto &kv : m_lcnmap)
+	{
+		kv.second.DumpLCN("[eDVBDB] resetLcnDB 1");
+		kv.second.reset();
+		kv.second.DumpLCN("[eDVBDB] resetLcnDB 2");
 	}
 }
 
@@ -824,15 +829,15 @@ void eDVBDB::addLcnToDB(int ns, int onid, int tsid, int sid, uint16_t lcn, uint3
 	std::map<eServiceReferenceDVB, LCNData>::iterator it = m_lcnmap.find(s);
 	if (it != m_lcnmap.end())
 	{
-		eDebug("[eDVBDB] addLcnToDB update 1 LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", it->second.LCN_BROADCAST, it->second.LCN_SCANNED, it->second.LCN_GUI);
+		it->second.DumpLCN("[eDVBDB] addLcnToDB update 1");
 		it->second.Update(lcn, signal);
-		eDebug("[eDVBDB] addLcnToDB update 2 LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", it->second.LCN_BROADCAST, it->second.LCN_SCANNED, it->second.LCN_GUI);
+		it->second.DumpLCN("[eDVBDB] addLcnToDB update 2");
 	}
 	else
 	{
 		LCNData lcndata;
 		lcndata.Update(lcn, signal);
-		eDebug("[eDVBDB] addLcnToDB new LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", lcndata.LCN_BROADCAST, lcndata.LCN_SCANNED, lcndata.LCN_GUI);
+		lcndata.DumpLCN("[eDVBDB] addLcnToDB new");
 		m_lcnmap.insert(std::pair<eServiceReferenceDVB, LCNData>(s, lcndata));
 	}
 }
@@ -865,6 +870,8 @@ void eDVBDB::loadServicelist(const char *file)
 			{
 				if(!sscanf(line, "#VERSION %d",&lcnversion))
 					lcnversion = 1;
+				else
+					continue;
 			}
 
 			LCNData lcndata;
@@ -880,6 +887,14 @@ void eDVBDB::loadServicelist(const char *file)
 	{
 		eDebug("[eDVBDB] save updated lcn db");
 		saveLcnDB();
+	}
+
+	if(lcnversion == 2)
+	{
+		for (auto &kv : m_lcnmap)
+		{
+			kv.second.DumpLCN("[eDVBDB] list");
+		}
 	}
 
 	int version;
