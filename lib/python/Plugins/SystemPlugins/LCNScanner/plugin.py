@@ -176,7 +176,7 @@ class LCNScanner:
 			lcns = []
 			try:
 				version = int(lcndb[0][9:]) if lcndb[0].startswith("#VERSION ") else 1
-			except ValueError:
+			except Exceptiom:
 				version = 1
 			match version:
 				case 1:
