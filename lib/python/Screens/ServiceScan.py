@@ -109,10 +109,11 @@ class ServiceScan(Screen):
 
 	def ok(self):
 		if self["scan"].isDone():
+			del self["scan"]  # Remove "scan" from memory before running LCNScanner.
 			try:
 				from Plugins.SystemPlugins.LCNScanner.plugin import LCNScanner
 				print("[ServiceScan] Running the LCNScanner after a scan.")
-				lcn = LCNScanner().buildAfterScan()
+				LCNScanner().buildAfterScan(session=self.session)
 			except ImportError:
 				pass
 			except Exception as err:

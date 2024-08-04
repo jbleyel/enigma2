@@ -3146,7 +3146,8 @@ class ExtensionsList(ChoiceBox):
 					extensionListAll.append((extension[1][0](), extension[1], extension[2], colorKeys.get(extension[2], 0)))
 			else:
 				for subExtension in extension[1]():
-					extensionListAll.append((subExtension[0][0](), subExtension[0], subExtension[1], colorKeys.get(subExtension[1], 0)))
+					if subExtension[0][2]():
+						extensionListAll.append((subExtension[0][0](), subExtension[0], subExtension[1], colorKeys.get(subExtension[1], 0)))
 
 		if config.usage.sortExtensionslist.value == "alpha":
 			extensionListAll.sort(key=lambda x: (x[3], x[0]))

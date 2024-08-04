@@ -174,7 +174,10 @@ class LCNScanner:
 		def matchLCNsAndServices(mode, lcndb, services, duplicate, renumbers):
 			print(f"[LCNScanner] Matching LCN entries with {mode} services.")
 			lcns = []
-			version = int(lcndb[0][9:]) if lcndb[0].startswith("#VERSION ") else 1
+			try:
+				version = int(lcndb[0][9:]) if lcndb[0].startswith("#VERSION ") else 1
+			except ValueError:
+				version = 1
 			match version:
 				case 1:
 					for line in lcndb:
@@ -476,13 +479,14 @@ class LCNScanner:
 		if callback and callable(callback):
 			callback()
 
-	def buildAfterScan(self):  # ServiceScan.py calls this method to perform an LCN scan.
+	def buildAfterScan(self, session):  # ServiceScan.py calls this method to perform an LCN scan.
 		def performScan():
 			self.lcnScan(verbose=True, callback=keyScanCallback)
 
 		def keyScanCallback():
 			Processing.instance.hideProgress()
 
+		self.session = session
 		Processing.instance.setDescription(_("Please wait while LCN bouquets are created/updated..."))
 		Processing.instance.showProgress(endless=True)
 		self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
@@ -525,7 +529,8 @@ def menu(menuid, **kwargs):
 
 def Plugins(**kwargs):
 	pluginList = []
-	pluginList.append(PluginDescriptor(where=[PluginDescriptor.WHERE_MENU], description=_("LCN Scanner plugin for DVB-T/T2 services"), needsRestart=False, fnc=menu))
+	description = _("LCN Scanner plugin for DVB-C/C2/T/T2 services")
+	pluginList.append(PluginDescriptor(where=[PluginDescriptor.WHERE_MENU], description=description, needsRestart=False, fnc=menu))
 	if config.plugins.LCNScanner.showInPluginsList.value:
-		pluginList.append(PluginDescriptor(name=_("LCN Scanner"), where=[PluginDescriptor.WHERE_PLUGINMENU], description=_("LCN Scanner for DVB-T/T2 services"), icon="LCNScanner.png", fnc=main))
+		pluginList.append(PluginDescriptor(name=_("LCN Scanner"), where=[PluginDescriptor.WHERE_PLUGINMENU], description=description, icon="LCNScanner.png", fnc=main))
 	return pluginList
