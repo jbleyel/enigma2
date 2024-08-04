@@ -14,6 +14,9 @@ except ImportError:
 import Screens.InfoBar
 from Screens.Processing import Processing
 from Screens.Screen import Screen
+from Tools.Directories import SCOPE_CONFIG, fileReadLines, resolveFilename
+
+MODULE_NAME = __name__.split(".")[-1]
 
 
 class FIFOList(MenuList):
@@ -147,8 +150,7 @@ class ServiceScan(Screen):
 	def scanPoll(self):
 		if self["scan"].isDone():
 			self.scanTimer.stop()
-			if self.LCNScanner:
-				self.lcnScanner()
+			self.runLCNScanner()
 			self["servicelist"].moveToIndex(0)
 			selectedService = self["servicelist"].getCurrentSelection()
 			if selectedService:
@@ -159,7 +161,7 @@ class ServiceScan(Screen):
 		self["scan"] = CScan(self["scan_progress"], self["scan_state"], self["servicelist"], self["pass"], self.scanList, self["network"], self["transponder"], self["FrontendInfo"], self.session.summary)
 		self.scanTimer.start(250)
 
-	def lcnScanner(self):
+	def runLCNScanner(self):
 		def performScan():
 			def lcnScannerCallback():
 				def clearProcessing():
@@ -175,12 +177,14 @@ class ServiceScan(Screen):
 				print(f"[ServiceScan] Error: Unable to run the LCNScanner!  ({err})")
 				Processing.instance.hideProgress()
 
-		print("[ServiceScan] Running the LCNScanner after a scan.")
-		Processing.instance.setDescription(_("Please wait while LCN bouquets are created/updated..."))
-		Processing.instance.showProgress(endless=True)
-		self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
-		self.timer.callback.append(performScan)
-		self.timer.start(0, True)  # Yield to the idle loop to allow a screen update.
+		lines = fileReadLines(resolveFilename(SCOPE_CONFIG, "lcndb"), default=[], source=MODULE_NAME)
+		if self.LCNScanner and len(lines) > 1:
+			print("[ServiceScan] Running the LCNScanner after a scan.")
+			Processing.instance.setDescription(_("Please wait while LCN bouquets are created/updated..."))
+			Processing.instance.showProgress(endless=True)
+			self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
+			self.timer.callback.append(performScan)
+			self.timer.start(0, True)  # Yield to the idle loop to allow a screen update.
 
 	def createSummary(self):
 		return ServiceScanSummary

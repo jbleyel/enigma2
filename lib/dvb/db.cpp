@@ -7,6 +7,7 @@
 #include <lib/base/cfile.h>
 #include <lib/base/eenv.h>
 #include <lib/base/eerror.h>
+#include <lib/base/estring.h>
 #include <lib/base/esettings.h>
 #include <lib/base/esimpleconfig.h>
 #include <libxml/parser.h>

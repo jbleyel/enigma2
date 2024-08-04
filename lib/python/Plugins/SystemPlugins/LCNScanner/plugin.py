@@ -482,10 +482,16 @@ class LCNScannerSetup(LCNScanner, Setup):
 	def __init__(self, session):
 		LCNScanner.__init__(self)
 		Setup.__init__(self, session=session, setup="LCNScanner", plugin="SystemPlugins/LCNScanner")
-		self["key_yellow"] = StaticText(_("Scan"))
 		self["scanActions"] = HelpableActionMap(self, "ColorActions", {
 			"yellow": (self.keyScan, _("Scan for terrestrial LCNs and create LCN bouquets"))
 		}, prio=0, description=_("LCN Scanner Actions"))
+		lines = fileReadLines(resolveFilename(SCOPE_CONFIG, "lcndb"), default=[], source=MODULE_NAME)
+		if len(lines) > 1:
+			self["scanActions"].setEnabled(True)
+			self["key_yellow"] = StaticText(_("Scan"))
+		else:
+			self["scanActions"].setEnabled(False)
+			self["key_yellow"] = StaticText("")
 
 	def keyScan(self):
 		def performScan():
@@ -495,7 +501,7 @@ class LCNScannerSetup(LCNScanner, Setup):
 					self["key_yellow"].setText(_("Scan"))
 					self.setFootnote("")
 
-				self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
+				self.timer = eTimer()
 				self.timer.callback.append(clearFootnote)
 				self.timer.startLongTimer(2)
 
@@ -504,12 +510,13 @@ class LCNScannerSetup(LCNScanner, Setup):
 		self["scanActions"].setEnabled(False)
 		self["key_yellow"].setText("")
 		self.setFootnote(_("Please wait while LCN bouquets are created/updated..."))
-		self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
+		self.timer = eTimer()
 		self.timer.callback.append(performScan)
 		self.timer.start(0, True)  # Yield to the idle loop to allow a screen update.
 
 	def keySave(self):
-		self.timer.stop()
+		if hasattr(self, "timer"):
+			self.timer.stop()
 		Setup.keySave(self)
 
 

@@ -5,9 +5,9 @@
 #include <lib/dvb/idvb.h>
 #include <lib/dvb/frontend.h>
 #include <lib/base/eptrlist.h>
-#include <lib/base/estring.h>
 #include <set>
 #include <vector>
+#include <sstream>
 class ServiceDescriptionSection;
 
 struct LCNData
@@ -22,6 +22,17 @@ private:
 	std::string PROVIDER_GUI;
 	std::string SERVICENAME;
 	std::string SERVICENAME_GUI;
+
+	std::vector<std::string> split_str(std::string s)
+	{
+		std::vector<std::string> tokens;
+		std::string token;
+		std::stringstream str(s);
+		while (getline(str, token, ':')) {
+			tokens.push_back(token);
+		}
+		return tokens;
+	}
 
 public:
 	LCNData()
@@ -44,6 +55,7 @@ public:
 		int tsid;
 		int sid;
 		char buffer[2048];
+		buffer[0] = '\0';
 
 		// will be removed
 		if (version == 1)
@@ -57,7 +69,7 @@ public:
 		if (sscanf(line, "%x:%x:%x:%x:%d:%d:%d:%d:%s", &sid, &tsid, &onid, &ns, &SIGNAL, &LCN_BROADCAST, &LCN_SCANNED, &LCN_GUI, buffer) == 9)
 		{
 			// eDebug("[eDVBDB] LCNData parse %X:%X:%X:%X: LCN_BROADCAST %d LCN_SCANNED %d LCN_GUI %d", sid, tsid, onid, ns, LCN_BROADCAST, LCN_SCANNED, LCN_GUI);
-			auto Data = split(buffer, ":");
+			auto Data = split_str(buffer);
 			if (Data.size() == 4)
 			{
 				PROVIDER = Data[0];
