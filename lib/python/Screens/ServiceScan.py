@@ -1,14 +1,19 @@
-import Screens.InfoBar
 from enigma import eServiceReference, eTimer
 
-from Screens.Screen import Screen
-from Components.ServiceScan import ServiceScan as CScan
-from Components.ProgressBar import ProgressBar
-from Components.Label import Label
 from Components.ActionMap import ActionMap
-from Components.MenuList import MenuList
-from Components.Sources.FrontendInfo import FrontendInfo
 from Components.config import config
+from Components.Label import Label
+from Components.MenuList import MenuList
+from Components.ProgressBar import ProgressBar
+from Components.ServiceScan import ServiceScan as CScan
+from Components.Sources.FrontendInfo import FrontendInfo
+try:
+	from Plugins.SystemPlugins.LCNScanner.plugin import LCNScanner
+except ImportError:
+	LCNScanner = None
+import Screens.InfoBar
+from Screens.Processing import Processing
+from Screens.Screen import Screen
 
 
 class FIFOList(MenuList):
@@ -94,6 +99,8 @@ class ServiceScan(Screen):
 		self.onFirstExecBegin.append(self.doServiceScan)
 		self.scanTimer = eTimer()
 		self.scanTimer.callback.append(self.scanPoll)
+		if LCNScanner:
+			self.LCNScanner = LCNScanner()
 
 	def up(self):
 		self["servicelist"].up()
@@ -109,15 +116,6 @@ class ServiceScan(Screen):
 
 	def ok(self):
 		if self["scan"].isDone():
-			del self["scan"]  # Remove "scan" from memory before running LCNScanner.
-			try:
-				from Plugins.SystemPlugins.LCNScanner.plugin import LCNScanner
-				print("[ServiceScan] Running the LCNScanner after a scan.")
-				LCNScanner().buildAfterScan()
-			except ImportError:
-				pass
-			except Exception as err:
-				print(f"[ServiceScan] Error: Unable to run the LCNScanner!  ({err})")
 			if self.currentInfobar.__class__.__name__ == "InfoBar":
 				selectedService = self["servicelist"].getCurrentSelection()
 				if selectedService and self.currentServiceList is not None:
@@ -150,6 +148,8 @@ class ServiceScan(Screen):
 	def scanPoll(self):
 		if self["scan"].isDone():
 			self.scanTimer.stop()
+			if self.LCNScanner:
+				self.lcnScanner()
 			self["servicelist"].moveToIndex(0)
 			selectedService = self["servicelist"].getCurrentSelection()
 			if selectedService:
@@ -159,6 +159,29 @@ class ServiceScan(Screen):
 		self["servicelist"].len = self["servicelist"].instance.size().height() // self["servicelist"].l.getItemSize().height()
 		self["scan"] = CScan(self["scan_progress"], self["scan_state"], self["servicelist"], self["pass"], self.scanList, self["network"], self["transponder"], self["FrontendInfo"], self.session.summary)
 		self.scanTimer.start(250)
+
+	def lcnScanner(self):
+		def performScan():
+			def lcnScannerCallback():
+				def clearProcessing():
+					Processing.instance.hideProgress()
+
+				self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
+				self.timer.callback.append(clearProcessing)
+				self.timer.startLongTimer(2)
+
+			try:
+				self.LCNScanner.lcnScan(callback=lcnScannerCallback)
+			except Exception as err:
+				print(f"[ServiceScan] Error: Unable to run the LCNScanner!  ({err})")
+				Processing.instance.hideProgress()
+
+		print("[ServiceScan] Running the LCNScanner after a scan.")
+		Processing.instance.setDescription(_("Please wait while LCN bouquets are created/updated..."))
+		Processing.instance.showProgress(endless=True)
+		self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
+		self.timer.callback.append(performScan)
+		self.timer.start(0, True)  # Yield to the idle loop to allow a screen update.
 
 	def createSummary(self):
 		return ServiceScanSummary

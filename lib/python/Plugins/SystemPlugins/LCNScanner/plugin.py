@@ -11,7 +11,6 @@ from Components.config import ConfigSelection, ConfigSubsection, ConfigYesNo, co
 from Components.PluginComponent import plugins
 from Components.Sources.StaticText import StaticText
 from Plugins.Plugin import PluginDescriptor
-from Screens.Processing import Processing
 from Screens.Setup import Setup
 from Tools.Directories import SCOPE_CONFIG, SCOPE_PLUGIN_ABSOLUTE, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 
@@ -478,19 +477,6 @@ class LCNScanner:
 		if callback and callable(callback):
 			callback()
 
-	def buildAfterScan(self):  # ServiceScan.py calls this method to perform an LCN scan.
-		def performScan():
-			self.lcnScan(callback=keyScanCallback)
-
-		def keyScanCallback():
-			Processing.instance.hideProgress()
-
-		Processing.instance.setDescription(_("Please wait while LCN bouquets are created/updated..."))
-		Processing.instance.showProgress(endless=True)
-		self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
-		self.timer.callback.append(performScan)
-		self.timer.start(0, True)  # Yield to the idle loop to allow a screen update.
-
 
 class LCNScannerSetup(LCNScanner, Setup):
 	def __init__(self, session):
@@ -503,17 +489,27 @@ class LCNScannerSetup(LCNScanner, Setup):
 
 	def keyScan(self):
 		def performScan():
+			def keyScanCallback():
+				def clearFootnote():
+					self["scanActions"].setEnabled(True)
+					self["key_yellow"].setText(_("Scan"))
+					self.setFootnote("")
+
+				self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
+				self.timer.callback.append(clearFootnote)
+				self.timer.startLongTimer(2)
+
 			self.lcnScan(callback=keyScanCallback)
 
-		def keyScanCallback():
-			self.setFootnote("")
-
+		self["scanActions"].setEnabled(False)
+		self["key_yellow"].setText("")
 		self.setFootnote(_("Please wait while LCN bouquets are created/updated..."))
 		self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
 		self.timer.callback.append(performScan)
 		self.timer.start(0, True)  # Yield to the idle loop to allow a screen update.
 
 	def keySave(self):
+		self.timer.stop()
 		Setup.keySave(self)
 
 
