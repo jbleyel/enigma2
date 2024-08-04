@@ -99,8 +99,7 @@ class ServiceScan(Screen):
 		self.onFirstExecBegin.append(self.doServiceScan)
 		self.scanTimer = eTimer()
 		self.scanTimer.callback.append(self.scanPoll)
-		if LCNScanner:
-			self.LCNScanner = LCNScanner()
+		self.LCNScanner = LCNScanner() if LCNScanner else None
 
 	def up(self):
 		self["servicelist"].up()
