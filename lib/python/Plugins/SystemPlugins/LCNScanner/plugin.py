@@ -304,20 +304,6 @@ class LCNScanner:
 			# 	print(f"[LCNScanner] matchLCNsAndServices DEBUG: Terrestrial LCN '{lcn}' -> {terrestrialLCNs[lcn]}.")
 			return (cableLCNs, satelliteLCNs, terrestrialLCNs)
 
-		def matchServices(services, lcns):
-			bouquet = []
-			for service in services:
-				lcn = lcns.get(":".join(service[self.SERVICE_SERVICEREFERENCE].split(":")[3:7]).upper())
-				if lcn:
-					activeLCN = lcn[self.LCNS_LCN_GUI]
-					if activeLCN == 0:
-						activeLCN = lcn[self.LCNS_LCN_SCANNED]
-						if activeLCN == 0:
-							activeLCN = lcn[self.LCNS_LCN_BROADCAST]
-					bouquet.append([activeLCN, service[self.SERVICE_SERVICEREFERENCE], service[self.SERVICE_NAME]])
-			bouquet.sort(key=lambda x: x[0])  # Sort by active LCN.
-			return bouquet
-
 		def writeBouquet(mode, medium, serviceLCNs, markers):
 			def insertMarker(mode, lcn):
 				if lcn in markers[mode]:
