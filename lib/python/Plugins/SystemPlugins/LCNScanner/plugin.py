@@ -11,7 +11,6 @@ from Components.config import ConfigSelection, ConfigSubsection, ConfigYesNo, co
 from Components.PluginComponent import plugins
 from Components.Sources.StaticText import StaticText
 from Plugins.Plugin import PluginDescriptor
-from Screens.MessageBox import MessageBox
 from Screens.Processing import Processing
 from Screens.Setup import Setup
 from Tools.Directories import SCOPE_CONFIG, SCOPE_PLUGIN_ABSOLUTE, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
@@ -125,7 +124,7 @@ class LCNScanner:
 		config.plugins.LCNScanner.addServiceNames = ConfigYesNo(default=False)
 		config.plugins.LCNScanner.useDescriptionLines = ConfigYesNo(default=False)
 
-	def lcnScan(self, verbose=False, callback=None):
+	def lcnScan(self, callback=None):
 		def getModes(element):
 			mode = element.get("mode", "All")
 			match mode:
@@ -176,7 +175,7 @@ class LCNScanner:
 			lcns = []
 			try:
 				version = int(lcndb[0][9:]) if lcndb[0].startswith("#VERSION ") else 1
-			except Exceptiom:
+			except Exception:
 				version = 1
 			match version:
 				case 1:
@@ -463,8 +462,8 @@ class LCNScanner:
 				if terrestrialLCNs:
 					writeBouquet(mode, "Terrestrial", terrestrialLCNs, markers)
 					lcns += buildLCNs(terrestrialLCNs)
-			elif verbose:
-				self.session.open(MessageBox, _("No valid entries found in the LCN database. Run a service scan."), MessageBox.TYPE_INFO, windowTitle=self.getTitle())
+			else:
+				print("[LCNScanner] Error: No valid entries found in the LCN database! Run a service scan.")
 		if lcns:
 			# This code is not currently supported but is being kept in case this changes.
 			# lcns.insert(0,"#SID:TSID:ONID:NAMESPACE:SIGNAL:LCN_BROADCAST:LCN_SCANNED:LCN_GUI:PROVIDER:PROVIDER_GUI:SERVICENAME:SERVICENAME_GUI")
@@ -479,14 +478,13 @@ class LCNScanner:
 		if callback and callable(callback):
 			callback()
 
-	def buildAfterScan(self, session):  # ServiceScan.py calls this method to perform an LCN scan.
+	def buildAfterScan(self):  # ServiceScan.py calls this method to perform an LCN scan.
 		def performScan():
-			self.lcnScan(verbose=True, callback=keyScanCallback)
+			self.lcnScan(callback=keyScanCallback)
 
 		def keyScanCallback():
 			Processing.instance.hideProgress()
 
-		self.session = session
 		Processing.instance.setDescription(_("Please wait while LCN bouquets are created/updated..."))
 		Processing.instance.showProgress(endless=True)
 		self.timer = eTimer()  # This must be in the self context to keep the code alive when the method exits.
@@ -529,7 +527,7 @@ def menu(menuid, **kwargs):
 
 def Plugins(**kwargs):
 	pluginList = []
-	description = _("LCN Scanner plugin for DVB-C/C2/T/T2 services")
+	description = _("LCN Scanner plugin for DVB-C/T/T2 services")
 	pluginList.append(PluginDescriptor(where=[PluginDescriptor.WHERE_MENU], description=description, needsRestart=False, fnc=menu))
 	if config.plugins.LCNScanner.showInPluginsList.value:
 		pluginList.append(PluginDescriptor(name=_("LCN Scanner"), where=[PluginDescriptor.WHERE_PLUGINMENU], description=description, icon="LCNScanner.png", fnc=main))

@@ -75,6 +75,16 @@ public:
 		return (LCN_GUI != 0) ? LCN_GUI : (LCN_SCANNED != 0) ? LCN_SCANNED : LCN_BROADCAST;
 	}
 
+	std::string getServiceNameGui()
+	{
+		return SERVICENAME_GUI;
+	}
+
+	std::string geProviderNameGui()
+	{
+		return PROVIDER_GUI;
+	}
+
 	void Update(uint16_t lcn, uint32_t signal)
 	{
 		LCN_BROADCAST = lcn;

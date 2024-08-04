@@ -113,7 +113,7 @@ class ServiceScan(Screen):
 			try:
 				from Plugins.SystemPlugins.LCNScanner.plugin import LCNScanner
 				print("[ServiceScan] Running the LCNScanner after a scan.")
-				LCNScanner().buildAfterScan(session=self.session)
+				LCNScanner().buildAfterScan()
 			except ImportError:
 				pass
 			except Exception as err:

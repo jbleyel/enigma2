@@ -214,6 +214,8 @@ RESULT eDVBService::getName(const eServiceReference &ref, std::string &name)
 {
 	if (!ref.name.empty())
 		name = ref.name; // use renamed service name..
+	else if (!m_service_display_name.empty())
+		name = m_service_display_name;
 	else if (!m_service_name.empty())
 		name = m_service_name;
 	else
@@ -961,6 +963,10 @@ void eDVBDB::loadServicelist(const char *file)
 			if (it != m_lcnmap.end())
 			{
 				s->m_lcn = it->second.getLCN();
+				if(!it->second.getServiceNameGui().empty())
+					s->m_service_display_name = it->second.getServiceNameGui();
+				if(!it->second.geProviderNameGui().empty())
+					s->m_provider_display_name = it->second.geProviderNameGui();
 			}
 		}
 		addService(ref, s);
