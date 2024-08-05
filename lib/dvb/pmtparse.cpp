@@ -382,11 +382,12 @@ int eDVBPMTParser::getProgramInfo(program &program)
 									}
 									break;
 								case 0x06: /* supplementary_audio_descriptor */
-									eDebug("[eDVBPMTParser] supplementary_audio_descriptor");
-									const SelectorByteVector* data = d->getSelectorBytes();
-									for (int x == 0;x<data->size();x++)
 									{
-										eDebug("%d -> %c", x, data[x]);
+										eDebug("[eDVBPMTParser] supplementary_audio_descriptor");
+										const SelectorByteVector* data = d->getSelectorBytes();
+										for(int i=0; i < data->size(); i++){
+											eDebug("%d -> %u", i, data[i]);
+										}
 									}
 									break;
 								default:
