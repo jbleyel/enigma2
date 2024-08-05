@@ -385,8 +385,12 @@ int eDVBPMTParser::getProgramInfo(program &program)
 									{
 										eDebug("[eDVBPMTParser] supplementary_audio_descriptor");
 										const SelectorByteVector* data = d->getSelectorBytes();
-										for(int i=0; i < data->size(); i++){
-											eDebug("%d -> %u", i, data[i]);
+										SelectorByteConstIterator i;
+										int count = 0;
+										for (i = data->begin(); i != data->end(); ++i)
+										{
+											eDebug("%d -> %u", count, *i);
+											count++;
 										}
 									}
 									break;
