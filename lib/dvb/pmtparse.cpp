@@ -381,6 +381,14 @@ int eDVBPMTParser::getProgramInfo(program &program)
 										audio.type = audioStream::atAC4;
 									}
 									break;
+								case 0x06: /* supplementary_audio_descriptor */
+									eDebug("[eDVBPMTParser] supplementary_audio_descriptor");
+									const SelectorByteVector* data = d->getSelectorBytes();
+									for (int x == 0;x<data->size();x++)
+									{
+										eDebug("%d -> %c", x, data[x]);
+									}
+									break;
 								default:
 									eDebug("[eDVBPMTParser] TODO: Fix parsing for Extension descriptor with tag: %d", d->getExtensionTag());
 									break;
