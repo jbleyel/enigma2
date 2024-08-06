@@ -45,7 +45,7 @@ eDVBServicePMTHandler::eDVBServicePMTHandler()
 	m_service_type = livetv;
 	m_ca_disabled = false;
 	m_pmt_ready = false;
-	m_pmt_debug = eSimpleConfig::getBool("config.crash.debugDVBPMT", false);
+	m_pmt_debug = eSimpleConfig::getBool("config.crash.debugDVB", false);
 
 	eDVBResourceManager::getInstance(m_resourceManager);
 	CONNECT(m_PAT.tableReady, eDVBServicePMTHandler::PATready);
