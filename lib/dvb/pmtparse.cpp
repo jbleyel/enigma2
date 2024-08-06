@@ -387,14 +387,18 @@ int eDVBPMTParser::getProgramInfo(program &program)
 										{
 											eDebug("[eDVBPMTParser] supplementary_audio_descriptor");
 											const SelectorByteVector* data = d->getSelectorBytes();
-											SelectorByteConstIterator i;
-											int count = 0;
-											for (i = data->begin(); i != data->end(); ++i)
+											if (data.size() > 1)
 											{
-												eDebug("%d -> %u / PID %d LANG %s", count, *i, (*es)->getPid(), audio.language_code.c_str());
-												count++;
+												bool mixed = data[0] & 1;
+												int type = data[0] & 6;
+												char lng[3];
+												lng[0] = '\0';
+												if ((data[0] & 128) && data.size() > 3)
+												{
+													memcpy(&lng[0], &data[1], 3);
+												}
+												eDebug("mixed %d / type %d lng %s / PID %d LANG %s", mixed, type, lng, (*es)->getPid(), audio.language_code.c_str());
 											}
-
 										}
 									}
 									break;
