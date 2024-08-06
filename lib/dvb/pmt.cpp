@@ -287,7 +287,7 @@ static void eraseHbbTVApplications(HbbTVApplicationInfoList  *applications)
 	applications->clear();
 }
 
-void saveData(int orgid, unsigned char* data, int sectionLength)
+void saveData(int orgid, unsigned char* data, int sectionLength, bool debug)
 {
 	int fd = 0, rc = 0;
 	char fileName[255] = {0};
@@ -295,13 +295,13 @@ void saveData(int orgid, unsigned char* data, int sectionLength)
 
 	if (data[6] > 0)
 	{
-		if(m_pmt_debug)
+		if(debug)
 			eDebug("[eDVBServicePMTHandler] section_number %d > 0", data[6]);
 		data[6] = 0;
 	}
 	if (data[7] > data[6])
 	{
-		if(m_pmt_debug)
+		if(debug)
 			eDebug("[eDVBServicePMTHandler] last_section_number %d > section_number %d", data[7], data[6]);
 		data[7] = data[6];
 	}
@@ -312,7 +312,7 @@ void saveData(int orgid, unsigned char* data, int sectionLength)
 		return;
 	}
 	rc = write(fd, data, sectionLength);
-	if(m_pmt_debug)
+	if(debug)
 		eDebug("[eDVBServicePMTHandler] Save Data Len : [%d]", rc);
 	close(fd);
 }
@@ -355,7 +355,7 @@ void eDVBServicePMTHandler::AITready(int error)
 					eDebug("[eDVBServicePMTHandler] found applicaions ids >> pid : %x, orgid : %d, appid : %d", m_ait_pid, orgid, appid);
 				if (controlCode == 1)
 				{
-					saveData(orgid, m_AITData, sectionLength);
+					saveData(orgid, m_AITData, sectionLength, m_pmt_debug);
 				}
 				if (controlCode == 1 || controlCode == 2) /* 1:AUTOSTART, 2:ETC */
 				{
