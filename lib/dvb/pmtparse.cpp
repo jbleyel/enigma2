@@ -392,13 +392,14 @@ int eDVBPMTParser::getProgramInfo(program &program)
 												uint8_t item = data->at(0);
 												uint8_t mix_type = item & 128;
 										        uint8_t editorial_classification = (item & 0x7C) >> 2;
-												char lng[3];
+												char lng[4];
 												lng[0] = '\0';
 												if ((item & 1) && data->size() > 3)
 												{
 													lng[0] = data->at(1);
 													lng[1] = data->at(2);
 													lng[2] = data->at(3);
+													lng[3] = '\0';
 													audio.language_code = lng;
 												}
 												eDebug("mixed %d / type %d lng %s / PID %d LANG %s", mix_type, editorial_classification, lng, (*es)->getPid(), audio.language_code.c_str());

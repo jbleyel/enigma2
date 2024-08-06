@@ -726,6 +726,7 @@ config.crash.debugScreens = ConfigYesNo(default=False)
 config.crash.debugEPG = ConfigYesNo(default=False)
 config.crash.debugDVBScan = ConfigYesNo(default=False)
 config.crash.debugDVBTime = ConfigYesNo(default=False)
+config.crash.debugDVBPMT = ConfigYesNo(default=False)
 config.crash.debugTimers = ConfigYesNo(default=False)
 
 # config.plugins needs to be defined before InputDevice < HelpMenu < MessageBox < InfoBar.
