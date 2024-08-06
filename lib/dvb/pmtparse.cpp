@@ -383,14 +383,18 @@ int eDVBPMTParser::getProgramInfo(program &program)
 									break;
 								case 0x06: /* supplementary_audio_descriptor */
 									{
-										eDebug("[eDVBPMTParser] supplementary_audio_descriptor");
-										const SelectorByteVector* data = d->getSelectorBytes();
-										SelectorByteConstIterator i;
-										int count = 0;
-										for (i = data->begin(); i != data->end(); ++i)
+										if(isaudio)
 										{
-											eDebug("%d -> %u", count, *i);
-											count++;
+											eDebug("[eDVBPMTParser] supplementary_audio_descriptor");
+											const SelectorByteVector* data = d->getSelectorBytes();
+											SelectorByteConstIterator i;
+											int count = 0;
+											for (i = data->begin(); i != data->end(); ++i)
+											{
+												eDebug("%d -> %u / PID %d LANG %s", count, *i, (*es)->getPid();, audio.language_code.c_str());
+												count++;
+											}
+
 										}
 									}
 									break;
