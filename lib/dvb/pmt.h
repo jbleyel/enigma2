@@ -111,7 +111,7 @@ class eDVBServicePMTHandler: public eDVBPMTParser
 
 	bool m_pmt_ready;
 	bool m_ca_disabled;
-	bool m_pmt_debug;
+	static int m_debug;
 public:
 	eDVBServicePMTHandler();
 	~eDVBServicePMTHandler();
