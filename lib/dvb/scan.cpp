@@ -984,7 +984,6 @@ void eDVBScan::channelDone()
 				{
 					switch ((*desc)->getTag())
 					{
-						//case HD_SIMULCAST_LOGICAL_CHANNEL_DESCRIPTOR:
 						case LOGICAL_CHANNEL_DESCRIPTOR:
 						{
 							if (system != iDVBFrontend::feTerrestrial && system != iDVBFrontend::feCable)
