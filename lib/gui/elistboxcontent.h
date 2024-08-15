@@ -84,7 +84,7 @@ public:
 	eSize calculateEntryTextSize(const std::string &string, bool headerFont = true);
 
 private:
-	int m_seperation, m_slider_height, m_slider_space;
+	int m_seperation, m_slider_height, m_slider_space, m_last_text_width;
 	std::map<int, int> m_text_offset;
 };
 
