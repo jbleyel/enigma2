@@ -84,7 +84,7 @@ public:
 	eSize calculateEntryTextSize(const std::string &string, bool headerFont = true);
 
 private:
-	int m_seperation, m_slider_height, m_slider_space, m_last_text_width;
+	int m_seperation, m_slider_height, m_slider_space;
 	std::map<int, int> m_text_offset;
 };
 
@@ -146,6 +146,7 @@ private:
 #define RT_WRAP 64
 #define RT_ELLIPSIS 128
 #define RT_BLEND 256
+#define RT_UNDERLINE 512
 #define BT_ALPHATEST 1
 #define BT_ALPHABLEND 2
 #define BT_SCALE 4

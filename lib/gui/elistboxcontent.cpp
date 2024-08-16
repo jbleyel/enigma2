@@ -708,6 +708,10 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 
 				leftOffset = style.getValue(eWindowStyleSkinned::valueHeaderLeftOffset);
 				painter.setFont(fnt3);
+
+				if (local_style->is_set.header_color)
+					painter.setForegroundColor(local_style->m_header_color);
+
 			}
 
 			// Separator
@@ -720,19 +724,18 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 				eRect sep_sz = local_style->m_separator_size;
 
 				int top = sep_sz.y();
+				if ( top > m_itemsize.height() )
+					top = -1;
 				top = (top != -1) ? top : (m_itemsize.height() / 2) - (sep_sz.height() / 2);
 
 				int width = sep_sz.width();
 				int left = sep_sz.x();
+				if(left > m_itemsize.width())
+					left = 0;
 				if(width == -1)
 				{
 					left = offset.x() + leftOffset;
 					width = m_itemsize.width() - left * 2;
-				}
-				else if(width == -2)
-				{
-					left = offset.x() + leftOffset;
-					width = m_last_text_width;
 				}
 				
 				painter.fill(eRect(ePoint(left, offset.y() + top), eSize(width, sep_sz.height())));
@@ -744,13 +747,6 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 			eRect labelrect(ePoint(offset.x() + leftOffset, offset.y()), m_itemsize);
 			painter.renderText(labelrect, string, alphablendflag | gPainter::RT_HALIGN_LEFT | gPainter::RT_VALIGN_CENTER, border_color, border_size);
 
-			if(local_style && local_style->m_separator_size.width() == -2)
-			{
-				eTextPara para(labelrect);
-				para.setFont((fnt3) ? fnt3 : fnt);
-				para.renderString(string, 0);
-				m_last_text_width = para.getBoundBox().size().width();
-			}
 
 			/*  check if this is really a tuple */
 			if (value && PyTuple_Check(value))

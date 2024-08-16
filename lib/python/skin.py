@@ -763,7 +763,6 @@ def parseSeparator(attribute, value):
 		height
 
 		width=-1 -> full width - margin ( default )
-		width=-2 -> auto based on the item before
 		top=-1 -> center ( default )
 	"""
 	if value in variables:
@@ -1034,6 +1033,9 @@ class AttributeParser:
 
 	def headerFont(self, value):
 		self.guiObject.setHeaderFont(parseFont(value, self.scaleTuple))
+
+	def headerForegroundColor(self, value):
+		self.guiObject.setHeaderColor(parseColor(value, 0x00000000))
 
 	def horizontalAlignment(self, value):
 		self.guiObject.setHAlign(parseHorizontalAlignment(value))
