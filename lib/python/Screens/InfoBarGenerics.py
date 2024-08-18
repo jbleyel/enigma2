@@ -1617,7 +1617,7 @@ class InfoBarChannelSelection:
 
 	def openServiceList(self):
 		if config.skin.autorefresh.value:
-			self.servicelist.reloadSkin()
+			self.servicelist.servicelist.reloadSkin()
 		self.session.execDialog(self.servicelist)
 
 	def openServiceListPiP(self):
