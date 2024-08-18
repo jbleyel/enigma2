@@ -92,7 +92,7 @@ public:
 		return SERVICENAME_GUI;
 	}
 
-	std::string geProviderNameGui()
+	std::string getProviderNameGui()
 	{
 		return PROVIDER_GUI;
 	}
