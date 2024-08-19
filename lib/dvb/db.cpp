@@ -313,13 +313,6 @@ int eDVBService::checkFilter(const eServiceReferenceDVB &ref, const eDVBChannelQ
 			else
 				res = m_provider_display_name == query.m_string;
 			break;
-			/*
-			if (query.m_string == "Unknown" && m_provider_name.empty())
-				res = 1;
-			else
-				res = m_provider_name == query.m_string;
-			break;
-			*/
 		}
 		case eDVBChannelQuery::tType:
 		{
@@ -2775,7 +2768,6 @@ int eDVBDBQueryBase::compareLessEqual(const eServiceReferenceDVB &a, const eServ
 			return aa < bb;
 		}
 	case eDVBChannelQuery::tProvider:
-		//return a_service->m_provider_name < b_service->m_provider_name;
 		return a_service->m_provider_display_name < b_service->m_provider_display_name;
 	case eDVBChannelQuery::tType:
 		return a.getServiceType() < b.getServiceType();
@@ -2946,7 +2938,6 @@ eDVBDBProvidersQuery::eDVBDBProvidersQuery(eDVBDB *db, const eServiceReference &
 		int res = !it->second->isHidden() && it->second->checkFilter(it->first, *query);
 		if (res)
 		{
-			// const char *provider_name = it->second->m_provider_name.length() ? it->second->m_provider_name.c_str() : "Unknown";
 			const char *provider_name = it->second->m_provider_display_name.length() ? it->second->m_provider_display_name.c_str() : "Unknown";
 			if (found.find(std::string(provider_name)) == found.end())
 			{

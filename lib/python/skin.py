@@ -237,7 +237,7 @@ def loadSkinTemplates(skinTemplatesFileName):
 		for screen in domScreens:
 			element, path = domScreens.get(screen, (None, None))
 			for template in element.findall(".//widget/templates/template"):
-				componentTemplates.add(template, path)
+				componentTemplates.add(template, None)
 	if config.crash.debugScreens.value:
 		print(f"[Skin] DEBUG: componentTemplates '{componentTemplates.templates}'.")
 

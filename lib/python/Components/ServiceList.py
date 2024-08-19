@@ -1113,16 +1113,6 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 			if "skinTemplates.xml" in fileName:
 				reloadSkinTemplates()
 				self.readTemplate(config.channelSelection.widgetStyle.value)
-				return
-		if fileNames:
-			reloadSkins()
-			from Screens.InfoBar import InfoBar
-			from Screens.ChannelSelection import ChannelSelection
-			InfoBarInstance = InfoBar.instance
-			session = InfoBar.instance.session
-			if InfoBarInstance is not None and InfoBarInstance.servicelist is not None:
-				del InfoBarInstance.servicelist
-				InfoBarInstance.servicelist = session.instantiateDialog(ChannelSelection)
 
 	def applySkin(self, desktop, parent):
 		attribs = []
