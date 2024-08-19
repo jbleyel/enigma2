@@ -237,7 +237,7 @@ def loadSkinTemplates(skinTemplatesFileName):
 		for screen in domScreens:
 			element, path = domScreens.get(screen, (None, None))
 			for template in element.findall(".//widget/templates/template"):
-				componentTemplates.add(template, None)
+				componentTemplates.add(template, path)
 	if config.crash.debugScreens.value:
 		print(f"[Skin] DEBUG: componentTemplates '{componentTemplates.templates}'.")
 
@@ -1608,10 +1608,12 @@ class ComponentTemplates():
 			return list(self.templates[component].keys())
 		return None
 
-	def isChanged(self):
+	def changedFiles(self):
+		fileNames = []
 		for fileName in self.changedTimes:
 			if getmtime(fileName) != self.changedTimes[fileName]:
-				return True
+				fileNames.append(fileName)
+		return fileNames
 
 
 componentTemplates = ComponentTemplates()
