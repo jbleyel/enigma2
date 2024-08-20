@@ -64,6 +64,7 @@ config.skin.autorefresh = ConfigEnableDisable(default=False)
 currentPrimarySkin = None
 currentDisplaySkin = None
 callbacks = []
+afterReloadSkins = []
 runCallbacks = False
 
 
@@ -222,6 +223,14 @@ def reloadSkins():
 	setups.clear()
 	switchPixmap.clear()
 	InitSkins()
+	for method in [x for x in afterReloadSkins if x and callable(x)]:
+		method()
+
+
+def addAfterReloadSkinsCallback(method):
+	global afterReloadSkins
+	if method not in afterReloadSkins:
+		afterReloadSkins.append(method)
 
 
 # Method to load a skinTemplates.xml if one exists or load the templates from the screens.

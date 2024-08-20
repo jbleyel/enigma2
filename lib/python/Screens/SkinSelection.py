@@ -36,8 +36,12 @@ class SkinSelection(Setup):
 		self["preview"].hide()
 		self.picLoad = None
 		self["colorActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"blue": (reloadSkins, _("Reload Skin")),
+			"blue": (self.reloadSkins, _("Reload Skin")),
 		}, prio=0, description=_("Skin Selection Actions"))
+
+	def reloadSkins(self):
+		reloadSkins()
+		self.session.reloadDialogs()
 
 	def createItems(self):
 		guiDirectory, guiSkin = split(config.skin.primary_skin.value)
