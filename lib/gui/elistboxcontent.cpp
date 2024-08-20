@@ -709,7 +709,7 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 				leftOffset = style.getValue(eWindowStyleSkinned::valueHeaderLeftOffset);
 				painter.setFont(fnt3);
 
-				if (local_style->is_set.header_color)
+				if (local_style && local_style->is_set.header_color)
 					painter.setForegroundColor(local_style->m_header_color);
 
 			}
@@ -746,7 +746,6 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 
 			eRect labelrect(ePoint(offset.x() + leftOffset, offset.y()), m_itemsize);
 			painter.renderText(labelrect, string, alphablendflag | gPainter::RT_HALIGN_LEFT | gPainter::RT_VALIGN_CENTER, border_color, border_size);
-
 
 			/*  check if this is really a tuple */
 			if (value && PyTuple_Check(value))

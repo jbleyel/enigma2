@@ -1108,11 +1108,9 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 		return False
 
 	def reloadSkin(self):
-		fileNames = componentTemplates.changedFiles()
-		for fileName in fileNames:
-			if "skinTemplates.xml" in fileName:
-				reloadSkinTemplates()
-				self.readTemplate(config.channelSelection.widgetStyle.value)
+		if componentTemplates.isChanged():
+			reloadSkinTemplates()
+			self.readTemplate(config.channelSelection.widgetStyle.value)
 
 	def applySkin(self, desktop, parent):
 		attribs = []
