@@ -242,7 +242,9 @@ def loadSkinTemplates(skinTemplatesFileName):
 		print(f"[Skin] DEBUG: componentTemplates '{componentTemplates.templates}'.")
 
 
-def reloadSkinTemplates():
+def reloadSkinTemplates(clear=False):
+	if clear:
+		componentTemplates.clear()
 	skinTemplatesFileName = resolveFilename(SCOPE_SKINS, pathjoin(dirname(currentPrimarySkin), "skinTemplates.xml"))
 	loadSkinTemplates(skinTemplatesFileName)
 
@@ -1599,6 +1601,10 @@ class ComponentTemplates():
 				self.templates[component][name] = template
 			else:
 				self.templates[component] = {name: template}
+
+	def clear(self):
+		self.templates = {}
+		self.changedTimes = {}
 
 	def get(self, component, name):
 		if component in self.templates and self.templates[component][name] is not None:

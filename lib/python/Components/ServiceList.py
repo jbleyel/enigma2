@@ -1109,7 +1109,7 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 
 	def reloadSkin(self):
 		if componentTemplates.isChanged():
-			reloadSkinTemplates()
+			reloadSkinTemplates(clear=True)
 			self.readTemplate(config.channelSelection.widgetStyle.value)
 
 	def applySkin(self, desktop, parent):
