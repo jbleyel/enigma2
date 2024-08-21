@@ -220,7 +220,7 @@ struct call_entry
 
 void eActionMap::keyPressed(const std::string &device, int key, int flags)
 {
-	//eDebug("[eActionMap] key from %s: %d %d", device.c_str(), key, flags);
+	eDebug("[eActionMap] key from %s: %d %d", device.c_str(), key, flags);
 
 	// Check for remotes that need key translations
 	std::map<std::string, eDeviceBinding>::iterator r = m_rcDevices.find(device);
