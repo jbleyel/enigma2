@@ -3,13 +3,10 @@ from os.path import dirname, exists, isdir, isfile, join, split
 
 from enigma import ePicLoad
 
-from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigSelection, NoSave, config
 from Components.Pixmap import Pixmap
-from Components.Sources.StaticText import StaticText
 from Screens.Setup import Setup
 from Tools.Directories import SCOPE_GUISKIN, SCOPE_SKINS, resolveFilename
-from skin import reloadSkins
 
 
 class SkinSelection(Setup):
@@ -31,17 +28,9 @@ class SkinSelection(Setup):
 		self.noPreview = join(resolveFilename(SCOPE_GUISKIN), "noprev.png")
 		self.createItems()
 		Setup.__init__(self, session, "Skin")
-		self["key_blue"] = StaticText(_("Reload"))
 		self["preview"] = Pixmap()
 		self["preview"].hide()
 		self.picLoad = None
-		self["colorActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"blue": (self.reloadSkins, _("Reload Skin")),
-		}, prio=0, description=_("Skin Selection Actions"))
-
-	def reloadSkins(self):
-		reloadSkins()
-		self.session.reloadDialogs()
 
 	def createItems(self):
 		guiDirectory, guiSkin = split(config.skin.primary_skin.value)
