@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-08-04 16:49+0000\n"
-"PO-Revision-Date: 2024-08-06 09:09+0000\n"
+"POT-Creation-Date: 2024-08-08 08:13+0000\n"
+"PO-Revision-Date: 2024-08-20 13:09+0000\n"
 "Last-Translator: kvinto <badsystem@ukr.net>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/uk/>\n"
 "Language: uk\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.7-dev\n"
+"X-Generator: Weblate 5.7\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 msgid ""
@@ -3194,6 +3194,9 @@ msgstr "Буферизація %d%%"
 msgid "Buffers"
 msgstr "Буфери"
 
+msgid "Build"
+msgstr "Збірка"
+
 msgid "Build Brand"
 msgstr "Назва збірки"
 
@@ -4334,6 +4337,9 @@ msgstr "Команда для запуску"
 
 msgid "Command type"
 msgstr "Тип команди"
+
+msgid "Commit"
+msgstr "Зміни"
 
 msgid "Commit Information Actions"
 msgstr "Здійснення інформаційних дій"
@@ -7079,8 +7085,14 @@ msgstr "Увімкніть цей параметр, щоб додати інфо
 msgid "Enable this option to add action map / remote control mapping data to the debug log file."
 msgstr "Увімкніть цю опцію, щоб додати дані відображення карти дій/віддаленого керування до файлу журналу налагодження."
 
+msgid "Enable this option to add extra DVB details to the debug log file."
+msgstr "Увімкніть цей параметр, щоб додати додаткові відомості про DVB до файлу журналу налагодження."
+
 msgid "Enable this option to add extra DVB scan data to the debug log file."
 msgstr "Увімкніть цей параметр, щоб додати додаткові дані сканування DVB до файлу журналу налагодження."
+
+msgid "Enable this option to add extra DVB time sync data to the debug log file."
+msgstr "Увімкніть цей параметр, щоб додати додаткові дані синхронізації часу DVB до файлу журналу налагодження."
 
 msgid "Enable this option to add extra EPG data to the debug log file."
 msgstr "Увімкніть цей параметр, щоб додати додаткові дані EPG до файлу журналу налагодження."
@@ -7102,6 +7114,9 @@ msgstr "Увімкніть цю опцію, щоб додати до файлу 
 
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Увімкніть цей параметр, щоб додати дані налагодження таймера до файлу журналу налагодження."
+
+msgid "Enable this option to show all the available Information screens in the Information menu item list."
+msgstr "Увімкніть цей параметр, щоб відобразити всі доступні екрани інформації в списку пунктів меню 'Інформація'."
 
 msgid "Enable this setting if your aerial system needs power."
 msgstr "Включити цю настройку, якщо Ваша антена потребує живлення."
@@ -9576,8 +9591,14 @@ msgstr "Додати AIT до запису"
 msgid "Include CI assignment"
 msgstr "Додати призначення CI"
 
+msgid "Include DVB details"
+msgstr "Додати деталі DVB"
+
 msgid "Include DVB scan data"
 msgstr "Включити дані сканування DVB"
+
+msgid "Include DVB timesync data"
+msgstr "Включити дані синхронізації часу DVB"
 
 msgid "Include ECM in http streams"
 msgstr "Додати ECM до http потоку"
@@ -13020,7 +13041,7 @@ msgid "Picture player"
 msgstr "Перегляд зображень"
 
 msgid "Pictures"
-msgstr "Кіноматографія"
+msgstr "Зображення"
 
 #. TRANSLATORS: Aspect ratio policy: Black bars on left/right in doubt, keep English term.
 msgid "Pillarbox"
@@ -14208,9 +14229,6 @@ msgstr "Інформація про приймач для %s %s"
 
 msgid "Receiver name"
 msgstr "Назва приймача"
-
-msgid "Reception"
-msgstr "Пошук каналів"
 
 msgid "Reception Lists"
 msgstr "Список прийому"
@@ -17112,7 +17130,7 @@ msgid "Short filenames with time"
 msgstr "Короткі часові назви файлів"
 
 msgid "Should the crash counter be reset to prevent a restart?"
-msgstr "Чи потрібно скинути лічильник rhtisd, щоб запобігти перезавантаженню?"
+msgstr "Чи потрібно скинути лічильник крешів, щоб запобігти перезавантаженню?"
 
 msgid "Show"
 msgstr "Шоу"
@@ -17386,6 +17404,9 @@ msgstr "Показати розширені налаштування"
 
 msgid "Show all"
 msgstr "Показати все"
+
+msgid "Show all Information screens"
+msgstr "Показати всі інформаційні екрани"
 
 msgid "Show all available services"
 msgstr "Показати всі доступні канали"
@@ -19133,7 +19154,7 @@ msgid "TMDB Search"
 msgstr "TMDB Пошук"
 
 msgid "TRANSLATOR_INFO"
-msgstr "Переклад: kvinto - 05.08.2024"
+msgstr "Переклад: kvinto - 19.08.2024"
 
 msgid "TS file is too large for ISO9660 level 1!"
 msgstr "TS файл занадто великий для ISO9660 рівень 1!"
@@ -20679,6 +20700,9 @@ msgstr "Тип тюнера %s"
 
 msgid "Tuners"
 msgstr "Тюнери"
+
+msgid "Tuners, Scanning & Reception"
+msgstr "Тюнери та Сканування"
 
 msgid "Tuning algorithm"
 msgstr "Алгоритм налаштування"
@@ -23815,6 +23839,9 @@ msgstr "так (зберігати фіди)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Reception"
+#~ msgstr "Пошук каналів"
 
 #~ msgid "Enable terrestrial LCN:"
 #~ msgstr "Включити наземний LCN:"

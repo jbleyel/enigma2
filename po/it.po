@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV Italian translation\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-08-04 16:49+0000\n"
-"PO-Revision-Date: 2024-08-07 20:09+0000\n"
+"POT-Creation-Date: 2024-08-08 08:13+0000\n"
+"PO-Revision-Date: 2024-08-20 13:09+0000\n"
 "Last-Translator: Massimo Pissarello <mapi68@gmail.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/it/>\n"
 "Language: it\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.7-dev\n"
+"X-Generator: Weblate 5.7\n"
 "X-Poedit-SourceCharset: iso-8859-1\n"
 
 msgid ""
@@ -3156,6 +3156,9 @@ msgstr "Buffer %d%%"
 msgid "Buffers"
 msgstr "Buffer"
 
+msgid "Build"
+msgstr "Build"
+
 msgid "Build Brand"
 msgstr "Brand build"
 
@@ -4294,6 +4297,9 @@ msgstr "Comando da eseguire"
 
 msgid "Command type"
 msgstr "Tipo comando"
+
+msgid "Commit"
+msgstr "Commit"
 
 msgid "Commit Information Actions"
 msgstr "Azioni sulle informazioni di commit"
@@ -5959,16 +5965,16 @@ msgid "Deselected packages usually occur because those packaged are incompatible
 msgstr "I pacchetti deselezionati di solito si verificano perché quelli impacchettati non sono compatibili con i pacchetti esistenti. Anche se questo è per lo più innocuo, è possibile che il %s %s possa riscontrare problemi."
 
 msgid "Destination of fallback remote receiver"
-msgstr "Destinazione del ricevitore remoto di fallback"
+msgstr "Destinazione ricevitore remoto fallback"
 
 msgid "Destination of fallback remote receiver for ATSC"
-msgstr "Destinazione del ricevitore remoto di fallback per ATSC"
+msgstr "Destinazione ricevitore remoto fallback per ATSC"
 
 msgid "Destination of fallback remote receiver for DVB-C"
-msgstr "Destinazione del ricevitore remoto di fallback per DVB-C"
+msgstr "Destinazione ricevitore remoto fallback per DVB-C"
 
 msgid "Destination of fallback remote receiver for DVB-T"
-msgstr "Destinazione del ricevitore remoto di fallback per DVB-T"
+msgstr "Destinazione ricevitore remoto fallback per DVB-T"
 
 msgid "Detail of GStreamer log."
 msgstr "Dettaglio registro di GStreamer"
@@ -7038,8 +7044,14 @@ msgstr "Abilita questa opzione per aggiungere le informazioni MultiBoot rilevate
 msgid "Enable this option to add action map / remote control mapping data to the debug log file."
 msgstr "Abilita questa opzione per aggiungere dati di mappatura delle azioni/controllo remoto al file di registro di debug."
 
+msgid "Enable this option to add extra DVB details to the debug log file."
+msgstr "Abilita questa opzione per aggiungere ulteriori dettagli DVB al file di registro di debug."
+
 msgid "Enable this option to add extra DVB scan data to the debug log file."
 msgstr "Abilita questa opzione per aggiungere dati di scansione DVB extra al file di registro di debug."
+
+msgid "Enable this option to add extra DVB time sync data to the debug log file."
+msgstr "Abilita questa opzione per aggiungere ulteriori dati di sincronizzazione temporale DVB al file di registro di debug."
 
 msgid "Enable this option to add extra EPG data to the debug log file."
 msgstr "Abilita questa opzione per aggiungere dati EPG extra al file di registro di debug."
@@ -7061,6 +7073,9 @@ msgstr "Abilita questa opzione per aggiungere nomi di schermate e dati di risolu
 
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Abilita questa opzione per aggiungere dati di debug del timer al file di registro di debug."
+
+msgid "Enable this option to show all the available Information screens in the Information menu item list."
+msgstr "Abilita questa opzione per mostrare tutte le schermate Informazioni disponibili nell'elenco delle voci del menu Informazioni."
 
 msgid "Enable this setting if your aerial system needs power."
 msgstr "Abilita questa impostazione se l'antenna necessita di alimentazione."
@@ -7947,7 +7962,7 @@ msgid "Fallback Font *"
 msgstr "Carattere di fallback *"
 
 msgid "Fallback Timer"
-msgstr "Timer del ricevitore remoto di fallback"
+msgstr "Timer ricevitore remoto fallback"
 
 msgid "Fallback remote receiver"
 msgstr "Ricevitore remoto Fallback"
@@ -7959,7 +7974,7 @@ msgid "Fallback remote receiver Port"
 msgstr "PORTA Ricevitore remoto fallback"
 
 msgid "Fallback remote receiver URL"
-msgstr "URL del ricevitore remoto di fallback"
+msgstr "URL ricevitore remoto fallback"
 
 msgid "Fallback remote receiver for ATSC"
 msgstr "Ricevitore remoto di fallback per ATSC"
@@ -7971,10 +7986,10 @@ msgid "Fallback remote receiver for DVB-T"
 msgstr "Ricevitore remoto di fallback per DVB-T"
 
 msgid "Fallback remote receiver setup"
-msgstr "Configurazione del ricevitore remoto di fallback"
+msgstr "Configurazione ricevitore remoto fallback"
 
 msgid "Fallback tuner setup"
-msgstr "Impostazioni tuner del ricevitore remoto di fallback"
+msgstr "Impostazioni tuner di fallback"
 
 msgid "False"
 msgstr "Falso"
@@ -9233,7 +9248,7 @@ msgid "IP address of the Stream Relay server used to descramble services that ca
 msgstr "Indirizzo IP del server Stream Relay usato per decodificare i servizi che possono essere decrittografati solo tramite Stream Relay."
 
 msgid "IP of fallback remote receiver"
-msgstr "IP del ricevitore remoto di fallback"
+msgstr "IP ricevitore remoto fallback"
 
 msgid "IPK Installer"
 msgstr "Installatore IPK"
@@ -9533,8 +9548,14 @@ msgstr "Includi AIT nelle registrazioni"
 msgid "Include CI assignment"
 msgstr "Includi assegnazione CI"
 
+msgid "Include DVB details"
+msgstr "Includi dettagli DVB"
+
 msgid "Include DVB scan data"
 msgstr "Includi dati scansione DVB"
+
+msgid "Include DVB timesync data"
+msgstr "Includi dati sincronizzazione temporale DVB"
 
 msgid "Include ECM in http streams"
 msgstr "Includi ECM nei flussi http"
@@ -13428,7 +13449,7 @@ msgid "Port number for the Stream Relay server used to descramble services that 
 msgstr "Numero di porta per il server Stream Relay usato per decodificare i servizi che possono essere decrittografati solo tramite Stream Relay."
 
 msgid "Port of fallback remote receiver"
-msgstr "Porta del ricevitore remoto di fallback"
+msgstr "Porta ricevitore remoto fallback"
 
 msgid "Portugal"
 msgstr "Portogallo"
@@ -14161,9 +14182,6 @@ msgstr "Informazioni sul ricevitore %s %s"
 
 msgid "Receiver name"
 msgstr "Nome del ricevitore"
-
-msgid "Reception"
-msgstr "Ricezione servizi"
 
 msgid "Reception Lists"
 msgstr "Elenchi di ricezione"
@@ -17338,6 +17356,9 @@ msgstr "Mostra impostazioni avanzate"
 msgid "Show all"
 msgstr "Mostra tutto"
 
+msgid "Show all Information screens"
+msgstr "Mostra tutte le schermate informative"
+
 msgid "Show all available services"
 msgstr "Mostra tutti i servizi disponibili"
 
@@ -17550,16 +17571,16 @@ msgid "Show next system information screen"
 msgstr "Mostra schermata informazioni di sistema successiva"
 
 msgid "Show notification when import channels and/or EPG from remote receiver URL did not complete"
-msgstr "Mostrare una notifica quando i canali di importazione e/o l'EPG dall'URL del ricevitore remoto non sono stati completati"
+msgstr "Mostra una notifica quando i canali di importazione e/o l'EPG dall'URL del ricevitore remoto non sono stati completati"
 
 msgid "Show notification when import channels and/or EPG from remote receiver URL is completed"
-msgstr "Mostrare una notifica quando i canali di importazione e/o l'EPG dall'URL del ricevitore remoto sono stati completati"
+msgstr "Mostra una notifica quando i canali di importazione e/o l'EPG dall'URL del ricevitore remoto sono stati completati"
 
 msgid "Show notification when import channels was not successful"
-msgstr "Mostrare una notifica quando i canali di importazione non sono stati completati"
+msgstr "Mostra una notifica quando i canali di importazione non sono stati completati"
 
 msgid "Show notification when import channels was successful"
-msgstr "Mostrare una notifica quando i canali di importazione sono stati completati"
+msgstr "Mostra una notifica quando i canali di importazione sono stati completati"
 
 msgid "Show or hide the extended description, (skin dependent)."
 msgstr "Mostra o nascondi la descrizione estesa (dipende dalla skin)."
@@ -20629,6 +20650,9 @@ msgstr "Tipo di tuner %s"
 msgid "Tuners"
 msgstr "Tuner"
 
+msgid "Tuners, Scanning & Reception"
+msgstr "Tuner, scansione e ricezione"
+
 msgid "Tuning algorithm"
 msgstr "Algoritmo di sintonizzazione"
 
@@ -20729,7 +20753,7 @@ msgid "URL"
 msgstr "URL"
 
 msgid "URL of fallback remote receiver"
-msgstr "URL del ricevitore remoto di fallback"
+msgstr "URL ricevitore remoto fallback"
 
 msgid "USALS"
 msgstr "USALS"
@@ -23763,6 +23787,9 @@ msgstr "sì (mantieni feed)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Reception"
+#~ msgstr "Ricezione servizi"
 
 #~ msgid "Enable terrestrial LCN:"
 #~ msgstr "Abilita LCN terrestre:"

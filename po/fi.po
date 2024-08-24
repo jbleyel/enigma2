@@ -4,8 +4,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-08-04 16:49+0000\n"
-"PO-Revision-Date: 2024-08-11 20:09+0000\n"
+"POT-Creation-Date: 2024-08-08 08:13+0000\n"
+"PO-Revision-Date: 2024-08-19 12:09+0000\n"
 "Last-Translator: tomppaa <tomzza@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Finnish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/fi/>\n"
 "Language: fi\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.7-dev\n"
+"X-Generator: Weblate 5.7\n"
 
 msgid ""
 "\n"
@@ -2250,7 +2250,7 @@ msgid "Also on standby"
 msgstr "Myös valmiustilassa"
 
 msgid "Also use a #DESCRIPTION line after each #SERVICE line to hold the service's name."
-msgstr ""
+msgstr "Lisää myös lisätiedot rivi jokaisen Kanava rivin jälkeen pitääksesi kanava nimet."
 
 msgid "Alternative"
 msgstr "Vaihtoehtoinen"
@@ -3164,6 +3164,9 @@ msgstr "Puskuroi %d%%"
 
 msgid "Buffers"
 msgstr "Puskurit"
+
+msgid "Build"
+msgstr "Koonti"
 
 msgid "Build Brand"
 msgstr "Valmistaja"
@@ -4304,6 +4307,9 @@ msgstr "Suoritettava komento"
 
 msgid "Command type"
 msgstr "Käskyn tyyppi"
+
+msgid "Commit"
+msgstr "Sitoutuminen"
 
 msgid "Commit Information Actions"
 msgstr "Yleiset tiedot Toiminnot"
@@ -7048,8 +7054,14 @@ msgstr "Ota tämä vaihtoehto käyttöön, jos haluat lisätä järjestelmän k�
 msgid "Enable this option to add action map / remote control mapping data to the debug log file."
 msgstr "Aktivoi tämä vaihtoehto, jos haluat lisätä toimintakarttatietoja virheenkorjauslokiin."
 
+msgid "Enable this option to add extra DVB details to the debug log file."
+msgstr "Aktivoi tämä vaihtoehto lisätäksesi DVB lisätietoja debug loki tiedostoon."
+
 msgid "Enable this option to add extra DVB scan data to the debug log file."
 msgstr "Ota tämä asetus käyttöön, jos haluat lisätä ylimääräisiä DVB skannaus tietoja virheenkorjauslokitiedostoon."
+
+msgid "Enable this option to add extra DVB time sync data to the debug log file."
+msgstr "Tämän vaihtoehdon avulla voit lisätä ylimääräisiä DVB aikasynkronointitietoja debug lokitiedostoon."
 
 msgid "Enable this option to add extra EPG data to the debug log file."
 msgstr "Ota tämä vaihtoehto käyttöön, jos haluat lisätä ylimääräisiä EPG tietoja vianmäärityslokitiedostoon."
@@ -7071,6 +7083,9 @@ msgstr "Ota tämä vaihtoehto käyttöön, jos haluat lisätä näytön nimiä j
 
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Ota tämä vaihtoehto käyttöön, jos haluat lisätä ajastin tiedot vianmääritys lokitiedostoon."
+
+msgid "Enable this option to show all the available Information screens in the Information menu item list."
+msgstr "Aktivoi tämä vaihtoehto,Näyttäeksi kaikki käytettävissä olevat tietoruudut tieto valikossa."
 
 msgid "Enable this setting if your aerial system needs power."
 msgstr "Ota tämä asetus käyttöön, jos antennijärjestelmäsi tarvitsee virtaa."
@@ -9548,8 +9563,14 @@ msgstr "Sisällytä AIT tallennuksiin"
 msgid "Include CI assignment"
 msgstr "SIsällytä CI määritys"
 
+msgid "Include DVB details"
+msgstr "DVB yksityiskohtaiset tiedot"
+
 msgid "Include DVB scan data"
 msgstr "Sisällytä DVB skannaus tiedot"
+
+msgid "Include DVB timesync data"
+msgstr "Sisältää DVB aikasynkronointi tiedot"
 
 msgid "Include ECM in http streams"
 msgstr "Sisällytä ECM http striimeihin"
@@ -14185,9 +14206,6 @@ msgstr "Vastaanottimen tiedot %s %s"
 msgid "Receiver name"
 msgstr "Vastaanottimen malli"
 
-msgid "Reception"
-msgstr "Virittimien asetukset"
-
 msgid "Reception Lists"
 msgstr "Kanavalistat"
 
@@ -17375,6 +17393,9 @@ msgstr "Näytä lisäasetukset"
 msgid "Show all"
 msgstr "Näytä kaikki"
 
+msgid "Show all Information screens"
+msgstr "Näytä kaikki tietonäytöt"
+
 msgid "Show all available services"
 msgstr "Näytä kaikki saatavilla olevat kanavat"
 
@@ -19120,7 +19141,7 @@ msgstr "TMDB Haku"
 
 msgid "TRANSLATOR_INFO"
 msgstr ""
-"Suomenkielinen käännös: 30.7.2024\n"
+"Suomenkielinen käännös: 18.8.2024\n"
 "tomppaa"
 
 msgid "TS file is too large for ISO9660 level 1!"
@@ -20671,6 +20692,9 @@ msgstr "Virittimen tyyppi %s"
 
 msgid "Tuners"
 msgstr "Virittimet"
+
+msgid "Tuners, Scanning & Reception"
+msgstr "Virittimien asetukset"
 
 msgid "Tuning algorithm"
 msgstr "Viritys alkometria"
@@ -23813,6 +23837,9 @@ msgstr "kyllä (pidä syötteet)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Reception"
+#~ msgstr "Virittimien asetukset"
 
 #~ msgid "Enable terrestrial LCN:"
 #~ msgstr "Aktivoi antenni LCN:"
