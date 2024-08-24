@@ -1,18 +1,32 @@
-# Copyright (C) 2024 jbleyel
-# This file is part of openATV enigma2 <https://github.com/openatv/enigma2>.
+#Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
 #
-# ServiceList.py is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#Copyright (c) 2024 jbleyel
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#1. Non-Commercial Use: You may not use the Software or any derivative works
+#   for commercial purposes without obtaining explicit permission from the
+#   copyright holder.
+#2. Share Alike: If you distribute or publicly perform the Software or any
+#   derivative works, you must do so under the same license terms, and you
+#   must make the source code of any derivative works available to the
+#   public.
+#3. Attribution: You must give appropriate credit to the original author(s)
+#   of the Software by including a prominent notice in your derivative works.
+#THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+#THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+#OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+#ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+#OTHER DEALINGS IN THE SOFTWARE.
 #
-# dogtag is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with ServiceList.py.  If not, see <http://www.gnu.org/licenses/>.
+#For more details about the CC BY-NC-SA 4.0 License, please visit:
+#https://creativecommons.org/licenses/by-nc-sa/4.0/
 
 # This file also contains the previous code of ServiceList ( ServiceListLegacy ) based on multiple authors.
 
@@ -860,7 +874,7 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 
 	def __init__(self, serviceList):
 		ServiceListBase.__init__(self, serviceList)
-		ServiceListTemplateParser.__init__(self, True)
+		ServiceListTemplateParser.__init__(self, config.crash.debugScreens.value)
 
 		self.session = serviceList.session
 		self.l = eListboxPythonServiceContent()
@@ -1050,7 +1064,7 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 				pixmap = self.picDVB_S
 		return pixmap
 
-	def buildOptionEntryServiceResolutionPixmap(self, service):  # TODO
+	def buildOptionEntryServiceResolutionPixmap(self, service):  # TODO Resolution type icon
 		pixmap = None
 		resolutionType = service.getUnsignedData(2)
 		return pixmap
@@ -1098,7 +1112,7 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 		self.widgetAttributes["serviceNotAvailColorSelected"] = "#00bbbbbb"
 
 		for (attrib, value) in self.skinAttributes:
-			# color attributes
+			# Color attributes
 			newattrib = attributeMapping.get(attrib, attrib)
 
 			if newattrib in ("foregroundColorMarked", "foregroundColorMarkedSelected", "backgroundColorMarked", "backgroundColorMarkedSelected") + self.widgetColors:
@@ -1174,7 +1188,7 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 	def setFontsize(self):  # This is a dummy function and not used for new servicelist
 		pass
 
-	def setItemsPerPage(self):  # This is currently not implemented
+	def setItemsPerPage(self):  # This is currently not implemented and will maybe never be implemented
 		pass
 
 	def buildEntry(self, service, status):
@@ -1226,33 +1240,14 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 
 			return foregroundColor, backgroundColor, foregroundColorSelected, backgroundColorSelected
 
-		def parseCoordinatesIntenal(pos, width, height):
-			if pos:
-				pos = pos.split(",")
-				x = pos[0]
-				y = pos[1]
-				if "e" in x:
-					x = x.replace("e", str(width))
-					x = eval(x)  # TODO do not used eval
-				elif "*" in x:
-					x = width
-				if "e" in y:
-					y = y.replace("e", str(height))
-					y = eval(y)  # TODO do not used eval
-				elif "*" in y:
-					y = height
-				return (int(x), int(y))
-			else:
-				return (0, 0)
-
 		# selected = status & 1
 		marked = status & 2
 		isMarker = status & 4
 		isPlayable = status & 8
 		isFolder = status & 128
 
-		rowwidth = self.l.getItemSize().width()
-		rowheight = self.l.getItemSize().height()
+		# rowwidth = self.l.getItemSize().width()
+		# rowheight = self.l.getItemSize().height()
 		res = [None]
 
 		info = self.service_center.info(service)
@@ -1277,7 +1272,6 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 				templateItems = self.templateDataBouquetsFolder
 			else:
 				templateItems = self.templateDataBouquets
-
 			defaults = self.templateDefaultsBouquets
 			maxEvents = defaults.get("maxevents")
 			if not isMarker and maxEvents:
@@ -1290,7 +1284,6 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 			serviceNumber = str(service.getChannelNum())
 		else:
 			defaults = self.templateDefaultsOther
-
 			if isMarker:
 				templateItems = self.templateDataOtherMarker
 			elif isFolder:
@@ -1317,13 +1310,10 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 				else:
 					currentEvent = None
 				font = item.get("font", 0)
-
 				size = item.get("size")
 				pos = item.get("position")
 				flags = item.get("_flags", 0)
-
 				foregroundColor, backgroundColor, foregroundColorSelected, backgroundColorSelected = getColor(defaults, item, serviceAvail, marked)
-
 				cornerRadius, cornerEdges = item.get("_radius", (0, 0))
 
 				if itemType == "rect":
@@ -1342,7 +1332,7 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 					autoFit = item.get("autoFitIndex", -1)
 					if autoFit > -1:
 						w = getTextBoundarySize(None, font=self.fonts.get(font), targetSize=eSize(size[0], size[1]), text=serviceName, nowrap=True).width()
-	#					print("autoFit serviceName %s %s -> %s" % (serviceName, size[0], w))
+						# print("autoFit serviceName %s %s -> %s" % (serviceName, size[0], w))
 						if w < size[0]:
 							autoFitData[autoFit] = size[0] - w
 						elif size[0] < w:
@@ -1413,7 +1403,7 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 						borderColorSelected = item.get("borderColorSelected", defaults.get("borderColorSelected")) if borderWidth else None
 						res.append((MultiContentEntryProgress(pos=pos, size=size, percent=percent, borderWidth=borderWidth, foreColor=foregroundColor, foreColorSelected=foregroundColorSelected, backColor=backgroundColor, backColorSelected=backgroundColor, borderColor=borderColor, borderColorSelected=borderColorSelected, startColor=gradientStart, midColor=gradientMid, endColor=gradientEnd, startColorSelected=gradientStartSelected, midColorSelected=gradientMidSelected, endColorSelected=gradientEndSelected, cornerRadius=cornerRadius, cornerEdges=cornerEdges)))
 
-		except Exception as ex:
+		except Exception as error:
 			import traceback
 			traceback.print_exception()
 
