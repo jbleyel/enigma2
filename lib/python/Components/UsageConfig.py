@@ -8,7 +8,7 @@ from time import time
 from enigma import Misc_Options, RT_HALIGN_CENTER, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, RT_WRAP, eActionMap, eBackgroundFileEraser, eDVBDB, eDVBFrontend, eEnv, eEPGCache, eServiceEvent, eSubtitleSettings, eSettings, setEnableTtCachingOnOff, setPreferredTuner, setSpinnerOnOff, setTunerTypePriorityOrder
 
 from keyids import KEYIDS
-from skin import parameters
+from skin import getcomponentTemplateNames, parameters, domScreens
 from Components.config import ConfigBoolean, ConfigClock, ConfigDirectory, ConfigDictionarySet, ConfigFloat, ConfigInteger, ConfigIP, ConfigLocations, ConfigNumber, ConfigSelectionNumber, ConfigPassword, ConfigSequence, ConfigSelection, ConfigSet, ConfigSlider, ConfigSubsection, ConfigText, ConfigYesNo, NoSave, config
 from Components.Harddisk import harddiskmanager
 from Components.International import international
@@ -278,6 +278,42 @@ def InitUsageConfig():
 	])
 	config.usage.multiepg_ask_bouquet = ConfigYesNo(default=False)
 	config.usage.showpicon = ConfigYesNo(default=True)
+
+	# New ServiceList
+	config.channelSelection = ConfigSubsection()
+	config.channelSelection.showNumber = ConfigYesNo(default=True)
+	config.channelSelection.showPicon = ConfigYesNo(default=False)
+	config.channelSelection.showServiceTypeIcon = ConfigYesNo(default=False)
+	config.channelSelection.showCryptoIcon = ConfigYesNo(default=False)
+	config.channelSelection.recordIndicatorMode = ConfigSelection(default=2, choices=[
+		(0, _("None")),
+		(1, _("Record Icon")),
+		(2, _("Colored Text"))
+	])
+	config.channelSelection.piconRatio = ConfigSelection(default=167, choices=[
+		(167, _("XPicon, ZZZPicon")),
+		(235, _("ZZPicon")),
+		(250, _("ZPicon"))
+	])
+
+	config.channelSelection.showTimers = ConfigYesNo(default=False)
+
+	screenChoiceList = [("", _("Legacy mode"))]
+	widgetChoiceList = []
+	styles = getcomponentTemplateNames("serviceList")
+	if styles:
+		for screen in domScreens:
+			element, path = domScreens.get(screen, (None, None))
+			if element.get("base") == "ChannelSelection":
+				label = element.get("label", screen)
+				screenChoiceList.append((screen, label))
+
+		default = styles[0]
+		for style in styles:
+			widgetChoiceList.append((style, style))
+
+	config.channelSelection.screenStyle = ConfigSelection(default="", choices=screenChoiceList)
+	config.channelSelection.widgetStyle = ConfigSelection(default=default, choices=widgetChoiceList)
 
 	# ########  Workaround for VTI Skins   ##############
 	config.usage.picon_dir = ConfigDirectory(default="/usr/share/enigma2/picon")

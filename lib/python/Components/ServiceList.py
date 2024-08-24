@@ -1,74 +1,36 @@
+# Copyright (C) 2024 jbleyel
+# This file is part of openATV enigma2 <https://github.com/openatv/enigma2>.
+#
+# ServiceList.py is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# dogtag is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with ServiceList.py.  If not, see <http://www.gnu.org/licenses/>.
+
+# This file also contains the previous code of ServiceList ( ServiceListLegacy ) based on multiple authors.
+
 from os.path import exists
 from time import time, localtime
 from enigma import eLabel, eRect, eSize, eServiceReference, gFont, eListbox, eServiceCenter, eListboxPythonMultiContent, eListboxPythonServiceContent, eListboxServiceContent, eEPGCache, getDesktop, eTimer, loadPNG
 
-from Components.config import config, ConfigYesNo, ConfigSelection, ConfigSubsection
 from Components.GUIComponent import GUIComponent
+from Components.config import config
 from Components.MultiContent import __resolveColor, MultiContentEntryProgress, MultiContentEntryText, MultiContentEntryRectangle, MultiContentEntryLinearGradient, MultiContentEntryLinearGradientAlphaBlend
 from Components.Renderer.Picon import getPiconName
 import NavigationInstance
 from ServiceReference import ServiceReference
-from skin import componentTemplates, domScreens, getcomponentTemplate, getcomponentTemplateNames, parseColor, parseFont, parseListOrientation, reloadSkins, reloadSkinTemplates, SizeTuple, SkinContext, SkinContextStack, TemplateParser
+from skin import componentTemplates, getcomponentTemplate, parseColor, parseFont, parseListOrientation, reloadSkinTemplates, SizeTuple, SkinContext, SkinContextStack, TemplateParser
 from timer import TimerEntry
 from Tools.Directories import resolveFilename, SCOPE_GUISKIN
 from Tools.LoadPixmap import LoadPixmap
 from Tools.TextBoundary import getTextBoundarySize
-
-
-def InitServiceListSettings():
-	config.channelSelection = ConfigSubsection()
-	config.channelSelection.showNumber = ConfigYesNo(default=True)
-	config.channelSelection.showPicon = ConfigYesNo(default=False)
-	config.channelSelection.showServiceTypeIcon = ConfigYesNo(default=False)
-	config.channelSelection.showCryptoIcon = ConfigYesNo(default=False)
-	config.channelSelection.recordIndicatorMode = ConfigSelection(default=2, choices=[
-		(0, _("None")),
-		(1, _("Record Icon")),
-		(2, _("Colored Text"))
-	])
-	config.channelSelection.piconRatio = ConfigSelection(default=167, choices=[
-		(167, _("XPicon, ZZZPicon")),
-		(235, _("ZZPicon")),
-		(250, _("ZPicon"))
-	])
-
-	config.channelSelection.showTimers = ConfigYesNo(default=False)
-
-	screenChoiceList = [("", _("Legacy mode"))]
-	widgetChoiceList = []
-	styles = getcomponentTemplateNames("serviceList")
-	if styles:
-		for screen in domScreens:
-			element, path = domScreens.get(screen, (None, None))
-			if element.get("base") == "ChannelSelection":
-				label = element.get("label", screen)
-				screenChoiceList.append((screen, label))
-
-		default = styles[0]
-		for style in styles:
-			widgetChoiceList.append((style, style))
-
-	config.channelSelection.screenStyle = ConfigSelection(default="", choices=screenChoiceList)
-	config.channelSelection.widgetStyle = ConfigSelection(default=default, choices=widgetChoiceList)
-
-	if styles:
-		def styleChanged(configelement):
-			from Screens.InfoBar import InfoBar
-			from Screens.ChannelSelection import ChannelSelection
-			InfoBarInstance = InfoBar.instance
-			session = InfoBar.instance.session
-			if InfoBarInstance is not None and InfoBarInstance.servicelist is not None:
-				del InfoBarInstance.servicelist
-				InfoBarInstance.servicelist = session.instantiateDialog(ChannelSelection)
-
-		config.channelSelection.screenStyle.addNotifier(styleChanged, initial_call=False, immediate_feedback=False)
-		config.channelSelection.widgetStyle.addNotifier(styleChanged, initial_call=False, immediate_feedback=False)
-		config.channelSelection.showNumber.addNotifier(styleChanged, initial_call=False, immediate_feedback=False)
-		config.channelSelection.showPicon.addNotifier(styleChanged, initial_call=False, immediate_feedback=False)
-		config.channelSelection.showServiceTypeIcon.addNotifier(styleChanged, initial_call=False, immediate_feedback=False)
-		config.channelSelection.showCryptoIcon.addNotifier(styleChanged, initial_call=False, immediate_feedback=False)
-		config.channelSelection.recordIndicatorMode.addNotifier(styleChanged, initial_call=False, immediate_feedback=False)
-		config.channelSelection.piconRatio.addNotifier(styleChanged, initial_call=False, immediate_feedback=False)
 
 
 class ServiceListTemplateParser(TemplateParser):
