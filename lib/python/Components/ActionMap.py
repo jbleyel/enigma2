@@ -109,7 +109,7 @@ def parseKeymap(filename, context, actionMapInstance, device, domKeys):
 				"b": 2,
 				"r": 4,
 				"l": 8,
-				"s": 16
+				"s": 32
 			}[x]
 			newFlags = sum(map(flagToValue, flags))
 			if not newFlags:
