@@ -301,6 +301,7 @@ def InitUsageConfig():
 	screenChoiceList = [("", _("Legacy mode"))]
 	widgetChoiceList = []
 	styles = getcomponentTemplateNames("serviceList")
+	default = ""
 	if styles:
 		for screen in domScreens:
 			element, path = domScreens.get(screen, (None, None))
