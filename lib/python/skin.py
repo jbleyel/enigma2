@@ -64,7 +64,6 @@ config.skin.autorefresh = ConfigEnableDisable(default=False)
 currentPrimarySkin = None
 currentDisplaySkin = None
 callbacks = []
-afterReloadSkins = []
 runCallbacks = False
 
 
@@ -223,30 +222,27 @@ def reloadSkins():
 	setups.clear()
 	switchPixmap.clear()
 	InitSkins()
-	for method in [x for x in afterReloadSkins if x and callable(x)]:
-		method()
-
-
-def addAfterReloadSkinsCallback(method):
-	global afterReloadSkins
-	if method not in afterReloadSkins:
-		afterReloadSkins.append(method)
 
 
 # Method to load a skinTemplates.xml if one exists or load the templates from the screens.
 #
-def loadSkinTemplates(skinTemplatesFileName):
-	if isfile(skinTemplatesFileName):
-		print(f"[Skin] Loading XML templates from '{skinTemplatesFileName}'.")
-		domStyles = fileReadXML(skinTemplatesFileName, source=MODULE_NAME)
-		if domStyles is not None:
-			for template in domStyles.findall("template"):
-				componentTemplates.add(template, skinTemplatesFileName)
+def loadSkinTemplates(skinTemplatesFileNames):
+	def addTemplate(template, fileName):
+		if template.get("component", "") in ("serviceList",):  # Only serviceList now more comming
+			componentTemplates.add(template, fileName)
+
+	if skinTemplatesFileNames:
+		for skinTemplatesFileName in skinTemplatesFileNames:
+			print(f"[Skin] Loading XML templates from '{skinTemplatesFileName}'.")
+			domStyles = fileReadXML(skinTemplatesFileName, source=MODULE_NAME)
+			if domStyles is not None:
+				for template in domStyles.findall("template"):
+					addTemplate(template, skinTemplatesFileName)
 	else:
 		for screen in domScreens:
 			element, path = domScreens.get(screen, (None, None))
 			for template in element.findall(".//widget/templates/template"):
-				componentTemplates.add(template, None)
+				addTemplate(template, None)
 	if config.crash.debugScreens.value:
 		print(f"[Skin] DEBUG: componentTemplates '{componentTemplates.templates}'.")
 
@@ -254,7 +250,11 @@ def loadSkinTemplates(skinTemplatesFileName):
 def reloadSkinTemplates(clear=False):
 	if clear:
 		componentTemplates.clear()
-	skinTemplatesFileName = resolveFilename(SCOPE_SKINS, pathjoin(dirname(currentPrimarySkin), "skinTemplates.xml"))
+	skinTemplatesFileNames = []
+	for fileName in ("skinTemplates.xml", "skinUserTemplates.xml"):
+		skinTemplatesFileName = resolveFilename(SCOPE_SKINS, pathjoin(dirname(currentPrimarySkin), fileName))
+		if isfile(skinTemplatesFileName):
+			skinTemplatesFileNames.append(skinTemplatesFileName)
 	loadSkinTemplates(skinTemplatesFileName)
 
 
