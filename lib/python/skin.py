@@ -9,7 +9,7 @@ from enigma import BT_ALPHABLEND, BT_ALPHATEST, BT_HALIGN_CENTER, BT_HALIGN_LEFT
 from Components.config import ConfigEnableDisable, ConfigSelection, ConfigSubsection, ConfigText, config
 from Components.SystemInfo import BoxInfo
 from Components.Sources.Source import ObsoleteSource
-from Tools.Directories import SCOPE_LCDSKIN, SCOPE_GUISKIN, SCOPE_FONTS, SCOPE_SKINS, pathExists, resolveFilename, fileReadXML, scopeConfig
+from Tools.Directories import SCOPE_LCDSKIN, SCOPE_GUISKIN, SCOPE_FONTS, SCOPE_SKINS, pathExists, resolveFilename, fileReadXML
 from Tools.Import import my_import
 from Tools.LoadPixmap import LoadPixmap
 
@@ -250,14 +250,11 @@ def loadSkinTemplates(skinTemplatesFileNames):
 def reloadSkinTemplates(clear=False):
 	if clear:
 		componentTemplates.clear()
-	skinTemplatesFileName = resolveFilename(SCOPE_SKINS, pathjoin(dirname(currentPrimarySkin), "skinTemplates.xml"))
+	skinTemplatesFileName = resolveFilename(SCOPE_GUISKIN, pathjoin(dirname(currentPrimarySkin), "skinTemplates.xml"))
 	skinTemplatesFileNames = []
 	if isfile(skinTemplatesFileName):
 		skinTemplatesFileNames.append(skinTemplatesFileName)
-	skinTemplatesFileName = pathjoin(scopeConfig, dirname(currentPrimarySkin), "skinUserTemplates.xml")
-	if isfile(skinTemplatesFileName):
-		skinTemplatesFileNames.append(skinTemplatesFileName)
-	skinTemplatesFileName = pathjoin(scopeConfig, "skinUserTemplates.xml")
+	skinTemplatesFileName = resolveFilename(SCOPE_GUISKIN, "skinUserTemplates.xml")
 	if isfile(skinTemplatesFileName):
 		skinTemplatesFileNames.append(skinTemplatesFileName)
 	loadSkinTemplates(skinTemplatesFileNames)
