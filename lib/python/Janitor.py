@@ -95,6 +95,7 @@ class Janitor(Timer):
 	def __init__(self):
 		Timer.__init__(self)
 
+	# TODO migrate powertimer
 	def loadTimers(self):
 		if exists(TIMER_XML_FILE):
 			timerDom = fileReadXML(TIMER_XML_FILE, source=MODULE_NAME)

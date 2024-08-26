@@ -1524,6 +1524,7 @@ class JanitorEdit(Setup):
 			repeated = None
 			weekday = DAY_LIST[int(strftime("%u", localtime(self.timer.begin))) - 1]
 			days[weekday] = True
+		functionTimerItems = functionTimer.get()
 		choices = [
 			# (JANITOR_TYPES.get(JANITOR_TYPE.NONE), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.NONE)),
 			(JANITOR_TYPES.get(JANITOR_TYPE.WAKEUP), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.WAKEUP)),
@@ -1534,9 +1535,7 @@ class JanitorEdit(Setup):
 			(JANITOR_TYPES.get(JANITOR_TYPE.DEEPSTANDBY), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.DEEPSTANDBY)),
 			(JANITOR_TYPES.get(JANITOR_TYPE.REBOOT), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.REBOOT)),
 			(JANITOR_TYPES.get(JANITOR_TYPE.RESTART), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.RESTART))
-		]
-		functionTimerItems = functionTimer.get()
-		choices.append((x, functionTimerItems[x]['name']) for x in functionTimerItems)
+		] + [(x, functionTimerItems[x]['name']) for x in functionTimerItems]
 		default = self.timer.function or JANITOR_TYPES.get(self.timer.timerType, "wakeup")
 		self.timerType = ConfigSelection(default=default, choices=choices)
 		self.timerActiveInStandby = ConfigSelection(default=self.timer.autosleepinstandbyonly, choices=[
@@ -1544,7 +1543,6 @@ class JanitorEdit(Setup):
 			("no", _("Standard (Always)")),
 			("noquery", _("Without query"))
 		])
-		# self.timerSleepDelay = ConfigInteger(default=self.timer.autosleepdelay, limits=(1, 300))
 		self.timerSleepDelay = ConfigSelection(default=self.timer.autosleepdelay, choices=[
 			(1, _("%d Minute") % 1),
 			(3, _("%d Minutes") % 3),
