@@ -102,21 +102,10 @@ class VolumeControl:
 		config.volumeControl.volume.setValue(self.volumeControl.getVolume())
 		config.volumeControl.save()
 
-	# These methods are only called from InfoBarGenerics.py:
-	#
-	def showMute(self):
+	def showMute(self):  # This method is only called by InfoBarGenerics.py:
 		if self.volumeControl.isMuted():
 			self.muteDialog.show()
 			self.hideTimer.start(config.volumeControl.hideTimer.value * 1000, True)
-
-	def isMuted(self):
-		return self.volumeControl.isMuted()
-
-	def mute(self):
-		self.volumeControl.volumeMute()
-
-	def unMute(self):
-		self.volumeControl.volumeUnMute()
 
 	# These methods are provided for compatibly with shared plugins.
 	#
