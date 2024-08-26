@@ -611,13 +611,13 @@ def InitAVSwitch():
 		config.av.pcm_multichannel = ConfigYesNo(default=False)
 		config.av.pcm_multichannel.addNotifier(setPCMMultichannel)
 
-	def setVolumeStepSize(configElement):
-		eDVBVolumecontrol.getInstance().setVolumeSteps(int(configElement.value))
+	# def setVolumeStepSize(configElement):
+	# 	eDVBVolumecontrol.getInstance().setVolumeSteps(int(configElement.value))
 
-	config.av.volume_stepsize = ConfigSelectionNumber(min=1, max=10, stepwidth=1, default=5)
-	config.av.volume_stepsize.addNotifier(setVolumeStepSize)
-	config.av.volume_stepsize_fastmode = ConfigSelectionNumber(min=1, max=10, stepwidth=1, default=5)
-	config.av.volume_hide_mute = ConfigYesNo(default=True)
+	# config.av.volume_stepsize = ConfigSelectionNumber(min=1, max=10, stepwidth=1, default=5)
+	# config.av.volume_stepsize.addNotifier(setVolumeStepSize)
+	# config.av.volume_stepsize_fastmode = ConfigSelectionNumber(min=1, max=10, stepwidth=1, default=5)
+	# config.av.volume_hide_mute = ConfigYesNo(default=True)
 	if AMLOGIC:
 		downmixAC3 = True
 		BoxInfo.setItem("CanPcmMultichannel", True)
