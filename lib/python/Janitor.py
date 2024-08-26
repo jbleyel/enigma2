@@ -801,6 +801,40 @@ class JanitorEntry(TimerEntry):
 							AddNotificationWithCallback(self.sendTryQuitMainloopNotification, MessageBox, message, MessageBox.TYPE_YESNO, timeout=timeout, default=True)
 				DSsave = False
 				return True
+			elif self.timerType == TIMERTYPE.OTHER and self.function:
+				if DEBUG:
+					print(f"[Janitor] self.timerType == TIMERTYPE.OTHER: / function = {self.function}")
+				functionTimerEntry = functionTimer.getItem(self.function)
+				if functionTimerEntry:
+					functionTimerEntryFunction = functionTimerEntry.get("fnc")
+
+					doFunc = False
+					#if self.exec_fnc_when == "standby" and Screens.Standby.inStandby:
+					#	doFunc = True
+					#elif self.exec_fnc_when == "stb_on" and not Screens.Standby.inStandby:
+					#	doFunc = True
+					#elif self.exec_fnc_when == "always":
+					#	doFunc = True
+
+					doFunc = True
+
+					if doFunc:
+						self.end += 7200
+						if functionTimerEntryFunction and callable(functionTimerEntryFunction):
+							functionTimerEntryFunction()
+
+						#if "isThreaded" in functionTimerEntry and not functionTimerEntry["isThreaded"]:
+						#	self.is_threaded = False
+						#elif "isScreen" in functionTimerEntry and not functionTimerEntry["isScreen"]:
+						#	self.is_threaded = False
+						#self.execnotifyafter = self.notify_after_t
+						#if self.notify_t and not Screens.Standby.inStandby:
+						#	Notifications.AddNotificationWithCallback(self.askForScheduledTimer, MessageBox, _("An scheduled task wants to execute following function at your STB\n\n %s \n\nContinue?") % functionTimerEntry["name"], timeout = 20)
+						#else:
+						#	self.askForScheduledTimer(True)
+
+				return True
+
 		elif nextState == self.StateEnded:
 			if self.afterEvent == AFTEREVENT.WAKEUP:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("wakeuppowertimer")
@@ -1099,3 +1133,25 @@ class JanitorEntry(TimerEntry):
 			else:
 				print("[Janitor] NetworkTraffic: Unable to access network traffic information! (Try 'cat /proc/net/dev' for testing on command line.)")
 		return False
+
+
+class FunctionTimer:
+	def __init__(self):
+		self.items = {}
+
+	def add(self, fnc):
+		if isinstance(fnc, (tuple, list)) and len(fnc) == 2 and isinstance(fnc[0], str) and isinstance(fnc[1], dict) and fnc[0] not in self.items:
+			self.items[fnc[0]] = fnc[1]
+
+	def remove(self, fncid):
+		if isinstance(fncid, str) and fncid in self.items:
+			self.items.pop(fncid)
+
+	def get(self):
+		return self.items
+
+	def getItem(self, item):
+		return self.items.get(item)
+
+
+functionTimer = FunctionTimer()
