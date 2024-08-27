@@ -49,7 +49,7 @@ public:
 
 	int getVolume() { return leftVol; }
 	int getVolumeLeft() { return leftVol; }
-	int getVolumeRight() { return leftRight; }
+	int getVolumeRight() { return rightVol; }
 	bool isMuted() { return muted; }
 };
 
