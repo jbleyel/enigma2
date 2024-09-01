@@ -62,7 +62,7 @@ public:
 		if (version == 1)
 		{
 			if (sscanf(line, "%x:%x:%x:%x:%d:%d", &NS, &onid, &tsid, &sid, &LCN_BROADCAST, &SIGNAL) == 6)
-				return eServiceReferenceDVB(eDVBNamespace(ns), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
+				return eServiceReferenceDVB(eDVBNamespace(NS), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
 			else
 				return eServiceReferenceDVB();
 		}
@@ -81,7 +81,7 @@ public:
 					SERVICENAME_GUI = Data[3];
 				}
 			}
-			return eServiceReferenceDVB(eDVBNamespace(ns), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
+			return eServiceReferenceDVB(eDVBNamespace(NS), eTransportStreamID(tsid), eOriginalNetworkID(onid), eServiceID(sid), 0);
 		}
 		return eServiceReferenceDVB();
 	}
