@@ -96,6 +96,9 @@ void eComponentScan::addInitial(const eDVBFrontendParametersATSC &p)
 
 int eComponentScan::start(int feid, int flags, int networkid)
 {
+
+	eDebug("[eComponentScan] start / m_done=%d", m_done);
+
 	if (m_initial.empty())
 		return -2;
 
@@ -168,6 +171,8 @@ int eComponentScan::start(int feid, int flags, int networkid)
 			}
 		}
 	}
+
+	eDebug("[eComponentScan] start m_scan");
 	m_scan->start(m_initial, flags, networkid);
 
 	return 0;
