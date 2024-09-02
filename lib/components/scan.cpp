@@ -57,23 +57,13 @@ eComponentScan::eComponentScan(): m_done(-1), m_failed(0)
 
 eComponentScan::~eComponentScan()
 {
-	eDebug("[eComponentScan] destructor 1");
-	m_initial.clear();
-
-	if(m_scan_event_connection)
-		delete m_scan_event_connection;
-
-	eDebug("[eComponentScan] destructor 2");
-
-	if(m_scan)
-		delete m_scan;
-
-	eDebug("[eComponentScan] destructor 3");
 }
 
 void eComponentScan::clear()
 {
 	m_initial.clear();
+	m_done = -1;
+	m_failed = 0;
 }
 
 void eComponentScan::addInitial(const eDVBFrontendParametersSatellite &p)
