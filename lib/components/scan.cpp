@@ -8,7 +8,7 @@ DEFINE_REF(eComponentScan);
 
 void eComponentScan::scanEvent(int evt)
 {
-	eDebug("[eComponentScan] scanEvent %d", evt);
+//	eDebug("scan event %d!", evt);
 
 	switch(evt)
 	{
@@ -62,8 +62,6 @@ eComponentScan::~eComponentScan()
 void eComponentScan::clear()
 {
 	m_initial.clear();
-	m_done = -1;
-	m_failed = 0;
 }
 
 void eComponentScan::addInitial(const eDVBFrontendParametersSatellite &p)
@@ -96,9 +94,6 @@ void eComponentScan::addInitial(const eDVBFrontendParametersATSC &p)
 
 int eComponentScan::start(int feid, int flags, int networkid)
 {
-
-	eDebug("[eComponentScan] start / m_done=%d", m_done);
-
 	if (m_initial.empty())
 		return -2;
 
@@ -122,12 +117,6 @@ int eComponentScan::start(int feid, int flags, int networkid)
 		eDebug("[eComponentScan] allocating raw channel (on frontend %d) failed!", feid);
 		return -1;
 	}
-
-	if(m_scan_event_connection)
-		delete m_scan_event_connection;
-
-	if(m_scan)
-		delete m_scan;
 
 	m_scan = new eDVBScan(channel);
 	m_scan->connectEvent(sigc::mem_fun(*this, &eComponentScan::scanEvent), m_scan_event_connection);
@@ -171,8 +160,6 @@ int eComponentScan::start(int feid, int flags, int networkid)
 			}
 		}
 	}
-
-	eDebug("[eComponentScan] start m_scan");
 	m_scan->start(m_initial, flags, networkid);
 
 	return 0;
