@@ -83,7 +83,7 @@ int eStaticServiceM2TSInformation::getLength(const eServiceReference &ref)
 
 	eDVBTSTools tstools;
 
-	struct stat s;
+	struct stat s = {};
 	stat(ref.path.c_str(), &s);
 
 	eM2TSFile *file = new eM2TSFile(ref.path.c_str());
@@ -386,7 +386,7 @@ RESULT eServiceFactoryM2TS::info(const eServiceReference &ref, ePtr<iStaticServi
 
 RESULT eServiceFactoryM2TS::offlineOperations(const eServiceReference &ref, ePtr<iServiceOfflineOperations> &ptr)
 {
-	ptr = 0;
+	ptr = nullptr;
 	return -1;
 }
 

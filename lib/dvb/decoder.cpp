@@ -850,7 +850,11 @@ static int64_t get_pts_video()
 }
 #endif
 
+#if SIGCXX_MAJOR_VERSION == 2
 RESULT eDVBVideo::connectEvent(const sigc::slot1<void, struct iTSMPEGDecoder::videoEvent> &event, ePtr<eConnection> &conn)
+#else
+RESULT eDVBVideo::connectEvent(const sigc::slot<void(struct iTSMPEGDecoder::videoEvent)> &event, ePtr<eConnection> &conn)
+#endif
 {
 	conn = new eConnection(this, m_event.connect(event));
 	return 0;
@@ -858,7 +862,7 @@ RESULT eDVBVideo::connectEvent(const sigc::slot1<void, struct iTSMPEGDecoder::vi
 
 int eDVBVideo::readApiSize(int fd, int &xres, int &yres, int &aspect)
 {
-	video_size_t size;
+	video_size_t size = {};
 	if (!::ioctl(fd, VIDEO_GET_SIZE, &size))
 	{
 		xres = size.w;
@@ -951,7 +955,7 @@ int eDVBVideo::getProgressive()
 	{
 		if (m_progressive == -1)
 		{
-			char tmp[64];
+			char tmp[64] = {};
 			sprintf(tmp, "/proc/stb/vmpeg/%d/progressive", m_dev);
 #ifdef DREAMNEXTGEN
 			CFile::parseInt(&m_progressive, tmp);
@@ -1018,7 +1022,7 @@ int eDVBPCR::startPid(int pid)
 {
 	if (m_fd_demux < 0)
 		return -1;
-	dmx_pes_filter_params pes;
+	dmx_pes_filter_params pes = {};
 	memset(&pes, 0, sizeof(pes));
 
 	pes.pid      = pid;
@@ -1368,7 +1372,7 @@ eTSMPEGDecoder::eTSMPEGDecoder(eDVBDemux *demux, int decoder)
 	CONNECT(m_showSinglePicTimer->timeout, eTSMPEGDecoder::finishShowSinglePic);
 	m_state = stateStop;
 
-	char filename[128];
+	char filename[128] = {};
 	sprintf(filename, "/dev/dvb/adapter%d/audio%d", m_demux ? m_demux->adapter : 0, m_decoder);
 	m_has_audio = !access(filename, W_OK);
 
@@ -1727,7 +1731,11 @@ void eTSMPEGDecoder::parseVideoInfo()
 }
 #endif
 
+#if SIGCXX_MAJOR_VERSION == 2
 RESULT eTSMPEGDecoder::connectVideoEvent(const sigc::slot1<void, struct videoEvent> &event, ePtr<eConnection> &conn)
+#else
+RESULT eTSMPEGDecoder::connectVideoEvent(const sigc::slot<void(struct videoEvent)> &event, ePtr<eConnection> &conn)
+#endif
 {
 	conn = new eConnection(this, m_video_event.connect(event));
 	return 0;

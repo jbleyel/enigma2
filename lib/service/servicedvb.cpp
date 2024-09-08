@@ -1515,7 +1515,11 @@ RESULT eDVBServicePlay::setTarget(int target, bool noaudio = false)
 	return 0;
 }
 
+#if SIGCXX_MAJOR_VERSION == 2
 RESULT eDVBServicePlay::connectEvent(const sigc::slot2<void,iPlayableService*,int> &event, ePtr<eConnection> &connection)
+#else
+RESULT eDVBServicePlay::connectEvent(const sigc::slot<void(iPlayableService*,int)> &event, ePtr<eConnection> &connection)
+#endif
 {
 	connection = new eConnection((iPlayableService*)this, m_event.connect(event));
 	return 0;
@@ -3224,7 +3228,7 @@ void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
 			m_subtitle_parser->connectNewPage(sigc::mem_fun(*this, &eDVBServicePlay::newDVBSubtitlePage), m_new_dvb_subtitle_page_connection);
 			if (m_timeshift_changed)
 			{
-				struct SubtitleTrack track;
+				struct SubtitleTrack track = {};
 				if (getCachedSubtitle(track) >= 0)
 				{
 					if (track.type == 0) // dvb
