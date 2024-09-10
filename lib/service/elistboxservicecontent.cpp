@@ -615,7 +615,7 @@ void eListboxPythonServiceContent::setBuildArgs(int selected)
 	bool isStreamed = m_record_indicator_mode && isPlayable && checkServiceIsRecorded(ref, pNavigation::isStreaming);
 	bool isPseudoRecorded = m_record_indicator_mode && isPlayable && checkServiceIsRecorded(ref, pNavigation::isPseudoRecording);
 	bool marked = ((m_current_marked && isSelected) || (cursorValid() && isMarked(*m_service_cursor)));
-	bool isinBouquet = ref.flags & 8192;
+	bool isinBouquet = ref.flags & dxIntIsinBouquet;
 
 	// status bitmask
 	// 1 selected
