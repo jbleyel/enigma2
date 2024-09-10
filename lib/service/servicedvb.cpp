@@ -3618,33 +3618,58 @@ void eDVBServicePlay::newSubtitleStream()
 	m_event((iPlayableService*)this, evUpdatedInfo);
 }
 
+// How many seconds before subtitle pages are considered to have bad timing.
+#define MAX_SUBTITLE_LIFESPAN 90
+
+// Used to sort subtitles in chronological order
+bool compare_pts(const eDVBTeletextSubtitlePage &a, const eDVBTeletextSubtitlePage &b)
+{
+	return a.m_pts < b.m_pts;
+}
 void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 {
 	if (m_subtitle_widget)
 	{
 		int subtitledelay = 0;
-		pts_t pts;
-		m_decoder->getPTS(0, pts);
-		if (m_is_pvr || m_timeshift_enabled)
+		pts_t pts = 0;
+		eDVBTeletextSubtitlePage tmppage = page;
+		tmppage.m_have_pts = true;
+
+		if (m_decoder)
+			m_decoder->getPTS(0, pts);
+		//m_decoder->getPTS(0, pts);
+		pts_t diff = tmppage.m_pts - pts;
+
+		if (diff < 0 || diff > (MAX_SUBTITLE_LIFESPAN * 90000))
 		{
-			eDebug("[eDVBServicePlay] Subtitle in recording/timeshift");
-			subtitledelay = eSubtitleSettings::subtitle_noPTSrecordingdelay;
+
+			if (m_is_pvr || m_timeshift_enabled)
+			{
+			//	eDebug("[eDVBServicePlay] Subtitle in recording/timeshift");
+			//	subtitledelay = eSubtitleSettings::subtitle_noPTSrecordingdelay;
+			//	tmppage.m_pts += subtitledelay;
+			//	m_subtitle_pages.push_back(tmppage);
+			//	m_subtitle_pages.sort(compare_pts);
+			}
 		}
 		else
 		{
 			/* check the setting for subtitle delay in live playback, either with pts, or without pts */
 			subtitledelay = eSubtitleSettings::subtitle_bad_timing_delay;
+			tmppage.m_pts += subtitledelay;
+			m_subtitle_pages.push_back(tmppage);
+			m_subtitle_pages.sort(compare_pts);
 		}
 
 		// eDebug("[eDVBServicePlay] Subtitle get  TTX have_pts=%d pvr=%d timeshift=%d page.pts=%lld pts=%lld delay=%d", page.m_have_pts, m_is_pvr, m_timeshift_enabled, page.m_pts, pts, subtitledelay);
-		eDVBTeletextSubtitlePage tmppage = page;
-		tmppage.m_have_pts = true;
+		//eDVBTeletextSubtitlePage tmppage = page;
+	//	tmppage.m_have_pts = true;
 
-		if (abs(tmppage.m_pts - pts) > SUBT_TXT_ABNORMAL_PTS_DIFFS)
-			tmppage.m_pts = pts; // fix abnormal pts diffs
+	//	if (abs(tmppage.m_pts - pts) > SUBT_TXT_ABNORMAL_PTS_DIFFS)
+	//		tmppage.m_pts = pts; // fix abnormal pts diffs
 
-		tmppage.m_pts += subtitledelay;
-		m_subtitle_pages.push_back(tmppage);
+	//	tmppage.m_pts += subtitledelay;
+	//	m_subtitle_pages.push_back(tmppage);
 
 		checkSubtitleTiming();
 	}
