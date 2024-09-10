@@ -89,7 +89,7 @@ std::string eServiceReference::toString() const
 
 	ret += getNum(type);
 	ret += ':';
-	ret += getNum(flags & ~dxIntIsinBouquet); // ignore dxIntIsinBouquet because this is only for internal use
+	ret += getNum(flags & ~16384); // ignore 16384 because this is only for internal use
 	for (unsigned int i = 0; i < sizeof(data) / sizeof(*data); ++i)
 	{
 		ret += ':';
