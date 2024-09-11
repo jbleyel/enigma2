@@ -152,11 +152,7 @@ int eDVBVolumecontrol::setVolume(int left, int right)
 #else
 	/* convert to -1dB steps */
 
-#ifdef VOLUME64DB
-	int minVol = 64;
-#else
 	int minVol = 63;
-#endif
 	left = minVol - leftVol * minVol / 100;
 	right = minVol - rightVol * minVol / 100;
 	/* now range is 63..0, where 0 is loudest */
