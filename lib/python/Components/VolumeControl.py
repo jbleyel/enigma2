@@ -58,8 +58,12 @@ class VolumeControl:
 		self.updateVolume()
 
 	def keyVolumeDown(self):
-		self.dvbVolumeControl.volumeDown(0, 0)
-		self.updateVolume()
+		newVolume = self.dvbVolumeControl.volumeDown(0, 0)
+		if newVolume:
+			self.updateVolume()
+		else:
+			self.dvbVolumeControl.volumeMute()
+			self.updateVolume(False)
 
 	def keyVolumeLong(self):
 		self.dvbVolumeControl.setVolumeSteps(config.volumeControl.longStep.value)
@@ -82,8 +86,8 @@ class VolumeControl:
 		if self.dvbVolumeControl.isMuted():
 			self.hideTimer.stop()
 
-	def updateVolume(self):
-		if self.dvbVolumeControl.isMuted():
+	def updateVolume(self, muteCheck=True):
+		if muteCheck and self.dvbVolumeControl.isMuted():
 			self.keyVolumeMute()  # Unmute.
 		else:
 			self.volumeDialog.setValue(self.dvbVolumeControl.getVolume())

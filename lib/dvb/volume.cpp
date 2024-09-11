@@ -118,14 +118,16 @@ void eDVBVolumecontrol::closeMixer(int fd)
 #endif
 }
 
-void eDVBVolumecontrol::volumeUp(int left, int right)
+int eDVBVolumecontrol::volumeUp(int left, int right)
 {
 	setVolume(leftVol + (left ? left : m_volsteps), rightVol + (right ? right : m_volsteps));
+	return leftVol;
 }
 
-void eDVBVolumecontrol::volumeDown(int left, int right)
+int eDVBVolumecontrol::volumeDown(int left, int right)
 {
 	setVolume(leftVol - (left ? left : m_volsteps), rightVol - (right ? right : m_volsteps));
+	return leftVol;
 }
 
 int eDVBVolumecontrol::checkVolume(int vol)
@@ -137,7 +139,7 @@ int eDVBVolumecontrol::checkVolume(int vol)
 	return vol;
 }
 
-void eDVBVolumecontrol::setVolume(int left, int right)
+int eDVBVolumecontrol::setVolume(int left, int right)
 {
 	/* left, right is 0..100 */
 	leftVol = checkVolume(left);
@@ -184,6 +186,7 @@ void eDVBVolumecontrol::setVolume(int left, int right)
 		CFile::writeInt("/proc/stb/avs/0/volume", left); /* in -1dB */
 	}
 #endif
+	return leftVol;
 }
 
 void eDVBVolumecontrol::volumeMute()
