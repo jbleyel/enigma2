@@ -389,7 +389,7 @@ public:
 	bool doHideVBI() const { return m_flags & dxHideVBI; }
 	bool doCenterDVBSubs() const { return m_flags & dxCenterDVBSubs; }
 	bool useEIT() const { return !(m_flags & dxNoEIT); }
-	bool noAITranslation() const { return (m_flags & dxNoAITranslation); }
+	bool noAITranslation() const { return m_flags & dxNoAITranslation; }
 
 	CAID_LIST m_ca;
 
