@@ -796,6 +796,9 @@ PyObject *eDVBServiceList::getContent(const char* format, bool sorted)
 				ePyObject tmp;
 				switch(format[i])
 				{
+				case 'L':  // service LCN
+					tmp = PyLong_FromLong(ref.getChannelNum());
+					break;
 				case 'R':  // service reference (swig)object
 					tmp = NEW_eServiceReference(ref);
 					break;
