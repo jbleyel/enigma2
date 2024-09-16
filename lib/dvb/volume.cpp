@@ -50,6 +50,7 @@ eDVBVolumecontrol::eDVBVolumecontrol()
 	mainVolume = NULL;
 	openMixer();
 #endif
+	mute_zero = false;
 	volumeUnMute();
 	setVolume(100, 100);
 }
@@ -256,10 +257,11 @@ void eDVBVolumecontrol::volumeUnMute()
 #endif
 }
 
-void eDVBVolumecontrol::volumeToggleMute()
+bool eDVBVolumecontrol::volumeToggleMute()
 {
 	if (isMuted())
 		volumeUnMute();
 	else
 		volumeMute();
+	return muted;
 }

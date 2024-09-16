@@ -582,6 +582,11 @@ def runScreenTest():
 	configfile.save()
 	from Screens.InfoBarGenerics import saveResumePoints
 	saveResumePoints()
+	try:   # Close Channelselection if opened to prevent crash on shutdown
+		if InfoBar.InfoBar.instance.servicelist.shown:
+			InfoBar.InfoBar.instance.servicelist.close()
+	except Exception:
+		pass
 	return 0
 
 

@@ -759,6 +759,7 @@ RESULT eDVBServiceList::getContent(std::list<eServiceReference> &list, bool sort
 //   R = Service Reference (as swig object .. this is very slow)
 //   S = Service Reference (as python string object .. same as ref.toString())
 //   C = Service Reference (as python string object .. same as ref.toCompareString())
+//   L = Service LCN (as python int object)
 //   N = Service Name (as python string object)
 //   n = Short Service Name (short name brakets used) (as python string object)
 //   when exactly one return value per service is selected in the format string,
