@@ -389,7 +389,6 @@ bool eStreamServer::stopStreamClient(const std::string remotehost, const std::st
 
 PyObject *eStreamServer::getConnectedClientDetails(int index)
 {
-	eDebug("eStreamServer::getConnectedClientDetails");
 	ePyObject ret;
 
 	eUsePtr<iDVBChannel> stream_channel;
@@ -471,7 +470,6 @@ PyObject *eStreamServer::getConnectedClientDetails(int index)
 
 PyObject *eStreamServer::getConnectedClients()
 {
-	eDebug("eStreamServer::getConnectedClients");
 	ePyObject ret;
 	int idx = 0;
 	int cnt = clients.size();
