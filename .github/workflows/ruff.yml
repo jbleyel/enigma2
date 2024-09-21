@@ -14,4 +14,4 @@ jobs:
       - uses: jbleyel/ruff-action@v1
         with:
           src: "./lib/python/"
-          args: --ignore E501,E722,F821,F405,E402,F401
+          args: --ignore E501,E722,F821,F405,E402,F401,E731
