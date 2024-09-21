@@ -46,10 +46,13 @@ eStreamClient::~eStreamClient()
 
 void eStreamClient::start()
 {
-	eDebug("[eStreamClient] start");
+	eDebug("eStreamClient::start");
 	rsn = eSocketNotifier::create(eApp, streamFd, eSocketNotifier::Read);
+	eDebug("eStreamClient::start 2");
 	CONNECT(rsn->activated, eStreamClient::notifier);
+	eDebug("eStreamClient::start 3");
 	CONNECT(m_timeout->timeout, eStreamClient::stopStream);
+	eDebug("eStreamClient::start 4");
 }
 
 void eStreamClient::set_socket_option(int fd, int optid, int option)
@@ -74,7 +77,7 @@ void eStreamClient::notifier(int what)
 	int len;
 	if ((len = singleRead(streamFd, buf, sizeof(buf))) <= 0)
 	{
-		eDebug("[eStreamClient]::notifier stop");
+		eDebug("eStreamClient::notifier stop");
 		rsn->stop();
 		stop();
 		parent->connectionLost(this);
@@ -90,7 +93,7 @@ void eStreamClient::notifier(int what)
 		size_t posdur;
 		if (eSimpleConfig::getBool("config.streaming.authentication", false))
 		{
-			eDebug("[eStreamClient]::notifier authentication TRUE");
+			eDebug("eStreamClient::notifier authentication TRUE");
 			bool authenticated = false;
 			if ((pos = request.find("Authorization: Basic ")) != std::string::npos)
 			{
@@ -136,7 +139,7 @@ void eStreamClient::notifier(int what)
 			}
 			if (!authenticated)
 			{
-				eDebug("[eStreamClient] STOP not authenticated");
+				eDebug("eStreamClient STOP not authenticated");
 				const char *reply = "HTTP/1.0 401 Authorization Required\r\nWWW-Authenticate: Basic realm=\"streamserver\"\r\n\r\n";
 				writeAll(streamFd, reply, strlen(reply));
 				rsn->stop();
@@ -291,7 +294,7 @@ void eStreamClient::notifier(int what)
 	}
 	if (!running)
 	{
-		eDebug("[eStreamClient] STOP not running");
+		eDebug("eStreamClient STOP not running");
 		const char *reply = "HTTP/1.0 400 Bad Request\r\n\r\n";
 		writeAll(streamFd, reply, strlen(reply));
 		rsn->stop();
@@ -350,6 +353,7 @@ eStreamServer *eStreamServer::getInstance()
 
 void eStreamServer::newConnection(int socket)
 {
+	eDebug("eStreamServer::newConnection");
 	ePtr<eStreamClient> client = new eStreamClient(this, socket, RemoteHost());
 	clients.push_back(client);
 	client->start();
