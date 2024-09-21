@@ -38,7 +38,7 @@ static void signal_handler(int x)
 static void ignore_but_report_signals()
 {
 	/* we set the signal to not restart syscalls, so we can detect our signal. */
-	struct sigaction act;
+	struct sigaction act = {};
 	act.sa_handler = signal_handler; // no, SIG_IGN doesn't do it. we want to receive the -EINTR
 	act.sa_flags = 0;
 	sigaction(SIGUSR1, &act, 0);
@@ -82,8 +82,8 @@ void eFilePushThread::thread()
 			if (maxread && !m_sof)
 			{
 #ifdef SHOW_WRITE_TIME
-				struct timeval starttime;
-				struct timeval now;
+				struct timeval starttime = {};
+				struct timeval now = {};
 				gettimeofday(&starttime, NULL);
 #endif
 				buf_end = m_source->read(m_current_position, m_buffer, maxread);
@@ -124,7 +124,7 @@ void eFilePushThread::thread()
 				/* on EOF, try COMMITting once. */
 				if (m_send_pvr_commit)
 				{
-					struct pollfd pfd;
+					struct pollfd pfd = {};
 					pfd.fd = m_fd_dest;
 					pfd.events = POLLIN;
 					switch (poll(&pfd, 1, 250)) // wait for 250ms
@@ -530,8 +530,8 @@ void eFilePushThreadRecorder::thread()
 		}
 
 #ifdef SHOW_WRITE_TIME
-		struct timeval starttime;
-		struct timeval now;
+		struct timeval starttime = {};
+		struct timeval now = {};
 		gettimeofday(&starttime, NULL);
 #endif
 		int w = writeData(bytes);
