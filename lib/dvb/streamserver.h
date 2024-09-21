@@ -4,6 +4,7 @@
 #include <lib/network/serversocket.h>
 #include <lib/service/servicedvbstream.h>
 #include <lib/nav/core.h>
+#include <lib/base/eerror.h>
 
 #ifndef SWIG
 class eStreamServer;
@@ -32,8 +33,14 @@ protected:
 
 	ePtr<eTimer> m_timeout;
 
-	void streamStopped() { stopStream(); }
-	void tuneFailed() { stopStream(); }
+	void streamStopped() { 
+		eDebug("eStreamClient::streamStopped");
+		stopStream();
+	}
+	void tuneFailed() { 
+		eDebug("eStreamClient::tuneFailed");
+		stopStream(); 
+	}
 
 public:
 	void stopStream();

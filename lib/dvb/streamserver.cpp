@@ -29,6 +29,7 @@ eStreamClient::eStreamClient(eStreamServer *handler, int socket, const std::stri
 
 eStreamClient::~eStreamClient()
 {
+	eDebug("eStreamClient::~eStreamClient");
 	rsn->stop();
 	stop();
 	if (streamThread)
@@ -45,6 +46,7 @@ eStreamClient::~eStreamClient()
 
 void eStreamClient::start()
 {
+	eDebug("[eStreamClient] start");
 	rsn = eSocketNotifier::create(eApp, streamFd, eSocketNotifier::Read);
 	CONNECT(rsn->activated, eStreamClient::notifier);
 	CONNECT(m_timeout->timeout, eStreamClient::stopStream);
@@ -72,6 +74,7 @@ void eStreamClient::notifier(int what)
 	int len;
 	if ((len = singleRead(streamFd, buf, sizeof(buf))) <= 0)
 	{
+		eDebug("[eStreamClient]::notifier stop");
 		rsn->stop();
 		stop();
 		parent->connectionLost(this);
@@ -87,6 +90,7 @@ void eStreamClient::notifier(int what)
 		size_t posdur;
 		if (eSimpleConfig::getBool("config.streaming.authentication", false))
 		{
+			eDebug("[eStreamClient]::notifier authentication TRUE");
 			bool authenticated = false;
 			if ((pos = request.find("Authorization: Basic ")) != std::string::npos)
 			{
@@ -132,6 +136,7 @@ void eStreamClient::notifier(int what)
 			}
 			if (!authenticated)
 			{
+				eDebug("[eStreamClient] STOP not authenticated");
 				const char *reply = "HTTP/1.0 401 Authorization Required\r\nWWW-Authenticate: Basic realm=\"streamserver\"\r\n\r\n";
 				writeAll(streamFd, reply, strlen(reply));
 				rsn->stop();
@@ -286,6 +291,7 @@ void eStreamClient::notifier(int what)
 	}
 	if (!running)
 	{
+		eDebug("[eStreamClient] STOP not running");
 		const char *reply = "HTTP/1.0 400 Bad Request\r\n\r\n";
 		writeAll(streamFd, reply, strlen(reply));
 		rsn->stop();
@@ -297,6 +303,7 @@ void eStreamClient::notifier(int what)
 
 void eStreamClient::stopStream()
 {
+	eDebug("eStreamClient::stopStream");
 	ePtr<eStreamClient> ref = this;
 	rsn->stop();
 	parent->connectionLost(this);
@@ -368,6 +375,7 @@ void eStreamServer::stopStream()
 
 bool eStreamServer::stopStreamClient(const std::string remotehost, const std::string serviceref)
 {
+	eDebug("eStreamServer::stopStreamClient");
 	for (eSmartPtrList<eStreamClient>::iterator it = clients.begin(); it != clients.end(); ++it)
 	{
 		if(it->getRemoteHost() == remotehost && it->getServiceref() == serviceref)
@@ -381,6 +389,7 @@ bool eStreamServer::stopStreamClient(const std::string remotehost, const std::st
 
 PyObject *eStreamServer::getConnectedClientDetails(int index)
 {
+	eDebug("eStreamServer::getConnectedClientDetails");
 	ePyObject ret;
 
 	eUsePtr<iDVBChannel> stream_channel;
@@ -462,6 +471,7 @@ PyObject *eStreamServer::getConnectedClientDetails(int index)
 
 PyObject *eStreamServer::getConnectedClients()
 {
+	eDebug("eStreamServer::getConnectedClients");
 	ePyObject ret;
 	int idx = 0;
 	int cnt = clients.size();
