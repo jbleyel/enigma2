@@ -505,7 +505,8 @@ void eFilePushThreadRecorder::thread()
 
 	if (m_protocol == _PROTO_RTSP_TCP)
 	{
-		int flags = fcntl(m_fd_source, F_GETFL, 0) |= O_NONBLOCK;
+		int flags = fcntl(m_fd_source, F_GETFL, 0);
+		flags |= O_NONBLOCK;
 		if (fcntl(m_fd_source, F_SETFL, flags) == -1)
 			eDebug("failed setting DMX handle %d in non-blocking mode, error %d: %s", m_fd_source, errno, strerror(errno));
 	}
