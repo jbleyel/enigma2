@@ -218,6 +218,11 @@ class Session:
 		if self.summary is not None:
 			self.summary.show()
 
+	def onShutdown(self):
+		for dialog in self.allDialogs:
+			if hasattr(dialog, "onShutdown"):
+				dialog.onShutdown()
+
 	def reloadDialogs(self):
 		for dialog in self.allDialogs:
 			if hasattr(dialog, "desktop"):
@@ -578,15 +583,11 @@ def runScreenTest():
 	print("=" * 100)
 	session.nav.stopService()
 	session.nav.shutdown()
+	session.onShutdown()
 	VolumeControl.instance.saveVolumeState()
 	configfile.save()
 	from Screens.InfoBarGenerics import saveResumePoints
 	saveResumePoints()
-	try:   # Close Channelselection if opened to prevent crash on shutdown
-		if InfoBar.InfoBar.instance.servicelist.shown:
-			InfoBar.InfoBar.instance.servicelist.close()
-	except Exception:
-		pass
 	return 0
 
 
