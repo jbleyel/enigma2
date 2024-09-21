@@ -430,7 +430,7 @@ class EPGList(GUIComponent):
 		if self.type == EPG_TYPE_GRAPH or self.type == EPG_TYPE_INFOBARGRAPH:
 			if self.cur_service is None:
 				return None, None
-			old_service = self.cur_service  #(service, service_name, events, picon)
+			# old_service = self.cur_service  #(service, service_name, events, picon)
 			events = self.cur_service[2]
 			refstr = self.cur_service[0]
 			try:
@@ -441,7 +441,7 @@ class EPGList(GUIComponent):
 				service = ServiceReference(refstr)
 				event = self.getEventFromId(service, eventid)  # get full event info
 				return event, service
-			except:
+			except Exception:
 				return None, ServiceReference(refstr)
 		else:
 			idx = 0
@@ -477,7 +477,7 @@ class EPGList(GUIComponent):
 				events = old_service[2]
 				cur_event = events[self.cur_event]  # (event_id, event_title, begin_time, duration)
 				last_time = cur_event[2]
-			except:
+			except Exception:
 				pass
 		if cur_service:
 			self.cur_event = 0
@@ -665,7 +665,7 @@ class EPGList(GUIComponent):
 		elif self.type == EPG_TYPE_GRAPH or self.type == EPG_TYPE_INFOBARGRAPH:
 			servicew = 0
 			piconw = 0
-			channelw = 0
+			# channelw = 0
 			if self.type == EPG_TYPE_GRAPH:
 				if self.showServiceTitle:
 					servicew = config.epgselection.graph_servicewidth.value
@@ -681,7 +681,7 @@ class EPGList(GUIComponent):
 					piconw = config.epgselection.infobar_piconwidth.value
 				if self.showServiceNumber:
 					font = gFont(self.serviceFontNameGraph, self.serviceFontSizeGraph + config.epgselection.infobar_servfs.value)
-					channelw = getTextBoundarySize(self.instance, font, self.instance.size(), "0000").width()
+					# channelw = getTextBoundarySize(self.instance, font, self.instance.size(), "0000").width()
 			w = (piconw + servicew)
 			self.service_rect = Rect(0, 0, w, height)
 			self.event_rect = Rect(w, 0, width - w, height)
@@ -691,10 +691,7 @@ class EPGList(GUIComponent):
 				piconWidth = w - 2 * self.serviceBorderWidth
 			self.picon_size = eSize(piconWidth, piconHeight)
 		elif self.type == EPG_TYPE_VERTICAL:
-			if self.picy > self.timeFontSizeVertical:
-				dh = self.picy
-			else:
-				dh = self.timeFontSizeVertical
+			dh = self.picy if self.picy > self.timeFontSizeVertical else self.timeFontSizeVertical
 			self.line_rect = Rect(0, 0, width, int(config.epgselection.vertical_showlines.value))
 			self.datetime_rect = Rect(0, 0, width, dh)
 			self.descr_rect = Rect(0, dh, width, height - dh)
@@ -723,7 +720,7 @@ class EPGList(GUIComponent):
 			try:
 				from Plugins.SystemPlugins.IceTV.plugin import fetcher
 				return fetcher is not None and fetcher.isIceTVEpgChannel(eServiceReference(service))
-			except ImportError as e:
+			except ImportError:
 				pass
 		return False
 
@@ -1077,16 +1074,16 @@ class EPGList(GUIComponent):
 				duration = ev[3]
 				xpos, ewidth = self.calcEntryPosAndWidthHelper(stime, duration, start, end, width)
 				clock_types = self.getPixmapForEntry(service, ev[0], stime, duration)
-				if self.eventNameAlign.lower() == 'left':
-					if self.eventNameWrap.lower() == 'yes':
-						alignnment = RT_HALIGN_LEFT | RT_VALIGN_CENTER | RT_WRAP
-					else:
-						alignnment = RT_HALIGN_LEFT | RT_VALIGN_CENTER
-				else:
-					if self.eventNameWrap.lower() == 'yes':
-						alignnment = RT_HALIGN_CENTER | RT_VALIGN_CENTER | RT_WRAP
-					else:
-						alignnment = RT_HALIGN_CENTER | RT_VALIGN_CENTER
+				#if self.eventNameAlign.lower() == 'left':
+				#	if self.eventNameWrap.lower() == 'yes':
+				#		alignnment = RT_HALIGN_LEFT | RT_VALIGN_CENTER | RT_WRAP
+				#	else:
+				#		alignnment = RT_HALIGN_LEFT | RT_VALIGN_CENTER
+				#else:
+				#	if self.eventNameWrap.lower() == 'yes':
+				#		alignnment = RT_HALIGN_CENTER | RT_VALIGN_CENTER | RT_WRAP
+				#	else:
+				#		alignnment = RT_HALIGN_CENTER | RT_VALIGN_CENTER
 
 				if stime <= now < (stime + duration):
 					if clock_types is not None and (clock_types == 2 or clock_types == 12):
@@ -1439,7 +1436,7 @@ class EPGList(GUIComponent):
 
 	def fillSimilarList(self, refstr, event_id):
 		# search similar broadcastings
-		t = time()
+		# t = time()
 		if event_id is None:
 			return
 		self.list = self.epgcache.search(('RIBND', 1024, eEPGCache.SIMILAR_BROADCASTINGS_SEARCH, refstr, event_id))
@@ -1615,7 +1612,7 @@ class EPGList(GUIComponent):
 	def getTimeBase(self):
 		try:
 			return int(self.time_base) + (int(self.offs) * int(self.time_epoch) * 60)
-		except:
+		except Exception:
 			return self.time_base
 
 	def resetOffset(self):
@@ -1739,10 +1736,10 @@ class TimelineText(GUIComponent):
 		#self.setTimeLineFontsize()
 		instance.setContent(self.l)
 
-	def setEntries(self, l, timeline_now, time_lines, force):
-		event_rect = l.getEventRect()
-		time_epoch = l.getTimeEpoch()
-		time_base = l.getTimeBase()
+	def setEntries(self, epgList, timeline_now, time_lines, force):
+		event_rect = epgList.getEventRect()
+		time_epoch = epgList.getTimeEpoch()
+		time_base = epgList.getTimeBase()
 
 		if self.timelineAlign.lower() == 'right':
 			alignnment = RT_HALIGN_RIGHT | RT_VALIGN_CENTER
@@ -1759,7 +1756,7 @@ class TimelineText(GUIComponent):
 		# Note: event_rect and service_rect are relative to the timeline_text position
 		# while the time lines are relative to the GraphEPG screen position!
 		if self.time_base != time_base or self.time_epoch != time_epoch or force:
-			service_rect = l.getServiceRect()
+			service_rect = epgList.getServiceRect()
 			time_steps = 60 if time_epoch > 180 else 30
 			num_lines = time_epoch // time_steps
 			incWidth = event_rect.width() / num_lines
@@ -1789,7 +1786,7 @@ class TimelineText(GUIComponent):
 			bgpng = self.TlDate
 			if bgpng is not None and self.graphic:
 				backColor = None
-				backColorSel = None
+				# backColorSel = None
 				res.append(MultiContentEntryPixmapAlphaTest(
 					pos=(0, 0),
 					size=(service_rect.width(), self.listHeight),
@@ -1815,7 +1812,7 @@ class TimelineText(GUIComponent):
 			xpos = 0  # eventLeft
 			if bgpng is not None and self.graphic:
 				backColor = None
-				backColorSel = None
+				# backColorSel = None
 				res.append(MultiContentEntryPixmapAlphaTest(
 					pos=(service_rect.width(), 0),
 					size=(event_rect.width(), self.listHeight),
