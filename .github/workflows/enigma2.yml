@@ -34,7 +34,6 @@ jobs:
           sudo apt-get install libgstreamer1.0-dev
           sudo apt-get install libgstreamer-plugins-base1.0-dev
           sudo apt-get install libfreetype6-dev
-          sudo apt-get install libsigc++-2.0-dev
           sudo apt-get install libfribidi-dev
           sudo apt-get install libavahi-client-dev
           sudo apt-get install libjpeg-turbo8-dev
@@ -64,10 +63,20 @@ jobs:
           make
           sudo make install
           popd
+          echo "installing libsigc++-3"
+          pushd .
+          cd /tmp
+          git clone --depth 1 https://github.com/TwolDE2/libsigc--3.0.git
+          cd libsigc--3.0
+          autoreconf -i
+          ./configure
+          make
+          sudo make install
+          popd
           echo "installing tuxbox"
           pushd .
           cd /tmp
-          git clone --depth 1 https://github.com/OpenPLi/tuxtxt.git
+          git clone --depth 1 https://github.com/oe-alliance/tuxtxt.git
           cd tuxtxt/libtuxtxt
           autoreconf -i
           ./configure --with-boxtype=generic DVB_API_VERSION=5
@@ -92,7 +101,7 @@ jobs:
           pip3 install six
           echo "compiling enigma2"
           autoreconf -i
-          ./configure --with-libsdl=no --with-boxtype=nobox --enable-dependency-tracking ac_cv_prog_c_openmp=-fopenmp --with-gstversion=1.0 --with-textlcd
+          ./configure --with-libsig3 --with-libsdl=no --with-boxtype=nobox --enable-dependency-tracking ac_cv_prog_c_openmp=-fopenmp --with-gstversion=1.0 --with-textlcd
           make
           python -m compileall .
           echo done!
