@@ -42,16 +42,10 @@ AC_ARG_WITH(gstversion,
 PKG_CHECK_MODULES(TUXTXT, tuxbox-tuxtxt)
 PKG_CHECK_MODULES(GSTREAMER, gstreamer-$GST_MAJORMINOR gstreamer-pbutils-$GST_MAJORMINOR)
 
-AC_ARG_WITH(libsigc3,
-	AS_HELP_STRING([--with-libsigc3], [use libsigc version 3]),
-	[[with_libsigc3=$withval]],
-	[[with_libsigc3=no]]
-)
-if test x"$with_libsigc3" = xyes ; then
-	AC_DEFINE_UNQUOTED(LIBSIGC_MAJORMINOR,"3.0",[libsigc 3])
-else
-	AC_DEFINE_UNQUOTED(LIBSIGC_MAJORMINOR,"2.0",[libsigc 2])
-fi
+dnl versions of libsigc
+AC_ARG_WITH(libsigcversion,
+	AS_HELP_STRING([--with-libsigcversion],[use libsigc version (major.minor)]),
+	[LIBSIGC_MAJORMINOR=$withval],[LIBSIGC_MAJORMINOR=2.0])
 
 PKG_CHECK_MODULES(BASE, [freetype2 fribidi gstreamer-$GST_MAJORMINOR gstreamer-pbutils-$GST_MAJORMINOR libdvbsi++ libpng libxml-2.0 sigc++-$LIBSIGC_MAJORMINOR libssl libcrypto libcurl])
 PKG_CHECK_MODULES(LIBDDVD, libdreamdvd, HAVE_LIBDDVD="yes", HAVE_LIBDDVD="no")

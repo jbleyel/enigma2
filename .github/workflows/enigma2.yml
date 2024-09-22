@@ -102,7 +102,7 @@ jobs:
           pip3 install six
           echo "compiling enigma2"
           autoreconf -i
-          ./configure --with-libsig3 --with-libsdl=no --with-boxtype=nobox --enable-dependency-tracking ac_cv_prog_c_openmp=-fopenmp --with-gstversion=1.0 --with-textlcd
+          ./configure --with-libsigcversion=3.0 --with-libsdl=no --with-boxtype=nobox --enable-dependency-tracking ac_cv_prog_c_openmp=-fopenmp --with-gstversion=1.0 --with-textlcd
           make
           python -m compileall .
           echo done!
