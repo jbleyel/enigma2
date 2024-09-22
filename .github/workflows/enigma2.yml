@@ -101,6 +101,8 @@ jobs:
         run: |
           pip3 install six
           echo "compiling enigma2"
+          sed -i "s/sigc++-2.0/sigc++-3.0/g" ./configure.ac
+          sed -i "s/sigc++-2.0/sigc++-3.0/g" ./enigma2.pc.in
           autoreconf -i
           ./configure --with-libsigcversion=3.0 --with-libsdl=no --with-boxtype=nobox --enable-dependency-tracking ac_cv_prog_c_openmp=-fopenmp --with-gstversion=1.0 --with-textlcd
           make
