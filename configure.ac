@@ -48,9 +48,9 @@ AC_ARG_WITH(libsigc3,
 	[[with_libsigc3=no]]
 )
 if test x"$with_libsigc3" = xyes ; then
-	AC_DEFINE(LIBSIGC_MAJORMINOR, 3.0,[libsigc 3])
+	AC_DEFINE_UNQUOTED(LIBSIGC_MAJORMINOR,"3.0",[libsigc 3])
 else
-	AC_DEFINE(LIBSIGC_MAJORMINOR, 2.0,[libsigc 2])
+	AC_DEFINE_UNQUOTED(LIBSIGC_MAJORMINOR,"2.0",[libsigc 2])
 fi
 
 PKG_CHECK_MODULES(BASE, [freetype2 fribidi gstreamer-$GST_MAJORMINOR gstreamer-pbutils-$GST_MAJORMINOR libdvbsi++ libpng libxml-2.0 sigc++-$LIBSIGC_MAJORMINOR libssl libcrypto libcurl])
