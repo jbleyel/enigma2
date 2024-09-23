@@ -361,6 +361,7 @@ void eStreamServer::newConnection(int socket)
 
 void eStreamServer::connectionLost(eStreamClient *client)
 {
+	eDebug("eStreamServer::connectionLost");
 	eSmartPtrList<eStreamClient>::iterator it = std::find(clients.begin(), clients.end(), client );
 	if (it != clients.end())
 	{
@@ -370,6 +371,7 @@ void eStreamServer::connectionLost(eStreamClient *client)
 
 void eStreamServer::stopStream()
 {
+	eDebug("eStreamServer::stopStream");
 	eSmartPtrList<eStreamClient>::iterator it = clients.begin();
 	if (it != clients.end())
 	{
