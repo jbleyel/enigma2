@@ -366,7 +366,7 @@ static int errs;
 
 int64_t eFilePushThreadRecorder::getTick()
 { //ms
-	struct timespec ts;
+	struct timespec ts = {};
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return (ts.tv_nsec / 1000000) + (ts.tv_sec * 1000);
 }
@@ -495,7 +495,7 @@ void eFilePushThreadRecorder::thread()
 
 #ifdef HAVE_HISILICON
 	/* we set the signal to not restart syscalls, so we can detect our signal. */
-	struct sigaction act;
+	struct sigaction act = {};
 	memset(&act, 0, sizeof(act));
 	act.sa_handler = signal_handler; // no, SIG_IGN doesn't do it. we want to receive the -EINTR
 	act.sa_flags = 0;

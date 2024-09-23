@@ -736,9 +736,9 @@ int eDVBFrontend::openFrontend()
 		{
 			m_dvbversion = DVB_VERSION(3, 0);
 #if defined DTV_API_VERSION
-			struct dtv_property p;
+			struct dtv_property p = {};
 			memset(&p, 0, sizeof(p));
-			struct dtv_properties cmdseq;
+			struct dtv_properties cmdseq = {};
 			cmdseq.props = &p;
 			cmdseq.num = 1;
 			p.cmd = DTV_API_VERSION;
@@ -769,7 +769,7 @@ int eDVBFrontend::openFrontend()
 			struct dtv_property p[1];
 			memset(p, 0, sizeof(p));
 			p[0].cmd = DTV_ENUM_DELSYS;
-			struct dtv_properties cmdseq;
+			struct dtv_properties cmdseq = {};
 			cmdseq.num = 1;
 			cmdseq.props = p;
 			ioctlMeasureStart;
@@ -1810,7 +1810,7 @@ int eDVBFrontend::readFrontendData(int type)
 		{
 			struct dtv_property p = {};
 			memset(&p, 0, sizeof(p));
-			struct dtv_properties cmdseq;
+			struct dtv_properties cmdseq = {};
 			oparm.getSystem(type);
 			cmdseq.props = &p;
 			cmdseq.num = 1;
@@ -3736,7 +3736,7 @@ bool eDVBFrontend::changeType(int type)
 	char mode[4];
 	struct dtv_property p[2];
 	memset(p, 0, sizeof(p));
-	struct dtv_properties cmdseq;
+	struct dtv_properties cmdseq = {};
 	cmdseq.props = p;
 	cmdseq.num = 2;
 	p[0].cmd = DTV_CLEAR;
@@ -3873,7 +3873,7 @@ bool eDVBFrontend::setDeliverySystem(fe_delivery_system_t delsys)
 	eTrace("[eDVBFrontend] frontend %d setDeliverySystem %d", m_slotid, delsys);
 	struct dtv_property p[2];
 	memset(p, 0, sizeof(p));
-	struct dtv_properties cmdseq;
+	struct dtv_properties cmdseq = {};
 	cmdseq.props = p;
 	cmdseq.num = 2;
 	p[0].cmd = DTV_CLEAR;

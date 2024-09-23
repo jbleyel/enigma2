@@ -64,7 +64,7 @@ ssize_t singleRead(int fd, void *buf, size_t count)
 		if (retval < 0)
 		{
 			if (errno == EINTR) continue;
-			eDebug("[singleRead] error: %d %m", errno);
+			eDebug("[singleRead] error: %d (%m)", errno);
 		}
 		return retval;
 	}
@@ -132,7 +132,7 @@ int Connect(const char *hostname, int port, int timeoutsec)
 	int sd = -1;
 	std::vector<struct addrinfo *> addresses;
 	struct addrinfo *info = NULL;
-	struct addrinfo hints;
+	struct addrinfo hints = {};
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC; /* both ipv4 and ipv6 */
 	hints.ai_socktype = SOCK_STREAM;
