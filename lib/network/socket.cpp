@@ -9,6 +9,7 @@
 
 void eSocket::close()
 {
+	eDebug("eSocket:close");
 	if (writebuffer.empty())
 	{
 		int wasconnected=(mystate==Connection) || (mystate==Closing);
@@ -87,10 +88,13 @@ int eSocket::state()
 int eSocket::setSocket(int s, int iss)
 //int eSocket::setSocket(int s, int iss, eMainloop *ml)
 {
+	eDebug("eSocket:setSocket s=%d / iss=%d", s, iss);
 	socketdesc=s;
 	if (socketdesc < 0) return -1;
 	issocket=iss;
-	fcntl(socketdesc, F_SETFL, O_NONBLOCK);
+	int f = fcntl(socketdesc, F_SETFL, O_NONBLOCK);
+	eDebug("eSocket:setSocket fcntl=%d", f);
+
 	last_break = -1;
 
 	rsn = 0;
@@ -103,6 +107,7 @@ int eSocket::setSocket(int s, int iss)
 
 void eSocket::notifier(int what)
 {
+	eDebug("eSocket:notifier what=%d", what);
 	if ((what & eSocketNotifier::Read) && (mystate == Connection))
 	{
 		int bytesavail=256;
@@ -229,6 +234,7 @@ int eSocket::writeBlock(const char *data, unsigned int len)
 
 int eSocket::connect(struct addrinfo *addr)
 {
+	eDebug("eSocket:connect");
 	int res;
 	struct addrinfo *ptr = addr;
 	close();
@@ -266,6 +272,7 @@ int eSocket::connect(struct addrinfo *addr)
 
 int eSocket::connectToHost(std::string hostname, int port)
 {
+	eDebug("eSocket:connectToHost %s / %d", hostname.c_str(), port);
 	int res;
 	struct addrinfo *addr = NULL;
 	struct addrinfo hints = {};

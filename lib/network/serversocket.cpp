@@ -8,8 +8,10 @@ bool eServerSocket::ok()
 	return okflag;
 }
 
-void eServerSocket::notifier(int)
+void eServerSocket::notifier(int handle)
 {
+	eDebug("eServerSocket:notifier handle=%d", handle);
+
 	int clientfd;
 	socklen_t clientlen;
 // handle multiple socket types...
@@ -67,6 +69,8 @@ void eServerSocket::notifier(int)
 			break;
 		}
 	}
+
+	eDebug("eServerSocket:newConnection clientfd=%d", clientfd);
 
 	newConnection(clientfd);
 }
