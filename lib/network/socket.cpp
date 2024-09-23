@@ -9,7 +9,7 @@
 
 void eSocket::close()
 {
-	eDebug("eSocket:close");
+	//eDebug("eSocket:close");
 	if (writebuffer.empty())
 	{
 		int wasconnected=(mystate==Connection) || (mystate==Closing);
@@ -88,12 +88,13 @@ int eSocket::state()
 int eSocket::setSocket(int s, int iss)
 //int eSocket::setSocket(int s, int iss, eMainloop *ml)
 {
-	eDebug("eSocket:setSocket s=%d / iss=%d", s, iss);
+	//eDebug("eSocket:setSocket s=%d / iss=%d", s, iss);
 	socketdesc=s;
 	if (socketdesc < 0) return -1;
 	issocket=iss;
 	int f = fcntl(socketdesc, F_SETFL, O_NONBLOCK);
-	eDebug("eSocket:setSocket fcntl=%d", f);
+	if (f)
+		eDebug("eSocket:setSocket s=%d fcntl=%d", s, f);
 
 	last_break = -1;
 
@@ -234,7 +235,7 @@ int eSocket::writeBlock(const char *data, unsigned int len)
 
 int eSocket::connect(struct addrinfo *addr)
 {
-	eDebug("eSocket:connect");
+	//eDebug("eSocket:connect");
 	int res;
 	struct addrinfo *ptr = addr;
 	close();

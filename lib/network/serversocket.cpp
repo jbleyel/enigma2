@@ -176,6 +176,7 @@ eServerSocket::eServerSocket(int port, eMainloop *ml): eSocket(ml, AF_INET6), m_
 
 eServerSocket::eServerSocket(std::string path, eMainloop *ml) : eSocket(ml)
 {
+	eDebug("eServerSocket::eServerSocket path=%s", path.c_str());
 	struct sockaddr_un serv_addr_un = {};
 	struct addrinfo addr = {};
 
@@ -248,6 +249,7 @@ eServerSocket::~eServerSocket()
 
 int eServerSocket::startListening(struct addrinfo *addr)
 {
+	eDebug("eServerSocket::startListening");
 	struct addrinfo *ptr;
 
 	for (ptr = addr; ptr != NULL; ptr = ptr->ai_next)
