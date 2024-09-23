@@ -278,7 +278,7 @@ void eStreamClient::notifier(int what)
 							m_serviceref = serviceref;
 							m_useencoder = true;
 
-							eDebug("[eStreamClient] new eDVBRecordStreamThread for %s",m_serviceref.c_str(()));
+							eDebug("[eStreamClient] new eDVBRecordStreamThread for %s",m_serviceref.c_str());
 							streamThread = new eDVBRecordStreamThread(188, buffersize);
 
 							if (streamThread)
