@@ -1199,7 +1199,8 @@ void eDVBScan::channelDone()
 					| m_chid_current.original_network_id.get();
 			service->m_service_name = strip_non_graph(convertDVBUTF8(sname,-1,tsonid,0));
 			service->genSortName();
-			service->m_provider_name = strip_non_graph(convertDVBUTF8(pname,-1,tsonid,0));
+			service->m_provider_name = std::string(pname);
+			// service->m_provider_name = strip_non_graph(convertDVBUTF8(pname,-1,tsonid,0));
 		}
 
 		if (!(m_flags & scanOnlyFree) || !m_pmt_in_progress->second.scrambled) {
