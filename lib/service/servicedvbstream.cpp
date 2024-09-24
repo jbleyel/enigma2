@@ -74,7 +74,6 @@ void eDVBServiceStream::serviceEvent(int event)
 
 int eDVBServiceStream::start(const char *serviceref, int fd)
 {
-	eDebug("[eDVBServiceStream] start %s / fd %d", serviceref, fd);
 	if (m_state != stateIdle) return -1;
 	m_ref = eServiceReferenceDVB(serviceref);
 	if (doPrepare() < 0) return -1;
@@ -105,7 +104,6 @@ RESULT eDVBServiceStream::stop()
 
 int eDVBServiceStream::doPrepare()
 {
-	eDebug("[eDVBServiceStream] doPrepare");
 	/* allocate a ts recorder if we don't already have one. */
 	if (m_state == stateIdle)
 	{
@@ -124,7 +122,6 @@ int eDVBServiceStream::doPrepare()
 
 int eDVBServiceStream::doRecord()
 {
-	eDebug("[eDVBServiceStream] doRecord");
 	int err = doPrepare();
 	if (err)
 	{
