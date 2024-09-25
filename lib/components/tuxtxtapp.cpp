@@ -72,10 +72,11 @@ void eTuxtxtApp::thread_finished()
 	messagePump.send(0);
 }
 
-void eTuxtxtApp::initCache()
+void eTuxtxtApp::initCache(bool debug)
 {
 	tuxtxt_init();
-	tuxtxt_enabledebug();
+	if(debug)
+		tuxtxt_enabledebug();
 }
 
 void eTuxtxtApp::freeCache()
