@@ -14,6 +14,7 @@ extern "C" void tuxtxt_start(int tpid, int demux);
 extern "C" int tuxtxt_stop();
 extern "C" void tuxtxt_close();
 extern "C" void tuxtxt_handlePressedKey(int key);
+extern "C" void tuxtxt_setdebug(bool debug);
 
 eAutoInitP0<eTuxtxtApp> init_eTuxtxtApp(eAutoInitNumbers::lowlevel, "Tuxtxt");
 eTuxtxtApp *eTuxtxtApp::instance = NULL;
@@ -74,6 +75,7 @@ void eTuxtxtApp::thread_finished()
 void eTuxtxtApp::initCache()
 {
 	tuxtxt_init();
+	tuxtxt_setdebug(true);
 }
 
 void eTuxtxtApp::freeCache()
