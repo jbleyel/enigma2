@@ -51,25 +51,25 @@ RESULT eServiceFactoryTS::play(const eServiceReference &ref, ePtr<iPlayableServi
 
 RESULT eServiceFactoryTS::record(const eServiceReference &ref, ePtr<iRecordableService> &ptr)
 {
-	ptr = nullptr;
+	ptr=0;
 	return -1;
 }
 
 RESULT eServiceFactoryTS::list(const eServiceReference &, ePtr<iListableService> &ptr)
 {
-	ptr = nullptr;
+	ptr=0;
 	return -1;
 }
 
 RESULT eServiceFactoryTS::info(const eServiceReference &ref, ePtr<iStaticServiceInformation> &ptr)
 {
-	ptr = nullptr;
+	ptr = 0;
 	return -1;
 }
 
 RESULT eServiceFactoryTS::offlineOperations(const eServiceReference &, ePtr<iServiceOfflineOperations> &ptr)
 {
-	ptr = nullptr;
+	ptr = 0;
 	return -1;
 }
 
@@ -178,7 +178,7 @@ int eServiceTS::openHttpConnection(std::string url)
 	if (fd == -1)
 		return -1;
 
-	struct sockaddr_in addr = {};
+	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = *((in_addr_t*)h->h_addr_list[0]);
 	addr.sin_port = htons(port);

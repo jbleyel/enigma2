@@ -58,13 +58,13 @@ DEFINE_REF(eServiceFactoryFS)
 	// iServiceHandler
 RESULT eServiceFactoryFS::play(const eServiceReference &ref, ePtr<iPlayableService> &ptr)
 {
-	ptr = nullptr;
+	ptr=0;
 	return -1;
 }
 
 RESULT eServiceFactoryFS::record(const eServiceReference &ref, ePtr<iRecordableService> &ptr)
 {
-	ptr = nullptr;
+	ptr=0;
 	return -1;
 }
 
@@ -82,7 +82,7 @@ RESULT eServiceFactoryFS::info(const eServiceReference &ref, ePtr<iStaticService
 
 RESULT eServiceFactoryFS::offlineOperations(const eServiceReference &, ePtr<iServiceOfflineOperations> &ptr)
 {
-	ptr = nullptr;
+	ptr = 0;
 	return -1;
 }
 
@@ -178,7 +178,7 @@ RESULT eServiceFS::getContent(std::list<eServiceReference> &list, bool sorted)
 		filename = path;
 		filename += e->d_name;
 
-		struct stat s = {};
+		struct stat s;
 		if (::stat(filename.c_str(), &s) < 0)
 			continue;
 

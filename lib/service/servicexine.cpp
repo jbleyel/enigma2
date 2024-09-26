@@ -48,13 +48,13 @@ RESULT eServiceFactoryXine::play(const eServiceReference &ref, ePtr<iPlayableSer
 
 RESULT eServiceFactoryXine::record(const eServiceReference &ref, ePtr<iRecordableService> &ptr)
 {
-	ptr = nullptr;
+	ptr=0;
 	return -1;
 }
 
 RESULT eServiceFactoryXine::list(const eServiceReference &, ePtr<iListableService> &ptr)
 {
-	ptr = nullptr;
+	ptr=0;
 	return -1;
 }
 
@@ -66,7 +66,7 @@ RESULT eServiceFactoryXine::info(const eServiceReference &ref, ePtr<iStaticServi
 
 RESULT eServiceFactoryXine::offlineOperations(const eServiceReference &, ePtr<iServiceOfflineOperations> &ptr)
 {
-	ptr = nullptr;
+	ptr = 0;
 	return -1;
 }
 
