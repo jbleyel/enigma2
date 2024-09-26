@@ -135,7 +135,7 @@ public:
 		if (m_handle)
 		{
 			fclose(m_handle);
-			m_handle = nullptr;
+			m_handle = 0;
 		}
 	}
 

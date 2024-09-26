@@ -183,12 +183,11 @@ int eHttpStream::openUrl(const std::string &url, std::string &newurl)
 		goto error;
 
 	result = sscanf(linebuf, "%99s %d %99s", proto, &statuscode, statusmsg);
-	if (statuscode != 301)
-		if (result != 3 || (statuscode != 200 && statuscode != 206 && statuscode != 302))
-		{
-			eDebug("[eHttpStream] %s: wrong http response code: %d", __func__, statuscode);
-			goto error;
-		}
+	if (result != 3 || (statuscode != 200 && statuscode != 206 && statuscode != 302))
+	{
+		eDebug("[eHttpStream] %s: wrong http response code: %d", __func__, statuscode);
+		goto error;
+	}
 
 	while (1)
 	{
