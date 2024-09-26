@@ -28,7 +28,6 @@ private:
 	int openMixer();
 	void closeMixer(int fd);
 
-	bool mute_zero;
 	bool muted;
 	int leftVol, rightVol;
 	int m_volsteps;
@@ -36,22 +35,20 @@ private:
 	int checkVolume(int vol);
 
 public:
-	static eDVBVolumecontrol *getInstance();
+	static eDVBVolumecontrol* getInstance();
 
-	void setVolumeSteps(int steps) { m_volsteps = steps; }
-	int volumeUp(int left = 0, int right = 0);
-	int volumeDown(int left = 0, int right = 0);
+	void setVolumeSteps(int steps);
+	void volumeUp(int left = 0, int right = 0);
+	void volumeDown(int left = 0, int right = 0);
 
-	int setVolume(int left, int right);
+	void setVolume(int left, int right);
 
 	void volumeMute();
 	void volumeUnMute();
-	bool volumeToggleMute();
+	void volumeToggleMute();
 
-	int getVolume() { return leftVol; }
-	int getVolumeLeft() { return leftVol; }
-	int getVolumeRight() { return rightVol; }
-	bool isMuted() { return muted; }
+	int getVolume();
+	bool isMuted();
 };
 
 #endif //__volume_h

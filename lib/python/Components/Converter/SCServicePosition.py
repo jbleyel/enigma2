@@ -1,4 +1,4 @@
-from time import localtime, time
+import time
 from Components.Converter.Converter import Converter
 from Components.Converter.Poll import Poll
 from enigma import iPlayableService
@@ -85,48 +85,48 @@ class SCServicePosition(Poll, Converter):
 			return ""
 		else:
 			if self.type == self.TYPE_LENGTH:
-				lVal = self.length
+				l = self.length
 			elif self.type == self.TYPE_POSITION:
-				lVal = self.position
+				l = self.position
 			elif self.type == self.TYPE_REMAINING:
-				lVal = self.length - self.position
+				l = self.length - self.position
 			elif self.type == self.TYPE_ENDTIME:
-				lVal = (self.length - self.position) / 90000
-				tVal = time()
-				tVal = localtime(tVal + lVal)
+				l = (self.length - self.position) / 90000
+				t = time.time()
+				t = time.localtime(t + l)
 				if self.showNoSeconds:
-					return "%02d:%02d" % (tVal.tm_hour, tVal.tm_min)
+					return "%02d:%02d" % (t.tm_hour, t.tm_min)
 				else:
-					return "%02d:%02d:%02d" % (tVal.tm_hour, tVal.tm_min, tVal.tm_sec)
+					return "%02d:%02d:%02d" % (t.tm_hour, t.tm_min, t.tm_sec)
 
 			if not self.detailed:
-				lVal /= 90000
+				l /= 90000
 
 			if self.negate:
-				lVal = -lVal
+				l = -l
 
-			if lVal > 0:
+			if l > 0:
 				sign = ""
 			else:
-				lVal = -lVal
+				l = -l
 				sign = "-"
 
 			if not self.detailed:
 				if self.showHours:
 					if self.showNoSeconds:
-						return sign + "%d:%02d" % (lVal / 3600, lVal % 3600 / 60)
+						return sign + "%d:%02d" % (l / 3600, l % 3600 / 60)
 					else:
-						return sign + "%d:%02d:%02d" % (lVal / 3600, lVal % 3600 / 60, lVal % 60)
+						return sign + "%d:%02d:%02d" % (l / 3600, l % 3600 / 60, l % 60)
 				else:
 					if self.showNoSeconds:
-						return sign + "%d" % (lVal / 60)
+						return sign + "%d" % (l / 60)
 					else:
-						return sign + "%d:%02d" % (lVal / 60, lVal % 60)
+						return sign + "%d:%02d" % (l / 60, l % 60)
 			else:
 				if self.showHours:
-					return sign + "%d:%02d:%02d:%03d" % ((lVal / 3600 / 90000), (lVal / 90000) % 3600 / 60, (lVal / 90000) % 60, (lVal % 90000) / 90)
+					return sign + "%d:%02d:%02d:%03d" % ((l / 3600 / 90000), (l / 90000) % 3600 / 60, (l / 90000) % 60, (l % 90000) / 90)
 				else:
-					return sign + "%d:%02d:%03d" % ((lVal / 60 / 90000), (lVal / 90000) % 60, (lVal % 90000) / 90)
+					return sign + "%d:%02d:%03d" % ((l / 60 / 90000), (l / 90000) % 60, (l % 90000) / 90)
 
 	# range/value are for the Progress renderer
 	range = 10000
@@ -134,10 +134,10 @@ class SCServicePosition(Poll, Converter):
 	@cached
 	def getValue(self):
 		pos = self.position
-		lVal = self.length
-		if pos is None or lVal is None or lVal <= 0:
+		len = self.length
+		if pos is None or len is None or len <= 0:
 			return None
-		return pos * 10000 / lVal
+		return pos * 10000 / len
 
 	position = property(getPosition)
 	length = property(getLength)

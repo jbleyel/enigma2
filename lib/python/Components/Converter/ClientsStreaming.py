@@ -1,128 +1,127 @@
 from socket import gethostbyaddr
+
 from enigma import eStreamServer
+
+from ServiceReference import ServiceReference
+from Components.Element import cached
 from Components.Converter.Converter import Converter
 from Components.Converter.Poll import Poll
-from Components.Element import cached
-from ServiceReference import ServiceReference
+
+DEBUG = True
 
 
 class ClientsStreaming(Converter, Poll):
-	UNKNOWN = -1
-	REF = 0
-	IP = 1
-	NAME = 2
-	ENCODER = 3
-	NUMBER = 4
-	SHORT_ALL = 5
-	ALL = 6
-	INFO = 7
-	INFO_RESOLVE = 8
-	INFO_RESOLVE_SHORT = 9
-	EXTRA_INFO = 10
-	DATA = 11
+	ALL = 0
+	DATA = 1
+	ENCODER = 2
+	EXTRA_INFO = 3
+	INFO = 4
+	INFO_RESOLVE = 5
+	INFO_RESOLVE_SHORT = 6
+	IP = 7
+	NAME = 8
+	NUMBER = 9
+	REF = 10
+	SHORT_ALL = 11
 
-	def __init__(self, type):
-		Converter.__init__(self, type)
+	def __init__(self, token):
+		Converter.__init__(self, token)
 		Poll.__init__(self)
 		self.poll_interval = 30000
 		self.poll_enabled = True
-
-		self.type = {
-			"REF": self.REF,
+		self.token = {
+			"ALL": self.ALL,
+			"DATA": self.DATA,
+			"ENCODER": self.ENCODER,
+			"EXTRAINFO": self.EXTRA_INFO,
+			"INFO": self.INFO,
+			"INFORESOLVE": self.INFO_RESOLVE,
+			"INFORESOLVESHORT": self.INFO_RESOLVE_SHORT,
 			"IP": self.IP,
 			"NAME": self.NAME,
-			"ENCODER": self.ENCODER,
 			"NUMBER": self.NUMBER,
-			"SHORT_ALL": self.SHORT_ALL,
-			"ALL": self.ALL,
-			"INFO": self.INFO,
-			"INFO_RESOLVE": self.INFO_RESOLVE,
-			"INFO_RESOLVE_SHORT": self.INFO_RESOLVE_SHORT,
-			"EXTRA_INFO": self.EXTRA_INFO,
-			"DATA": self.DATA,
-		}.get(type, self.UNKNOWN)
-
+			"REF": self.REF,
+			"SHORTALL": self.SHORT_ALL
+		}.get(token.upper().replace("_",""))  # The upper() and replace() is to maintain compatibility with the original converter even though it is inconsistent with other converters.
+		if self.token is None:
+			print(f"[ClientsStreaming] Error: Converter argument '{token}' is invalid!")
 		self.streamServer = eStreamServer.getInstance()
-
-	@cached
-	def getText(self):
-		if self.streamServer is None:
-			return ""
-
-		clients = []
-		refs = []
-		ips = []
-		names = []
-		encoders = []
-		extrainfo = f'{_("ClientIP")}\t\t{_("Transcode")}\t{_("Channel")}\n\n'
-		info = ""
-
-		for x in self.streamServer.getConnectedClients():
-			refs.append((x[1]))
-			servicename = ServiceReference(x[1]).getServiceName() or "(unknown service)"
-			service_name = servicename
-			names.append((service_name))
-			ip = x[0]
-
-			ips.append((ip))
-
-			if int(x[2]) == 0:
-				strtype = "S"
-				encoder = _("No")
-			else:
-				strtype = "T"
-				encoder = _("Yes")
-
-			encoders.append((encoder))
-
-			if self.type == self.INFO_RESOLVE or self.type == self.INFO_RESOLVE_SHORT:
-				try:
-					raw = gethostbyaddr(ip)
-					ip = raw[0]
-				except Exception:
-					pass
-
-				if self.type == self.INFO_RESOLVE_SHORT:
-					ip, sep, tail = ip.partition(".")
-
-			info = f"{info}{strtype} {ip:8s} {service_name}\n"
-
-			clients.append((ip, service_name, encoder))
-
-			extrainfo = f"{extrainfo}{ip:8s}\t{encoder}\t{service_name}\n"
-
-		if self.type == self.REF:
-			return " ".join(refs)
-		elif self.type == self.IP:
-			return " ".join(ips)
-		elif self.type == self.NAME:
-			return " ".join(names)
-		elif self.type == self.ENCODER:
-			return _("Transcoding: ") + " ".join(encoders)
-		elif self.type == self.NUMBER:
-			return str(len(clients))
-		elif self.type == self.EXTRA_INFO:
-			return extrainfo
-		elif self.type == self.SHORT_ALL:
-			return _("Total clients streaming: %d ( %s )") % (len(clients), " ".join(names))
-		elif self.type == self.ALL:
-			return "\n".join(" ".join(elems) for elems in clients)
-		elif self.type == self.INFO or self.type == self.INFO_RESOLVE or self.type == self.INFO_RESOLVE_SHORT:
-			return info
-		elif self.type == self.DATA:
-			return clients
-		else:
-			return "(unknown)"
-
-	text = property(getText)
+		self.tokenText = tokens  # DEBUG: This is only for testing purposes.
 
 	@cached
 	def getBoolean(self):
-		if self.streamServer is None:
-			return False
-		return self.streamServer.getConnectedClients() and True or False
+		result = False
+		if self.streamServer:
+			result = self.streamServer.getConnectedClients() and True or False
+		if DEBUG:
+			print(f"[ClientsStreaming] DEBUG: Converter boolean token '{self.tokenText}' result is '{result}'{"." if isinstance(result, bool) else " TYPE MISMATCH!"}")
+		return result
 
 	boolean = property(getBoolean)
+
+	@cached
+	def getText(self):
+		result = ""
+		if self.streamServer:
+			ips = []
+			serviceReferences = []
+			serviceNames = []
+			encoders = []
+			clients = []
+			info = ""
+			extraInfo = f"{_("ClientIP")}\t\t{_("Transcode")}\t{_("Channel")}\n\n"
+			for connectedClient in self.streamServer.getConnectedClients():
+				ip = connectedClient[0]
+				ips.append((ip))
+				if self.token in (self.INFO_RESOLVE, self.INFO_RESOLVE_SHORT):
+					try:
+						ip = gethostbyaddr(ip)[0]
+					except Exception:
+						pass
+					if self.token == self.INFO_RESOLVE_SHORT:
+						ip, sep, domain = ip.partition(".")  # Here ip is actually the host name.
+				serviceReference = connectedClient[1]
+				serviceReferences.append((serviceReference))
+				serviceName = ServiceReference(serviceReference).getServiceName() or f"({_("Unknown Service")})"
+				serviceNames.append((serviceName))
+				if int(connectedClient[2]) == 0:
+					strType = "S"
+					encoder = _("No")
+				else:
+					strType = "T"
+					encoder = _("Yes")
+				encoders.append((encoder))
+				clients.append((ip, serviceName, encoder))
+				info = f"{info}{strType} {ip:8s} {serviceName}\n"
+				extraInfo = f"{extraInfo}{ip:8s}\t{encoder}\t{serviceName}\n"
+			match self.token:
+				case self.ALL:
+					result = "\n".join(" ".join(client) for client in clients)
+				case self.DATA:
+					result = clients
+				case self.ENCODER:
+					result = f"{_("Transcoding: ")} {" ".join(encoders)}"
+				case self.EXTRA_INFO:
+					result = extraInfo
+				case self.INFO | self.INFO_RESOLVE | self.INFO_RESOLVE_SHORT:
+					result = info
+				case self.IP:
+					result = " ".join(ips)
+				case self.NAME:
+					result = " ".join(serviceNames)
+				case self.NUMBER:
+					result = str(len(clients))
+				case self.REF:
+					result = " ".join(serviceReferences)
+				case self.SHORT_ALL:
+					result = _("Total clients streaming: %d ( %s )") % (len(clients), " ".join(names))
+				case _:
+					result = f"({_("Unknown")})"
+		if DEBUG:
+			print(f"[ClientsStreaming] DEBUG: Converter text token '{self.tokenText}' result is '{result}'{"." if isinstance(result, str) else " TYPE MISMATCH!"}")
+		return result
+
+	text = property(getText)
 
 	def changed(self, what):
 		Converter.changed(self, (self.CHANGED_POLL,))

@@ -623,10 +623,10 @@ class InfoBarTimeshift:
 					statinfo = stat("%s%s" % (config.timeshift.path.value, filename))
 					if statinfo.st_mtime < (time() - 5.0):
 						# Get Event Info from meta file
-						readmetafile = open(f"{config.timeshift.path.value}{filename}.meta")
+						readmetafile = open("%s%s.meta" % (config.timeshift.path.value, filename))
 						servicerefname = readmetafile.readline()[0:-1]
 						eventname = readmetafile.readline()[0:-1]
-						# description = readmetafile.readline()[0:-1]
+						description = readmetafile.readline()[0:-1]
 						begintime = readmetafile.readline()[0:-1]
 						readmetafile.close()
 						# Add Event to list
@@ -699,7 +699,7 @@ class InfoBarTimeshift:
 								ptsfilename = "%s - %s" % (self.pts_curevent_name.replace("\n", ""), strftime("%Y%m%d %H%M", localtime(self.pts_starttime)))
 							elif config.recording.filename_composition.value == "veryveryshort":
 								ptsfilename = "%s - %s" % (self.pts_curevent_name.replace("\n", ""), strftime("%Y%m%d %H%M", localtime(self.pts_starttime)))
-					except Exception:
+					except Exception as errormsg:
 						print("[Timeshift] Using default filename.")
 					if config.recording.ascii_filenames.value:
 						ptsfilename = legacyEncode(ptsfilename)
@@ -732,7 +732,7 @@ class InfoBarTimeshift:
 								ptsfilename = "%s - %s" % (eventname, strftime("%Y%m%d %H%M", localtime(int(begintime))))
 							elif config.recording.filename_composition.value == "veryveryshort":
 								ptsfilename = "%s - %s" % (eventname, strftime("%Y%m%d %H%M", localtime(int(begintime))))
-					except Exception:
+					except Exception as errormsg:
 						print("[Timeshift] Using default filename.")
 					if config.recording.ascii_filenames.value:
 						ptsfilename = legacyEncode(ptsfilename)
@@ -1167,7 +1167,7 @@ class InfoBarTimeshift:
 			if fileExists("%s.meta" % filename, "r"):
 				# Get Event Info from meta file.
 				readmetafile = open(filename + ".meta")
-				# servicerefname = readmetafile.readline()[0:-1]
+				servicerefname = readmetafile.readline()[0:-1]
 				eventname = readmetafile.readline()[0:-1]
 				readmetafile.close()
 			else:

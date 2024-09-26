@@ -238,8 +238,7 @@ class ParentalControl:
 			return serviceList.getContent("CN", True)  # (ServiceCompareString, Name)
 
 	def save(self):
-		if self.filesOpened:
-			self.saveListToFile(LIST_BLACKLIST, self.blacklist)
+		self.saveListToFile(LIST_BLACKLIST, self.blacklist)
 
 	def open(self):
 		self.blacklist = self.openListFromFile(LIST_BLACKLIST)
