@@ -349,10 +349,10 @@ eDVBUsbAdapter::eDVBUsbAdapter(int nr)
 : eDVBAdapterLinux(nr)
 {
 	int file;
-	char type[8] = {};
-	struct dvb_frontend_info fe_info = {};
+	char type[8];
+	struct dvb_frontend_info fe_info;
 	int frontend = -1;
-	char filename[256] = {};
+	char filename[256];
 	char name[128] = {0};
 	int vtunerid = nr - 1;
 	char buffer[4*1024];
@@ -628,7 +628,7 @@ void *eDVBUsbAdapter::vtunerPump()
 		{
 			if (FD_ISSET(vtunerFd, &xset))
 			{
-				struct vtuner_message message = {};
+				struct vtuner_message message;
 				memset(message.pidlist, 0xff, sizeof(message.pidlist));
 				::ioctl(vtunerFd, VTUNER_GET_MESSAGE, &message);
 
@@ -672,7 +672,7 @@ void *eDVBUsbAdapter::vtunerPump()
 						}
 						else
 						{
-							struct dmx_pes_filter_params filter = {};
+							struct dmx_pes_filter_params filter;
 							filter.input = DMX_IN_FRONTEND;
 							filter.flags = 0;
 							filter.pid = message.pidlist[i];
@@ -2073,8 +2073,7 @@ static size_t diff_upto(off_t high, off_t low, size_t max)
 	return max;
 }
 
-/* remember, this gets called from another thread. */
-//void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off_t &start, size_t &size, int blocksize, int &sof)
+	/* remember, this gets called from another thread. */
 void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off_t &start, size_t &size, int blocksize)
 {
 	unsigned int max = align(1024*1024*1024, blocksize);
@@ -2245,7 +2244,7 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 			if (current_offset < i->second)
 			{
 				start = current_offset;
-				size = diff_upto(i->second, start, max);
+				size = align(diff_upto(i->second, start, max), blocksize);
 				//eDebug("[eDVBChannel] HIT, %lld < %lld < %lld, size: %zd", i->first, current_offset, i->second, size);
 				return;
 			}
@@ -2264,7 +2263,6 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 					eDebug("[eDVBChannel] reached SOF");
 					m_skipmode_m = 0;
 					m_pvr_thread->sendEvent(eFilePushThread::evtUser);
-//					sof = 1;
 				}
 			}
 			else
@@ -2284,12 +2282,10 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 	}
 
 	if ((current_offset < -m_skipmode_m) && (m_skipmode_m < 0))
-//	if ((current_offset < 0) && (m_skipmode_m < 0))
 	{
 		eDebug("[eDVBChannel] reached SOF");
 		m_skipmode_m = 0;
 		m_pvr_thread->sendEvent(eFilePushThread::evtUser);
-//		sof = 1;
 	}
 
 	start = current_offset;

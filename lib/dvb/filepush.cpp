@@ -3,7 +3,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <poll.h>
 
 //#define SHOW_WRITE_TIME
 
@@ -38,16 +37,8 @@ static void signal_handler(int x)
 
 static void ignore_but_report_signals()
 {
-#ifndef HAVE_HISILICON
-	/* we must set a signal mask for the thread otherwise signals don't have any effect */
-	sigset_t sigmask;
-	sigemptyset(&sigmask);
-	sigaddset(&sigmask, SIGUSR1);
-	pthread_sigmask(SIG_UNBLOCK, &sigmask, NULL);
-#endif
-	
 	/* we set the signal to not restart syscalls, so we can detect our signal. */
-	struct sigaction act = {};
+	struct sigaction act;
 	act.sa_handler = signal_handler; // no, SIG_IGN doesn't do it. we want to receive the -EINTR
 	act.sa_flags = 0;
 	sigaction(SIGUSR1, &act, 0);
@@ -67,13 +58,11 @@ void eFilePushThread::thread()
 		size_t bytes_read = 0;
 		off_t current_span_offset = 0;
 		size_t current_span_remaining = 0;
-		m_sof = 0;
 
 		while (!m_stop)
 		{
 			if (m_sg && !current_span_remaining)
 			{
-				//m_sg->getNextSourceSpan(m_current_position, bytes_read, current_span_offset, current_span_remaining, m_blocksize, m_sof);
 				m_sg->getNextSourceSpan(m_current_position, bytes_read, current_span_offset, current_span_remaining, m_blocksize);
 				ASSERT(!(current_span_remaining % m_blocksize));
 				m_current_position = current_span_offset;
@@ -89,12 +78,11 @@ void eFilePushThread::thread()
 			/* align to blocksize */
 			maxread -= maxread % m_blocksize;
 
-//			if (maxread && !m_sof)
 			if (maxread)
 			{
 #ifdef SHOW_WRITE_TIME
-				struct timeval starttime = {};
-				struct timeval now = {};
+				struct timeval starttime;
+				struct timeval now;
 				gettimeofday(&starttime, NULL);
 #endif
 				buf_end = m_source->read(m_current_position, m_buffer, maxread);
@@ -130,13 +118,12 @@ void eFilePushThread::thread()
 			if (d)
 				buf_end -= d;
 
-			//if (buf_end == 0 || m_sof == 1)
 			if (buf_end == 0)
 			{
 				/* on EOF, try COMMITting once. */
 				if (m_send_pvr_commit)
 				{
-					struct pollfd pfd = {};
+					struct pollfd pfd;
 					pfd.fd = m_fd_dest;
 					pfd.events = POLLIN;
 					switch (poll(&pfd, 1, 250)) // wait for 250ms
@@ -163,10 +150,6 @@ void eFilePushThread::thread()
 
 				   in stream_mode, think of evtEOF as "buffer underrun occurred". */
 				sendEvent(evtEOF);
-//				if (m_sof == 0)
-//					sendEvent(evtEOF);
-//				else
-//					sendEvent(evtUser); // start of file event
 
 				if (m_stream_mode)
 				{
@@ -338,7 +321,7 @@ eFilePushThreadRecorder::eFilePushThreadRecorder(unsigned char *buffer, size_t b
 																							 m_buffer(buffer),
 																							 m_overflow_count(0),
 																							 m_stop(1),
-																							 m_messagepump(eApp, 0, "eFilePushThreadRecorder")
+																							 m_messagepump(eApp, 0)
 {
 	m_protocol = m_stream_id = m_session_id = m_packet_no = 0;
 	CONNECT(m_messagepump.recv_msg, eFilePushThreadRecorder::recvEvent);
@@ -370,7 +353,7 @@ static int errs;
 
 int64_t eFilePushThreadRecorder::getTick()
 { //ms
-	struct timespec ts = {};
+	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return (ts.tv_nsec / 1000000) + (ts.tv_sec * 1000);
 }
@@ -406,7 +389,6 @@ int eFilePushThreadRecorder::read_ts(int fd, unsigned char *buf, int size)
 
 	return bytes;
 }
-
 int eFilePushThreadRecorder::read_dmx(int fd, void *m_buffer, int size)
 {
 	unsigned char *buf;
@@ -490,23 +472,18 @@ int eFilePushThreadRecorder::read_dmx(int fd, void *m_buffer, int size)
 
 void eFilePushThreadRecorder::thread()
 {
-#ifndef HAVE_HISILICON
-	ignore_but_report_signals();
-	hasStarted(); /* "start()" blocks until we get here */
-#endif
 	setIoPrio(IOPRIO_CLASS_RT, 7);
+
 	eDebug("[eFilePushThreadRecorder] THREAD START");
 
-#ifdef HAVE_HISILICON
 	/* we set the signal to not restart syscalls, so we can detect our signal. */
-	struct sigaction act = {};
+	struct sigaction act;
 	memset(&act, 0, sizeof(act));
 	act.sa_handler = signal_handler; // no, SIG_IGN doesn't do it. we want to receive the -EINTR
 	act.sa_flags = 0;
 	sigaction(SIGUSR1, &act, 0);
-	hasStarted();
-#endif
 
+	hasStarted();
 	if (m_protocol == _PROTO_RTSP_TCP)
 	{
 		int flags = fcntl(m_fd_source, F_GETFL, 0);
@@ -514,44 +491,22 @@ void eFilePushThreadRecorder::thread()
 		if (fcntl(m_fd_source, F_SETFL, flags) == -1)
 			eDebug("failed setting DMX handle %d in non-blocking mode, error %d: %s", m_fd_source, errno, strerror(errno));
 	}
-	/* m_stop must be evaluated after each syscall */
-	/* if it isn't, there's a chance of the thread becoming deadlocked when recordings are finishing */
+	/* m_stop must be evaluated after each syscall. */
 	while (!m_stop)
 	{
 		ssize_t bytes;
 		if (m_protocol == _PROTO_RTSP_TCP)
 			bytes = read_dmx(m_fd_source, m_buffer, m_buffersize);
 		else
-		{
-#ifndef HAVE_HISILICON
-		/* this works around the buggy Broadcom encoder that always returns even if there is no data */
-		/* (works like O_NONBLOCK even when not opened as such), prevent idle waiting for the data */
-		/* this won't ever hurt, because it will return immediately when there is data or an error condition */
-
-		struct pollfd pfd = { m_fd_source, POLLIN, 0 };
-		poll(&pfd, 1, 100);
-		/* Reminder: m_stop *must* be evaluated after each syscall. */
-		if (m_stop)
-			break;
-
-		bytes = ::read(m_fd_source, m_buffer, m_buffersize);
-		/* And again: Check m_stop regardless of read success. */
-		if (m_stop)
-			break;
-#else
-		bytes = ::read(m_fd_source, m_buffer, m_buffersize);
-#endif
-		}
+			bytes = ::read(m_fd_source, m_buffer, m_buffersize);
 		if (bytes < 0)
 		{
 			bytes = 0;
-#if HAVE_HISILICON
 			/* Check m_stop after interrupted syscall. */
 			if (m_stop)
 			{
 				break;
 			}
-#endif
 			if (errno == EINTR || errno == EBUSY || errno == EAGAIN)
 			{
 #if HAVE_HISILICON
@@ -571,8 +526,8 @@ void eFilePushThreadRecorder::thread()
 		}
 
 #ifdef SHOW_WRITE_TIME
-		struct timeval starttime = {};
-		struct timeval now = {};
+		struct timeval starttime;
+		struct timeval now;
 		gettimeofday(&starttime, NULL);
 #endif
 		int w = writeData(bytes);
