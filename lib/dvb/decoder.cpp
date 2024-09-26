@@ -1376,7 +1376,7 @@ eTSMPEGDecoder::eTSMPEGDecoder(eDVBDemux *demux, int decoder)
 	m_has_audio = !access(filename, W_OK);
 
 	if (eTSMPEGDecoder::m_debugTXT < 0)
-		eTSMPEGDecoder::m_debugTXT = eSimpleConfig::getBool("config.crash.debugTXT", false) ? 1 : 0;
+		eTSMPEGDecoder::m_debugTXT = eSimpleConfig::getBool("config.crash.debugTeletext", false) ? 1 : 0;
 
 
 	if (m_demux && m_decoder == 0)	// Tuxtxt caching actions only on primary decoder
