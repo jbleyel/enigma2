@@ -52,6 +52,7 @@ class Session:
 		self.current_dialog = None
 		self.dialog_stack = []
 		self.summary_stack = []
+		self.onShutdown = []
 		self.summary = None
 		self.in_exec = False
 		self.screen = SessionGlobals(self)
@@ -218,10 +219,10 @@ class Session:
 		if self.summary is not None:
 			self.summary.show()
 
-	def onShutdown(self):
-		for dialog in self.allDialogs:
-			if hasattr(dialog, "onShutdown"):
-				dialog.onShutdown()
+	def doShutdown(self):
+		for function in self.onShutdown:
+			if callable(function):
+				function()
 
 	def reloadDialogs(self):
 		for dialog in self.allDialogs:
@@ -583,7 +584,7 @@ def runScreenTest():
 	print("=" * 100)
 	session.nav.stopService()
 	session.nav.shutdown()
-	session.onShutdown()
+	session.doShutdown()
 	VolumeControl.instance.saveVolumeState()
 	configfile.save()
 	from Screens.InfoBarGenerics import saveResumePoints

@@ -2,11 +2,14 @@
 #include <asm/ioctls.h>
 #include <unistd.h>
 #include <errno.h>
+#include <time.h>
+#include <string.h>
 #include <linux/serial.h>
 #include <lib/network/socket.h>
 
 void eSocket::close()
 {
+	//eDebug("eSocket:close");
 	if (writebuffer.empty())
 	{
 		int wasconnected=(mystate==Connection) || (mystate==Closing);
@@ -82,16 +85,22 @@ int eSocket::state()
 	return mystate;
 }
 
-int eSocket::setSocket(int s, int iss, eMainloop *ml)
+int eSocket::setSocket(int s, int iss)
+//int eSocket::setSocket(int s, int iss, eMainloop *ml)
 {
+	//eDebug("eSocket:setSocket s=%d / iss=%d", s, iss);
 	socketdesc=s;
 	if (socketdesc < 0) return -1;
 	issocket=iss;
-	fcntl(socketdesc, F_SETFL, O_NONBLOCK);
+	int f = fcntl(socketdesc, F_SETFL, O_NONBLOCK);
+	if (f)
+		eDebug("eSocket:setSocket s=%d fcntl=%d", s, f);
+
 	last_break = -1;
 
 	rsn = 0;
-	rsn=eSocketNotifier::create(ml, getDescriptor(),
+	rsn = eSocketNotifier::create(mainloop, getDescriptor(),
+//	rsn = eSocketNotifier::create(ml, getDescriptor(),
 		eSocketNotifier::Read|eSocketNotifier::Hungup);
 	CONNECT(rsn->activated, eSocket::notifier);
 	return 0;
@@ -99,6 +108,7 @@ int eSocket::setSocket(int s, int iss, eMainloop *ml)
 
 void eSocket::notifier(int what)
 {
+	eDebug("eSocket:notifier what=%d", what);
 	if ((what & eSocketNotifier::Read) && (mystate == Connection))
 	{
 		int bytesavail=256;
@@ -223,10 +233,80 @@ int eSocket::writeBlock(const char *data, unsigned int len)
 	return w;
 }
 
-int eSocket::getDescriptor()
+int eSocket::connect(struct addrinfo *addr)
 {
-	return socketdesc;
+	//eDebug("eSocket:connect");
+	int res;
+	struct addrinfo *ptr = addr;
+	close();
+	for (ptr = addr; ptr != NULL; ptr = ptr->ai_next)
+	{
+		if (setSocket(socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol), 1) < 0)
+		{
+			/* No need to close, setSocket only fails when socket() already failed */
+			continue;
+		}
+		mystate = Idle;
+
+		res = ::connect(socketdesc, ptr->ai_addr, ptr->ai_addrlen);
+		if ((res < 0) && (errno != EINPROGRESS) && (errno != EINTR))
+		{
+			error_(errno);
+			close(); /* Release and disconnect the notifier */
+			continue;
+		}
+		if (res < 0)	// EINPROGRESS or EINTR
+		{
+			rsn->setRequested(rsn->getRequested() | eSocketNotifier::Write);
+			mystate = Connecting;
+			return 0;
+		}
+		else
+		{
+			mystate = Connection;
+			connected_();
+			return 1;
+		}
+	}
+	return -1;
 }
+
+int eSocket::connectToHost(std::string hostname, int port)
+{
+	eDebug("eSocket:connectToHost %s / %d", hostname.c_str(), port);
+	int res;
+	struct addrinfo *addr = NULL;
+	struct addrinfo hints = {};
+	char portnumber[16] = {};
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC; /* both ipv4 and ipv6 */
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = 0; /* any */
+#ifdef AI_ADDRCONFIG
+	hints.ai_flags = AI_NUMERICSERV | AI_ADDRCONFIG; /* only return ipv6 if we have an ipv6 address ourselves, and ipv4 if we have an ipv4 address ourselves */
+#else
+	hints.ai_flags = AI_NUMERICSERV; /* AI_ADDRCONFIG is not available */
+#endif
+	snprintf(portnumber, sizeof(portnumber), "%d", port);
+
+	if ((res = getaddrinfo(hostname.c_str(), portnumber, &hints, &addr)) || !addr)
+	{
+		eDebug("[eSocket] can't resolve %s (getaddrinfo: %s)", hostname.c_str(), gai_strerror(res));
+		return -2;
+	}
+
+	res = connect(addr);
+	if (res < 0)
+	{
+		eDebug("[eSocket] can't connect to host: %s", hostname.c_str());
+	}
+	freeaddrinfo(addr);
+	return res;
+}
+
+
+/*
 
 int eSocket::connectToHost(std::string hostname, int port)
 {
@@ -237,7 +317,7 @@ int eSocket::connectToHost(std::string hostname, int port)
 
 	if (mystate == Invalid)
 	{
-		/* the socket has been closed, create a new socket descriptor */
+		// the socket has been closed, create a new socket descriptor
 		int s=socket(AF_INET6, SOCK_STREAM, 0);
 		mystate=Idle;
 		setSocket(s, 1, mainloop);
@@ -278,7 +358,15 @@ int eSocket::connectToHost(std::string hostname, int port)
 	}
 	return(0);
 }
+*/
 
+eSocket::eSocket(eMainloop *ml): readbuffer(32768), writebuffer(32768), mainloop(ml)
+{
+	socketdesc = -1;
+	mystate = Invalid;
+}
+
+/*
 eSocket::eSocket(eMainloop *ml, int domain): readbuffer(32768), writebuffer(32768), mainloop(ml)
 {
 	int s=socket(domain, SOCK_STREAM, 0);
@@ -288,10 +376,12 @@ eSocket::eSocket(eMainloop *ml, int domain): readbuffer(32768), writebuffer(3276
 	mystate=Idle;
 	setSocket(s, 1, ml);
 }
+*/
 
 eSocket::eSocket(int socket, int issocket, eMainloop *ml): readbuffer(32768), writebuffer(32768), mainloop(ml)
 {
-	setSocket(socket, issocket, ml);
+	setSocket(socket, issocket);
+	//setSocket(socket, issocket, ml);
 	mystate=Connection;
 }
 
@@ -300,10 +390,12 @@ eSocket::~eSocket()
 	if(socketdesc>=0)
 	{
 		::close(socketdesc);
+		socketdesc = -1;
 	}
 }
 
-eUnixDomainSocket::eUnixDomainSocket(eMainloop *ml) : eSocket(ml, AF_LOCAL)
+eUnixDomainSocket::eUnixDomainSocket(eMainloop *ml) : eSocket(ml)
+//eUnixDomainSocket::eUnixDomainSocket(eMainloop *ml) : eSocket(ml, AF_LOCAL)
 {
 }
 
@@ -317,12 +409,34 @@ eUnixDomainSocket::~eUnixDomainSocket()
 
 int eUnixDomainSocket::connectToPath(std::string path)
 {
+	int res;
+	struct sockaddr_un serv_addr_un = {};
+	struct addrinfo addr = {};
+
+	memset(&serv_addr_un, 0, sizeof(serv_addr_un));
+	serv_addr_un.sun_family = AF_LOCAL;
+	strcpy(serv_addr_un.sun_path, path.c_str());
+
+	memset(&addr, 0, sizeof(addr));
+	addr.ai_family = AF_LOCAL;
+	addr.ai_socktype = SOCK_STREAM;
+	addr.ai_protocol = 0; /* any */
+	addr.ai_addr = (struct sockaddr *)&serv_addr_un;
+	addr.ai_addrlen = sizeof(serv_addr_un);
+
+	res = connect(&addr);
+	return res;
+}
+
+/*
+int eUnixDomainSocket::connectToPath(std::string path)
+{
 	sockaddr_un serv_addr_un;
 	int res;
 
 	if (mystate == Invalid)
 	{
-		/* the socket has been closed, create a new socket descriptor */
+		// the socket has been closed, create a new socket descriptor
 		int s=socket(AF_LOCAL, SOCK_STREAM, 0);
 		mystate=Idle;
 		setSocket(s, 1, mainloop);
@@ -353,3 +467,4 @@ int eUnixDomainSocket::connectToPath(std::string path)
 	}
 	return(0);
 }
+*/

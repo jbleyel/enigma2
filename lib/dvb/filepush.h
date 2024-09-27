@@ -53,6 +53,7 @@ private:
 	int m_fd_dest;
 	int m_send_pvr_commit;
 	int m_stream_mode;
+	int m_sof;
 	int m_blocksize;
 	size_t m_buffersize;
 	unsigned char* m_buffer;

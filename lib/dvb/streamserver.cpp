@@ -101,7 +101,7 @@ void eStreamClient::notifier(int what)
 					char *buffer = (char*)malloc(4096);
 					if (buffer)
 					{
-						struct passwd pwd;
+						struct passwd pwd = {};
 						struct passwd *pwdresult = NULL;
 						std::string crypt;
 						username = authentication.substr(0, pos);
@@ -109,13 +109,13 @@ void eStreamClient::notifier(int what)
 						getpwnam_r(username.c_str(), &pwd, buffer, 4096, &pwdresult);
 						if (pwdresult)
 						{
-							struct crypt_data cryptdata;
+							struct crypt_data cryptdata = {};
 							char *cryptresult = NULL;
 							cryptdata.initialized = 0;
 							crypt = pwd.pw_passwd;
 							if (crypt == "*" || crypt == "x")
 							{
-								struct spwd spwd;
+								struct spwd spwd = {};
 								struct spwd *spwdresult = NULL;
 								getspnam_r(username.c_str(), &spwd, buffer, 4096, &spwdresult);
 								if (spwdresult)

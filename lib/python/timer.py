@@ -307,3 +307,4 @@ class TimerEntry:
 
 	def enable(self):
 		self.disabled = False
+		self.state = self.StateWaiting
