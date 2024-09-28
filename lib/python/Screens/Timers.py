@@ -1350,6 +1350,7 @@ class RecordTimerOverview(TimerOverviewBase):
 							timerChanged = False
 					else:
 						timer.disable()
+						timerChanged = False
 				if timerChanged:
 					self.session.nav.RecordTimer.timeChanged(timer)
 				self.reloadTimerList()

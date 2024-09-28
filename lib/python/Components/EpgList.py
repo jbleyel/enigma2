@@ -121,7 +121,8 @@ class EPGList(GUIComponent):
 				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_pre.png')),
 				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_zaprec.png')),
 				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_prepost.png')),
-				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_post.png'))]
+				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_post.png')),
+				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_disabled.png'))]
 
 		self.selclocks = [LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_add.png')),
 				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_selpre.png')),
@@ -137,7 +138,8 @@ class EPGList(GUIComponent):
 				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_selpre.png')),
 				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_zaprec.png')),
 				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_selprepost.png')),
-				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_selpost.png'))]
+				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_selpost.png')),
+				LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_disabled.png'))]
 
 		self.autotimericon = LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_autotimer.png'))
 		self.icetvicon = LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, 'icons/epgclock_icetv.png'))
@@ -455,12 +457,14 @@ class EPGList(GUIComponent):
 			event = self.getEventFromId(service, eventid)
 			return event, service
 
-	def connectSelectionChanged(func):
-		if not self.onSelChanged.count(func):
-			self.onSelChanged.append(func)
+# Removed because this is probably not used
+#	def connectSelectionChanged(func):
+#		if not self.onSelChanged.count(func):
+#			self.onSelChanged.append(func)
 
-	def disconnectSelectionChanged(func):
-		self.onSelChanged.remove(func)
+# Removed because this is probably not used
+#	def disconnectSelectionChanged(func):
+#		self.onSelChanged.remove(func)
 
 	def serviceChanged(self):
 		cur_sel = self.l.getCurrentSelection()
@@ -673,7 +677,7 @@ class EPGList(GUIComponent):
 					piconw = config.epgselection.graph_piconwidth.value
 				if self.showServiceNumber:
 					font = gFont(self.serviceFontNameGraph, self.serviceFontSizeGraph + config.epgselection.graph_servfs.value)
-					channelw = getTextBoundarySize(self.instance, font, self.instance.size(), "0000").width()
+					# channelw = getTextBoundarySize(self.instance, font, self.instance.size(), "0000").width()
 			elif self.type == EPG_TYPE_INFOBARGRAPH:
 				if self.showServiceTitle:
 					servicew = config.epgselection.infobar_servicewidth.value
@@ -1436,7 +1440,6 @@ class EPGList(GUIComponent):
 
 	def fillSimilarList(self, refstr, event_id):
 		# search similar broadcastings
-		# t = time()
 		if event_id is None:
 			return
 		self.list = self.epgcache.search(('RIBND', 1024, eEPGCache.SIMILAR_BROADCASTINGS_SEARCH, refstr, event_id))

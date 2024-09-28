@@ -2073,9 +2073,10 @@ class InfoBarEPG:
 	def openBouquetEPG(self, bouquet=None, bouquets=None):
 		if bouquet:
 			self.StartBouquet = bouquet
-		elif bouquets and not self.servicelist.isSubservices():  # Current service not found in any bouquet so add all services
+		elif bouquets and not self.servicelist.isSubservices():
 			root = self.servicelist.getRoot()
-			bouquets.insert(0, (self.servicelist.getServiceName(root), root))
+			if root.toString().startswith((service_types_tv, service_types_radio)):  # Current service not found in any bouquet so add all services
+				bouquets.insert(0, (self.servicelist.getServiceName(root), root))
 		self.dlg_stack.append(self.session.openWithCallback(self.closed, EPGSelection, None, zapFunc=self.zapToService, EPGtype=self.EPGtype, StartBouquet=self.StartBouquet, StartRef=self.StartRef, bouquets=bouquets))
 
 	def closed(self, ret=False):
