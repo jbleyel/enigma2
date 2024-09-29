@@ -429,24 +429,6 @@ void eDVBService::setCacheEntry(cacheID id, int pid)
 		initCache();
 	if (id < cacheMax)
 		m_cache[id] = pid;
-
-	if (!m_reference_str.empty()) {
-		bool hasFoundItem = false;
-		std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
-		for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it) {
-			if (m_reference_str.find((*it)->m_reference_str) != std::string::npos) {
-				hasFoundItem = true;
-				(*it)->setCacheEntry(id, pid);
-				break;
-			}
-		}
-		if (!hasFoundItem) {
-			ePtr<eDVBService> s = new eDVBService;
-			s->m_reference_str = eServiceReference(m_reference_str).toReferenceString();
-			s->setCacheEntry(id, pid);
-			iptv_services.push_back(s);
-		}
-	}
 }
 
 DEFINE_REF(eDVBDB);
