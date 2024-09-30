@@ -1,19 +1,20 @@
-from Screens.Screen import Screen
-from Screens.Setup import Setup, setupDom
-from Screens.InputBox import PinInput
-from Screens.MessageBox import MessageBox
+from enigma import eDVBDB, iPlayableService, eTimer, eSize
 from Components.ServiceEventTracker import ServiceEventTracker
 from Components.ActionMap import NumberActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.config import config, ConfigSubsection, getConfigListEntry, ConfigNothing, ConfigSelection, ConfigOnOff
 from Components.Label import Label
 from Components.Pixmap import Pixmap
+from Components.Sources.Boolean import Boolean
 from Components.Sources.StaticText import StaticText
 from Components.Sources.List import List
-from Components.Sources.Boolean import Boolean
 from Components.SystemInfo import BoxInfo
+from Components.UsageConfig import originalAudioTracks, visuallyImpairedCommentary
 
-from enigma import iPlayableService, eTimer, eSize
+from Screens.InputBox import PinInput
+from Screens.MessageBox import MessageBox
+from Screens.Screen import Screen
+from Screens.Setup import Setup, setupDom
 
 from Tools.ISO639 import LanguageCodes
 FOCUS_CONFIG, FOCUS_STREAMS = range(2)
@@ -223,9 +224,15 @@ class AudioSelection(ConfigListScreen, Screen):
 					cnt = 0
 					for lang in languages:
 						if cnt:
-							language += ' / '
-						if lang in LanguageCodes:
+							language += " / "
+						if lang == "":
+							language += _("Not defined")
+						elif lang in originalAudioTracks:
+							language += _("Original language")
+						elif lang in LanguageCodes:
 							language += _(LanguageCodes[lang][0])
+						elif lang in visuallyImpairedCommentary:
+							language += _("Narration")
 						else:
 							language += lang
 						cnt += 1
@@ -456,8 +463,11 @@ class AudioSelection(ConfigListScreen, Screen):
 	def changeAudio(self, audio):
 		track = int(audio)
 		if isinstance(track, int):
-			if self.session.nav.getCurrentService().audioTracks().getNumberOfTracks() > track:
+			service = self.session.nav.getCurrentService()
+			if service.audioTracks().getNumberOfTracks() > track:
 				self.audioTracks.selectTrack(track)
+				if self.session.nav.isCurrentServiceIPTV():
+					eDVBDB.getInstance().saveIptvServicelist()
 
 	def keyLeft(self):
 		if self.focus == FOCUS_CONFIG:
@@ -560,6 +570,8 @@ class AudioSelection(ConfigListScreen, Screen):
 				else:
 					self.enableSubtitle(cur[0][:5])
 					self.__updatedInfo()
+				if self.session.nav.isCurrentServiceIPTV():
+					eDVBDB.getInstance().saveIptvServicelist()
 			self.close(0)
 		elif self.focus == FOCUS_CONFIG:
 			self.keyRight()
