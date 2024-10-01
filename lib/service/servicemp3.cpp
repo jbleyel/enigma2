@@ -545,6 +545,11 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		}
 	}
 
+	eDebug("eServiceMP3::eServiceMP3 m_currentAudioStream %d", m_currentAudioStream);
+	eDebug("eServiceMP3::eServiceMP3 m_currentSubtitleStream %d", m_currentSubtitleStream);
+	eDebug("eServiceMP3::eServiceMP3 m_cachedSubtitleStream %d", m_cachedSubtitleStream);
+	
+
 	CONNECT(m_subtitle_sync_timer->timeout, eServiceMP3::pushSubtitles);
 	CONNECT(m_pump.recv_msg, eServiceMP3::gstPoll);
 	CONNECT(m_nownext_timer->timeout, eServiceMP3::updateEpgCacheNowNext);
