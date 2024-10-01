@@ -1278,6 +1278,8 @@ RESULT eServiceMP3::trickSeek(gdouble ratio)
 				eDebug("[eServiceMP3] blocked pipeline we need to flush playposition in pts at paused is %" G_GINT64_FORMAT, (gint64)pts);
 				seekTo(pts);
 			}
+			if (m_currentAudioStream >= 0)
+				selectTrack(m_currentAudioStream);
 		}
 		//m_last_seek_count = 0;
 		return 0;
@@ -2237,6 +2239,47 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
 				{
 					m_paused = false;
+					if (m_currentAudioStream < 0)
+					{
+						unsigned int autoaudio = 0;
+						int autoaudio_level = 5;
+
+
+						std::string configvalue;
+						std::vector<std::string> autoaudio_languages;
+						configvalue = eSettings::audio_autoselect1;
+						if (configvalue != "")
+							autoaudio_languages.push_back(configvalue);
+						configvalue = eSettings::audio_autoselect2;
+						if (configvalue != "")
+							autoaudio_languages.push_back(configvalue);
+						configvalue = eSettings::audio_autoselect3;
+						if (configvalue != "")
+							autoaudio_languages.push_back(configvalue);
+						configvalue = eSettings::audio_autoselect4;
+						if (configvalue != "")
+							autoaudio_languages.push_back(configvalue);
+
+						for (unsigned int i = 0; i < m_audioStreams.size(); i++)
+						{
+							if (!m_audioStreams[i].language_code.empty())
+							{
+								int x = 1;
+								for (std::vector<std::string>::iterator it = autoaudio_languages.begin(); x < autoaudio_level && it != autoaudio_languages.end(); x++, it++)
+								{
+									if ((*it).find(m_audioStreams[i].language_code) != std::string::npos)
+									{
+										autoaudio = i;
+										autoaudio_level = x;
+										break;
+									}
+								}
+							}
+						}
+
+						if (autoaudio)
+							selectTrack(autoaudio);
+					}
 					if (!m_first_paused)
 						m_event((iPlayableService*)this, evGstreamerPlayStarted);
 					m_first_paused = false;
