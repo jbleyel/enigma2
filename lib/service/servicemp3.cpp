@@ -3280,6 +3280,7 @@ RESULT eServiceMP3::disableSubtitles()
 
 RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack &track)
 {
+	int m_subtitleStreams_size = (int)m_subtitleStreams.size();
 
 	if (!eSubtitleSettings::pango_autoturnon)
 		return -1;
