@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: tuxbox-enigma 0.0.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2024-09-12 21:03+0000\n"
-"PO-Revision-Date: 2024-09-16 19:28+0000\n"
+"PO-Revision-Date: 2024-09-23 00:21+0000\n"
 "Last-Translator: Makumbo <tokioplo@web.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/de/>\n"
 "Language: de\n"
@@ -15137,7 +15137,7 @@ msgstr "Aufnahme fehlgeschlagen!"
 msgid "Recording finished"
 msgstr "Aufnahme beendet"
 
-msgid "Recording in progress"
+msgid "Recording in progress!"
 msgstr "Es wird aufgenommen"
 
 msgid "Recording location"
@@ -17309,13 +17309,13 @@ msgid "Select the sort order of the Extension Menu entries."
 msgstr "Sortierreihenfolge der Menüpunkte im Erweiterungsmenü einstellen."
 
 msgid "Select the sort order of the Plugin Browser menu entries. User defined also allows the menu entries to be hidden."
-msgstr "Sortierung und Sichtbarkeit (Benutzerdefiniert) der Einträge im Plugin-Manager einstellen."
+msgstr "Sortierung der Einträge im Plugin-Manager einstellen. 'Benutzerdefiniert' erlaubt auch das Verstecken von Einträgen."
 
 msgid "Select the sort order of the Plugin Browser menu entries. User defined also allows the plugin entries to be hidden."
-msgstr "Sortierung der Menüeinträge im Plugin-Manager. 'Benutzerdefiniert' erlaubt auch das Verstecken von Einträgen."
+msgstr "Sortierung der Menüeinträge im Plugin-Manager einstellen. 'Benutzerdefiniert' erlaubt auch das Verstecken von Einträgen."
 
 msgid "Select the sort order of the menu entries. User defined also allows the menu entries to be hidden."
-msgstr "Sortierung und Sichtbarkeit (Benutzerdefiniert) der Menüeinträge einstellen."
+msgstr "Sortierung der Menüeinträge einstellen. 'Benutzerdefiniert' erlaubt auch das Verstecken von Einträgen."
 
 msgid "Select the source location from where to obtain the upgrade files."
 msgstr "Die Quelle der Upgrade-Dateien auswählen."
@@ -24534,10 +24534,10 @@ msgstr "gleich"
 msgid "equestrian"
 msgstr "Pferdesport"
 
-msgid "error starting scanning"
+msgid "Problem starting scan"
 msgstr "Fehler beim Start der Suche!"
 
-msgid "error while scanning"
+msgid "Problem while scanning"
 msgstr "Fehler beim Suchen!"
 
 msgid "execute cuts (requires MovieCut plugin)"
@@ -24854,7 +24854,7 @@ msgstr "Keine CAID ausgewählt"
 msgid "no CI slots found"
 msgstr "Keinen CI-Slot gefunden!"
 
-msgid "no channel list"
+msgid "No channel list"
 msgstr "keine Senderliste"
 
 #
@@ -24864,7 +24864,7 @@ msgstr "Kein Modul gefunden"
 msgid "no or unknown card inserted"
 msgstr "Keine oder unbekannte Karte eingesteckt"
 
-msgid "no resource manager"
+msgid "No resource manager"
 msgstr "Kein Resourcen-Manager"
 
 msgid "no storage devices found"
