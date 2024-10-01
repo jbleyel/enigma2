@@ -1243,8 +1243,10 @@ void eDVBDB::saveIptvServicelist(const char *file)
 		eFatal("[eDVBDB] couldn't save iptv cache file!");
 	else
 	{
+		eDebug("[eDVBDB] saveIptvServicelist");
 		for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it)
 		{
+			eDebug("[eDVBDB] saveIptvServicelist %s",(*it)->m_reference_str.c_str());
 			fprintf(f, "s:%s", (*it)->m_reference_str.c_str());
 			for (int x=0; x < eDVBService::cacheMax; ++x)
 			{

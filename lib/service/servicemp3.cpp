@@ -532,7 +532,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	m_decoder = NULL;
 	m_subs_to_pull_handler_id = m_notify_source_handler_id = m_notify_element_added_handler_id = 0;
 
-	 // TODO IPTV
 	std::string sref = ref.toString();
 	if (!sref.empty()) {
 		std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
@@ -992,6 +991,7 @@ DEFINE_REF(GstMessageContainer);
 
 void eServiceMP3::setCacheEntry(bool isAudio, int pid)
 {
+	eDebug("[eServiceMP3] setCacheEntry %d %d / %d", isAudio, pid, m_ref.toString().c_str());
 	bool hasFoundItem = false;
 	std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
 	for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it) {
