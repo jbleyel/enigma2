@@ -654,6 +654,7 @@ void eDVBScan::addChannelToScan(iDVBFrontendParameters *feparm)
 
 	int type;
 	feparm->getSystem(type);
+	int offset = 2000;
 
 	switch(type)
 	{
@@ -680,6 +681,7 @@ void eDVBScan::addChannelToScan(iDVBFrontendParameters *feparm)
 		SCAN_eDebug("[eDVBScan] try to add terres %d %d %d %d %d %d %d %d",
 			parm.frequency, parm.modulation, parm.transmission_mode, parm.hierarchy,
 			parm.guard_interval, parm.code_rate_LP, parm.code_rate_HP, parm.bandwidth);
+		offset = 120; // Closer than Australian offset frequency
 		break;
 	}
 	case iDVBFrontend::feATSC:
@@ -696,7 +698,7 @@ void eDVBScan::addChannelToScan(iDVBFrontendParameters *feparm)
 		/* ... in the list of channels to scan */
 	for (std::list<ePtr<iDVBFrontendParameters> >::iterator i(m_ch_toScan.begin()); i != m_ch_toScan.end();)
 	{
-		if (sameChannel(*i, feparm))
+		if (sameChannel(*i, feparm, false, offset))
 		{
 			if (!found_count)
 			{
@@ -722,7 +724,7 @@ void eDVBScan::addChannelToScan(iDVBFrontendParameters *feparm)
 
 		/* ... in the list of successfully scanned channels */
 	for (std::list<ePtr<iDVBFrontendParameters> >::const_iterator i(m_ch_scanned.begin()); i != m_ch_scanned.end(); ++i)
-		if (sameChannel(*i, feparm))
+		if (sameChannel(*i, feparm, false, offset))
 		{
 			SCAN_eDebug("[eDVBScan] successfully scanned");
 			return;
@@ -730,14 +732,14 @@ void eDVBScan::addChannelToScan(iDVBFrontendParameters *feparm)
 
 		/* ... in the list of unavailable channels */
 	for (std::list<ePtr<iDVBFrontendParameters> >::const_iterator i(m_ch_unavailable.begin()); i != m_ch_unavailable.end(); ++i)
-		if (sameChannel(*i, feparm, true))
+		if (sameChannel(*i, feparm, true, offset))
 		{
 			SCAN_eDebug("[eDVBScan] scanned but not available");
 			return;
 		}
 
 		/* ... on the current channel */
-	if (sameChannel(m_ch_current, feparm))
+	if (sameChannel(m_ch_current, feparm, false, offset))
 	{
 		SCAN_eDebug("[eDVBScan] is current");
 		return;
@@ -748,13 +750,12 @@ void eDVBScan::addChannelToScan(iDVBFrontendParameters *feparm)
 	m_ch_toScan.push_front(feparm); // better.. then the rotor not turning wild from east to west :)
 }
 
-int eDVBScan::sameChannel(iDVBFrontendParameters *ch1, iDVBFrontendParameters *ch2, bool exact) const
+int eDVBScan::sameChannel(iDVBFrontendParameters *ch1, iDVBFrontendParameters *ch2, bool exact, int offset) const
 {
 	int diff;
 	if (ch1->calculateDifference(ch2, diff, exact))
 		return 0;
-	if (diff < 120) // Closer than Australian offset frequency // BW
-	//if (diff < 2000) // more than 2mhz difference? // ATV
+	if (diff < offset)
 		return 1;
 	return 0;
 }
@@ -910,8 +911,6 @@ void eDVBScan::channelDone()
 					{
 						if (system != iDVBFrontend::feTerrestrial)
 							break; // when current locked transponder is no terrestrial transponder ignore this descriptor
-//						if (!T2)
-//							break;
 
 						FrequencyListDescriptor &d = (FrequencyListDescriptor&)**desc;
 						if (d.getCodingType() != 0x03)
@@ -1011,8 +1010,6 @@ void eDVBScan::channelDone()
 						switch (d.getExtensionTag())
 						{
 						case T2_DELIVERY_SYSTEM_DESCRIPTOR:
-							eDebug("[eDVBScan] T2_DELIVERY_SYSTEM_DESCRIPTOR found");
-
 							T2 = true;
 							T2DeliverySystemDescriptor &d = (T2DeliverySystemDescriptor&)**desc;
 							t2transponder.set(d);
@@ -1287,6 +1284,8 @@ void eDVBScan::channelDone()
 		m_pmts_to_read.erase(m_pmt_in_progress++);
 	}
 
+	int offset = (type == iDVBFrontend::feTerrestrial) ? 120 : 2000;
+
 	if (!m_chid_current)
 		eWarning("[eDVBScan] the current channel's ID was not corrected - not adding channel.");
 	else
@@ -1355,7 +1354,7 @@ void eDVBScan::channelDone()
 
 	for (std::list<ePtr<iDVBFrontendParameters> >::iterator i(m_ch_toScan.begin()); i != m_ch_toScan.end();)
 	{
-		if (sameChannel(*i, m_ch_current))
+		if (sameChannel(*i, m_ch_current, false, offset))
 		{
 			SCAN_eDebug("[eDVBScan] remove dupe 2");
 			m_ch_toScan.erase(i++);
@@ -1419,9 +1418,12 @@ void eDVBScan::start(const eSmartPtrList<iDVBFrontendParameters> &known_transpon
 	for (eSmartPtrList<iDVBFrontendParameters>::const_iterator i(known_transponders.begin()); i != known_transponders.end(); ++i)
 	{
 		bool exist=false;
+		int type;
+		(*i)->getSystem(type)
+		int offset = (type == iDVBFrontend::feTerrestrial) ? 120 : 2000;
 		for (std::list<ePtr<iDVBFrontendParameters> >::const_iterator ii(transponderlist->begin()); ii != transponderlist->end(); ++ii)
 		{
-			if (sameChannel(*i, *ii, true))
+			if (sameChannel(*i, *ii, true, offset))
 			{
 				exist=true;
 				break;

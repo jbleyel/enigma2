@@ -118,7 +118,7 @@ class eDVBScan: public sigc::trackable, public iObject
 	void addKnownGoodChannelBW(const eDVBChannelID &chid, iDVBFrontendParameters *feparm, tunerstate newstate);
 	void addChannelToScan(iDVBFrontendParameters *feparm);
 
-	int sameChannel(iDVBFrontendParameters *ch1, iDVBFrontendParameters *ch2, bool exact=false) const;
+	int sameChannel(iDVBFrontendParameters *ch1, iDVBFrontendParameters *ch2, bool exact, int offset) const;
 
 	void channelDone();
 
