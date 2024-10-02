@@ -998,7 +998,7 @@ DEFINE_REF(GstMessageContainer);
 
 void eServiceMP3::setCacheEntry(bool isAudio, int pid)
 {
-	eDebug("[eServiceMP3] setCacheEntry %d %d / %d", isAudio, pid, m_ref.toString().c_str());
+	eDebug("[eServiceMP3] setCacheEntry %d %d / %s", isAudio, pid, m_ref.toString().c_str());
 	bool hasFoundItem = false;
 	std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
 	for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it) {
@@ -3230,7 +3230,7 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser *user, struct SubtitleTrack &t
 {
 	eDebug ("[eServiceMP3][enableSubtitles] entered: subtitle stream %i track.pid %i", m_currentSubtitleStream, track.pid);
 	bool starting_subtitle = false;
-	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon)
+	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon)
 	{
 		//if (m_currentSubtitleStream == -1)
 		//	starting_subtitle = true;
