@@ -840,7 +840,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		if (dvb_subsink)
 		{
 			m_subs_to_pull_handler_id = g_signal_connect (dvb_subsink, "new-buffer", G_CALLBACK (gstCBsubtitleAvail), this);
-			g_object_set (dvb_subsink, "caps", gst_caps_from_string("text/plain; text/x-plain; text/x-raw; text/x-pango-markup; subpicture/x-dvd; subpicture/x-pgs; video/x-raw, format={ I420, YUY2, YVYU, UYVY, VYUY, v210 }"), NULL);
+			g_object_set (dvb_subsink, "caps", gst_caps_from_string("text/plain; text/x-plain; text/x-raw; text/x-pango-markup; subpicture/x-dvd; subpicture/x-pgs"), NULL);
 			g_object_set (m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set (m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
@@ -2009,7 +2009,6 @@ RESULT eServiceMP3::getTrackInfo(struct iAudioTrackInfo &info, unsigned int i)
 	}
 
 	std::string desc = m_audioStreams[i].codec;
-	eDebug("[eServiceMP3] getTrackInfo old '%s'", desc.c_str());
 
 	std::map<std::string, std::string> audioReplacements = {
 		{"AC-3", "AC3"},
@@ -2046,7 +2045,6 @@ RESULT eServiceMP3::getTrackInfo(struct iAudioTrackInfo &info, unsigned int i)
 	}
 
 	info.m_description = desc;
-	eDebug("[eServiceMP3] getTrackInfo new '%s'", desc.c_str());
 
 	if (info.m_language.empty())
 	{
@@ -3290,7 +3288,7 @@ RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack &track)
 	if (!eSubtitleSettings::pango_autoturnon)
 		return -1;
 
-	eDebug("[eServiceMP3][getCachedSubtitle] autorun subtitles set");
+	// eDebug("[eServiceMP3][getCachedSubtitle] autorun subtitles set");
 	if (m_cachedSubtitleStream == -2 && m_subtitleStreams_size)
 	{
 		eDebug("[eServiceMP3][getCachedSubtitle] m_cachedSubtitleStream == -2 && m_subtitleStreams_size)");
