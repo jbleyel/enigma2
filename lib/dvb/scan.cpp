@@ -1250,6 +1250,8 @@ void eDVBScan::channelDone()
 
 	int offset = (type == iDVBFrontend::feTerrestrial) ? 120 : 2000;
 
+	SCAN_eDebug("[eDVBScan] channel done offset %d", offset);
+
 	if (!m_chid_current)
 		eWarning("[eDVBScan] the current channel's ID was not corrected - not adding channel.");
 	else
@@ -1351,6 +1353,7 @@ void eDVBScan::start(const eSmartPtrList<iDVBFrontendParameters> &known_transpon
 		int type;
 		(*i)->getSystem(type);
 		int offset = (type == iDVBFrontend::feTerrestrial) ? 120 : 2000;
+		SCAN_eDebug("[eDVBScan] start offset %d", offset);
 		for (std::list<ePtr<iDVBFrontendParameters> >::const_iterator ii(transponderlist->begin()); ii != transponderlist->end(); ++ii)
 		{
 			if (sameChannel(*i, *ii, true, offset))

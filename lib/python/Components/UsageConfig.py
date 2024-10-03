@@ -2240,6 +2240,7 @@ def InitUsageConfig():
 	config.streaming.stream_ait = ConfigYesNo(default=True)
 	config.streaming.stream_sdtbat = ConfigYesNo(default=False)
 	config.streaming.authentication = ConfigYesNo(default=False)
+	config.streaming.port = ConfigInteger(default=8001, limits=(1, 65535))
 
 	config.pluginbrowser = ConfigSubsection()
 	config.pluginbrowser.po = ConfigYesNo(default=False)

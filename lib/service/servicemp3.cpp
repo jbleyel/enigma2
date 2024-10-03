@@ -8,6 +8,7 @@
 #include <lib/base/object.h>
 #include <lib/base/esettings.h>
 #include <lib/base/esimpleconfig.h>
+#include <lib/base/estring.h>
 #include <lib/dvb/epgcache.h>
 #include <lib/dvb/decoder.h>
 #include <lib/dvb/db.h>
@@ -532,8 +533,9 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	m_decoder = NULL;
 	m_subs_to_pull_handler_id = m_notify_source_handler_id = m_notify_element_added_handler_id = 0;
 
-	std::string sref = ref.toReferenceString();
+	std::string sref = ref.toString();
 	if (!sref.empty()) {
+		sref = replace_all(sref, "," , "_");
 		std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
 		for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it) {
 			eDebug("[eServiceMP3] iptv_services m_reference_str : %s", (*it)->m_reference_str.c_str());
@@ -999,10 +1001,11 @@ DEFINE_REF(GstMessageContainer);
 void eServiceMP3::setCacheEntry(bool isAudio, int pid)
 {
 	eDebug("[eServiceMP3] setCacheEntry %d %d / %s", isAudio, pid, m_ref.toString().c_str());
+	std::string ref = replace_all(m_ref.toString(), ",", "_");
 	bool hasFoundItem = false;
 	std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
 	for(std::vector<ePtr<eDVBService>>::iterator it = iptv_services.begin(); it != iptv_services.end(); ++it) {
-		if (m_ref.toString().find((*it)->m_reference_str) != std::string::npos) {
+		if (ref.find((*it)->m_reference_str) != std::string::npos) {
 			hasFoundItem = true;
 			(*it)->setCacheEntry( isAudio ? eDVBService::cMPEGAPID : eDVBService::cSUBTITLE, pid);
 			break;
@@ -1010,7 +1013,7 @@ void eServiceMP3::setCacheEntry(bool isAudio, int pid)
 	}
 	if (!hasFoundItem) {
 		ePtr<eDVBService> s = new eDVBService;
-		s->m_reference_str = m_ref.toReferenceString();
+		s->m_reference_str = ref;
 		s->setCacheEntry( isAudio ? eDVBService::cMPEGAPID : eDVBService::cSUBTITLE, pid);
 		iptv_services.push_back(s);
 	}
