@@ -246,7 +246,7 @@ void eActionMap::keyPressed(const std::string &device, int key, int flags)
 	bool modal = false;
 	for (std::multimap<int64_t, eActionBinding>::iterator c(m_bindings.begin()); c != m_bindings.end(); ++c)
 	{
-		if (c->first == -10)
+		if (c->first == -20)
 		{
 			eDebug("[eActionMap] modal active");
 			modal = true;
@@ -257,7 +257,7 @@ void eActionMap::keyPressed(const std::string &device, int key, int flags)
 	// iterate active contexts
 	for (std::multimap<int64_t, eActionBinding>::iterator c(m_bindings.begin()); c != m_bindings.end(); ++c)
 	{
-		if (modal && c->first > -10)
+		if (modal && c->first > -20)
 		{
 			eDebug("[eActionMap] modal active / ignore key %d", key);
 			continue;
