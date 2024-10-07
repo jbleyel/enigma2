@@ -4,10 +4,10 @@ from os.path import isfile
 from twisted.internet.protocol import Protocol, Factory
 
 from Plugins.Plugin import PluginDescriptor
+from Components.Console import Console
 from Components.Harddisk import harddiskmanager
-from Screens.MessageBox import MessageBox
-from Tools.Notifications import AddPopup
-from Tools.Directories import fileReadLines
+from Screens.MessageBox import MessageBox, ModalMessageBox
+from Tools.Directories import fileReadLines, fileWriteLines
 
 # globals
 hotplugNotifier = []
@@ -38,7 +38,6 @@ def processHotplugData(self, v):
 				ID_FS_UUID = v.get("ID_FS_UUID")
 				ID_MODEL = v.get("ID_MODEL")
 				ID_PART_ENTRY_SIZE = v.get("ID_PART_ENTRY_SIZE")
-				harddiskmanager.enumerateBlockDevices()
 				notFound = True
 				knownDevices = fileReadLines("/etc/udev/known_devices")
 				if knownDevices:
@@ -48,17 +47,45 @@ def processHotplugData(self, v):
 							notFound = False
 							break
 				if notFound:
+					# TODO Text
 					text = f"{ID_MODEL} - {DEVNAME}\n"
 					text = _("A new device has been pluged-in:\n%s") % text
-					text += _("Please goto Device Manager and choose what todo.")
-					AddPopup(text=text, type=MessageBox.TYPE_INFO, timeout=10)
+					mountPoint = "/media/usb"  # TODO
+
+					def newDeviceCallback(answer):
+						if answer:
+							fstab = fileReadLines("/etc/fstab")
+							if answer == 1:
+								knownDevices.append(f"{ID_FS_UUID}:None")
+							elif answer == 2:
+								knownDevices.append(f"{ID_FS_UUID}:{mountPoint}")
+								fstab.append(f"{ID_FS_UUID} {mountPoint} {ID_FS_TYPE} defaults 0 0")
+								fileWriteLines("/etc/fstab", fstab)
+								Console().ePopen(("/bin/mount", "-a"))
+							elif answer == 3:
+								Console().ePopen(("/bin/mount", "-t", ID_FS_TYPE, DEVNAME, mountPoint))
+
+							if answer in (1, 2):
+								fileWriteLines("/etc/udev/known_devices", knownDevices)
+						harddiskmanager.enumerateBlockDevices()
+
+					choiceList = [
+						(_("Do nothing"), 0),
+						(_("Ignore this device"), 1),
+						(_("Mount as %s") % mountPoint, 2),
+						(_("Temporary mount as %s" % mountPoint), 3)
+					]
+					ModalMessageBox.instance.showMessageBox(text=text, list=choiceList, windowTitle=_("New Device detected"), callback=newDeviceCallback)
+				else:
+					harddiskmanager.enumerateBlockDevices()
+
 		elif action == "remove":
 			ID_TYPE = v.get("ID_TYPE")
 			DEVTYPE = v.get("DEVTYPE")
 			if ID_TYPE == "disk" and DEVTYPE == "partition":
 				#device = v.get("DEVNAME")
 				#harddiskmanager.removeHotplugPartition(device)
-				harddiskmanager.enumerateBlockDevices()
+				harddiskmanager.enumerateBlockDevices()  # TODO
 		elif action == "ifup":
 			interface = v.get("INTERFACE")
 		elif action == "ifdown":
