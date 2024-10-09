@@ -25,25 +25,76 @@ static std::string encode(const std::string s)
 	return res;
 }
 
-eServiceReference::eServiceReference(const std::string &string)
+RESULT eServiceReference::parseNameAndProviderFromName(std::string &sourceName, std::string& name, std::string& prov) {
+	prov = "";
+	if (!sourceName.empty()) {
+		std::vector<std::string> name_split = split(sourceName, "•");
+		name = name_split[0];
+		if (name_split.size() > 1) {
+			prov = name_split[1];
+		}
+	}
+	return 0;
+}
+
+void eServiceReference::eServiceReferenceBase(const std::string &string)
 {
-	const char *c=string.c_str();
-	int pathl=0;
+	const char *c = string.c_str();
+	int pathl = 0;
+
 	number = 0;
 
-	if (!string.length())
-		type = idInvalid;
-	else if ( sscanf(c, "%d:%d:%x:%x:%x:%x:%x:%x:%x:%x:%n", &type, &flags, &data[0], &data[1], &data[2], &data[3], &data[4], &data[5], &data[6], &data[7], &pathl) < 8 )
+	if (string.empty())
 	{
-		memset( data, 0, sizeof(data) );
+		type = idInvalid;
+		return;
+	}
+
+	if (isalpha(*c))
+	{
+		eDebug("[eServiceReference] May be unencoded URL: %s", c);
+		const char *colon = strchr(c, ':');
+		if ((colon) && !strncmp(colon, "://", 3))
+		{
+			type = idServiceMP3;
+			memset(data, 0, sizeof(data));
+			/* Allow space separated name */
+			const char *space = strchr(colon, ' ');
+			if (space)
+			{
+				path.assign(c, space - c);
+				name = space + 1;
+			}
+			else
+			{
+				path = string;
+				name = string;
+			}
+
+			std::string res_name = "";
+			std::string res_provider = "";
+			eServiceReference::parseNameAndProviderFromName(name, res_name, res_provider);
+			name = res_name;
+			prov = res_provider;
+
+			eDebug("[eServiceReference] URL=%s name=%s", path.c_str(), name.c_str());
+			return;
+		}
+	}
+
+	int ret = sscanf(c, "%d:%d:%x:%x:%x:%x:%x:%x:%x:%x:%n", &type, &flags, &data[0], &data[1], &data[2], &data[3], &data[4], &data[5], &data[6], &data[7], &pathl);
+	if (ret < 8 )
+	{
+		memset(data, 0, sizeof(data));
+		ret = sscanf(c, "%d:%d:%x:%x:%x:%x:%n", &type, &flags, &data[0], &data[1], &data[2], &data[3], &pathl);
 		eDebug("[eServiceReference] find old format eServiceReference string");
-		if ( sscanf(c, "%d:%d:%x:%x:%x:%x:%n", &type, &flags, &data[0], &data[1], &data[2], &data[3], &pathl) < 2 )
+		if (ret < 2)
 			type = idInvalid;
 	}
 
 	if (pathl)
 	{
-		const char *pathstr = c+pathl;
+		const char *pathstr = c + pathl;
 		const char *namestr = strchr(pathstr, ':');
 		if (namestr)
 		{
@@ -80,6 +131,25 @@ eServiceReference::eServiceReference(const std::string &string)
 
 	path = urlDecode(path);
 	name = urlDecode(name);
+
+	std::string res_name = "";
+	std::string res_provider = "";
+	eServiceReference::parseNameAndProviderFromName(name, res_name, res_provider);
+	name = res_name;
+	prov = res_provider;
+}
+
+eServiceReference::eServiceReference(const std::string &string)
+{
+	/* eDebug("[eServiceReference][std]"); */
+	eServiceReferenceBase(string);
+}
+
+eServiceReference::eServiceReference(const char* string2)
+{
+	std::string string(string2);
+	/* eDebug("[eServiceReference][char]"); */
+	eServiceReferenceBase(string);
 }
 
 std::string eServiceReference::toString() const
@@ -101,6 +171,9 @@ std::string eServiceReference::toString() const
 	{
 		ret += ':';
 		ret += encode(name);
+	}
+	if (!prov.empty()) {
+		ret += "•" + prov;
 	}
 	return ret;
 }

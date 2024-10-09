@@ -59,6 +59,8 @@ public:
 
 	inline int getSortKey() const { return (flags & hasSortKey) ? data[3] : ((flags & sort1) ? 1 : 0); }
 
+	static RESULT parseNameAndProviderFromName(std::string &sourceName, std::string& name, std::string& prov);
+
 #ifndef SWIG
 	int data[8];
 	std::string path;
@@ -100,10 +102,20 @@ public:
 // real existing service ( for dvb eServiceDVB )
 #ifndef SWIG
 	std::string name;
+	std::string prov;
 	int number;
 #endif
-	std::string getName() const { return name; }
-	void setName( const std::string &n ) { name=n; }
+	std::string getName() const { 
+		if (!name.empty()) {
+			std::vector<std::string> name_split = split(name, "•");
+			std::string name_res = name_split[0];
+			return name_res; 
+		}
+		return name; 
+	}
+	std::string getProvider() const { return prov; }
+	void setName( const std::string &s ) { name=s; }
+	void setProvider( const std::string &s ) { prov=s; }
 	int getChannelNum() const { return number; }
 	void setChannelNum(const int n) { number = n; }
 
@@ -170,10 +182,12 @@ public:
 		memset(data, 0, sizeof(data));
 		number = 0;
 	}
+	void eServiceReferenceBase(const std::string &string);
 #ifdef SWIG
 	eServiceReference(const eServiceReference &ref);
 #endif
 	eServiceReference(const std::string &string);
+	eServiceReference(const char* string2);
 	std::string toString() const;
 	std::string toCompareString() const;
 	std::string toReferenceString() const;
@@ -214,6 +228,16 @@ public:
 	{
 		return type != idInvalid;
 	}
+#ifdef SWIG
+public:
+%typemap(in) (const char* string2) {
+	if (PyBytes_Check($input)) {
+		$1 = PyBytes_AsString($input);
+	} else {
+		$1 = PyBytes_AsString(PyUnicode_AsEncodedString($input, "utf-8", "surrogateescape"));
+	}
+}
+#endif
 };
 
 SWIG_ALLOW_OUTPUT_SIMPLE(eServiceReference);
