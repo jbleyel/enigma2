@@ -397,6 +397,14 @@ RESULT eStaticServiceDVBPVRInformation::getName(const eServiceReference &ref, st
 		}
 		m_parser.m_name = name;
 	}
+
+	std::string res_name = "";
+	std::string res_provider = "";
+	eServiceReference::parseNameAndProviderFromName(name, res_name, res_provider);
+	name = res_name;
+	m_parser.m_name = name;
+	if (m_parser.m_prov.empty() && !ref.prov.empty()) m_parser.m_prov = ref.prov;
+
 	return 0;
 }
 
@@ -469,6 +477,13 @@ std::string eStaticServiceDVBPVRInformation::getInfoString(const eServiceReferen
 		return m_parser.m_ref.toString();
 	case iServiceInformation::sTags:
 		return m_parser.m_tags;
+	case iServiceInformation::sProvider:
+	{
+		if (m_parser.m_prov.empty()) {
+			return "";
+		}
+		return m_parser.m_prov;
+	}
 	default:
 		return "";
 	}
@@ -804,10 +819,10 @@ PyObject *eDVBServiceList::getContent(const char* format, bool sorted)
 					tmp = NEW_eServiceReference(ref);
 					break;
 				case 'C':  // service reference compare string
-					tmp = PyString_FromString(ref.toCompareString().c_str());
+					tmp = PyUnicode_FromString(ref.toCompareString().c_str());
 					break;
 				case 'S':  // service reference string
-					tmp = PyString_FromString(ref.toString().c_str());
+					tmp = PyUnicode_FromString(ref.toString().c_str());
 					break;
 				case 'N':  // service name
 					if (service_center)
@@ -826,11 +841,11 @@ PyObject *eDVBServiceList::getContent(const char* format, bool sorted)
 								name.erase(pos,2);
 
 							if (name.length())
-								tmp = PyString_FromString(name.c_str());
+								tmp = PyUnicode_FromString(name.c_str());
 						}
 					}
 					if (!tmp)
-						tmp = PyString_FromString("<n/a>");
+						tmp = PyUnicode_FromString("<n/a>");
 					break;
 				case 'n':  // short service name
 					if (service_center)
@@ -842,11 +857,11 @@ PyObject *eDVBServiceList::getContent(const char* format, bool sorted)
 							sptr->getName(ref, name);
 							name = buildShortName(name);
 							if (name.length())
-								tmp = PyString_FromString(name.c_str());
+								tmp = PyUnicode_FromString(name.c_str());
 						}
 					}
 					if (!tmp)
-						tmp = PyString_FromString("<n/a>");
+						tmp = PyUnicode_FromString("<n/a>");
 					break;
 				default:
 					if (tuple)
@@ -1097,7 +1112,7 @@ eDVBServicePlay::~eDVBServicePlay()
 		int ret=meta.parseFile(m_reference.path);
 		if (!ret)
 		{
-			char tmp[255];
+			char tmp[255] = {};
 			meta.m_service_data="";
 			sprintf(tmp, "f:%x", m_dvb_service->m_flags);
 			meta.m_service_data += tmp;
