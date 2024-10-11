@@ -466,7 +466,6 @@ void eDVBDB::loadIPTVCachefile(const char *file)
 			*sdata++ = '\0';
 			ePtr<eDVBService> s = new eDVBService;
 			s->m_reference_str = line + 2;
-			eDebug("[eDVBDB] parseIPTVServiceData '%s'",s->m_reference_str.c_str());
 			parseIPTVServiceData(s, sdata);
 			iptv_services.push_back(s);
 			scount ++;
@@ -495,8 +494,6 @@ void eDVBDB::parseIPTVServiceData(ePtr<eDVBService> s, std::string str)
 		{
 			int cid, val;
 			sscanf(v.c_str(), "%02d%x", &cid, &val);
-			eDebug("[eDVBDB] parseIPTVServiceData %02d%x", cid, val);
-
 			s->setCacheEntry((eDVBService::cacheID)cid,val);
 		}
 	}
