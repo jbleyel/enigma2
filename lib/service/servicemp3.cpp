@@ -848,7 +848,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		if (dvb_subsink)
 		{
 			m_subs_to_pull_handler_id = g_signal_connect (dvb_subsink, "new-buffer", G_CALLBACK (gstCBsubtitleAvail), this);
-			g_object_set (dvb_subsink, "caps", gst_caps_from_string("text/plain; text/x-plain; text/x-raw; text/x-pango-markup; subpicture/x-dvd; subpicture/x-pgs"), NULL);
+			g_object_set (dvb_subsink, "caps", gst_caps_from_string("text/plain; text/x-plain; text/x-raw; text/x-pango-markup; subpicture/x-dvd; subpicture/x-dvb; subpicture/x-pgs"), NULL);
 			g_object_set (m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set (m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
@@ -2089,6 +2089,8 @@ subtype_t getSubtitleType(GstPad* pad, gchar *g_codec=NULL)
 					type = stPlainText;
 				else if ( !strcmp(g_type, "subpicture/x-pgs") )
 					type = stPGS;
+				else if ( !strcmp(g_type, "subpicture/x-dvb") )
+					type = stDVB;
 				else
 					eDebug("[eServiceMP3] getSubtitleType::unsupported subtitle caps %s (%s)", g_type, g_codec ? g_codec : "(null)");
 			}
@@ -3364,7 +3366,7 @@ RESULT eServiceMP3::getSubtitleList(std::vector<struct SubtitleTrack> &subtitlel
 		default:
 		{
 			struct SubtitleTrack track = {};
-			track.type = 2;
+			track.type = (type == stDVB) ? 0 : 2;
 			track.pid = stream_idx;
 			track.page_number = int(type);
 			track.magazine_number = 0;
