@@ -460,18 +460,27 @@ void eDVBDB::loadIPTVCachefile(const char *file)
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
 		if (!strncmp(line, "s:", 2)) {		// Service data
+
+			eDebug("[eDVBDB] loaded iptv channel line %s", line);
+
 			// s:serviceref[,servicedata]
-			char * sname = strchr(line, ',');
-			if (!sname)
-				continue;
-			*sname = '\0';
-			sname += 2;	// skip '"'
-			char * sdata = strchr(sname, '"');
+//			char * sname = strchr(line, ',');
+//			if (!sname)
+//				continue;
+//			*sname = '\0';
+//			sname += 2;	// skip '"'
+			char * sdata = strchr(line, ',');
 			if (!sdata)
 				continue;
+
+			eDebug("[eDVBDB] loaded iptv channel sdata 1 %s", sdata);
+
 			*sdata++ = '\0';  // end string on '"'
 			ePtr<eDVBService> s = new eDVBService;
 			s->m_reference_str = line + 2;
+
+			eDebug("[eDVBDB] loaded iptv channel sdata 2 %s", sdata);
+
 			if (*sdata++ == ',') // expect a ',' or '\0'.
 				parseIPTVServiceData(s, sdata);
 			iptv_services.push_back(s);
