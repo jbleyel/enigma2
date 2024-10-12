@@ -3340,10 +3340,12 @@ RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack &track)
 	if (m_cachedSubtitleStream >= 0 && m_cachedSubtitleStream < (int)m_subtitleStreams.size())
 	{
 		eDebug("[eServiceMP3][getCachedSubtitle] (m_cachedSubtitleStream >= 0 && m_cachedSubtitleStream < m_subtitleStreams_size)");
-		track.type = 2;
+		track.type = (m_subtitleStreams[m_cachedSubtitleStream].type == stDVB) ? 0 : 2;
 		track.pid = m_cachedSubtitleStream;
 		track.page_number = int(m_subtitleStreams[m_cachedSubtitleStream].type);
 		track.magazine_number = 0;
+		track.language_code = m_subtitleStreams[m_cachedSubtitleStream].language_code;
+		track.title = m_subtitleStreams[m_cachedSubtitleStream].title;
 		return 0;
 	}
 	return -1;
