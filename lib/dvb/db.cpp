@@ -447,26 +447,30 @@ void eDVBDB::reloadServicelist()
 void eDVBDB::loadIPTVCachefile(const char *file)
 {
 	CFile f(file, "rt");
-	if (!f) {
+	if (!f)
+	{
 		eDebug("[eDVBDB] can't open %s: %m", file);
 		return;
 	}
 	iptv_services.clear();
 	int scount=0;
 	char line[1024];
-	while (fgets(line, 1024, f)) {
+	while (fgets(line, 1024, f))
+	{
 		int len = strlen(line);
 		if (!len) continue;
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
-		if (!strncmp(line, "s:", 2)) {		// Service data
+		if (!strncmp(line, "s:", 2)) // Service data
+		{
 			char * sdata = strchr(line, ',');
-			if (!sdata)
-				continue;
-			*sdata++ = '\0';
 			ePtr<eDVBService> s = new eDVBService;
+			if (sdata)
+			{
+				*sdata++ = '\0';
+				parseIPTVServiceData(s, sdata);
+			}
 			s->m_reference_str = line + 2;
-			parseIPTVServiceData(s, sdata);
 			iptv_services.push_back(s);
 			scount ++;
 		}
