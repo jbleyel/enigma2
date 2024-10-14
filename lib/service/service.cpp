@@ -37,7 +37,7 @@ RESULT eServiceReference::parseNameAndProviderFromName(std::string &sourceName, 
 	return 0;
 }
 
-void eServiceReference::eServiceReferenceBase(const std::string &string)
+void eServiceReference::eServiceReference(const std::string &string)
 {
 	const char *c = string.c_str();
 	int pathl = 0;
@@ -137,19 +137,6 @@ void eServiceReference::eServiceReferenceBase(const std::string &string)
 	eServiceReference::parseNameAndProviderFromName(name, res_name, res_provider);
 	name = res_name;
 	prov = res_provider;
-}
-
-eServiceReference::eServiceReference(const std::string &string)
-{
-	/* eDebug("[eServiceReference][std]"); */
-	eServiceReferenceBase(string);
-}
-
-eServiceReference::eServiceReference(const char* string2)
-{
-	std::string string(string2);
-	/* eDebug("[eServiceReference][char]"); */
-	eServiceReferenceBase(string);
 }
 
 std::string eServiceReference::toString() const
