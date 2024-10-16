@@ -2598,7 +2598,7 @@ RESULT eDVBDB::addOrUpdateBouquet(const std::string &name, const std::string &fi
 		bouquet->setListName(name);
 	}
 	if (!PyList_Check(services)) {
-		const char *errstr = "eDVBDB::appendServicesToBouquet second parameter is not a python list!!!";
+		const char *errstr = "eDVBDB::appendServicesToBouquet second parameter is not a python list!";
 		PyErr_SetString(PyExc_TypeError, errstr);
 		return -1;
 	}
@@ -2609,9 +2609,8 @@ RESULT eDVBDB::addOrUpdateBouquet(const std::string &name, const std::string &fi
 		ePyObject refstr = PyList_GET_ITEM(services, size);
 		if (!PyUnicode_Check(refstr))
 		{
-			char buf[255];
-			snprintf(buf, 255, "eDVBDB::appendServicesToBouquet entry in service list is not a string.. it is '%s'!!", PyObject_Type(refstr));
-			PyErr_SetString(PyExc_TypeError, buf);
+			const char *errstr = "eDVBDB::appendServicesToBouquet entry in service list is not a string.";
+			PyErr_SetString(PyExc_TypeError, errstr);
 			return -1;
 		}
 		const char *tmpstr = PyUnicode_AsUTF8(refstr);
@@ -2623,7 +2622,7 @@ RESULT eDVBDB::addOrUpdateBouquet(const std::string &name, const std::string &fi
 			bouquet->m_services.push_front(ref);
 		}
 		else
-			eDebug("[DB] eDVBDB::appendServicesToBouquet '%s' is not a valid service reference... ignore!!", tmpstr);
+			eDebug("eDVBDB::appendServicesToBouquet '%s' is not a valid service reference.", tmpstr);
 	}
 
 	bouquet->flushChanges();
@@ -2651,7 +2650,7 @@ RESULT eDVBDB::appendServicesToBouquet(const std::string &filename, ePyObject se
 	{
 		
 		if (!PyList_Check(services)) {
-			const char *errstr = "eDVBDB::appendServicesToBouquet second parameter is not a python list!!!";
+			const char *errstr = "eDVBDB::appendServicesToBouquet second parameter is not a python list!";
 			PyErr_SetString(PyExc_TypeError, errstr);
 			return -1;
 		}
@@ -2662,9 +2661,8 @@ RESULT eDVBDB::appendServicesToBouquet(const std::string &filename, ePyObject se
 			ePyObject refstr = PyList_GET_ITEM(services, size);
 			if (!PyUnicode_Check(refstr))
 			{
-				char buf[255];
-				snprintf(buf, 255, "eDVBDB::appendServicesToBouquet entry in service list is not a string.. it is '%s'!!", PyObject_Type(refstr));
-				PyErr_SetString(PyExc_TypeError, buf);
+				const char *errstr = "eDVBDB::appendServicesToBouquet entry in service list is not a string.";
+				PyErr_SetString(PyExc_TypeError, errstr);
 				return -1;
 			}
 			const char *tmpstr = PyUnicode_AsUTF8(refstr);
@@ -2676,7 +2674,7 @@ RESULT eDVBDB::appendServicesToBouquet(const std::string &filename, ePyObject se
 				bouquet->m_services.push_front(ref);
 			}
 			else
-				eDebug("[DB] eDVBDB::appendServicesToBouquet '%s' is not a valid service reference... ignore!!", tmpstr);
+				eDebug("eDVBDB::appendServicesToBouquet '%s' is not a valid service reference!", tmpstr);
 		}
 		bouquet->flushChanges();
 		renumberBouquet();
@@ -2703,7 +2701,7 @@ RESULT eDVBDB::removeBouquet(const std::string &filename_regex)
 	DIR *dir = opendir(p.c_str());
 	if (!dir)
 	{
-		eDebug("[eDVBDB] Cannot open directory where the userbouquets should be expected..");
+		eDebug("[eDVBDB] Cannot open directory where the userbouquets should be expected.");
 		return -1;
 	}
 	dirent *entry;
