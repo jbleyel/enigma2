@@ -338,11 +338,13 @@ RESULT eStaticServiceMP3Info::getName(const eServiceReference &ref, std::string 
 			name = ref.path;
 	}
 
+	/*  TODO */
+	/*
 	std::string res_name = "";
 	std::string res_provider = "";
 	eServiceReference::parseNameAndProviderFromName(name, res_name, res_provider);
 	name = res_name;
-
+	*/
 	return 0;
 }
 
@@ -2429,7 +2431,8 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				}
 			}
 			gst_tag_list_free(tags);
-			m_event((iPlayableService*)this, evUpdatedInfo);
+			m_event((iPlayableService*)this, evUser+15); // Use user event for tags changed notification since if we use evUpdatedInfo it causes constant refreshes of AudioSelectionLists
+//			m_event((iPlayableService*)this, evUpdatedInfo);
 			break;
 		}
 		/* TOC entry intercept used for chapter support CVR */
@@ -2456,8 +2459,11 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			if ( n_video + n_audio <= 0 )
 				stop();
 
-			m_audioStreams.clear();
-			m_subtitleStreams.clear();
+			std::vector<audioStream> audioStreams_temp;
+			std::vector<subtitleStream> subtitleStreams_temp;
+
+			//m_audioStreams.clear();
+			//m_subtitleStreams.clear();
 
 			for (i = 0; i < n_audio; i++)
 			{
@@ -2495,7 +2501,8 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				}
 				eDebug("[eServiceMP3] audio stream=%i codec=%s language=%s", i, audio.codec.c_str(), audio.language_code.c_str());
 				//codec_tofix = (audio.codec.find("MPEG-1 Layer 3 (MP3)") == 0 || audio.codec.find("MPEG-2 AAC") == 0) && n_audio - n_video == 1;
-				m_audioStreams.push_back(audio);
+				//m_audioStreams.push_back(audio);
+				audioStreams_temp.push_back(audio);
 				gst_caps_unref(caps);
 			}
 
@@ -2546,10 +2553,25 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 
 				gst_object_unref(pad);
 				g_free(g_codec);
-				m_subtitleStreams.push_back(subs);
+				//m_subtitleStreams.push_back(subs);
+				subtitleStreams_temp.push_back(subs);
 			}
-			eDebug("[eServiceMP3] GST_MESSAGE_ASYNC_DONE before evUpdatedInfo");
-			m_event((iPlayableService*)this, evUpdatedInfo);
+
+			bool hasChanges = m_audioStreams.size() != audioStreams_temp.size() || std::equal(m_audioStreams.begin(), m_audioStreams.end(), audioStreams_temp.begin());
+			if (!hasChanges)
+				hasChanges = m_subtitleStreams.size() != subtitleStreams_temp.size() || std::equal(m_subtitleStreams.begin(), m_subtitleStreams.end(), subtitleStreams_temp.begin());
+
+			if (hasChanges)
+			{
+				eTrace("[eServiceMP3] audio or subtitle stream difference -- re enumerating");
+				m_audioStreams.clear();
+				m_subtitleStreams.clear();
+				std::copy(audioStreams_temp.begin(), audioStreams_temp.end(), back_inserter(m_audioStreams));
+				std::copy(subtitleStreams_temp.begin(), subtitleStreams_temp.end(), back_inserter(m_subtitleStreams));
+				eDebug("[eServiceMP3] GST_MESSAGE_ASYNC_DONE before evUpdatedInfo");
+				m_event((iPlayableService*)this, evUpdatedInfo);
+			}
+
 			if ( m_errorInfo.missing_codec != "" )
 			{
 				if (m_errorInfo.missing_codec.find("video/") == 0 || (m_errorInfo.missing_codec.find("audio/") == 0 && m_audioStreams.empty()))
