@@ -52,7 +52,7 @@ class Setup(ConfigListScreen, Screen):
 		<widget name="HelpWindow" position="0,0" size="0,0" alphatest="blend" conditional="HelpWindow" transparent="1" zPosition="+1" />
 	</screen>"""
 
-	def __init__(self, session, setup, plugin=None, PluginLanguageDomain=None):
+	def __init__(self, session, setup=None, plugin=None, PluginLanguageDomain=None):
 		Screen.__init__(self, session, mandatoryWidgets=["config", "footnote", "description"], enableHelp=True)
 		self.setImage(setup, "setup")
 		self.setup = setup
@@ -139,6 +139,8 @@ class Setup(ConfigListScreen, Screen):
 		else:
 			itemText = _(element.get("text", "??"))
 			itemDescription = _(element.get("description", " "))
+		if element.get("restart", "").lower() in ("1", "true") and not itemText.endswith(" *"):  # Add * as restart indicator based on the restart attribute
+			itemText = f"{itemText} *"
 		item = eval(element.text) if element.text else ""
 		if item == "":
 			self.list.append((self.formatItemText(itemText),))  # Add the comment line to the config list.
