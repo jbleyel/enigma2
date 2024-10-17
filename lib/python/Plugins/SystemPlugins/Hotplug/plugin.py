@@ -1,43 +1,71 @@
-# -*- coding: utf-8 -*-
 from os import remove
-from os.path import isfile
-from twisted.internet.protocol import Protocol, Factory
+from os.path import exists, isfile
+from twisted.internet import reactor
+from twisted.internet.protocol import Factory, Protocol
 
-from Plugins.Plugin import PluginDescriptor
 from Components.Console import Console
 from Components.Harddisk import harddiskmanager
-from Screens.MessageBox import MessageBox, ModalMessageBox
+from Plugins.Plugin import PluginDescriptor
+from Screens.MessageBox import ModalMessageBox
 from Tools.Directories import fileReadLines, fileWriteLines
+
+HOTPLUG_SOCKET = "/tmp/hotplug.socket"
 
 # globals
 hotplugNotifier = []
 audiocd = False
 
 
+class Hotplug(Protocol):
+	def __init__(self):
+		self.received = ""
+
+	def connectionMade(self):
+		print("[Hotplug] Connection made.")
+		self.received = ""
+
+	def dataReceived(self, data):
+		if isinstance(data, bytes):
+			data = data.decode()
+		self.received += data
+		print(f"[Hotplug] Data received: '{", ".join(self.received.split("\0")[:-1])}'.")
+
+	def connectionLost(self, reason):
+		print(f"[Hotplug] Connection lost reason '{reason}'.")
+		eventData = {}
+		if "\n" in self.received:
+			data = self.received[:-1].split("\n")
+			eventData["mode"] = 1
+		else:
+			data = self.received.split("\0")[:-1]
+			eventData["mode"] = 0
+		for values in data:
+			variable, value = values.split("=", 1)
+			eventData[variable] = value
+		processHotplugData(eventData)
+
+
 def AudiocdAdded():
 	global audiocd
-	if audiocd:
-		return True
-	else:
-		return False
+	return audiocd
 
 
-def processHotplugData(self, v):
-	mode = v.get("mode")
-	print("[Hotplug.plugin.py]:", v)
-	action = v.get("ACTION")
+def processHotplugData(eventData):
+	mode = eventData.get("mode")
+	print("[Hotplug.plugin.py]:", eventData)
+	action = eventData.get("ACTION")
 	if mode == 1:
 		if action == "add":
-			ID_TYPE = v.get("ID_TYPE")
-			DEVTYPE = v.get("DEVTYPE")
+			ID_TYPE = eventData.get("ID_TYPE")
+			DEVTYPE = eventData.get("DEVTYPE")
 			if ID_TYPE == "disk" and DEVTYPE == "partition":
-				device = v.get("DEVPATH")
-				DEVNAME = v.get("DEVNAME")
-				ID_FS_TYPE = v.get("ID_FS_TYPE")
-				ID_BUS = v.get("ID_BUS")
-				ID_FS_UUID = v.get("ID_FS_UUID")
-				ID_MODEL = v.get("ID_MODEL")
-				ID_PART_ENTRY_SIZE = v.get("ID_PART_ENTRY_SIZE")
+				device = eventData.get("DEVPATH")
+				DEVNAME = eventData.get("DEVNAME")
+				ID_FS_TYPE = eventData.get("ID_FS_TYPE")
+				ID_BUS = eventData.get("ID_BUS")
+				ID_FS_UUID = eventData.get("ID_FS_UUID")
+				ID_MODEL = eventData.get("ID_MODEL")
+				ID_PART_ENTRY_SIZE = eventData.get("ID_PART_ENTRY_SIZE")
 				notFound = True
 				knownDevices = fileReadLines("/etc/udev/known_devices")
 				if knownDevices:
@@ -80,36 +108,34 @@ def processHotplugData(self, v):
 					harddiskmanager.enumerateBlockDevices()
 
 		elif action == "remove":
-			ID_TYPE = v.get("ID_TYPE")
-			DEVTYPE = v.get("DEVTYPE")
+			ID_TYPE = eventData.get("ID_TYPE")
+			DEVTYPE = eventData.get("DEVTYPE")
 			if ID_TYPE == "disk" and DEVTYPE == "partition":
 				#device = v.get("DEVNAME")
 				#harddiskmanager.removeHotplugPartition(device)
 				harddiskmanager.enumerateBlockDevices()  # TODO
 		elif action == "ifup":
-			interface = v.get("INTERFACE")
+			interface = eventData.get("INTERFACE")
 		elif action == "ifdown":
-			interface = v.get("INTERFACE")
+			interface = eventData.get("INTERFACE")
 		elif action == "online":
-			state = v.get("STATE")
+			state = eventData.get("STATE")
 
 	else:
-		device = v.get("DEVPATH")
-		physdevpath = v.get("PHYSDEVPATH")
-		media_state = v.get("X_E2_MEDIA_STATUS")
+		device = eventData.get("DEVPATH", "").split("/")[-1]
+		physicalDevicePath = eventData.get("PHYSDEVPATH")
+		mediaState = eventData.get("X_E2_MEDIA_STATUS")
 		global audiocd
 
-		dev = device.split("/")[-1]
-
 		if action == "add":
-			error, blacklisted, removable, is_cdrom, partitions, medium_found = harddiskmanager.addHotplugPartition(dev, physdevpath)
+			error, blacklisted, removable, is_cdrom, partitions, medium_found = harddiskmanager.addHotplugPartition(device, physicalDevicePath)
 		elif action == "remove":
-			harddiskmanager.removeHotplugPartition(dev)
+			harddiskmanager.removeHotplugPartition(device)
 		elif action == "audiocdadd":
 			audiocd = True
-			media_state = "audiocd"
-			error, blacklisted, removable, is_cdrom, partitions, medium_found = harddiskmanager.addHotplugAudiocd(dev, physdevpath)
-			print("[Hotplug.plugin.py] AUDIO CD ADD")
+			mediaState = "audiocd"
+			error, blacklisted, removable, is_cdrom, partitions, medium_found = harddiskmanager.addHotplugAudiocd(device, physicalDevicePath)
+			print("[Hotplug] Adding AudioCD.")
 		elif action == "audiocdremove":
 			audiocd = False
 			file = []
@@ -125,62 +151,34 @@ def processHotplugData(self, v):
 					remove("/etc/enigma2/playlist.e2pls")
 				except OSError:
 					pass
-			harddiskmanager.removeHotplugPartition(dev)
-			print("[Hotplug.plugin.py] REMOVING AUDIOCD")
-		elif media_state is not None:
-			if media_state == "1":
-				harddiskmanager.removeHotplugPartition(dev)
-				harddiskmanager.addHotplugPartition(dev, physdevpath)
-			elif media_state == "0":
-				harddiskmanager.removeHotplugPartition(dev)
+			harddiskmanager.removeHotplugPartition(device)
+			print("[Hotplug] Removing AudioCD.")
+		elif mediaState is not None:
+			if mediaState == "1":
+				harddiskmanager.removeHotplugPartition(device)
+				harddiskmanager.addHotplugPartition(device, physicalDevicePath)
+			elif mediaState == "0":
+				harddiskmanager.removeHotplugPartition(device)
 
 		for callback in hotplugNotifier:
 			try:
-				callback(dev, action or media_state)
+				callback(device, action or mediaState)
 			except AttributeError:
 				hotplugNotifier.remove(callback)
 
 
-class Hotplug(Protocol):
-	def __init__(self):
-		pass
-
-	def connectionMade(self):
-		print("[Hotplug.plugin.py] connection!")
-		self.received = ""
-
-	def dataReceived(self, data):
-		if isinstance(data, bytes):
-			data = data.decode()
-		self.received += data
-
-	def connectionLost(self, reason):
-		print("[Hotplug.plugin.py] connection lost!")
-		v = {}
-		if "\n" in self.received:
-			data = self.received[:-1].split("\n")
-			v["mode"] = 1
-		else:
-			data = self.received.split("\0")[:-1]
-			v["mode"] = 0
-		for x in data:
-			i = x.find("=")
-			var, val = x[:i], x[i + 1:]
-			v[var] = val
-		processHotplugData(self, v)
-
-
 def autostart(reason, **kwargs):
 	if reason == 0:
-		from twisted.internet import reactor
+		print("[Hotplug] Starting hotplug handler.")
 		try:
-			remove("/tmp/hotplug.socket")
+			if exists(HOTPLUG_SOCKET):
+				remove(HOTPLUG_SOCKET)
 		except OSError:
 			pass
 		factory = Factory()
 		factory.protocol = Hotplug
-		reactor.listenUNIX("/tmp/hotplug.socket", factory)
+		reactor.listenUNIX(HOTPLUG_SOCKET, factory)
 
 
 def Plugins(**kwargs):
-	return PluginDescriptor(name="Hotplug", description="listens to hotplug events", where=PluginDescriptor.WHERE_AUTOSTART, needsRestart=True, fnc=autostart)
+	return PluginDescriptor(name="Hotplug", description="Hotplug handler.", where=PluginDescriptor.WHERE_AUTOSTART, needsRestart=True, fnc=autostart)
