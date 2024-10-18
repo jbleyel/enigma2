@@ -3622,7 +3622,8 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 
 				while (data[pos++] == DVB_SUB_SYNC_BYTE) 
 				{
-					int segment_type, page_id, segment_len, processed_length;
+					int segment_type, page_id, processed_length;
+					size_t segment_len;
 					if ((len - pos) < (2 * 2 + 1)) {
 						eWarning("Data after SYNC BYTE too short, less than needed to even get to segment_length");
 						break;
