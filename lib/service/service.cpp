@@ -55,7 +55,7 @@ eServiceReference::eServiceReference(const std::string &string)
 
 	if (pathl)
 	{
-		const char *pathstr = c+pathl;
+		const char *pathstr = c + pathl;
 		const char *namestr = strchr(pathstr, ':');
 		if (namestr)
 		{
@@ -88,10 +88,19 @@ eServiceReference::eServiceReference(const std::string &string)
 		{
 			path=pathstr;
 		}
-	}
 
-	path = urlDecode(path);
-	name = urlDecode(name);
+		path = urlDecode(path);
+		name = urlDecode(name);
+
+		if(!name.empty())
+		{
+			std::string res_name = "";
+			std::string res_provider = "";
+			eServiceReference::parseNameAndProviderFromName(name, res_name, res_provider);
+			name = res_name;
+			prov = res_provider;
+		}
+	}
 }
 
 std::string eServiceReference::toString() const
@@ -113,6 +122,11 @@ std::string eServiceReference::toString() const
 	{
 		ret += ':';
 		ret += encode(name);
+	}
+	if (!prov.empty()) {
+		std::string provPart = "•" + prov;
+		if (ret.find(provPart) == std::string::npos)
+			ret += provPart;
 	}
 	return ret;
 }
