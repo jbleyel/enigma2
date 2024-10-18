@@ -139,7 +139,7 @@ static unsigned char *color_resize(unsigned char * orgin, int ox, int oy, int dx
 					b += q[2];
 				}
 			}
-			if (sq == 0) // prevent Division by zero
+			if (sq == 0) // prevent division by zero
 				sq = 1;
 			p[0] = r / sq;
 			p[1] = g / sq;
@@ -184,12 +184,13 @@ static void fetch_pallete(int fd, struct color pallete[], int count)
 
 static unsigned char *bmp_load(const char *file,  int *x, int *y)
 {
-	unsigned char buff[4];
-	struct color pallete[256];
+	unsigned char buff[4] = {};
+	struct color pallete[256] = {};
 
 	int fd = open(file, O_RDONLY);
 	if (fd == -1) return NULL;
-	if (lseek(fd, BMP_SIZE_OFFSET, SEEK_SET) == -1) {
+	if (lseek(fd, BMP_SIZE_OFFSET, SEEK_SET) == -1)
+	{
 		close(fd);
 		return NULL;
 	}
@@ -239,13 +240,13 @@ static unsigned char *bmp_load(const char *file,  int *x, int *y)
 			fetch_pallete(fd, pallete, 16);
 			lseek(fd, raster, SEEK_SET);
 			unsigned char * tbuffer = new unsigned char[*x / 2 + 1];
-			if (tbuffer == NULL) {
+			if (tbuffer == NULL)
+			{
 				close(fd);
 				return NULL;
 			}
 			for (int i = 0; i < *y; i++)
 			{
-
 				if (read(fd, tbuffer, (*x) / 2 + *x % 2) != ((*x) / 2 + *x % 2))
 				{
 					eDebug("[ePicLoad] failed to read %d bytes...", ((*x) / 2 + *x % 2));
@@ -287,7 +288,8 @@ static unsigned char *bmp_load(const char *file,  int *x, int *y)
 			fetch_pallete(fd, pallete, 256);
 			lseek(fd, raster, SEEK_SET);
 			unsigned char * tbuffer = new unsigned char[*x];
-			if (tbuffer == NULL) {
+			if (tbuffer == NULL)
+			{
 				close(fd);
 				return NULL;
 			}
@@ -307,7 +309,7 @@ static unsigned char *bmp_load(const char *file,  int *x, int *y)
 				{
 					if (read(fd, buff, skip) != skip)
 					{
-						eDebug("[ePicLoad] failed to read %d bytes...", skip);
+						eDebug("[ePicLoad] failed to skip %d bytes...", skip);
 					}
 				}
 				wr_buffer -= (*x) * 3;
@@ -332,7 +334,7 @@ static unsigned char *bmp_load(const char *file,  int *x, int *y)
 				{
 					if (read(fd, buff, skip) != skip)
 					{
-						eDebug("[ePicLoad] failed to read %d bytes...", skip);
+						eDebug("[ePicLoad] failed to skip %d bytes...", skip);
 					}
 				}
 				wr_buffer -= (*x) * 3;
@@ -347,7 +349,6 @@ static unsigned char *bmp_load(const char *file,  int *x, int *y)
 
 	close(fd);
 	return(pic_buffer);
-
 }
 
 /**
@@ -399,9 +400,17 @@ static void png_load(Cfilepara *filepara, unsigned int background)
 
 	filepara->ox = width;
 	filepara->oy = height;
+	
+	// This is a hack to support 8bit pngs with transparency since the detection is not really correct for some reason....
+	if (color_type == PNG_COLOR_TYPE_PALETTE && bit_depth == 8) {
+		color_type = PNG_COLOR_TYPE_RGBA;
+	}
+	
 
-	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA)
+	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA) {
 		filepara->transparent = true;
+		filepara->bits = 32; // Here set bits to 32 explicitly to simulate alpha transparency if it is not explicitly set
+	}
 	else
 	{
 		png_bytep trans_alpha = NULL;
@@ -440,7 +449,6 @@ static void png_load(Cfilepara *filepara, unsigned int background)
 			png_color *palette;
 			int num_palette;
 			png_get_PLTE(png_ptr, info_ptr, &palette, &num_palette);
-
 			filepara->palette_size = num_palette;
 			if (num_palette)
 				filepara->palette = new gRGB[num_palette];
@@ -457,7 +465,7 @@ static void png_load(Cfilepara *filepara, unsigned int background)
 			{
 				png_byte *trans;
 				png_get_tRNS(png_ptr, info_ptr, &trans, &num_palette, 0);
-				for (int i = 0; i < num_palette; i++)
+				for (unsigned int i = 0; i < num_palette; i++)
 					filepara->palette[i].a = 255 - trans[i];
 			}
 		}
@@ -490,13 +498,25 @@ static void png_load(Cfilepara *filepara, unsigned int background)
 		if ((color_type == PNG_COLOR_TYPE_PALETTE) || (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) || (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)))
 			png_set_expand(png_ptr);
 
+		if (color_type & PNG_COLOR_MASK_ALPHA || png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+		{
+			png_set_strip_alpha(png_ptr);
+			png_color_16 bg;
+			bg.red = (background >> 16) & 0xFF;
+			bg.green = (background >> 8) & 0xFF;
+			bg.blue = (background) & 0xFF;
+			bg.gray = bg.green;
+			bg.index = 0;
+			png_set_background(png_ptr, &bg, PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
+		}
 		int number_passes = png_set_interlace_handling(png_ptr);
 		png_read_update_info(png_ptr, info_ptr);
 
 		int bpp = png_get_rowbytes(png_ptr, info_ptr) / width;
+		eTrace("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
 		if ((bpp != 4) && (bpp != 3))
 		{
-			eDebug("[ePicLoad] Error processing");
+			eDebug("[ePicLoad] Error processing (did not get RGB data from PNG file)");
 			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 			return;
 		}
@@ -552,6 +572,7 @@ static void png_load(Cfilepara *filepara, unsigned int background)
 		filepara->bits = 24;
 	}
 }
+
 //-------------------------------------------------------------------
 
 struct r_jpeg_error_mgr
@@ -993,18 +1014,18 @@ void ePicLoad::decodeThumb()
 				cachedir = cachedir.substr(0, pos) + "/.Thumbnails";
 
 			cachefile = cachedir + std::string("/pc_") + crcstr;
-			if(!access(cachefile.c_str(), R_OK))
+			if (!access(cachefile.c_str(), R_OK))
 			{
 				cachefile_found = true;
 				free(m_filepara->file);
 				m_filepara->file = strdup(cachefile.c_str());
 				m_filepara->id = F_JPEG;
-				eDebug("[ePicLoad] Cache File found");
+				eDebug("[ePicLoad] Cache File %s found", cachefile.c_str());
 			}
 		}
 	}
 
-	switch(m_filepara->id)
+	switch (m_filepara->id)
 	{
 		case F_PNG:	png_load(m_filepara, m_conf.background); break;
 		case F_JPEG:	m_filepara->pic_buffer = jpeg_load(m_filepara->file, &m_filepara->ox, &m_filepara->oy, m_filepara->max_x, m_filepara->max_y);	break;
@@ -1013,18 +1034,18 @@ void ePicLoad::decodeThumb()
 		case F_SVG:	svg_load(m_filepara); break;
 	}
 
-	if(exif_thumbnail)
+	if (exif_thumbnail)
 		::unlink(THUMBNAILTMPFILE);
 
-	if(m_filepara->pic_buffer != NULL)
+	if (m_filepara->pic_buffer != NULL)
 	{
-		//save cachefile
-		if(m_conf.usecache && (! exif_thumbnail) && (! cachefile_found))
+		// Save cachefile
+		if (m_conf.usecache && !exif_thumbnail && !cachefile_found)
 		{
-			if(access(cachedir.c_str(), R_OK))
+			if (access(cachedir.c_str(), R_OK))
 				::mkdir(cachedir.c_str(), 0755);
 
-			//resize for Thumbnail
+			// Resize for Thumbnail
 			int imx, imy;
 			if (m_filepara->ox <= m_filepara->oy)
 			{
@@ -1251,51 +1272,51 @@ PyObject *ePicLoad::getInfo(const char *filename)
 			char tmp[256];
 			int pos=0;
 			list = PyList_New(23);
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(filename));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->Version));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->CameraMake));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->CameraModel));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->DateTime));
-			PyList_SET_ITEM(list, pos++,  PyString_FromFormat("%d x %d", exif->m_exifinfo->Width, exif->m_exifinfo->Height));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->FlashUsed));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->Orientation));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->Comments));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->MeteringMode));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->ExposureProgram));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->LightSource));
-			PyList_SET_ITEM(list, pos++,  PyString_FromFormat("%d", exif->m_exifinfo->CompressionLevel));
-			PyList_SET_ITEM(list, pos++,  PyString_FromFormat("%d", exif->m_exifinfo->ISOequivalent));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(filename));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->Version));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->CameraMake));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->CameraModel));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->DateTime));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString("%d x %d", exif->m_exifinfo->Width, exif->m_exifinfo->Height));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->FlashUsed));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->Orientation));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->Comments));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->MeteringMode));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->ExposureProgram));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->LightSource));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString("%d", exif->m_exifinfo->CompressionLevel));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString("%d", exif->m_exifinfo->ISOequivalent));
 			snprintf(tmp, sizeof(tmp) - 1, "%.2f", exif->m_exifinfo->Xresolution);
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(tmp));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(tmp));
 			snprintf(tmp, sizeof(tmp) - 1, "%.2f", exif->m_exifinfo->Yresolution);
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(tmp));
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(exif->m_exifinfo->ResolutionUnit));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(tmp));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(exif->m_exifinfo->ResolutionUnit));
 			snprintf(tmp, sizeof(tmp) - 1, "%.2f", exif->m_exifinfo->Brightness);
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(tmp));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(tmp));
 			snprintf(tmp, sizeof(tmp) - 1, "%.5f sec.", exif->m_exifinfo->ExposureTime);
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(tmp));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(tmp));
 			snprintf(tmp, sizeof(tmp) - 1, "%.5f", exif->m_exifinfo->ExposureBias);
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(tmp));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(tmp));
 			snprintf(tmp, sizeof(tmp) - 1, "%.5f", exif->m_exifinfo->Distance);
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(tmp));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(tmp));
 			snprintf(tmp, sizeof(tmp) - 1, "%.5f", exif->m_exifinfo->CCDWidth);
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(tmp));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(tmp));
 			snprintf(tmp, sizeof(tmp) - 1, "%.2f", exif->m_exifinfo->ApertureFNumber);
-			PyList_SET_ITEM(list, pos++,  PyString_FromString(tmp));
+			PyList_SET_ITEM(list, pos++,  PyUnicode_FromString(tmp));
 		}
 		else
 		{
 			list = PyList_New(2);
-			PyList_SET_ITEM(list, 0, PyString_FromString(filename));
-			PyList_SET_ITEM(list, 1, PyString_FromString(exif->m_szLastError));
+			PyList_SET_ITEM(list, 0, PyUnicode_FromString(filename));
+			PyList_SET_ITEM(list, 1, PyUnicode_FromString(exif->m_szLastError));
 		}
 		exif->ClearExif();
 	}
 	else
 	{
 		list = PyList_New(2);
-		PyList_SET_ITEM(list, 0, PyString_FromString(filename));
-		PyList_SET_ITEM(list, 1, PyString_FromString(exif->m_szLastError));
+		PyList_SET_ITEM(list, 0, PyUnicode_FromString(filename));
+		PyList_SET_ITEM(list, 1, PyUnicode_FromString(exif->m_szLastError));
 	}
 	delete exif;
 
@@ -1306,7 +1327,7 @@ int ePicLoad::getData(ePtr<gPixmap> &result)
 {
 	if (m_filepara == NULL)
 	{
-		eDebug("[ePicLoad] - Weird situation, I wasn't decoding anything!");
+		eDebug("[ePicLoad] Weird situation, was not decoding anything!");
 		result = 0;
 		return 1;
 	}
@@ -1485,18 +1506,15 @@ RESULT ePicLoad::setPara(PyObject *val)
 	if (PySequence_Size(val) < 7)
 		return 0;
 	else {
-		ePyObject fast		= PySequence_Fast(val, "");
-		int width		= PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 0));
-		int height		= PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 1));
-
+		ePyObject fast = PySequence_Fast(val, "");
+		int width = PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 0));
+		int height = PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 1));
 		ePyObject pas = PySequence_Fast_GET_ITEM(fast, 2);
-
-		double aspectRatio 	= PyFloat_Check(pas) ? PyFloat_AsDouble(pas) : PyLong_AsDouble(pas); 
-		
-		int as			= PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 3));
-		bool useCache		= PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 4));
-		int resizeType	        = PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 5));
-		const char *bg_str	= PyUnicode_AsUTF8(PySequence_Fast_GET_ITEM(fast, 6));
+		double aspectRatio = PyFloat_Check(pas) ? PyFloat_AsDouble(pas) : PyLong_AsDouble(pas);
+		int as = PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 3));
+		bool useCache = PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 4));
+		int resizeType = PyLong_AsLong(PySequence_Fast_GET_ITEM(fast, 5));
+		const char *bg_str = PyUnicode_AsUTF8(PySequence_Fast_GET_ITEM(fast, 6));
 		return setPara(width, height, aspectRatio, as, useCache, resizeType, bg_str);
 	}
 }
@@ -1541,9 +1559,9 @@ SWIG_VOID(int) loadPic(ePtr<gPixmap> &result, std::string filename, int x, int y
 	PyTuple_SET_ITEM(tuple, 4,  PyLong_FromLong(0));
 	PyTuple_SET_ITEM(tuple, 5,  PyLong_FromLong(resize_mode));
 	if(background)
-		PyTuple_SET_ITEM(tuple, 6,  PyString_FromString("#ff000000"));
+		PyTuple_SET_ITEM(tuple, 6,  PyUnicode_FromString("#ff000000"));
 	else
-		PyTuple_SET_ITEM(tuple, 6,  PyString_FromString("#00000000"));
+		PyTuple_SET_ITEM(tuple, 6,  PyUnicode_FromString("#00000000"));
 
 	ePicLoad mPL;
 	mPL.setPara(tuple);
@@ -1555,4 +1573,3 @@ SWIG_VOID(int) loadPic(ePtr<gPixmap> &result, std::string filename, int x, int y
 
 	return 0;
 }
-
