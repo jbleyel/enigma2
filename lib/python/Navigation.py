@@ -305,7 +305,7 @@ class Navigation:
 					break
 			if wrappererror:
 				AddPopup(text=wrappererror, type=MessageBox.TYPE_ERROR, timeout=5, id="channelzapwrapper")
-		return nref
+		return nref, wrappererror
 
 	def playService(self, ref, checkParentalControl=True, forceRestart=False, adjust=True, ignoreStreamRelay=False):
 		oldref = self.currentlyPlayingServiceOrGroup
@@ -329,7 +329,9 @@ class Navigation:
 				if not ignoreStreamRelay:
 					playref, isStreamRelay = streamrelay.streamrelayChecker(playref)
 				if not isStreamRelay:
-					playref = self.serviceHook(playref)
+					playref, wrappererror = self.serviceHook(playref)
+					if wrappererror:
+						return 1
 				print(f"[Navigation] Playref is '{str(playref)}'.")
 				if playref and oldref and playref == oldref and not forceRestart:
 					print("[Navigation] Ignore request to play already running service.  (2)")
@@ -366,6 +368,12 @@ class Navigation:
 				self.currentlyPlayingServiceReference = playref
 				if not ignoreStreamRelay:
 					playref, isStreamRelay = streamrelay.streamrelayChecker(playref)
+				if not isStreamRelay:
+					playref, wrappererror = self.serviceHook(playref)
+					if wrappererror:
+						if oldref:
+							self.playService(oldref, checkParentalControl=False, forceRestart=True, ignoreStreamRelay=True)
+						return 1
 				print(f"[Navigation] Playref is '{playref.toString()}'.")
 				self.currentlyPlayingServiceOrGroup = ref
 				if InfoBarInstance and InfoBarInstance.servicelist.servicelist.setCurrent(ref, adjust):
@@ -435,6 +443,8 @@ class Navigation:
 				ref = getBestPlayableServiceReference(ref, eServiceReference(), simulate)
 			if type != (pNavigation.isPseudoRecording | pNavigation.isFromEPGrefresh):
 				ref, isStreamRelay = streamrelay.streamrelayChecker(ref)
+				#if not isStreamRelay:
+				#	ref, wrappererror = self.serviceHook(ref)
 			service = ref and self.pnav and self.pnav.recordService(ref, simulate, type)
 			if service is None:
 				print("[Navigation] Record returned non-zero.")
