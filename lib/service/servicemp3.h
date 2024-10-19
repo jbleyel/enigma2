@@ -149,13 +149,13 @@ public:
 	RESULT subtitle(ePtr<iSubtitleOutput> &ptr);
 	RESULT audioDelay(ePtr<iAudioDelay> &ptr);
 	RESULT cueSheet(ePtr<iCueSheet> &ptr);
-	RESULT tap(ePtr<iTapService> &ptr) { ptr = nullptr; return -1; };
 
 		// not implemented (yet)
 	RESULT setTarget(int target, bool noaudio = false) { return -1; }
 	RESULT frontendInfo(ePtr<iFrontendInformation> &ptr) { ptr = nullptr; return -1; }
 	RESULT subServices(ePtr<iSubserviceList> &ptr) { ptr = nullptr; return -1; }
 	RESULT timeshift(ePtr<iTimeshiftService> &ptr) { ptr = nullptr; return -1; }
+	RESULT tap(ePtr<iTapService> &ptr) { ptr = nullptr; return -1; };
 //	RESULT cueSheet(ePtr<iCueSheet> &ptr) { ptr = nullptr; return -1; }
 
 		// iCueSheet
@@ -388,7 +388,8 @@ private:
 	typedef std::pair<uint32_t, subtitle_page_t> subtitle_pages_map_pair_t;
 	subtitle_pages_map_t m_subtitle_pages;
 	ePtr<eTimer> m_subtitle_sync_timer;
-
+	ePtr<eTimer> m_dvb_subtitle_sync_timer;
+	
 	pts_t m_prev_decoder_time;
 	int m_decoder_time_valid_state;
 
@@ -398,7 +399,7 @@ private:
 	int subtitle_process_pixel_data(subtitle_region *region, subtitle_region_object *object, int *linenr, int *linep, uint8_t *data);
 	void subtitle_process_line(subtitle_region *region, subtitle_region_object *object, int line, uint8_t *data, int len);
 
-	void pushDVBSubtitles(const eDVBSubtitlePage &p);
+	void pushDVBSubtitles();
 	void pushSubtitles();
 	void pullSubtitle(GstBuffer *buffer);
 	void sourceTimeout();
