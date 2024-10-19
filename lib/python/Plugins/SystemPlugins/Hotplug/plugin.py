@@ -67,13 +67,20 @@ def processHotplugData(eventData):
 				ID_MODEL = eventData.get("ID_MODEL")
 				ID_PART_ENTRY_SIZE = eventData.get("ID_PART_ENTRY_SIZE")
 				notFound = True
-				knownDevices = fileReadLines("/etc/udev/known_devices")
-				if knownDevices:
-					for device in knownDevices:
-						deviceData = device.split(":")
-						if len(deviceData) == 2 and deviceData[0] == ID_FS_UUID and deviceData[1]:
+				mounts = fileReadLines("/proc/mounts")
+				if mounts:
+					for mount in mounts:
+						if device in mount:
 							notFound = False
 							break
+				if notFound:
+					knownDevices = fileReadLines("/etc/udev/known_devices")
+					if knownDevices:
+						for device in knownDevices:
+							deviceData = device.split(":")
+							if len(deviceData) == 2 and deviceData[0] == ID_FS_UUID and deviceData[1]:
+								notFound = False
+								break
 				if notFound:
 					# TODO Text
 					text = f"{ID_MODEL} - {DEVNAME}\n"
