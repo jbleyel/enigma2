@@ -248,7 +248,7 @@ void eActionMap::keyPressed(const std::string &device, int key, int flags)
 	{
 		if (c->first == -20)
 		{
-			eDebug("[eActionMap] modal active");
+			eTrace("[eActionMap] modal active");
 			modal = true;
 			break;
 		}
@@ -259,7 +259,7 @@ void eActionMap::keyPressed(const std::string &device, int key, int flags)
 	{
 		if (modal && c->first > -20)
 		{
-			eDebug("[eActionMap] modal active / ignore key %d", key);
+			eTrace("[eActionMap] modal active / ignore key %d", key);
 			continue;
 		}
 

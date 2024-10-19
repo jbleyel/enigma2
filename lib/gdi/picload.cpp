@@ -469,7 +469,7 @@ static void png_load(Cfilepara *filepara, unsigned int background, bool forceRGB
 			{
 				png_byte *trans;
 				png_get_tRNS(png_ptr, info_ptr, &trans, &num_palette, 0);
-				for (unsigned int i = 0; i < num_palette; i++)
+				for (int i = 0; i < num_palette; i++)
 					filepara->palette[i].a = 255 - trans[i];
 			}
 		}

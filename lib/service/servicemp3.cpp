@@ -3633,8 +3633,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 
 				while (data[pos++] == DVB_SUB_SYNC_BYTE) 
 				{
-					int segment_type, page_id, processed_length;
-					size_t segment_len;
+					int segment_type, page_id, processed_length, segment_len;
 					if ((len - pos) < (2 * 2 + 1)) {
 						eWarning("Data after SYNC BYTE too short, less than needed to even get to segment_length");
 						break;
@@ -3644,8 +3643,8 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 					pos += 2;
     				segment_len = (data[pos] << 8) | data[pos + 1];
 					pos += 2;
-					if ((len - pos) < segment_len) {
-						eWarning("segment_length was told to be %u, but we only have %d bytes left", segment_len, len - pos);
+					if ((len - pos) < (unsigned)segment_len) {
+						eWarning("segment_length was told to be %d, but we only have %lu bytes left", segment_len, len - pos);
 						break;
 					}
 					subtitle_page *page, **ppage;
