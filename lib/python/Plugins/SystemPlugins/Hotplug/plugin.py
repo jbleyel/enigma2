@@ -3,13 +3,14 @@ from os.path import exists, isfile
 from twisted.internet import reactor
 from twisted.internet.protocol import Factory, Protocol
 
-from enigma import eTimer
+from enigma import getDeviceDB, eTimer
 
 from Components.Console import Console
 from Components.Harddisk import harddiskmanager
 from Plugins.Plugin import PluginDescriptor
 from Screens.MessageBox import ModalMessageBox
 from Tools.Directories import fileReadLines, fileWriteLines
+from Tools.Conversions import scaleNumber
 
 HOTPLUG_SOCKET = "/tmp/hotplug.socket"
 
@@ -23,17 +24,17 @@ class Hotplug(Protocol):
 		self.received = ""
 
 	def connectionMade(self):
-		print("[Hotplug] Connection made.")
+		# print("[Hotplug] Connection made.")
 		self.received = ""
 
 	def dataReceived(self, data):
 		if isinstance(data, bytes):
 			data = data.decode()
 		self.received += data
-		print(f"[Hotplug] Data received: '{", ".join(self.received.split("\0")[:-1])}'.")
+		# print(f"[Hotplug] Data received: '{", ".join(self.received.split("\0")[:-1])}'.")
 
 	def connectionLost(self, reason):
-		print(f"[Hotplug] Connection lost reason '{reason}'.")
+		# print(f"[Hotplug] Connection lost reason '{reason}'.")
 		eventData = {}
 		if "\n" in self.received:
 			data = self.received[:-1].split("\n")
@@ -75,13 +76,13 @@ class HotPlugManager:
 		self.timer.stop()
 		if self.deviceData:
 			eventData = self.deviceData.pop()
-			device = eventData.get("DEVPATH")
+			DEVPATH = eventData.get("DEVPATH")
 			DEVNAME = eventData.get("DEVNAME")
-			ID_FS_TYPE = eventData.get("ID_FS_TYPE")
-			ID_BUS = eventData.get("ID_BUS")
+			ID_FS_TYPE = "auto"  # eventData.get("ID_FS_TYPE")
+			# ID_BUS = eventData.get("ID_BUS")
 			ID_FS_UUID = eventData.get("ID_FS_UUID")
 			ID_MODEL = eventData.get("ID_MODEL")
-			ID_PART_ENTRY_SIZE = eventData.get("ID_PART_ENTRY_SIZE")
+			ID_PART_ENTRY_SIZE = int(eventData.get("ID_PART_ENTRY_SIZE", 0))
 			notFound = True
 			mounts = fileReadLines("/proc/mounts")
 			mountPoint = "/media/usb"
@@ -89,24 +90,34 @@ class HotPlugManager:
 			knownDevices = fileReadLines("/etc/udev/known_devices", default=[])
 			if mounts:
 				usbMounts = [x.split()[1] for x in mounts if "/media/usb" in x]
-				nr = 1
+				nr = 0
 				while mountPoint in usbMounts:
+					nr += 1
 					mountPoint = f"/media/usb{nr}"
 
 				for mount in mounts:
-					if device in mount:
+					if DEVNAME in mount and DEVNAME.replace("/dev/", "/media/") not in mount:
+						print(f"[Hotplug] device '{DEVNAME}' found in mounts -> {mount}")
 						notFound = False
 						break
+
 			if notFound:
 				if knownDevices:
 					for device in knownDevices:
 						deviceData = device.split(":")
 						if len(deviceData) == 2 and deviceData[0] == ID_FS_UUID and deviceData[1]:
+							print("[Hotplug] UUID found in known_devices")
 							notFound = False
 							break
+
 			if notFound:
 				# TODO Text
-				text = f"{ID_MODEL} - {DEVNAME}\n"
+				description = ""
+				for physdevprefix, pdescription in list(getDeviceDB().items()):
+					if DEVPATH.startswith(physdevprefix):
+						description = f"\n{pdescription}"
+
+				text = f"{ID_MODEL} - ({scaleNumber(ID_PART_ENTRY_SIZE * 512, format="%.1f")})\n{description}"
 				text = _("A new device has been pluged-in:\n%s") % text
 
 				def newDeviceCallback(answer):
@@ -157,7 +168,7 @@ class HotPlugManager:
 
 	def processHotplugData(self, eventData):
 		mode = eventData.get("mode")
-		print("[Hotplug.plugin.py]:", eventData)
+		print("[Hotplug] DEBUG: ", eventData)
 		action = eventData.get("ACTION")
 		if mode == 1:
 			if action == "add":
@@ -172,6 +183,7 @@ class HotPlugManager:
 			elif action == "remove":
 				ID_TYPE = eventData.get("ID_TYPE")
 				DEVTYPE = eventData.get("DEVTYPE")
+				# ID_FS_UUID = eventData.get("ID_FS_UUID")
 				if ID_TYPE == "disk" and DEVTYPE == "partition":
 					device = eventData.get("DEVNAME")
 					harddiskmanager.removeHotplugPartition(device)
