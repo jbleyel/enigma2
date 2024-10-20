@@ -281,7 +281,7 @@ class ModalMessageBox:
 
 	def close(self, *retVal):
 		if self.callback and callable(self.callback):
-			self.callback(retVal)
+			self.callback(*retVal)
 		if self.dialog.enableInput:
 			self.dialog["actions"].execEnd()
 		self.dialog.hide()
