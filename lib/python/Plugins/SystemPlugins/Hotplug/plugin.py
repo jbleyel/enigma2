@@ -85,6 +85,7 @@ class HotPlugManager:
 			notFound = True
 			mounts = fileReadLines("/proc/mounts")
 			mountPoint = "/media/usb"
+			mountPointHdd = None if [x.split()[1] for x in mounts if "/media/hdd" in x] else "/media/hdd"
 			knownDevices = fileReadLines("/etc/udev/known_devices", default=[])
 			if mounts:
 				usbMounts = [x.split()[1] for x in mounts if "/media/usb" in x]
@@ -113,6 +114,8 @@ class HotPlugManager:
 						fstab = fileReadLines("/etc/fstab")
 						if answer in (2, 3) and not exists(mountPoint):
 							mkdir(mountPoint)
+						if answer == 4 and not exists(mountPointHdd):
+							mkdir(mountPointHdd)
 						if answer == 1:
 							knownDevices.append(f"{ID_FS_UUID}:None")
 						elif answer == 2:
@@ -123,19 +126,30 @@ class HotPlugManager:
 							Console().ePopen("/bin/mount -a")
 						elif answer == 3:
 							Console().ePopen(f"/bin/mount -t {ID_FS_TYPE} {DEVNAME} {mountPoint}")
-
-						if answer in (1, 2):
+						elif answer == 4:
+							knownDevices.append(f"{ID_FS_UUID}:{mountPointHdd}")
+							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x]
+							newFstab.append(f"UUID={ID_FS_UUID} {mountPointHdd} {ID_FS_TYPE} defaults 0 0")
+							fileWriteLines("/etc/fstab", newFstab)
+							Console().ePopen("/bin/mount -a")
+						if answer in (1, 2, 4):
 							fileWriteLines("/etc/udev/known_devices", knownDevices)
 					self.timer.start(1000)
 					# harddiskmanager.enumerateBlockDevices()
 
+				default = 2
 				choiceList = [
 					(_("Do nothing"), 0),
 					(_("Ignore this device"), 1),
 					(_("Mount as %s") % mountPoint, 2),
 					(_("Temporary mount as %s" % mountPoint), 3)
 				]
-				ModalMessageBox.instance.showMessageBox(text=text, list=choiceList, windowTitle=_("New Device detected"), callback=newDeviceCallback)
+				if mountPointHdd:
+					default = 4
+					choiceList.append(
+						(_("Mount as %s") % mountPointHdd, 4),
+					)
+				ModalMessageBox.instance.showMessageBox(text=text, list=choiceList, default=default, windowTitle=_("New Device detected"), callback=newDeviceCallback)
 			else:
 				self.timer.start(1000)
 		else:
