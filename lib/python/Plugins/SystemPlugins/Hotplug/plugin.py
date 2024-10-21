@@ -111,14 +111,12 @@ class HotPlugManager:
 							break
 
 			if notFound:
-				# TODO Text
 				description = ""
 				for physdevprefix, pdescription in list(getDeviceDB().items()):
 					if DEVPATH.startswith(physdevprefix):
 						description = f"\n{pdescription}"
 
-				text = f"{ID_MODEL} - ({scaleNumber(ID_PART_ENTRY_SIZE * 512, format="%.1f")})\n{description}"
-				text = _("A new device has been pluged-in:\n%s") % text
+				text = f"{_("A new storage device has been connected:")}\n{ID_MODEL} - ({scaleNumber(ID_PART_ENTRY_SIZE * 512, format="%.1f")})\n{description}"
 
 				def newDeviceCallback(answer):
 					if answer:
@@ -130,37 +128,37 @@ class HotPlugManager:
 						if answer == 1:
 							knownDevices.append(f"{ID_FS_UUID}:None")
 						elif answer == 2:
+							Console().ePopen(f"/bin/mount -t {ID_FS_TYPE} {DEVNAME} {mountPoint}")
+						elif answer == 3:
 							knownDevices.append(f"{ID_FS_UUID}:{mountPoint}")
 							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x]
 							newFstab.append(f"UUID={ID_FS_UUID} {mountPoint} {ID_FS_TYPE} defaults 0 0")
 							fileWriteLines("/etc/fstab", newFstab)
 							Console().ePopen("/bin/mount -a")
-						elif answer == 3:
-							Console().ePopen(f"/bin/mount -t {ID_FS_TYPE} {DEVNAME} {mountPoint}")
 						elif answer == 4:
 							knownDevices.append(f"{ID_FS_UUID}:{mountPointHdd}")
 							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x]
 							newFstab.append(f"UUID={ID_FS_UUID} {mountPointHdd} {ID_FS_TYPE} defaults 0 0")
 							fileWriteLines("/etc/fstab", newFstab)
 							Console().ePopen("/bin/mount -a")
-						if answer in (1, 2, 4):
+						if answer in (1, 3, 4):
 							fileWriteLines("/etc/udev/known_devices", knownDevices)
 					self.timer.start(1000)
 					# harddiskmanager.enumerateBlockDevices()
 
-				default = 2
+				default = 3
 				choiceList = [
 					(_("Do nothing"), 0),
-					(_("Ignore this device"), 1),
-					(_("Mount as %s") % mountPoint, 2),
-					(_("Temporary mount as %s" % mountPoint), 3)
+					(_("Permanently ignore this device"), 1),
+					(_("Temporarily mount as %s") % mountPoint, 2),
+					(_("Permanently mount as %s" % mountPoint), 3)
 				]
 				if mountPointHdd:
 					default = 4
 					choiceList.append(
-						(_("Mount as %s") % mountPointHdd, 4),
+						(_("Permanently mount as %s") % mountPointHdd, 4),
 					)
-				ModalMessageBox.instance.showMessageBox(text=text, list=choiceList, default=default, windowTitle=_("New Device detected"), callback=newDeviceCallback)
+				ModalMessageBox.instance.showMessageBox(text=text, list=choiceList, default=default, windowTitle=_("New Storage Device"), callback=newDeviceCallback)
 			else:
 				self.timer.start(1000)
 		else:
