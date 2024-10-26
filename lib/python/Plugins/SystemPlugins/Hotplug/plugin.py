@@ -90,7 +90,7 @@ class HotPlugManager:
 			knownDevices = fileReadLines("/etc/udev/known_devices", default=[])
 			if mounts:
 				usbMounts = [x.split()[1] for x in mounts if "/media/usb" in x]
-				nr = 0
+				nr = 1
 				while mountPoint in usbMounts:
 					nr += 1
 					mountPoint = f"/media/usb{nr}"
@@ -122,9 +122,9 @@ class HotPlugManager:
 					if answer:
 						fstab = fileReadLines("/etc/fstab")
 						if answer in (2, 3) and not exists(mountPoint):
-							mkdir(mountPoint)
+							mkdir(mountPoint, 0o755)
 						if answer == 4 and not exists(mountPointHdd):
-							mkdir(mountPointHdd)
+							mkdir(mountPointHdd, 0o755)
 						if answer == 1:
 							knownDevices.append(f"{ID_FS_UUID}:None")
 						elif answer == 2:
