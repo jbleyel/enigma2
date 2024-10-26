@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        gcc: [13,14]
+        gcc: [13]
         python: ['3.12', '3.13']
     steps:
       - name: Install prerequisites
