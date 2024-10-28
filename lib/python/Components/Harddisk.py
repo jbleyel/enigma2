@@ -698,9 +698,9 @@ class HarddiskManager:
 			dev, part = self.splitDeviceName(device)
 			try:
 				physdev = realpath(f"/sys/block/{dev}/device")[4:]
-			except OSError:
+			except OSError as err:
 				physdev = dev
-				print(f"[Harddisk] Error {err.errno}: Couldn't determine blockdev or physdev for device '{device'!  ({err.strerror})")
+				print(f"[Harddisk] Error {err.errno}: Couldn't determine blockdev or physdev for device '{device}'!  ({err.strerror})")
 		error, blacklisted, removable, is_cdrom, partitions, medium_found = self.getBlockDevInfo(self.splitDeviceName(device)[0])
 		hw_type = HardwareInfo().get_device_name()
 		if hw_type == "elite" or hw_type == "premium" or hw_type == "premium+" or hw_type == "ultra":
@@ -728,9 +728,9 @@ class HarddiskManager:
 			dev, part = self.splitDeviceName(device)
 			try:
 				physdev = realpath(f"/sys/block/{dev}/device")[4:]
-			except OSError:
+			except OSError as err:
 				physdev = dev
-				print(f"[Harddisk] Error {err.errno}: Couldn't determine blockdev or physdev for device '{device'!  ({err.strerror})")
+				print(f"[Harddisk] Error {err.errno}: Couldn't determine blockdev or physdev for device '{device}'!  ({err.strerror})")
 		error, blacklisted, removable, is_cdrom, partitions, medium_found = self.getBlockDevInfo(device)
 		if not blacklisted and medium_found:
 			description = self.getUserfriendlyDeviceName(device, physdev)
@@ -839,7 +839,7 @@ class HarddiskManager:
 			cd = open(device)
 			ioctl(cd.fileno(), ioctl_flag, speed)
 			cd.close()
-		except Exception as err:
+		except OSError as err:
 			print(f"[Harddisk] Error {err.errno}: Failed to set '{device}' speed to {speed}!  ({err.strerror})")
 
 
@@ -870,7 +870,7 @@ class UnmountTask(Components.Task.LoggingTask):
 		for path in self.mountpoints:
 			try:
 				rmdir(path)
-			except Exception as err:
+			except OSError as err:
 				print(f"[Harddisk] Error {err.errno}: Failed to remove path '{path}'!  ({err.strerror})")
 
 
