@@ -371,8 +371,6 @@ class Navigation:
 				if not isStreamRelay:
 					playref, wrappererror = self.serviceHook(playref)
 					if wrappererror:
-						if oldref:
-							self.playService(oldref, checkParentalControl=False, forceRestart=True, ignoreStreamRelay=True)
 						return 1
 				print(f"[Navigation] Playref is '{playref.toString()}'.")
 				self.currentlyPlayingServiceOrGroup = ref
