@@ -6,7 +6,6 @@
 
 #include <lib/base/eerror.h>
 
-
 // misc helper functions
 
 void traceHexdump(const uint8_t *data, unsigned int len)
@@ -214,7 +213,7 @@ bool write_authdata(unsigned int slot, const uint8_t *host_id, const uint8_t *dh
 	return true;
 }
 
-bool parameter_init(unsigned int slot, uint8_t* dh_p, uint8_t* dh_g, uint8_t* dh_q, uint8_t* s_key, uint8_t* key_data, uint8_t* iv)
+bool parameter_init(unsigned int slot, uint8_t *dh_p, uint8_t *dh_g, uint8_t *dh_q, uint8_t *s_key, uint8_t *key_data, uint8_t *iv)
 {
 	int fd;
 	unsigned char buf[592];
@@ -293,8 +292,8 @@ X509 *certificate_open(const char *filename)
 int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 {
 	/* If the fields p and g in d are NULL, the corresponding input
-	* parameters MUST be non-NULL.  q may remain NULL.
-	*/
+	 * parameters MUST be non-NULL.  q may remain NULL.
+	 */
 	if ((dh->p == NULL && p == NULL) || (dh->g == NULL && g == NULL))
 		return 0;
 
@@ -425,10 +424,10 @@ X509 *certificate_import_and_check(X509_STORE *store, const uint8_t *data, int l
 
 bool ciplus_cert_param_files_exists()
 {
-	if (access("/etc/ciplus/param", R_OK ) != -1 &&
-		access("/etc/ciplus/root.pem", R_OK ) != -1 &&
-		access("/etc/ciplus/device.pem", R_OK ) != -1 &&
-		access("/etc/ciplus/customer.pem", R_OK ) != -1)
+	if (access("/etc/ciplus/param", R_OK) != -1 &&
+		access("/etc/ciplus/root.pem", R_OK) != -1 &&
+		access("/etc/ciplus/device.pem", R_OK) != -1 &&
+		access("/etc/ciplus/customer.pem", R_OK) != -1)
 		return true;
 
 	return false;

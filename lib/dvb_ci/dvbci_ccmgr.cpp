@@ -9,12 +9,10 @@
 
 #include <openssl/aes.h>
 
-
-eDVBCICcSession::eDVBCICcSession(eDVBCISlot *slot, int version):
-	m_slot(slot), m_akh_index(0),
-	m_root_ca_store(nullptr), m_cust_cert(nullptr), m_device_cert(nullptr),
-	m_ci_cust_cert(nullptr), m_ci_device_cert(nullptr),
-	m_rsa_device_key(nullptr), m_dh(nullptr)
+eDVBCICcSession::eDVBCICcSession(eDVBCISlot *slot, int version) : m_slot(slot), m_akh_index(0),
+																  m_root_ca_store(nullptr), m_cust_cert(nullptr), m_device_cert(nullptr),
+																  m_ci_cust_cert(nullptr), m_ci_device_cert(nullptr),
+																  m_rsa_device_key(nullptr), m_dh(nullptr)
 {
 	uint8_t buf[32], host_id[8];
 
@@ -81,21 +79,32 @@ eDVBCICcSession::~eDVBCICcSession()
 int eDVBCICcSession::receivedAPDU(const unsigned char *tag, const void *data, int len)
 {
 	eTraceNoNewLineStart("[CI%d CC] SESSION(%d)/CC %02x %02x %02x: ", m_slot->getSlotID(), session_nb, tag[0], tag[1], tag[2]);
-	for (int i=0; i<len; i++)
-		eTraceNoNewLine("%02x ", ((const unsigned char*)data)[i]);
+	for (int i = 0; i < len; i++)
+		eTraceNoNewLine("%02x ", ((const unsigned char *)data)[i]);
 	eTraceNoNewLine("\n");
 
 	if ((tag[0] == 0x9f) && (tag[1] == 0x90))
 	{
 		switch (tag[2])
 		{
-			case 0x01: cc_open_req(); break;
-			case 0x03: cc_data_req((const uint8_t *)data, len); break;
-			case 0x05: cc_sync_req((const uint8_t *)data, len); break;
-			case 0x07: cc_sac_data_req((const uint8_t *)data, len); break;
-			case 0x09: cc_sac_sync_req((const uint8_t *)data, len); break;
-			default:
-				eWarning("[CI%d RCC] unknown APDU tag %02x", m_slot->getSlotID(), tag[2]); break;
+		case 0x01:
+			cc_open_req();
+			break;
+		case 0x03:
+			cc_data_req((const uint8_t *)data, len);
+			break;
+		case 0x05:
+			cc_sync_req((const uint8_t *)data, len);
+			break;
+		case 0x07:
+			cc_sac_data_req((const uint8_t *)data, len);
+			break;
+		case 0x09:
+			cc_sac_sync_req((const uint8_t *)data, len);
+			break;
+		default:
+			eWarning("[CI%d RCC] unknown APDU tag %02x", m_slot->getSlotID(), tag[2]);
+			break;
 		}
 	}
 
@@ -104,7 +113,8 @@ int eDVBCICcSession::receivedAPDU(const unsigned char *tag, const void *data, in
 
 int eDVBCICcSession::doAction()
 {
-	switch (state) {
+	switch (state)
+	{
 	case stateStarted:
 		break;
 	default:
@@ -119,7 +129,7 @@ void eDVBCICcSession::send(const unsigned char *tag, const void *data, int len)
 	sendAPDU(tag, data, len);
 }
 
-void eDVBCICcSession::addProgram(uint16_t program_number, std::vector<uint16_t>& pids)
+void eDVBCICcSession::addProgram(uint16_t program_number, std::vector<uint16_t> &pids)
 {
 	// first open ca device and set descrambler key if it's not set yet
 	set_descrambler_key();
@@ -133,7 +143,7 @@ void eDVBCICcSession::addProgram(uint16_t program_number, std::vector<uint16_t>&
 		descrambler_set_pid(m_descrambler_fd, m_slot, 1, *it);
 }
 
-void eDVBCICcSession::removeProgram(uint16_t program_number, std::vector<uint16_t>& pids)
+void eDVBCICcSession::removeProgram(uint16_t program_number, std::vector<uint16_t> &pids)
 {
 	eDebugNoNewLineStart("[CI%d CC] SESSION(%d)/REMOVE PROGRAM %04x: ", m_slot->getSlotID(), session_nb, program_number);
 	for (std::vector<uint16_t>::iterator it = pids.begin(); it != pids.end(); ++it)
@@ -149,14 +159,14 @@ void eDVBCICcSession::removeProgram(uint16_t program_number, std::vector<uint16_
 
 void eDVBCICcSession::cc_open_req()
 {
-	const uint8_t tag[3] = { 0x9f, 0x90, 0x02 };
+	const uint8_t tag[3] = {0x9f, 0x90, 0x02};
 	const uint8_t bitmap = 0x01;
 	send(tag, &bitmap, 1);
 }
 
 void eDVBCICcSession::cc_data_req(const uint8_t *data, unsigned int len)
 {
-	uint8_t cc_data_cnf_tag[3] = { 0x9f, 0x90, 0x04 };
+	uint8_t cc_data_cnf_tag[3] = {0x9f, 0x90, 0x04};
 	uint8_t dest[BUFSIZ];
 	int dt_nr;
 	int id_bitmask;
@@ -203,15 +213,15 @@ void eDVBCICcSession::cc_data_req(const uint8_t *data, unsigned int len)
 
 void eDVBCICcSession::cc_sync_req(const uint8_t *data, unsigned int len)
 {
-	const uint8_t tag[3] = { 0x9f, 0x90, 0x06 };
-	const uint8_t status = 0x00;    /* OK */
+	const uint8_t tag[3] = {0x9f, 0x90, 0x06};
+	const uint8_t status = 0x00; /* OK */
 
 	send(tag, &status, 1);
 }
 
 void eDVBCICcSession::cc_sac_data_req(const uint8_t *data, unsigned int len)
 {
-	const uint8_t data_cnf_tag[3] = { 0x9f, 0x90, 0x08 };
+	const uint8_t data_cnf_tag[3] = {0x9f, 0x90, 0x08};
 	uint8_t dest[BUFSIZ];
 	uint8_t tmp[len];
 	int id_bitmask, dt_nr;
@@ -237,7 +247,7 @@ void eDVBCICcSession::cc_sac_data_req(const uint8_t *data, unsigned int len)
 	}
 
 	serial = UINT32(&data[rp], 4);
-	eDebug("[CI%d RCC] cc_sac_data_req serial %u\n",  m_slot->getSlotID(), serial);
+	eDebug("[CI%d RCC] cc_sac_data_req serial %u\n", m_slot->getSlotID(), serial);
 
 	/* skip serial & header */
 	rp += 8;
@@ -269,7 +279,7 @@ void eDVBCICcSession::cc_sac_data_req(const uint8_t *data, unsigned int len)
 	pos += BYTE32(&dest[pos], 0x01000000);
 
 	dest[pos++] = id_bitmask;
-	dest[pos++] = dt_nr;    /* dt_nbr */
+	dest[pos++] = dt_nr; /* dt_nbr */
 
 	answ_len = data_req_loop(&dest[pos], dest_len - 10, &data[rp], len - rp, dt_nr);
 	if (answ_len <= 0)
@@ -284,7 +294,7 @@ void eDVBCICcSession::cc_sac_data_req(const uint8_t *data, unsigned int len)
 
 void eDVBCICcSession::cc_sac_sync_req(const uint8_t *data, unsigned int len)
 {
-	const uint8_t sync_cnf_tag[3] = { 0x9f, 0x90, 0x10 };
+	const uint8_t sync_cnf_tag[3] = {0x9f, 0x90, 0x10};
 	uint8_t dest[64];
 	unsigned int serial;
 	int pos = 0;
@@ -315,7 +325,7 @@ void eDVBCICcSession::cc_sac_send(const uint8_t *tag, uint8_t *data, unsigned in
 	}
 
 	pos += add_padding(&data[pos], pos - 8, 16);
-	BYTE16(&data[6], pos - 8);      /* len in header */
+	BYTE16(&data[6], pos - 8); /* len in header */
 
 	pos += sac_gen_auth(&data[pos], data, pos);
 	sac_crypt(&data[8], &data[8], pos - 8, AES_ENCRYPT);
@@ -369,7 +379,7 @@ int eDVBCICcSession::data_req_loop(uint8_t *dest, unsigned int dest_len, const u
 	for (i = 0; i < items; i++)
 	{
 		dt_id = data[i];
-		data_req_handle_new(dt_id);    /* check if there is any action needed before we answer */
+		data_req_handle_new(dt_id); /* check if there is any action needed before we answer */
 
 		len = m_ci_elements.get_buf(NULL, dt_id);
 		if ((len + 3) > dest_len)
@@ -397,41 +407,41 @@ int eDVBCICcSession::data_get_handle_new(unsigned int id)
 {
 	switch (id)
 	{
-		case CICAM_BRAND_CERT:
-		case DHPM:
-		case CICAM_DEV_CERT:
-//		case CICAM_ID:
-		case SIGNATURE_B:
-			if (check_ci_certificates())
-				break;
-
-			check_dh_challenge();
+	case CICAM_BRAND_CERT:
+	case DHPM:
+	case CICAM_DEV_CERT:
+		//		case CICAM_ID:
+	case SIGNATURE_B:
+		if (check_ci_certificates())
 			break;
 
-		case AUTH_NONCE:
-			restart_dh_challenge();
-			break;
+		check_dh_challenge();
+		break;
 
-		case NS_MODULE:
-			generate_ns_host();
-			generate_key_seed();
-			generate_SAK_SEK();
-			break;
+	case AUTH_NONCE:
+		restart_dh_challenge();
+		break;
 
-		case CICAM_ID:
-		case KP:
-		case KEY_REGISTER:
-			check_new_key();
-			break;
+	case NS_MODULE:
+		generate_ns_host();
+		generate_key_seed();
+		generate_SAK_SEK();
+		break;
 
-		case PROGRAM_NUMBER:
-		case URI_MESSAGE:
-			generate_uri_confirm();
-			break;
+	case CICAM_ID:
+	case KP:
+	case KEY_REGISTER:
+		check_new_key();
+		break;
 
-		default:
-			eWarning("[CI%d RCC] unhandled id %u", m_slot->getSlotID(), id);
-			break;
+	case PROGRAM_NUMBER:
+	case URI_MESSAGE:
+		generate_uri_confirm();
+		break;
+
+	default:
+		eWarning("[CI%d RCC] unhandled id %u", m_slot->getSlotID(), id);
+		break;
 	}
 
 	return 0;
@@ -441,34 +451,34 @@ int eDVBCICcSession::data_req_handle_new(unsigned int id)
 {
 	switch (id)
 	{
-		case AKH:
+	case AKH:
+	{
+		uint8_t akh[32], host_id[8];
+
+		memset(akh, 0, sizeof(akh));
+
+		if (m_akh_index != 5)
 		{
-			uint8_t akh[32], host_id[8];
+			if (!get_authdata(host_id, m_dhsk, akh, m_slot->getSlotID(), m_akh_index++))
+				m_akh_index = 5;
 
-			memset(akh, 0, sizeof(akh));
+			if (!m_ci_elements.set(AKH, akh, 32))
+				eWarning("[CI%d RCC] can not set AKH in elements", m_slot->getSlotID());
 
-			if (m_akh_index != 5)
-			{
-				if (!get_authdata(host_id, m_dhsk, akh, m_slot->getSlotID(), m_akh_index++))
-					m_akh_index = 5;
-
-				if (!m_ci_elements.set(AKH, akh, 32))
-					eWarning("[CI%d RCC] can not set AKH in elements", m_slot->getSlotID());
-
-				if (!m_ci_elements.set(HOST_ID, host_id, 8))
-					eWarning("[CI%d RCC] can not set host_id in elements", m_slot->getSlotID());
-			}
-			break;
+			if (!m_ci_elements.set(HOST_ID, host_id, 8))
+				eWarning("[CI%d RCC] can not set host_id in elements", m_slot->getSlotID());
 		}
-		case CRITICAL_SEC_UPDATE:
-		{
-			uint8_t csu[1];
-			csu[0] = 0x00;
-			m_ci_elements.set(CRITICAL_SEC_UPDATE, csu, 1);
-			break;
-		}
-		default:
-			break;
+		break;
+	}
+	case CRITICAL_SEC_UPDATE:
+	{
+		uint8_t csu[1];
+		csu[0] = 0x00;
+		m_ci_elements.set(CRITICAL_SEC_UPDATE, csu, 1);
+		break;
+	}
+	default:
+		break;
 	}
 
 	return 0;
@@ -568,7 +578,7 @@ int eDVBCICcSession::generate_dh_key()
 	uint8_t dhph[256];
 	int len;
 	unsigned int gap;
-	BIGNUM *p, *g , *q;
+	BIGNUM *p, *g, *q;
 	const BIGNUM *pub_key;
 
 	m_dh = DH_new();
@@ -670,7 +680,7 @@ int eDVBCICcSession::restart_dh_challenge()
 	if (!m_ci_elements.valid(AUTH_NONCE))
 		return -1;
 
-	//eDebug("[CI%d RCC] rechecking...", m_slot->getSlotID());
+	// eDebug("[CI%d RCC] rechecking...", m_slot->getSlotID());
 
 	m_root_ca_store = X509_STORE_new();
 	if (!m_root_ca_store)
@@ -720,7 +730,7 @@ int eDVBCICcSession::generate_uri_confirm()
 	uint8_t uck[32];
 	uint8_t uri_confirm[32];
 
-	//eDebug("[CI%d RCC] uri_confirm...", m_slot->getSlotID());
+	// eDebug("[CI%d RCC] uri_confirm...", m_slot->getSlotID());
 
 	// UCK
 	SHA256_Init(&sha);
@@ -752,7 +762,7 @@ void eDVBCICcSession::check_new_key()
 	if (!m_ci_elements.valid(KEY_REGISTER))
 		return;
 
-	//eDebug("[CI%d RCC] key checking...", m_slot->getSlotID());
+	// eDebug("[CI%d RCC] key checking...", m_slot->getSlotID());
 
 	kp = m_ci_elements.get_ptr(KP);
 	m_ci_elements.get_buf(&slot, KEY_REGISTER);
@@ -798,7 +808,7 @@ void eDVBCICcSession::set_descrambler_key()
 		m_current_ca_demux_id = m_slot->getCADemuxID();
 	}
 
-	if  (m_descrambler_fd != -1 && (set_key || m_descrambler_new_key))
+	if (m_descrambler_fd != -1 && (set_key || m_descrambler_new_key))
 	{
 		eDebug("[CI%d RCC] setting key: new ca device: %d, new key: %d", m_slot->getSlotID(), set_key, m_descrambler_new_key);
 		descrambler_set_key(m_descrambler_fd, m_slot, m_descrambler_odd_even, m_descrambler_key_iv);
@@ -870,7 +880,7 @@ bool eDVBCICcSession::sac_check_auth(const uint8_t *data, unsigned int len)
 		return false;
 	}
 
-	//eDebug("[CI RCC] auth ok!");
+	// eDebug("[CI RCC] auth ok!");
 
 	return true;
 }
@@ -964,7 +974,8 @@ bool eDVBCICcSession::ci_element_set_certificate(unsigned int id, X509 *cert)
 		return false;
 	}
 
-	if (!m_ci_elements.set(id, cert_der, cert_len)) {
+	if (!m_ci_elements.set(id, cert_der, cert_len))
+	{
 		eWarning("[CI%d RCC] can not store certificate id %u", m_slot->getSlotID(), id);
 		return false;
 	}
@@ -995,7 +1006,7 @@ bool eDVBCICcSession::ci_element_set_hostid_from_certificate(unsigned int id, X5
 		return false;
 	}
 
-	//eDebug("[CI%d RCC] DEVICE_ID: %s", m_slot->getSlotID(), hostid);
+	// eDebug("[CI%d RCC] DEVICE_ID: %s", m_slot->getSlotID(), hostid);
 
 	str2bin(bin_hostid, hostid, 16);
 

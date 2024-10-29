@@ -626,7 +626,7 @@ class InfoBarTimeshift:
 						readmetafile = open(f"{config.timeshift.path.value}{filename}.meta")
 						servicerefname = readmetafile.readline()[0:-1]
 						eventname = readmetafile.readline()[0:-1]
-						# description = readmetafile.readline()[0:-1]
+						description = readmetafile.readline()[0:-1]
 						begintime = readmetafile.readline()[0:-1]
 						readmetafile.close()
 						# Add Event to list
@@ -1167,7 +1167,7 @@ class InfoBarTimeshift:
 			if fileExists("%s.meta" % filename, "r"):
 				# Get Event Info from meta file.
 				readmetafile = open(filename + ".meta")
-				# servicerefname = readmetafile.readline()[0:-1]
+				servicerefname = readmetafile.readline()[0:-1]
 				eventname = readmetafile.readline()[0:-1]
 				readmetafile.close()
 			else:

@@ -52,7 +52,7 @@ class Setup(ConfigListScreen, Screen):
 		<widget name="HelpWindow" position="0,0" size="0,0" alphatest="blend" conditional="HelpWindow" transparent="1" zPosition="+1" />
 	</screen>"""
 
-	def __init__(self, session, setup=None, plugin=None, PluginLanguageDomain=None):
+	def __init__(self, session, setup, plugin=None, PluginLanguageDomain=None):
 		Screen.__init__(self, session, mandatoryWidgets=["config", "footnote", "description"], enableHelp=True)
 		self.setImage(setup, "setup")
 		self.setup = setup
