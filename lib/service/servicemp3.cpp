@@ -337,7 +337,6 @@ RESULT eStaticServiceMP3Info::getName(const eServiceReference &ref, std::string 
 			name = ref.path.substr(last + 1);
 		else
 			name = ref.path;
-
 	}
 	return 0;
 }

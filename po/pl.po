@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-01 08:46+0000\n"
-"PO-Revision-Date: 2024-10-23 07:15+0000\n"
+"POT-Creation-Date: 2024-10-28 12:47+0000\n"
+"PO-Revision-Date: 2024-10-30 09:00+0000\n"
 "Last-Translator: pololoko111 <peciek83@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/pl/>\n"
 "Language: pl\n"
@@ -906,14 +906,6 @@ msgstr[0] "%d rok"
 msgstr[1] "%d lata"
 msgstr[2] "%d lat"
 
-#. TRANSLATORS: Intermediate scanning result, '%d' channel(s) have been found so far
-#, python-format
-msgid "%d channel found"
-msgid_plural "%d channels found"
-msgstr[0] "znaleziono %d kanał"
-msgstr[1] "znaleziono %d kanały"
-msgstr[2] "znaleziono %d kanałów"
-
 #, python-format
 msgid "%d core"
 msgid_plural "%d cores"
@@ -1306,7 +1298,7 @@ msgid "'Buffer in hours' or 'number of last events'. For deleting older time shi
 msgstr "'Limit bufora w godzinach' lub 'Liczba ostatnio zarejestrowanych wydarzeń' spowoduje usunięcie najstarszego pliku timeshiftu, w zależności od tego, który warunek wystąpił jako pierwszy."
 
 msgid "'Handle standby from TV' has a higher priority than 'Handle input from TV'."
-msgstr "Komenda czuwania z TV ma wyższy priorytet niż komenda wejścia."
+msgstr "Opcja „Obsługa trybu czuwania z telewizora” ma wyższy priorytet niż opcja „Obsługa sygnału wejściowego z telewizora”."
 
 msgid "'Unscramble & record ECM' gives the option to unscramble afterwards if unscrambling on recording failed. 'Don't unscramble, record ECM' save a scramble recording that can be unscrambled on playback. 'Normal' means unscramble the recording and don't record ECM."
 msgstr "Dekodowanie i nagrywanie ECM' daje możliwość późniejszego deszyfrowania, jeśli deszyfrowanie przy nagrywaniu zakończyło się niepowodzeniem. 'Nie dekoduj, nagrywaj ECM', zapisz nagranie, które można odszyfrować podczas odtwarzania. \"Normalny\" oznacza deszyfrowanie nagrania i nie rejestruje ECM."
@@ -2242,7 +2234,7 @@ msgid "Allows the %s %s to store the EPG data regularly."
 msgstr "Umożliwia %s %s na regularne przechowywanie danych EPG."
 
 msgid "Allows the TV remote to be used to control the receiver."
-msgstr "Zezwól na kontrolę za pomocą pilota od TV."
+msgstr "Umożliwia sterowanie odbiornikiem za pomocą pilota telewizora."
 
 msgid "Allows you to adjust the amount of time the resolution information display on screen."
 msgstr "Pozwala określić, czy i jak długo ekran jest wyświetlany, gdy zmienia się rozdzielczość."
@@ -2921,7 +2913,7 @@ msgid "Backup your current image"
 msgstr "Wykonaj kopię zapasową aktualnego systemu"
 
 msgid "Backup your current image to HDD or USB. This will make a 1:1 copy of your box"
-msgstr "Zapisz aktualny system na HDD lub USB. Utworzy to kopię systemu 1:1 tego urządzenia"
+msgstr "Kopia zapasowa bieżącego systemu na HDD lub USB. Spowoduje to utworzenie kopii 1:1 Twojego dekodera"
 
 msgid "Backup your current settings"
 msgstr "Wykonaj kopię zapasowa bieżących ustawień"
@@ -3181,7 +3173,7 @@ msgid "Brightness"
 msgstr "Jasność"
 
 msgid "Brightness (Dimmed)"
-msgstr "Jasność przyciemniona"
+msgstr "Jasność (przyciemnienie)"
 
 msgid "Brightness (Normal)"
 msgstr "Jasność"
@@ -3654,11 +3646,11 @@ msgstr "Anuluj wybór systemu i wyjdź"
 msgid "Cancel the image selection and exit all menus"
 msgstr "Anuluj wybór systemu i zamknij wszystkie menu"
 
-msgid "Cancel the scan and exit the scanner"
-msgstr "Anuluj skanowanie i wyjdź ze skanera"
-
 msgid "Cancel the scan and exit all menus"
 msgstr "Anuluj skanowanie i wyjdź ze wszystkich menu"
+
+msgid "Cancel the scan and exit the scanner"
+msgstr "Anuluj skanowanie i wyjdź ze skanera"
 
 msgid "Cancel the selection and exit"
 msgstr "Anuluj wybór i wyjdź"
@@ -6122,7 +6114,7 @@ msgid "Dim delay"
 msgstr "Przygaś ekran po"
 
 msgid "Dim the LCD to the level from 'Brightness (Dimmed)' after specified time."
-msgstr "Przyciemnij wyświetlacz LCD do poziomu z pozycji „Jasność przyciemniona” po określonym czasie."
+msgstr "Przyciemnij wyświetlacz LCD do poziomu określonego w opcji „Jasność (przyciemnienie)” po określonym czasie."
 
 msgid "Direct menu item selection"
 msgstr "Bezpośrednie menu wyboru elementy"
@@ -6777,12 +6769,11 @@ msgstr "Lokalizacja EPG"
 msgid "EPG only"
 msgstr "Tylko EPG"
 
+msgid "EPG:"
+msgstr "EPG:"
+
 msgid "EPGSearch"
 msgstr "Wyszukiwanie EPG"
-
-#, python-format
-msgid "ERROR - failed to scan (%s)!"
-msgstr "BŁĄD - skanowanie (%s) nie powiodło się!"
 
 msgid "EXIF-Version"
 msgstr "Wersja EXIF"
@@ -8971,7 +8962,7 @@ msgid "Handle Python crashes"
 msgstr "Awaria obsługi Pythona"
 
 msgid "Handle input from TV"
-msgstr "Obsługuj dane przychodzące z TV"
+msgstr "Obsługa danych wejściowych z telewizora"
 
 msgid "Handle standby from TV"
 msgstr "Obsługuj komendę 'czuwania' z TV"
@@ -11712,6 +11703,9 @@ msgstr "Przestrzeń i poz. orbit"
 msgid "Namibia"
 msgstr "Namibia"
 
+msgid "Narration"
+msgstr "Narracja"
+
 msgid "Native"
 msgstr "Rodowity"
 
@@ -12023,6 +12017,9 @@ msgstr "Nie włożono karty!"
 msgid "No channel"
 msgstr "Brak kanału"
 
+msgid "No channel list"
+msgstr "Brak listy kanałów"
+
 msgid ""
 "No data on transponder!\n"
 "(Timeout reading PAT)"
@@ -12083,6 +12080,9 @@ msgstr "Nie znaleziono nadającego się pozycjonera."
 
 msgid "No priority"
 msgstr "Bez priorytetu"
+
+msgid "No resource manager"
+msgstr "Brak menadżera zasobów"
 
 msgid "No satellite, terrestrial or cable tuner is configured. Please check your tuner setup."
 msgstr "Nie skonfigurowano tunera satelitarnego, naziemnego ani kablowego. Sprawdź konfigurację tunera."
@@ -12300,6 +12300,9 @@ msgstr "nie skonfigurowano"
 
 msgid "Not currently mounted."
 msgstr "Obecnie nie jest zamontowany."
+
+msgid "Not defined"
+msgstr "Nie zdefiniowano"
 
 #, python-format
 msgid "Not enough disk space. Please free up some disk space and try again. (%d MB required, %d MB available)"
@@ -12691,6 +12694,9 @@ msgstr "Oryginalny"
 
 msgid "Original Network ID (ONID)"
 msgstr "Oryginale ID sieci (ONID)"
+
+msgid "Original language"
+msgstr "Język oryginalny"
 
 msgid "Oriya"
 msgstr "Oriya"
@@ -13462,7 +13468,7 @@ msgid "Plugin Action Log Actions"
 msgstr "Akcje dziennika działań wtyczek"
 
 msgid "Plugin Browser"
-msgstr "Przeglądarka wtyczek"
+msgstr "Wtyczki"
 
 msgid "Plugin Browser Actions"
 msgstr "Akcje przeglądarki wtyczek"
@@ -13841,6 +13847,12 @@ msgstr "Podstawowe minuty czasu"
 msgid "Priority"
 msgstr "Priorytet konwertera"
 
+msgid "Problem starting scan"
+msgstr "Problem z uruchomieniem skanowania"
+
+msgid "Problem while scanning"
+msgstr "Problem podczas skanowania"
+
 msgid "Proc model"
 msgstr "Model Procesora"
 
@@ -13948,7 +13960,7 @@ msgid "Protect on epg age"
 msgstr "Chroń Wiek z EPG"
 
 msgid "Protect plugin browser"
-msgstr "Chroń Przeglądarkę Wtyczek"
+msgstr "Chroń przeglądarkę wtyczek"
 
 msgid "Protect services"
 msgstr "Zabezpiecz Kanały"
@@ -15404,14 +15416,6 @@ msgstr "Skanowanie"
 msgid "Scanning %s..."
 msgstr "Skanowanie %s..."
 
-#. TRANSLATORS: The stb is performing a channel scan, progress percentage is printed in '%d' (and '%%' will show a single '%' symbol)
-#, python-format
-msgid "Scanning - %d%% completed"
-msgid_plural "Scanning - %d%% completed"
-msgstr[0] "Skanowanie - %d%% ukończono"
-msgstr[1] "Skanowanie - %d%% ukończono"
-msgstr[2] "Skanowanie - %d%% ukończone"
-
 msgid "Scanning can't be performed while recordings are in progress."
 msgstr "Skanowania nie można wykonać podczas nagrywania."
 
@@ -15606,7 +15610,7 @@ msgid "Select 'Provider' to scan from the predefined list of cable multiplexes. 
 msgstr "Wybierz opcję „Dostawca”, aby skanować z predefiniowanej listy multipleksów kablowych. Wybierz „Pasma”, aby skanować tylko określone części widma. Wybierz „Kroki”, aby skanować krokowo dla określonego pasma częstotliwości."
 
 msgid "Select 'Unique numbering' to assign unique numbers for every service in every bouquet. Use 'Bouquets start at 1' to start numbering each bouquet from 1. Use 'LCN numbering' to use consistent service LCNs where ever that service is used."
-msgstr "Wybierz opcję „Unikalna numeracja”, aby przypisać unikalne numery do każdej usługi w każdym bukiecie. Użyj opcji „Listy kanałów zaczynają się od 1”, aby rozpocząć numerację każdej listy od 1. Użyj opcji „Numerowanie LCN”, aby używać spójnych numerów LCN usług wszędzie tam, gdzie używana jest ta usługa."
+msgstr "Wybierz opcję „Unikalna numeracja”, aby przypisać unikalne numery do każdego kanału w każdej liście kanałów. Użyj opcji „Listy kanałów zaczynają się od 1”, aby rozpocząć numerację każdej listy od 1. Użyj opcji „Numerowanie LCN”, aby używać spójnych numerów LCN usług wszędzie tam, gdzie używana jest ta usługa."
 
 msgid "Select 'Yes' if an end time is required for this timer."
 msgstr "Wybierz opcję „Tak”, jeśli dla tego timera wymagana jest godzina zakończenia."
@@ -15651,7 +15655,7 @@ msgid "Select 'Yes' to disable multi-selection mode after each operation. Select
 msgstr "Wybierz opcję „Tak”, aby wyłączyć tryb wielokrotnego wyboru po każdej operacji. Wybierz opcję „Nie”, aby pozostawić aktywny tryb wielokrotnego wyboru i niezmienione wybory."
 
 msgid "Select 'Yes' to display a small TV image (PiG - Picture in Graphic) within the EPG screen."
-msgstr "Jeśli jest ustawione na 'tak' , pokazuje małe okno TV w EPG."
+msgstr "Wybierz „Tak”, aby wyświetlić mały obraz telewizyjny (PiG - Picture in Graphic) na ekranie EPG."
 
 msgid "Select 'Yes' to display the InfoBar when a new event starts."
 msgstr "Jeśli jest ustawione na 'tak', zostanie wyświetlony pasek informacyjny gdy rozpoczyna się nowy program."
@@ -16458,7 +16462,7 @@ msgid "Select the type of LNB/device being used (normally 'Universal'). If your 
 msgstr "Wybierz typ używanego LNB / urządzenia (zwykle „Uniwersalny”). Jeśli typ LNB nie jest dostępny, wybierz „zdefiniowane przez użytkownika”."
 
 msgid "Select the type of Single Cable Reception device you are using."
-msgstr "Wybierz typ używanego urządzenia do odbioru pojedynczego kabla."
+msgstr "Wybierz typ urządzenia odbiorczego pojedynczego kabla, którego używasz."
 
 msgid "Select the type of keyboard connected to the %s %s."
 msgstr "Wybierz typ klawiatury aktualnie podłączonej do %s %s."
@@ -20431,6 +20435,9 @@ msgstr "Akcja timera"
 msgid "Timer+"
 msgstr "Timer+"
 
+msgid "Timer:"
+msgstr "Timer:"
+
 msgid "Timerlist"
 msgstr "Lista timera"
 
@@ -20803,14 +20810,8 @@ msgstr "Algorytm strojenia"
 msgid "Tunisia"
 msgstr "Tunezja"
 
-msgid ""
-"Turbo: One reboot after flash\n"
-"Fast: One reboot after flash, one reboot after restore\n"
-"Slow: One reboot after flash, one reboot after restore in GUI"
-msgstr ""
-"Turbo: Jeden restart po flashu\n"
-"Szybki: Jeden restart po flashu, jeden restart po przywróceniu\n"
-"Wolny: Jeden restart po flashu, jeden restart po przywróceniu interfejsu"
+msgid "Turbo: One reboot after flash; Fast: One reboot after flash, one reboot after restore; Slow: One reboot after flash, one reboot after restore in GUI."
+msgstr "Turbo: Jeden restart po flashu; Szybki: Jeden restart po flashu, jeden restart po przywróceniu; Wolny: Jeden restart po flashu, jeden restart po przywróceniu interfejsu."
 
 msgid "Turkey"
 msgstr "Turcja"
@@ -21261,7 +21262,7 @@ msgid "Use QuickSelect"
 msgstr "Użyj szybkiego wyboru"
 
 msgid "Use TV remote control"
-msgstr "Zezwól na kontrolę pilotem od TV"
+msgstr "Użyj pilota do telewizora"
 
 msgid "Use UP/DOWN buttons to select option then press OK"
 msgstr "Użyj przycisków GÓRA/DÓŁ, aby wybrać opcję, a następnie naciśnij OK"
@@ -21462,7 +21463,7 @@ msgid "User  (keymap.usr)"
 msgstr "Użytkownika(keymap.usr)"
 
 msgid "User - Bouquets"
-msgstr "Listy kanałów"
+msgstr "Użytkownik - Listy kanałów"
 
 msgid "User Feed URL"
 msgstr "adres URL feeda użytkownika"
@@ -23177,12 +23178,6 @@ msgstr "równe"
 msgid "equestrian"
 msgstr "jeździectwo"
 
-msgid "Problem starting scan"
-msgstr "Problem z uruchomieniem skanowania"
-
-msgid "Problem while scanning"
-msgstr "Problem podczas skanowania"
-
 msgid "execute cuts (requires MovieCut plugin)"
 msgstr "wykonywać cięcia (wymaga wtyczki MovieCut)"
 
@@ -23468,17 +23463,11 @@ msgstr "nie wybrano kaida"
 msgid "no CI slots found"
 msgstr "nie znaleziono gniazda CI"
 
-msgid "No channel list"
-msgstr "Brak listy kanałów"
-
 msgid "no module found"
 msgstr "nie znaleziono modułu"
 
 msgid "no or unknown card inserted"
 msgstr "brak lub nieaktywna karta"
-
-msgid "No resource manager"
-msgstr "Brak menadżera zasobów"
 
 msgid "no storage devices found"
 msgstr "nie znaleziono urządzenia magazynującego"
@@ -23539,9 +23528,6 @@ msgstr "pakiet"
 
 msgid "packages"
 msgstr "pakiety"
-
-msgid "pass"
-msgstr "przelot"
 
 msgid "performing arts"
 msgstr "sztuka"
@@ -23938,6 +23924,27 @@ msgstr "tak (zachować kanały)"
 
 msgid "®"
 msgstr "®"
+
+#, python-format
+#~ msgid "%d channel found"
+#~ msgid_plural "%d channels found"
+#~ msgstr[0] "znaleziono %d kanał"
+#~ msgstr[1] "znaleziono %d kanały"
+#~ msgstr[2] "znaleziono %d kanałów"
+
+#, python-format
+#~ msgid "ERROR - failed to scan (%s)!"
+#~ msgstr "BŁĄD - skanowanie (%s) nie powiodło się!"
+
+#, python-format
+#~ msgid "Scanning - %d%% completed"
+#~ msgid_plural "Scanning - %d%% completed"
+#~ msgstr[0] "Skanowanie - %d%% ukończono"
+#~ msgstr[1] "Skanowanie - %d%% ukończono"
+#~ msgstr[2] "Skanowanie - %d%% ukończone"
+
+#~ msgid "pass"
+#~ msgstr "przelot"
 
 #, python-format
 #~ msgid "%s  (%s)"
