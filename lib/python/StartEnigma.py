@@ -111,16 +111,13 @@ class Session:
 		return self.doInstantiateDialog(screen, arguments, kwargs, self.desktop)
 
 	def deleteDialog(self, screen):
-		screen.hide()
-		screen.doClose()
 		if screen in self.allDialogs:
 			self.allDialogs.remove(screen)
+		screen.hide()
+		screen.doClose()
 
 	def deleteDialogWithCallback(self, callback, screen, *retVal):
-		if screen in self.allDialogs:
-			self.allDialogs.remove(screen)
-		screen.hide()
-		screen.doClose()
+		self.deleteDialog(screen)
 		if callback is not None:
 			callback(*retVal)
 
