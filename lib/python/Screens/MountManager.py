@@ -274,8 +274,7 @@ class MountManager(Screen):
 			if current:
 				deviceP = current[4]
 				deviceUuid = self.deviceUUID.get(deviceP)
-				choiceList = [("None", "None")]
-				choiceList = [("", "Custom")]
+				choiceList = [("None", "None"), ("", "Custom")]
 				if "sr" in current[11]:
 					choiceList.extend([("/media/cdrom", "/media/cdrom")], [("/media/dvd", "/media/dvd")])
 				else:
@@ -331,7 +330,10 @@ class MountManager(Screen):
 				result = ["usb", "usb2", "usb3"]
 			case 1:
 				result = ["mmc", "mmc2", "mmc3"]
-		return result.extend(["hdd", "hdd2", "hdd3"])
+			case _:
+				result = []
+		result.extend(["hdd", "hdd2", "hdd3"])
+		return result
 
 	def createSummary(self):
 		return DevicesPanelSummary
