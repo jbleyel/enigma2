@@ -553,6 +553,14 @@
 		<item level="0" text="F2" description="Select the function to be assigned to this button.">config.movielist.btn_F2</item>
 		<item level="0" text="F3" description="Select the function to be assigned to this button.">config.movielist.btn_F3</item>
 	</setup>
+	<setup key="MountPoint" title="Mountpoint">
+		<item text="Mountpoint" description="Select the mountpoint for the device.">self.mountPoint</item>
+		<if conditional="self.mountPoint.value">
+			<item text="Custom mountpoint" description="Define the custom ountpoint for the device." conditional="self.mountPoint.value=='custom'">self.customMountPoint</item>
+			<item text="Filesystem" description="Select the filesystem for the device.">self.fileSystem</item>
+			<item text="Options" description="Define the filesystem mount options.">self.options</item>
+		</if>
+	</setup>
 	<setup key="Network" title="Network Settings">
 		<item text="Use DHCP" description="When enabled, use DHCP for the IP configuration.">config.network.dhcp</item>
 		<item text="IP address" description="Configure the IP address.">config.network.ip</item>

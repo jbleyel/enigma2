@@ -3,12 +3,12 @@ from os.path import exists, isfile, join, realpath
 from re import search, sub
 
 from Components.ActionMap import HelpableActionMap
-from Components.ConfigList import ConfigListScreen
-from Components.config import ConfigSelection, NoSave
+#from Components.ConfigList import ConfigListScreen
+from Components.config import ConfigSelection, ConfigText, NoSave
 from Components.Console import Console
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
-from Components.SystemInfo import BoxInfo, getBoxDisplayName
+from Components.SystemInfo import BoxInfo  # , getBoxDisplayName
 from Screens.ChoiceBox import ChoiceBox
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
@@ -95,6 +95,7 @@ class MountManager(Screen):
 		self.knownDevices = []
 		self.swapDevices = []
 		self.deviceUUID = {}
+		self.needReboot = False
 		self.readDevices()
 
 	def selectionChanged(self):
@@ -131,7 +132,7 @@ class MountManager(Screen):
 
 		self.console.ePopen([self.BLKID, self.BLKID], callback=readDevicesCallback)
 
-	def updateDevices(self, result=None, retval=None, extra_args=None):
+	def updateDevices(self):
 		self.partitions = fileReadLines("/proc/partitions", default=[], source=MODULE_NAME)
 		self.mounts = fileReadLines("/proc/mounts", default=[], source=MODULE_NAME)
 		self.fstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME)
@@ -179,7 +180,7 @@ class MountManager(Screen):
 				d1 = parts[1]
 				dtype = parts[2]
 				rw = parts[3]
-				break
+				# break - Use the last mount if the divice exists multiple times
 			else:
 				if device in self.swapDevices:
 					parts = line.strip().split()
@@ -235,29 +236,51 @@ class MountManager(Screen):
 			self.deviceList.append(res)
 
 	def keyClose(self):
-		self.close((True, ))
+		if self.needReboot:
+			self.session.open(TryQuitMainloop, QUIT_REBOOT)
+		else:
+			self.close((True, ))
 
 	def keyMountPoint(self):
 		def keyMountPointCallback(answer):
+			def keyMountPointCallback2(result=None, retval=None, extra_args=None):
+				reboot = False
+				isMounted = current[5]
+				mountp = current[3]
+				device = current[4]
+				self.updateDevices()
+				if answer[1] == "None" or device != current[4] or current[5] != isMounted or mountp != current[3]:
+					self.needReboot = True
+
 			if answer:
+				answerMoutPoint = answer[0]
+				answerFS = answer[1]
+				answerOptions = answer[2]
 				newFstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME)
-				newFstab = [l for l in newFstab if answer[1] not in l]
+				newFstab = [l for l in newFstab if answerMoutPoint not in l]
 				newFstab = [l for l in newFstab if deviceP not in l]
 				newFstab = [l for l in newFstab if deviceUuid not in l]
-				newFstab.append(f"UUID={deviceUuid}\t{answer[1]}\tauto\tdefaults\t0 0\n")
+				if answer[1] != "None":
+					newFstab.append(f"UUID={deviceUuid}\t{answerMoutPoint}\t{answerFS}\t{answerOptions}\t0 0\n")
 				fileWriteLines("/etc/fstab", newFstab, source=MODULE_NAME)
-				if not exists(answer[1]):
-					mkdir(answer[1], 0o755)
-				self.console.ePopen([self.MOUNT, self.MOUNT, "-a"], self.updateDevices)
+				if answerMoutPoint != "None":
+					if not exists(answerMoutPoint):
+						mkdir(answerMoutPoint, 0o755)
+				self.console.eBatch([f"{self.MOUNT} -a", "sync", "sleep 1"], keyMountPointCallback2)
+#				self.console.ePopen([self.MOUNT, self.MOUNT, "-a"], keyMountPointCallback2)
 
 		if self.deviceList:
 			current = self["devicelist"].getCurrent()
 			if current:
 				deviceP = current[4]
 				deviceUuid = self.deviceUUID.get(deviceP)
-				title = _("Select the new mount point for: '%s'") % current[11]
-				choiceList = [(f"/media/{x}", f"/media/{x}") for x in self.getMountPoints(current[10])]
-				self.session.openWithCallback(keyMountPointCallback, ChoiceBox, choiceList=choiceList, buttonList=[], windowTitle=title)
+				choiceList = [("None", "None")]
+				choiceList = [("", "Custom")]
+				if "sr" in current[11]:
+					choiceList.extend([("/media/cdrom", "/media/cdrom")], [("/media/dvd", "/media/dvd")])
+				else:
+					choiceList.extend([(f"/media/{x}", f"/media/{x}") for x in self.getMountPoints(current[10])])
+				self.session.openWithCallback(keyMountPointCallback, MountManagerMountPoint, choiceList, current[11])
 
 	def keyToggleMount(self):
 		def keyYellowCallback(answer):
@@ -308,12 +331,58 @@ class MountManager(Screen):
 				result = ["usb", "usb2", "usb3"]
 			case 1:
 				result = ["mmc", "mmc2", "mmc3"]
-			case _:
-				result = ["hdd", "hdd2", "hdd3"]
-		return result
+		return result.extend(["hdd", "hdd2", "hdd3"])
 
 	def createSummary(self):
 		return DevicesPanelSummary
+
+
+class MountManagerMountPoint(Setup):
+	defaultOptions = {
+		"auto": "",
+		"ext4": "defaults,noatime",
+		"vfat": "rw,iocharset=utf8,uid=0,gid=0,umask=0022",
+		"extfat": "rw,iocharset=utf8,uid=0,gid=0,umask=0022",
+		"ntfs-3g": "defaults,uid=0,gid=0,umask=0022",
+		"iso9660": "ro,defaults",
+		"udf": "ro,defaults",
+		"hfsplus": "rw,force,uid=0,gid=0",
+		"btrfs": "defaults,noatime",
+		"xfs": "defaults,compress=zstd,noatime",
+		"fuseblk": "defaults,uid=0,gid=0"
+	}
+
+	def __init__(self, session, mountPoints, device):
+		self.mountPoint = NoSave(ConfigSelection(default=mountPoints[2][0], choices=mountPoints))
+		self.customMountPoint = NoSave(ConfigText())
+		if "sr" in device:
+			fileSystems = ["auto", "iso9660", "udf"]
+		else:
+			fileSystems = ["auto", "ext4", "vfat"]
+			if exists("/sbin/mount.exfat"):
+				fileSystems.append("exfat")
+			if exists("/sbin/mount.ntfs-3g"):
+				fileSystems.append("ntfs-3g")
+			if exists("/sbin/mount.fuse"):
+				fileSystems.append("fuseblk")
+			fileSystems.extend(["hfsplus", "btrfs", "xfs"])
+		fileSystemChoices = [(x, x) for x in fileSystems]
+		self.fileSystem = NoSave(ConfigSelection(default=fileSystems[0][0], choices=fileSystemChoices))
+		self.options = NoSave(ConfigText("default"))
+		Setup.__init__(self, session=session, setup="MountManagerMountPoint")
+		self.setTitle(_("Select the new mount point for: '%s'") % device)
+
+	def changedEntry(self):
+		current = self["config"].getCurrent()[1]
+		if current == self.fileSystem:
+			self.options.value = self.defaultOptions.get(self.fileSystem.value)
+		Setup.changedEntry(self)
+
+	def keySave(self):
+		self.close((self.mountPoint.value or self.customMountPoint.value, self.fileSystem.value, self.options.value))
+
+	def keyCancel(self):
+		self.close(None)
 
 
 class HddMount(MountManager):
