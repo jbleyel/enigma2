@@ -710,7 +710,6 @@ void eAVControl::setOSDAlpha(int alpha, int flags) const
 std::string eAVControl::getEDIDPath() const
 {
 	struct stat buffer = {};
-	const std::string proc = "/proc/stb/hdmi/raw_edid";
 
 #ifdef DREAMNEXTGEN
 	const std::string proc = "/sys/class/amhdmitx/amhdmitx0/rawedid";
