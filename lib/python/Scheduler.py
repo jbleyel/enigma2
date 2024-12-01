@@ -15,7 +15,7 @@ from Components.SystemInfo import getBoxDisplayName
 from Components.TimerSanityCheck import TimerSanityCheck
 from Screens.MessageBox import MessageBox
 import Screens.Standby
-from Tools.Directories import SCOPE_CONFIG, fileReadLines, fileReadXML, resolveFilename
+from Tools.Directories import SCOPE_CONFIG, copyFile, fileReadLines, fileReadXML, resolveFilename
 from Tools.Notifications import AddNotification, AddNotificationWithCallback, AddPopup
 from Tools.XMLTools import stringToXML
 
@@ -95,8 +95,13 @@ class Scheduler(Timer):
 	def __init__(self):
 		Timer.__init__(self)
 
-	# TODO migrate powertimer
 	def loadTimers(self):
+
+		# Migrate PowerTimer
+		powerTimerFile = resolveFilename(SCOPE_CONFIG, "pm_timers.xml")
+		if exists(powerTimerFile) and not exists(TIMER_XML_FILE):
+			copyFile(powerTimerFile, TIMER_XML_FILE)
+
 		if exists(TIMER_XML_FILE):
 			timerDom = fileReadXML(TIMER_XML_FILE, source=MODULE_NAME)
 			if timerDom is None:
