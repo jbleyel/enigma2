@@ -4,7 +4,7 @@ from time import localtime, mktime, strftime, time
 
 from enigma import BT_SCALE, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, eEPGCache, eLabel, eListbox, eListboxPythonMultiContent, eSize, eTimer
 
-from Janitor import AFTEREVENT as JANITOR_AFTEREVENT, JanitorEntry, TIMERTYPE as JANITOR_TYPE, functionTimer
+from Scheduler import AFTEREVENT as SCHEDULER_AFTEREVENT, SchedulerEntry, TIMERTYPE as SCHEDULER_TYPE, functionTimer
 from PowerTimer import AFTEREVENT as POWER_AFTEREVENT, PowerTimerEntry, TIMERTYPE as POWER_TIMERTYPE
 from RecordTimer import AFTEREVENT as RECORD_AFTEREVENT, RecordTimerEntry, TIMERTYPE as RECORD_TIMERTYPE, parseEvent
 from ServiceReference import ServiceReference
@@ -129,43 +129,43 @@ POWERTIMER_TYPES = {
 	POWER_TIMERTYPE.RESTART: "restart"
 }
 
-JANITOR_TYPES = {
-	JANITOR_TYPE.NONE: "nothing",
-	JANITOR_TYPE.WAKEUP: "wakeup",
-	JANITOR_TYPE.WAKEUPTOSTANDBY: "wakeuptostandby",
-	JANITOR_TYPE.AUTOSTANDBY: "autostandby",
-	JANITOR_TYPE.AUTODEEPSTANDBY: "autodeepstandby",
-	JANITOR_TYPE.STANDBY: "standby",
-	JANITOR_TYPE.DEEPSTANDBY: "deepstandby",
-	JANITOR_TYPE.REBOOT: "reboot",
-	JANITOR_TYPE.RESTART: "restart",
-	JANITOR_TYPE.OTHER: "other"
+SCHEDULER_TYPES = {
+	SCHEDULER_TYPE.NONE: "nothing",
+	SCHEDULER_TYPE.WAKEUP: "wakeup",
+	SCHEDULER_TYPE.WAKEUPTOSTANDBY: "wakeuptostandby",
+	SCHEDULER_TYPE.AUTOSTANDBY: "autostandby",
+	SCHEDULER_TYPE.AUTODEEPSTANDBY: "autodeepstandby",
+	SCHEDULER_TYPE.STANDBY: "standby",
+	SCHEDULER_TYPE.DEEPSTANDBY: "deepstandby",
+	SCHEDULER_TYPE.REBOOT: "reboot",
+	SCHEDULER_TYPE.RESTART: "restart",
+	SCHEDULER_TYPE.OTHER: "other"
 }
 
-JANITOR_VALUES = dict([(JANITOR_TYPES[x], x) for x in JANITOR_TYPES.keys()])
-JANITOR_TYPE_NAMES = {
-	JANITOR_TYPE.AUTODEEPSTANDBY: _("Auto deep standby") if DEEPSTANDBY_SUPPORT else _("Auto shut down"),
-	JANITOR_TYPE.AUTOSTANDBY: _("Auto standby"),
-	JANITOR_TYPE.DEEPSTANDBY: _("Deep standby") if DEEPSTANDBY_SUPPORT else _("Shut down"),
-	JANITOR_TYPE.NONE: _("Do nothing"),
-	JANITOR_TYPE.REBOOT: _("Reboot"),
-	JANITOR_TYPE.RESTART: _("Restart GUI"),
-	JANITOR_TYPE.STANDBY: _("Standby"),
-	JANITOR_TYPE.WAKEUP: _("Wake up"),
-	JANITOR_TYPE.WAKEUPTOSTANDBY: _("Wake up to standby")
+SCHEDULER_VALUES = dict([(SCHEDULER_TYPES[x], x) for x in SCHEDULER_TYPES.keys()])
+SCHEDULER_TYPE_NAMES = {
+	SCHEDULER_TYPE.AUTODEEPSTANDBY: _("Auto deep standby") if DEEPSTANDBY_SUPPORT else _("Auto shut down"),
+	SCHEDULER_TYPE.AUTOSTANDBY: _("Auto standby"),
+	SCHEDULER_TYPE.DEEPSTANDBY: _("Deep standby") if DEEPSTANDBY_SUPPORT else _("Shut down"),
+	SCHEDULER_TYPE.NONE: _("Do nothing"),
+	SCHEDULER_TYPE.REBOOT: _("Reboot"),
+	SCHEDULER_TYPE.RESTART: _("Restart GUI"),
+	SCHEDULER_TYPE.STANDBY: _("Standby"),
+	SCHEDULER_TYPE.WAKEUP: _("Wake up"),
+	SCHEDULER_TYPE.WAKEUPTOSTANDBY: _("Wake up to standby")
 }
-JANITOR_AFTER_EVENTS = {
-	JANITOR_AFTEREVENT.NONE: "nothing",
-	JANITOR_AFTEREVENT.WAKEUPTOSTANDBY: "wakeuptostandby",
-	JANITOR_AFTEREVENT.STANDBY: "standby",
-	JANITOR_AFTEREVENT.DEEPSTANDBY: "deepstandby"
+SCHEDULER_AFTER_EVENTS = {
+	SCHEDULER_AFTEREVENT.NONE: "nothing",
+	SCHEDULER_AFTEREVENT.WAKEUPTOSTANDBY: "wakeuptostandby",
+	SCHEDULER_AFTEREVENT.STANDBY: "standby",
+	SCHEDULER_AFTEREVENT.DEEPSTANDBY: "deepstandby"
 }
-JANITOR_AFTER_VALUES = dict([(JANITOR_AFTER_EVENTS[x], x) for x in JANITOR_AFTER_EVENTS.keys()])
-JANITOR_AFTER_EVENT_NAMES = {
-	JANITOR_AFTEREVENT.NONE: _("Do nothing"),
-	JANITOR_AFTEREVENT.WAKEUPTOSTANDBY: _("Wake up to standby"),
-	JANITOR_AFTEREVENT.STANDBY: _("Go to standby"),
-	JANITOR_AFTEREVENT.DEEPSTANDBY: _("Go to deep standby") if DEEPSTANDBY_SUPPORT else _("Shut down")
+SCHEDULER_AFTER_VALUES = dict([(SCHEDULER_AFTER_EVENTS[x], x) for x in SCHEDULER_AFTER_EVENTS.keys()])
+SCHEDULER_AFTER_EVENT_NAMES = {
+	SCHEDULER_AFTEREVENT.NONE: _("Do nothing"),
+	SCHEDULER_AFTEREVENT.WAKEUPTOSTANDBY: _("Wake up to standby"),
+	SCHEDULER_AFTEREVENT.STANDBY: _("Go to standby"),
+	SCHEDULER_AFTEREVENT.DEEPSTANDBY: _("Go to deep standby") if DEEPSTANDBY_SUPPORT else _("Shut down")
 }
 
 POWERTIMER_VALUES = dict([(POWERTIMER_TYPES[x], x) for x in POWERTIMER_TYPES.keys()])
@@ -226,9 +226,9 @@ onRecordTimerChannelChange = []  # Hook for plugins to enhance the RecordTimer s
 onPowerTimerCreate = []  # Hook for plugins to enhance the PowerTimer screen.
 onPowerTimerSetup = []  # Hook for plugins to enhance the PowerTimer screen.
 onPowerTimerSave = []  # Hook for plugins to enhance the PowerTimer screen.
-onJanitorCreate = []  # Hook for plugins to enhance the Janitor screen.
-onJanitorSetup = []  # Hook for plugins to enhance the Janitor screen.
-onJanitorSave = []  # Hook for plugins to enhance the Janitor screen.
+onSchedulerCreate = []  # Hook for plugins to enhance the Scheduler screen.
+onSchedulerSetup = []  # Hook for plugins to enhance the Scheduler screen.
+onSchedulerSave = []  # Hook for plugins to enhance the Scheduler screen.
 
 
 class TimerListBase(GUIComponent):
@@ -351,14 +351,14 @@ class TimerListBase(GUIComponent):
 # <Repeat icon> <Name of timer>          <At end>
 # <State icon>  <State>   <Start, End (Duration)>
 #
-class JanitorList(TimerListBase):
+class SchedulerList(TimerListBase):
 	def __init__(self, timerList):
 		TimerListBase.__init__(self, timerList)
 
 	def buildTimerEntry(self, timer, processed):
 		width = self.timerListWidget.getItemSize().width()
 		height = self.timerListWidget.getItemSize().height()
-		if timer.timerType in (JANITOR_TYPE.AUTOSTANDBY, JANITOR_TYPE.AUTODEEPSTANDBY):
+		if timer.timerType in (SCHEDULER_TYPE.AUTOSTANDBY, SCHEDULER_TYPE.AUTODEEPSTANDBY):
 			repeatIcon = self.iconOnce if timer.autosleeprepeat == "once" else self.iconRepeat
 			topText = None
 			bottomText = _("Delay: %s") % ngettext("%d Minute", "%d Minutes", timer.autosleepdelay) % timer.autosleepdelay
@@ -788,24 +788,24 @@ class TimerOverviewSummary(ScreenSummary):
 		self["state"].setText(state)
 
 
-class JanitorOverview(TimerOverviewBase):
+class SchedulerOverview(TimerOverviewBase):
 	def __init__(self, session):
-		self["timerlist"] = JanitorList([])
+		self["timerlist"] = SchedulerList([])
 		TimerOverviewBase.__init__(self, session, mode=MODE_POWER)
 
 	def doChangeCallbackAppend(self):
-		self.session.nav.Janitor.on_state_change.append(self.onStateChange)
+		self.session.nav.Scheduler.on_state_change.append(self.onStateChange)
 
 	def doChangeCallbackRemove(self):
-		self.session.nav.Janitor.on_state_change.remove(self.onStateChange)
+		self.session.nav.Scheduler.on_state_change.remove(self.onStateChange)
 
 	def loadTimerList(self):
 		def condition(element):
 			return element[0].state == TimerEntry.StateEnded, element[0].begin
 
 		timerList = []
-		timerList.extend([(timer, False) for timer in self.session.nav.Janitor.timer_list])
-		timerList.extend([(timer, True) for timer in self.session.nav.Janitor.processed_timers])
+		timerList.extend([(timer, False) for timer in self.session.nav.Scheduler.timer_list])
+		timerList.extend([(timer, True) for timer in self.session.nav.Scheduler.processed_timers])
 		if config.usage.timerlist_finished_timer_position.index:  # End of list.
 			timerList.sort(key=condition)
 		else:
@@ -833,7 +833,7 @@ class JanitorOverview(TimerOverviewBase):
 			time = "%s %s ... %s" % (fuzzyDate(timer.begin)[0], fuzzyDate(timer.begin)[1], fuzzyDate(timer.end)[1])
 			duration = int((timer.end - timer.begin) / 60.0)
 			for callback in self.onSelectionChanged:
-				callback(JANITOR_TYPE_NAMES.get(timer.timerType, UNKNOWN), "", time, ngettext("%d Min", "%d Mins", duration) % duration, TIMER_STATES.get(timer.state, UNKNOWN))
+				callback(SCHEDULER_TYPE_NAMES.get(timer.timerType, UNKNOWN), "", time, ngettext("%d Min", "%d Mins", duration) % duration, TIMER_STATES.get(timer.state, UNKNOWN))
 		else:
 			self["description"].setText("")
 			self["key_info"].setText("")
@@ -860,19 +860,19 @@ class JanitorOverview(TimerOverviewBase):
 		now = int(time())
 		begin = now + 60
 		end = now + 120
-		self.session.openWithCallback(self.addTimerCallback, JanitorEdit, JanitorEntry(begin, end, checkOldTimers=True))
+		self.session.openWithCallback(self.addTimerCallback, SchedulerEdit, SchedulerEntry(begin, end, checkOldTimers=True))
 
 	def addTimerCallback(self, result=(False,)):
 		if isinstance(result, bool) and result:  # Special case for close recursive.
 			self.close(True)
 			return
 		if result[0]:
-			self.session.nav.Janitor.record(result[1])
+			self.session.nav.Scheduler.record(result[1])
 			self.loadTimerList()
 			self.selectionChanged()
 
 	def doCleanupTimers(self):
-		self.session.nav.Janitor.cleanup()
+		self.session.nav.Scheduler.cleanup()
 
 	def deleteTimer(self):
 		if self["timerlist"].getCurrent():
@@ -883,13 +883,13 @@ class JanitorOverview(TimerOverviewBase):
 			timer = self["timerlist"].getCurrent()
 			if timer:
 				timer.afterEvent = RECORD_AFTEREVENT.NONE
-				self.session.nav.Janitor.removeEntry(timer)
+				self.session.nav.Scheduler.removeEntry(timer)
 				self.reloadTimerList()
 
 	def editTimer(self):
 		timer = self["timerlist"].getCurrent()
 		if timer:
-			self.session.openWithCallback(self.editTimerCallback, JanitorEdit, timer)
+			self.session.openWithCallback(self.editTimerCallback, SchedulerEdit, timer)
 
 	def editTimerCallback(self, result):
 		if isinstance(result, bool) and result:  # Special case for close recursive.
@@ -897,20 +897,20 @@ class JanitorOverview(TimerOverviewBase):
 			return
 		if result[0]:
 			entry = result[1]
-			self.session.nav.Janitor.timeChanged(entry)
-			print("[Timers] Janitor updated.")
+			self.session.nav.Scheduler.timeChanged(entry)
+			print("[Timers] Scheduler updated.")
 			self.reloadTimerList()
 		else:
-			print("[Timers] Janitor not updated.")
+			print("[Timers] Scheduler not updated.")
 
 	def toggleTimer(self):
 		timer = self["timerlist"].getCurrent()
 		if timer:
 			if timer.disabled:
-				print("[Timers] Try to enable Janitor.")
+				print("[Timers] Try to enable Scheduler.")
 				timer.enable()
 			else:
-				print("[Timers] Try to disable Janitor.")
+				print("[Timers] Try to disable Scheduler.")
 				if timer.isRunning():
 					if timer.repeated:
 						choiceList = (
@@ -921,7 +921,7 @@ class JanitorOverview(TimerOverviewBase):
 						self.session.openWithCallback(boundFunction(self.toggleTimerCallback, timer), ChoiceBox, title=_("Repeating event is currently active, what do you want to do?"), list=choiceList)
 				else:
 					timer.disable()
-			self.session.nav.Janitor.timeChanged(timer)
+			self.session.nav.Scheduler.timeChanged(timer)
 			self.reloadTimerList()
 
 	def toggleTimerCallback(self, timer, choice):
@@ -929,10 +929,10 @@ class JanitorOverview(TimerOverviewBase):
 			if choice[1] in ("stoponlycurrent", "stopall"):
 				timer.enable()
 				timer.processRepeated(findRunningEvent=False)
-				self.session.nav.Janitor.doActivate(timer)
+				self.session.nav.Scheduler.doActivate(timer)
 			if choice[1] in ("stoponlycoming", "stopall"):
 				timer.disable()
-			self.session.nav.Janitor.timeChanged(timer)
+			self.session.nav.Scheduler.timeChanged(timer)
 			self.reloadTimerList()
 
 	def cleanupTimers(self):
@@ -940,7 +940,7 @@ class JanitorOverview(TimerOverviewBase):
 
 	def cleanupTimersCallback(self, answer):
 		if answer:
-			self.session.nav.Janitor.cleanup()
+			self.session.nav.Scheduler.cleanup()
 			self.reloadTimerList()
 
 	# def refill(self):
@@ -1485,11 +1485,11 @@ class ConflictTimerOverview(TimerOverviewBase):
 	# 	pass
 
 
-class JanitorEdit(Setup):
+class SchedulerEdit(Setup):
 	def __init__(self, session, timer):
 		self.timer = timer
 		self.createConfig()
-		Setup.__init__(self, session, "PowerTimer")
+		Setup.__init__(self, session, "Scheduler")
 
 	def createConfig(self):
 		days = {}
@@ -1524,17 +1524,17 @@ class JanitorEdit(Setup):
 			days[weekday] = True
 		functionTimerItems = functionTimer.get()
 		choices = [
-			# (JANITOR_TYPES.get(JANITOR_TYPE.NONE), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.NONE)),
-			(JANITOR_TYPES.get(JANITOR_TYPE.WAKEUP), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.WAKEUP)),
-			(JANITOR_TYPES.get(JANITOR_TYPE.WAKEUPTOSTANDBY), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.WAKEUPTOSTANDBY)),
-			(JANITOR_TYPES.get(JANITOR_TYPE.AUTOSTANDBY), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.AUTOSTANDBY)),
-			(JANITOR_TYPES.get(JANITOR_TYPE.AUTODEEPSTANDBY), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.AUTODEEPSTANDBY)),
-			(JANITOR_TYPES.get(JANITOR_TYPE.STANDBY), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.STANDBY)),
-			(JANITOR_TYPES.get(JANITOR_TYPE.DEEPSTANDBY), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.DEEPSTANDBY)),
-			(JANITOR_TYPES.get(JANITOR_TYPE.REBOOT), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.REBOOT)),
-			(JANITOR_TYPES.get(JANITOR_TYPE.RESTART), JANITOR_TYPE_NAMES.get(JANITOR_TYPE.RESTART))
+			# (SCHEDULER_TYPES.get(SCHEDULER_TYPE.NONE), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.NONE)),
+			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.WAKEUP), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.WAKEUP)),
+			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.WAKEUPTOSTANDBY), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.WAKEUPTOSTANDBY)),
+			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.AUTOSTANDBY), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.AUTOSTANDBY)),
+			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.AUTODEEPSTANDBY), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.AUTODEEPSTANDBY)),
+			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.STANDBY), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.STANDBY)),
+			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.DEEPSTANDBY), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.DEEPSTANDBY)),
+			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.REBOOT), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.REBOOT)),
+			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.RESTART), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.RESTART))
 		] + [(x, functionTimerItems[x]['name']) for x in functionTimerItems]
-		default = self.timer.function or JANITOR_TYPES.get(self.timer.timerType, "wakeup")
+		default = self.timer.function or SCHEDULER_TYPES.get(self.timer.timerType, "wakeup")
 		self.timerType = ConfigSelection(default=default, choices=choices)
 		self.timerActiveInStandby = ConfigSelection(default=self.timer.autosleepinstandbyonly, choices=[
 			("yes", _("Only in standby")),
@@ -1577,18 +1577,18 @@ class JanitorEdit(Setup):
 		self.timerStartTime = ConfigClock(default=self.timer.begin)
 		self.timerSetEndTime = ConfigYesNo(default=(int((self.timer.end - self.timer.begin) / 60.0) > 4))
 		self.timerEndTime = ConfigClock(default=self.timer.end)
-		self.timerAfterEvent = ConfigSelection(default=JANITOR_AFTER_EVENTS.get(self.timer.afterEvent, "nothing"), choices=[
-			(JANITOR_AFTER_EVENTS.get(JANITOR_AFTEREVENT.NONE), JANITOR_AFTER_EVENT_NAMES.get(JANITOR_AFTEREVENT.NONE)),
-			(JANITOR_AFTER_EVENTS.get(JANITOR_AFTEREVENT.WAKEUPTOSTANDBY), JANITOR_AFTER_EVENT_NAMES.get(JANITOR_AFTEREVENT.WAKEUPTOSTANDBY)),
-			(JANITOR_AFTER_EVENTS.get(JANITOR_AFTEREVENT.STANDBY), JANITOR_AFTER_EVENT_NAMES.get(JANITOR_AFTEREVENT.STANDBY)),
-			(JANITOR_AFTER_EVENTS.get(JANITOR_AFTEREVENT.DEEPSTANDBY), JANITOR_AFTER_EVENT_NAMES.get(JANITOR_AFTEREVENT.DEEPSTANDBY))
+		self.timerAfterEvent = ConfigSelection(default=SCHEDULER_AFTER_EVENTS.get(self.timer.afterEvent, "nothing"), choices=[
+			(SCHEDULER_AFTER_EVENTS.get(SCHEDULER_AFTEREVENT.NONE), SCHEDULER_AFTER_EVENT_NAMES.get(SCHEDULER_AFTEREVENT.NONE)),
+			(SCHEDULER_AFTER_EVENTS.get(SCHEDULER_AFTEREVENT.WAKEUPTOSTANDBY), SCHEDULER_AFTER_EVENT_NAMES.get(SCHEDULER_AFTEREVENT.WAKEUPTOSTANDBY)),
+			(SCHEDULER_AFTER_EVENTS.get(SCHEDULER_AFTEREVENT.STANDBY), SCHEDULER_AFTER_EVENT_NAMES.get(SCHEDULER_AFTEREVENT.STANDBY)),
+			(SCHEDULER_AFTER_EVENTS.get(SCHEDULER_AFTEREVENT.DEEPSTANDBY), SCHEDULER_AFTER_EVENT_NAMES.get(SCHEDULER_AFTEREVENT.DEEPSTANDBY))
 		])
-		for callback in onJanitorCreate:
+		for callback in onSchedulerCreate:
 			callback(self)
 
 	def createSetup(self):  # NOSONAR silence S2638
 		Setup.createSetup(self)
-		for callback in onJanitorSetup:
+		for callback in onSchedulerSetup:
 			callback(self)
 
 	def keyCancel(self):
@@ -1606,18 +1606,18 @@ class JanitorEdit(Setup):
 		self.close((False,))
 
 	def keySave(self, result=None):
-		for callback in onJanitorSave:
+		for callback in onSchedulerSave:
 			callback(self)
 		if not self.timerSetEndTime.value:
 			self.timerEndTime.value = self.timerStartTime.value
 		now = int(time())
 		self.timer.resetRepeated()
 		if self.timerType.value in functionTimer.get():
-			self.timer.timerType = JANITOR_TYPE.OTHER
+			self.timer.timerType = SCHEDULER_TYPE.OTHER
 			self.timer.function = self.timerType.value
 		else:
-			self.timer.timerType = JANITOR_VALUES.get(self.timerType.value, JANITOR_TYPE.WAKEUP)
-		self.timer.afterEvent = JANITOR_AFTER_VALUES.get(self.timerAfterEvent.value, JANITOR_TYPE.NONE)
+			self.timer.timerType = SCHEDULER_VALUES.get(self.timerType.value, SCHEDULER_TYPE.WAKEUP)
+		self.timer.afterEvent = SCHEDULER_AFTER_VALUES.get(self.timerAfterEvent.value, SCHEDULER_TYPE.NONE)
 		if self.timerRepeat.value == "once":
 			date = self.timerRepeatStartDate.value
 			startTime = self.timerStartTime.value
@@ -1674,7 +1674,7 @@ class JanitorEdit(Setup):
 			ipAdresses.append(".".join("%d" % d for d in self.timerIPAddress[i].value))
 		self.timer.ipadress = ",".join(ipAdresses)
 
-		self.session.nav.Janitor.saveTimers()
+		self.session.nav.Scheduler.saveTimers()
 		for notifier in self.onSave:
 			notifier()
 		self.close((True, self.timer))

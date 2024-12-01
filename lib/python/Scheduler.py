@@ -22,15 +22,15 @@ from Tools.XMLTools import stringToXML
 # try:
 # 	from Screens.InfoBar import InfoBar
 # except Exception as err:
-# 	print("[Janitor] Error: Import of 'InfoBar' from 'Screens.InfoBar' failed!  (%s)" % str(err))
+# 	print("[Scheduler] Error: Import of 'InfoBar' from 'Screens.InfoBar' failed!  (%s)" % str(err))
 # 	InfoBar = False
 InfoBar = False
 
 MODULE_NAME = __name__.split(".")[-1]
 DEBUG = config.crash.debugTimers.value
 
-TIMER_XML_FILE = resolveFilename(SCOPE_CONFIG, "janitor.xml")
-TIMER_FLAG_FILE = "/tmp/was_janitor_wakeup"
+TIMER_XML_FILE = resolveFilename(SCOPE_CONFIG, "scheduler.xml")
+TIMER_FLAG_FILE = "/tmp/was_scheduler_wakeup"
 
 wasTimerWakeup = False
 DSsave = False
@@ -91,7 +91,7 @@ def parseEvent(event):
 	return (begin, end)
 
 
-class Janitor(Timer):
+class Scheduler(Timer):
 	def __init__(self):
 		Timer.__init__(self)
 
@@ -104,10 +104,10 @@ class Janitor(Timer):
 				try:
 					rename(TIMER_XML_FILE, f"{TIMER_XML_FILE}_bad")
 				except OSError as err:
-					print(f"[Janitor] Error {err.errno}: Unable to rename corrupt timer file out of the way!  ({err.strerror})")
+					print(f"[Scheduler] Error {err.errno}: Unable to rename corrupt timer file out of the way!  ({err.strerror})")
 				return
 		else:
-			print(f"[Janitor] Note: The timer file '{TIMER_XML_FILE}' was not found!")
+			print(f"[Scheduler] Note: The timer file '{TIMER_XML_FILE}' was not found!")
 			return
 		check = True  # Display a message when at least one timer overlaps another one.
 		for timer in timerDom.findall("timer"):
@@ -178,7 +178,7 @@ class Janitor(Timer):
 				fsync(fd.fileno())
 			rename(f"{TIMER_XML_FILE}.writing", TIMER_XML_FILE)
 		except OSError as err:
-			print(f"[Janitor] Error {err.errno}: Unable to save timer entries to '{TIMER_XML_FILE}'!  ({err.strerror})")
+			print(f"[Scheduler] Error {err.errno}: Unable to save timer entries to '{TIMER_XML_FILE}'!  ({err.strerror})")
 
 	def createTimer(self, timerDom):
 		begin = int(timerDom.get("begin"))
@@ -206,7 +206,7 @@ class Janitor(Timer):
 		repeated = timerDom.get("repeated")
 		autosleepbegin = int(timerDom.get("autosleepbegin") or begin)
 		autosleepend = int(timerDom.get("autosleepend") or end)
-		entry = JanitorEntry(begin, end, disabled, afterevent, timertype)
+		entry = SchedulerEntry(begin, end, disabled, afterevent, timertype)
 		entry.repeated = int(repeated)
 		entry.autosleepinstandbyonly = timerDom.get("autosleepinstandbyonly", "no")
 		entry.autosleepdelay = int(timerDom.get("autosleepdelay", "0"))
@@ -228,7 +228,7 @@ class Janitor(Timer):
 	#
 	def doActivate(self, timer):
 		if timer.shouldSkip():
-			timer.state = JanitorEntry.StateEnded
+			timer.state = SchedulerEntry.StateEnded
 		else:
 			# When active returns True this means "accepted", otherwise the current
 			# state is kept. The timer entry itself will fix up the delay.
@@ -237,13 +237,13 @@ class Janitor(Timer):
 		try:
 			self.timer_list.remove(timer)
 		except ValueError:
-			print("[Janitor] Remove timer from timer list failed!")
-		if timer.state < JanitorEntry.StateEnded:  # Did this timer reached the last state?
+			print("[Scheduler] Remove timer from timer list failed!")
+		if timer.state < SchedulerEntry.StateEnded:  # Did this timer reached the last state?
 			insort(self.timer_list, timer)  # No, sort it into active list.
 		else:  # Yes, process repeated, and re-add.
 			if timer.repeated:
 				timer.processRepeated()
-				timer.state = JanitorEntry.StateWaiting
+				timer.state = SchedulerEntry.StateWaiting
 				self.addTimerEntry(timer)
 			else:
 
@@ -271,7 +271,7 @@ class Janitor(Timer):
 				if nextAct + 3 < now:
 					continue
 				if getNextStbPowerOn and DEBUG:
-					print(f"[Janitor] Next STB power up {strftime('%a, %Y/%m/%d %H:%M', localtime(nextAct))}.")
+					print(f"[Scheduler] Next STB power up {strftime('%a, %Y/%m/%d %H:%M', localtime(nextAct))}.")
 				nextTimerType = None
 				nextAfterEvent = None
 				if nextPTlist[0][0] == -1:
@@ -309,14 +309,14 @@ class Janitor(Timer):
 			ae = []
 			now = int(time())
 			if DEBUG:
-				print("[Janitor] +++++++++++++++")
+				print("[Scheduler] +++++++++++++++")
 			for entry in nextRecTime:
 				if entry[0] < now + 900:
 					tt.append(entry[1])
 				if entry[0] < now + 900:
 					ae.append(entry[2])
 				if DEBUG:
-					print(f"[Janitor] {ctime(entry[0])} {str(entry)}.")
+					print(f"[Scheduler] {ctime(entry[0])} {str(entry)}.")
 			if TIMERTYPE.RESTART not in tt:
 				RSsave = False
 			if TIMERTYPE.REBOOT not in tt:
@@ -326,9 +326,9 @@ class Janitor(Timer):
 			if AFTEREVENT.DEEPSTANDBY not in ae:
 				aeDSsave = False
 			if DEBUG:
-				print(f"[Janitor] RSsave={RSsave}, RBsave={RBsave}, DSsave={DSsave}, aeDSsave={aeDSsave}, wasTimerWakeup={wasTimerWakeup}")
+				print(f"[Scheduler] RSsave={RSsave}, RBsave={RBsave}, DSsave={DSsave}, aeDSsave={aeDSsave}, wasTimerWakeup={wasTimerWakeup}")
 			if DEBUG:
-				print("[Janitor] +++++++++++++++")
+				print("[Scheduler] +++++++++++++++")
 			if config.timeshift.isRecording.value:
 				if 0 < nextRecTime[0][0] < fakeTime:
 					return nextRecTime
@@ -355,7 +355,7 @@ class Janitor(Timer):
 
 	def record(self, timer, doSave=True):
 		timer.timeChanged()
-		print(f"[Janitor] Timer '{str(timer)}'.")
+		print(f"[Scheduler] Timer '{str(timer)}'.")
 		timer.Timer = self
 		self.addTimerEntry(timer)
 		if doSave:
@@ -363,15 +363,15 @@ class Janitor(Timer):
 		return None
 
 	def removeEntry(self, timer):
-		print(f"[Janitor] Remove timer '{str(timer)}'.")
+		print(f"[Scheduler] Remove timer '{str(timer)}'.")
 		timer.repeated = False  # Avoid re-queuing.
 		timer.autoincrease = False
 		timer.abort()  # Abort timer. This sets the end time to current time, so timer will be stopped.
 		if timer.state != timer.StateEnded:
 			self.timeChanged(timer)
-		# print("[Janitor] State: %s." % timer.state)
-		# print("[Janitor] In processed: %s." % timer in self.processed_timers)
-		# print("[Janitor] In running: %s." % timer in self.timer_list)
+		# print("[Scheduler] State: %s." % timer.state)
+		# print("[Scheduler] In processed: %s." % timer in self.processed_timers)
+		# print("[Scheduler] In running: %s." % timer in self.timer_list)
 		if timer.state != TimerEntry.StateEnded:  # Disable timer first.
 			timer.disable()
 		if not timer.dontSave:  # Auto increase instant timer if possible.
@@ -414,13 +414,13 @@ class Janitor(Timer):
 		return isRunning
 
 
-class JanitorEntry(TimerEntry):
+class SchedulerEntry(TimerEntry):
 	def __init__(self, begin, end, disabled=False, afterEvent=AFTEREVENT.NONE, timerType=TIMERTYPE.WAKEUP, checkOldTimers=False, autosleepdelay=60):
 		TimerEntry.__init__(self, int(begin), int(end))
-		print("[JanitorEntry] DEBUG: Running init code.")
+		print("[SchedulerEntry] DEBUG: Running init code.")
 		if checkOldTimers and self.begin < int(time()) - 1209600:
 			self.begin = int(time())
-		# Check auto Janitor.
+		# Check auto Scheduler.
 		if (timerType == TIMERTYPE.AUTOSTANDBY or timerType == TIMERTYPE.AUTODEEPSTANDBY) and not disabled and int(time()) > 3600 and self.begin > int(time()):
 			self.begin = int(time())  # The begin is in the future -> set to current time = no start delay of this timer.
 		if self.end < self.begin:
@@ -470,9 +470,9 @@ class JanitorEntry(TimerEntry):
 		if getType:
 			return timertype
 		if not self.disabled:
-			return f"JanitorEntry(type={timertype}, begin={ctime(self.begin)})"
+			return f"SchedulerEntry(type={timertype}, begin={ctime(self.begin)})"
 		else:
-			return f"JanitorEntry(type={timertype}, begin={ctime(self.begin)} Disabled)"
+			return f"SchedulerEntry(type={timertype}, begin={ctime(self.begin)} Disabled)"
 
 	def activate(self):
 		global DSsave, InfoBar, RBsave, RSsave, aeDSsave, wasTimerWakeup
@@ -480,7 +480,7 @@ class JanitorEntry(TimerEntry):
 			try:
 				from Screens.InfoBar import InfoBar
 			except Exception as err:
-				print(f"[Janitor] Import 'InfoBar' from 'Screens.InfoBar' failed!  ({str(err)})")
+				print(f"[Scheduler] Import 'InfoBar' from 'Screens.InfoBar' failed!  ({str(err)})")
 		isRecTimerWakeup = breakPT = shiftPT = False
 		now = int(time())
 		nextState = self.state + 1
@@ -506,23 +506,23 @@ class JanitorEntry(TimerEntry):
 			if self.timerType == TIMERTYPE.AUTODEEPSTANDBY:
 				self.getNetworkTraffic(getInitialValue=True)
 		if nextState in (self.StateRunning, self.StateEnded):
-			if NavigationInstance.instance.Janitor is None:
+			if NavigationInstance.instance.Scheduler is None:
 				# DEBUG: Running/Ended timer at system start has no navigation instance.
-				# First fix: Crash in getPriorityCheck (NavigationInstance.instance.Janitor...).
-				# Second fix: Suppress the message "A finished Janitor wants to ...".
+				# First fix: Crash in getPriorityCheck (NavigationInstance.instance.Scheduler...).
+				# Second fix: Suppress the message "A finished Scheduler wants to ...".
 				if DEBUG:
-					print(f"[Janitor] *****NavigationInstance.instance.Janitor is None***** {self.timerType} {self.state} {ctime(self.begin)} {ctime(self.end)}.")
+					print(f"[Scheduler] *****NavigationInstance.instance.Scheduler is None***** {self.timerType} {self.state} {ctime(self.begin)} {ctime(self.end)}.")
 				return True
 			elif (nextState == self.StateRunning and abs(self.begin - now) > 900) or (nextState == self.StateEnded and abs(self.end - now) > 900):
 				if self.timerType in (TIMERTYPE.AUTODEEPSTANDBY, TIMERTYPE.AUTOSTANDBY):
-					print(f"[Janitor] Time warp detected - set new begin time for {self.__repr__(True)} timer.")
+					print(f"[Scheduler] Time warp detected - set new begin time for {self.__repr__(True)} timer.")
 					if not self.getAutoSleepWindow():
 						return False
 					else:
 						self.begin = now + autoSleepDelay
 						self.end = self.begin
 						return False
-				print(f"[Janitor] Time warp detected - timer {self.__repr__(True)} ending without action.")
+				print(f"[Scheduler] Time warp detected - timer {self.__repr__(True)} ending without action.")
 				return True
 			if NavigationInstance.instance.isRecordTimerImageStandard:
 				isRecTimerWakeup = NavigationInstance.instance.RecordTimer.isRecTimerWakeup()
@@ -539,23 +539,23 @@ class JanitorEntry(TimerEntry):
 				return True
 			elif self.timerType == TIMERTYPE.WAKEUP:
 				if DEBUG:
-					print("[Janitor] self.timerType == TIMERTYPE.WAKEUP:")
+					print("[Scheduler] self.timerType == TIMERTYPE.WAKEUP:")
 				Screens.Standby.TVinStandby.skipHdmiCecNow("wakeuppowertimer")
 				if Screens.Standby.inStandby:
 					Screens.Standby.inStandby.Power()
 				return True
 			elif self.timerType == TIMERTYPE.WAKEUPTOSTANDBY:
 				if DEBUG:
-					print("[Janitor] self.timerType == TIMERTYPE.WAKEUPTOSTANDBY:")
+					print("[Scheduler] self.timerType == TIMERTYPE.WAKEUPTOSTANDBY:")
 				return True
 			elif self.timerType == TIMERTYPE.STANDBY:
 				if DEBUG:
-					print("[Janitor] self.timerType == TIMERTYPE.STANDBY:")
+					print("[Scheduler] self.timerType == TIMERTYPE.STANDBY:")
 				prioPT = [TIMERTYPE.WAKEUP, TIMERTYPE.RESTART, TIMERTYPE.REBOOT, TIMERTYPE.DEEPSTANDBY]
 				prioPTae = [AFTEREVENT.WAKEUP, AFTEREVENT.DEEPSTANDBY]
 				shiftPT, breakPT = self.getPriorityCheck(prioPT, prioPTae)
 				if not Screens.Standby.inStandby and not breakPT:  # Not already in standby.
-					message = _("A finished JanitorEntry wants to set your %s %s to standby. Do that now?") % getBoxDisplayName()
+					message = _("A finished PowerTimer wants to set your %s %s to standby. Do that now?") % getBoxDisplayName()
 					timeout = int(config.usage.shutdown_msgbox_timeout.value)
 					if InfoBar and InfoBar.instance:
 						InfoBar.instance.openInfoBarMessageWithCallback(self.sendStandbyNotification, message, MessageBox.TYPE_YESNO, timeout=timeout, default=True)
@@ -564,7 +564,7 @@ class JanitorEntry(TimerEntry):
 				return True
 			elif self.timerType == TIMERTYPE.AUTOSTANDBY:
 				if DEBUG:
-					print("[Janitor] self.timerType == TIMERTYPE.AUTOSTANDBY:")
+					print("[Scheduler] self.timerType == TIMERTYPE.AUTOSTANDBY:")
 				if not self.getAutoSleepWindow():
 					return False
 				if not Screens.Standby.inStandby and not self.messageBoxAnswerPending:  # Not already in standby.
@@ -588,11 +588,11 @@ class JanitorEntry(TimerEntry):
 					self.end = self.begin
 			elif self.timerType == TIMERTYPE.AUTODEEPSTANDBY:
 				if DEBUG:
-					print("[Janitor] self.timerType == TIMERTYPE.AUTODEEPSTANDBY:")
+					print("[Scheduler] self.timerType == TIMERTYPE.AUTODEEPSTANDBY:")
 				if not self.getAutoSleepWindow():
 					return False
 				if isRecTimerWakeup or (self.autosleepinstandbyonly == "yes" and not Screens.Standby.inStandby) \
-				or NavigationInstance.instance.Janitor.isProcessing() or abs(NavigationInstance.instance.Janitor.getNextPowerManagerTime() - now) <= 900 or self.getNetworkAdress() or self.getNetworkTraffic() \
+				or NavigationInstance.instance.Scheduler.isProcessing() or abs(NavigationInstance.instance.Scheduler.getNextPowerManagerTime() - now) <= 900 or self.getNetworkAdress() or self.getNetworkTraffic() \
 				or NavigationInstance.instance.RecordTimer.isRecording() or abs(NavigationInstance.instance.RecordTimer.getNextRecordingTime() - now) <= 900 or abs(NavigationInstance.instance.RecordTimer.getNextZapTime() - now) <= 900:
 					self.do_backoff()
 					self.begin = self.end = int(now) + self.backoff  # Retry.
@@ -601,7 +601,7 @@ class JanitorEntry(TimerEntry):
 					if self.autosleeprepeat == "once":
 						self.disabled = True
 					if Screens.Standby.inStandby or self.autosleepinstandbyonly == "noquery":  # In standby or option "without query" is enabled.
-						print("[Janitor] quitMainloop #1.")
+						print("[Scheduler] quitMainloop #1.")
 						quitMainloop(1)
 						return True
 					elif not self.messageBoxAnswerPending:
@@ -621,18 +621,18 @@ class JanitorEntry(TimerEntry):
 					self.end = self.begin
 			elif self.timerType == TIMERTYPE.RESTART:
 				if DEBUG:
-					print("[Janitor] self.timerType == TIMERTYPE.RESTART:")
+					print("[Scheduler] self.timerType == TIMERTYPE.RESTART:")
 				prioPT = [TIMERTYPE.RESTART, TIMERTYPE.REBOOT, TIMERTYPE.DEEPSTANDBY]  # Check priority.
 				prioPTae = [AFTEREVENT.DEEPSTANDBY]
 				shiftPT, breakPT = self.getPriorityCheck(prioPT, prioPTae)
 				if RBsave or aeDSsave or DSsave:  # A timer with higher priority was shifted - no execution of current timer.
 					if DEBUG:
-						print("[Janitor] Break #1.")
+						print("[Scheduler] Break #1.")
 					breakPT = True
 				# NOTE: This code can *NEVER* run!
 				# if False:  # A timer with lower priority was shifted - shift now current timer and wait for restore the saved time values from other timer.
 				# 	if DEBUG:
-				# 		print("[Janitor] Shift #1.")
+				# 		print("[Scheduler] Shift #1.")
 				# 	breakPT = False
 				# 	shiftPT = True
 				if isRecTimerWakeup or shiftPT or breakPT or NavigationInstance.instance.RecordTimer.isRecording() or abs(NavigationInstance.instance.RecordTimer.getNextRecordingTime() - now) <= 900 or abs(NavigationInstance.instance.RecordTimer.getNextZapTime() - now) <= 900:
@@ -669,7 +669,7 @@ class JanitorEntry(TimerEntry):
 						except Exception:
 							pass
 					if Screens.Standby.inStandby:  # In standby.
-						print("[Janitor] quitMainloop #4.")
+						print("[Scheduler] quitMainloop #4.")
 						quitMainloop(3)
 					else:
 						message = _("A finished PowerTimer wants to restart the user interface. Do that now?")
@@ -682,17 +682,17 @@ class JanitorEntry(TimerEntry):
 				return True
 			elif self.timerType == TIMERTYPE.REBOOT:
 				if DEBUG:
-					print("[Janitor] self.timerType == TIMERTYPE.REBOOT:")
+					print("[Scheduler] self.timerType == TIMERTYPE.REBOOT:")
 				prioPT = [TIMERTYPE.REBOOT, TIMERTYPE.DEEPSTANDBY]  # Check priority.
 				prioPTae = [AFTEREVENT.DEEPSTANDBY]
 				shiftPT, breakPT = self.getPriorityCheck(prioPT, prioPTae)
 				if aeDSsave or DSsave:  # A timer with higher priority was shifted - no execution of current timer.
 					if DEBUG:
-						print("[Janitor] Break #1.")
+						print("[Scheduler] Break #1.")
 					breakPT = True
 				if RSsave:  # A timer with lower priority was shifted - shift now current timer and wait for restore the saved time values from other timer.
 					if DEBUG:
-						print("[Janitor] Shift #1.")
+						print("[Scheduler] Shift #1.")
 					breakPT = False
 					shiftPT = True
 				if isRecTimerWakeup or shiftPT or breakPT or NavigationInstance.instance.RecordTimer.isRecording() or abs(NavigationInstance.instance.RecordTimer.getNextRecordingTime() - now) <= 900 or abs(NavigationInstance.instance.RecordTimer.getNextZapTime() - now) <= 900:
@@ -729,7 +729,7 @@ class JanitorEntry(TimerEntry):
 						except Exception:
 							pass
 					if Screens.Standby.inStandby:  # In standby.
-						print("[Janitor] quitMainloop #3.")
+						print("[Scheduler] quitMainloop #3.")
 						quitMainloop(2)
 					else:
 						message = _("A finished PowerTimer wants to reboot your %s %s. Do that now?") % getBoxDisplayName()
@@ -742,18 +742,18 @@ class JanitorEntry(TimerEntry):
 				return True
 			elif self.timerType == TIMERTYPE.DEEPSTANDBY:
 				if DEBUG:
-					print("[Janitor] self.timerType == TIMERTYPE.DEEPSTANDBY:")
+					print("[Scheduler] self.timerType == TIMERTYPE.DEEPSTANDBY:")
 				prioPT = [TIMERTYPE.WAKEUP, TIMERTYPE.WAKEUPTOSTANDBY, TIMERTYPE.DEEPSTANDBY]  # Check priority.
 				prioPTae = [AFTEREVENT.WAKEUP, AFTEREVENT.WAKEUPTOSTANDBY, AFTEREVENT.DEEPSTANDBY]
 				shiftPT, breakPT = self.getPriorityCheck(prioPT, prioPTae)
 				# NOTE: This code can *NEVER* run!
 				# if False:  # A timer with higher priority was shifted - no execution of current timer.
 				# 	if DEBUG:
-				# 		print("[Janitor] Break #1.")
+				# 		print("[Scheduler] Break #1.")
 				# 	breakPT = True
 				if RSsave or RBsave or aeDSsave:  # A timer with lower priority was shifted - shift now current timer and wait for restore the saved time values from other timer.
 					if DEBUG:
-						print("[Janitor] Shift #1.")
+						print("[Scheduler] Shift #1.")
 					breakPT = False
 					shiftPT = True
 				if isRecTimerWakeup or shiftPT or breakPT or NavigationInstance.instance.RecordTimer.isRecording() or abs(NavigationInstance.instance.RecordTimer.getNextRecordingTime() - now) <= 900 or abs(NavigationInstance.instance.RecordTimer.getNextZapTime() - now) <= 900:
@@ -790,7 +790,7 @@ class JanitorEntry(TimerEntry):
 						except Exception:
 							pass
 					if Screens.Standby.inStandby:  # In standby.
-						print("[Janitor] quitMainloop #2.")
+						print("[Scheduler] quitMainloop #2.")
 						quitMainloop(1)
 					else:
 						message = _("A finished PowerTimer wants to shut down your %s %s. Do that now?") % getBoxDisplayName()
@@ -803,7 +803,7 @@ class JanitorEntry(TimerEntry):
 				return True
 			elif self.timerType == TIMERTYPE.OTHER and self.function:
 				if DEBUG:
-					print(f"[Janitor] self.timerType == TIMERTYPE.OTHER: / function = {self.function}")
+					print(f"[Scheduler] self.timerType == TIMERTYPE.OTHER: / function = {self.function}")
 				functionTimerEntry = functionTimer.getItem(self.function)
 				if functionTimerEntry:
 					functionTimerEntryFunction = functionTimerEntry.get("fnc")
@@ -850,22 +850,22 @@ class JanitorEntry(TimerEntry):
 						AddNotificationWithCallback(self.sendStandbyNotification, MessageBox, message, MessageBox.TYPE_YESNO, timeout=timeout, default=True)
 			elif self.afterEvent == AFTEREVENT.DEEPSTANDBY:
 				if DEBUG:
-					print("[Janitor] self.afterEvent == AFTEREVENT.DEEPSTANDBY:")
+					print("[Scheduler] self.afterEvent == AFTEREVENT.DEEPSTANDBY:")
 				prioPT = [TIMERTYPE.WAKEUP, TIMERTYPE.WAKEUPTOSTANDBY, TIMERTYPE.DEEPSTANDBY]  # Check priority.
 				prioPTae = [AFTEREVENT.WAKEUP, AFTEREVENT.WAKEUPTOSTANDBY, AFTEREVENT.DEEPSTANDBY]
 				shiftPT, breakPT = self.getPriorityCheck(prioPT, prioPTae)
 				if DSsave:  # A timer with higher priority was shifted - no execution of current timer.
 					if DEBUG:
-						print("[Janitor] Break #1.")
+						print("[Scheduler] Break #1.")
 					breakPT = True
 				if RSsave or RBsave:  # A timer with lower priority was shifted - shift now current timer and wait for restore the saved time values.
 					if DEBUG:
-						print("[Janitor] Shift #1.")
+						print("[Scheduler] Shift #1.")
 					breakPT = False
 					shiftPT = True
 				runningPT = False
-				# Option: Check other Janitor is running (currently disabled).
-				# runningPT = NavigationInstance.instance.Janitor.isProcessing(exceptTimer = TIMERTYPE.NONE, endedTimer = self.timerType)
+				# Option: Check other Scheduler is running (currently disabled).
+				# runningPT = NavigationInstance.instance.Scheduler.isProcessing(exceptTimer = TIMERTYPE.NONE, endedTimer = self.timerType)
 				if isRecTimerWakeup or shiftPT or breakPT or runningPT or NavigationInstance.instance.RecordTimer.isRecording() or abs(NavigationInstance.instance.RecordTimer.getNextRecordingTime() - now) <= 900 or abs(NavigationInstance.instance.RecordTimer.getNextZapTime() - now) <= 900:
 					if self.repeated and not aeDSsave:
 						self.savebegin = self.begin
@@ -892,7 +892,7 @@ class JanitorEntry(TimerEntry):
 						except Exception:
 							pass
 					if Screens.Standby.inStandby:  # In standby.
-						print("[Janitor] quitMainloop #5.")
+						print("[Scheduler] quitMainloop #5.")
 						quitMainloop(1)
 					else:
 						message = _("A finished PowerTimer wants to shut down your %s %s. Do that now?") % getBoxDisplayName()
@@ -902,7 +902,7 @@ class JanitorEntry(TimerEntry):
 						else:
 							AddNotificationWithCallback(self.sendTryQuitMainloopNotification, MessageBox, message, MessageBox.TYPE_YESNO, timeout=timeout, default=True)
 				aeDSsave = False
-			NavigationInstance.instance.Janitor.saveTimers()
+			NavigationInstance.instance.Scheduler.saveTimers()
 			self.resetTimerWakeup()
 			return True
 
@@ -911,7 +911,7 @@ class JanitorEntry(TimerEntry):
 		if exists(TIMER_FLAG_FILE):
 			remove(TIMER_FLAG_FILE)
 			if DEBUG:
-				print("[Janitor] Reset wakeup state.")
+				print("[Scheduler] Reset wakeup state.")
 		wasTimerWakeup = False
 
 	def getNextActivation(self):
@@ -950,7 +950,7 @@ class JanitorEntry(TimerEntry):
 		if not self.autoincrease:
 			return False
 		newEnd = int(time()) + self.autoincreasetime if timer is None else timer.begin - 30
-		dummyTimer = JanitorEntry(self.begin, newEnd, disabled=True, afterEvent=self.afterEvent, timerType=self.timerType)
+		dummyTimer = SchedulerEntry(self.begin, newEnd, disabled=True, afterEvent=self.afterEvent, timerType=self.timerType)
 		dummyTimer.disabled = self.disabled
 		timerSanityCheck = TimerSanityCheck(NavigationInstance.instance.PowerManager.timer_list, dummyTimer)
 		if not timerSanityCheck.check():
@@ -1027,24 +1027,24 @@ class JanitorEntry(TimerEntry):
 	def getPriorityCheck(self, prioPT, prioPTae):
 		shiftPT = False
 		breakPT = False
-		nextPTlist = NavigationInstance.instance.Janitor.getNextPowerManagerTime(getNextTimerTyp=True)
+		nextPTlist = NavigationInstance.instance.Scheduler.getNextPowerManagerTime(getNextTimerTyp=True)
 		for timer in nextPTlist:
 			if abs(timer[0] - int(time())) > 900:  # Check timers within next 15 minutes will start or end.
 				continue
 			if timer[1] is None and timer[2] is None and timer[3] is None:  # Faketime.
 				if DEBUG:
-					print(f"[Janitor] Shift #2 - Timer is fake time {ctime(timer[0])} {str(timer)}.")
+					print(f"[Scheduler] Shift #2 - Timer is fake time {ctime(timer[0])} {str(timer)}.")
 				shiftPT = True
 				continue
 			if timer[0] == self.begin and timer[1] == self.timerType and timer[2] is None and timer[3] == self.state or timer[0] == self.end and timer[1] is None and timer[2] == self.afterEvent and timer[3] == self.state:  # Is timer in list itself?
 				if DEBUG:
-					print(f"[Janitor] Timer is itself {ctime(timer[0])} {str(timer)}.")
+					print(f"[Scheduler] Timer is itself {ctime(timer[0])} {str(timer)}.")
 				nextPTitself = True
 			else:
 				nextPTitself = False
 			if (timer[1] in prioPT or timer[2] in prioPTae) and not nextPTitself:
 				if DEBUG:
-					print(f"[Janitor] Break #2 <= 900 {ctime(timer[0])} {str(timer)}.")
+					print(f"[Scheduler] Break #2 <= 900 {ctime(timer[0])} {str(timer)}.")
 				breakPT = True
 				break
 		return shiftPT, breakPT
@@ -1100,7 +1100,7 @@ class JanitorEntry(TimerEntry):
 						retVal = True
 						break
 			except Exception:
-				print(f"[Janitor] Error reading IP -> {self.ipadress}!")
+				print(f"[Scheduler] Error reading IP -> {self.ipadress}!")
 		return retVal
 
 	def getNetworkTraffic(self, getInitialValue=False):
@@ -1116,7 +1116,7 @@ class JanitorEntry(TimerEntry):
 				if getInitialValue:
 					self.netbytes = newBytes
 					self.netbytes_time = now
-					print(f"[Janitor] NetworkTraffic: Initial bytes={newBytes}, time is {ctime(now)}.")
+					print(f"[Scheduler] NetworkTraffic: Initial bytes={newBytes}, time is {ctime(now)}.")
 					return
 				oldBytes = self.netbytes
 				seconds = now - self.netbytes_time
@@ -1124,14 +1124,14 @@ class JanitorEntry(TimerEntry):
 				self.netbytes_time = now
 				diffBytes = float(newBytes - oldBytes) * 8.0 / 1024.0 / seconds  # In kbit/s.
 				if diffBytes < 0:
-					print("[Janitor] NetworkTraffic: Overflow of interface counter, waiting for next value.")
+					print("[Scheduler] NetworkTraffic: Overflow of interface counter, waiting for next value.")
 					return True
 				else:
-					print(f"[Janitor] NetworkTraffic: {diffBytes:0.2f} Kbps ({diffBytes / 8.0 / 1024.0 * seconds:0.2f} MByte in {seconds} seconds), actualBytes={newBytes}, time is {ctime(now)}.")
+					print(f"[Scheduler] NetworkTraffic: {diffBytes:0.2f} Kbps ({diffBytes / 8.0 / 1024.0 * seconds:0.2f} MByte in {seconds} seconds), actualBytes={newBytes}, time is {ctime(now)}.")
 				if diffBytes > self.trafficlimit:
 					return True
 			else:
-				print("[Janitor] NetworkTraffic: Unable to access network traffic information! (Try 'cat /proc/net/dev' for testing on command line.)")
+				print("[Scheduler] NetworkTraffic: Unable to access network traffic information! (Try 'cat /proc/net/dev' for testing on command line.)")
 		return False
 
 

@@ -18,4 +18,4 @@ install_PYTHON = \
 	timer.py \
 	upgrade.py \
 	PowerTimer.py \
-	Janitor.py
+	Scheduler.py
