@@ -174,14 +174,23 @@ class MountManager(Screen):
 		devicePixmap = LoadPixmap(resolveFilename(SCOPE_GUISKIN, self.DEVICE_TYPES[deviceType][self.DEVICE_TYPES_ICON]))
 		deviceName = self.DEVICE_TYPES[deviceType][self.DEVICE_TYPES_NAME]
 		deviceName = f"{deviceName}{model}"
-		for line in self.mounts:
-			if line.find(device) != -1:
-				parts = line.strip().split()
-				d1 = parts[1]
-				dtype = parts[2]
-				rw = parts[3]
-				# break - Use the last mount if the divice exists multiple times
-			else:
+		print("device")
+		print(device)
+		print("device2")
+		print(device2)
+		print("self.mounts")
+		print(self.mounts)
+
+		found = 0
+		for line in [line for line in self.mounts if line.find(device) != -1]:
+			parts = line.strip().split()
+			d1 = parts[1]
+			dtype = parts[2]
+			rw = parts[3]
+			found += 1
+
+		if found == 0:
+			for line in [line for line in self.mounts if line.find(device) == -1]:
 				if device in self.swapDevices:
 					parts = line.strip().split()
 					d1 = _("None")
@@ -198,9 +207,13 @@ class MountManager(Screen):
 			if line.find(device) != -1:
 				parts = line.strip().split()
 				size = int(parts[2]) * 1024
+				print("size 1")
+				print(size)
 				break
 		if not size:
 			size = fileReadLine(join("/sys/block", device2, device, "size"), default=None, source=MODULE_NAME)
+			print("size 2")
+			print(size)
 			try:
 				size = int(size) * 512
 			except ValueError:
@@ -244,6 +257,9 @@ class MountManager(Screen):
 	def keyMountPoint(self):
 		def keyMountPointCallback(answer):
 			def keyMountPointCallback2(result=None, retval=None, extra_args=None):
+				print("keyMountPointCallback2")
+				print(retval)
+				print(result)
 				reboot = False
 				isMounted = current[5]
 				mountp = current[3]
@@ -260,14 +276,18 @@ class MountManager(Screen):
 				newFstab = [l for l in newFstab if answerMoutPoint not in l]
 				newFstab = [l for l in newFstab if deviceP not in l]
 				newFstab = [l for l in newFstab if deviceUuid not in l]
+				print("newFstab A")
+				print(newFstab)
 				if answer[1] != "None":
-					newFstab.append(f"UUID={deviceUuid}\t{answerMoutPoint}\t{answerFS}\t{answerOptions}\t0 0\n")
+					newFstab.append(f"UUID={deviceUuid}\t{answerMoutPoint}\t{answerFS}\t{answerOptions}\t0 0")
+				print("newFstab B")
+				print(newFstab)
 				fileWriteLines("/etc/fstab", newFstab, source=MODULE_NAME)
 				if answerMoutPoint != "None":
 					if not exists(answerMoutPoint):
 						mkdir(answerMoutPoint, 0o755)
-				self.console.eBatch([f"{self.MOUNT} -a", "sync", "sleep 1"], keyMountPointCallback2)
-#				self.console.ePopen([self.MOUNT, self.MOUNT, "-a"], keyMountPointCallback2)
+#				self.console.eBatch([f"{self.MOUNT} -a", "sync", "sleep 1"], keyMountPointCallback2)
+				self.console.ePopen([self.MOUNT, self.MOUNT, "-a"], keyMountPointCallback2)
 
 		if self.deviceList:
 			current = self["devicelist"].getCurrent()
@@ -369,9 +389,9 @@ class MountManagerMountPoint(Setup):
 				fileSystems.append("fuseblk")
 			fileSystems.extend(["hfsplus", "btrfs", "xfs"])
 		fileSystemChoices = [(x, x) for x in fileSystems]
-		self.fileSystem = NoSave(ConfigSelection(default=fileSystems[0][0], choices=fileSystemChoices))
-		self.options = NoSave(ConfigText("default"))
-		Setup.__init__(self, session=session, setup="MountManagerMountPoint")
+		self.fileSystem = NoSave(ConfigSelection(default=fileSystems[0], choices=fileSystemChoices))
+		self.options = NoSave(ConfigText("defaults"))
+		Setup.__init__(self, session=session, setup="MountPoint")
 		self.setTitle(_("Select the new mount point for: '%s'") % device)
 
 	def changedEntry(self):

@@ -555,8 +555,8 @@
 	</setup>
 	<setup key="MountPoint" title="Mountpoint">
 		<item text="Mountpoint" description="Select the mountpoint for the device.">self.mountPoint</item>
-		<if conditional="self.mountPoint.value">
-			<item text="Custom mountpoint" description="Define the custom ountpoint for the device." conditional="self.mountPoint.value=='custom'">self.customMountPoint</item>
+		<if conditional="self.mountPoint.value!='None'">
+			<item text="Custom mountpoint" description="Define the custom ountpoint for the device." conditional="self.mountPoint.value==''">self.customMountPoint</item>
 			<item text="Filesystem" description="Select the filesystem for the device.">self.fileSystem</item>
 			<item text="Options" description="Define the filesystem mount options.">self.options</item>
 		</if>
