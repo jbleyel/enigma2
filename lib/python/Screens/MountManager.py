@@ -113,7 +113,10 @@ class MountManager(Screen):
 			else:
 				name = ""
 				description = ""
-			self["key_yellow"].setText(_("Unmount") if isMounted else _("Mount"))
+			if ":None" in current[9]:
+				self["key_yellow"].setText(_("Activate"))
+			else:
+				self["key_yellow"].setText(_("Unmount") if isMounted else _("Mount"))
 			for callback in self.onChangedEntry:
 				if callback and callable(callback):
 					callback(name, description)
@@ -226,7 +229,6 @@ class MountManager(Screen):
 				rw = " R/O"
 			else:
 				rw = ""
-			des = f"{size}\t{_("Mount: ")}{d1}\n{_("Device: ")}{join("/dev", device)}\t{_("Type: ")}{dtype}{rw}"
 			mountP = d1
 			deviceP = f"/dev/{device}"
 			isMounted = len([m for m in self.mounts if mountP in m])
@@ -237,6 +239,9 @@ class MountManager(Screen):
 			for known in self.knownDevices:
 				if UUID in known:
 					knownDevice = known
+			if ":None" in knownDevice:
+				d1 = "Ignore"
+			des = f"{size}\t{_("Mount: ")}{d1}\n{_("Device: ")}{join("/dev", device)}\t{_("Type: ")}{dtype}{rw}"
 			for fstab in self.fstab:
 				fstabData = fstab.split()
 				if fstabData:
@@ -260,12 +265,11 @@ class MountManager(Screen):
 				print("keyMountPointCallback2")
 				print(retval)
 				print(result)
-				reboot = False
 				isMounted = current[5]
 				mountp = current[3]
 				device = current[4]
 				self.updateDevices()
-				if answer[1] == "None" or device != current[4] or current[5] != isMounted or mountp != current[3]:
+				if answer[0] == "None" or device != current[4] or current[5] != isMounted or mountp != current[3]:
 					self.needReboot = True
 
 			if answer:
@@ -278,7 +282,9 @@ class MountManager(Screen):
 				newFstab = [l for l in newFstab if deviceUuid not in l]
 				print("newFstab A")
 				print(newFstab)
-				if answer[1] != "None":
+				print("answer")
+				print(answer)
+				if answer[0] != "None":
 					newFstab.append(f"UUID={deviceUuid}\t{answerMoutPoint}\t{answerFS}\t{answerOptions}\t0 0")
 				print("newFstab B")
 				print(newFstab)
@@ -320,25 +326,29 @@ class MountManager(Screen):
 
 		current = self["devicelist"].getCurrent()
 		if current:
-			isMounted = current[5]
-			mountp = current[3]
-			device = current[4]
-			if isMounted:
-				self.console.ePopen([self.UMOUNT, self.UMOUNT, mountp])
-				try:
-					mounts = open("/proc/mounts")
-				except OSError:
-					return -1
-				mountcheck = mounts.readlines()
-				mounts.close()
-				for line in mountcheck:
-					parts = line.strip().split(" ")
-					if realpath(parts[0]).startswith(device):
-						self.session.open(MessageBox, _("Can't unmount partition, make sure it is not being used for swap or record/time shift paths"), MessageBox.TYPE_INFO)
+			if ":None" in current[9]:
+				self.knownDevices.remove(current[9])
+				fileWriteLines("/etc/udev/known_devices", self.knownDevices, source=MODULE_NAME)
 			else:
-				title = _("Select the new mount point for: '%s'") % current[11]
-				choiceList = [(f"/media/{x}", f"/media/{x}") for x in self.getMountPoints(current[10])]
-				self.session.openWithCallback(keyYellowCallback, ChoiceBox, choiceList=choiceList, buttonList=[], windowTitle=title)
+				isMounted = current[5]
+				mountp = current[3]
+				device = current[4]
+				if isMounted:
+					self.console.ePopen([self.UMOUNT, self.UMOUNT, mountp])
+					try:
+						mounts = open("/proc/mounts")
+					except OSError:
+						return -1
+					mountcheck = mounts.readlines()
+					mounts.close()
+					for line in mountcheck:
+						parts = line.strip().split(" ")
+						if parts[1] == mountp:
+							self.session.open(MessageBox, _("Can't unmount partition, make sure it is not being used for swap or record/time shift paths"), MessageBox.TYPE_INFO)
+				else:
+					title = _("Select the new mount point for: '%s'") % current[11]
+					choiceList = [(f"/media/{x}", f"/media/{x}") for x in self.getMountPoints(current[10])]
+					self.session.openWithCallback(keyYellowCallback, ChoiceBox, choiceList=choiceList, buttonList=[], windowTitle=title)
 			self.updateDevices()
 
 	def keyBlue(self):
@@ -353,6 +363,12 @@ class MountManager(Screen):
 			case _:
 				result = []
 		result.extend(["hdd", "hdd2", "hdd3"])
+		for dev in result[:]:
+			for fstab in self.fstab:
+				if fstab:
+					fstabData = fstab.split()
+					if fstabData[1] == f"/media/{dev}":
+						result.remove(dev)
 		return result
 
 	def createSummary(self):

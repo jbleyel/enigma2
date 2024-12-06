@@ -68,6 +68,7 @@ def autostart(reason, **kwargs):
 
 class HotPlugManager:
 	def __init__(self):
+		self.newCount = 0
 		self.timer = eTimer()
 		self.timer.callback.append(self.processDeviceData)
 		self.deviceData = []
@@ -120,6 +121,8 @@ class HotPlugManager:
 
 				def newDeviceCallback(answer):
 					if answer:
+						if answer in (2, 3):
+							self.newCount += 1
 						fstab = fileReadLines("/etc/fstab")
 						if answer in (2, 3) and not exists(mountPoint):
 							mkdir(mountPoint, 0o755)
@@ -162,7 +165,9 @@ class HotPlugManager:
 			else:
 				self.timer.start(1000)
 		else:
-			harddiskmanager.enumerateBlockDevices()
+			if self.newCount:
+				self.newCount = 0
+				harddiskmanager.enumerateBlockDevices()
 
 	def processHotplugData(self, eventData):
 		mode = eventData.get("mode")
