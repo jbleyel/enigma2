@@ -5,7 +5,6 @@ from time import localtime, mktime, strftime, time
 from enigma import BT_SCALE, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, eEPGCache, eLabel, eListbox, eListboxPythonMultiContent, eSize, eTimer
 
 from Scheduler import AFTEREVENT as SCHEDULER_AFTEREVENT, SchedulerEntry, TIMERTYPE as SCHEDULER_TYPE, functionTimer
-from PowerTimer import AFTEREVENT as POWER_AFTEREVENT, PowerTimerEntry, TIMERTYPE as POWER_TIMERTYPE
 from RecordTimer import AFTEREVENT as RECORD_AFTEREVENT, RecordTimerEntry, TIMERTYPE as RECORD_TIMERTYPE, parseEvent
 from ServiceReference import ServiceReference
 from skin import parseBoolean, parseFont, parseInteger
@@ -36,7 +35,7 @@ from Tools.LoadPixmap import LoadPixmap
 
 # Timer modes.
 #
-MODE_POWER = 0
+MODE_SCHEDULER = 0
 MODE_ENERGY = 1
 MODE_SLEEP = 2
 MODE_RECORD = 3
@@ -45,7 +44,7 @@ MODE_CONFLICT = 4
 # Timer mode data.
 #
 MODE_DATA = {  # Skin name, Screen title, ActionMap description
-	MODE_POWER: ("PowerTimerOverview", _("PowerTimer Overview"), _("PowerTimer Actions")),
+	MODE_SCHEDULER: ("SchedulerOverview", _("PowerTimer Overview"), _("PowerTimer Actions")),
 	MODE_ENERGY: ("EnergyTimerOverview", _("EnergyTimer Overview"), _("EnergyTimer Actions")),
 	MODE_SLEEP: ("SleepTimerOverview", _("SleepTimer Overview"), _("SleepTimer Actions")),
 	MODE_RECORD: ("RecordTimerOverview", _("RecordTimer Overview"), _("RecordTimer Actions")),
@@ -117,17 +116,6 @@ TIMER_STATES = {
 	TimerEntry.StateDisabled: _("Disabled")
 }
 DEEPSTANDBY_SUPPORT = BoxInfo.getItem("DeepstandbySupport")
-POWERTIMER_TYPES = {
-	POWER_TIMERTYPE.NONE: "nothing",
-	POWER_TIMERTYPE.WAKEUP: "wakeup",
-	POWER_TIMERTYPE.WAKEUPTOSTANDBY: "wakeuptostandby",
-	POWER_TIMERTYPE.AUTOSTANDBY: "autostandby",
-	POWER_TIMERTYPE.AUTODEEPSTANDBY: "autodeepstandby",
-	POWER_TIMERTYPE.STANDBY: "standby",
-	POWER_TIMERTYPE.DEEPSTANDBY: "deepstandby",
-	POWER_TIMERTYPE.REBOOT: "reboot",
-	POWER_TIMERTYPE.RESTART: "restart"
-}
 
 SCHEDULER_TYPES = {
 	SCHEDULER_TYPE.NONE: "nothing",
@@ -168,31 +156,6 @@ SCHEDULER_AFTER_EVENT_NAMES = {
 	SCHEDULER_AFTEREVENT.DEEPSTANDBY: _("Go to deep standby") if DEEPSTANDBY_SUPPORT else _("Shut down")
 }
 
-POWERTIMER_VALUES = dict([(POWERTIMER_TYPES[x], x) for x in POWERTIMER_TYPES.keys()])
-POWERTIMER_TYPE_NAMES = {
-	POWER_TIMERTYPE.AUTODEEPSTANDBY: _("Auto deep standby") if DEEPSTANDBY_SUPPORT else _("Auto shut down"),
-	POWER_TIMERTYPE.AUTOSTANDBY: _("Auto standby"),
-	POWER_TIMERTYPE.DEEPSTANDBY: _("Deep standby") if DEEPSTANDBY_SUPPORT else _("Shut down"),
-	POWER_TIMERTYPE.NONE: _("Do nothing"),
-	POWER_TIMERTYPE.REBOOT: _("Reboot"),
-	POWER_TIMERTYPE.RESTART: _("Restart GUI"),
-	POWER_TIMERTYPE.STANDBY: _("Standby"),
-	POWER_TIMERTYPE.WAKEUP: _("Wake up"),
-	POWER_TIMERTYPE.WAKEUPTOSTANDBY: _("Wake up to standby")
-}
-POWERTIMER_AFTER_EVENTS = {
-	POWER_AFTEREVENT.NONE: "nothing",
-	POWER_AFTEREVENT.WAKEUPTOSTANDBY: "wakeuptostandby",
-	POWER_AFTEREVENT.STANDBY: "standby",
-	POWER_AFTEREVENT.DEEPSTANDBY: "deepstandby"
-}
-POWERTIMER_AFTER_VALUES = dict([(POWERTIMER_AFTER_EVENTS[x], x) for x in POWERTIMER_AFTER_EVENTS.keys()])
-POWERTIMER_AFTER_EVENT_NAMES = {
-	POWER_AFTEREVENT.NONE: _("Do nothing"),
-	POWER_AFTEREVENT.WAKEUPTOSTANDBY: _("Wake up to standby"),
-	POWER_AFTEREVENT.STANDBY: _("Go to standby"),
-	POWER_AFTEREVENT.DEEPSTANDBY: _("Go to deep standby") if DEEPSTANDBY_SUPPORT else _("Shut down")
-}
 RECORDTIMER_TYPES = {
 	RECORD_TIMERTYPE.RECORD: "record",
 	RECORD_TIMERTYPE.ZAP: "zap",
@@ -223,9 +186,6 @@ onRecordTimerCreate = []  # Hook for plugins to enhance the RecordTimer screen.
 onRecordTimerSetup = []  # Hook for plugins to enhance the RecordTimer screen.
 onRecordTimerSave = []  # Hook for plugins to enhance the RecordTimer screen.
 onRecordTimerChannelChange = []  # Hook for plugins to enhance the RecordTimer screen.
-onPowerTimerCreate = []  # Hook for plugins to enhance the PowerTimer screen.
-onPowerTimerSetup = []  # Hook for plugins to enhance the PowerTimer screen.
-onPowerTimerSave = []  # Hook for plugins to enhance the PowerTimer screen.
 onSchedulerCreate = []  # Hook for plugins to enhance the Scheduler screen.
 onSchedulerSetup = []  # Hook for plugins to enhance the Scheduler screen.
 onSchedulerSave = []  # Hook for plugins to enhance the Scheduler screen.
@@ -359,87 +319,6 @@ class SchedulerList(TimerListBase):
 		width = self.timerListWidget.getItemSize().width()
 		height = self.timerListWidget.getItemSize().height()
 		if timer.timerType in (SCHEDULER_TYPE.AUTOSTANDBY, SCHEDULER_TYPE.AUTODEEPSTANDBY):
-			repeatIcon = self.iconOnce if timer.autosleeprepeat == "once" else self.iconRepeat
-			topText = None
-			bottomText = _("Delay: %s") % ngettext("%d Minute", "%d Minutes", timer.autosleepdelay) % timer.autosleepdelay
-		else:
-			repeatIcon = self.iconRepeat if timer.repeated else self.iconOnce
-			topText = _("At end: %s") % POWERTIMER_AFTER_EVENT_NAMES.get(timer.afterEvent, UNKNOWN)
-			begin = fuzzyDate(timer.begin)
-			if timer.repeated:
-				repeatedText = []
-				flags = timer.repeated
-				for dayName in DAY_LIST:
-					if flags & 1 == 1:
-						repeatedText.append(dayName)
-					flags >>= 1
-				if repeatedText == DAY_LIST:
-					repeatedText = _("Everyday")
-				elif repeatedText == WEEKDAYS:
-					repeatedText = _("Weekdays")
-				elif repeatedText == WEEKENDS:
-					repeatedText = _("Weekends")
-				else:
-					repeatedText = ", ".join([dict(SHORT_DAY_NAMES).get(x) for x in repeatedText])
-			else:
-				repeatedText = begin[0]  # Date.
-			duration = int((timer.end - timer.begin) / 60.0)
-			bottomText = "%s %s ... %s  (%s)" % (repeatedText, begin[1], fuzzyDate(timer.end)[1], ngettext("%d Min", "%d Mins", duration) % duration)
-		if processed:
-			state = TIMER_STATES.get(TimerEntry.StateEnded)
-			stateIcon = self.iconDone
-		else:
-			state = TIMER_STATES.get(timer.state, UNKNOWN)
-			if timer.state == TimerEntry.StateWaiting:
-				stateIcon = self.iconWait
-			elif timer.state == TimerEntry.StatePrepared:
-				stateIcon = self.iconPrepared
-			elif timer.state == TimerEntry.StateRunning:
-				stateIcon = self.iconZapped
-			elif timer.state == TimerEntry.StateEnded:
-				stateIcon = self.iconDone
-			else:
-				stateIcon = None
-		if timer.disabled:
-			state = TIMER_STATES.get(TimerEntry.StateDisabled, UNKNOWN)
-			stateIcon = self.iconDisabled
-		if timer.failed:
-			state = TIMER_STATES.get(TimerEntry.StateFailed)
-			stateIcon = self.iconFailed
-		leftOffset = self.indent + self.iconWidth + self.iconMargin
-		textWidth = width - leftOffset - self.indent
-		halfWidth = textWidth // 2 - 5
-		minorWidth = (textWidth - self.statusOffset) // 4 - 5
-		majorWidth = textWidth - self.statusOffset - minorWidth - 10
-		res = [None]
-		if repeatIcon:
-			res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, self.indent, ((self.topHeight - self.iconHeight) // 2), self.iconWidth, self.iconHeight, repeatIcon, None, None, BT_SCALE))
-		res.append((eListboxPythonMultiContent.TYPE_TEXT, leftOffset, 0, halfWidth, self.topHeight, 0, RT_HALIGN_LEFT | RT_VALIGN_CENTER, POWERTIMER_TYPE_NAMES.get(timer.timerType, UNKNOWN)))
-		if topText:
-			res.append((eListboxPythonMultiContent.TYPE_TEXT, leftOffset + halfWidth + 10, 0, halfWidth, self.topHeight, 2, RT_HALIGN_RIGHT | RT_VALIGN_CENTER, topText))
-		if stateIcon:
-			res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, self.indent, self.topHeight + ((self.bottomHeight - self.iconHeight) // 2), self.iconWidth, self.iconHeight, stateIcon, None, None, BT_SCALE))
-		res.append((eListboxPythonMultiContent.TYPE_TEXT, leftOffset + self.statusOffset, self.topHeight, minorWidth, self.bottomHeight, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, state))
-		res.append((eListboxPythonMultiContent.TYPE_TEXT, leftOffset + self.statusOffset + minorWidth + 10, self.topHeight, majorWidth, self.bottomHeight, 2, RT_HALIGN_RIGHT | RT_VALIGN_CENTER, bottomText))
-		if self.showSeparator:
-			res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, 0, height - 2, width, 2, self.line, None, None, BT_SCALE))
-		return res
-
-# Widget item layout:
-#
-# <Repeat icon> <Name of timer>          <At end>
-# <State icon>  <State>   <Start, End (Duration)>
-#
-
-
-class PowerTimerList(TimerListBase):
-	def __init__(self, timerList):
-		TimerListBase.__init__(self, timerList)
-
-	def buildTimerEntry(self, timer, processed):
-		width = self.timerListWidget.getItemSize().width()
-		height = self.timerListWidget.getItemSize().height()
-		if timer.timerType in (POWER_TIMERTYPE.AUTOSTANDBY, POWER_TIMERTYPE.AUTODEEPSTANDBY):
 			repeatIcon = self.iconOnce if timer.autosleeprepeat == "once" else self.iconRepeat
 			topText = None
 			bottomText = _("Delay: %s") % ngettext("%d Minute", "%d Minutes", timer.autosleepdelay) % timer.autosleepdelay
@@ -791,7 +670,7 @@ class TimerOverviewSummary(ScreenSummary):
 class SchedulerOverview(TimerOverviewBase):
 	def __init__(self, session):
 		self["timerlist"] = SchedulerList([])
-		TimerOverviewBase.__init__(self, session, mode=MODE_POWER)
+		TimerOverviewBase.__init__(self, session, mode=MODE_SCHEDULER)
 
 	def doChangeCallbackAppend(self):
 		self.session.nav.Scheduler.on_state_change.append(self.onStateChange)
@@ -941,170 +820,6 @@ class SchedulerOverview(TimerOverviewBase):
 	def cleanupTimersCallback(self, answer):
 		if answer:
 			self.session.nav.Scheduler.cleanup()
-			self.reloadTimerList()
-
-	# def refill(self):
-	#	length = len(self.timerList)
-	#	self.fillTimerList()
-	#	if length and length != len(self.timerList):
-	#		self["timerlist"].entryRemoved(self["timerlist"].getCurrentIndex())
-	#	else:
-	#		self["timerlist"].invalidate()
-
-
-class PowerTimerOverview(TimerOverviewBase):
-	def __init__(self, session):
-		self["timerlist"] = PowerTimerList([])
-		TimerOverviewBase.__init__(self, session, mode=MODE_POWER)
-
-	def doChangeCallbackAppend(self):
-		self.session.nav.PowerTimer.on_state_change.append(self.onStateChange)
-
-	def doChangeCallbackRemove(self):
-		self.session.nav.PowerTimer.on_state_change.remove(self.onStateChange)
-
-	def loadTimerList(self):
-		def condition(element):
-			return element[0].state == TimerEntry.StateEnded, element[0].begin
-
-		timerList = []
-		timerList.extend([(timer, False) for timer in self.session.nav.PowerTimer.timer_list])
-		timerList.extend([(timer, True) for timer in self.session.nav.PowerTimer.processed_timers])
-		if config.usage.timerlist_finished_timer_position.index:  # End of list.
-			timerList.sort(key=condition)
-		else:
-			timerList.sort(key=lambda x: x[0].begin)
-		self["timerlist"].setList(timerList)
-
-	def selectionChanged(self):
-		timer = self["timerlist"].getCurrent()
-		if timer:
-			# self["description"].setText(timer.description)
-			self["description"].setText("")
-			self["key_info"].setText(_("INFO"))
-			self["editActions"].setEnabled(True)
-			self["key_red"].setText(_("Delete"))
-			self["deleteActions"].setEnabled(True)
-			if timer.isRunning() and not timer.repeated:
-				self["key_yellow"].setText("")
-				self["toggleActions"].setEnabled(False)
-			elif timer.disabled:
-				self["key_yellow"].setText(_("Enable"))
-				self["toggleActions"].setEnabled(True)
-			else:
-				self["key_yellow"].setText(_("Disable"))
-				self["toggleActions"].setEnabled(True)
-			time = "%s %s ... %s" % (fuzzyDate(timer.begin)[0], fuzzyDate(timer.begin)[1], fuzzyDate(timer.end)[1])
-			duration = int((timer.end - timer.begin) / 60.0)
-			for callback in self.onSelectionChanged:
-				callback(POWERTIMER_TYPE_NAMES.get(timer.timerType, UNKNOWN), "", time, ngettext("%d Min", "%d Mins", duration) % duration, TIMER_STATES.get(timer.state, UNKNOWN))
-		else:
-			self["description"].setText("")
-			self["key_info"].setText("")
-			self["editActions"].setEnabled(False)
-			self["key_red"].setText("")
-			self["deleteActions"].setEnabled(False)
-			self["key_yellow"].setText("")
-			self["toggleActions"].setEnabled(False)
-			for callback in self.onSelectionChanged:
-				callback("", "", "", "", "")
-		showCleanup = False
-		for item in self["timerlist"].getList():
-			if not item[0].disabled and item[1] is True:
-				showCleanup = True
-				break
-		if showCleanup:
-			self["key_blue"].setText(_("Cleanup"))
-			self["cleanupActions"].setEnabled(True)
-		else:
-			self["key_blue"].setText("")
-			self["cleanupActions"].setEnabled(False)
-
-	def addTimer(self):
-		now = int(time())
-		begin = now + 60
-		end = now + 120
-		self.session.openWithCallback(self.addTimerCallback, PowerTimerEdit, PowerTimerEntry(begin, end, checkOldTimers=True))
-
-	def addTimerCallback(self, result=(False,)):
-		if isinstance(result, bool) and result:  # Special case for close recursive.
-			self.close(True)
-			return
-		if result[0]:
-			self.session.nav.PowerTimer.record(result[1])
-			self.loadTimerList()
-			self.selectionChanged()
-
-	def doCleanupTimers(self):
-		self.session.nav.PowerTimer.cleanup()
-
-	def deleteTimer(self):
-		if self["timerlist"].getCurrent():
-			self.session.openWithCallback(self.deleteTimerCallback, MessageBox, _("Do you really want to delete this timer?"), default=False, windowTitle=self.getTitle())
-
-	def deleteTimerCallback(self, answer):
-		if answer:
-			timer = self["timerlist"].getCurrent()
-			if timer:
-				timer.afterEvent = RECORD_AFTEREVENT.NONE
-				self.session.nav.PowerTimer.removeEntry(timer)
-				self.reloadTimerList()
-
-	def editTimer(self):
-		timer = self["timerlist"].getCurrent()
-		if timer:
-			self.session.openWithCallback(self.editTimerCallback, PowerTimerEdit, timer)
-
-	def editTimerCallback(self, result):
-		if isinstance(result, bool) and result:  # Special case for close recursive.
-			self.close(True)
-			return
-		if result[0]:
-			entry = result[1]
-			self.session.nav.PowerTimer.timeChanged(entry)
-			print("[Timers] PowerTimer updated.")
-			self.reloadTimerList()
-		else:
-			print("[Timers] PowerTimer not updated.")
-
-	def toggleTimer(self):
-		timer = self["timerlist"].getCurrent()
-		if timer:
-			if timer.disabled:
-				print("[Timers] Try to enable PowerTimer.")
-				timer.enable()
-			else:
-				print("[Timers] Try to disable PowerTimer.")
-				if timer.isRunning():
-					if timer.repeated:
-						choiceList = (
-							(_("Stop current event but not future events"), "stoponlycurrent"),
-							(_("Stop current event and disable future events"), "stopall"),
-							(_("Don't stop current event but disable future events"), "stoponlycoming")
-						)
-						self.session.openWithCallback(boundFunction(self.toggleTimerCallback, timer), ChoiceBox, title=_("Repeating event is currently active, what do you want to do?"), list=choiceList)
-				else:
-					timer.disable()
-			self.session.nav.PowerTimer.timeChanged(timer)
-			self.reloadTimerList()
-
-	def toggleTimerCallback(self, timer, choice):
-		if choice is not None:
-			if choice[1] in ("stoponlycurrent", "stopall"):
-				timer.enable()
-				timer.processRepeated(findRunningEvent=False)
-				self.session.nav.PowerTimer.doActivate(timer)
-			if choice[1] in ("stoponlycoming", "stopall"):
-				timer.disable()
-			self.session.nav.PowerTimer.timeChanged(timer)
-			self.reloadTimerList()
-
-	def cleanupTimers(self):
-		self.session.openWithCallback(self.cleanupTimersCallback, MessageBox, _("Clean up (delete) all completed timers?"), windowTitle=self.getTitle())
-
-	def cleanupTimersCallback(self, answer):
-		if answer:
-			self.session.nav.PowerTimer.cleanup()
 			self.reloadTimerList()
 
 	# def refill(self):
@@ -1675,199 +1390,6 @@ class SchedulerEdit(Setup):
 		self.timer.ipadress = ",".join(ipAdresses)
 
 		self.session.nav.Scheduler.saveTimers()
-		for notifier in self.onSave:
-			notifier()
-		self.close((True, self.timer))
-
-	def getTimeStamp(self, date, time):  # Note: The "date" can be a float() or an int() while "time" is a two item list.
-		localDate = localtime(date)
-		return int(mktime(datetime(localDate.tm_year, localDate.tm_mon, localDate.tm_mday, time[0], time[1]).timetuple()))
-
-
-class PowerTimerEdit(Setup):
-	def __init__(self, session, timer):
-		self.timer = timer
-		self.createConfig()
-		Setup.__init__(self, session, "PowerTimer")
-
-	def createConfig(self):
-		days = {}
-		for day in DAY_LIST:
-			days[day] = False
-		if self.timer.repeated:  # Timer repeated.
-			type = "repeated"
-			weekday = "Mon"
-			if self.timer.repeated == 31:  # Mon-Fri.
-				repeated = "weekdays"
-			elif self.timer.repeated == 127:  # Daily.
-				repeated = "daily"
-			else:
-				flags = self.timer.repeated
-				repeated = "user"
-				count = 0
-				for day in DAY_LIST:
-					if flags == 1:  # Weekly.
-						weekday = day
-					if flags & 1 == 1:  # Set user defined days.
-						days[day] = True
-						count += 1
-					else:
-						days[day] = False
-					flags >>= 1
-				if count == 1:
-					repeated = "weekly"
-		else:  # Timer once.
-			type = "once"
-			repeated = None
-			weekday = DAY_LIST[int(strftime("%u", localtime(self.timer.begin))) - 1]
-			days[weekday] = True
-		self.timerType = ConfigSelection(default=POWERTIMER_TYPES.get(self.timer.timerType, "wakeup"), choices=[
-			# (POWERTIMER_TYPES.get(POWER_TIMERTYPE.NONE), POWERTIMER_TYPE_NAMES.get(POWER_TIMERTYPE.NONE)),
-			(POWERTIMER_TYPES.get(POWER_TIMERTYPE.WAKEUP), POWERTIMER_TYPE_NAMES.get(POWER_TIMERTYPE.WAKEUP)),
-			(POWERTIMER_TYPES.get(POWER_TIMERTYPE.WAKEUPTOSTANDBY), POWERTIMER_TYPE_NAMES.get(POWER_TIMERTYPE.WAKEUPTOSTANDBY)),
-			(POWERTIMER_TYPES.get(POWER_TIMERTYPE.AUTOSTANDBY), POWERTIMER_TYPE_NAMES.get(POWER_TIMERTYPE.AUTOSTANDBY)),
-			(POWERTIMER_TYPES.get(POWER_TIMERTYPE.AUTODEEPSTANDBY), POWERTIMER_TYPE_NAMES.get(POWER_TIMERTYPE.AUTODEEPSTANDBY)),
-			(POWERTIMER_TYPES.get(POWER_TIMERTYPE.STANDBY), POWERTIMER_TYPE_NAMES.get(POWER_TIMERTYPE.STANDBY)),
-			(POWERTIMER_TYPES.get(POWER_TIMERTYPE.DEEPSTANDBY), POWERTIMER_TYPE_NAMES.get(POWER_TIMERTYPE.DEEPSTANDBY)),
-			(POWERTIMER_TYPES.get(POWER_TIMERTYPE.REBOOT), POWERTIMER_TYPE_NAMES.get(POWER_TIMERTYPE.REBOOT)),
-			(POWERTIMER_TYPES.get(POWER_TIMERTYPE.RESTART), POWERTIMER_TYPE_NAMES.get(POWER_TIMERTYPE.RESTART))
-		])
-		self.timerActiveInStandby = ConfigSelection(default=self.timer.autosleepinstandbyonly, choices=[
-			("yes", _("Only in standby")),
-			("no", _("Standard (Always)")),
-			("noquery", _("Without query"))
-		])
-		# self.timerSleepDelay = ConfigInteger(default=self.timer.autosleepdelay, limits=(1, 300))
-		self.timerSleepDelay = ConfigSelection(default=self.timer.autosleepdelay, choices=[
-			(1, _("%d Minute") % 1),
-			(3, _("%d Minutes") % 3),
-			(5, _("%d Minutes") % 5),
-			(10, _("%d Minutes") % 10)
-		] + [(x, _("%d Minutes") % x) for x in range(15, 301, 15)])
-		self.timerRepeat = ConfigSelection(default=type, choices=REPEAT_CHOICES)
-		self.timerAutoSleepRepeat = ConfigSelection(default=self.timer.autosleeprepeat, choices=REPEAT_CHOICES)
-		self.timerSleepWindow = ConfigYesNo(default=self.timer.autosleepwindow)
-		self.timerSleepStart = ConfigClock(default=self.timer.autosleepbegin)
-		self.timerSleepEnd = ConfigClock(default=self.timer.autosleepend)
-		self.timerShowExtended = ConfigYesNo(default=self.timer.nettraffic or self.timer.netip)
-		self.timerNetTraffic = ConfigYesNo(default=self.timer.nettraffic)
-		self.timerNetTrafficLimit = ConfigSelection(default=self.timer.trafficlimit, choices=[
-			(10, "10"),
-			(50, "50"),
-			(100, "100"),
-			(500, "500"),
-			(1000, "1000")
-		])
-		self.timerNetIP = ConfigYesNo(default=self.timer.netip)
-		timerIPAddress = [x.strip() for x in self.timer.ipadress.split(",")]
-		self.timerNetIPCount = ConfigSelection(default=len(timerIPAddress), choices=[(x, str(x)) for x in range(1, 6)])
-		self.timerIPAddress = []
-		for i in range(5):
-			ipAddress = timerIPAddress[i] if (len(timerIPAddress) > i and len(timerIPAddress[i].split(".")) == 4) else "0.0.0.0"
-			self.timerIPAddress.append(ConfigIP(default=[int(x) for x in ipAddress.split(".")]))
-		self.timerRepeatPeriod = ConfigSelection(default=repeated, choices=REPEAT_OPTIONS)
-		self.timerRepeatStartDate = ConfigDateTime(default=self.timer.repeatedbegindate, formatstring=config.usage.date.daylong.value, increment=86400)
-		self.timerWeekday = ConfigSelection(default=weekday, choices=DAY_NAMES)
-		self.timerDay = {}
-		for day in DAY_LIST:
-			self.timerDay[day] = ConfigYesNo(default=days[day])
-		self.timerStartTime = ConfigClock(default=self.timer.begin)
-		self.timerSetEndTime = ConfigYesNo(default=(int((self.timer.end - self.timer.begin) / 60.0) > 4))
-		self.timerEndTime = ConfigClock(default=self.timer.end)
-		self.timerAfterEvent = ConfigSelection(default=POWERTIMER_AFTER_EVENTS.get(self.timer.afterEvent, "nothing"), choices=[
-			(POWERTIMER_AFTER_EVENTS.get(POWER_AFTEREVENT.NONE), POWERTIMER_AFTER_EVENT_NAMES.get(POWER_AFTEREVENT.NONE)),
-			(POWERTIMER_AFTER_EVENTS.get(POWER_AFTEREVENT.WAKEUPTOSTANDBY), POWERTIMER_AFTER_EVENT_NAMES.get(POWER_AFTEREVENT.WAKEUPTOSTANDBY)),
-			(POWERTIMER_AFTER_EVENTS.get(POWER_AFTEREVENT.STANDBY), POWERTIMER_AFTER_EVENT_NAMES.get(POWER_AFTEREVENT.STANDBY)),
-			(POWERTIMER_AFTER_EVENTS.get(POWER_AFTEREVENT.DEEPSTANDBY), POWERTIMER_AFTER_EVENT_NAMES.get(POWER_AFTEREVENT.DEEPSTANDBY))
-		])
-		for callback in onPowerTimerCreate:
-			callback(self)
-
-	def createSetup(self):  # NOSONAR silence S2638
-		Setup.createSetup(self)
-		for callback in onPowerTimerSetup:
-			callback(self)
-
-	def keyCancel(self):
-		if self["config"].isChanged():
-			self.session.openWithCallback(self.cancelConfirm, MessageBox, self.cancelMsg, default=False, type=MessageBox.TYPE_YESNO, windowTitle=self.getTitle())
-		else:
-			self.close((False,))
-
-	def cancelConfirm(self, result):
-		if not result:
-			return
-		for item in self["config"].list:
-			if len(item) > 1:
-				item[1].cancel()
-		self.close((False,))
-
-	def keySave(self, result=None):
-		for callback in onPowerTimerSave:
-			callback(self)
-		if not self.timerSetEndTime.value:
-			self.timerEndTime.value = self.timerStartTime.value
-		now = int(time())
-		self.timer.resetRepeated()
-		self.timer.timerType = POWERTIMER_VALUES.get(self.timerType.value, POWER_TIMERTYPE.WAKEUP)
-		self.timer.afterEvent = POWERTIMER_AFTER_VALUES.get(self.timerAfterEvent.value, POWER_AFTEREVENT.NONE)
-		if self.timerRepeat.value == "once":
-			date = self.timerRepeatStartDate.value
-			startTime = self.timerStartTime.value
-			begin = self.getTimeStamp(date, startTime)
-			endTime = self.timerEndTime.value
-			end = self.getTimeStamp(date, endTime)
-			if end < begin:  # If end is less than start then add 1 day to the end time.
-				end += 86400
-			self.timer.begin = begin
-			self.timer.end = end
-		if self.timerType.value in ("autostandby", "autodeepstandby"):
-			self.timer.begin = now + 10
-			self.timer.end = self.timer.begin
-			self.timer.autosleepinstandbyonly = self.timerActiveInStandby.value
-			self.timer.autosleepdelay = self.timerSleepDelay.value
-			self.timer.autosleeprepeat = self.timerAutoSleepRepeat.value
-			if self.timerRepeat.value == "repeated":  # Ensure that the timer repeated is cleared if we have an "autosleeprepeat".
-				self.timer.resetRepeated()
-				self.timerRepeat.value = "once"  # Stop it being set again.
-			self.timer.autosleepwindow = self.timerSleepWindow.value
-			if self.timerSleepWindow.value:
-				self.timer.autosleepbegin = self.getTimeStamp(now, self.timerSleepStart.value)
-				self.timer.autosleepend = self.getTimeStamp(now, self.timerSleepEnd.value)
-		if self.timerRepeat.value == "repeated":
-			if self.timerRepeatPeriod.value == "daily":
-				for day in (0, 1, 2, 3, 4, 5, 6):
-					self.timer.setRepeated(day)
-			elif self.timerRepeatPeriod.value == "weekly":
-				self.timer.setRepeated(self.timerWeekday.index)
-			elif self.timerRepeatPeriod.value == "weekdays":
-				for day in (0, 1, 2, 3, 4):
-					self.timer.setRepeated(day)
-			elif self.timerRepeatPeriod.value == "weekends":
-				for day in (5, 6):
-					self.timer.setRepeated(day)
-			elif self.timerRepeatPeriod.value == "user":
-				for day in (0, 1, 2, 3, 4, 5, 6):
-					if self.timerDay[DAY_LIST[day]].value:
-						self.timer.setRepeated(day)
-			self.timer.repeatedbegindate = self.getTimeStamp(self.timerRepeatStartDate.value, self.timerStartTime.value)
-			if self.timer.repeated:
-				self.timer.begin = self.getTimeStamp(self.timerRepeatStartDate.value, self.timerStartTime.value)
-				self.timer.end = self.getTimeStamp(self.timerRepeatStartDate.value, self.timerEndTime.value)
-			else:
-				self.timer.begin = self.getTimeStamp(now, self.timerStartTime.value)
-				self.timer.end = self.getTimeStamp(now, self.timerEndTime.value)
-			if self.timer.end < self.timer.begin:  # If end is less than start then add 1 day to the end time.
-				self.timer.end += 86400
-		self.timer.nettraffic = self.timerNetTraffic.value
-		self.timer.trafficlimit = self.timerNetTrafficLimit.value
-		self.timer.netip = self.timerNetIP.value
-		ipAdresses = []
-		for i in range(self.timerNetIPCount.value):
-			ipAdresses.append(".".join("%d" % d for d in self.timerIPAddress[i].value))
-		self.timer.ipadress = ",".join(ipAdresses)
-
-		self.session.nav.PowerTimer.saveTimers()
 		for notifier in self.onSave:
 			notifier()
 		self.close((True, self.timer))
