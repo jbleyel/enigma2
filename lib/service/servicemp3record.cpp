@@ -292,7 +292,6 @@ void eServiceMP3Record::gstBusCall(GstMessage *msg)
 			g_free(debug);
 			//if (err->code != GST_STREAM_ERROR_CODEC_NOT_FOUND)
 			//	eWarning("[eServiceMP3Record] gstBusCall Gstreamer error: %s (%i) from %s", err->message, err->code, sourceName);
-
 			if ( err->domain == GST_STREAM_ERROR )
 			{
 				if ( err->code == GST_STREAM_ERROR_CODEC_NOT_FOUND )
@@ -307,7 +306,6 @@ void eServiceMP3Record::gstBusCall(GstMessage *msg)
 					stop();
 				}
 			}
-
 			g_error_free(err);
 			break;
 		}

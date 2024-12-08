@@ -113,7 +113,9 @@ class MountManager(Screen):
 			else:
 				name = ""
 				description = ""
-			if ":None" in current[9]:
+			if current[7] or current[8]:
+				self["key_yellow"].setText("")
+			elif ":None" in current[9]:
 				self["key_yellow"].setText(_("Activate"))
 			else:
 				self["key_yellow"].setText(_("Unmount") if isMounted else _("Mount"))
@@ -237,7 +239,7 @@ class MountManager(Screen):
 			devMount = ""
 			knownDevice = ""
 			for known in self.knownDevices:
-				if UUID in known:
+				if UUID and UUID in known:
 					knownDevice = known
 			if ":None" in knownDevice:
 				d1 = "Ignore"
@@ -245,7 +247,7 @@ class MountManager(Screen):
 			for fstab in self.fstab:
 				fstabData = fstab.split()
 				if fstabData:
-					if UUID in fstabData:
+					if UUID and UUID in fstabData:
 						UUIDMount = (fstabData[0], fstabData[1])
 					elif deviceP in fstabData:
 						devMount = (fstabData[0], fstabData[1])
@@ -326,7 +328,9 @@ class MountManager(Screen):
 
 		current = self["devicelist"].getCurrent()
 		if current:
-			if ":None" in current[9]:
+			if current[7] or current[8]:
+				return
+			elif ":None" in current[9]:
 				self.knownDevices.remove(current[9])
 				fileWriteLines("/etc/udev/known_devices", self.knownDevices, source=MODULE_NAME)
 			else:
