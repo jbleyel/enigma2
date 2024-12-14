@@ -2,11 +2,14 @@ from os import mkdir
 from os.path import exists, isfile, join, realpath
 from re import search, sub
 
+from enigma import getDeviceDB
+
 from Components.ActionMap import HelpableActionMap
 #from Components.ConfigList import ConfigListScreen
 from Components.config import ConfigSelection, ConfigText, NoSave
 from Components.Console import Console
 from Components.Sources.List import List
+from Components.Label import Label
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo  # , getBoxDisplayName
 from Screens.ChoiceBox import ChoiceBox
@@ -35,19 +38,19 @@ class MountManager(Screen):
 	DEVICE_TYPES_ICON = 1
 
 	skin = """
-	<screen name="MountManager" title="Mount Manager" position="center,center" size="980,465" resolution="1280,720">
-		<widget source="devicelist" render="Listbox" position="0,0" size="980,425">
-			<convert type="TemplatedMultiContent">
-				{"template": [
-					MultiContentEntryText(pos = (90, 0), size = (600, 30), font=0, text = 0),
-					MultiContentEntryText(pos = (110, 30), size = (600, 50), font=1, flags = RT_VALIGN_TOP, text = 1),
-					MultiContentEntryPixmapAlphaBlend(pos = (0, 0), size = (80, 80), png = 2),
-				],
-				"fonts": [gFont("Regular", 24),gFont("Regular", 20)],
-				"itemHeight": 85
-				}
-			</convert>
+	<screen name="MountManager" title="Mount Manager" position="center,center" size="1080,465" resolution="1280,720">
+		<widget source="devicelist" render="Listbox" position="0,0" size="680,425">
+				<templates>
+					<template name="Default" fonts="Regular;24,Regular;20" itemHeight="85">
+						<mode name="default">
+							<text index="0" position="90,0" size="600,30" font="0" />
+							<text index="1" position="110,30" size="600,50" font="1" verticalAlignment="top" />
+							<pixmap index="2" position="0,0" size="80,80" alpha="blend" scale="centerScaled" />
+						</mode>
+				</template>
+			</templates>
 		</widget>
+		<widget name="description" position="680,0" size="400,e-60" font="Regular;20" verticalAlignment="top" horizontalAlignment="left" />
 		<widget source="key_red" render="Label" position="0,e-40" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
@@ -80,11 +83,13 @@ class MountManager(Screen):
 		self["key_green"] = StaticText(_("Mount Point"))
 		self["key_yellow"] = StaticText(_("Unmount"))
 		self["key_blue"] = StaticText()
-		self["actions"] = HelpableActionMap(self, ["CancelActions", "ColorActions"], {
+		self["description"] = Label()
+		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
 			"cancel": (self.close, _("Close the Mount Manager screen")),
+			"ok": (self.keyMountPoint, _("Select a permanent mount point for the current device")),
 			"close": (self.keyClose, _("Close the Mount Manager screen and exit all menus")),
 			"red": (self.close, _("Close the Mount Manager screen")),
-			"green": (self.keyMountPoint, _("Select a permanent mount point for the current device")),
+			"green": (self.keyMountPoints, _("Select a permanent mount point for all devices")),
 			"yellow": (self.keyToggleMount, _("Toggle a temporary mount for the current device"))
 			# "blue": (self.keyBlue _("Reserved for future use"))
 		}, prio=0, description=_("Mount Manager Actions"))
@@ -123,11 +128,15 @@ class MountManager(Screen):
 				if callback and callable(callback):
 					callback(name, description)
 
+			description = current[13]
+			print(description)
+			self["description"].setText(description)
+
 	def readDevices(self):
 		def readDevicesCallback(output=None, retVal=None, extraArgs=None):
 			self.deviceUUID = {}
 			lines = output.splitlines()
-			lines = [line for line in lines if "UUID=" in line and ("/dev/sd" in line or "/dev/cf" in line)]
+			lines = [line for line in lines if "UUID=" in line and ("/dev/sd" in line or "/dev/cf" in line or "/dev/mmc" in line)]
 			for line in lines:
 				data = line.split()
 				UUID = [x.split("UUID=")[1] for x in data if "UUID=" in x][0].replace("\"", "")
@@ -172,29 +181,28 @@ class MountManager(Screen):
 				model = fileReadLine(join("/sys/block", device2, "device/model"), default="", source=MODULE_NAME)
 			if devicePath.find("/devices/pci") != -1 or devicePath.find("ahci") != -1:
 				deviceType = 2
-			return deviceType, model
+			return devicePath[:4], deviceType, model
 
 		device2 = device[:7] if device.startswith("mmcblk") else sub(r"[\d]", "", device)
-		deviceType, model = getDeviceTypeModel()
+		physdev, deviceType, model = getDeviceTypeModel()
 		devicePixmap = LoadPixmap(resolveFilename(SCOPE_GUISKIN, self.DEVICE_TYPES[deviceType][self.DEVICE_TYPES_ICON]))
 		deviceName = self.DEVICE_TYPES[deviceType][self.DEVICE_TYPES_NAME]
 		deviceName = f"{deviceName}{model}"
-		print("device")
-		print(device)
-		print("device2")
-		print(device2)
-		print("self.mounts")
-		print(self.mounts)
+		deviceLocation = ""
+		for physdevprefix, pdescription in list(getDeviceDB().items()):
+			if physdev.startswith(physdevprefix):
+				deviceLocation = pdescription
 
-		found = 0
+		deviceMounts = []
+
 		for line in [line for line in self.mounts if line.find(device) != -1]:
 			parts = line.strip().split()
 			d1 = parts[1]
 			dtype = parts[2]
 			rw = parts[3]
-			found += 1
+			deviceMounts.append((d1, dtype, rw))
 
-		if found == 0:
+		if not deviceMounts:
 			for line in [line for line in self.mounts if line.find(device) == -1]:
 				if device in self.swapDevices:
 					parts = line.strip().split()
@@ -212,13 +220,9 @@ class MountManager(Screen):
 			if line.find(device) != -1:
 				parts = line.strip().split()
 				size = int(parts[2]) * 1024
-				print("size 1")
-				print(size)
 				break
 		if not size:
 			size = fileReadLine(join("/sys/block", device2, device, "size"), default=None, source=MODULE_NAME)
-			print("size 2")
-			print(size)
 			try:
 				size = int(size) * 512
 			except ValueError:
@@ -243,7 +247,7 @@ class MountManager(Screen):
 					knownDevice = known
 			if ":None" in knownDevice:
 				d1 = "Ignore"
-			des = f"{size}\t{_("Mount: ")}{d1}\n{_("Device: ")}{join("/dev", device)}\t{_("Type: ")}{dtype}{rw}"
+			des = f"{size}\t{_("Mount")}: {d1}\n{_("Device: ")}{join("/dev", device)}\t{_("Type")}: {dtype}{rw}"
 			for fstab in self.fstab:
 				fstabData = fstab.split()
 				if fstabData:
@@ -251,7 +255,16 @@ class MountManager(Screen):
 						UUIDMount = (fstabData[0], fstabData[1])
 					elif deviceP in fstabData:
 						devMount = (fstabData[0], fstabData[1])
-			res = (deviceName, des, devicePixmap, mountP, deviceP, isMounted, UUID, UUIDMount, devMount, knownDevice, deviceType, model)
+			description = []
+			description.append(f"{_("Device: ")}{join("/dev", device)}")
+			description.append(f"{_("Size")}: {size}")
+			description.append(f"{_("Mount")}: {d1}")
+			description.append(f"{_("Type")}: {dtype}{rw}")
+			description.append(f"{_("Name")}: {model}")
+			if deviceLocation:
+				description.append(f"{_("Location")}: {deviceLocation}")
+			description = "\n".join(description)
+			res = (deviceName, des, devicePixmap, mountP, deviceP, isMounted, UUID, UUIDMount, devMount, knownDevice, deviceType, model, deviceLocation, description)
 			print(res)
 			self.deviceList.append(res)
 
@@ -260,6 +273,28 @@ class MountManager(Screen):
 			self.session.open(TryQuitMainloop, QUIT_REBOOT)
 		else:
 			self.close((True, ))
+
+	def keyMountPoints(self):
+		def keyMountPointsCallback(answer):
+			print(answer)
+			pass
+		devices = []
+		for device in self.deviceList:
+			name = device[0]
+			if device[12]:
+				name = f"{name} ({device[12]})"
+			isMounted = device[5]
+			mountp = device[3]
+			deviceP = device[4]
+			deviceUuid = self.deviceUUID.get(deviceP)
+			choiceList = [("None", "None"), ("", "Custom")]
+			if "sr" in device[11]:
+				choiceList.extend([("/media/cdrom", "/media/cdrom")], [("/media/dvd", "/media/dvd")])
+			else:
+				choiceList.extend([(f"/media/{x}", f"/media/{x}") for x in self.getMountPoints(device[10])])
+			devices.append((deviceP, mountp, isMounted, deviceUuid, name, choiceList))
+
+		self.session.openWithCallback(keyMountPointsCallback, MountManagerMountPoints, devices)
 
 	def keyMountPoint(self):
 		def keyMountPointCallback(answer):
@@ -422,6 +457,96 @@ class MountManagerMountPoint(Setup):
 
 	def keySave(self):
 		self.close((self.mountPoint.value or self.customMountPoint.value, self.fileSystem.value, self.options.value))
+
+	def keyCancel(self):
+		self.close(None)
+
+
+class MountManagerMountPoints(MountManagerMountPoint):
+	def __init__(self, session, devices):
+		self.devices = devices
+		self.mountPoints = []
+		self.customMountPoints = []
+		self.fileSystems = []
+		self.options = []
+		self.defaultMountpoints = []
+
+		defaults = [
+			 "usb5", "usb4", "usb3", "usb2", "usb", "hdd"
+		]
+
+		# device , mountpount, isMounted , deviceUuid, name, choiceList
+		for device in devices:
+			if "sr" in device[0]:
+				self.defaultMountpoints.append("/media/cdrom")
+			else:
+				deviceName = device[0].replace("/dev/", "")
+				if deviceName not in device[1]:
+					self.defaultMountpoints.append(deviceName)
+					deviceName = deviceName.replace("/media/", "")
+					if deviceName in defaults:
+						defaults.remove(deviceName)
+				else:
+					self.defaultMountpoints.append(f"/media/{defaults.pop()}")
+
+		for index, device in enumerate(devices):
+			self.mountPoints.append(NoSave(ConfigSelection(default=self.defaultMountpoints[index], choices=device[5])))
+			self.customMountPoints.append(NoSave(ConfigText()))
+			if "sr" in device[0]:
+				fileSystems = ["auto", "iso9660", "udf"]
+			else:
+				fileSystems = ["auto", "ext4", "vfat"]
+				if exists("/sbin/mount.exfat"):
+					fileSystems.append("exfat")
+				if exists("/sbin/mount.ntfs-3g"):
+					fileSystems.append("ntfs-3g")
+				if exists("/sbin/mount.fuse"):
+					fileSystems.append("fuseblk")
+				fileSystems.extend(["hfsplus", "btrfs", "xfs"])
+			fileSystemChoices = [(x, x) for x in fileSystems]
+			self.fileSystems.append(NoSave(ConfigSelection(default=fileSystems[0], choices=fileSystemChoices)))
+			self.options.append(NoSave(ConfigText("defaults")))
+
+		Setup.__init__(self, session=session, setup="")
+		self.setTitle(_("Select the mount points"))
+
+	def appendEntries(self, index, device):
+		items = []
+		items.append(("%s - %s" % (device[0], device[4]),))
+		items.append((_("Mountpoint"), self.mountPoints[index], _("Select the mountpoint for the device."), index))
+		if self.mountPoints[index].value != "None":
+			if self.mountPoints[index].value == "":
+				items.append((_("Custom mountpoint"), self.customMountPoints[index], _("Define the custom ountpoint for the device."), index))
+			items.append((_("Filesystem"), self.fileSystems[index], _("Select the filesystem for the device."), index))
+			items.append((_("Options"), self.options[index], _("Define the filesystem mount options."), index))
+		return items
+
+	def getCurrentValue(self):
+		print("getCurrentValue")
+		if self["config"].getCurrent():
+			print(self["config"].getCurrent())
+			print(self["config"].getCurrent()[1])
+		return ""
+
+	def createSetup(self):  # NOSONAR silence S2638
+		items = []
+		for index, device in enumerate(self.devices):
+			items = items + self.appendEntries(index, device)
+		print(items)
+		Setup.createSetup(self, appendItems=items)
+
+	def changedEntry(self):
+		current = self["config"].getCurrent()[1]
+		index = self["config"].getCurrent()[3]
+		if current == self.fileSystems[index]:
+			self.options[index].value = self.defaultOptions.get(self.fileSystems[index].value)
+		Setup.changedEntry(self)
+
+	def keySave(self):
+		result = []
+		for index, device in enumerate(self.devices):
+			result.append((self.mountPoints[index].value or self.customMountPoints[index].value, self.fileSystems[index].value, self.options[index].value, device[0], device[1], device[2]))
+		self.close(result)
 
 	def keyCancel(self):
 		self.close(None)
