@@ -1,6 +1,7 @@
-from os import access, listdir, lstat, major, minor, popen, rmdir, stat as osstat, statvfs, system, unlink, walk
+from glob import glob
+from os import access, listdir, lstat, major, minor, mkdir, popen, remove, rmdir, stat as osstat, statvfs, system, unlink, walk
 from os.path import abspath, dirname, exists, isfile, islink, ismount, join, realpath
-from re import search
+from re import search, sub
 from time import sleep, time
 
 from enigma import getDeviceDB, eTimer
@@ -8,6 +9,7 @@ from enigma import getDeviceDB, eTimer
 from Components.SystemInfo import BoxInfo
 import Components.Task
 from Components.Console import Console
+from Tools.Directories import fileReadLines, fileReadLine, fileWriteLines
 from Tools.CList import CList
 from Tools.HardwareInfo import HardwareInfo
 
@@ -588,6 +590,10 @@ class HarddiskManager:
 		self.partitions = []
 		self.devices_scanned_on_init = []
 		self.on_partition_list_change = CList()
+		self.console = Console()
+		self.enumerateHotPlugDevices(self.init)
+
+	def init(self):
 		self.enumerateBlockDevices()
 		self.enumerateNetworkMounts()
 		p = [("/", _("Internal flash"))]  # Find stuff not detected by the enumeration.
@@ -647,6 +653,70 @@ class HarddiskManager:
 			if err.errno == 159:  # No medium present.
 				medium_found = False
 		return error, blacklisted, removable, is_cdrom, partitions, medium_found
+
+	def enumerateHotPlugDevices(self, callback):
+		def parseDeviceData(inputData):
+			eventData = {}
+			if "\n" in inputData:
+				data = inputData[:-1].split("\n")
+				eventData["mode"] = 1
+			else:
+				data = inputData.split("\0")[:-1]
+				eventData["mode"] = 0
+			for values in data:
+				variable, value = values.split("=", 1)
+				eventData[variable] = value
+			return eventData
+
+		def enumerateHotPlugDevicesCallback(*args, **kwargs):
+			callback()
+
+		print("[Harddisk] Enumerating hotplug devices.")
+		fileNames = glob("/tmp/hotplug_dev_*")
+		devices = []
+		for fileName in fileNames:
+			with open(fileName) as f:
+				data = f.read()
+				eventData = parseDeviceData(data)
+				device = eventData["DEVNAME"].replace("/dev/", "")
+				shortDevice = device[:7] if device.startswith("mmcblk") else sub(r"[\d]", "", device)
+				removable = fileReadLine(f"/sys/block/{shortDevice}/removable")
+				eventData["SORT"] = 0 if ("pci" in eventData["DEVPATH"] or "ahci" in eventData["DEVPATH"]) and removable == "0" else 1
+				devices.append(eventData)
+				# remove(fileName)
+
+		if devices:
+			devices.sort(key=lambda x: (x["SORT"], x["ID_PART_ENTRY_SIZE"]))
+			mounts = fileReadLines("/proc/mounts")
+			mounts = [x.split()[1] for x in mounts if "/media/" in x]
+			possibleMountPoints = [f"/media/{x}" for x in ("usb8", "usb7", "usb6", "usb5", "usb4", "usb3", "usb2", "usb", "hdd") if f"/media/{x}" not in mounts]
+			for device in devices:
+				device["MOUNT"] = possibleMountPoints.pop()
+
+			knownDevices = fileReadLines("/etc/udev/known_devices", default=[])
+			newFstab = fileReadLines("/etc/fstab")
+			commands = []
+			for device in devices:
+				ID_FS_UUID = device.get("ID_FS_UUID")
+				DEVNAME = device.get("DEVNAME")
+				if [x for x in newFstab if DEVNAME in x]:
+					continue
+				if [x for x in newFstab if ID_FS_UUID in x]:
+					continue
+				commands.append(f"/bin/umount -lf {DEVNAME.replace("/dev/", "/media/")}")
+				ID_FS_TYPE = "auto"  # eventData.get("ID_FS_TYPE")
+				mountPoint = device.get("MOUNT")
+				knownDevices.append(f"{ID_FS_UUID}:{mountPoint}")
+				newFstab.append(f"UUID={ID_FS_UUID} {mountPoint} {ID_FS_TYPE} defaults 0 0")
+				if not exists(mountPoint):
+					mkdir(mountPoint, 0o755)
+				print(f"[Harddisk] Add hotplug device: {DEVNAME} mount: {mountPoint} to fstab")
+
+			fileWriteLines("/etc/fstab", newFstab)
+			commands.append("/bin/mount -a")
+			self.console.eBatch(cmds=commands, callback=enumerateHotPlugDevicesCallback)
+		else:
+			callback()
 
 	def enumerateBlockDevices(self):
 		print("[Harddisk] Enumerating block devices.")

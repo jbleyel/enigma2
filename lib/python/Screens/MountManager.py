@@ -406,7 +406,7 @@ class MountManager(Screen):
 			for fstab in self.fstab:
 				if fstab:
 					fstabData = fstab.split()
-					if fstabData[1] == f"/media/{dev}":
+					if fstabData[1] == f"/media/{dev}" and dev in result:
 						result.remove(dev)
 		return result
 
