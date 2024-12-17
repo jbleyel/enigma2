@@ -264,6 +264,13 @@ extern "C" {
 	}
 
 	static PyObject *
+	eConsolePy_waitPID(eConsolePy* self)
+	{
+		self->cont->waitPID();
+		Py_RETURN_NONE;
+	}
+
+	static PyObject *
 	eConsolePy_sendCtrlC(eConsolePy* self)
 	{
 		self->cont->sendCtrlC();
@@ -350,6 +357,9 @@ extern "C" {
 		},
 		{(char*)"getPID", (PyCFunction)eConsolePy_getPID, METH_NOARGS,
 		(char*)"execute command"
+		},
+		{(char*)"waitPID", (PyCFunction)eConsolePy_waitPID, METH_NOARGS,
+		(char*)"wait"
 		},
 		{(char*)"kill", (PyCFunction)eConsolePy_kill, METH_NOARGS,
 		(char*)"kill application"
