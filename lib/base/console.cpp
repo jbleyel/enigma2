@@ -306,7 +306,7 @@ int eConsoleAppContainer::waitPID()
 	int status;
 	// wait for process end
 	do {
-		w = waitpid(pid, &status, 0);
+		int w = waitpid(pid, &status, 0);
 		if (w == -1) {
 			eDebug("[eConsoleAppContainer] waitPID pid = %d error %d.", pid, w);
 			return w;
