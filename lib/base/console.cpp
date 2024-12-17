@@ -301,15 +301,30 @@ void eConsoleAppContainer::readyRead(int what)
 	}
 }
 
-void eConsoleAppContainer::waitPID()
+int eConsoleAppContainer::waitPID()
 {
-	eDebug("[eConsoleAppContainer] waitPID pid = %d", pid);
-	int childstatus;
+	int status;
 	// wait for process end
-	::waitpid(pid, &childstatus, 0);
-	eDebug("[eConsoleAppContainer] waitPID pid = %d / childstatus = %d", pid, childstatus);
+	do {
+		w = waitpid(pid, &status, 0);
+		if (w == -1) {
+			eDebug("[eConsoleAppContainer] waitPID pid = %d error %d.", pid, w);
+			return w;
+		}
+		if (WIFEXITED(status)) {
+			eDebug("[eConsoleAppContainer] pid = %d exited with status %d.", pid, WEXITSTATUS(status));
+		} else if (WIFSIGNALED(status)) {
+			eDebug("[eConsoleAppContainer] pid = %d killed by signal %d.", pid, WTERMSIG(status));
+		} else if (WIFSTOPPED(status)) {
+			eDebug("[eConsoleAppContainer] pid = %d stopped by signal %d.", pid, WSTOPSIG(status));
+		} else if (WIFCONTINUED(status)) {
+			eDebug("[eConsoleAppContainer] pid = %d continued.", pid);
+		}
+	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
 	// force hungup
 	readyRead(eSocketNotifier::Hungup);
+	return 0;
 }
 
 void eConsoleAppContainer::readyErrRead(int what)

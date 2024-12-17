@@ -266,8 +266,7 @@ extern "C" {
 	static PyObject *
 	eConsolePy_waitPID(eConsolePy* self)
 	{
-		self->cont->waitPID();
-		Py_RETURN_NONE;
+		return PyLong_FromLong(self->cont->waitPID());
 	}
 
 	static PyObject *
@@ -356,7 +355,7 @@ extern "C" {
 		(char*)"set input file"
 		},
 		{(char*)"getPID", (PyCFunction)eConsolePy_getPID, METH_NOARGS,
-		(char*)"execute command"
+		(char*)"get PID"
 		},
 		{(char*)"waitPID", (PyCFunction)eConsolePy_waitPID, METH_NOARGS,
 		(char*)"wait"
