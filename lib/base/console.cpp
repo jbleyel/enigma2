@@ -26,6 +26,7 @@ int bidirpipe(int pfd[], const char *cmd , const char * const argv[], const char
 		return(-1);
 	else if (pid == 0) /* child process */
 	{
+		eDebug("[eConsoleAppContainer] Child Process");
 		setsid();
 		if ( close(0) == -1 || close(1) == -1 || close(2) == -1 )
 			_exit(0);
@@ -44,6 +45,7 @@ int bidirpipe(int pfd[], const char *cmd , const char * const argv[], const char
 		if (cwd && chdir(cwd) < 0)
 			eDebug("[eConsoleAppContainer] failed to change directory to %s (%m)", cwd);
 
+		eDebug("[eConsoleAppContainer] execvp");
 		execvp(cmd, (char * const *)argv);
 		/* the vfork will actually suspend the parent thread until execvp is called. thus it's ok to use the shared arg/cmdline pointers here. */
 		eDebug("[eConsoleAppContainer] Finished %s", cmd);
@@ -56,6 +58,7 @@ int bidirpipe(int pfd[], const char *cmd , const char * const argv[], const char
 	pfd[1] = pfdout[1];
 	pfd[2] = pfderr[0];
 
+	eDebug("[eConsoleAppContainer] bidirpipe pid = %d", pid);
 	return(pid);
 }
 
@@ -252,10 +255,10 @@ void eConsoleAppContainer::closePipes()
 
 void eConsoleAppContainer::readyRead(int what)
 {
+	eDebug("[eConsoleAppContainer] readyRead what = %d / pid = %d", what, pid);
 	bool hungup = what & eSocketNotifier::Hungup;
 	if (what & (eSocketNotifier::Priority|eSocketNotifier::Read))
 	{
-//		eDebug("[eConsoleAppContainer] readyRead what = %d", what);
 		char* buf = &buffer[0];
 		int rd;
 		while((rd = read(fd[0], buf, buffer.size()-1)) > 0)
