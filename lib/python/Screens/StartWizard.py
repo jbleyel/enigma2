@@ -169,6 +169,9 @@ class StartWizard(Wizard, ShowRemoteControl):
 	def isFlashExpanderActive(self):
 		return isdir(join("/%s/%s" % (EXPANDER_MOUNT, EXPANDER_MOUNT), "bin"))
 
+	def hasDevices(self):
+		return True  # TODO
+
 	def keyYellow(self):
 		if self.wizard[self.currStep]["name"] == "swap":
 			self.session.open(HarddiskSelection)
