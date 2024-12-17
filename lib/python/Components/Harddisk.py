@@ -668,9 +668,6 @@ class HarddiskManager:
 				eventData[variable] = value
 			return eventData
 
-		def enumerateHotPlugDevicesCallback(*args, **kwargs):
-			callback()
-
 		print("[Harddisk] Enumerating hotplug devices.")
 		fileNames = glob("/tmp/hotplug_dev_*")
 		devices = []
@@ -683,7 +680,7 @@ class HarddiskManager:
 				removable = fileReadLine(f"/sys/block/{shortDevice}/removable")
 				eventData["SORT"] = 0 if ("pci" in eventData["DEVPATH"] or "ahci" in eventData["DEVPATH"]) and removable == "0" else 1
 				devices.append(eventData)
-				# remove(fileName)
+				remove(fileName)
 
 		if devices:
 			devices.sort(key=lambda x: (x["SORT"], x["ID_PART_ENTRY_SIZE"]))
@@ -712,11 +709,16 @@ class HarddiskManager:
 					mkdir(mountPoint, 0o755)
 				print(f"[Harddisk] Add hotplug device: {DEVNAME} mount: {mountPoint} to fstab")
 
-			fileWriteLines("/etc/fstab", newFstab)
-			commands.append("/bin/mount -a")
-			self.console.eBatch(cmds=commands, callback=enumerateHotPlugDevicesCallback)
-		else:
-			callback()
+			if commands:
+				#def enumerateHotPlugDevicesCallback(*args, **kwargs):
+				#	callback()
+				fileWriteLines("/etc/fstab", newFstab)
+				commands.append("/bin/mount -a")
+				#self.console.eBatch(cmds=commands, callback=enumerateHotPlugDevicesCallback) # eBatch is not working correctly here this needs to be fixed
+				#return
+				for command in commands:
+					self.console.ePopen(command)
+		callback()
 
 	def enumerateBlockDevices(self):
 		print("[Harddisk] Enumerating block devices.")
