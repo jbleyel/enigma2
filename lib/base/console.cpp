@@ -278,6 +278,7 @@ void eConsoleAppContainer::readyRead(int what)
 	readyErrRead(eSocketNotifier::Priority|eSocketNotifier::Read); /* be sure to flush all data which might be already written */
 	if (hungup)
 	{
+		eDebug("[eConsoleAppContainer] readyRead hungup pid = %d", pid);
 		int childstatus;
 		int retval = killstate;
 		/*
@@ -286,12 +287,16 @@ void eConsoleAppContainer::readyRead(int what)
 		 */
 		if (::waitpid(-pid, &childstatus, 0) > 0)
 		{
+			eDebug("[eConsoleAppContainer] readyRead hungup waitpid pid = %d / childstatus = %d", pid, childstatus);
 			if (WIFEXITED(childstatus))
 			{
+				eDebug("[eConsoleAppContainer] readyRead hungup WEXITSTATUS pid = %d", pid);
 				retval = WEXITSTATUS(childstatus);
 			}
 		}
+		eDebug("[eConsoleAppContainer] readyRead hungup closePipes pid = %d", pid);
 		closePipes();
+		eDebug("[eConsoleAppContainer] readyRead hungup appClosed pid = %d / retval = %d", pid, retval);
 		/*emit*/ appClosed(retval);
 	}
 }
