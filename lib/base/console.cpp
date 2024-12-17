@@ -301,6 +301,17 @@ void eConsoleAppContainer::readyRead(int what)
 	}
 }
 
+void eConsoleAppContainer::waitPID()
+{
+	eDebug("[eConsoleAppContainer] waitPID pid = %d", pid);
+	int childstatus;
+	// wait for process end
+	::waitpid(pid, &childstatus, 0);
+	eDebug("[eConsoleAppContainer] waitPID pid = %d / childstatus = %d", pid, childstatus);
+	// force hungup
+	readyRead(eSocketNotifier::Hungup);
+}
+
 void eConsoleAppContainer::readyErrRead(int what)
 {
 	if (what & (eSocketNotifier::Priority|eSocketNotifier::Read))
