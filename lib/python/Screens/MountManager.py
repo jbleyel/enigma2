@@ -13,6 +13,7 @@ from Components.Label import Label
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo  # , getBoxDisplayName
 from Screens.ChoiceBox import ChoiceBox
+from Screens.FlashExpander import EXPANDER_MOUNT
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Screens.Setup import Setup
@@ -172,10 +173,10 @@ class StorageDevices():
 			for fstab in self.fstab:
 				fstabData = fstab.split()
 				if fstabData:
-					if UUID and UUID in fstabData:
+					if UUID and UUID in fstabData[0]:
 						fstabMountPoint = fstabData[1]
 					elif deviceP in fstabData:
-						fstabMountPoint = fstabData[1]
+						fstabMountPoint = fstabData[0]
 
 			description = []
 			description.append(f"{_("Device: ")}{join("/dev", device)}")
@@ -222,25 +223,18 @@ class StorageDevices():
 				deviceP = deviceData.get("devicePoint")
 				deviceUuid = deviceData.get("UUID")
 				deviceType = deviceData.get("deviceType")
-				choiceList = [("None", "None"), ("", "Custom")]
-				if "sr" in deviceP:
-					choiceList.extend([("/media/cdrom", "/media/cdrom")], [("/media/dvd", "/media/dvd")])
-				else:
-					choiceList.extend([(f"/media/{x}", f"/media/{x}") for x in self.getMountPoints(deviceType)])
-				if fstabMountPoint not in [x[0] for x in choiceList]:
-					choiceList.insert(0, (fstabMountPoint, fstabMountPoint))
-				devices.append((deviceP, fstabMountPoint, isMounted, deviceUuid, name, choiceList))
+				devices.append((deviceP, fstabMountPoint, isMounted, deviceUuid, name, deviceType))
 		return devices
 
 	def getMountPoints(self, deviceType):
 		match deviceType:
 			case 0:
-				result = ["usb", "usb2", "usb3"]
+				result = ["usb", "usb2", "usb3", "usb4", "usb5"]
 			case 1:
-				result = ["mmc", "mmc2", "mmc3"]
+				result = ["mmc", "mmc2", "mmc3", "mmc4", "mmc5"]
 			case _:
 				result = []
-		result.extend(["hdd", "hdd2", "hdd3"])
+		result.extend(["hdd", "hdd2", "hdd3", "hdd4", "hdd5"])
 		for dev in result[:]:
 			for fstab in self.fstab:
 				if fstab:
@@ -354,17 +348,17 @@ class MountManager(Screen):
 
 	def keyMountPoints(self):
 		def keyMountPointsCallback(needsReboot=False):
-			self.updateDevices()
+			self.devices.updateDevices()
 
 		devices = self.devices.buildDevices()
-		self.session.openWithCallback(keyMountPointsCallback, MountManagerMountPoints, devices)
+		self.session.openWithCallback(keyMountPointsCallback, MountManagerMountPoints, devices=devices, devicesObj=self.devices)
 
 	def keyMountPoint(self):
 		def keyMountPointCallback(needsReboot=False):
-			self.updateDevices()
+			self.devices.updateDevices()
 
 		devices = self.devices.buildDevices(self["devicelist"].getCurrentIndex())
-		self.session.openWithCallback(keyMountPointCallback, MountManagerMountPoints, devices)
+		self.session.openWithCallback(keyMountPointCallback, MountManagerMountPoints, devices=devices, single=True, devicesObj=self.devices)
 
 		return
 
@@ -385,9 +379,9 @@ class MountManager(Screen):
 			def checkMount(data, retVal, extraArgs):
 				if retVal:
 					print(f"[MountManager] mount failed for device:{device} / RC:{retVal}")
-				self.updateDevices()
+				self.devices.updateDevices()
 				mountok = False
-				for line in self.mounts:
+				for line in self.devices.mounts:
 					if line.find(device) != -1:
 						mountok = True
 				if not mountok:
@@ -429,7 +423,7 @@ class MountManager(Screen):
 					title = _("Select the new mount point for: '%s'") % model
 					choiceList = [(f"/media/{x}", f"/media/{x}") for x in self.devices.getMountPoints(deviceType)]
 					self.session.openWithCallback(keyYellowCallback, ChoiceBox, choiceList=choiceList, buttonList=[], windowTitle=title)
-			self.updateDevices()
+			self.devices.updateDevices()
 
 	def keyBlue(self):
 		pass
@@ -439,6 +433,7 @@ class MountManager(Screen):
 
 
 class MountManagerMountPoints(Setup):
+	MOUNT = "/bin/mount"
 	defaultOptions = {
 		"auto": "",
 		"ext4": "defaults,noatime",
@@ -453,7 +448,7 @@ class MountManagerMountPoints(Setup):
 		"fuseblk": "defaults,uid=0,gid=0"
 	}
 
-	def __init__(self, session, devices=None):
+	def __init__(self, session, devices=None, single=False, devicesObj=None):
 		if devices is None:
 			devicesObj = StorageDevices()
 			devicesObj.readDevices()
@@ -464,31 +459,28 @@ class MountManagerMountPoints(Setup):
 		self.customMountPoints = []
 		self.fileSystems = []
 		self.options = []
-		self.defaultMountpoints = []
 
-		defaults = [
-			"usb7", "usb6", "usb5", "usb4", "usb3", "usb2", "usb", "hdd"
-		]
-
-		# device , fstabmountpoint, isMounted , deviceUuid, name, choiceList
-		for device in devices:
-			if "sr" in device[0]:
-				self.defaultMountpoints.append("/media/cdrom")
-			else:
-				deviceName = device[1].replace("/media/", "")
-				if device[1]:
-					self.defaultMountpoints.append(device[1])
-				else:
-					self.defaultMountpoints.append(f"/media/{defaults.pop()}")
-				if deviceName in defaults:
-					defaults.remove(deviceName)
-
+		# device , fstabmountpoint, isMounted , deviceUuid, name, deviceType
 		for index, device in enumerate(devices):
-			self.mountPoints.append(NoSave(ConfigSelection(default=self.defaultMountpoints[index], choices=device[5])))
-			self.customMountPoints.append(NoSave(ConfigText()))
+			deviceType = device[5]
+			fstabMountPoint = device[1]
+			choiceList = [("None", "None")]
 			if "sr" in device[0]:
 				fileSystems = ["auto", "iso9660", "udf"]
+				choiceList.extend([("/media/cdrom", "/media/cdrom")], [("/media/dvd", "/media/dvd")])
+				defaultMountpoint = fstabMountPoint or "/media/cdrom"
 			else:
+				possibleMounts = [f"/media/{x}" for x in devicesObj.getMountPoints(deviceType)]
+				if single:
+					for mounts in devicesObj.mounts:
+						if mounts.split()[1] in possibleMounts:
+							possibleMounts.remove(mounts.split()[1])
+					choiceList.extend([(x, x) for x in possibleMounts])
+				else:
+					choiceList.extend([(x, x) for x in possibleMounts])
+				if fstabMountPoint not in [x[0] for x in choiceList]:
+					choiceList.insert(1, (fstabMountPoint, fstabMountPoint))
+				defaultMountpoint = fstabMountPoint or "None"
 				fileSystems = ["auto", "ext4", "vfat"]
 				if exists("/sbin/mount.exfat"):
 					fileSystems.append("exfat")
@@ -497,6 +489,9 @@ class MountManagerMountPoints(Setup):
 				if exists("/sbin/mount.fuse"):
 					fileSystems.append("fuseblk")
 				fileSystems.extend(["hfsplus", "btrfs", "xfs"])
+			choiceList.append(("", "Custom"))
+			self.mountPoints.append(NoSave(ConfigSelection(default=defaultMountpoint, choices=choiceList)))
+			self.customMountPoints.append(NoSave(ConfigText()))
 			fileSystemChoices = [(x, x) for x in fileSystems]
 			self.fileSystems.append(NoSave(ConfigSelection(default=fileSystems[0], choices=fileSystemChoices)))
 			self.options.append(NoSave(ConfigText("defaults")))
@@ -551,9 +546,9 @@ class MountManagerMountPoints(Setup):
 			# deviceName = device[0]
 			currentMountPoint = device[1]
 			UUID = device[3]
-			newFstab = [l for l in newFstab if currentMountPoint not in l]
-			newFstab = [l for l in newFstab if UUID not in l]
-			newFstab = [l for l in newFstab if mountPoint not in l]
+			newFstab = [l for l in newFstab if currentMountPoint not in l or EXPANDER_MOUNT in l]
+			newFstab = [l for l in newFstab if UUID not in l or EXPANDER_MOUNT in l]
+			newFstab = [l for l in newFstab if mountPoint not in l or EXPANDER_MOUNT in l]
 			if mountPoint != "None":
 				newFstab.append(f"UUID={UUID}\t{mountPoint}\t{fileSystem}\t{options}\t0 0")
 			if mountPoint != "None":
@@ -562,7 +557,7 @@ class MountManagerMountPoints(Setup):
 
 		if newFstab != oldFstab:
 			fileWriteLines("/etc/fstab", newFstab, source=MODULE_NAME)
-			self.console.ePopen([self.MOUNT, self.MOUNT, "-a"], keySaveCallback)
+			Console().ePopen([self.MOUNT, self.MOUNT, "-a"], keySaveCallback)
 		else:
 			self.close(False)
 
