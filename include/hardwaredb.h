@@ -150,8 +150,8 @@ static std::unordered_map<std::string, std::string> HardwareDB{
 #elif HWH7
 	{"/devices/platform/rdb/f045a000.sata/ata1/", "SATA"},
 	{"/devices/platform/f0470500.ehci/usb2/", "Back USB 3.0"},
-	{"/devices/platform/f0470300.ehci/usb1/1-1/1-1.2/", "Back, lower USB 2.0"},
-	{"/devices/platform/f0470300.ehci/usb1/1-1/1-1.1/", "Back, upper USB 2.0"}
+	{"/devices/platform/f0470300.ehci/usb1/1-1/1-1.2/", "Back, lower USB"},
+	{"/devices/platform/f0470300.ehci/usb1/1-1/1-1.1/", "Back, upper USB"}
 #elif HWH17 // CHECKED
 	{"/devices/platform/f0470300.ehci/usb1/", "Front USB"},
 	{"/devices/platform/f0471000.xhci/usb6/", "Back USB"},
@@ -161,8 +161,8 @@ static std::unordered_map<std::string, std::string> HardwareDB{
 	{"/devices/platform/rdb/f045a000.sata/ata2/", "SATA"},
 	{"/devices/platform/rdb/f0470300.ehci_v2/usb3/3-1/3-1.1/3-1.1:", "Front USB"},
 	{"/devices/platform/rdb/f0470500.ehci_v2/usb4/", "Back USB 3.0"},
-	{"/devices/platform/rdb/f0470300.ehci_v2/usb3/3-1/3-1.2/3-1.2:", "Back, upper USB 2.0"},
-	{"/devices/platform/rdb/f0470300.ehci_v2/usb3/3-1/3-1.3/3-1.3:", "Back, lower USB 2.0"}
+	{"/devices/platform/rdb/f0470300.ehci_v2/usb3/3-1/3-1.2/3-1.2:", "Back, upper USB"},
+	{"/devices/platform/rdb/f0470300.ehci_v2/usb3/3-1/3-1.3/3-1.3:", "Back, lower USB"}
 #elif HWPULSE4K
 	{"/devices/platform/soc/f9900000.hiahci/ata1/host0/target0:0:0/0:0:0:0", "SATA"},
 	{"/devices/platform/soc/f98a0000.xhci/usb3/", "Front USB"},
@@ -180,11 +180,11 @@ static std::unordered_map<std::string, std::string> HardwareDB{
 	{"/devices/platform/soc/f9890000.ehci/usb1/1-1/1-1", "Back, right USB"}
 #elif HWGBQUAD4K
 	{"/devices/platform/rdb/f045a000.sata/", "SATA"},
-	{"/devices/platform/rdb/f0470300.ehci_v2/usb3/", "Back USB 2.0"},
-	{"/devices/platform/rdb/f0470500.ehci_v2/usb4/4-1/4-1.2/", "Back USB 2.0"},
+	{"/devices/platform/rdb/f0470300.ehci_v2/usb3/", "Back USB"},
+	{"/devices/platform/rdb/f0470500.ehci_v2/usb4/4-1/4-1.2/", "Back USB"},
 	{"/devices/platform/rdb/f0470500.ehci_v2/usb4/4-1/4-1.4/", "Front USB"}
 #elif HWU5 // eg. Dinobot4k
-	{"/devices/platform/soc/f98a0000.xhci/usb3/", "Back USB 3.0"},
+	{"/devices/platform/soc/f98a0000.xhci/usb3/", "Back USB"},
 	{"/devices/platform/soc/f9890000.ehci/usb1/1-2/1-2.3/", "Left, back USB"},
 	{"/devices/platform/soc/f9890000.ehci/usb1/1-2/1-2.4/", "Left, front USB"}
 #elif HWGBQUAD4KPRO // CHECKED
@@ -203,14 +203,14 @@ static std::unordered_map<std::string, std::string> HardwareDB{
 	{"/devices/platform/rdb/f0470500.ehci_v2/usb4/4-1/4-1.3", "Back USB-C"}
 #elif HWDUO4K
 	{"/devices/platform/rdb/8b0a000.sata/", "SATA"},
-	{"/devices/platform/rdb/8b39000.xhci_v2/usb1/", "Front USB 2.0"},
-	{"/devices/platform/rdb/8b39000.xhci_v2/usb2/2-2/", "Back, upper USB 3.0"},
-	{"/devices/platform/rdb/8b39000.xhci_v2/usb2/2-1/", "Back, lower USB 3.0"}
+	{"/devices/platform/rdb/8b39000.xhci_v2/usb1/", "Front USB"},
+	{"/devices/platform/rdb/8b39000.xhci_v2/usb2/2-2/", "Back, upper USB"},
+	{"/devices/platform/rdb/8b39000.xhci_v2/usb2/2-1/", "Back, lower USB"}
 #elif HWDUO4KSE
 	{"/devices/platform/rdb/f045a000.sata/", "SATA"},
-	{"/devices/platform/rdb/f0480500.ehci_v2/usb6/", "Front USB 2.0"},
-	{"/devices/platform/rdb/f0471000.xhci_v2/usb2/2-2/", "Back, upper USB 3.0"},
-	{"/devices/platform/rdb/f0471000.xhci_v2/usb2/2-1/", "Back, lower USB 3.0"}
+	{"/devices/platform/rdb/f0480500.ehci_v2/usb6/", "Front USB"},
+	{"/devices/platform/rdb/f0471000.xhci_v2/usb2/2-2/", "Back, upper USB"},
+	{"/devices/platform/rdb/f0471000.xhci_v2/usb2/2-1/", "Back, lower USB"}
 #elif HWHD51 // CHECKED
 	{"/devices/platform/f0470300.ehci/usb1/1-1/1-1.2", "Front USB"},
 	{"/devices/platform/f0470300.ehci/usb1/1-1/1-1.3", "Back, left USB"},
@@ -234,7 +234,13 @@ static std::unordered_map<std::string, std::string> HardwareDB{
 	{"/devices/platform/soc/f9890000.ehci/usb1/1-1", "Back, left USB"},
 	{"/devices/platform/soc/f9890000.ehci/usb1/1-2", "Back, right USB"},
 	{"/devices/platform/soc/f9900000.hiahci/ata1/", "SATA"}
+#elif HWSF8008
+	{"/devices/platform/soc/f98a0000.xhci/usb4/4-1/4-1", "Right USB"},
+	{"/devices/platform/soc/f98a0000.xhci/usb4/3-1/3-1", "Right USB"},
+	{"/devices/platform/soc/f9890000.ehci/usb1/1-1/1-1.2", "Back USB"},
+	{"/devices/platform/soc/f9890000.ehci/usb1/1-1/1-1.3", "Micro SD"}
 #else
+
 #endif
 
 };

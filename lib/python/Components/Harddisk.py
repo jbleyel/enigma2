@@ -39,7 +39,7 @@ def getProcMounts():
 			result.append(item)
 		return result
 	except OSError as err:
-		print("[Harddisk] Error {err.errno}: Failed to open '/proc/mounts'!  (err.strerror})")
+		print(f"[Harddisk] Error {err.errno}: Failed to open '/proc/mounts'!  ({err.strerror})")
 		return []
 
 
@@ -53,7 +53,7 @@ def isFileSystemSupported(filesystem):
 		file.close()
 		return False
 	except Exception as err:
-		print("[Harddisk] Error {err.errno}: Failed to read '/proc/filesystems'!  ({err.strerror})")
+		print(f"[Harddisk] Error {err.errno}: Failed to read '/proc/filesystems'!  ({err.strerror})")
 
 
 def findMountPoint(path):
@@ -220,7 +220,7 @@ class Harddisk:
 			else:
 				raise Exception("no hdX or sdX or mmcX")
 		except Exception as err:
-			# print("[Harddisk] Error {err.errno}: Failed to get model!  ({err.strerror})")
+			# print(f"[Harddisk] Error {err.errno}: Failed to get model!  ({err.strerror})")
 			return "-?-"
 
 	def free(self):
@@ -302,7 +302,7 @@ class Harddisk:
 			parts = line.strip().split(" ")
 			fspath = realpath(parts[0])
 			if fspath == dev:
-				print("[Harddisk] Mounting '{fspath}'.")
+				print(f"[Harddisk] Mounting '{fspath}'.")
 				cmd = f"mount -t auto {fspath}"
 				res = system(cmd)
 				return res >> 8
@@ -680,7 +680,7 @@ class HarddiskManager:
 				removable = fileReadLine(f"/sys/block/{shortDevice}/removable")
 				eventData["SORT"] = 0 if ("pci" in eventData["DEVPATH"] or "ahci" in eventData["DEVPATH"]) and removable == "0" else 1
 				devices.append(eventData)
-				remove(fileName)
+				#remove(fileName)
 
 		if devices:
 			devices.sort(key=lambda x: (x["SORT"], x["ID_PART_ENTRY_SIZE"]))
@@ -878,7 +878,7 @@ class HarddiskManager:
 		try:
 			description = readFile(f"/sys{phys}/model")
 		except OSError as err:
-			print("[Harddisk] Error {err.errno}: Couldn't read model!  ({err.strerror})")
+			print(f"[Harddisk] Error {err.errno}: Couldn't read model!  ({err.strerror})")
 		for physdevprefix, pdescription in list(getDeviceDB().items()):
 			if phys.startswith(physdevprefix):
 				description = pdescription
