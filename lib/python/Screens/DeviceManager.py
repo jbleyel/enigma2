@@ -244,12 +244,12 @@ class StorageDevices():
 		return result
 
 
-class MountManager(Screen):
+class DeviceManager(Screen):
 	MOUNT = "/bin/mount"
 	UMOUNT = "/bin/umount"
 
 	skin = """
-	<screen name="MountManager" title="Mount Manager" position="center,center" size="1080,465" resolution="1280,720">
+	<screen name="DeviceManager" title="Mount Manager" position="center,center" size="1080,465" resolution="1280,720">
 		<widget source="devicelist" render="Listbox" position="0,0" size="680,425">
 				<templates>
 					<template name="Default" fonts="Regular;24,Regular;20" itemHeight="85">
@@ -351,14 +351,14 @@ class MountManager(Screen):
 			self.devices.updateDevices()
 
 		devices = self.devices.buildDevices()
-		self.session.openWithCallback(keyMountPointsCallback, MountManagerMountPoints, devices=devices, devicesObj=self.devices)
+		self.session.openWithCallback(keyMountPointsCallback, DeviceManagerMountPoints, devices=devices, devicesObj=self.devices)
 
 	def keyMountPoint(self):
 		def keyMountPointCallback(needsReboot=False):
 			self.devices.updateDevices()
 
 		devices = self.devices.buildDevices(self["devicelist"].getCurrentIndex())
-		self.session.openWithCallback(keyMountPointCallback, MountManagerMountPoints, devices=devices, single=True, devicesObj=self.devices)
+		self.session.openWithCallback(keyMountPointCallback, DeviceManagerMountPoints, devices=devices, single=True, devicesObj=self.devices)
 
 		return
 
@@ -378,7 +378,7 @@ class MountManager(Screen):
 		def keyYellowCallback(answer):
 			def checkMount(data, retVal, extraArgs):
 				if retVal:
-					print(f"[MountManager] mount failed for device:{device} / RC:{retVal}")
+					print(f"[DeviceManager] mount failed for device:{device} / RC:{retVal}")
 				self.devices.updateDevices()
 				mountok = False
 				for line in self.devices.mounts:
@@ -432,7 +432,7 @@ class MountManager(Screen):
 		return DevicesPanelSummary
 
 
-class MountManagerMountPoints(Setup):
+class DeviceManagerMountPoints(Setup):
 	MOUNT = "/bin/mount"
 	defaultOptions = {
 		"auto": "",
@@ -565,7 +565,7 @@ class MountManagerMountPoints(Setup):
 		self.close(False)
 
 
-class HddMount(MountManager):
+class HddMount(DeviceManager):
 	pass
 
 

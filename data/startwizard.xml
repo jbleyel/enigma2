@@ -56,7 +56,7 @@ self.condition = self.swapDevice and self.swapDevice == "."
 		<condition>
 self.condition = self.hasDevices()
 		</condition>
-		<config screen="MountManagerMountPoints" module="MountManager" type="standalone" />
+		<config screen="DeviceManagerMountPoints" module="DeviceManager" type="standalone" />
 	</step>
 
 	<step id="network">

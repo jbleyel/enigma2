@@ -21,11 +21,11 @@ def readFile(filename):
 		data = fd.read().strip()
 	return data
 
-
-def getextdevices(ext):
-	cmd = f"blkid -t TYPE={ext} -o device"
-	extdevices = popen(cmd).read().replace("\n", ",").rstrip(",")
-	return None if extdevices == "" else [x.strip() for x in extdevices.split(",")]
+## Unused
+#def getextdevices(ext):
+#	cmd = f"blkid -t TYPE={ext} -o device"
+#	extdevices = popen(cmd).read().replace("\n", ",").rstrip(",")
+#	return None if extdevices == "" else [x.strip() for x in extdevices.split(",")]
 
 
 def getProcMounts():

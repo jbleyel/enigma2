@@ -329,7 +329,7 @@ class QuickMenu(Screen, ProtectedScreen):
 		if NETWORKBROWSER:
 			self.subList.append(self.quickSubMenuEntryComponent(_("Mount Manager"), _("Manage network mounts"), _("Setup your network mounts"), callback=mountManager))
 			self.subList.append(self.quickSubMenuEntryComponent(_("Network Browser"), _("Search for network shares"), _("Search for network shares"), callback=networkBrowser))
-		self.subList.append(self.quickSubMenuEntryComponent(_("Device Manager"), _("Mounts Devices"), _("Setup your Device mounts (USB, HDD, others...)"), screen="MountManager", screenName="HddMount"))
+		self.subList.append(self.quickSubMenuEntryComponent(_("Device Manager"), _("Mounts Devices"), _("Setup your Device mounts (USB, HDD, others...)"), screen="DeviceManager", screenName="DeviceManager"))
 		self.setSubList()
 
 	def subMenuNetwork(self):  # Network Menu.
