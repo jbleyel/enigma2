@@ -226,7 +226,7 @@ class StorageDevices():
 				devices.append((deviceP, fstabMountPoint, isMounted, deviceUuid, name, deviceType))
 		return devices
 
-	def getMountPoints(self, deviceType):
+	def getMountPoints(self, deviceType, onlyPossible=False):
 		match deviceType:
 			case 0:
 				result = ["usb", "usb2", "usb3", "usb4", "usb5"]
@@ -235,11 +235,11 @@ class StorageDevices():
 			case _:
 				result = []
 		result.extend(["hdd", "hdd2", "hdd3", "hdd4", "hdd5"])
-		for dev in result[:]:
-			for fstab in self.fstab:
-				if fstab:
-					fstabData = fstab.split()
-					if fstabData[1] == f"/media/{dev}" and dev in result:
+		if onlyPossible:
+			fstabMountPoints = [x.split()[1] for x in self.fstab if x]
+			for dev in result[:]:
+				for fstabMountPoint in fstabMountPoints:
+					if fstabMountPoint == f"/media/{dev}" and dev in result:
 						result.remove(dev)
 		return result
 
@@ -421,7 +421,7 @@ class DeviceManager(Screen):
 							self.session.open(MessageBox, _("Can't unmount partition, make sure it is not being used for swap or record/time shift paths"), MessageBox.TYPE_INFO)
 				else:
 					title = _("Select the new mount point for: '%s'") % model
-					choiceList = [(f"/media/{x}", f"/media/{x}") for x in self.devices.getMountPoints(deviceType)]
+					choiceList = [(f"/media/{x}", f"/media/{x}") for x in self.devices.getMountPoints(deviceType, onlyPossible=True)]
 					self.session.openWithCallback(keyYellowCallback, ChoiceBox, choiceList=choiceList, buttonList=[], windowTitle=title)
 			self.devices.updateDevices()
 
@@ -472,13 +472,13 @@ class DeviceManagerMountPoints(Setup):
 			else:
 				possibleMounts = [f"/media/{x}" for x in devicesObj.getMountPoints(deviceType)]
 				if single:
-					for mounts in devicesObj.mounts:
+					for mounts in devicesObj.fstab:
 						if mounts.split()[1] in possibleMounts:
 							possibleMounts.remove(mounts.split()[1])
 					choiceList.extend([(x, x) for x in possibleMounts])
 				else:
 					choiceList.extend([(x, x) for x in possibleMounts])
-				if fstabMountPoint not in [x[0] for x in choiceList]:
+				if fstabMountPoint and fstabMountPoint not in [x[0] for x in choiceList]:
 					choiceList.insert(1, (fstabMountPoint, fstabMountPoint))
 				defaultMountpoint = fstabMountPoint or "None"
 				fileSystems = ["auto", "ext4", "vfat"]
@@ -537,21 +537,31 @@ class DeviceManagerMountPoints(Setup):
 			self.close(needReboot)
 
 		oldFstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME)
-		newFstab = oldFstab[:]
+		newFstab = []
+
+		UUIDs = [device[3] for device in self.devices if device[3]]
+
+		for line in oldFstab:
+			found = False
+			for UUID in UUIDs:
+				if UUID in line:
+					found = True
+					break
+
+			if not found or EXPANDER_MOUNT in line:
+				newFstab.append(line)
+
 		for index, device in enumerate(self.devices):
 			mountPoint = self.mountPoints[index].value or self.customMountPoints[index].value
 			fileSystem = self.fileSystems[index].value
 			options = self.options[index].value
 			# device , fstabmountpoint, isMounted , deviceUuid, name, choiceList
-			# deviceName = device[0]
-			currentMountPoint = device[1]
 			UUID = device[3]
-			newFstab = [l for l in newFstab if currentMountPoint not in l or EXPANDER_MOUNT in l]
-			newFstab = [l for l in newFstab if UUID not in l or EXPANDER_MOUNT in l]
-			newFstab = [l for l in newFstab if mountPoint not in l or EXPANDER_MOUNT in l]
 			if mountPoint != "None":
-				newFstab.append(f"UUID={UUID}\t{mountPoint}\t{fileSystem}\t{options}\t0 0")
-			if mountPoint != "None":
+				if UUID:
+					newFstab.append(f"UUID={device[3]}\t{mountPoint}\t{fileSystem}\t{options}\t0 0")
+				else:  # This should not happen
+					newFstab.append(f"{device[0]}\t{mountPoint}\t{fileSystem}\t{options}\t0 0")
 				if not exists(mountPoint):
 					mkdir(mountPoint, 0o755)
 
