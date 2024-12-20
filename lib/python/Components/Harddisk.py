@@ -54,6 +54,7 @@ def isFileSystemSupported(filesystem):
 		return False
 	except Exception as err:
 		print(f"[Harddisk] Error {err.errno}: Failed to read '/proc/filesystems'!  ({err.strerror})")
+		return False
 
 
 def findMountPoint(path):
@@ -71,7 +72,7 @@ def getFolderSize(path):
 		st = lstat(path)
 		return (st.st_size, st.st_blocks * 512)
 	total_bytes = 0
-	have = []
+	have = set()
 	for dirpath, dirnames, filenames in walk(path):
 		total_bytes += lstat(dirpath).st_blocks * 512
 		for f in filenames:
@@ -81,7 +82,7 @@ def getFolderSize(path):
 			st = lstat(fp)
 			if st.st_ino in have:
 				continue  # Skip hard links which were already counted.
-			have.append(st.st_ino)
+			have.add(st.st_ino)
 			total_bytes += st.st_blocks * 512
 		for d in dirnames:
 			dp = join(dirpath, d)
@@ -175,7 +176,7 @@ class Harddisk:
 		if hw_type == "elite" or hw_type == "premium" or hw_type == "premium+" or hw_type == "ultra":
 			internal = "ide" in self.phys_path
 		else:
-			internal = ("pci" or "ahci") in self.phys_path
+			internal = ("pci" in self.phys_path or "ahci" in self.phys_path)
 		if MODEL == "sf8008":
 			internal = ("usb1/1-1/1-1.1/1-1.1:1.0" in self.phys_path) or ("usb1/1-1/1-1.4/1-1.4:1.0" in self.phys_path)
 		if card:
@@ -926,7 +927,7 @@ class UnmountTask(Components.Task.LoggingTask):
 			dev = self.hdd.disk_path.split("/")[-1]
 			open(f"/dev/nomount.{dev}", "wb").close()
 		except OSError as err:
-			print(f"[Harddisk] Error {err.errno}: Failed to create '/dev/nomount' file!  {{err.strerror}}")
+			print(f"[Harddisk] Error {err.errno}: Failed to create '/dev/nomount' file!  ({err.strerror})")
 		self.setTool("umount")
 		self.args.append("-f")
 		for dev in self.hdd.enumMountDevices():
