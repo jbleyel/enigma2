@@ -3,7 +3,6 @@
 # A task is the run of an external tool, with proper methods for failure handling
 
 from Tools.CList import CList
-import six
 
 
 class Job:
@@ -216,7 +215,8 @@ class Task:
 		self.processOutput(data)
 
 	def processOutput(self, data):
-		data = six.ensure_str(data)
+		if isinstance(data, bytes):
+			data = data.decode()
 		self.output_line += data
 		while True:
 			i = self.output_line.find('\n')
@@ -280,7 +280,8 @@ class LoggingTask(Task):
 		self.log = []
 
 	def processOutput(self, data):
-		data = six.ensure_str(data)
+		if isinstance(data, bytes):
+			data = data.decode()
 		print("[Task %s]" % self.name, data, end=' ')
 		self.log.append(data)
 
@@ -486,6 +487,7 @@ class WorkspaceExistsPrecondition(Condition):
 		pass
 
 	def check(self, task):
+		import os
 		return os.access(task.job.workspace, os.W_OK)
 
 
