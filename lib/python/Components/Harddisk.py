@@ -686,10 +686,12 @@ class HarddiskManager:
 		if devices:
 			devices.sort(key=lambda x: (x["SORT"], x["ID_PART_ENTRY_SIZE"]))
 			mounts = fileReadLines("/proc/mounts")
+			devmounts = [x.split()[0] for x in mounts if "/dev/" in x]
 			mounts = [x.split()[1] for x in mounts if "/media/" in x]
 			possibleMountPoints = [f"/media/{x}" for x in ("usb8", "usb7", "usb6", "usb5", "usb4", "usb3", "usb2", "usb", "hdd") if f"/media/{x}" not in mounts]
 			for device in devices:
-				device["MOUNT"] = possibleMountPoints.pop()
+				if device["DEVNAME"] not in devmounts:
+					device["MOUNT"] = possibleMountPoints.pop()
 
 			knownDevices = fileReadLines("/etc/udev/known_devices", default=[])
 			newFstab = fileReadLines("/etc/fstab")
