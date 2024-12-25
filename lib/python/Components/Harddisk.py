@@ -33,7 +33,7 @@ def getProcMountsNew():
 	result = []
 	for line in [x for x in lines if x and x.startswith("/dev/")]:
 		# Replace encoded space (\040) and newline (\012) characters with actual space and newline
-		result.append((s.replace("\\040", " ").replace("\\012", "\n") for s in line.strip(" \n").split(" ")))
+		result.append([s.replace("\\040", " ").replace("\\012", "\n") for s in line.strip(" \n").split(" ")])
 	return result
 
 
