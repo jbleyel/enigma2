@@ -28,6 +28,15 @@ def readFile(filename):
 #	return None if extdevices == "" else [x.strip() for x in extdevices.split(",")]
 
 
+def getProcMountsNew():
+	lines = fileReadLines("/proc/mounts", default=[])
+	result = []
+	for line in [x for x in lines if x and x.startswith("/dev/")]:
+		# Replace encoded space (\040) and newline (\012) characters with actual space and newline
+		result.append((s.replace("\\040", " ").replace("\\012", "\n") for s in line.strip(" \n").split(" ")))
+	return result
+
+
 def getProcMounts():
 	try:
 		mounts = open("/proc/mounts")
@@ -257,14 +266,14 @@ class Harddisk:
 		return numPart
 
 	def mountDevice(self):
-		for parts in getProcMounts():
+		for parts in getProcMountsNew():
 			if realpath(parts[0]).startswith(self.dev_path):
 				self.mount_device = parts[0]
 				self.mount_path = parts[1]
 				return parts[1]
 
 	def enumMountDevices(self):
-		for parts in getProcMounts():
+		for parts in getProcMountsNew():
 			if realpath(parts[0]).startswith(self.dev_path):
 				yield parts[1]
 
@@ -554,7 +563,7 @@ class Partition:
 			return True
 		if self.mountpoint:
 			if mounts is None:
-				mounts = getProcMounts()
+				mounts = getProcMountsNew()
 			for parts in mounts:
 				if self.mountpoint.startswith(parts[1]):  # Use startswith so a mount not ending with "/" is also detected.
 					return True
@@ -563,7 +572,7 @@ class Partition:
 	def filesystem(self, mounts=None):
 		if self.mountpoint:
 			if mounts is None:
-				mounts = getProcMounts()
+				mounts = getProcMountsNew()
 			for fields in mounts:
 				if self.mountpoint.endswith("/") and not self.mountpoint == "/":
 					if join(fields[1], "") == self.mountpoint:
@@ -685,10 +694,11 @@ class HarddiskManager:
 
 		if devices:
 			devices.sort(key=lambda x: (x["SORT"], x["ID_PART_ENTRY_SIZE"]))
-			mounts = fileReadLines("/proc/mounts")
-			devmounts = [x.split()[0] for x in mounts if "/dev/" in x]
-			mounts = [x.split()[1] for x in mounts if "/media/" in x]
+			mounts = getProcMountsNew()
+			devmounts = [x[0] for x in mounts]
+			mounts = [x[1] for x in mounts if "/media/" in x[1]]
 			possibleMountPoints = [f"/media/{x}" for x in ("usb8", "usb7", "usb6", "usb5", "usb4", "usb3", "usb2", "usb", "hdd") if f"/media/{x}" not in mounts]
+
 			for device in devices:
 				if device["DEVNAME"] not in devmounts:
 					device["MOUNT"] = possibleMountPoints.pop()
@@ -700,17 +710,22 @@ class HarddiskManager:
 				ID_FS_UUID = device.get("ID_FS_UUID")
 				DEVNAME = device.get("DEVNAME")
 				if [x for x in newFstab if DEVNAME in x]:
+					print(f"[Harddisk] Add hotplug device: {DEVNAME} ignored because device is already in fstab")
 					continue
 				if [x for x in newFstab if ID_FS_UUID in x]:
+					print(f"[Harddisk] Add hotplug device: {DEVNAME} ignored because uuid is already in fstab")
 					continue
-				commands.append(f"/bin/umount -lf {DEVNAME.replace("/dev/", "/media/")}")
-				ID_FS_TYPE = "auto"  # eventData.get("ID_FS_TYPE")
 				mountPoint = device.get("MOUNT")
-				knownDevices.append(f"{ID_FS_UUID}:{mountPoint}")
-				newFstab.append(f"UUID={ID_FS_UUID} {mountPoint} {ID_FS_TYPE} defaults 0 0")
-				if not exists(mountPoint):
-					mkdir(mountPoint, 0o755)
-				print(f"[Harddisk] Add hotplug device: {DEVNAME} mount: {mountPoint} to fstab")
+				if mountPoint:
+					commands.append(f"/bin/umount -lf {DEVNAME.replace("/dev/", "/media/")}")
+					ID_FS_TYPE = "auto"  # eventData.get("ID_FS_TYPE")
+					knownDevices.append(f"{ID_FS_UUID}:{mountPoint}")
+					newFstab.append(f"UUID={ID_FS_UUID} {mountPoint} {ID_FS_TYPE} defaults 0 0")
+					if not exists(mountPoint):
+						mkdir(mountPoint, 0o755)
+					print(f"[Harddisk] Add hotplug device: {DEVNAME} mount: {mountPoint} to fstab")
+				else:
+					print(f"[Harddisk] Warning! hotplug device: {DEVNAME} has no mountPoint")
 
 			if commands:
 				#def enumerateHotPlugDevicesCallback(*args, **kwargs):
@@ -761,7 +776,7 @@ class HarddiskManager:
 
 	def getMountpoint(self, device):
 		dev = join("/dev", device)
-		for item in getProcMounts():
+		for item in getProcMountsNew():
 			if item[0] == dev:
 				return join(item[1], "")
 		return None
@@ -848,7 +863,7 @@ class HarddiskManager:
 
 	def getMountedPartitions(self, onlyhotplug=False, mounts=None):
 		if mounts is None:
-			mounts = getProcMounts()
+			mounts = getProcMountsNew()
 		parts = [x for x in self.partitions if (x.is_hotplug or not onlyhotplug) and x.mounted(mounts)]
 		devs = set([x.device for x in parts])
 		for devname in devs.copy():

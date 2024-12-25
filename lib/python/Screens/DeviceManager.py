@@ -8,7 +8,7 @@ from enigma import getDeviceDB
 from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigSelection, ConfigText, NoSave
 from Components.Console import Console
-from Components.Harddisk import getProcMounts
+from Components.Harddisk import getProcMountsNew
 from Components.Label import Label
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
@@ -72,7 +72,7 @@ class UnmountTask(LoggingTask):
 		self.setTool('umount')
 		self.args.append('-f')
 		self.args.append('-l')
-		for parts in getProcMounts():
+		for parts in getProcMountsNew():
 			if parts[0].startswith(self.storageDevice.devicePoint):
 				self.args.append(parts[0])
 				self.postconditions.append(ReturncodePostcondition())
@@ -266,7 +266,7 @@ class StorageDevice():
 		return self.mount_path
 
 	def mountDevice(self):
-		for parts in getProcMounts():
+		for parts in getProcMountsNew():
 			if realpath(parts[0]).startswith(self.devicePoint):
 				self.mount_device = parts[0]
 				self.mount_path = parts[1]
@@ -307,7 +307,9 @@ class StorageDevice():
 			task.args += ["-n", label]
 		if fsType == "ntfs":
 			task.setTool(f"mkntfs")
-			task.args += ["-O", "-F"]
+			task.args += ["-Q", "-F"]
+			if label:
+				task.args += ["-L", label]
 		elif fsType.startswith("ext"):
 			big_o_options = ["dir_index"]
 			if self.size > 250000 * 1024 * 1024:
@@ -391,7 +393,9 @@ class StorageDevice():
 				task.args += ["-n", label]
 			if fsType == "ntfs":
 				task.setTool(f"mkntfs")
-				task.args += ["-O", "-F"]
+				task.args += ["-Q", "-F"]
+			if label:
+				task.args += ["-L", label]
 			elif fsType.startswith("ext"):
 				big_o_options = ["dir_index"]
 				if self.size > 250000 * 1024 * 1024:
@@ -452,8 +456,9 @@ class StorageDevice():
 			task.weighting = 1
 
 		MountTask(job, self)
-		task = ConditionTask(job, _("Waiting for mount"))
-		task.check = self.mountDevice
+		task.weighting = 3
+#		task = ConditionTask(job, _("Waiting for mount"))
+#		task.check = self.mountDevice
 		return job
 
 	def createCheckJob(self, options=None):
@@ -465,9 +470,13 @@ class StorageDevice():
 			task.setTool("ntfsfix")
 		else:
 			task.setTool(f"fsck.{self.fsType}")
-			task.args += ["-f", "-p"]
+			if self.fsType == "exfat":
+				task.args += ["-p"]
+			else:
+				task.args += ["-f", "-p"]
 		task.args.append(self.devicePoint)
 		MountTask(job, self)
+		task.weighting = 3
 #		task = ConditionTask(job, _("Waiting for mount"))
 #		task.check = self.mountDevice
 		return job
@@ -475,17 +484,12 @@ class StorageDevice():
 
 class StorageDeviceManager():
 	def __init__(self):
-		self.mounts = []
-		self.partitions = []
-		self.fstab = []
-		self.knownDevices = []
-		self.swapDevices = []
-		self.deviceList = []
+		pass
 
 	def buildDevices(self):
 		swapdevices = [x for x in fileReadLines("/proc/swaps", default=[], source=MODULE_NAME) if x.startswith("/")]
 		partitions = fileReadLines("/proc/partitions", default=[], source=MODULE_NAME)
-		mounts = fileReadLines("/proc/mounts", default=[], source=MODULE_NAME)
+		mounts = getProcMountsNew()
 		fstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME)
 		knownDevices = fileReadLines("/etc/udev/known_devices", default=[], source=MODULE_NAME)
 		deviceList = []
@@ -539,17 +543,15 @@ class StorageDeviceManager():
 
 		deviceMounts = []
 
-		for line in [line for line in mounts if line.find(device) != -1]:
-			parts = line.strip().split()
+		for parts in [parts for parts in mounts if device in parts[0]]:
 			mountP = parts[1]
 			mountFsType = parts[2]
 			rw = parts[3]
 			deviceMounts.append((mountP, mountFsType, rw))
 
 		if not deviceMounts:
-			for line in [line for line in mounts if line.find(device) == -1]:
+			for parts in [parts for parts in mounts if device not in parts[0]]:
 				if device in swapDevices:
-					parts = line.strip().split()
 					mountP = _("None")
 					mountFsType = "swap"
 					rw = _("None")
@@ -573,7 +575,7 @@ class StorageDeviceManager():
 				size = 0
 		if size:
 			devicePoint = f"/dev/{device}"
-			isMounted = len([m for m in mounts if mountP in m])
+			isMounted = len([parts for parts in mounts if mountP == parts[1]])
 			UUID = fileReadLine(f"/dev/uuid/{device}", default="", source=MODULE_NAME)
 			fsType = fileReadLine(f"/dev/fstype/{device}", default="", source=MODULE_NAME)
 			knownDevice = ""
@@ -617,7 +619,7 @@ class StorageDeviceManager():
 			}
 			return deviceData
 
-	def getMountPoints(self, deviceType, onlyPossible=False):
+	def getMountPoints(self, deviceType, fstab=None, onlyPossible=False):
 		match deviceType:
 			case 0:
 				result = ["usb", "usb2", "usb3", "usb4", "usb5"]
@@ -627,7 +629,8 @@ class StorageDeviceManager():
 				result = []
 		result.extend(["hdd", "hdd2", "hdd3", "hdd4", "hdd5"])
 		if onlyPossible:
-			fstabMountPoints = [x.split()[1] for x in self.fstab if x]
+			fstab = fstab or []
+			fstabMountPoints = [x.split()[1] for x in fstab if x]
 			for dev in result[:]:
 				for fstabMountPoint in fstabMountPoints:
 					if fstabMountPoint == f"/media/{dev}" and dev in result:
@@ -848,15 +851,20 @@ class DeviceManager(Screen):
 					print(f"[DeviceManager] mount failed for device:{device} / RC:{retVal}")
 				self.updateDevices()
 				mountok = False
-				for line in self.devices.mounts:
-					if line.find(device) != -1:
+				mounts = getProcMountsNew()
+				for parts in mounts:
+					if parts[0] == device:
 						mountok = True
 				if not mountok:
 					self.session.open(MessageBox, _("Mount failed"), MessageBox.TYPE_INFO, timeout=5)
 			if answer:
 				if not exists(answer[1]):
 					mkdir(answer[1], 0o755)
-				self.console.ePopen([self.MOUNT, self.MOUNT, storageDevice.get("device"), f"{answer[1]}/"], checkMount)
+				cmd = [self.MOUNT, self.MOUNT]
+				if storageDevice.get("fsType") == "exfat":
+					cmd += ["-t", "exfat"]
+				cmd += [f"/dev/{storageDevice.get("device")}", f"{answer[1]}/"]
+				self.console.ePopen(cmd, checkMount)
 
 		current = self["devicelist"].getCurrent()
 		if current:
@@ -873,19 +881,14 @@ class DeviceManager(Screen):
 				device = storageDevice.get("devicePoint")
 				if storageDevice.get("isMounted"):
 					self.console.ePopen([self.UMOUNT, self.UMOUNT, storageDevice.get("mountPoint")])
-					try:
-						mounts = open("/proc/mounts")
-					except OSError:
-						return -1
-					mountcheck = mounts.readlines()
-					mounts.close()
-					for line in mountcheck:
-						parts = line.strip().split(" ")
+					mounts = getProcMountsNew()
+					for parts in mounts:
 						if parts[1] == storageDevice.get("mountPoint"):
 							self.session.open(MessageBox, _("Can't unmount partition, make sure it is not being used for swap or record/time shift paths"), MessageBox.TYPE_INFO)
 				else:
 					title = _("Select the new mount point for: '%s'") % storageDevice.get("model")
-					choiceList = [(f"/media/{x}", f"/media/{x}") for x in self.storageDevices.getMountPoints(storageDevice.get("deviceType"), onlyPossible=True)]
+					fstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME)
+					choiceList = [(f"/media/{x}", f"/media/{x}") for x in self.storageDevices.getMountPoints(storageDevice.get("deviceType"), fstab, onlyPossible=True)]
 					self.session.openWithCallback(keyYellowCallback, ChoiceBox, choiceList=choiceList, buttonList=[], windowTitle=title)
 			self.updateDevices()
 
@@ -1013,7 +1016,7 @@ class DeviceManagerMountPoints(Setup):
 		"auto": "",
 		"ext4": "defaults,noatime",
 		"vfat": "rw,iocharset=utf8,uid=0,gid=0,umask=0022",
-		"extfat": "rw,iocharset=utf8,uid=0,gid=0,umask=0022",
+		"exfat": "rw,iocharset=utf8,uid=0,gid=0,umask=0022",
 		"ntfs-3g": "defaults,uid=0,gid=0,umask=0022",
 		"iso9660": "ro,defaults",
 		"udf": "ro,defaults",
@@ -1034,6 +1037,7 @@ class DeviceManagerMountPoints(Setup):
 		self.fileSystems = []
 		self.options = []
 		single = index != -1
+		fstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME) if single else []
 
 		# device , fstabmountpoint, isMounted , deviceUuid, name, deviceType
 		for index, device in enumerate(self.devices):
@@ -1048,7 +1052,7 @@ class DeviceManagerMountPoints(Setup):
 			else:
 				possibleMounts = [f"/media/{x}" for x in self.storageDevices.getMountPoints(deviceType)]
 				if single:
-					for mounts in self.storageDevices.fstab:
+					for mounts in fstab:
 						if mounts.split()[1] in possibleMounts:
 							possibleMounts.remove(mounts.split()[1])
 					choiceList.extend([(x, x) for x in possibleMounts])
