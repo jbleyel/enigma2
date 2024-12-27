@@ -14,11 +14,7 @@
 self.condition = self.smallFlashSize
 		</condition>
 		<config screen="FlashExpander" module="FlashExpander" type="standalone" />
-		<code pos="before" async="yes">
-self.disableKeys = True
-		</code>
 		<code pos="after" async="yes">
-self.disableKeys = False
 if self.isFlashExpanderActive() and self.getFreeMemory() &lt; 128:
 	self.createSwapFileFlashExpander(self.afterAsyncCode)
 		</code>
@@ -61,12 +57,6 @@ self.condition = self.swapDevice and self.swapDevice == "."
 self.condition = self.hasDevices()
 		</condition>
 		<config screen="DeviceManagerMountPoints" module="DeviceManager" type="standalone" />
-		<code pos="before" async="yes">
-self.disableKeys = True
-		</code>
-		<code pos="after" async="yes">
-self.disableKeys = False
-		</code>
 	</step>
 
 	<step id="network">
