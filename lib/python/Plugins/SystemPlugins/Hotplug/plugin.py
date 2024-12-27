@@ -9,6 +9,7 @@ from Components.Console import Console
 from Components.Harddisk import harddiskmanager
 from Plugins.Plugin import PluginDescriptor
 from Screens.MessageBox import ModalMessageBox
+from Screens.FlashExpander import EXPANDER_MOUNT
 from Tools.Directories import fileReadLines, fileWriteLines
 from Tools.Conversions import scaleNumber
 
@@ -31,7 +32,7 @@ class Hotplug(Protocol):
 		if isinstance(data, bytes):
 			data = data.decode()
 		self.received += data
-		# print(f"[Hotplug] Data received: '{", ".join(self.received.split("\0")[:-1])}'.")
+		print(f"[Hotplug] Data received: '{", ".join(self.received.split("\0")[:-1])}'.")
 
 	def connectionLost(self, reason):
 		# print(f"[Hotplug] Connection lost reason '{reason}'.")
@@ -89,6 +90,7 @@ class HotPlugManager:
 			mountPoint = "/media/usb"
 			mountPointHdd = None if [x.split()[1] for x in mounts if "/media/hdd" in x] else "/media/hdd"
 			knownDevices = fileReadLines("/etc/udev/known_devices", default=[])
+			knownDevice = ""
 			if mounts:
 				usbMounts = [x.split()[1] for x in mounts if "/media/usb" in x]
 				nr = 1
@@ -106,10 +108,19 @@ class HotPlugManager:
 				if knownDevices:
 					for device in knownDevices:
 						deviceData = device.split(":")
-						if len(deviceData) == 2 and deviceData[0] == ID_FS_UUID and deviceData[1]:
+						if len(deviceData) == 2 and deviceData[0] == ID_FS_UUID:
 							print("[Hotplug] UUID found in known_devices")
-							notFound = False
+							knownDevice = deviceData[1]
+							notFound = knownDevice != "None"  # Ignore this device
 							break
+
+			if notFound:
+				# Check if device is already in fstab and if the mountpoint not used
+				fstab = fileReadLines("/etc/fstab")
+				fstabDevice = [x.split()[1] for x in fstab if ID_FS_UUID in x and EXPANDER_MOUNT not in x]
+				if fstabDevice and fstabDevice[0] not in mounts:
+					Console().ePopen("/bin/mount -a")
+					notFound = False
 
 			if notFound:
 				description = ""

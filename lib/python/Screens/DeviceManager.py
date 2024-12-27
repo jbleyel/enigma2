@@ -780,6 +780,7 @@ class DeviceManager(Screen):
 		self.deviceList = []
 
 		indexNames = {
+			"Selection": self.LIST_SELECTION,  # This is a dummy entry for selection
 			"Image": self.LIST_IMAGE,
 			"PartitionSeparator": self.LIST_PARTITION_SEPARATOR,
 			"Description": self.LIST_DESCRIPTION,
