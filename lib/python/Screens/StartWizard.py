@@ -172,7 +172,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 		return isdir(join("/%s/%s" % (EXPANDER_MOUNT, EXPANDER_MOUNT), "bin"))
 
 	def hasDevices(self):
-		return True  # TODO
+		return harddiskmanager.HDDCount() > 0
 
 	def keyYellow(self):
 		if self.wizard[self.currStep]["name"] == "swap":
