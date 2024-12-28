@@ -115,14 +115,13 @@ class HotPlugManager:
 							break
 
 			if notFound:
-				# Check if device is already in fstab and if the mountpoint not used
 				fstab = fileReadLines("/etc/fstab")
 				fstabDevice = [x.split()[1] for x in fstab if ID_FS_UUID in x and EXPANDER_MOUNT not in x]
-				if fstabDevice and fstabDevice[0] not in mounts:
+				if fstabDevice and fstabDevice[0] not in mounts:  # Check if device is already in fstab and if the mountpoint not used
 					Console().ePopen("/bin/mount -a")
 					notFound = False
 
-			if notFound and mountPointHdd:
+			if notFound and mountPointHdd:  # If device is the first and /media/hdd not mounted
 				knownDevices.append(f"{ID_FS_UUID}:{mountPointHdd}")
 				fileWriteLines("/etc/udev/known_devices", knownDevices)
 				fstab = fileReadLines("/etc/fstab")
@@ -155,13 +154,13 @@ class HotPlugManager:
 							Console().ePopen(f"/bin/mount -t {ID_FS_TYPE} {DEVNAME} {mountPoint}")
 						elif answer == 3:
 							knownDevices.append(f"{ID_FS_UUID}:{mountPoint}")
-							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x]
+							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x and EXPANDER_MOUNT not in x]
 							newFstab.append(f"UUID={ID_FS_UUID} {mountPoint} {ID_FS_TYPE} defaults 0 0")
 							fileWriteLines("/etc/fstab", newFstab)
 							Console().ePopen("/bin/mount -a")
 						elif answer == 4:
 							knownDevices.append(f"{ID_FS_UUID}:{mountPointHdd}")
-							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x]
+							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x and EXPANDER_MOUNT not in x]
 							newFstab.append(f"UUID={ID_FS_UUID} {mountPointHdd} {ID_FS_TYPE} defaults 0 0")
 							fileWriteLines("/etc/fstab", newFstab)
 							Console().ePopen("/bin/mount -a")
