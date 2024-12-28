@@ -613,6 +613,8 @@ class StorageDeviceManager():
 
 		deviceMounts = []
 
+		mounts = [x for x in mounts if EXPANDER_MOUNT not in x[1]]
+
 		for parts in [parts for parts in mounts if device in parts[0]]:
 			mountP = parts[1]
 			mountFsType = parts[2]
@@ -656,13 +658,14 @@ class StorageDeviceManager():
 				if UUID and UUID in known:
 					knownDevice = known
 			fstabMountPoint = ""
-			for fstab in fstab:
-				fstabData = fstab.split()
-				if fstabData:
-					if UUID and UUID in fstabData[0]:
-						fstabMountPoint = fstabData[1]
-					elif devicePoint in fstabData:
-						fstabMountPoint = fstabData[0]
+			for line in fstab:
+				if EXPANDER_MOUNT not in line:
+					fstabData = line.split()
+					if fstabData:
+						if UUID and UUID in fstabData[0]:
+							fstabMountPoint = fstabData[1]
+						elif devicePoint in fstabData:
+							fstabMountPoint = fstabData[0]
 
 			description = []
 			if not isPartition:
