@@ -122,6 +122,16 @@ class HotPlugManager:
 					Console().ePopen("/bin/mount -a")
 					notFound = False
 
+			if notFound and mountPointHdd:
+				knownDevices.append(f"{ID_FS_UUID}:{mountPointHdd}")
+				fileWriteLines("/etc/udev/known_devices", knownDevices)
+				fstab = fileReadLines("/etc/fstab")
+				newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x and EXPANDER_MOUNT not in x]
+				newFstab.append(f"UUID={ID_FS_UUID} {mountPointHdd} {ID_FS_TYPE} defaults 0 0")
+				fileWriteLines("/etc/fstab", newFstab)
+				Console().ePopen("/bin/mount -a")
+				notFound = False
+
 			if notFound:
 				description = ""
 				for physdevprefix, pdescription in list(getDeviceDB().items()):
