@@ -1204,7 +1204,7 @@ class DeviceManagerMountPoints(Setup):
 				if exists("/sbin/mount.fuse"):
 					fileSystems.append("fuseblk")
 				fileSystems.extend(["hfsplus", "btrfs", "xfs"])
-			devMount = f"/media/{device[0]}"
+			devMount = device[0].replace("/dev/", "/media/")
 			choiceList.append((devMount, devMount))
 			choiceList.append(("", "Custom"))
 			self.mountPoints.append(NoSave(ConfigSelection(default=defaultMountpoint, choices=choiceList)))
