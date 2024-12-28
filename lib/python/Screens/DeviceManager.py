@@ -1170,11 +1170,14 @@ class DeviceManagerMountPoints(Setup):
 		self.options = []
 		single = index != -1
 		fstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME) if single else []
+		noMediaHdd = len(self.devices) == 1 and not [line for line in fstab if "/media/hdd" in line]  # No media/hdd and only one device
 
 		# device , fstabmountpoint, isMounted , deviceUuid, name, deviceType
 		for index, device in enumerate(self.devices):
 			deviceType = device[5]
 			fstabMountPoint = device[1]
+			if noMediaHdd:
+				fstabMountPoint = "/media/hdd"
 			choiceList = [("None", "None")]
 
 			if "sr" in device[0]:
