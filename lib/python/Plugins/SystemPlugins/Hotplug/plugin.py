@@ -88,6 +88,7 @@ class HotPlugManager:
 			notFound = True
 			mounts = fileReadLines("/proc/mounts")
 			mountPoint = "/media/usb"
+			mountPointDevice = f"/media/{DEVNAME.replace("/dev/", "")}"
 			mountPointHdd = None if [x.split()[1] for x in mounts if "/media/hdd" in x] else "/media/hdd"
 			knownDevices = fileReadLines("/etc/udev/known_devices", default=[])
 			knownDevice = ""
@@ -164,7 +165,13 @@ class HotPlugManager:
 							newFstab.append(f"UUID={ID_FS_UUID} {mountPointHdd} {ID_FS_TYPE} defaults 0 0")
 							fileWriteLines("/etc/fstab", newFstab)
 							Console().ePopen("/bin/mount -a")
-						if answer in (1, 3, 4):
+						elif answer == 5:
+							knownDevices.append(f"{ID_FS_UUID}:{mountPointDevice}")
+							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x and EXPANDER_MOUNT not in x]
+							newFstab.append(f"UUID={ID_FS_UUID} {mountPointDevice} {ID_FS_TYPE} defaults 0 0")
+							fileWriteLines("/etc/fstab", newFstab)
+							Console().ePopen("/bin/mount -a")
+						if answer in (1, 3, 4, 5):
 							fileWriteLines("/etc/udev/known_devices", knownDevices)
 					self.timer.start(1000)
 					# harddiskmanager.enumerateBlockDevices()
@@ -180,6 +187,10 @@ class HotPlugManager:
 					default = 4
 					choiceList.append(
 						(_("Permanently mount as %s") % mountPointHdd, 4),
+					)
+				elif mountPointDevice:
+					choiceList.append(
+						(_("Permanently mount as %s") % mountPointDevice, 5),
 					)
 				ModalMessageBox.instance.showMessageBox(text=text, list=choiceList, default=default, windowTitle=_("New Storage Device"), callback=newDeviceCallback)
 			else:
