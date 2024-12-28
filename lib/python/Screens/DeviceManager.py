@@ -561,12 +561,25 @@ class StorageDeviceManager():
 
 		seenUUIDs = [device.get("UUID") for device in deviceList if device.get("UUID")]
 
+		expanderUUID = None
 		for line in fstab:
 			if EXPANDER_MOUNT in line:
 				parts = line.split()
 				if parts[0].startswith("UUID="):
 					UUID = parts[0].replace("UUID=", "")
+					expanderUUID = UUID
 					seenUUIDs.append(UUID)
+
+		expanderDisk = None
+		if expanderUUID:
+			for device in deviceList:
+				if device.get("UUID") == expanderUUID:
+					expanderDisk = device.get("disk")
+					break
+
+		if expanderDisk:
+			for device in deviceList:
+				device["FlashExpander"] = device.get("disk") == expanderDisk
 
 		for index, line in enumerate(fstab):
 			parts = line.split()
@@ -693,7 +706,8 @@ class StorageDeviceManager():
 				"size": size,
 				"mountFsType": mountFsType,
 				"swapState": swapState,
-				"isUnknown": False
+				"isUnknown": False,
+				"FlashExpander": False
 			}
 			return deviceData
 
@@ -887,7 +901,9 @@ class DeviceManager(Screen):
 					name = ""
 					description = ""
 				self["key_green"].setText(_("Action"))
-				if storageDevice.get("fsType") == "swap":
+				if storageDevice.get("FlashExpander"):
+					self["key_blue"].setText("")
+				elif storageDevice.get("fsType") == "swap":
 					self["key_blue"].setText("")
 					self["key_green"].setText(_("Off") if storageDevice.get("swapState") else _("On"))
 				elif storageDevice.get("isPartition"):
@@ -932,7 +948,9 @@ class DeviceManager(Screen):
 			current = self["devicelist"].getCurrent()
 			if current:
 				storageDevice = current[self.LIST_DATA]
-				if storageDevice.get("fsType") == "swap":
+				if storageDevice.get("FlashExpander"):
+					return
+				elif storageDevice.get("fsType") == "swap":
 					def swapCallback(data, retVal, extraArgs):
 						self.updateDevices()
 					command = "swapoff" if storageDevice.swapState else "swapon"
@@ -1086,6 +1104,9 @@ class DeviceManager(Screen):
 			self.curentservice = None
 			storageDevice = current[self.LIST_DATA]
 			storageDevice = StorageDevice(storageDevice)
+
+			if storageDevice.FlashExpander:
+				return
 			if storageDevice.isUnknown:
 				fstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME)
 				fstabNew = []
