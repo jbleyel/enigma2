@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-24 18:40+0000\n"
+"POT-Creation-Date: 2024-12-31 15:16+0000\n"
 "PO-Revision-Date: 2021-08-15 18:50+0000\n"
 "Last-Translator: openATV <openatv@gmail.com>\n"
 "Language-Team: Thai <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/th/>\n"
@@ -92,6 +92,9 @@ msgid " updated"
 msgstr "ปรุบปรุง"
 
 msgid "!! Boot loader Upgrade !!"
+msgstr ""
+
+msgid "# = Reboot Required"
 msgstr ""
 
 #, fuzzy
@@ -1602,25 +1605,25 @@ msgid "A file from media is in use!"
 msgstr ""
 
 #, fuzzy, python-format
-msgid "A finished PowerTimer wants to reboot your %s %s. Do that now?"
+msgid "A finished scheduled timer wants to reboot your %s %s. Do that now?"
 msgstr ""
 "บันทึกรายการเสร็จแล้ว เครื่องดรีมบอกซ์\n"
 "กำลังจะ Standby ให้ทำตอนนี้หรือไม่?"
 
 #, fuzzy
-msgid "A finished PowerTimer wants to restart the user interface. Do that now?"
+msgid "A finished scheduled timer wants to restart the user interface. Do that now?"
 msgstr ""
 "บันทึกรายการเสร็จแล้ว เครื่องดรีมบอกซ์\n"
 "กำลังจะ Standby ให้ทำตอนนี้หรือไม่?"
 
 #, fuzzy, python-format
-msgid "A finished PowerTimer wants to set your %s %s to standby. Do that now?"
+msgid "A finished scheduled timer wants to set your %s %s to standby. Do that now?"
 msgstr ""
 "บันทึกรายการเสร็จแล้ว เครื่องดรีมบอกซ์\n"
 "กำลังจะ Standby ให้ทำตอนนี้หรือไม่?"
 
 #, fuzzy, python-format
-msgid "A finished PowerTimer wants to shut down your %s %s. Do that now?"
+msgid "A finished scheduled timer wants to shut down your %s %s. Do that now?"
 msgstr ""
 "บันทึกรายการเสร็จแล้ว เครื่องดรีมบอกซ์\n"
 "กำลังจะปิด (Shutdown) ต้องการให้ปิดตอนนี้หรือไม่?"
@@ -1641,10 +1644,10 @@ msgstr ""
 "บันทึกรายการเสร็จแล้ว เครื่องดรีมบอกซ์\n"
 "กำลังจะปิด (Shutdown) ต้องการให้ปิดตอนนี้หรือไม่?"
 
-msgid "Graphical DVB subtitles will be displayed in the selected color, instead of the original colors."
+msgid "A highlight on the remote control image shows which button the help refers to. If more than one button performs the indicated function, more than one highlight will be shown. Text below the list lists the active buttons and whether the function requires a long press or SHIFT of the button(s)."
 msgstr ""
 
-msgid "A highlight on the remote control image shows which button the help refers to. If more than one button performs the indicated function, more than one highlight will be shown. Text below the list lists the active buttons and whether the function requires a long press or SHIFT of the button(s)."
+msgid "A new storage device has been connected:"
 msgstr ""
 
 #, python-format
@@ -1671,7 +1674,7 @@ msgstr "กำลังบันทึกรายอยู่ หยุดก�
 
 #, python-format
 msgid ""
-"A recording, recording timer or power timer is running or will begin within 15 minutes. %s extended to 30 minutes. Your %s %s will go to Deep Standby after the recording or power timer event.\n"
+"A recording, recording timer or scheduled task is running or will begin within 15 minutes. %s extended to 30 minutes. Your %s %s will go to Deep Standby after the recording or scheduled task.\n"
 "\n"
 "Go to Deep Standby now?"
 msgstr ""
@@ -1792,7 +1795,7 @@ msgstr ""
 msgid "About"
 msgstr "เกี่ยวกับ"
 
-msgid "About openATV"
+msgid "About OpenATV"
 msgstr ""
 
 msgid "About to start"
@@ -1824,6 +1827,9 @@ msgid "Action on long POWER button press"
 msgstr ""
 
 msgid "Action on short POWER button press"
+msgstr ""
+
+msgid "Actions"
 msgstr ""
 
 msgid "Activate"
@@ -2789,6 +2795,9 @@ msgid "Automatic resolution label"
 msgstr "ค้นหาอัตโนมัติ"
 
 msgid "Automatic scan for services"
+msgstr ""
+
+msgid "Automatic shares access"
 msgstr ""
 
 msgid "Automatically put the TV in standby whenever the receiver goes into standby or deep standby."
@@ -3864,12 +3873,6 @@ msgstr "เพิ่มเข้ากลุ่ม (Bouquet)"
 msgid "Changed"
 msgstr ""
 
-#, python-format
-msgid ""
-"Changes need a system restart to take effect.\n"
-"Restart your %s %s now?"
-msgstr ""
-
 msgid "Channel"
 msgstr "ช่อง"
 
@@ -4013,12 +4016,6 @@ msgstr "อุปกรณ์สำหรับบันทึก"
 #, fuzzy
 msgid "Chechen"
 msgstr "ตรวจสอบ"
-
-msgid "Check"
-msgstr "ตรวจสอบ"
-
-msgid "Check HDD"
-msgstr ""
 
 msgid "Check for PDC"
 msgstr ""
@@ -4328,6 +4325,12 @@ msgid "Close dialog"
 msgstr ""
 
 msgid "Close screen"
+msgstr ""
+
+msgid "Close the Device Manager screen"
+msgstr ""
+
+msgid "Close the Device Manager screen and exit all menus"
 msgstr ""
 
 msgid "Close the Kexec MultiBoot Manager"
@@ -5050,12 +5053,6 @@ msgstr ""
 msgid "Controlled by HDMI"
 msgstr ""
 
-msgid "Convert EXT3 File System to EXT4"
-msgstr ""
-
-msgid "Convert ext3 to ext4"
-msgstr ""
-
 msgid "Convert file system ext3 to ext4"
 msgstr ""
 
@@ -5408,6 +5405,9 @@ msgstr ""
 #, fuzzy
 msgid "Custom"
 msgstr "ปรับแต่ง"
+
+msgid "Custom mountpoint"
+msgstr ""
 
 msgid "Custom skip time for '1'/'3' buttons"
 msgstr ""
@@ -5877,6 +5877,12 @@ msgstr ""
 msgid "Define the DNS suffix."
 msgstr ""
 
+msgid "Define the custom mountpoint for the device."
+msgstr ""
+
+msgid "Define the file system mount options."
+msgstr ""
+
 msgid "Defined / Active"
 msgstr ""
 
@@ -6197,7 +6203,13 @@ msgstr ""
 msgid "Development Packages"
 msgstr ""
 
+msgid "Device"
+msgstr ""
+
 msgid "Device Manager"
+msgstr ""
+
+msgid "Device Manager Actions"
 msgstr ""
 
 msgid "Device Settings"
@@ -6213,9 +6225,6 @@ msgid "Device name:"
 msgstr ""
 
 msgid "Device number"
-msgstr ""
-
-msgid "Device: "
 msgstr ""
 
 msgid "Devices"
@@ -7166,6 +7175,9 @@ msgstr ""
 msgid "Enable auto fast scan for %s"
 msgstr ""
 
+msgid "Enable automatic shares"
+msgstr ""
+
 msgid "Enable autorefresh templates."
 msgstr ""
 
@@ -7839,7 +7851,7 @@ msgstr ""
 msgid "Even if TV has another input active?"
 msgstr ""
 
-msgid "Even if a 'Wakeup' PowerTimer starting?"
+msgid "Even if a 'Wakeup' scheduled task starting?"
 msgstr ""
 
 msgid "Even if a 'Zap and Record' recording timer starting?"
@@ -8374,6 +8386,9 @@ msgstr ""
 msgid "File Commander settings"
 msgstr ""
 
+msgid "File system"
+msgstr ""
+
 msgid "File System Check"
 msgstr ""
 
@@ -8401,7 +8416,7 @@ msgstr "ชื่อไฟล์"
 msgid "Files/folders to exclude from backup"
 msgstr ""
 
-msgid "Filesystem check your hard drive"
+msgid "Filesystem"
 msgstr ""
 
 msgid "Fill in channel EPGs from the broadcast EPG where there is no IceTV EPG for the channel"
@@ -8490,7 +8505,7 @@ msgstr ""
 msgid "Flash Image"
 msgstr "แฟรช"
 
-#. TRANSLATORS: The variable is the name of a distribution.  E.g. "openATV".
+#. TRANSLATORS: The variable is the name of a distribution.  E.g. "OpenATV".
 #, python-format
 msgid "Flash Manager - %s Images"
 msgstr ""
@@ -8615,13 +8630,10 @@ msgstr "ฟอร์แมท"
 msgid "Format Disk"
 msgstr ""
 
-msgid "Format HDD"
-msgstr ""
-
 msgid "Format Storage Device"
 msgstr ""
 
-msgid "Format your hard drive"
+msgid "Formatting storage device..."
 msgstr ""
 
 msgid "Forward Error Correction (FEC)"
@@ -8747,9 +8759,6 @@ msgid "FullHD Test"
 msgstr ""
 
 msgid "G"
-msgstr ""
-
-msgid "GB"
 msgstr ""
 
 msgid "GCC version"
@@ -8973,6 +8982,9 @@ msgid "GotoX calibration"
 msgstr "ไปยังตำแหน่ง"
 
 msgid "Grab"
+msgstr ""
+
+msgid "Graphical DVB subtitles will be displayed in the selected color, instead of the original colors."
 msgstr ""
 
 msgid "Graphical EPG"
@@ -9954,9 +9966,6 @@ msgid "Initial rewind speed"
 msgstr ""
 
 msgid "Initial scroll delay"
-msgstr ""
-
-msgid "Initialization"
 msgstr ""
 
 msgid "Initialize"
@@ -10988,9 +10997,6 @@ msgstr ""
 msgid "MAC-address"
 msgstr "IP Address"
 
-msgid "MB"
-msgstr ""
-
 msgid "MENU"
 msgstr ""
 
@@ -11503,6 +11509,9 @@ msgstr ""
 msgid "Mount Menu Actions"
 msgstr ""
 
+msgid "Mount Point"
+msgstr ""
+
 msgid "Mount Settings"
 msgstr ""
 
@@ -11512,16 +11521,13 @@ msgstr ""
 msgid "Mount failed"
 msgstr ""
 
+msgid "Mount point"
+msgstr ""
+
 msgid "Mount root file system."
 msgstr ""
 
-msgid "Mount: "
-msgstr ""
-
 msgid "Mounts"
-msgstr ""
-
-msgid "Mounts Devices"
 msgstr ""
 
 msgid "Move"
@@ -12192,6 +12198,9 @@ msgid "New PIN"
 msgstr ""
 
 msgid "New Setting DXAndy "
+msgstr ""
+
+msgid "New Storage Device"
 msgstr ""
 
 msgid "New Zealand"
@@ -13012,6 +13021,9 @@ msgstr ""
 msgid "Optional parameter"
 msgstr ""
 
+msgid "Options"
+msgstr ""
+
 msgid "Orbital position"
 msgstr ""
 
@@ -13273,6 +13285,9 @@ msgstr ""
 msgid "Partition"
 msgstr ""
 
+msgid "Partition Type"
+msgstr ""
+
 msgid "Partitions"
 msgstr ""
 
@@ -13299,6 +13314,9 @@ msgid "Password Settings"
 msgstr "รหัสผ่าน"
 
 msgid "Password changed."
+msgstr ""
+
+msgid "Path"
 msgstr ""
 
 #, python-format
@@ -13349,6 +13367,13 @@ msgid "Perform the upgrade?"
 msgstr ""
 
 msgid "Permanently delete all recordings in the trash can?"
+msgstr ""
+
+msgid "Permanently ignore this device"
+msgstr ""
+
+#, python-format
+msgid "Permanently mount as %s"
 msgstr ""
 
 msgid "Permanently remove all deleted items"
@@ -13795,9 +13820,6 @@ msgstr ""
 msgid "Please wait, swap is is being created. This could take a few minutes to complete."
 msgstr ""
 
-msgid "Please wait."
-msgstr ""
-
 msgid "Please wait..."
 msgstr "กรุณารอสักครู่..."
 
@@ -13898,6 +13920,9 @@ msgstr "ภาษาโปตุเกส"
 msgid "Portuguese"
 msgstr "ภาษาโปตุเกส"
 
+msgid "Position"
+msgstr ""
+
 msgid "Position of finished Timers in Timerlist"
 msgstr ""
 
@@ -13951,30 +13976,6 @@ msgstr ""
 
 msgid "Power threshold in mA"
 msgstr "กำลังไฟฟ้า (mA)"
-
-msgid "PowerTimer"
-msgstr ""
-
-msgid "PowerTimer Actions"
-msgstr ""
-
-msgid "PowerTimer Overview"
-msgstr ""
-
-msgid "PowerTimer Settings"
-msgstr ""
-
-msgid "PowerTimer Standby"
-msgstr ""
-
-msgid "PowerTimer deep standby"
-msgstr ""
-
-msgid "PowerTimer log"
-msgstr ""
-
-msgid "PowerTimers"
-msgstr ""
 
 #, fuzzy
 msgid "Predefined"
@@ -14559,7 +14560,13 @@ msgstr ""
 msgid "Re-enter new PIN"
 msgstr ""
 
+msgid "Read Only"
+msgstr ""
+
 msgid "Read Userdata from oscam.conf"
+msgstr ""
+
+msgid "Read/Write"
 msgstr ""
 
 msgid "Reader"
@@ -14630,6 +14637,10 @@ msgstr ""
 
 msgid "Reboot"
 msgstr "เริ่มระบบใหม่ (Reboot)"
+
+#, python-format
+msgid "Reboot %s %s now?"
+msgstr ""
 
 msgid "Rec"
 msgstr ""
@@ -15227,10 +15238,6 @@ msgstr ""
 msgid "Restart"
 msgstr "เริ่มระบบใหม่"
 
-#, python-format
-msgid "Restart %s %s."
-msgstr ""
-
 #, fuzzy
 msgid "Restart GUI"
 msgstr "เริ่มทำงานใหม่ (GUI) ตอนนี้หรือไม่?"
@@ -15626,6 +15633,9 @@ msgstr ""
 msgid "Samba Server"
 msgstr ""
 
+msgid "Samba Settings"
+msgstr ""
+
 msgid "Same as in active"
 msgstr ""
 
@@ -15881,6 +15891,27 @@ msgstr ""
 msgid "Scheduled save of epg.dat"
 msgstr ""
 
+msgid "Scheduler"
+msgstr ""
+
+msgid "Scheduler Actions"
+msgstr ""
+
+msgid "Scheduler Overview"
+msgstr ""
+
+msgid "Scheduler Settings"
+msgstr ""
+
+msgid "Scheduler Standby"
+msgstr ""
+
+msgid "Scheduler deep standby"
+msgstr ""
+
+msgid "Scheduler log"
+msgstr ""
+
 msgid "Sci-Fi"
 msgstr ""
 
@@ -16060,7 +16091,7 @@ msgstr ""
 msgid "Select 'Yes' if you are using a multi-switch which requires a DiSEqC Port-A command signal. Select 'No' for all other setups."
 msgstr ""
 
-msgid "Select 'Yes' if you want to wake the TV for a 'Wakeup' power timer is starting."
+msgid "Select 'Yes' if you want to wake the TV when a 'Wakeup' scheduled task is starting."
 msgstr ""
 
 msgid "Select 'Yes' if you want to wake the TV for a 'Zap and Record' recording timer is starting."
@@ -16070,6 +16101,9 @@ msgid "Select 'Yes' if you want to wake the TV for a 'Zap' recording timer is st
 msgstr ""
 
 msgid "Select 'Yes' the keep the InfoBar displayed, with no timeout, while media playback is paused."
+msgstr ""
+
+msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr ""
 
 msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
@@ -16162,7 +16196,7 @@ msgstr ""
 msgid "Select 'Yes' to remove all settings, tuning data, timers, resume pointers etc. Selecting this option will restore the configuration to the initial settings before any configuration settings were applied. This is the most reliable form of Factory Reset."
 msgstr ""
 
-msgid "Select 'Yes' to remove all timer configuration data. Selecting this option will clear all timers, autotimers and power timers."
+msgid "Select 'Yes' to remove all timer configuration data. Selecting this option will clear all timers, autotimers and schedules."
 msgstr ""
 
 msgid "Select 'Yes' to remove all tuning data. Selecting this option will remove all tuning and bouquet data and will make timers non functional until the receiver is retuned."
@@ -16305,9 +16339,6 @@ msgstr ""
 msgid "Select Folders"
 msgstr ""
 
-msgid "Select HDD"
-msgstr "เลือกฮาร์ดดิสก์ (HDD)"
-
 msgid "Select Lan/Wlan"
 msgstr ""
 
@@ -16385,6 +16416,12 @@ msgstr "เลือกภาพยนต์"
 msgid "Select a network adapter"
 msgstr ""
 
+msgid "Select a permanent mount point for all devices"
+msgstr ""
+
+msgid "Select a permanent mount point for the current device"
+msgstr ""
+
 msgid "Select a repository commit log to view:"
 msgstr ""
 
@@ -16416,6 +16453,9 @@ msgid "Select all lines"
 msgstr ""
 
 msgid "Select all related files"
+msgstr ""
+
+msgid "Select an action for the current device"
 msgstr ""
 
 msgid "Select an action to perform when the task has completed."
@@ -16611,6 +16651,9 @@ msgstr ""
 msgid "Select the Yes / True response"
 msgstr ""
 
+msgid "Select the access mode for the automatically exported samba shares."
+msgstr ""
+
 #, python-format
 msgid "Select the action for '%s'"
 msgstr ""
@@ -16706,6 +16749,9 @@ msgstr ""
 msgid "Select the file sort order for the %s column:"
 msgstr ""
 
+msgid "Select the file system for the device."
+msgstr ""
+
 msgid "Select the first item in list or move to the start of text"
 msgstr ""
 
@@ -16761,6 +16807,12 @@ msgstr ""
 msgid "Select the model number of your Unicable device. If the model number is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
 msgstr ""
 
+msgid "Select the mount points"
+msgstr ""
+
+msgid "Select the mountpoint for the device."
+msgstr ""
+
 #, fuzzy
 msgid "Select the movie path"
 msgstr "เลือกพาธของภาพยนต์"
@@ -16772,6 +16824,10 @@ msgid ""
 "Select the network interface to be used for the Internet connection.\n"
 "\n"
 "Press OK to continue."
+msgstr ""
+
+#, python-format
+msgid "Select the new mount point for: '%s'"
 msgstr ""
 
 msgid "Select the next item in list or move the cursor right"
@@ -17483,9 +17539,6 @@ msgid "Setup InputDevice"
 msgstr ""
 
 msgid "Setup MiniDLNA"
-msgstr ""
-
-msgid "Setup Mounts"
 msgstr ""
 
 msgid "Setup Network Services"
@@ -18361,9 +18414,8 @@ msgstr ""
 msgid "Show the OSCam information screen"
 msgstr ""
 
-#, fuzzy
-msgid "Show the PowerTimer"
-msgstr "แสดงเครื่องเล่นโทรทัศน์..."
+msgid "Show the Scheduler"
+msgstr ""
 
 #, fuzzy
 msgid "Show the SleepTimer"
@@ -18939,7 +18991,7 @@ msgstr ""
 msgid "Sorry, no backups found!"
 msgstr ""
 
-msgid "Sorry, no physical devices that supports SWAP attached. Can't create Swapfile on network or fat32 filesystems"
+msgid "Sorry, no physical devices that supports SWAP attached. Can't create swap file on network or FAT32 file systems"
 msgstr ""
 
 msgid "Sorry, there was a problem:"
@@ -19526,6 +19578,9 @@ msgstr ""
 msgid "Swahili"
 msgstr ""
 
+msgid "Swap"
+msgstr ""
+
 msgid "Swap File Manager"
 msgstr ""
 
@@ -19755,9 +19810,6 @@ msgstr ""
 msgid "T2MI RAW Mode"
 msgstr ""
 
-msgid "TB"
-msgstr ""
-
 msgid "TEXT"
 msgstr ""
 
@@ -19921,6 +19973,10 @@ msgstr ""
 
 #, python-format
 msgid "Temp directory (%s)"
+msgstr ""
+
+#, python-format
+msgid "Temporarily mount as %s"
 msgstr ""
 
 msgid "Temporary directory"
@@ -20358,9 +20414,6 @@ msgstr "%s %s เครื่องนี้ไม่สามารถอ่า
 
 msgid "This DVD RW medium is already formatted - reformatting will erase all content on the disc."
 msgstr "แผ่น DVD-RW นี้ได้รับการฟอร์แมทมาแล้ว หากทำซ้ำจะเป็นการลบข้อมูลออกทั้งหมด"
-
-msgid "This Device is already mounted as HDD."
-msgstr ""
 
 msgid "This Option allows you to switch Audio to BT Speakers."
 msgstr ""
@@ -20976,6 +21029,9 @@ msgstr ""
 msgid "Toggle a cut mark at the current position"
 msgstr ""
 
+msgid "Toggle a temporary mount for the current device"
+msgstr ""
+
 msgid "Toggle all related files"
 msgstr ""
 
@@ -21498,6 +21554,9 @@ msgstr "Universal LNB"
 msgid "Unknown"
 msgstr ""
 
+msgid "Unknown Devices"
+msgstr ""
+
 msgid ""
 "Unknown Error creating Skin.\n"
 "Please check after reboot MyMetrixLite-Plugin and apply your settings."
@@ -21655,9 +21714,6 @@ msgstr ""
 msgid "Updating"
 msgstr "กำลังอัพเกรด"
 
-msgid "Updating mount locations."
-msgstr ""
-
 msgid "Updating package list."
 msgstr ""
 
@@ -21780,9 +21836,6 @@ msgid "Use alternate GitHub DNS"
 msgstr ""
 
 msgid "Use an alternative smaller screen."
-msgstr ""
-
-msgid "Use as HDD"
 msgstr ""
 
 msgid "Use automatic mode detection"
@@ -22412,13 +22465,6 @@ msgstr ""
 msgid "Wait please while creating swap file..."
 msgstr ""
 
-msgid "Wait please while scanning for devices..."
-msgstr ""
-
-#, python-format
-msgid "Wait please while scanning your %s %s devices..."
-msgstr ""
-
 msgid "Wait please while scanning..."
 msgstr ""
 
@@ -22536,7 +22582,7 @@ msgid "Welcome to IceTV"
 msgstr ""
 
 msgid ""
-"Welcome to openATV.\n"
+"Welcome to OpenATV.\n"
 "\n"
 "Use the UP/DOWN buttons on your remote control to select an option. Use the LEFT/RIGHT buttons to change the values of a configurable option. After that, press OK to proceed to the next screen."
 msgstr ""
@@ -22829,6 +22875,12 @@ msgid "Winter Sports"
 msgstr ""
 
 msgid "Wipe"
+msgstr ""
+
+msgid "Wipe Storage Device"
+msgstr ""
+
+msgid "Wiping storage device..."
 msgstr ""
 
 msgid "Wireless LAN"
@@ -24388,6 +24440,16 @@ msgstr "ใช่ (เก็บฟีดนี้ไว้)"
 
 msgid "®"
 msgstr ""
+
+#, fuzzy
+#~ msgid "Show the PowerTimer"
+#~ msgstr "แสดงเครื่องเล่นโทรทัศน์..."
+
+#~ msgid "Check"
+#~ msgstr "ตรวจสอบ"
+
+#~ msgid "Select HDD"
+#~ msgstr "เลือกฮาร์ดดิสก์ (HDD)"
 
 #, fuzzy
 #~ msgid "E "

@@ -38,6 +38,9 @@ class ConsoleItem:
 			except OSError as err:
 				print("[Console] Error %s: Wait for command on PID %d to terminate failed!  (%s)" % (err.errno, pid, err.strerror))
 
+#			if self.container.waitPID():
+#				print("[Console] Waiting for command failed.")
+
 	def dataAvailCB(self, data):
 		self.appResults.append(data)
 
@@ -48,7 +51,7 @@ class ConsoleItem:
 		del self.container.appClosed[:]
 		del self.container
 		callback = self.callback
-		if callback:
+		if callback and callable(callback):
 			data = b"".join(self.appResults)
 			data = data if self.binary else data.decode()
 			callback(data, retVal, self.extraArgs)

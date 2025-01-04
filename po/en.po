@@ -1969,18 +1969,18 @@ msgid "A file from media is in use!"
 msgstr ""
 
 #, python-format
-msgid "A finished PowerTimer wants to reboot your %s %s. Do that now?"
+msgid "A finished scheduled timer wants to reboot your %s %s. Do that now?"
 msgstr ""
 
-msgid "A finished PowerTimer wants to restart the user interface. Do that now?"
-msgstr ""
-
-#, python-format
-msgid "A finished PowerTimer wants to set your %s %s to standby. Do that now?"
+msgid "A finished scheduled timer wants to restart the user interface. Do that now?"
 msgstr ""
 
 #, python-format
-msgid "A finished PowerTimer wants to shut down your %s %s. Do that now?"
+msgid "A finished scheduled timer wants to set your %s %s to standby. Do that now?"
+msgstr ""
+
+#, python-format
+msgid "A finished scheduled timer wants to shut down your %s %s. Do that now?"
 msgstr ""
 
 #, python-format
@@ -2020,7 +2020,7 @@ msgstr ""
 
 #, python-format
 msgid ""
-"A recording, recording timer or power timer is running or will begin within 15 minutes. %s extended to 30 minutes. Your %s %s will go to Deep Standby after the recording or power timer event.\n"
+"A recording, recording timer or scheduled task is running or will begin within 15 minutes. %s extended to 30 minutes. Your %s %s will go to Deep Standby after the recording or scheduled task.\n"
 "\n"
 "Go to Deep Standby now?"
 msgstr ""
@@ -2152,7 +2152,7 @@ msgstr ""
 msgid "About"
 msgstr ""
 
-msgid "About openATV"
+msgid "About OpenATV"
 msgstr ""
 
 msgid "About to start"
@@ -7307,7 +7307,7 @@ msgstr ""
 msgid "Even if TV has another input active?"
 msgstr ""
 
-msgid "Even if a 'Wakeup' PowerTimer starting?"
+msgid "Even if a 'Wakeup' scheduled task starting?"
 msgstr ""
 
 msgid "Even if a 'Zap and Record' recording timer starting?"
@@ -10697,7 +10697,7 @@ msgstr ""
 msgid "Mount: "
 msgstr ""
 
-msgid "Mountpoint"
+msgid "Mount point"
 msgstr ""
 
 msgid "Mounts"
@@ -12847,19 +12847,19 @@ msgstr ""
 msgid "PowerTimer"
 msgstr ""
 
-msgid "PowerTimer deep standby"
+msgid "Scheduler deep standby"
 msgstr ""
 
 msgid "PowerTimer Entry"
 msgstr ""
 
-msgid "PowerTimer log"
+msgid "Scheduler log"
 msgstr ""
 
-msgid "PowerTimer Overview"
+msgid "Scheduler Overview"
 msgstr ""
 
-msgid "PowerTimer Standby"
+msgid "Scheduler Standby"
 msgstr ""
 
 msgid "Predefined"
@@ -14689,7 +14689,7 @@ msgstr ""
 msgid "Select 'Yes' to remove all settings, tuning data, timers, resume pointers etc. Selecting this option will restore the configuration to the initial settings before any configuration settings were applied. This is the most reliable form of Factory Reset."
 msgstr ""
 
-msgid "Select 'Yes' to remove all timer configuration data. Selecting this option will clear all timers, autotimers and power timers."
+msgid "Select 'Yes' to remove all timer configuration data. Selecting this option will clear all timers, autotimers and schedules."
 msgstr ""
 
 msgid "Select 'Yes' to remove all tuning data. Selecting this option will remove all tuning and bouquet data and will make timers non functional until the receiver is retuned."
@@ -16799,7 +16799,7 @@ msgstr ""
 msgid "Sorry, no details available!"
 msgstr ""
 
-msgid "Sorry, no physical devices that supports SWAP attached. Can't create Swapfile on network or fat32 filesystems"
+msgid "Sorry, no physical devices that supports SWAP attached. Can't create swap file on network or FAT32 file systems"
 msgstr ""
 
 msgid "Sorry, there was a problem:"

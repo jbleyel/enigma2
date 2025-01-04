@@ -44,7 +44,7 @@ MODE_CONFLICT = 4
 # Timer mode data.
 #
 MODE_DATA = {  # Skin name, Screen title, ActionMap description
-	MODE_SCHEDULER: ("SchedulerOverview", _("PowerTimer Overview"), _("PowerTimer Actions")),
+	MODE_SCHEDULER: ("SchedulerOverview", _("Scheduler Overview"), _("Scheduler Actions")),
 	MODE_ENERGY: ("EnergyTimerOverview", _("EnergyTimer Overview"), _("EnergyTimer Actions")),
 	MODE_SLEEP: ("SleepTimerOverview", _("SleepTimer Overview"), _("SleepTimer Actions")),
 	MODE_RECORD: ("RecordTimerOverview", _("RecordTimer Overview"), _("RecordTimer Actions")),
@@ -324,7 +324,7 @@ class SchedulerList(TimerListBase):
 			bottomText = _("Delay: %s") % ngettext("%d Minute", "%d Minutes", timer.autosleepdelay) % timer.autosleepdelay
 		else:
 			repeatIcon = self.iconRepeat if timer.repeated else self.iconOnce
-			topText = _("At end: %s") % POWERTIMER_AFTER_EVENT_NAMES.get(timer.afterEvent, UNKNOWN)
+			topText = _("At end: %s") % SCHEDULER_AFTER_EVENT_NAMES.get(timer.afterEvent, UNKNOWN)
 			begin = fuzzyDate(timer.begin)
 			if timer.repeated:
 				repeatedText = []
@@ -374,7 +374,7 @@ class SchedulerList(TimerListBase):
 		res = [None]
 		if repeatIcon:
 			res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, self.indent, ((self.topHeight - self.iconHeight) // 2), self.iconWidth, self.iconHeight, repeatIcon, None, None, BT_SCALE))
-		res.append((eListboxPythonMultiContent.TYPE_TEXT, leftOffset, 0, halfWidth, self.topHeight, 0, RT_HALIGN_LEFT | RT_VALIGN_CENTER, POWERTIMER_TYPE_NAMES.get(timer.timerType, UNKNOWN)))
+		res.append((eListboxPythonMultiContent.TYPE_TEXT, leftOffset, 0, halfWidth, self.topHeight, 0, RT_HALIGN_LEFT | RT_VALIGN_CENTER, SCHEDULER_TYPE_NAMES.get(timer.timerType, UNKNOWN)))
 		if topText:
 			res.append((eListboxPythonMultiContent.TYPE_TEXT, leftOffset + halfWidth + 10, 0, halfWidth, self.topHeight, 2, RT_HALIGN_RIGHT | RT_VALIGN_CENTER, topText))
 		if stateIcon:
@@ -671,7 +671,7 @@ class SchedulerOverview(TimerOverviewBase):
 	def __init__(self, session):
 		self["timerlist"] = SchedulerList([])
 		TimerOverviewBase.__init__(self, session, mode=MODE_SCHEDULER)
-		self.skinName = self.skinName.insert(0, "PowerTimerOverview")
+		self.skinName.insert(0, "PowerTimerOverview")  # Fallback for old skins
 
 	def doChangeCallbackAppend(self):
 		self.session.nav.Scheduler.on_state_change.append(self.onStateChange)
@@ -1948,4 +1948,4 @@ class TimerLog(Screen):
 class TimerLogSummary(ScreenSummary):
 	def __init__(self, session, parent):
 		ScreenSummary.__init__(self, session, parent=parent)
-		self["logname"] = StaticText(parent.timer.name if hasattr(parent.timer, "name") else _("PowerTimer log"))
+		self["logname"] = StaticText(parent.timer.name if hasattr(parent.timer, "name") else _("Scheduler log"))

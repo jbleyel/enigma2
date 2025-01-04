@@ -90,6 +90,9 @@ class Timer:
 		self.next = when
 
 	def timeChanged(self, timer):
+		print("####[Timer] timeChanged")
+		print("self.processed_timers", self.processed_timers)
+		print("self.timer_list", self.timer_list)
 		timer.timeChanged()
 		if timer.state == TimerEntry.StateEnded:
 			self.processed_timers.remove(timer)
@@ -112,6 +115,12 @@ class Timer:
 		entry.processRepeated()
 		# When the timer has not yet started, and is already passed, don't go through
 		# waiting/running/end-states, but sort it right into the processedTimers.
+
+		print("### addTimerEntry")
+		print("### entry.shouldSkip()", entry.shouldSkip())
+		print("### entry.state", entry.state)
+		print("### entry.disabled", entry.disabled)
+
 		if entry.shouldSkip() or entry.state == TimerEntry.StateEnded or (entry.state == TimerEntry.StateWaiting and entry.disabled):
 			insort(self.processed_timers, entry)
 			entry.state = TimerEntry.StateEnded
@@ -307,3 +316,14 @@ class TimerEntry:
 
 	def enable(self):
 		self.disabled = False
+
+	def setState(self, newstate):
+		print("DEBUG TIMER setState", newstate)
+		import traceback
+		traceback.print_stack()
+		self._state = newstate
+
+	def getState(self):
+		return self._state
+
+	state = property(getState, setState)

@@ -1,11 +1,11 @@
 # tomppaa <tomzza89@gmail.com>, 2023.
-# tomppaa <tomzza@users.noreply.hosted.weblate.org>, 2023, 2024.
+# tomppaa <tomzza@users.noreply.hosted.weblate.org>, 2023, 2024, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-24 18:40+0000\n"
-"PO-Revision-Date: 2024-12-24 18:34+0000\n"
+"POT-Creation-Date: 2024-12-31 15:16+0000\n"
+"PO-Revision-Date: 2025-01-01 18:30+0000\n"
 "Last-Translator: tomppaa <tomzza@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Finnish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/fi/>\n"
 "Language: fi\n"
@@ -93,6 +93,9 @@ msgstr " päivitetty"
 
 msgid "!! Boot loader Upgrade !!"
 msgstr "!! Bootloaderi Päivitys !!"
+
+msgid "# = Reboot Required"
+msgstr "# Uudelleen käynnistys tarvitaan"
 
 msgid "%-H:%M"
 msgstr "%-H:%M"
@@ -1550,22 +1553,22 @@ msgid "A file from media is in use!"
 msgstr "Mediatiedosto on käytössä!"
 
 #, python-format
-msgid "A finished PowerTimer wants to reboot your %s %s. Do that now?"
+msgid "A finished scheduled timer wants to reboot your %s %s. Do that now?"
 msgstr ""
 "Valmis virta ajastus haluaa uudelleenkäynnistää\n"
 "%s %s:n. Tehdäänkö se nyt?"
 
-msgid "A finished PowerTimer wants to restart the user interface. Do that now?"
+msgid "A finished scheduled timer wants to restart the user interface. Do that now?"
 msgstr "Päättynyt virta ajastus haluaa käynnistää järjestelmän uudelleen. Tehdäänkö se nyt?"
 
 #, python-format
-msgid "A finished PowerTimer wants to set your %s %s to standby. Do that now?"
+msgid "A finished scheduled timer wants to set your %s %s to standby. Do that now?"
 msgstr ""
 "Päättynyt virta ajastus haluaa sammuttaa\n"
 "%s %s:n valmiustilaan. Sammutetaanko nyt?"
 
 #, python-format
-msgid "A finished PowerTimer wants to shut down your %s %s. Do that now?"
+msgid "A finished scheduled timer wants to shut down your %s %s. Do that now?"
 msgstr ""
 "Päättynyt virta ajastus haluaa sammuttaa\n"
 "%s %s:n virransäästötilaan. Sammutetaanko nyt?"
@@ -1586,11 +1589,11 @@ msgstr ""
 "Juuri päättynyt ajastus haluaa sammuttaa\n"
 "%s %s:n virransäästötilaan. Sammutetaanko nyt?"
 
-msgid "Graphical DVB subtitles will be displayed in the selected color, instead of the original colors."
-msgstr ""
-
 msgid "A highlight on the remote control image shows which button the help refers to. If more than one button performs the indicated function, more than one highlight will be shown. Text below the list lists the active buttons and whether the function requires a long press or SHIFT of the button(s)."
 msgstr "Kaukosäätimen kuvan korostus osoittaa, mihin painikkeisiin ohje liittyy. Jos useampi kuin yksi näppäin suorittaa määritetyn toiminnon, näytössä näkyy useampi kuin yksi merkki. Luettelon alapuolella oleva teksti luettelee aktiiviset näppäimet ja osoittaa, edellyttääkö toiminto näppäimen painamista pitkään tai painikkeen painamista."
+
+msgid "A new storage device has been connected:"
+msgstr "Uusi tallennuslaite on yhdistetty:"
 
 #, python-format
 msgid ""
@@ -1618,7 +1621,7 @@ msgstr "Tallennus on käynnissä. Lopeta se ennen kanavahakua."
 
 #, python-format
 msgid ""
-"A recording, recording timer or power timer is running or will begin within 15 minutes. %s extended to 30 minutes. Your %s %s will go to Deep Standby after the recording or power timer event.\n"
+"A recording, recording timer or scheduled task is running or will begin within 15 minutes. %s extended to 30 minutes. Your %s %s will go to Deep Standby after the recording or scheduled task.\n"
 "\n"
 "Go to Deep Standby now?"
 msgstr ""
@@ -1751,7 +1754,7 @@ msgstr "Keskeytä streami palvelu.\n"
 msgid "About"
 msgstr "Tietoja"
 
-msgid "About openATV"
+msgid "About OpenATV"
 msgstr "Tietoja OpenATV:stä"
 
 msgid "About to start"
@@ -1783,6 +1786,9 @@ msgstr "Virtanappäimen (pitkä painallus) toiminto"
 
 msgid "Action on short POWER button press"
 msgstr "Virtanäppäimen (lyhyt painallus) toiminto"
+
+msgid "Actions"
+msgstr "Toiminnot"
 
 msgid "Activate"
 msgstr "Aktivoi"
@@ -2715,6 +2721,9 @@ msgstr "Resoluution vaihtumisen ilmoitus"
 
 msgid "Automatic scan for services"
 msgstr "Automaattinen kanavahaku"
+
+msgid "Automatic shares access"
+msgstr "Automaattinen jakaminen määritys"
 
 msgid "Automatically put the TV in standby whenever the receiver goes into standby or deep standby."
 msgstr "Laittaa television automaattisesti valmiustilaan, kun vastaanotin siirtyy valmiustilaan tai virransäästötilaan."
@@ -3783,14 +3792,6 @@ msgstr "Vaihda suosikkilistalle"
 msgid "Changed"
 msgstr "Muutettu"
 
-#, python-format
-msgid ""
-"Changes need a system restart to take effect.\n"
-"Restart your %s %s now?"
-msgstr ""
-"Muutokset tulee voimaan järjestelmän uudelleenkäynnistyksen jälkeen.\n"
-"Käynnistetäänkö %s %s uudelleen nyt?"
-
 msgid "Channel"
 msgstr "Kanava"
 
@@ -3925,12 +3926,6 @@ msgstr "Tallennusvälineet"
 
 msgid "Chechen"
 msgstr "Tšetšenia"
-
-msgid "Check"
-msgstr "Tarkista"
-
-msgid "Check HDD"
-msgstr "Tarkista Kiintolevy"
 
 msgid "Check for PDC"
 msgstr "Tarkista PDC"
@@ -4236,6 +4231,12 @@ msgstr "Sulje valinta"
 
 msgid "Close screen"
 msgstr "Sulje näyttö"
+
+msgid "Close the Device Manager screen"
+msgstr "Sulje Laite hallinta näyttö"
+
+msgid "Close the Device Manager screen and exit all menus"
+msgstr "Sulje Laite hallinta näyttö ja poistu valikoista"
 
 msgid "Close the Kexec MultiBoot Manager"
 msgstr "Sulje Kexec MultiBoot Manageri"
@@ -4950,12 +4951,6 @@ msgstr "Hallinnoi softcameja"
 msgid "Controlled by HDMI"
 msgstr "HDMI:n hallitsema"
 
-msgid "Convert EXT3 File System to EXT4"
-msgstr "Muunna ext3 -> ext4 järjestelmäksi"
-
-msgid "Convert ext3 to ext4"
-msgstr "Muunna levyjärjestelmä ext3 -> ext4"
-
 msgid "Convert file system ext3 to ext4"
 msgstr "Muunna ext3 -> ext4"
 
@@ -5300,6 +5295,9 @@ msgstr "Tällä hetkellä määritellyt Äänen voimakkuuden poikkeamat"
 msgid "Custom"
 msgstr "Muokattu"
 
+msgid "Custom mountpoint"
+msgstr "Mukautettu liitos"
+
 msgid "Custom skip time for '1'/'3' buttons"
 msgstr "'1'/'3'-näppäimien hypyn pituus (sek)"
 
@@ -5331,7 +5329,7 @@ msgid "Cutlist editor..."
 msgstr "Määritä leikkauskohdat..."
 
 msgid "Cyan"
-msgstr ""
+msgstr "Syaani"
 
 msgid "Cycle PiP(zap)"
 msgstr "Kierrä PIP(zap)"
@@ -5416,7 +5414,7 @@ msgid "DVB subtitle black transparency"
 msgstr "DVB tekstin mustan reunan läpinäkyvyys"
 
 msgid "DVB subtitles color"
-msgstr ""
+msgstr "DVB tekstityksen väri"
 
 msgid "DVB-C"
 msgstr "DVB-C"
@@ -5755,6 +5753,12 @@ msgstr "Määritä vaihtoehtoinen viive millisekunneissa ennen http(s) suora toi
 msgid "Define the DNS suffix."
 msgstr "Aseta DNS osoite."
 
+msgid "Define the custom mountpoint for the device."
+msgstr "Määritä laitteen mukautettu liitos."
+
+msgid "Define the file system mount options."
+msgstr "Määrittele tiedosto järjestelmäasetukset."
+
 msgid "Defined / Active"
 msgstr "Määritetty / Aktiivinen"
 
@@ -6068,8 +6072,14 @@ msgstr "Yksityiskohtaiset tiedot"
 msgid "Development Packages"
 msgstr "Kehityspaketit"
 
+msgid "Device"
+msgstr "Laite"
+
 msgid "Device Manager"
 msgstr "Laitehallinta"
+
+msgid "Device Manager Actions"
+msgstr "Laite asetukset"
 
 msgid "Device Settings"
 msgstr "Verkkoasetukset"
@@ -6085,9 +6095,6 @@ msgstr "Laitenimi:"
 
 msgid "Device number"
 msgstr "Laitteen numero"
-
-msgid "Device: "
-msgstr "Laite: "
 
 msgid "Devices"
 msgstr "Laitteet"
@@ -7045,6 +7052,9 @@ msgstr "Ota käyttöön autom. pikahaku"
 msgid "Enable auto fast scan for %s"
 msgstr "Ota automaattinen pikahaku kohteelle %s"
 
+msgid "Enable automatic shares"
+msgstr "Ota käyttöön automaattinen jakaminen"
+
 msgid "Enable autorefresh templates."
 msgstr "Ota automaattiset päivitykset käyttöön."
 
@@ -7723,7 +7733,7 @@ msgstr "Ethiopia"
 msgid "Even if TV has another input active?"
 msgstr "Vaikka televisiossa olisi video sisäänmeno aktiivinen?"
 
-msgid "Even if a 'Wakeup' PowerTimer starting?"
+msgid "Even if a 'Wakeup' scheduled task starting?"
 msgstr "Vaikka 'herätys' virta ajastun käynnistyy?"
 
 msgid "Even if a 'Zap and Record' recording timer starting?"
@@ -8253,6 +8263,9 @@ msgstr "Tiedostonhallinnan Tekstieditori toiminnot"
 msgid "File Commander settings"
 msgstr "File Commander Asetukset"
 
+msgid "File system"
+msgstr "Tiedostojärjestelmä"
+
 msgid "File System Check"
 msgstr "Tiedostojärjestelmän tarkistus"
 
@@ -8281,8 +8294,8 @@ msgstr "Tiedostonimi"
 msgid "Files/folders to exclude from backup"
 msgstr "Poistot varmuuskopioinnista"
 
-msgid "Filesystem check your hard drive"
-msgstr "Tiedostojärjestelmä tarkista kiintolevy"
+msgid "Filesystem"
+msgstr "Tiedostojärjestelmä"
 
 msgid "Fill in channel EPGs from the broadcast EPG where there is no IceTV EPG for the channel"
 msgstr "Täytä kanavan EPG: t lähetetystä EPG: stä, jos kanavalle ei ole IceTV EPG: tä"
@@ -8366,7 +8379,7 @@ msgstr "Muistin laajennuksen Toiminnot"
 msgid "Flash Image"
 msgstr "Päivitä"
 
-#. TRANSLATORS: The variable is the name of a distribution.  E.g. "openATV".
+#. TRANSLATORS: The variable is the name of a distribution.  E.g. "OpenATV".
 #, python-format
 msgid "Flash Manager - %s Images"
 msgstr "Ohjelmisto hallinta - %s Ohjelmistot"
@@ -8483,14 +8496,11 @@ msgstr "Alusta"
 msgid "Format Disk"
 msgstr "Alusta levy"
 
-msgid "Format HDD"
-msgstr "Alusta kiintolevy"
-
 msgid "Format Storage Device"
 msgstr "Alusta kiintolevy"
 
-msgid "Format your hard drive"
-msgstr "Alusta kiintolevy"
+msgid "Formatting storage device..."
+msgstr "Alustetaan tallennus laitetta..."
 
 msgid "Forward Error Correction (FEC)"
 msgstr "Virheiden korjaus (FEC)"
@@ -8611,9 +8621,6 @@ msgstr "FullHD Testi"
 
 msgid "G"
 msgstr "G"
-
-msgid "GB"
-msgstr "GB"
 
 msgid "GCC version"
 msgstr "GCC versio"
@@ -8831,6 +8838,9 @@ msgstr "GotoX kalibrointi"
 
 msgid "Grab"
 msgstr "Tartua"
+
+msgid "Graphical DVB subtitles will be displayed in the selected color, instead of the original colors."
+msgstr "Graafiset DVB tekstitykset näkyvät valitussa värissä alkuperäisen värin sijaan."
 
 msgid "Graphical EPG"
 msgstr "Graafinen EPG"
@@ -9794,9 +9804,6 @@ msgstr "Taaksepäinkelauksen aloitusnopeus"
 
 msgid "Initial scroll delay"
 msgstr "Rullausviive alussa"
-
-msgid "Initialization"
-msgstr "Alusta kiintolevy"
 
 msgid "Initialize"
 msgstr "Alusta"
@@ -10784,9 +10791,6 @@ msgstr "Mac osoite"
 msgid "MAC-address"
 msgstr "MAC-osoite"
 
-msgid "MB"
-msgstr "MB"
-
 msgid "MENU"
 msgstr "VALIKKO"
 
@@ -10827,7 +10831,7 @@ msgid "Madagascar"
 msgstr "Madagascar"
 
 msgid "Magenta"
-msgstr ""
+msgstr "Magenta"
 
 msgid "Magic"
 msgstr "Taika"
@@ -11284,6 +11288,9 @@ msgstr "Liitosten hallinta"
 msgid "Mount Menu Actions"
 msgstr "Liitosten Valikko asetukset"
 
+msgid "Mount Point"
+msgstr "Liitäntä"
+
 msgid "Mount Settings"
 msgstr "Liitokset Asetukset"
 
@@ -11293,17 +11300,14 @@ msgstr "Määritä verkko ja laiteliitokset"
 msgid "Mount failed"
 msgstr "Liitos epäonnistui"
 
+msgid "Mount point"
+msgstr "Liitäntä"
+
 msgid "Mount root file system."
 msgstr "Liitä järjestelmätiedosto."
 
-msgid "Mount: "
-msgstr "Liitos: "
-
 msgid "Mounts"
 msgstr "Liitokset"
-
-msgid "Mounts Devices"
-msgstr "Liitä laitteita"
 
 msgid "Move"
 msgstr "Siirrä"
@@ -11947,6 +11951,9 @@ msgstr "Uusi PIN koodi"
 
 msgid "New Setting DXAndy "
 msgstr "Uudet Asetukset DXAndy "
+
+msgid "New Storage Device"
+msgstr "Uusi tallennuslaite"
 
 msgid "New Zealand"
 msgstr "Uusi Seelanti"
@@ -12750,6 +12757,9 @@ msgstr "Käytä kiintolevyn sisäistä virransäästötoimintoa"
 msgid "Optional parameter"
 msgstr "Valinnainen parametri"
 
+msgid "Options"
+msgstr "Asetukset"
+
 msgid "Orbital position"
 msgstr "Sijainti"
 
@@ -13006,6 +13016,9 @@ msgstr "Parlamentti"
 msgid "Partition"
 msgstr "Osio"
 
+msgid "Partition Type"
+msgstr "Osio tyyppi"
+
 msgid "Partitions"
 msgstr "Levyosiot"
 
@@ -13032,6 +13045,9 @@ msgstr "Salasana asetukset"
 
 msgid "Password changed."
 msgstr "Salasana vaihdettu."
+
+msgid "Path"
+msgstr "Polku"
 
 #, python-format
 msgid "Path '%s' missing!"
@@ -13078,6 +13094,13 @@ msgstr "Suoritetaanko päivitys?"
 
 msgid "Permanently delete all recordings in the trash can?"
 msgstr "Poista kaikki roskakorin tallenteet pysyvästi?"
+
+msgid "Permanently ignore this device"
+msgstr "Unohda tämä laite pysyvästi"
+
+#, python-format
+msgid "Permanently mount as %s"
+msgstr "Liitä pysyvästi %s"
 
 msgid "Permanently remove all deleted items"
 msgstr "Poista poistetut pysyvästi"
@@ -13511,9 +13534,6 @@ msgstr "Odota, Ladataan ohjelmistoa."
 msgid "Please wait, swap is is being created. This could take a few minutes to complete."
 msgstr "Odota, swappia luodaan. Tämä voi kestää muutaman minuutin."
 
-msgid "Please wait."
-msgstr "Odota."
-
 msgid "Please wait..."
 msgstr "Odota..."
 
@@ -13613,6 +13633,9 @@ msgstr "Portugali"
 msgid "Portuguese"
 msgstr "Portugali"
 
+msgid "Position"
+msgstr "Sijainti"
+
 msgid "Position of finished Timers in Timerlist"
 msgstr "Tallennettujen ajastusten sijainti ajastusluettelossa"
 
@@ -13663,30 +13686,6 @@ msgstr "Etupaneeli Näyttö päällä"
 
 msgid "Power threshold in mA"
 msgstr "Tunnistusvirta mA"
-
-msgid "PowerTimer"
-msgstr "Virta ajastusasetukset"
-
-msgid "PowerTimer Actions"
-msgstr "Virta-ajastus Toiminnot"
-
-msgid "PowerTimer Overview"
-msgstr "Virran katkaisu ajastukset"
-
-msgid "PowerTimer Settings"
-msgstr "Virta-ajastus Asetukset"
-
-msgid "PowerTimer Standby"
-msgstr "Virta ajastukset Valmistila"
-
-msgid "PowerTimer deep standby"
-msgstr "Virta ajastin virransäästötila"
-
-msgid "PowerTimer log"
-msgstr "PowerTimer-loki"
-
-msgid "PowerTimers"
-msgstr "Virta Ajastukset"
 
 msgid "Predefined"
 msgstr "Esiasetettu"
@@ -14256,8 +14255,14 @@ msgstr "Ikärajaa ei määritelty"
 msgid "Re-enter new PIN"
 msgstr "Toista uusi PIN kooditun"
 
+msgid "Read Only"
+msgstr "Vain luku tila"
+
 msgid "Read Userdata from oscam.conf"
 msgstr "Lue Käyttäjäntiedot oscam.conf:ista"
+
+msgid "Read/Write"
+msgstr "Lue/kirjoita"
 
 msgid "Reader"
 msgstr "Lukija"
@@ -14325,6 +14330,10 @@ msgstr "Takana"
 
 msgid "Reboot"
 msgstr "Käynnistä uudelleen"
+
+#, python-format
+msgid "Reboot %s %s now?"
+msgstr "Käynnistetäänkö %s %s nyt?"
 
 msgid "Rec"
 msgstr "Tallennus"
@@ -14907,10 +14916,6 @@ msgstr "Resoluutio yksikkö"
 msgid "Restart"
 msgstr "Käynnistä uudelleen"
 
-#, python-format
-msgid "Restart %s %s."
-msgstr "Käynnistä %s %s uudelleen."
-
 msgid "Restart GUI"
 msgstr "Käynnistä järjestelmä uudelleen"
 
@@ -15296,6 +15301,9 @@ msgstr "Samba Asiakas"
 msgid "Samba Server"
 msgstr "Samba Serveri"
 
+msgid "Samba Settings"
+msgstr "Samba asetukset"
+
 msgid "Same as in active"
 msgstr "Sama kuin aktiivinen"
 
@@ -15542,6 +15550,27 @@ msgstr "Ajoitettu epg:en lataus"
 msgid "Scheduled save of epg.dat"
 msgstr "Ajoitettu epg:en tallennus"
 
+msgid "Scheduler"
+msgstr "Aikataulu"
+
+msgid "Scheduler Actions"
+msgstr "Virta-ajastus Toiminnot"
+
+msgid "Scheduler Overview"
+msgstr "Virran katkaisu ajastukset"
+
+msgid "Scheduler Settings"
+msgstr "Aikataulu asetukset"
+
+msgid "Scheduler Standby"
+msgstr "Virta ajastukset Valmistila"
+
+msgid "Scheduler deep standby"
+msgstr "Virta ajastin virransäästötila"
+
+msgid "Scheduler log"
+msgstr "PowerTimer-loki"
+
 msgid "Sci-Fi"
 msgstr "Scifi"
 
@@ -15721,7 +15750,7 @@ msgstr ""
 "Valitse 'kyllä', jos käytät monikytkintä, joka vaatii DiSEqC portti-A\n"
 "komentosignaalin. Kaikille muille kokoonpanoille valitse 'ei'."
 
-msgid "Select 'Yes' if you want to wake the TV for a 'Wakeup' power timer is starting."
+msgid "Select 'Yes' if you want to wake the TV when a 'Wakeup' scheduled task is starting."
 msgstr "Valitse \"Kyllä\", jos haluat herätää television kun Virta ajastus käynnistyy."
 
 msgid "Select 'Yes' if you want to wake the TV for a 'Zap and Record' recording timer is starting."
@@ -15732,6 +15761,9 @@ msgstr "Valitse \"Kyllä\", jos haluat herätää television Vaihda kanavaa ajas
 
 msgid "Select 'Yes' the keep the InfoBar displayed, with no timeout, while media playback is paused."
 msgstr "'Kyllä' valinnalla tietopalkki näytetään, pysyvästi keskeytetyssä tilassa (ei aikakatkaisua)."
+
+msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
+msgstr "Valitse 'Kyllä' salliaksesi, että jokainen tunnistettu tallennuslaite viedään automaattisesti Samba jaoksi."
 
 msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
 msgstr "Jos asetuksena on 'kyllä ', voit käyttää hakupalkkia hypätäksesi haluttuun kohtaan ohjelmassa."
@@ -15823,7 +15855,7 @@ msgstr "Valitse 'Kyllä' poistaaksesi kaikki laajennukset tiedot. Tämän vaihto
 msgid "Select 'Yes' to remove all settings, tuning data, timers, resume pointers etc. Selecting this option will restore the configuration to the initial settings before any configuration settings were applied. This is the most reliable form of Factory Reset."
 msgstr "Valitse 'Kyllä' poistaaksesi kaikki asetukset, virittimen tiedot, ajastukset jne. Tämän vaihtoehdon valitseminen palauttaa kokoonpanon alkuasetuksiin ennen kuin mitään kokoonpanoasetuksia käytettiin. Tämä on luotettavin Tehdasasetusten palautuksen muoto."
 
-msgid "Select 'Yes' to remove all timer configuration data. Selecting this option will clear all timers, autotimers and power timers."
+msgid "Select 'Yes' to remove all timer configuration data. Selecting this option will clear all timers, autotimers and schedules."
 msgstr "Valitse 'Kyllä' poistaaksesi kaikki ajastus tiedot. Tämän vaihtoehdon valitseminen poistaa kaikki ajastukset, automaattiset ajastukset ja virta ajastukset."
 
 msgid "Select 'Yes' to remove all tuning data. Selecting this option will remove all tuning and bouquet data and will make timers non functional until the receiver is retuned."
@@ -15966,9 +15998,6 @@ msgstr ""
 msgid "Select Folders"
 msgstr "Hakemiston valinta"
 
-msgid "Select HDD"
-msgstr "Valitse Kiintolevy"
-
 msgid "Select Lan/Wlan"
 msgstr "Valitse LAN/WLAN"
 
@@ -16045,6 +16074,12 @@ msgstr "Elokuvan valinta"
 msgid "Select a network adapter"
 msgstr "Valitse verkkoadapteri"
 
+msgid "Select a permanent mount point for all devices"
+msgstr "Valitse pysyvä liitospiste kaikille laitteille"
+
+msgid "Select a permanent mount point for the current device"
+msgstr "Valitse pysyvä liitospiste nykyiselle laitteille"
+
 msgid "Select a repository commit log to view:"
 msgstr "Valitse arkiston loki tarkasteltavaksi:"
 
@@ -16075,6 +16110,9 @@ msgstr "Valitse kaikki rivit"
 
 msgid "Select all related files"
 msgstr "Valitse kaikki liittyvät tiedostot"
+
+msgid "Select an action for the current device"
+msgstr "Valitse toiminto nykyiselle laitteelle"
 
 msgid "Select an action to perform when the task has completed."
 msgstr "Valitse toiminto, joka suoritetaan, kun tehtävä on suoritettu."
@@ -16269,6 +16307,9 @@ msgstr "Valitse tähän virittimeen asetettu käyttäjän taajuusalueen taajuus.
 msgid "Select the Yes / True response"
 msgstr "Valitse Kyllä / Tosi vastaus"
 
+msgid "Select the access mode for the automatically exported samba shares."
+msgstr "Valitse pääsy automaattisesti viedyille Samba jaoille."
+
 #, python-format
 msgid "Select the action for '%s'"
 msgstr "Valitse toiminto '%s'"
@@ -16364,6 +16405,9 @@ msgstr "Valitse aiemmin katsottuijen kanavien näyttö järjestys."
 msgid "Select the file sort order for the %s column:"
 msgstr "Valitse tiedostojen lajittelujärjestys sarakkeelle %s:"
 
+msgid "Select the file system for the device."
+msgstr "Valitse laitteen tiedostojärjestelmä."
+
 msgid "Select the first item in list or move to the start of text"
 msgstr "Valitse luettelon ensimmäinen kohta tai siirry tekstin alkuun"
 
@@ -16418,6 +16462,12 @@ msgstr "Valitse DNS tila."
 msgid "Select the model number of your Unicable device. If the model number is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
 msgstr "Valitse SCR:n mallinumero. Jos mallinumeroa ei löydy listalta, aseta 'SCR' 'käyttäjän määrittelemä' ja syötä laitteen parametrit käsin teknisistä tiedoista."
 
+msgid "Select the mount points"
+msgstr "Valitse liitos piste"
+
+msgid "Select the mountpoint for the device."
+msgstr "Valitse laitten liitos tällä laitteelle."
+
 msgid "Select the movie path"
 msgstr "Valitse tallennus hakemisto"
 
@@ -16432,6 +16482,10 @@ msgstr ""
 "Valitse verkkosovitin jota käytetään internet yhteyteen.\n"
 "\n"
 "Jatka painamalla OK näppäintä."
+
+#, python-format
+msgid "Select the new mount point for: '%s'"
+msgstr "Valitse uusi liitos: '%s'"
 
 msgid "Select the next item in list or move the cursor right"
 msgstr "Valitse listan seuraava kohde tai siirrä kohdistinta oikealle"
@@ -17155,9 +17209,6 @@ msgstr "Kaukosäädin asetukset"
 
 msgid "Setup MiniDLNA"
 msgstr "MiniDLNA asetukset"
-
-msgid "Setup Mounts"
-msgstr "Määritä liitokset"
 
 msgid "Setup Network Services"
 msgstr "Määritä verkkopalvelut"
@@ -17995,8 +18046,8 @@ msgstr "Näytä Lokit asetukset näytössä"
 msgid "Show the OSCam information screen"
 msgstr "Näytä OSCam tietonäytössä"
 
-msgid "Show the PowerTimer"
-msgstr "Näytä Virta ajastukset"
+msgid "Show the Scheduler"
+msgstr "Näytä aikataulu"
 
 msgid "Show the SleepTimer"
 msgstr "Näytä uniajastukset"
@@ -18551,7 +18602,7 @@ msgstr "%s ei ole asennettu!"
 msgid "Sorry, no backups found!"
 msgstr "Varmuuskopioita ei löydy!"
 
-msgid "Sorry, no physical devices that supports SWAP attached. Can't create Swapfile on network or fat32 filesystems"
+msgid "Sorry, no physical devices that supports SWAP attached. Can't create swap file on network or FAT32 file systems"
 msgstr "Valitettavasti mitään fyysisiä laitteita, jotka tukevat SWAP liitäntää, ei ole liitetty. Swapfile tiedostoa ei voi luoda verkko- tai fat32-tiedostojärjestelmiin"
 
 msgid "Sorry, there was a problem:"
@@ -19119,6 +19170,9 @@ msgstr "Huippuvuoret ja Jan Mayen"
 msgid "Swahili"
 msgstr "Swahili"
 
+msgid "Swap"
+msgstr "Vaihda"
+
 msgid "Swap File Manager"
 msgstr "Swap muistin hallinta"
 
@@ -19341,9 +19395,6 @@ msgstr "T2MI PLP ID"
 msgid "T2MI RAW Mode"
 msgstr "T2MI RAW tila"
 
-msgid "TB"
-msgstr "TB"
-
 msgid "TEXT"
 msgstr "TEKSTI"
 
@@ -19352,7 +19403,7 @@ msgstr "TMDB Haku"
 
 msgid "TRANSLATOR_INFO"
 msgstr ""
-"Suomenkielinen käännös: 15.12.2024\n"
+"Suomenkielinen käännös: 1.1.2025\n"
 "tomppaa"
 
 msgid "TS file is too large for ISO9660 level 1!"
@@ -19508,6 +19559,10 @@ msgstr "Telugu"
 #, python-format
 msgid "Temp directory (%s)"
 msgstr "Tilapäishakemisto (%s)"
+
+#, python-format
+msgid "Temporarily mount as %s"
+msgstr "Väliaikainen liitos %s"
 
 msgid "Temporary directory"
 msgstr "Väliaikainen hakemisto"
@@ -20006,9 +20061,6 @@ msgstr "Tämä %s %s ei pysty purkamaan %s lähteitä!"
 
 msgid "This DVD RW medium is already formatted - reformatting will erase all content on the disc."
 msgstr "Tämä DVD-RW levy on jo alustettu - uudelleenalustus tuhoaa levyn kaiken sisällön."
-
-msgid "This Device is already mounted as HDD."
-msgstr "Laite on jo liitetty kiintolevyksi."
 
 msgid "This Option allows you to switch Audio to BT Speakers."
 msgstr "Tämän vaihtoehdon avulla voit vaihtaa äänen Bluetooth kaiuttimelle."
@@ -20621,6 +20673,9 @@ msgstr "Pikkukuva päälle/pois"
 msgid "Toggle a cut mark at the current position"
 msgstr "Vaihda leikkausmerkki nykyiseen kohtaan"
 
+msgid "Toggle a temporary mount for the current device"
+msgstr "Väliaikainen liitos nykyiselle laitteelle"
+
 msgid "Toggle all related files"
 msgstr "Vaihda kaikki liittyvät tiedostot"
 
@@ -21124,6 +21179,9 @@ msgstr "Universaali LNB"
 msgid "Unknown"
 msgstr "Tuntematon"
 
+msgid "Unknown Devices"
+msgstr "Tuntemattomat laitteet"
+
 msgid ""
 "Unknown Error creating Skin.\n"
 "Please check after reboot MyMetrixLite-Plugin and apply your settings."
@@ -21281,9 +21339,6 @@ msgstr "Päivityksiä saatavilla:"
 msgid "Updating"
 msgstr "Päivitetään"
 
-msgid "Updating mount locations."
-msgstr "Päivitetään Liitosten paikkaa."
-
 msgid "Updating package list."
 msgstr "Päivitetään lisäosa listaa."
 
@@ -21410,9 +21465,6 @@ msgstr "Käytä vaihtoehtoista GitHub DNS"
 
 msgid "Use an alternative smaller screen."
 msgstr "Käytä vaihtoehtoista näyttöä."
-
-msgid "Use as HDD"
-msgstr "Käytä Kiintolevynä"
 
 msgid "Use automatic mode detection"
 msgstr "Käytä automaattista tilan tunnistusta"
@@ -22061,13 +22113,6 @@ msgstr "Odota ajan synkronointia järjestelmän käynnistyessä"
 msgid "Wait please while creating swap file..."
 msgstr "Odota, kun swap tiedosto luotu..."
 
-msgid "Wait please while scanning for devices..."
-msgstr "Odota, laitteita etsitään..."
-
-#, python-format
-msgid "Wait please while scanning your %s %s devices..."
-msgstr "Odota, kun laite etsii kohdetta %s %s"
-
 msgid "Wait please while scanning..."
 msgstr "Odota, kun skannaat..."
 
@@ -22180,11 +22225,11 @@ msgid "Welcome to IceTV"
 msgstr "Tervetuloa IceTV"
 
 msgid ""
-"Welcome to openATV.\n"
+"Welcome to OpenATV.\n"
 "\n"
 "Use the UP/DOWN buttons on your remote control to select an option. Use the LEFT/RIGHT buttons to change the values of a configurable option. After that, press OK to proceed to the next screen."
 msgstr ""
-"Tervetuloa openATV.\n"
+"Tervetuloa OpenATV.\n"
 "\n"
 "Valitse vaihtoehto kaukosäätimen YLÖS/ALAS painikkeilla. Käytä VASEN/OIKEA painikkeita muuttaaksesi määritettävän asetuksen arvoja. Paina sen jälkeen OK siirtyäksesi seuraavaan näyttöön."
 
@@ -22479,6 +22524,12 @@ msgstr "Talviurheilu"
 
 msgid "Wipe"
 msgstr "Pyyhi"
+
+msgid "Wipe Storage Device"
+msgstr "Pyyhi tallennus laite"
+
+msgid "Wiping storage device..."
+msgstr "Tyhjennetään tallennuslaitetta..."
 
 msgid "Wireless LAN"
 msgstr "WLAN-verkko"
@@ -24050,6 +24101,97 @@ msgstr "kyllä (pidä syötteet)"
 msgid "®"
 msgstr "®"
 
+#~ msgid "PowerTimer"
+#~ msgstr "Virta ajastusasetukset"
+
+#~ msgid "PowerTimer Settings"
+#~ msgstr "Virta-ajastus Asetukset"
+
+#~ msgid "PowerTimers"
+#~ msgstr "Virta Ajastukset"
+
+#~ msgid "Show the PowerTimer"
+#~ msgstr "Näytä Virta ajastukset"
+
+#, python-format
+#~ msgid ""
+#~ "Changes need a system restart to take effect.\n"
+#~ "Restart your %s %s now?"
+#~ msgstr ""
+#~ "Muutokset tulee voimaan järjestelmän uudelleenkäynnistyksen jälkeen.\n"
+#~ "Käynnistetäänkö %s %s uudelleen nyt?"
+
+#~ msgid "Check"
+#~ msgstr "Tarkista"
+
+#~ msgid "Check HDD"
+#~ msgstr "Tarkista Kiintolevy"
+
+#~ msgid "Convert EXT3 File System to EXT4"
+#~ msgstr "Muunna ext3 -> ext4 järjestelmäksi"
+
+#~ msgid "Convert ext3 to ext4"
+#~ msgstr "Muunna levyjärjestelmä ext3 -> ext4"
+
+#~ msgid "Device: "
+#~ msgstr "Laite: "
+
+#~ msgid "Filesystem check your hard drive"
+#~ msgstr "Tiedostojärjestelmä tarkista kiintolevy"
+
+#~ msgid "Format HDD"
+#~ msgstr "Alusta kiintolevy"
+
+#~ msgid "Format your hard drive"
+#~ msgstr "Alusta kiintolevy"
+
+#~ msgid "GB"
+#~ msgstr "GB"
+
+#~ msgid "Initialization"
+#~ msgstr "Alusta kiintolevy"
+
+#~ msgid "MB"
+#~ msgstr "MB"
+
+#~ msgid "Mount: "
+#~ msgstr "Liitos: "
+
+#~ msgid "Mounts Devices"
+#~ msgstr "Liitä laitteita"
+
+#~ msgid "Please wait."
+#~ msgstr "Odota."
+
+#, python-format
+#~ msgid "Restart %s %s."
+#~ msgstr "Käynnistä %s %s uudelleen."
+
+#~ msgid "Select HDD"
+#~ msgstr "Valitse Kiintolevy"
+
+#~ msgid "Setup Mounts"
+#~ msgstr "Määritä liitokset"
+
+#~ msgid "TB"
+#~ msgstr "TB"
+
+#~ msgid "This Device is already mounted as HDD."
+#~ msgstr "Laite on jo liitetty kiintolevyksi."
+
+#~ msgid "Updating mount locations."
+#~ msgstr "Päivitetään Liitosten paikkaa."
+
+#~ msgid "Use as HDD"
+#~ msgstr "Käytä Kiintolevynä"
+
+#~ msgid "Wait please while scanning for devices..."
+#~ msgstr "Odota, laitteita etsitään..."
+
+#, python-format
+#~ msgid "Wait please while scanning your %s %s devices..."
+#~ msgstr "Odota, kun laite etsii kohdetta %s %s"
+
 #~ msgid "When enabled, graphical DVB subtitles will be displayed in yellow, instead of the original color."
 #~ msgstr "Kun päällä, DVB tekstitys näytetään keltaisena alkuperäisen värin sijaan."
 
@@ -24085,9 +24227,6 @@ msgstr "®"
 
 #~ msgid "E "
 #~ msgstr "O "
-
-#~ msgid "Mountpoint"
-#~ msgstr "Liitäntä"
 
 #, python-format
 #~ msgid "%d channel found"

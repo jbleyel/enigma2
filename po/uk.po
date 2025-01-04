@@ -1,7 +1,7 @@
 # Ukrainian translations for Enigma2.
 #
 # openATV <openatv@gmail.com>, 2021.
-# kvinto <badsystem@ukr.net>, 2021, 2022, 2023, 2024.
+# kvinto <badsystem@ukr.net>, 2021, 2022, 2023, 2024, 2025.
 # igorrrrr <igorzhugan66@gmail.com>, 2021, 2022, 2023.
 # Tymofii Lytvynenko <till.svit@gmail.com>, 2021.
 # Artem <artem@molotov.work>, 2022.
@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-24 18:40+0000\n"
-"PO-Revision-Date: 2024-12-27 21:39+0000\n"
+"POT-Creation-Date: 2024-12-31 15:16+0000\n"
+"PO-Revision-Date: 2025-01-02 13:08+0000\n"
 "Last-Translator: kvinto <badsystem@ukr.net>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/uk/>\n"
 "Language: uk\n"
@@ -100,6 +100,9 @@ msgstr " оновлено"
 
 msgid "!! Boot loader Upgrade !!"
 msgstr "!! Завантажувач оновлено !!"
+
+msgid "# = Reboot Required"
+msgstr "# = Потрібне перезавантаження"
 
 msgid "%-H:%M"
 msgstr "%-H:%M"
@@ -1591,18 +1594,18 @@ msgid "A file from media is in use!"
 msgstr "Використовується файл із носія!"
 
 #, python-format
-msgid "A finished PowerTimer wants to reboot your %s %s. Do that now?"
+msgid "A finished scheduled timer wants to reboot your %s %s. Do that now?"
 msgstr "Заплановане завдання таймера живлення вимагає перезавантаження Вашого %s %s. Перезавантажити зараз?"
 
-msgid "A finished PowerTimer wants to restart the user interface. Do that now?"
+msgid "A finished scheduled timer wants to restart the user interface. Do that now?"
 msgstr "Заплановане завдання таймера живлення вимагає перезавантаження інтерфеса. Зробити це зараз?"
 
 #, python-format
-msgid "A finished PowerTimer wants to set your %s %s to standby. Do that now?"
+msgid "A finished scheduled timer wants to set your %s %s to standby. Do that now?"
 msgstr "Заплановане завдання таймера живлення вимагає перевести Ваш %s %s в режим очікування. Зробити це зараз?"
 
 #, python-format
-msgid "A finished PowerTimer wants to shut down your %s %s. Do that now?"
+msgid "A finished scheduled timer wants to shut down your %s %s. Do that now?"
 msgstr "Заплановане завдання таймера живлення вимагає вимкнути Ваш %s %s. Зробити це зараз?"
 
 #, python-format
@@ -1621,11 +1624,11 @@ msgstr ""
 "Запис по таймеру закінчено і Ваш %s %s буде вимкнено\n"
 "Зробити це зараз?"
 
-msgid "Graphical DVB subtitles will be displayed in the selected color, instead of the original colors."
-msgstr "Графічні субтитри DVB відображатимуться у вибраному кольорі замість оригінальних кольорів."
-
 msgid "A highlight on the remote control image shows which button the help refers to. If more than one button performs the indicated function, more than one highlight will be shown. Text below the list lists the active buttons and whether the function requires a long press or SHIFT of the button(s)."
 msgstr "Виділення на зображенні пульта дистанційного керування показує, до якої кнопки посилається довідка. Якщо зазначену функцію виконує більше однієї кнопки, буде показано більше одного виділення. Текст під списком містить перелік активних кнопок та те, чи потрібна функція тривалого натискання, або SHIFT кнопки."
+
+msgid "A new storage device has been connected:"
+msgstr "Підключено новий запам'ятовуючий пристрій:"
 
 #, python-format
 msgid ""
@@ -1653,7 +1656,7 @@ msgstr "В даний час триває запис. Зупиніть запи�
 
 #, python-format
 msgid ""
-"A recording, recording timer or power timer is running or will begin within 15 minutes. %s extended to 30 minutes. Your %s %s will go to Deep Standby after the recording or power timer event.\n"
+"A recording, recording timer or scheduled task is running or will begin within 15 minutes. %s extended to 30 minutes. Your %s %s will go to Deep Standby after the recording or scheduled task.\n"
 "\n"
 "Go to Deep Standby now?"
 msgstr ""
@@ -1784,8 +1787,8 @@ msgstr "Відтворення стрім-каналу перервано.\n"
 msgid "About"
 msgstr "Система"
 
-msgid "About openATV"
-msgstr "Про openATV"
+msgid "About OpenATV"
+msgstr "Про OpenATV"
 
 msgid "About to start"
 msgstr "час до запису"
@@ -1816,6 +1819,9 @@ msgstr "Дія при довгому натисканні кнопки вимк�
 
 msgid "Action on short POWER button press"
 msgstr "Дія при короткому натисканні кнопки вимкнення"
+
+msgid "Actions"
+msgstr "Дії"
 
 msgid "Activate"
 msgstr "Активувати"
@@ -2744,6 +2750,9 @@ msgstr "Мітка автороздільності екрану"
 
 msgid "Automatic scan for services"
 msgstr "Автосканування каналів"
+
+msgid "Automatic shares access"
+msgstr "Автоматичний доступ до спільних ресурсів"
 
 msgid "Automatically put the TV in standby whenever the receiver goes into standby or deep standby."
 msgstr "Автоматично переводьте телевізор у режим очікування, коли приймач переходить у режим очікування, або глибокого очікування."
@@ -3811,14 +3820,6 @@ msgstr "Змінити фаворитний список"
 msgid "Changed"
 msgstr "Змінено"
 
-#, python-format
-msgid ""
-"Changes need a system restart to take effect.\n"
-"Restart your %s %s now?"
-msgstr ""
-"Для вступу змін в силу потрібне перезавантаження.\n"
-"Перезавантажити %s %s зараз?"
-
 msgid "Channel"
 msgstr "Канал"
 
@@ -3953,12 +3954,6 @@ msgstr "Властивість пристрою"
 
 msgid "Chechen"
 msgstr "Чеченська"
-
-msgid "Check"
-msgstr "Перевірити"
-
-msgid "Check HDD"
-msgstr "Перевірити HDD"
 
 msgid "Check for PDC"
 msgstr "Перевірте наявність PDC"
@@ -4265,6 +4260,12 @@ msgstr "Закрити діалог"
 
 msgid "Close screen"
 msgstr "Закрити вікно"
+
+msgid "Close the Device Manager screen"
+msgstr "Закрити екран диспетчера пристроїв"
+
+msgid "Close the Device Manager screen and exit all menus"
+msgstr "Закрити екран диспетчера пристроїв і вийти із усіх меню"
 
 msgid "Close the Kexec MultiBoot Manager"
 msgstr "Закрийте Kexec MultiBoot Менеджер"
@@ -4980,12 +4981,6 @@ msgstr "Керування емуляторами"
 msgid "Controlled by HDMI"
 msgstr "управляється HDMI"
 
-msgid "Convert EXT3 File System to EXT4"
-msgstr "Перетворити файлову систему ext3 в ext4"
-
-msgid "Convert ext3 to ext4"
-msgstr "Перетворення ext3 в ext4"
-
 msgid "Convert file system ext3 to ext4"
 msgstr "Перетворити файлову систему ext3 на ext4"
 
@@ -5329,6 +5324,9 @@ msgstr "Поточні зміщення гучності:"
 
 msgid "Custom"
 msgstr "Користувацька"
+
+msgid "Custom mountpoint"
+msgstr "Користувацька точка монтування"
 
 msgid "Custom skip time for '1'/'3' buttons"
 msgstr "Час пропуску для кнопок '1'/'3'"
@@ -5785,6 +5783,12 @@ msgstr "Визначте додаткову затримку в мілісеку
 msgid "Define the DNS suffix."
 msgstr "Визначити DNS-суфікс."
 
+msgid "Define the custom mountpoint for the device."
+msgstr "Визначте настроювану точку підключення для пристрою."
+
+msgid "Define the file system mount options."
+msgstr "Визначте параметри монтування файлової системи."
+
 msgid "Defined / Active"
 msgstr "Визначено / Активно"
 
@@ -6098,8 +6102,14 @@ msgstr "Подробиці"
 msgid "Development Packages"
 msgstr "Пакети розробки"
 
+msgid "Device"
+msgstr "Пристрій"
+
 msgid "Device Manager"
 msgstr "Диспетчер пристроїв"
+
+msgid "Device Manager Actions"
+msgstr "Дії кнопок меню диспетчера пристроїв"
 
 msgid "Device Settings"
 msgstr "Налаштування пристрою"
@@ -6115,9 +6125,6 @@ msgstr "Назва пристрою:"
 
 msgid "Device number"
 msgstr "Номер пристрою"
-
-msgid "Device: "
-msgstr "Пристрій: "
 
 msgid "Devices"
 msgstr "Пристрої"
@@ -7076,6 +7083,9 @@ msgstr "Включити швидке автосканування"
 msgid "Enable auto fast scan for %s"
 msgstr "Включити швидке автосканування для %s"
 
+msgid "Enable automatic shares"
+msgstr "Увімкнути автоматичний спільний доступ"
+
 msgid "Enable autorefresh templates."
 msgstr "Увімкнути автооновлення шаблонів."
 
@@ -7756,7 +7766,7 @@ msgstr "Ефіопія"
 msgid "Even if TV has another input active?"
 msgstr "Навіть якщо телевізор має інший активний вхід?"
 
-msgid "Even if a 'Wakeup' PowerTimer starting?"
+msgid "Even if a 'Wakeup' scheduled task starting?"
 msgstr "Навіть якщо спрацює таймер живлення 'ввімкнути'?"
 
 msgid "Even if a 'Zap and Record' recording timer starting?"
@@ -8286,6 +8296,9 @@ msgstr "File Commander Дії текстового редактора"
 msgid "File Commander settings"
 msgstr "File Commander Налаштування"
 
+msgid "File system"
+msgstr "Файлова Система"
+
 msgid "File System Check"
 msgstr "Перевірка файлової системи"
 
@@ -8314,8 +8327,8 @@ msgstr "Назва файлу"
 msgid "Files/folders to exclude from backup"
 msgstr "Файли/теки виключити з резервної копії"
 
-msgid "Filesystem check your hard drive"
-msgstr "Перевірка файлової системи Вашого жорсткого диска"
+msgid "Filesystem"
+msgstr "Файлова система"
 
 msgid "Fill in channel EPGs from the broadcast EPG where there is no IceTV EPG for the channel"
 msgstr "Заповніть EPG каналу з EPG трансляції, де для каналу немає EPG IceTV"
@@ -8399,7 +8412,7 @@ msgstr "Дії розширювача флеш-пам’яті"
 msgid "Flash Image"
 msgstr "Запис Іміджа"
 
-#. TRANSLATORS: The variable is the name of a distribution.  E.g. "openATV".
+#. TRANSLATORS: The variable is the name of a distribution.  E.g. "OpenATV".
 #, python-format
 msgid "Flash Manager - %s Images"
 msgstr "Флеш-менеджер - %s іміджів"
@@ -8516,14 +8529,11 @@ msgstr "Форматування"
 msgid "Format Disk"
 msgstr "Форматувати диск"
 
-msgid "Format HDD"
-msgstr "Форматувати HDD"
-
 msgid "Format Storage Device"
 msgstr "Форматувати пристрій зберігання"
 
-msgid "Format your hard drive"
-msgstr "Форматування Вашого жорсткого диска"
+msgid "Formatting storage device..."
+msgstr "Форматування накопичувача..."
 
 msgid "Forward Error Correction (FEC)"
 msgstr "Корекція помилок (FEC)"
@@ -8644,9 +8654,6 @@ msgstr "Тест FullHD"
 
 msgid "G"
 msgstr "G"
-
-msgid "GB"
-msgstr "ГБ"
 
 msgid "GCC version"
 msgstr "Версія GCC"
@@ -8864,6 +8871,9 @@ msgstr "Калібрування позиції Х"
 
 msgid "Grab"
 msgstr "Скріншот"
+
+msgid "Graphical DVB subtitles will be displayed in the selected color, instead of the original colors."
+msgstr "Графічні субтитри DVB відображатимуться у вибраному кольорі замість оригінальних кольорів."
 
 msgid "Graphical EPG"
 msgstr "Графічний EPG"
@@ -9822,9 +9832,6 @@ msgstr "Початкова швидкість перемотування наз�
 
 msgid "Initial scroll delay"
 msgstr "Початкова затримка прокрутки"
-
-msgid "Initialization"
-msgstr "Ініціалізація"
 
 msgid "Initialize"
 msgstr "Ініціалізувати"
@@ -10814,9 +10821,6 @@ msgstr "MAC-адреса"
 msgid "MAC-address"
 msgstr "MAC-адреса"
 
-msgid "MB"
-msgstr "МБ"
-
 msgid "MENU"
 msgstr "MENU"
 
@@ -11314,6 +11318,9 @@ msgstr "Помічник монтування"
 msgid "Mount Menu Actions"
 msgstr "Дії Меню монтування"
 
+msgid "Mount Point"
+msgstr "Точка монтування"
+
 msgid "Mount Settings"
 msgstr "Налаштування монтування"
 
@@ -11323,17 +11330,14 @@ msgstr "Налаштування монтування"
 msgid "Mount failed"
 msgstr "Монтування невдале"
 
+msgid "Mount point"
+msgstr "Точка монтування"
+
 msgid "Mount root file system."
 msgstr "Монтування кореневої файлової системи."
 
-msgid "Mount: "
-msgstr "Підключення: "
-
 msgid "Mounts"
 msgstr "Точки монтування"
-
-msgid "Mounts Devices"
-msgstr "Підключення пристроїв"
 
 msgid "Move"
 msgstr "Переміщення"
@@ -11975,6 +11979,9 @@ msgstr "Новий ПІН"
 
 msgid "New Setting DXAndy "
 msgstr "Нові налаштування DXAndy "
+
+msgid "New Storage Device"
+msgstr "Новий пристрій зберігання даних"
 
 msgid "New Zealand"
 msgstr "Нова Зеландія"
@@ -12772,6 +12779,9 @@ msgstr "Включити таймер режиму очікування HDD"
 msgid "Optional parameter"
 msgstr "Необов'язковий параметр"
 
+msgid "Options"
+msgstr "Опції"
+
 msgid "Orbital position"
 msgstr "Орбітальна позиція"
 
@@ -13028,6 +13038,9 @@ msgstr "Парламент"
 msgid "Partition"
 msgstr "Розділ"
 
+msgid "Partition Type"
+msgstr "Тип розділу"
+
 msgid "Partitions"
 msgstr "Розділи"
 
@@ -13054,6 +13067,9 @@ msgstr "Налаштування Пароля"
 
 msgid "Password changed."
 msgstr "Пароль змінено."
+
+msgid "Path"
+msgstr "Директорія"
 
 #, python-format
 msgid "Path '%s' missing!"
@@ -13100,6 +13116,13 @@ msgstr "Виконати оновлення?"
 
 msgid "Permanently delete all recordings in the trash can?"
 msgstr "Остаточно видалити всі записи в кошик для сміття?"
+
+msgid "Permanently ignore this device"
+msgstr "Назавжди ігнорувати цей пристрій"
+
+#, python-format
+msgid "Permanently mount as %s"
+msgstr "Постійно монтувати як %s"
 
 msgid "Permanently remove all deleted items"
 msgstr "Назавжди видалити усі видалені елементи"
@@ -13535,9 +13558,6 @@ msgstr "Зачекайте, завантажується імідж..."
 msgid "Please wait, swap is is being created. This could take a few minutes to complete."
 msgstr "Будь ласка, зачекайте, swap створюється. Це може зайняти декілька хвилин."
 
-msgid "Please wait."
-msgstr "Будь ласка, почекайте."
-
 msgid "Please wait..."
 msgstr "Будь ласка, почекайте..."
 
@@ -13637,6 +13657,9 @@ msgstr "Португалія"
 msgid "Portuguese"
 msgstr "Португальська"
 
+msgid "Position"
+msgstr "Позиція"
+
 msgid "Position of finished Timers in Timerlist"
 msgstr "Розташування виконаних Таймерів в списку"
 
@@ -13687,30 +13710,6 @@ msgstr "Включення дисплею"
 
 msgid "Power threshold in mA"
 msgstr "Поріг струму в mA"
-
-msgid "PowerTimer"
-msgstr "Таймер живлення"
-
-msgid "PowerTimer Actions"
-msgstr "Дії таймера живлення"
-
-msgid "PowerTimer Overview"
-msgstr "Перегляд таймерів живлення"
-
-msgid "PowerTimer Settings"
-msgstr "Налаштування PowerTimer"
-
-msgid "PowerTimer Standby"
-msgstr "Таймер живлення в режимі очікування"
-
-msgid "PowerTimer deep standby"
-msgstr "Таймер живлення в режимі глибокого очікування"
-
-msgid "PowerTimer log"
-msgstr "Лог мененджера живлення"
-
-msgid "PowerTimers"
-msgstr "Таймери живлення"
 
 msgid "Predefined"
 msgstr "Попередньо заплановано"
@@ -14280,8 +14279,14 @@ msgstr "Рейтинг не визначений"
 msgid "Re-enter new PIN"
 msgstr "Повторно введіть новий ПІН"
 
+msgid "Read Only"
+msgstr "Тільки для читання"
+
 msgid "Read Userdata from oscam.conf"
 msgstr "Дані користувача з oscam.conf"
+
+msgid "Read/Write"
+msgstr "Читання/запис"
 
 msgid "Reader"
 msgstr "Рідер"
@@ -14349,6 +14354,10 @@ msgstr "Тиловий"
 
 msgid "Reboot"
 msgstr "Перезавантажити"
+
+#, python-format
+msgid "Reboot %s %s now?"
+msgstr "Перезавантажити %s %s зараз?"
 
 msgid "Rec"
 msgstr "Запис"
@@ -14931,10 +14940,6 @@ msgstr "Одиниця роздільної здатності"
 msgid "Restart"
 msgstr "Перезавантажити"
 
-#, python-format
-msgid "Restart %s %s."
-msgstr "Перезапуск %s %s."
-
 msgid "Restart GUI"
 msgstr "Перезавантаження GUI"
 
@@ -15320,6 +15325,9 @@ msgstr "Клієнт Samba"
 msgid "Samba Server"
 msgstr "Samba Сервер"
 
+msgid "Samba Settings"
+msgstr "Налаштування Samba"
+
 msgid "Same as in active"
 msgstr "Те ж, що при активності"
 
@@ -15569,6 +15577,27 @@ msgstr "Заплановане завантаження epg.dat"
 msgid "Scheduled save of epg.dat"
 msgstr "Заплановане збереження epg.dat"
 
+msgid "Scheduler"
+msgstr "Планувальник"
+
+msgid "Scheduler Actions"
+msgstr "Дії таймера живлення"
+
+msgid "Scheduler Overview"
+msgstr "Перегляд таймерів живлення"
+
+msgid "Scheduler Settings"
+msgstr "Параметри планувальника"
+
+msgid "Scheduler Standby"
+msgstr "Таймер живлення в режимі очікування"
+
+msgid "Scheduler deep standby"
+msgstr "Таймер живлення в режимі глибокого очікування"
+
+msgid "Scheduler log"
+msgstr "Лог мененджера живлення"
+
 msgid "Sci-Fi"
 msgstr "Наукова фантастика"
 
@@ -15740,7 +15769,7 @@ msgstr "Виберіть 'Так', якщо налаштування гучно�
 msgid "Select 'Yes' if you are using a multi-switch which requires a DiSEqC Port-A command signal. Select 'No' for all other setups."
 msgstr "Виберіть 'Так' коли Ви використовуєте мультисвіч, який вимагає команду DiSEqC Port-A. Для всіх інших налаштувань виберіть 'Ні'."
 
-msgid "Select 'Yes' if you want to wake the TV for a 'Wakeup' power timer is starting."
+msgid "Select 'Yes' if you want to wake the TV when a 'Wakeup' scheduled task is starting."
 msgstr "Виберіть 'Так', якщо бажаєте увімкнути телевізор під час запуску таймера 'Пробудження'."
 
 msgid "Select 'Yes' if you want to wake the TV for a 'Zap and Record' recording timer is starting."
@@ -15751,6 +15780,9 @@ msgstr "Виберіть 'Так', якщо бажаєте увімкнути т
 
 msgid "Select 'Yes' the keep the InfoBar displayed, with no timeout, while media playback is paused."
 msgstr "Якщо вибрано 'так', інформаційна панель в режимі 'пауза' буде показана постійно (немає тайм-ауту)."
+
+msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
+msgstr "Виберіть 'Так', щоб кожен виявлений пристрій зберігання даних автоматично експортувався як спільний доступ до samba."
 
 msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
 msgstr "Якщо вибрано 'так', зможете використовувати SeekBar, щоб перейти до точки з подією."
@@ -15842,7 +15874,7 @@ msgstr "Виберіть 'Так', щоб видалити всі дані ко�
 msgid "Select 'Yes' to remove all settings, tuning data, timers, resume pointers etc. Selecting this option will restore the configuration to the initial settings before any configuration settings were applied. This is the most reliable form of Factory Reset."
 msgstr "Виберіть 'Так', щоб видалити всі налаштування, дані налаштування, таймери, показники відновлення, тощо. Вибір цієї опції відновить конфігурацію до початкових налаштувань. Це найнадійніша форма скидання до заводських налаштувань."
 
-msgid "Select 'Yes' to remove all timer configuration data. Selecting this option will clear all timers, autotimers and power timers."
+msgid "Select 'Yes' to remove all timer configuration data. Selecting this option will clear all timers, autotimers and schedules."
 msgstr "Виберіть 'Так', щоб видалити всі дані конфігурації таймера. Якщо вибрати цей параметр, усі таймери, автотаймери та таймери живлення очистяться."
 
 msgid "Select 'Yes' to remove all tuning data. Selecting this option will remove all tuning and bouquet data and will make timers non functional until the receiver is retuned."
@@ -15983,9 +16015,6 @@ msgstr "Виберіть Швидкий DiSEqC, якщо ваша антена �
 msgid "Select Folders"
 msgstr "Виберіть теки"
 
-msgid "Select HDD"
-msgstr "Вибрати HDD"
-
 msgid "Select Lan/Wlan"
 msgstr "Вибір Lan/Wi-Fi"
 
@@ -16062,6 +16091,12 @@ msgstr "Вибрати відео"
 msgid "Select a network adapter"
 msgstr "Вибір мережевого адаптера"
 
+msgid "Select a permanent mount point for all devices"
+msgstr "Виберіть постійну точку підключення для всіх пристроїв"
+
+msgid "Select a permanent mount point for the current device"
+msgstr "Виберіть постійну точку підключення для поточного пристрою"
+
 msgid "Select a repository commit log to view:"
 msgstr "Виберіть журнал фіксації сховища для перегляду:"
 
@@ -16092,6 +16127,9 @@ msgstr "Виділити усі рядки"
 
 msgid "Select all related files"
 msgstr "Виберіть усі пов’язані файли"
+
+msgid "Select an action for the current device"
+msgstr "Виберіть дію для поточного пристрою"
 
 msgid "Select an action to perform when the task has completed."
 msgstr "Виберіть дію, яку потрібно виконати після завершення завдання."
@@ -16284,6 +16322,9 @@ msgstr "Виберіть частоту Користувацької Смуги,
 msgid "Select the Yes / True response"
 msgstr "Виберіть відповідь Так/Правда"
 
+msgid "Select the access mode for the automatically exported samba shares."
+msgstr "Виберіть режим доступу для автоматично експортованих спільних ресурсів samba."
+
 #, python-format
 msgid "Select the action for '%s'"
 msgstr "Вибрати дію для '%s'"
@@ -16379,6 +16420,9 @@ msgstr "Виберіть послідовність відображення п�
 msgid "Select the file sort order for the %s column:"
 msgstr "Виберіть порядок сортування файлів для стовпця %s:"
 
+msgid "Select the file system for the device."
+msgstr "Виберіть файлову систему для пристрою."
+
 msgid "Select the first item in list or move to the start of text"
 msgstr "Виберіть перший елемент у списку, або перейдіть на початок тексту"
 
@@ -16433,6 +16477,12 @@ msgstr "Вибрати режим роботи DNS."
 msgid "Select the model number of your Unicable device. If the model number is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
 msgstr "Виберіть номер моделі вашого пристрою Unicable. Якщо номер моделі не вказаний, встановіть 'SCR' на 'визначено користувачем' і введіть параметри пристрою вручну відповідно до його специфікації."
 
+msgid "Select the mount points"
+msgstr "Виберіть точки монтування"
+
+msgid "Select the mountpoint for the device."
+msgstr "Виберіть точку монтування для пристрою."
+
 msgid "Select the movie path"
 msgstr "Виберіть теку для фільмів"
 
@@ -16447,6 +16497,10 @@ msgstr ""
 "Виберіть мережевий інтерфейс, який буде використовуватися для підключення до Інтернету.\n"
 "\n"
 "Натисніть OK, щоб продовжити."
+
+#, python-format
+msgid "Select the new mount point for: '%s'"
+msgstr "Виберіть нову точку монтування для: '%s'"
 
 msgid "Select the next item in list or move the cursor right"
 msgstr "Виберіть наступний елемент у списку, або перемістіть курсор праворуч"
@@ -17168,9 +17222,6 @@ msgstr "Налаштування Пристрій введення"
 
 msgid "Setup MiniDLNA"
 msgstr "Налаштування MiniDLNA"
-
-msgid "Setup Mounts"
-msgstr "Налаштування монтування"
 
 msgid "Setup Network Services"
 msgstr "Налаштування мережевих служб"
@@ -18008,8 +18059,8 @@ msgstr "Показати екран налаштувань журналів"
 msgid "Show the OSCam information screen"
 msgstr "Показати Екран Інформації OSCam"
 
-msgid "Show the PowerTimer"
-msgstr "Показати Таймер вимкнення"
+msgid "Show the Scheduler"
+msgstr "Показати планувальник"
 
 msgid "Show the SleepTimer"
 msgstr "Показати таймер сну"
@@ -18566,7 +18617,7 @@ msgstr "Вибачте, %s не встановлено!"
 msgid "Sorry, no backups found!"
 msgstr "Вибачте, не знайдено жодного бекапу!"
 
-msgid "Sorry, no physical devices that supports SWAP attached. Can't create Swapfile on network or fat32 filesystems"
+msgid "Sorry, no physical devices that supports SWAP attached. Can't create swap file on network or FAT32 file systems"
 msgstr "Вибачте, ніяких фізичних пристроїв, які підтримують SWAP не знайдено. Неможливо створити файл підкачки в мережі або файловій системі fat32"
 
 msgid "Sorry, there was a problem:"
@@ -19134,6 +19185,9 @@ msgstr "Шпіцберген і Ян Майен"
 msgid "Swahili"
 msgstr "Суахілі"
 
+msgid "Swap"
+msgstr "Swap"
+
 msgid "Swap File Manager"
 msgstr "Мененджер Файла підкачки"
 
@@ -19356,9 +19410,6 @@ msgstr "T2MI PLP ID"
 msgid "T2MI RAW Mode"
 msgstr "T2MI RAW Режим"
 
-msgid "TB"
-msgstr "ТБ"
-
 msgid "TEXT"
 msgstr "TEXT"
 
@@ -19366,7 +19417,7 @@ msgid "TMDB Search"
 msgstr "TMDB Пошук"
 
 msgid "TRANSLATOR_INFO"
-msgstr "Переклад: kvinto - 27.12.2024"
+msgstr "Переклад: kvinto - 02.01.2024"
 
 msgid "TS file is too large for ISO9660 level 1!"
 msgstr "TS файл занадто великий для ISO9660 рівень 1!"
@@ -19521,6 +19572,10 @@ msgstr "Телугу"
 #, python-format
 msgid "Temp directory (%s)"
 msgstr "Тимчасовий каталог (%s)"
+
+#, python-format
+msgid "Temporarily mount as %s"
+msgstr "Тимчасово підключити як %s"
 
 msgid "Temporary directory"
 msgstr "Тимчасовий каталог"
@@ -20017,9 +20072,6 @@ msgstr "Цей %s %s не може декодувати %s потоки!"
 
 msgid "This DVD RW medium is already formatted - reformatting will erase all content on the disc."
 msgstr "Цей DVD-RW диск вже відформатований - переформатування знищить всі дані на диску."
-
-msgid "This Device is already mounted as HDD."
-msgstr "Цей пристрій вже змонтовано як жорсткий диск."
 
 msgid "This Option allows you to switch Audio to BT Speakers."
 msgstr "Ця опція дозволяє перемикати аудіосистему на BT динамік."
@@ -20630,6 +20682,9 @@ msgstr "Переключити Зображення в Графіку"
 msgid "Toggle a cut mark at the current position"
 msgstr "Переключити мітку вирізання в цю позицію"
 
+msgid "Toggle a temporary mount for the current device"
+msgstr "Перемикання тимчасового монтування для поточного пристрою"
+
 msgid "Toggle all related files"
 msgstr "Переключити всі пов’язані файли"
 
@@ -21132,6 +21187,9 @@ msgstr "Універсальний конвертор"
 msgid "Unknown"
 msgstr "Невідомий"
 
+msgid "Unknown Devices"
+msgstr "Невідомі пристрої"
+
 msgid ""
 "Unknown Error creating Skin.\n"
 "Please check after reboot MyMetrixLite-Plugin and apply your settings."
@@ -21289,9 +21347,6 @@ msgstr "Доступні оновлення:"
 msgid "Updating"
 msgstr "Оновлення"
 
-msgid "Updating mount locations."
-msgstr "Оновлення параметрів підключення."
-
 msgid "Updating package list."
 msgstr "Оновлення списку пакетів."
 
@@ -21418,9 +21473,6 @@ msgstr "Використати альтернативний DNS GitHub"
 
 msgid "Use an alternative smaller screen."
 msgstr "Використовувати альтернативне вікно."
-
-msgid "Use as HDD"
-msgstr "Використовувати як HDD"
 
 msgid "Use automatic mode detection"
 msgstr "Використовувати автоматичне визначення режиму"
@@ -22069,13 +22121,6 @@ msgstr "Зачекайте на синхронізацію часу під ча�
 msgid "Wait please while creating swap file..."
 msgstr "Чекайте, триває створення файлу підкачки..."
 
-msgid "Wait please while scanning for devices..."
-msgstr "Зачекайте, виконується пошук пристроїв..."
-
-#, python-format
-msgid "Wait please while scanning your %s %s devices..."
-msgstr "Зачекайте, виконується пошук %s %s пристроїв..."
-
 msgid "Wait please while scanning..."
 msgstr "Зачекайте, виконується сканування..."
 
@@ -22188,11 +22233,11 @@ msgid "Welcome to IceTV"
 msgstr "Ласкаво просимо до IceTV"
 
 msgid ""
-"Welcome to openATV.\n"
+"Welcome to OpenATV.\n"
 "\n"
 "Use the UP/DOWN buttons on your remote control to select an option. Use the LEFT/RIGHT buttons to change the values of a configurable option. After that, press OK to proceed to the next screen."
 msgstr ""
-"Ласкаво просимо до openATV.\n"
+"Ласкаво просимо до OpenATV.\n"
 "\n"
 "Використовуйте кнопки ВГОРУ/ВНИЗ на пульті дистанційного керування, щоб вибрати параметр. Використовуйте кнопки ВЛІВО/ВПРАВО, щоб змінити значення настроюваного параметра. Після цього натисніть OK, щоб перейти до наступного кроку."
 
@@ -22487,6 +22532,12 @@ msgstr "Зимовий спорт"
 
 msgid "Wipe"
 msgstr "Витерти"
+
+msgid "Wipe Storage Device"
+msgstr "Очистити пристрій зберігання"
+
+msgid "Wiping storage device..."
+msgstr "Очищення пристрою зберігання..."
 
 msgid "Wireless LAN"
 msgstr "Безпровідний адаптер"
@@ -24053,6 +24104,97 @@ msgstr "так (зберігати фіди)"
 msgid "®"
 msgstr "®"
 
+#~ msgid "PowerTimer"
+#~ msgstr "Таймер живлення"
+
+#~ msgid "PowerTimer Settings"
+#~ msgstr "Налаштування PowerTimer"
+
+#~ msgid "PowerTimers"
+#~ msgstr "Таймери живлення"
+
+#~ msgid "Show the PowerTimer"
+#~ msgstr "Показати Таймер вимкнення"
+
+#, python-format
+#~ msgid ""
+#~ "Changes need a system restart to take effect.\n"
+#~ "Restart your %s %s now?"
+#~ msgstr ""
+#~ "Для вступу змін в силу потрібне перезавантаження.\n"
+#~ "Перезавантажити %s %s зараз?"
+
+#~ msgid "Check"
+#~ msgstr "Перевірити"
+
+#~ msgid "Check HDD"
+#~ msgstr "Перевірити HDD"
+
+#~ msgid "Convert EXT3 File System to EXT4"
+#~ msgstr "Перетворити файлову систему ext3 в ext4"
+
+#~ msgid "Convert ext3 to ext4"
+#~ msgstr "Перетворення ext3 в ext4"
+
+#~ msgid "Device: "
+#~ msgstr "Пристрій: "
+
+#~ msgid "Filesystem check your hard drive"
+#~ msgstr "Перевірка файлової системи Вашого жорсткого диска"
+
+#~ msgid "Format HDD"
+#~ msgstr "Форматувати HDD"
+
+#~ msgid "Format your hard drive"
+#~ msgstr "Форматування Вашого жорсткого диска"
+
+#~ msgid "GB"
+#~ msgstr "ГБ"
+
+#~ msgid "Initialization"
+#~ msgstr "Ініціалізація"
+
+#~ msgid "MB"
+#~ msgstr "МБ"
+
+#~ msgid "Mount: "
+#~ msgstr "Підключення: "
+
+#~ msgid "Mounts Devices"
+#~ msgstr "Підключення пристроїв"
+
+#~ msgid "Please wait."
+#~ msgstr "Будь ласка, почекайте."
+
+#, python-format
+#~ msgid "Restart %s %s."
+#~ msgstr "Перезапуск %s %s."
+
+#~ msgid "Select HDD"
+#~ msgstr "Вибрати HDD"
+
+#~ msgid "Setup Mounts"
+#~ msgstr "Налаштування монтування"
+
+#~ msgid "TB"
+#~ msgstr "ТБ"
+
+#~ msgid "This Device is already mounted as HDD."
+#~ msgstr "Цей пристрій вже змонтовано як жорсткий диск."
+
+#~ msgid "Updating mount locations."
+#~ msgstr "Оновлення параметрів підключення."
+
+#~ msgid "Use as HDD"
+#~ msgstr "Використовувати як HDD"
+
+#~ msgid "Wait please while scanning for devices..."
+#~ msgstr "Зачекайте, виконується пошук пристроїв..."
+
+#, python-format
+#~ msgid "Wait please while scanning your %s %s devices..."
+#~ msgstr "Зачекайте, виконується пошук %s %s пристроїв..."
+
 #~ msgid "A graphical DVB subtitles will be displayed in the selected color, instead of the original color."
 #~ msgstr "Графічні субтитри DVB відображатимуться у вибраному кольорі замість оригінального кольору."
 
@@ -24091,9 +24233,6 @@ msgstr "®"
 
 #~ msgid "E "
 #~ msgstr "E "
-
-#~ msgid "Mountpoint"
-#~ msgstr "Точка монтування"
 
 #, python-format
 #~ msgid "%d channel found"
@@ -24279,7 +24418,7 @@ msgstr "®"
 #~ msgstr "Збірка: %s"
 
 #~ msgid "By openATV Image Team"
-#~ msgstr "Від команди openATV"
+#~ msgstr "Від команди OpenATV"
 
 #~ msgid "Cannot create backup directory"
 #~ msgstr "Неможливо створити каталог резервної копії"

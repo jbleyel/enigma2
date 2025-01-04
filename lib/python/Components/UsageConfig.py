@@ -580,8 +580,8 @@ def InitUsageConfig():
 		("standby", _("Standby")),
 		("standby_noTVshutdown", _("Standby without TV shut down")),
 		("sleeptimer", _("SleepTimer")),
-		("schedulerStandby", _("PowerTimer Standby")),
-		("schedulerDeepStandby", _("PowerTimer deep standby"))
+		("schedulerStandby", _("Scheduler Standby")),
+		("schedulerDeepStandby", _("Scheduler deep standby"))
 	]
 	config.usage.on_long_powerpress = ConfigSelection(default="show_menu", choices=choiceList)
 	config.usage.on_short_powerpress = ConfigSelection(default="standby", choices=choiceList)
@@ -1405,6 +1405,13 @@ def InitUsageConfig():
 	config.network.Samba_autostart = ConfigYesNo(default=True)
 	config.network.Inadyn_autostart = ConfigYesNo(default=False)
 	config.network.uShare_autostart = ConfigYesNo(default=False)
+
+	config.samba = ConfigSubsection()
+	config.samba.enableAutoShare = ConfigYesNo(default=True)
+	config.samba.autoShareAccess = ConfigSelection(default=1, choices=[
+		(0, _("Read Only")),
+		(1, _("Read/Write"))
+	])
 
 	config.seek = ConfigSubsection()
 	config.seek.baractivation = ConfigSelection(default="leftright", choices=[

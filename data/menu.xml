@@ -18,7 +18,7 @@
 	<menu key="mainmenu" text="Main Menu" title="Main Menu">
 		<!-- Menu / Information -->
 		<menu key="information" level="0" text="Information" description="This menu contains selections to display information about the receiver." weight="5">
-			<item key="distribution_info_screen" level="0" text="About openATV" weight="5"><screen module="Information" screen="DistributionInformation" /></item>
+			<item key="distribution_info_screen" level="0" text="About OpenATV" weight="5"><screen module="Information" screen="DistributionInformation" /></item>
 			<item key="receiver_info_screen" level="0" text="Receiver" weight="10"><screen module="Information" screen="ReceiverInformation" /></item>
 			<item key="picture_info_screen" level="0" text="Pictures" weight="15" conditional="config.usage.informationShowAllMenuScreens.value"><screen module="Information" screen="PictureInformation" /></item>
 			<item key="tuner_info_screen" level="0" text="Tuners" weight="20"><screen module="Information" screen="TunerInformation" /></item>
@@ -38,7 +38,7 @@
 		<!-- Menu / Timer -->
 		<menu key="timermenu" level="0" text="Timers" weight="7">
 			<item key="timer_edit" level="0" text="RecordTimers" weight="0"><screen module="Timers" screen="RecordTimerOverview" /></item>
-			<item key="scheduler_edit" level="0" text="TaskPlaner" weight="5"><screen module="Timers" screen="SchedulerOverview" /></item>
+			<item key="powertimer_edit" level="0" text="Scheduler" weight="5"><screen module="Timers" screen="SchedulerOverview" /></item>
 			<item key="crontimer_edit" level="0" text="Cron Timers" weight="10"><screen module="CronTimer" screen="CronTimers" /></item>
 			<item key="sleep" level="0" text="Sleep Timers" weight="20" requires="DeepstandbySupport"><screen module="SleepTimer" screen="SleepTimer" /></item>
 		</menu>
@@ -190,6 +190,7 @@ self.session.openWithCallback(msgClosed, EpgDeleteMsg)
 				<item key="Inadyn_setup" level="2" text="Inadyn Settings" weight="25" requires="inadyn"><screen module="NetworkSetup" screen="NetworkInadynSetup" /></item>
 				<item key="minidlna_setup" level="2" text="MiniDLNA Settings" weight="30" requires="minidlna"><screen module="NetworkSetup" screen="NetworkMiniDLNASetup" /></item>
 				<item key="netushare_setup" level="2" text="uShare Settings" weight="55" requires="ushare"><screen module="NetworkSetup" screen="NetworkuShareSetup" /></item>
+				<item key="netsamba_setup" level="2" text="Samba Settings" weight="60" requires="samba"><screen module="NetworkSetup" screen="NetworkSambaSetup" /></item>
 			</menu>
 			<!-- Menu / Setup / System (Was: Menu / Setup / System / Extended System) -->
 			<menu key="extended" level="0" text="System" weight="95">

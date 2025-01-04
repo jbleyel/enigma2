@@ -103,8 +103,6 @@ int eStaticServiceDVBInformation::getLength(const eServiceReference &ref)
 
 int eStaticServiceDVBInformation::isPlayable(const eServiceReference &ref, const eServiceReference &ignore, bool simulate)
 {
-	eDebug("[eStaticServiceDVBInformation] isPlayable ref %s / ignore %s", ref.toString().c_str(),ignore.toString().c_str());
-	eDebug("[eStaticServiceDVBInformation] isPlayable ref alter %s / ignore alter %s", ref.alternativeurl.c_str(),ignore.alternativeurl.c_str());
 	ePtr<eDVBResourceManager> res_mgr;
 	if ( eDVBResourceManager::getInstance( res_mgr ) )
 		eDebug("[eStaticServiceDVBInformation] isPlayable... no res manager!!");
@@ -114,9 +112,6 @@ int eStaticServiceDVBInformation::isPlayable(const eServiceReference &ref, const
 		int system;
 		((const eServiceReferenceDVB&)ref).getChannelID(chid);
 		((const eServiceReferenceDVB&)ignore).getChannelID(chid_ignore);
-
-		eDebug("[eStaticServiceDVBInformation] isPlayable canAllocateChannel chid %s / chid_ignore %s", chid.toString().c_str(),chid_ignore.toString().c_str());
-
 		return res_mgr->canAllocateChannel(chid, chid_ignore, system);
 	}
 	return 0;
