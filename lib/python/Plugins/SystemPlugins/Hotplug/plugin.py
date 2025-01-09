@@ -5,6 +5,7 @@ from twisted.internet.protocol import Factory, Protocol
 
 from enigma import getDeviceDB, eTimer
 
+from Components.config import config
 from Components.Console import Console
 from Components.Harddisk import harddiskmanager
 from Components.Storage import EXPANDER_MOUNT, cleanMediaDirs
@@ -46,7 +47,8 @@ class Hotplug(Protocol):
 		for values in data:
 			variable, value = values.split("=", 1)
 			eventData[variable] = value
-		hotPlugManager.processHotplugData(eventData)
+		if data and eventData:
+			hotPlugManager.processHotplugData(eventData)
 
 
 def AudiocdAdded():
@@ -77,6 +79,12 @@ class HotPlugManager:
 		self.removeTimer.callback.append(self.processRemoveDevice)
 		self.deviceData = []
 		self.addedDevice = []
+		self.callMount = False
+		self.debug = False
+
+		def debugStorageChanged(configElement):
+			self.debug = configElement.value
+		config.crash.debugStorage.addNotifier(debugStorageChanged)
 
 	def processAddDevice(self):
 		self.addTimer.stop()
@@ -118,7 +126,8 @@ class HotPlugManager:
 				for device in knownDevices:
 					deviceData = device.split(":")
 					if len(deviceData) == 2 and deviceData[0] == ID_FS_UUID:
-						print("[Hotplug] UUID found in known_devices")
+						if self.debug:
+							print("[Hotplug] UUID found in known_devices")
 						knownDevice = deviceData[1]
 						notFound = knownDevice != "None"  # Ignore this device
 						break
@@ -127,7 +136,9 @@ class HotPlugManager:
 				fstab = fileReadLines("/etc/fstab")
 				fstabDevice = [x.split()[1] for x in fstab if ID_FS_UUID in x and EXPANDER_MOUNT not in x]
 				if fstabDevice and fstabDevice[0] not in mounts:  # Check if device is already in fstab and if the mountpoint not used
-					Console().ePopen("/bin/mount -a")
+					if not exists(fstabDevice[0]):
+						mkdir(fstabDevice[0], 0o755)
+					self.callMount = True
 					notFound = False
 					self.newCount += 1
 
@@ -138,7 +149,9 @@ class HotPlugManager:
 				newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x and EXPANDER_MOUNT not in x]
 				newFstab.append(f"UUID={ID_FS_UUID} {mountPointHdd} {ID_FS_TYPE} defaults 0 0")
 				fileWriteLines("/etc/fstab", newFstab)
-				Console().ePopen("/bin/mount -a")
+				if not exists(mountPointHdd):
+					mkdir(mountPoint, 0o755)
+				self.callMount = True
 				notFound = False
 				self.newCount += 1
 
@@ -168,19 +181,19 @@ class HotPlugManager:
 							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x and EXPANDER_MOUNT not in x]
 							newFstab.append(f"UUID={ID_FS_UUID} {mountPoint} {ID_FS_TYPE} defaults 0 0")
 							fileWriteLines("/etc/fstab", newFstab)
-							Console().ePopen("/bin/mount -a")
+							self.callMount = True
 						elif answer == 4:
 							knownDevices.append(f"{ID_FS_UUID}:{mountPointHdd}")
 							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x and EXPANDER_MOUNT not in x]
 							newFstab.append(f"UUID={ID_FS_UUID} {mountPointHdd} {ID_FS_TYPE} defaults 0 0")
 							fileWriteLines("/etc/fstab", newFstab)
-							Console().ePopen("/bin/mount -a")
+							self.callMount = True
 						elif answer == 5:
 							knownDevices.append(f"{ID_FS_UUID}:{mountPointDevice}")
 							newFstab = [x for x in fstab if f"UUID={ID_FS_UUID}" not in x and EXPANDER_MOUNT not in x]
 							newFstab.append(f"UUID={ID_FS_UUID} {mountPointDevice} {ID_FS_TYPE} defaults 0 0")
 							fileWriteLines("/etc/fstab", newFstab)
-							Console().ePopen("/bin/mount -a")
+							self.callMount = True
 						if answer in (1, 3, 4, 5):
 							fileWriteLines("/etc/udev/known_devices", knownDevices)
 					self.addedDevice.append((DEVNAME, DEVPATH, ID_MODEL))
@@ -207,6 +220,9 @@ class HotPlugManager:
 				self.addTimer.start(1000)
 		else:
 			if self.newCount:
+				if self.callMount:
+					self.callMount = False
+					Console().ePopen("/bin/mount -a")
 				self.newCount = 0
 				for device, physicalDevicePath, model in self.addedDevice:
 					harddiskmanager.addHotplugPartition(device, physicalDevicePath, model=model)
@@ -217,9 +233,10 @@ class HotPlugManager:
 
 	def processHotplugData(self, eventData):
 		mode = eventData.get("mode")
-		print("[Hotplug] DEBUG: ", eventData)
+		if self.debug:
+			print("[Hotplug] DEBUG: ", eventData)
 		action = eventData.get("ACTION")
-		if mode == 1:
+		if mode == 1 and eventData.get("MODE", "") != "CD":
 			if action == "add":
 				self.addTimer.stop()
 				ID_TYPE = eventData.get("ID_TYPE")

@@ -32,6 +32,7 @@
 from glob import glob
 from os import listdir, mkdir, rmdir, unlink
 from os.path import exists, ismount, join, realpath
+from string import ascii_letters, digits
 
 
 from Components.Task import Job, LoggingTask, ConditionTask, ReturncodePostcondition
@@ -53,6 +54,20 @@ class StorageDevice():
 		self.dev_path = self.devicePoint
 		self.disk_path = self.dev_path
 
+	def getLabelLimit(self, fstype):
+		if "ntfs" in fstype:
+			return 32
+		elif "exfat" == fstype:
+			return 15
+		elif "ext" in fstype:
+			return 16
+		else:
+			return 11
+
+	def normalizeLabel(self, label, limit):
+		label = label.replace(" ", "_")
+		return "".join([ch for ch in label if ch in (ascii_letters + digits + "_")])[:limit]
+
 	def findMount(self):
 		if self.mount_path is None:
 			return self.mountDevice()
@@ -68,12 +83,13 @@ class StorageDevice():
 	def createWipeJob(self, options=None):
 		options = options or {}
 		uuids = options.get("uuids") or {}
+		debug = options.get("debug")
 
 		job = Job(_("Initializing storage device..."))
 
-		UnmountTask(job, self)
+		UnmountTask(job, self, debug)
 
-		UnmountSwapTask(job, self)
+		UnmountSwapTask(job, self, debug)
 
 		task = LoggingTask(job, _("Removing partition table"))
 		task.setTool('parted')
@@ -83,17 +99,19 @@ class StorageDevice():
 		task.weighting = 1
 
 		if uuids:
-			task = UUIDTask(job, uuids)
+			task = UUIDTask(job, uuids, debug)
 			task.weighting = 1
 		return job
 
 	def createFormatJob(self, options):
+		debug = options.get("debug")
 		fsType = options.get("fsType", "ext4")
 		label = options.get("label")
+		label = self.normalizeLabel(label, self.getLabelLimit(fsType))
 		job = Job(_("Formatting storage device..."))
-		UnmountTask(job, self)
-		UnmountSwapTask(job, self)
-		task = MkfsTask(job, _("Creating file system"))
+		UnmountTask(job, self, debug)
+		UnmountSwapTask(job, self, debug)
+		task = MkfsTask(job, debug)
 		task.setTool(f"mkfs.{fsType}")
 		if label:
 			if fsType in ("vfat", "fat"):
@@ -103,6 +121,8 @@ class StorageDevice():
 		if fsType == "ntfs":
 			task.setTool("mkntfs")
 			task.args += ["-Q", "-F"]
+			if label:
+				task.args += ["-L", label]
 		if fsType == "swap":
 			task.setTool("mkswap")
 		elif fsType.startswith("ext"):
@@ -123,14 +143,15 @@ class StorageDevice():
 			task.args += ["-E", "discard", "-F", "-m0", "-O ^metadata_csum", "-O", ",".join(big_o_options)]
 		task.args.append(self.devicePoint)
 		if self.fstabMountPoint and self.UUID:
-			task = UUIDTask(job, {self.devicePoint.replace("/dev/", ""): self.UUID})
+			task = UUIDTask(job, {self.devicePoint.replace("/dev/", ""): self.UUID}, debug)
 			task.weighting = 1
-		task = MountTask(job, self)
+		task = MountTask(job, self, debug=debug)
 		task.weighting = 3
 		return job
 
 	def createInitializeJob(self, options=None):
 		options = options or {}
+		debug = options.get("debug")
 		partitions = options.get("partitions") or []
 		uuids = options.get("uuids") or {}
 		fsTypes = options.get("fsTypes") or {}
@@ -138,12 +159,13 @@ class StorageDevice():
 		mountDevice = options.get("mountDevice")
 
 		job = Job(_("Initializing storage device..."))
-		print(f"[StorageDevice] createInitializeJob size: {scaleNumber(self.size, format="%.2f")}")
-		print(f"[StorageDevice] createInitializeJob partitions: {partitions} uuids: {uuids}")
+		if debug:
+			print(f"[StorageDevice] createInitializeJob size: {scaleNumber(self.size, format="%.2f")}")
+			print(f"[StorageDevice] createInitializeJob partitions: {partitions} uuids: {uuids}")
 
-		UnmountTask(job, self)
+		UnmountTask(job, self, debug)
 
-		UnmountSwapTask(job, self)
+		UnmountSwapTask(job, self, debug)
 
 		task = LoggingTask(job, _("Removing partition table"))
 		task.setTool('parted')
@@ -185,10 +207,11 @@ class StorageDevice():
 		for index, partition in enumerate(partitions):
 			fsType = partition.get("fsType", "ext4")
 			label = partition.get("label", f"DISK_{index + 1}")
+			label = self.normalizeLabel(label, self.getLabelLimit(fsType))
 			device = f"{self.devicePoint}p{index + 1}" if "mmcblk" in self.devicePoint else f"{self.devicePoint}{index + 1}"
 			uuid = uuids.get(device)
 			oldFsType = fsTypes.get(device)
-			task = MkfsTask(job, _("Creating file system"))
+			task = MkfsTask(job, debug)
 			if fsType == "swap":
 				task.setTool("mkswap")
 			else:
@@ -201,6 +224,8 @@ class StorageDevice():
 				if fsType == "ntfs":
 					task.setTool("mkntfs")
 					task.args += ["-Q", "-F"]
+					if label:
+						task.args += ["-L", label]
 				elif fsType.startswith("ext"):
 					big_o_options = ["dir_index"]
 					if self.size > 250000 * 1024 * 1024:
@@ -220,17 +245,19 @@ class StorageDevice():
 			task.args.append(device)
 
 		if uuids:
-			task = UUIDTask(job, uuids)
+			task = UUIDTask(job, uuids, debug)
 			task.weighting = 1
-		task = MountTask(job, self, mountDevice=mountDevice)
+		task = MountTask(job, self, mountDevice=mountDevice, debug=debug)
 		task.weighting = 3
 		return job
 
 	def createExt4ConversionJob(self, options=None):
+		options = options or {}
+		debug = options.get("debug")
 		job = Job(_("Converting ext3 to ext4..."))
 
 		if self.findMount():
-			UnmountTask(job, self)
+			UnmountTask(job, self, debug)
 		task = LoggingTask(job, "fsck")
 		task.setTool('fsck.ext3')
 		task.args.append('-p')
@@ -251,17 +278,19 @@ class StorageDevice():
 		task.args.append(self.devicePoint)
 
 		if self.fstabMountPoint and self.UUID:
-			task = UUIDTask(job, {self.devicePoint.replace("/dev/", ""): self.UUID})
+			task = UUIDTask(job, {self.devicePoint.replace("/dev/", ""): self.UUID}, debug)
 			task.weighting = 1
 
-		task = MountTask(job, self)
+		task = MountTask(job, self, debug=debug)
 		task.weighting = 3
 		return job
 
 	def createCheckJob(self, options=None):
+		options = options or {}
+		debug = options.get("debug")
 		job = Job(_("Checking file system..."))
 		if self.findMount():
-			UnmountTask(job, self)
+			UnmountTask(job, self, debug)
 		task = LoggingTask(job, "fsck")
 		if self.fsType == "ntfs":
 			task.setTool("ntfsfix")
@@ -272,15 +301,16 @@ class StorageDevice():
 			else:
 				task.args += ["-f", "-p"]
 		task.args.append(self.devicePoint)
-		task = MountTask(job, self)
+		task = MountTask(job, self, debug=debug)
 		task.weighting = 3
 		return job
 
 
 class UUIDTask(ConditionTask):
-	def __init__(self, job, uuids):
+	def __init__(self, job, uuids, debug):
 		ConditionTask.__init__(self, job, _("UUID"), 1)
 		self.uuids = uuids
+		self.debug = debug
 
 	def check(self):
 		fstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME)
@@ -293,26 +323,30 @@ class UUIDTask(ConditionTask):
 				for i, line in enumerate(fstab):
 					if line.find(f"UUID={olduuid}") != -1:
 						fstab[i] = line.replace(f"UUID={olduuid}", f"UUID={newuuid}")
-						print(f"[UUIDTask] fstab UUID changed from {olduuid} to {newuuid}")
+						if self.debug:
+							print(f"[UUIDTask] fstab UUID changed from {olduuid} to {newuuid}")
 						saveFstab = True
 						break
 				for i, line in enumerate(knownDevices):
 					if line.startswith(olduuid):
 						knownDevices[i] = line.replace(f"{olduuid}", f"{newuuid}")
-						print(f"[UUIDTask] known_devices UUID changed from {olduuid} to {newuuid}")
+						if self.debug:
+							print(f"[UUIDTask] known_devices UUID changed from {olduuid} to {newuuid}")
 						saveknownDevices = True
 						break
 			if not newuuid:
 				for i, line in enumerate(fstab):
 					if line.find(f"UUID={olduuid}") != -1:
 						fstab[i] = ""
-						print(f"[UUIDTask] fstab UUID {olduuid} removed")
+						if self.debug:
+							print(f"[UUIDTask] fstab UUID {olduuid} removed")
 						saveFstab = True
 						break
 				for i, line in enumerate(knownDevices):
 					if line.startswith(olduuid):
 						knownDevices[i] = ""
-						print(f"[UUIDTask] known_devices UUID {olduuid} removed")
+						if self.debug:
+							print(f"[UUIDTask] known_devices UUID {olduuid} removed")
 						saveknownDevices = True
 						break
 		if saveFstab:
@@ -320,11 +354,18 @@ class UUIDTask(ConditionTask):
 		if saveknownDevices:
 			knownDevices = [x for x in knownDevices if x]
 			fileWriteLines("/etc/udev/known_devices", knownDevices, source=MODULE_NAME)
+		for line in fstab:
+			if EXPANDER_MOUNT not in line and "/media/" in line:
+				parts = line.split()
+				if not exists(parts[1]):
+					mkdir(parts[1], 0o755)
+
 		return True
 
 
 class UnmountTask(LoggingTask):
-	def __init__(self, job, storageDevice):
+	def __init__(self, job, storageDevice, debug):
+		self.debug = debug
 		LoggingTask.__init__(self, job, _("Unmount"))
 		self.storageDevice = storageDevice
 		self.nomoutFile = f"/dev/nomount.{self.storageDevice.disk}"
@@ -334,7 +375,7 @@ class UnmountTask(LoggingTask):
 		try:
 			open(self.nomoutFile, "wb").close()
 		except Exception as e:
-			print("[UnmountTask] ERROR: Failed to create /dev/nomount file:", e)
+			print(f"[{self.__class__.__name__}] ERROR: Failed to create /dev/nomount file:{e}")
 		self.setTool('umount')
 		self.args.append('-f')
 		self.args.append('-l')
@@ -343,15 +384,21 @@ class UnmountTask(LoggingTask):
 				self.args.append(parts[0])
 				self.mountpoints.append(parts[0])
 		if not self.mountpoints:
-			print("[UnmountTask] No mountpoints found?")
+			print(f"[{self.__class__.__name__}] No mountpoints found?")
 			self.cmd = 'true'
 			self.args = [self.cmd]
 		else:
 			self.postconditions.append(ReturncodePostcondition())
 
+	def afterRun(self):
+		if self.debug:
+			print(f"[{self.__class__.__name__}] DEBUG Output:\n")
+			print(self.log)
+
 
 class UnmountSwapTask(LoggingTask):
-	def __init__(self, job, storageDevice):
+	def __init__(self, job, storageDevice, debug):
+		self.debug = debug
 		LoggingTask.__init__(self, job, _("Unmount"))
 		self.storageDevice = storageDevice
 		self.mountpoints = []
@@ -364,13 +411,20 @@ class UnmountSwapTask(LoggingTask):
 			parts = line.split()
 			self.args.append(parts[0])
 		if not swaps:
-			print("[UnmountSwapTask] No mountpoints found?")
+			if self.debug:
+				print(f"[{self.__class__.__name__}] No mountpoints found!")
 			self.cmd = 'true'
 			self.args = [self.cmd]
 
+	def afterRun(self):
+		if self.debug:
+			print(f"[{self.__class__.__name__}] DEBUG Output:\n")
+			print(self.log)
+
 
 class MountTask(LoggingTask):
-	def __init__(self, job, storageDevice, mountDevice=""):
+	def __init__(self, job, storageDevice, mountDevice="", debug=False):
+		self.debug = debug
 		LoggingTask.__init__(self, job, _("Mount"))
 		self.storageDevice = storageDevice
 		self.mountDevice = mountDevice
@@ -380,7 +434,7 @@ class MountTask(LoggingTask):
 		try:
 			unlink(self.nomoutFile)
 		except Exception as e:
-			print("[MountTask] ERROR: Failed to remove /dev/nomount file:", e)
+			print(f"[{self.__class__.__name__}] ERROR: Failed to remove /dev/nomount file: {e}")
 
 		if self.mountDevice:
 			part = "p1" if "mmcblk" in self.storageDevice.disk else "1"
@@ -392,8 +446,17 @@ class MountTask(LoggingTask):
 		else:
 			self.setCmdline("mount -a")
 
+	def afterRun(self):
+		if self.debug:
+			print(f"[{self.__class__.__name__}] DEBUG Output:\n")
+			print(self.log)
+
 
 class MkfsTask(LoggingTask):
+	def __init__(self, job, debug):
+		self.debug = debug
+		LoggingTask.__init__(self, job, _("Creating file system"))
+
 	def prepare(self):
 		self.fsck_state = None
 
@@ -409,9 +472,14 @@ class MkfsTask(LoggingTask):
 					d[1] = d[1].split("\x08", 1)[0]
 				self.setProgress(80 * int(d[0]) // int(d[1]))
 			except Exception as err:
-				print(f"[MkfsTask] MkfsTask - [Mkfs] Error: {err}!")
+				print(f"[{self.__class__.__name__}] Error: {err}!")
 			return  # Don't log the progress.
 		self.log.append(data)
+
+	def afterRun(self):
+		if self.debug:
+			print(f"[{self.__class__.__name__}] DEBUG Output:\n")
+			print(self.log)
 
 
 def getProcMountsNew():
@@ -427,7 +495,7 @@ def cleanMediaDirs():
 	mounts = getProcMountsNew()
 	mounts = [x[1] for x in mounts if x[1].startswith("/media/")]
 	for directory in listdir("/media"):
-		if directory not in ("autofs", "hdd"):
+		if directory not in ("audiocd", "autofs", "hdd", "net"):
 			mediaDirectory = join("/media/", directory)
 			if mediaDirectory not in mounts and not ismount(mediaDirectory):
 				print(f"[Storage] remove directory {mediaDirectory} because of unmount")

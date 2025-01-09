@@ -1,6 +1,6 @@
 from glob import glob
 from locale import AM_STR, PM_STR, nl_langinfo
-from os import makedirs, remove, system as ossystem
+from os import makedirs, remove, system as ossystem, unlink
 from os.path import exists, isfile, join as pathjoin, normpath, splitext
 from sys import maxsize
 from time import time
@@ -112,7 +112,8 @@ def InitUsageConfig():
 	])
 	config.usage.unhandledKeyTimeout = ConfigSelection(default=2, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(1, 6)])
 	config.usage.show_spinner = ConfigYesNo(default=True)
-	config.usage.screen_saver = ConfigSelection(default="0", choices=[(0, _("Disabled"))] + [(x, _("%d Seconds") % x) for x in (5, 30)] + [(x * 60, ngettext("%d Minute", "%d Minutes", x) % x) for x in (1, 5, 10, 15, 20, 30, 45, 60)])
+	config.usage.screenSaverStartTimer = ConfigSelection(default=0, choices=[(0, _("Disabled"))] + [(x, _("%d Seconds") % x) for x in (5, 10, 20, 30, 40, 50)] + [(x * 60, ngettext("%d Minute", "%d Minutes", x) % x) for x in (1, 5, 10, 15, 20, 30, 45, 60)])
+	config.usage.screenSaverMoveTimer = ConfigSelection(default=10, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(1, 61)])
 	config.usage.informationShowAllMenuScreens = ConfigYesNo(default=False)
 	config.usage.informationExtraSpacing = ConfigYesNo(False)
 
@@ -1312,6 +1313,16 @@ def InitUsageConfig():
 		eEPGCache.getInstance().setDebug(configElement.value)
 
 	config.crash.debugEPG.addNotifier(debugEPGhanged, immediate_feedback=False, initial_call=False)
+
+	def debugStorageChanged(configElement):
+		udevDebugFile = "/etc/udev/udev.debug"
+		if configElement.value:
+			fileWriteLine(udevDebugFile, "", source=MODULE_NAME)
+		elif exists(udevDebugFile):
+			unlink(udevDebugFile)
+		harddiskmanager.debug = configElement.value
+
+	config.crash.debugStorage.addNotifier(debugStorageChanged)
 
 	hddChoices = [("/etc/enigma2/", _("Internal Flash"))]
 	for partition in harddiskmanager.getMountedPartitions():
