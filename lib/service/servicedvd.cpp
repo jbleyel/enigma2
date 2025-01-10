@@ -609,7 +609,7 @@ void eServiceDVD::thread_finished()
 RESULT eServiceDVD::info(ePtr<iServiceInformation>&i)
 {
 	i = this;
-	eDebug("[eServiceDVD] info");
+	eTrace("[eServiceDVD] info");
 	return 0;
 }
 
@@ -700,8 +700,23 @@ std::string eServiceDVD::getInfoString(int w)
 	switch(w)
 	{
 		case sServiceref:
-			eDebug("[eServiceDVD] getInfoString ServiceRef %s", m_ref.toString().c_str());
+			eTrace("[eServiceDVD] getInfoString ServiceRef %s", m_ref.toString().c_str());
 			return m_ref.toString();
+		case sVideoInfo:
+#ifdef DDVD_SUPPORTS_PICTURE_INFO
+			std::string videoInfo;
+			char buff[100];
+			snprintf(buff, sizeof(buff), "%d|%d|%d|%d|%d|1",
+					m_width,
+					m_height,
+					m_framerate,
+					m_progressive,
+					m_aspect
+				);
+			videoInfo = buff;
+#else
+		return std::string("720|576|50|1|0|1");
+#endif
 		default:
 			eDebug("[eServiceDVD] getInfoString %d unsupported", w);
 	}
