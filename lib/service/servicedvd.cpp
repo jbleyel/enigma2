@@ -703,6 +703,7 @@ std::string eServiceDVD::getInfoString(int w)
 			eTrace("[eServiceDVD] getInfoString ServiceRef %s", m_ref.toString().c_str());
 			return m_ref.toString();
 		case sVideoInfo:
+			{
 #ifdef DDVD_SUPPORTS_PICTURE_INFO
 			std::string videoInfo;
 			char buff[100];
@@ -718,6 +719,7 @@ std::string eServiceDVD::getInfoString(int w)
 #else
 			return std::string("720|576|50|1|0|1");
 #endif
+			}
 		default:
 			eDebug("[eServiceDVD] getInfoString %d unsupported", w);
 	}
