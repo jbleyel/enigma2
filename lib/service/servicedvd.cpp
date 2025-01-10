@@ -714,8 +714,9 @@ std::string eServiceDVD::getInfoString(int w)
 					m_aspect
 				);
 			videoInfo = buff;
+			return videoInfo;
 #else
-		return std::string("720|576|50|1|0|1");
+			return std::string("720|576|50|1|0|1");
 #endif
 		default:
 			eDebug("[eServiceDVD] getInfoString %d unsupported", w);
