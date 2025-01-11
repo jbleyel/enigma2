@@ -38,6 +38,14 @@ class DVDOverlay(Screen):
 		DVDOverlay.skin = """<screen name="DVDOverlay" position="0,0" size="%d,%d" flags="wfNoBorder" zPosition="-1" backgroundColor="transparent" />""" % (w, h)
 		Screen.__init__(self, session)
 
+	def show(self):
+		print("[DVDOverlay] show")
+		Screen.show(self)
+
+	def hide(self):
+		print("[DVDOverlay] hide")
+		Screen.hide(self)
+
 
 class ChapterZap(Screen):
 	skin = """
