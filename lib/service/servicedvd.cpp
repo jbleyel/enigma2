@@ -181,12 +181,10 @@ eServiceDVD::eServiceDVD(eServiceReference ref):
 	m_sn = eSocketNotifier::create(eApp, ddvd_get_messagepipe_fd(m_ddvdconfig), eSocketNotifier::Read|eSocketNotifier::Priority|eSocketNotifier::Error|eSocketNotifier::Hungup);
 	eDebug("[eServiceDVD] construct!");
 	// create handle
-	eDebug("[eServiceDVD] ddvd_set_dvd_path %s", ref.path.c_str());
 	ddvd_set_dvd_path(m_ddvdconfig, ref.path.c_str());
 	ddvd_set_ac3thru(m_ddvdconfig, 0);
 
 	std::string ddvd_language = eConfigManager::getConfigValue("config.misc.locale");
-	eDebug("[eServiceDVD] ddvd_set_language %s", ddvd_language.c_str());
 	if (ddvd_language != "")
 		ddvd_set_language(m_ddvdconfig, (ddvd_language.substr(0, 2)).c_str());
 
@@ -562,7 +560,7 @@ RESULT eServiceDVD::keys(ePtr<iServiceKeys> &ptr)
 
 RESULT eServiceDVD::setSlowMotion(int ratio)
 {
-	eDebug("[eServiceDVD] setSlowmode(%d)", ratio);
+	eTrace("[eServiceDVD] setSlowmode(%d)", ratio);
 	// pass ratio as repeat factor.
 	// ratio=2 means 1/2 speed
 	// ratio=3 means 1/3 speed
@@ -573,7 +571,7 @@ RESULT eServiceDVD::setSlowMotion(int ratio)
 
 RESULT eServiceDVD::setFastForward(int trick)
 {
-	eDebug("[eServiceDVD] setTrickmode: %d", trick);
+	eTrace("[eServiceDVD] setTrickmode: %d", trick);
 	ddvd_send_key(m_ddvdconfig, trick < 0 ? DDVD_KEY_FASTBWD : DDVD_KEY_FASTFWD);
 	ddvd_send_key(m_ddvdconfig, trick);
 	return 0;
@@ -595,14 +593,14 @@ RESULT eServiceDVD::unpause()
 
 void eServiceDVD::thread()
 {
-	eDebug("[eServiceDVD] thread_started");
+	eTrace("[eServiceDVD] thread_started");
 	hasStarted();
 	ddvd_run(m_ddvdconfig);
 }
 
 void eServiceDVD::thread_finished()
 {
-	eDebug("[eServiceDVD] thread_finished");
+	eTrace("[eServiceDVD] thread_finished");
 	m_pump.send(1); // inform main thread
 }
 
