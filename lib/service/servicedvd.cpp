@@ -281,13 +281,11 @@ void eServiceDVD::gotMessage(int /*what*/)
 
 				int x_offset = 0, y_offset = 0, width = 720, height = 576;
 
-#ifdef DDVD_SUPPORTS_GET_BLIT_DESTINATION
 				ddvd_get_blit_destination(m_ddvdconfig, &x_offset, &y_offset, &width, &height);
 				eDebug("[eServiceDVD] DVD_SCREEN_UPDATE: values got from ddvd: %d %d %d %d", x_offset, y_offset, width, height);
 				y_offset = -y_offset;
 				width -= x_offset * 2;
 				height -= y_offset * 2;
-#endif
 				eRect dest(x_offset, y_offset, width, height);
 
 				if (dest.width() && dest.height())
@@ -721,7 +719,7 @@ std::string eServiceDVD::getInfoString(int w)
 #endif
 			}
 		default:
-			eDebug("[eServiceDVD] getInfoString %d unsupported", w);
+			eTrace("[eServiceDVD] getInfoString %d unsupported", w);
 	}
 	return "";
 }
@@ -814,12 +812,7 @@ RESULT eServiceDVD::enableSubtitles(iSubtitleUser *user, SubtitleTrack &track)
 	if (!m_pixmap)
 	{
 		m_pixmap = new gPixmap(size, 32, 1); /* allocate accel surface (if possible) */
-#ifdef DDVD_SUPPORTS_GET_BLIT_DESTINATION
 		ddvd_set_lfb_ex(m_ddvdconfig, (unsigned char *)m_pixmap->surface->data, size.width(), size.height(), 4, size.width()*4, 1);
-#else
-		ddvd_set_lfb(m_ddvdconfig, (unsigned char *)m_pixmap->surface->data, size.width(), size.height(), 4, size.width()*4);
-#warning please update libdreamdvd for fast scaling
-#endif
 		run(); // start the thread
 	}
 
