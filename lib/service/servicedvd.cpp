@@ -429,7 +429,7 @@ void eServiceDVD::gotMessage(int /*what*/)
 
 eServiceDVD::~eServiceDVD()
 {
-	eDebug("[eServiceDVD] destruct");
+	eTrace("[eServiceDVD] destruct");
 	kill();
 	saveCuesheet();
 	ddvd_close(m_ddvdconfig);
