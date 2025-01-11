@@ -181,10 +181,12 @@ eServiceDVD::eServiceDVD(eServiceReference ref):
 	m_sn = eSocketNotifier::create(eApp, ddvd_get_messagepipe_fd(m_ddvdconfig), eSocketNotifier::Read|eSocketNotifier::Priority|eSocketNotifier::Error|eSocketNotifier::Hungup);
 	eDebug("[eServiceDVD] construct!");
 	// create handle
+	eDebug("[eServiceDVD] ddvd_set_dvd_path %s", ref.path.c_str());
 	ddvd_set_dvd_path(m_ddvdconfig, ref.path.c_str());
 	ddvd_set_ac3thru(m_ddvdconfig, 0);
 
 	std::string ddvd_language = eConfigManager::getConfigValue("config.misc.locale");
+	eDebug("[eServiceDVD] ddvd_set_language %s", ddvd_language.c_str());
 	if (ddvd_language != "")
 		ddvd_set_language(m_ddvdconfig, (ddvd_language.substr(0, 2)).c_str());
 
