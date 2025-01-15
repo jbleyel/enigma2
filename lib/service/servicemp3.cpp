@@ -284,7 +284,6 @@ RESULT eMP3ServiceOfflineOperations::getListOfFilenames(std::list<std::string> &
 	res.push_back(m_ref.path);
 	res.push_back(m_ref.path + ".meta");
 	res.push_back(m_ref.path + ".cuts");
-	res.push_back(m_ref.path + ".jpg"); // Cover
 	std::string filename = m_ref.path;
 	size_t pos;
 	if ( (pos = filename.rfind('.')) != std::string::npos)
