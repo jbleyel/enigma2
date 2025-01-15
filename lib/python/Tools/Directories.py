@@ -97,7 +97,22 @@ def InitDefaultPaths():
 	resolveFilename(SCOPE_CONFIG)
 
 
+skinResolveList = []
+lcdskinResolveList = []
+fontsResolveList = []
+
+
+def clearResolveLists():
+	global skinResolveList, lcdskinResolveList, fontsResolveList
+	skinResolveList = []
+	lcdskinResolveList = []
+	fontsResolveList = []
+
+
 def resolveFilename(scope, base="", path_prefix=None):
+	def addifExists(paths):
+		return [path for path in paths if isdir(path)]
+
 	if str(base).startswith(f"~{sep}"):  # You can only use the ~/ if we have a prefix directory.
 		if path_prefix:
 			base = join(path_prefix, base[2:])
@@ -109,7 +124,7 @@ def resolveFilename(scope, base="", path_prefix=None):
 		print(f"[Directories] Error: Invalid scope={scope} provided to resolveFilename!")
 		return None
 	path, flag = defaultPaths[scope]  # Ensure that the defaultPath directory that should exist for this scope does exist.
-	if flag == PATH_CREATE and not pathExists(path):
+	if flag == PATH_CREATE and not exists(path):
 		try:
 			makedirs(path)
 		except OSError as err:
@@ -132,7 +147,7 @@ def resolveFilename(scope, base="", path_prefix=None):
 		for item in resolveList:
 			# for base in baseList:
 			file = join(item, base)
-			if pathExists(file):
+			if exists(file):
 				return file
 		return base
 
@@ -151,60 +166,67 @@ def resolveFilename(scope, base="", path_prefix=None):
 				if len(pluginCode) > 2:
 					path = join(plugins, pluginCode[0], pluginCode[1])
 	elif scope == SCOPE_GUISKIN:
-		from Components.config import config  # This import must be here as this module finds the config file as part of the config initialisation.
-		skin = dirname(config.skin.primary_skin.value)
-		resolveList = [
-			join(scopeConfig, skin),
-			join(scopeConfig, "skin_common"),
-			scopeConfig,  # Can we deprecate top level of SCOPE_CONFIG directory to allow a clean up?
-			join(scopeGUISkin, skin),
-			join(scopeGUISkin, f"skin_fallback_{getDesktop(0).size().height()}"),
-			join(scopeGUISkin, "skin_default"),
-			scopeGUISkin  # Can we deprecate top level of SCOPE_GUISKIN directory to allow a clean up?
-		]
-		path = itemExists(resolveList, base)
+		global skinResolveList
+		if not skinResolveList:
+			from Components.config import config  # This import must be here as this module finds the config file as part of the config initialisation.
+			skin = dirname(config.skin.primary_skin.value)
+			skinResolveList = addifExists([
+				join(scopeConfig, skin),
+				join(scopeConfig, "skin_common"),
+				scopeConfig,  # Can we deprecate top level of SCOPE_CONFIG directory to allow a clean up?
+				join(scopeGUISkin, skin),
+				join(scopeGUISkin, f"skin_fallback_{getDesktop(0).size().height()}"),
+				join(scopeGUISkin, "skin_default"),
+				scopeGUISkin  # Can we deprecate top level of SCOPE_GUISKIN directory to allow a clean up?
+			])
+		path = itemExists(skinResolveList, base)
 	elif scope == SCOPE_LCDSKIN:
-		from Components.config import config  # This import must be here as this module finds the config file as part of the config initialisation.
-		skin = dirname(config.skin.display_skin.value) if hasattr(config.skin, "display_skin") else ""
-		resolveList = [
-			join(scopeConfig, "display", skin),
-			join(scopeConfig, "display", "skin_common"),
-			scopeConfig,  # Can we deprecate top level of SCOPE_CONFIG directory to allow a clean up?
-			join(scopeLCDSkin, skin),
-			join(scopeLCDSkin, f"skin_fallback_{getDesktop(1).size().height()}"),
-			join(scopeLCDSkin, "skin_default"),
-			scopeLCDSkin  # Can we deprecate top level of SCOPE_LCDSKIN directory to allow a clean up?
-		]
-		path = itemExists(resolveList, base)
+		global lcdskinResolveList
+		if not lcdskinResolveList:
+			from Components.config import config  # This import must be here as this module finds the config file as part of the config initialisation.
+			skin = dirname(config.skin.display_skin.value) if hasattr(config.skin, "display_skin") else ""
+			lcdskinResolveList = addifExists([
+				join(scopeConfig, "display", skin),
+				join(scopeConfig, "display", "skin_common"),
+				scopeConfig,  # Can we deprecate top level of SCOPE_CONFIG directory to allow a clean up?
+				join(scopeLCDSkin, skin),
+				join(scopeLCDSkin, f"skin_fallback_{getDesktop(1).size().height()}"),
+				join(scopeLCDSkin, "skin_default"),
+				scopeLCDSkin  # Can we deprecate top level of SCOPE_LCDSKIN directory to allow a clean up?
+			])
+		path = itemExists(lcdskinResolveList, base)
 	elif scope == SCOPE_FONTS:
-		from Components.config import config  # This import must be here as this module finds the config file as part of the config initialisation.
-		skin = dirname(config.skin.primary_skin.value)
-		display = dirname(config.skin.display_skin.value) if hasattr(config.skin, "display_skin") else None
-		resolveList = [
-			join(scopeConfig, "fonts"),
-			join(scopeConfig, skin, "fonts"),
-			join(scopeConfig, skin)
-		]
-		if display:
-			resolveList.append(join(scopeConfig, "display", display, "fonts"))
-			resolveList.append(join(scopeConfig, "display", display))
-		resolveList.append(join(scopeConfig, "skin_common", "fonts"))
-		resolveList.append(join(scopeConfig, "skin_common"))
-		resolveList.append(scopeConfig)  # Can we deprecate top level of SCOPE_CONFIG directory to allow a clean up?
-		resolveList.append(join(scopeGUISkin, skin, "fonts"))
-		resolveList.append(join(scopeGUISkin, skin))
-		resolveList.append(join(scopeGUISkin, "skin_default", "fonts"))
-		resolveList.append(join(scopeGUISkin, "skin_default"))
-		if display:
-			resolveList.append(join(scopeLCDSkin, display, "fonts"))
-			resolveList.append(join(scopeLCDSkin, display))
-		resolveList.append(join(scopeLCDSkin, "skin_default", "fonts"))
-		resolveList.append(join(scopeLCDSkin, "skin_default"))
-		resolveList.append(scopeFonts)
-		path = itemExists(resolveList, base)
+		global fontsResolveList
+		if not fontsResolveList:
+			from Components.config import config  # This import must be here as this module finds the config file as part of the config initialisation.
+			skin = dirname(config.skin.primary_skin.value)
+			display = dirname(config.skin.display_skin.value) if hasattr(config.skin, "display_skin") else None
+			resolveList = [
+				join(scopeConfig, "fonts"),
+				join(scopeConfig, skin, "fonts"),
+				join(scopeConfig, skin)
+			]
+			if display:
+				resolveList.append(join(scopeConfig, "display", display, "fonts"))
+				resolveList.append(join(scopeConfig, "display", display))
+			resolveList.append(join(scopeConfig, "skin_common", "fonts"))
+			resolveList.append(join(scopeConfig, "skin_common"))
+			resolveList.append(scopeConfig)  # Can we deprecate top level of SCOPE_CONFIG directory to allow a clean up?
+			resolveList.append(join(scopeGUISkin, skin, "fonts"))
+			resolveList.append(join(scopeGUISkin, skin))
+			resolveList.append(join(scopeGUISkin, "skin_default", "fonts"))
+			resolveList.append(join(scopeGUISkin, "skin_default"))
+			if display:
+				resolveList.append(join(scopeLCDSkin, display, "fonts"))
+				resolveList.append(join(scopeLCDSkin, display))
+			resolveList.append(join(scopeLCDSkin, "skin_default", "fonts"))
+			resolveList.append(join(scopeLCDSkin, "skin_default"))
+			resolveList.append(scopeFonts)
+			fontsResolveList = addifExists(resolveList)
+		path = itemExists(fontsResolveList, base)
 	elif scope == SCOPE_PLUGIN:
 		file = join(scopePlugins, base)
-		if pathExists(file):
+		if exists(file):
 			path = file
 	elif scope in (SCOPE_PLUGIN_ABSOLUTE, SCOPE_PLUGIN_RELATIVE):
 		callingCode = normpath(getframe(1).f_code.co_filename)
@@ -339,13 +361,13 @@ def fileReadXML(filename, default=None, source=DEFAULT_MODULE_NAME, debug=False)
 
 
 def defaultRecordingLocation(candidate=None):
-	if candidate and pathExists(candidate):
+	if candidate and exists(candidate):
 		return candidate
 	try:
 		path = readlink("/hdd")  # First, try whatever /hdd points to, or /media/hdd.
 	except OSError as err:
 		path = "/media/hdd"
-	if not pathExists(path):  # Find the largest local disk.
+	if not exists(path):  # Find the largest local disk.
 		from Components import Harddisk
 		mounts = [mount for mount in Harddisk.getProcMounts() if mount[1].startswith("/media/")]
 		path = bestRecordingLocation([mount for mount in mounts if mount[0].startswith("/dev/")])  # Search local devices first, use the larger one.

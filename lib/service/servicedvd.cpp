@@ -429,7 +429,7 @@ void eServiceDVD::gotMessage(int /*what*/)
 
 eServiceDVD::~eServiceDVD()
 {
-	eTrace("[eServiceDVD] destruct");
+	eDebug("[eServiceDVD] destruct");
 	kill();
 	saveCuesheet();
 	ddvd_close(m_ddvdconfig);
@@ -560,7 +560,7 @@ RESULT eServiceDVD::keys(ePtr<iServiceKeys> &ptr)
 
 RESULT eServiceDVD::setSlowMotion(int ratio)
 {
-	eTrace("[eServiceDVD] setSlowmode(%d)", ratio);
+	eDebug("[eServiceDVD] setSlowmode(%d)", ratio);
 	// pass ratio as repeat factor.
 	// ratio=2 means 1/2 speed
 	// ratio=3 means 1/3 speed
@@ -571,7 +571,7 @@ RESULT eServiceDVD::setSlowMotion(int ratio)
 
 RESULT eServiceDVD::setFastForward(int trick)
 {
-	eTrace("[eServiceDVD] setTrickmode: %d", trick);
+	eDebug("[eServiceDVD] setTrickmode: %d", trick);
 	ddvd_send_key(m_ddvdconfig, trick < 0 ? DDVD_KEY_FASTBWD : DDVD_KEY_FASTFWD);
 	ddvd_send_key(m_ddvdconfig, trick);
 	return 0;
@@ -593,21 +593,21 @@ RESULT eServiceDVD::unpause()
 
 void eServiceDVD::thread()
 {
-	eTrace("[eServiceDVD] thread_started");
+	eDebug("[eServiceDVD] thread_started");
 	hasStarted();
 	ddvd_run(m_ddvdconfig);
 }
 
 void eServiceDVD::thread_finished()
 {
-	eTrace("[eServiceDVD] thread_finished");
+	eDebug("[eServiceDVD] thread_finished");
 	m_pump.send(1); // inform main thread
 }
 
 RESULT eServiceDVD::info(ePtr<iServiceInformation>&i)
 {
 	i = this;
-	eTrace("[eServiceDVD] info");
+	eDebug("[eServiceDVD] info");
 	return 0;
 }
 
@@ -698,7 +698,7 @@ std::string eServiceDVD::getInfoString(int w)
 	switch(w)
 	{
 		case sServiceref:
-			eTrace("[eServiceDVD] getInfoString ServiceRef %s", m_ref.toString().c_str());
+			eDebug("[eServiceDVD] getInfoString ServiceRef %s", m_ref.toString().c_str());
 			return m_ref.toString();
 		case sVideoInfo:
 			{

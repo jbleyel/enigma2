@@ -226,6 +226,14 @@ class SelectionEventInfo:
 
 	def updateEventInfo(self):
 		serviceref = self.getCurrent()
+		if serviceref and (serviceref.flags & eServiceReference.flagDirectory) == eServiceReference.flagDirectory:
+			item = self.getCurrentSelection()
+			if item and item[0] and item[1] is None:  # Check for ".."
+				newServiceRef = eServiceReference(serviceref)
+				root = self["list"].root.getPath()
+				newServiceRef.setPath(root)  # Set current path instead of the target path for ".."
+				self["Service"].newService(newServiceRef)
+				return
 		self["Service"].newService(serviceref)
 
 
