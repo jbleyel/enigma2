@@ -9,7 +9,7 @@ from enigma import BT_ALPHABLEND, BT_ALPHATEST, BT_HALIGN_CENTER, BT_HALIGN_LEFT
 from Components.config import ConfigEnableDisable, ConfigSelection, ConfigSubsection, ConfigText, config
 from Components.SystemInfo import BoxInfo
 from Components.Sources.Source import ObsoleteSource
-from Tools.Directories import SCOPE_LCDSKIN, SCOPE_GUISKIN, SCOPE_FONTS, SCOPE_SKINS, pathExists, resolveFilename, fileReadXML
+from Tools.Directories import SCOPE_LCDSKIN, SCOPE_GUISKIN, SCOPE_FONTS, SCOPE_SKINS, pathExists, resolveFilename, fileReadXML, scopeConfig
 from Tools.Import import my_import
 from Tools.LoadPixmap import LoadPixmap
 
@@ -159,7 +159,10 @@ def InitSkins():
 #
 def loadSkin(filename, scope=SCOPE_SKINS, desktop=getDesktop(GUI_SKIN_ID), screenID=GUI_SKIN_ID):
 	global windowStyles, resolutions
-	filename = resolveFilename(scope, filename)
+	if "skin_user" in filename and isfile(pathjoin(scopeConfig, filename)):  # Check user skin files in /etc/enigma2 first and use it if exists
+		filename = pathjoin(scopeConfig, filename)
+	else:
+		filename = resolveFilename(scope, filename)
 	print(f"[Skin] Loading skin file '{filename}'.")
 	domSkin = fileReadXML(filename, source=MODULE_NAME)
 	if domSkin is not None:
@@ -1916,7 +1919,7 @@ class TemplateParser():
 	def collectColors(self, attributes, widgetColors=None):
 		if widgetColors is None:
 			widgetColors = ()
-		for color in ("backgroundColor", "backgroundColorMarked", "backgroundColorMarkedAndSelected", "backgroundColorSelected", "borderColor", "foregroundColor", "foregroundColorMarked", "foregroundColorMarkedAndSelected", "foregroundColorSelected") + widgetColors:
+		for color in ("backgroundColor", "backgroundColorMarked", "backgroundColorMarkedAndSelected", "backgroundColorSelected", "borderColor", "borderColorSelected", "foregroundColor", "foregroundColorMarked", "foregroundColorMarkedAndSelected", "foregroundColorSelected") + widgetColors:
 			translatedColor = self.resolveColor(attributes.get(color))
 			if translatedColor is not None:
 				attributes[color] = translatedColor
@@ -1969,6 +1972,9 @@ class TemplateParser():
 			return []
 		if itemIndex and excludeItemIndexes and itemIndex in excludeItemIndexes:
 			return []
+		if pos == "fill":
+			pos = "0,0"
+			size = f"{context.w},{context.h}"
 		if pos is not None:
 			pos, size = context.parse(pos, size, None)
 			skinAttributes.append(("position", pos))
@@ -1995,7 +2001,11 @@ class TemplateParser():
 			print(f"[TemplateParser] processPanel DEBUG: Position={widget.attrib.get("position")}, Size={widget.attrib.get("size")}.")
 			print(f"[TemplateParser] processPanel DEBUG: Parent x={context.x}, width={context.w}.")
 		position = widget.attrib.get("position")
-		if "left" in position or "right" in position:
+		if position == "fill":
+			position = [0, 0]
+			widget.attrib["position"] = "0,0"
+			widget.attrib["size"] = f"{context.w},{context.h}"
+		elif "left" in position or "right" in position:
 			pos = position.split(",")
 			top = 0
 			if len(pos) == 2 and pos[0] in ("left", "right") and pos[1].isdigit():
@@ -2207,7 +2217,8 @@ def readSkin(screen, skin, names, desktop):
 					args = {
 						"scale": context.scale,
 						"dom": widgetTemplates,
-						"size": widget.attrib.get("size")
+						"itemHeight": int(widget.attrib.get("itemHeight", 0)),
+						"itemWidth": int(widget.attrib.get("itemWidth", 0))
 					}
 					connection = converterClass(args)
 					connection.connect(source)

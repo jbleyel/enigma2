@@ -93,8 +93,6 @@ DEFINE_REF(eServiceFS);
 eServiceFS::eServiceFS(const char *path, const char *additional_extensions): path(path)
 {
 	m_list_valid = 0;
-	eDebug("[eServiceFS] path (%s)", path);
-	eDebug("[eServiceFS] additional_extensions (%s)", additional_extensions);
 	if (additional_extensions)
 	{
 		size_t slen=strlen(additional_extensions);
