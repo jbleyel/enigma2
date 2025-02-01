@@ -5,7 +5,7 @@ from locale import Error as LocaleError, LC_ALL, LC_COLLATE, LC_CTYPE, LC_MESSAG
 from os import environ, listdir
 from os.path import isdir
 
-from Tools.Directories import SCOPE_CONFIG, SCOPE_LANGUAGE, SCOPE_SKINS, fileReadLines, resolveFilename
+from Tools.Directories import SCOPE_CONFIG, SCOPE_LANGUAGE, fileReadLines, resolveFilename
 
 # In this code the following meanings are used:
 # 	Language: An official language as recognized by ISO, eg "en" for English.
@@ -542,7 +542,7 @@ class International:
 		lines = []
 		lines = fileReadLines(resolveFilename(SCOPE_CONFIG, "settings"), default=lines, source=MODULE_NAME)
 		self.debugMode = "config.crash.debugInternational=True" in lines
-		self.availablePackages = []
+		self.availablePackages = ["ar", "bg", "ca", "cs", "da", "de", "el", "en", "en_AU", "en_GB", "es", "et", "fa", "fi", "fr", "fy", "he", "hr", "hu", "id", "is", "it", "ku", "lt", "lv", "nb", "nl", "nn", "pl", "pt", "pt_BR", "ro", "ru", "sk", "sl", "sq", "sr", "sv", "ta", "th", "tr", "uk", "vi", "zh_CN", "zh_HK"]
 		self.installedPackages = []
 		self.installedDirectories = []
 		self.packageLocales = {}
@@ -557,7 +557,6 @@ class International:
 
 	def initInternational(self):
 		print("[International] Initializing locales/languages.")
-		self.availablePackages = self.getAvailablePackages(update=True)
 		self.installedPackages = self.getInstalledPackages(update=True)
 		self.installedDirectories = self.getInstalledDirectories(update=True)
 		if len(self.installedDirectories) != len(self.installedPackages):
@@ -582,15 +581,8 @@ class International:
 		self.languageList.sort()
 		print("[International] Initializing locales/languages Finished.")
 
-	def getAvailablePackages(self, update=False):
-		if update:
-			availablePackages = fileReadLines(resolveFilename(SCOPE_SKINS, "languages.lst"), default=[])
-			if self.debugMode:
-				availablePackagesList = "', '".join(availablePackages)
-				print(f"[International] There are {len(availablePackages)} available locale/language packages in the repository '{availablePackagesList}'.")
-		else:
-			availablePackages = self.availablePackages
-		return availablePackages
+	def getAvailablePackages(self):
+		return self.availablePackages
 
 	def getInstalledPackages(self, update=False):
 		if update:
