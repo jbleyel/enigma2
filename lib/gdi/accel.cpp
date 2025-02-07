@@ -178,8 +178,12 @@ int gAccel::blit(gUnmanagedSurface *dst, gUnmanagedSurface *src, const eRect &p,
 				pal_addr = src->clut.data_phys;
 			}
 		} else
+		{
+			eDebug("[gAccel] bcm_accel_blit unsupported source format");
 			return -1; /* unsupported source format */
+		}
 
+		eDebug("[gAccel] bcm_accel_blit");
 		bcm_accel_blit(
 			src->data_phys, src->x, src->y, src->stride, src_format,
 			dst->data_phys, dst->x, dst->y, dst->stride,
@@ -219,8 +223,12 @@ int gAccel::blit(gUnmanagedSurface *dst, gUnmanagedSurface *src, const eRect &p,
 				eDebug("!!!!!!!!!![gAccel] pal_addr2 %x clors=%d!!!!!!!!!!",pal_addr,src->clut.colors);
 			}
 		} else
+		{
+			eDebug("[gAccel] dinobot_accel_blit unsupported source format");
 			return -1; /* unsupported source format */
+		}
 
+		eDebug("[gAccel] dinobot_accel_blit");
 		dinobot_accel_blit(
 			src->data_phys, src->x, src->y, src->stride, src_format,
 			dst->data_phys, dst->x, dst->y, dst->stride,
