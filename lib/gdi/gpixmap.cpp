@@ -1944,7 +1944,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 		if (accel)
 		{
 			flag &= 7; // remove all flags except the blit flags
-			eDebug("[gPixmap] accel flag %d", flag);
+			eDebug("[gPixmap] accel flag %d / area (%d,%d,%d,%d) / srcarea (%d,%d,%d,%d)", flag, area.left(), area.top(), area.width(), area.height(), srcarea.left(), srcarea.top(), srcarea.width(), srcarea.height());
 			if (!gAccel::getInstance()->blit(surface, src.surface, area, srcarea, flag))
 			{
 #ifdef GPIXMAP_DEBUG
