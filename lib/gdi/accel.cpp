@@ -185,7 +185,7 @@ int gAccel::blit(gUnmanagedSurface *dst, gUnmanagedSurface *src, const eRect &p,
 			dst->data_phys, dst->x, dst->y, dst->stride,
 			area.left(), area.top(), area.width(), area.height(),
 			p.x(), p.y(), p.width(), p.height(),
-			pal_addr, flags);
+			pal_addr, flags & 7);
 		return 0;
 	}
 #endif
