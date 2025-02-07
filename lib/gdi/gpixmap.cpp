@@ -26,7 +26,7 @@
 #define GFX_SURFACE_BLIT_ACCELERATION_THRESHOLD 0
 #endif
 
-#define GPIXMAP_DEBUG
+// #define GPIXMAP_DEBUG
 
 #ifdef GPIXMAP_DEBUG
 #	include "../base/benchmark.h"
@@ -1754,7 +1754,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 	//		flag, accel);
 	eRect pos = _pos;
 
-	eDebug("[gPixmap] source size: %d %d / flag %d", src.size().width(), src.size().height(), flag);
+	// eDebug("[gPixmap] source size: %d %d / flag %d", src.size().width(), src.size().height(), flag);
 
 	int scale_x = FIX, scale_y = FIX;
 
@@ -1949,7 +1949,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 		if (accel)
 		{
 			flag &= 7; // remove all flags except the blit flags
-			eDebug("[gPixmap] accel flag %d / area (%d,%d,%d,%d) / srcarea (%d,%d,%d,%d)", flag, area.left(), area.top(), area.width(), area.height(), srcarea.left(), srcarea.top(), srcarea.width(), srcarea.height());
+			// eDebug("[gPixmap] accel flag %d / area (%d,%d,%d,%d) / srcarea (%d,%d,%d,%d)", flag, area.left(), area.top(), area.width(), area.height(), srcarea.left(), srcarea.top(), srcarea.width(), srcarea.height());
 			if (!gAccel::getInstance()->blit(surface, src.surface, area, srcarea, flag))
 			{
 #ifdef GPIXMAP_DEBUG
