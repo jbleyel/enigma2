@@ -1754,7 +1754,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 	//		flag, accel);
 	eRect pos = _pos;
 
-	//eDebug("[gPixmap] source size: %d %d / flag %d", src.size().width(), src.size().height(), flag);
+	eDebug("[gPixmap] source size: %d %d / flag %d", src.size().width(), src.size().height(), flag);
 
 	int scale_x = FIX, scale_y = FIX;
 
@@ -1857,14 +1857,12 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 		eRect srcarea = area;
 		srcarea.moveBy(-pos.x(), -pos.y());
 
-		//		eDebug("[gPixmap] srcarea before scale: %d %d %d %d",
-		//			srcarea.x(), srcarea.y(), srcarea.width(), srcarea.height());
+		eDebug("[gPixmap] srcarea before scale: %d %d %d %d",srcarea.x(), srcarea.y(), srcarea.width(), srcarea.height());
 
 		if (flag & blitScale)
 			srcarea = eRect(srcarea.x() * FIX / scale_x, srcarea.y() * FIX / scale_y, srcarea.width() * FIX / scale_x, srcarea.height() * FIX / scale_y);
 
-		//		eDebug("[gPixmap] srcarea after scale: %d %d %d %d",
-		//			srcarea.x(), srcarea.y(), srcarea.width(), srcarea.height());
+		eDebug("[gPixmap] srcarea after scale: %d %d %d %d",srcarea.x(), srcarea.y(), srcarea.width(), srcarea.height());
 
 		if (cornerRadius && surface->bpp == 32)
 		{
