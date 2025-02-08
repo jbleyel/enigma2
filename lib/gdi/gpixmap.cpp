@@ -1754,7 +1754,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 	//		flag, accel);
 	eRect pos = _pos;
 
-	// eDebug("[gPixmap] source size: %d %d / flag %d", src.size().width(), src.size().height(), flag);
+	eDebug("[gPixmap] source size: %d %d / flag %d", src.size().width(), src.size().height(), flag);
 
 	int scale_x = FIX, scale_y = FIX;
 
@@ -1943,8 +1943,14 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 #endif
 
 //#ifdef FORCE_NO_ACCELERATION_SCALE
-//	if (accel && (flag & blitScale))
-//		accel = false;	
+	if (accel && (flag & blitScale))
+	{
+		//if(src.size().width() != srcarea.width() || src.size().height() != srcarea.height())
+		{
+			eDebug("[gPixmap] accel orginal w/h (%d,%d) area w/h (%d,%d)", src.size().width(), src.size().height(), srcarea.width(), srcarea.height());
+//			accel = false;
+		}
+	}
 //#endif
 		if (accel)
 		{
