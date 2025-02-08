@@ -1857,7 +1857,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 		eRect srcarea = area;
 		srcarea.moveBy(-pos.x(), -pos.y());
 
-		eDebug("[gPixmap] srcarea before scale: %d %d %d %d",srcarea.x(), srcarea.y(), srcarea.width(), srcarea.height());
+		eDebug("[gPixmap] srcarea before scale: %d %d %d %d / scale_x %d / scale_y %d",srcarea.x(), srcarea.y(), srcarea.width(), srcarea.height(), scale_x , scale_y);
 
 		if (flag & blitScale)
 			srcarea = eRect(srcarea.x() * FIX / scale_x, srcarea.y() * FIX / scale_y, srcarea.width() * FIX / scale_x, srcarea.height() * FIX / scale_y);
