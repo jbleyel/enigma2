@@ -1943,12 +1943,11 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 #ifdef FORCE_NO_ACCELERATION_SCALE
 	if (accel && (flag & blitScale))
 	{
-		// Force no acceleration only for scaling if src and srcarea have different sizes
-		if(src.size().width() != srcarea.width() || src.size().height() != srcarea.height())
-		{
-//			eDebug("[gPixmap] accel orginal w/h (%d,%d) area w/h (%d,%d)", src.size().width(), src.size().height(), srcarea.width(), srcarea.height());
-			accel = false;
-		}
+		if (src.size().width() != srcarea.width())
+			srcarea.setWidth(src.size().width());
+
+		if (src.size().height() != srcarea.height())
+			srcarea.setHeight(src.size().height());
 	}
 #endif
 		if (accel)
