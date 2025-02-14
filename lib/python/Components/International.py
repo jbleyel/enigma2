@@ -582,7 +582,6 @@ class International:
 				print(f"[International] Package '{package}' supports {count} locale{'' if count == 1 else 's'} '{"', '".join(packageLocales)}'.")
 		self.localeList.sort()
 		self.languageList.sort()
-		print("[International] Initializing locales/languages Finished.")
 
 	def getAvailablePackages(self, update=False):
 		if update or self.debugMode:
