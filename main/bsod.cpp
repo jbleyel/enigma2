@@ -20,6 +20,7 @@
 
 /* Defined in bsod.cpp */
 void retrieveLogBuffer(const char **p1, unsigned int *s1, const char **p2, unsigned int *s2);
+void clearRingBuffer();
 
 static const std::string getConfigString(const char* key, const char* defaultValue)
 {
@@ -147,6 +148,8 @@ void bsodFatal(const char *component)
 	const char* logp2 = NULL;
 	unsigned int logs2 = 0;
 	retrieveLogBuffer(&logp1, &logs1, &logp2, &logs2);
+    std::vector<char> logt1(logp1, logp1 + logs1);
+    std::vector<char> logt2(logp2, logp2 + logs2);
 
 	FILE *f;
 	std::string crashlog_name;
@@ -230,15 +233,18 @@ void bsodFatal(const char *component)
 
 		/* dump the log ringbuffer */
 		fprintf(f, "\n\n");
-		if (logp1)
-			fwrite(logp1, 1, logs1, f);
-		if (logp2)
-			fwrite(logp2, 1, logs2, f);
+		if (!logt1.empty())
+			fwrite(logt1.data(), 1, logs1, f);
+		if (!logt2.empty())
+			fwrite(logt2.data(), 1, logs2, f);
 
 		/* dump the kernel log */
 		getKlog(f);
 		fsync(fileno(f));
 		fclose(f);
+
+		/* clear the ringbuffer */
+		clearRingBuffer();
 	}
 
 	if (bsodpython && bsodcnt == 1 && !bsodhide) //write always the first crashlog
@@ -297,13 +303,13 @@ void bsodFatal(const char *component)
 	std::string logtail;
 	int lines = 20;
 	
-	if (logp2)
+	if (!logt2.empty())
 	{
 		unsigned int size = logs2;
 		while (size) {
-			const char* r = (const char*)memrchr(logp2, '\n', size);
+			const char* r = (const char*)memrchr(logt2.data(), '\n', size);
 			if (r) {
-				size = r - logp2;
+				size = r - logt2.data();
 				--lines;
 				if (!lines) {
 					logtail = std::string(r, logs2 - size);
@@ -311,27 +317,27 @@ void bsodFatal(const char *component)
 				} 
 			}
 			else {
-				logtail = std::string(logp2, logs2);
+				logtail = std::string(logt2.data(), logs2);
 				break;
 			}
 		}
 	}
 
-	if (lines && logp1)
+	if (lines && !logt1.empty())
 	{
 		unsigned int size = logs1;
 		while (size) {
-			const char* r = (const char*)memrchr(logp1, '\n', size);
+			const char* r = (const char*)memrchr(logt1.data(), '\n', size);
 			if (r) {
 				--lines;
-				size = r - logp1;
+				size = r - logt1.data();
 				if (!lines) {
 					logtail += std::string(r, logs1 - size);
 					break;
 				} 
 			}
 			else {
-				logtail += std::string(logp1, logs1);
+				logtail += std::string(logt1.data(), logs1);
 				break;
 			}
 		}
