@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
-"PO-Revision-Date: 2025-01-07 22:22+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
+"PO-Revision-Date: 2025-02-12 12:56+0000\n"
 "Last-Translator: kvinto <badsystem@ukr.net>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/uk/>\n"
 "Language: uk\n"
@@ -1730,19 +1730,22 @@ msgstr "AC3+ транскодування"
 msgid "AFL"
 msgstr "AFL"
 
-msgid "AI-Powered Translation color"
+msgid "AI Translation color"
 msgstr "Колір субтитрів за допомогою AI"
 
-msgid "AI-Powered Translation enabled"
+msgid "AI Translation enabled"
 msgstr "Ввімкнути переклад за допомогою AI"
 
-msgid "AI-Powered Translation language"
+msgid "AI Translation language"
 msgstr "Мова перекладу на основі AI"
 
-msgid "AI-Powered Translation optimization"
+msgid "AI Translation mode"
+msgstr "Режим перекладу ШІ"
+
+msgid "AI Translation optimization"
 msgstr "Оптимізація перекладу за допомогою ШІ"
 
-msgid "AI-Powered Translation subscription code"
+msgid "AI Translation subscription code"
 msgstr "Код підписки на переклад на основі AI"
 
 msgid "ARM"
@@ -1852,6 +1855,9 @@ msgstr "Активуйте налаштовані параметри мереж�
 
 msgid "Activate the flash expander, save all changed settings and exit"
 msgstr "Активуйте флеш-розширювач, збережіть усі змінені налаштування та вийдіть"
+
+msgid "Activate this device"
+msgstr "Активувати цей пристрій"
 
 msgid "Activate time shift End"
 msgstr "Вказати закінчення таймшифта"
@@ -2410,6 +2416,9 @@ msgstr "Арабська"
 
 msgid "Arabic (Egyptian)"
 msgstr "Арабська (Єгипетська)"
+
+msgid "Arabic (Iraq)"
+msgstr "Арабська (Ірак)"
 
 msgid "Arabic (Moroccan)"
 msgstr "Арабська (Марокканська)"
@@ -3568,6 +3577,9 @@ msgstr ""
 "Неможливо з’єднатися з ТВ!\n"
 "Підключитися до каналу і перезапустити таймшифт?"
 
+msgid "Can't move to trashcan!"
+msgstr "Неможливо перемістити в кошик!"
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3693,9 +3705,6 @@ msgstr "Не вдається визначити ліміт %s ..., скасов
 
 msgid "Cannot find any signal ..., aborting !"
 msgstr "Неможливо знайти будь-який сигнал ..., скасовується!"
-
-msgid "Cannot move to trash can"
-msgstr "Неможливо перемістити в кошик"
 
 msgid "Cape Verde"
 msgstr "Кабо Верде"
@@ -3828,9 +3837,6 @@ msgstr "Інформація каналу"
 
 msgid "Channel List"
 msgstr "Список каналів"
-
-msgid "Channel List Menu"
-msgstr "Меню списку каналів"
 
 msgid "Channel Selection"
 msgstr "Вибір каналу"
@@ -4652,7 +4658,7 @@ msgstr "Налаштуйте широту Вашого місцезнаходж�
 msgid "Configure the longitude of your location."
 msgstr "Налаштуйте довготу Вашого місцезнаходження."
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr "Налаштування мінімального обсягу дискового простору, що має бути доступно для записів. Коли обсяг простору падає нижче цього значення, записи будуть видалені з корзини."
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4667,7 +4673,7 @@ msgstr "Налаштування маски мережі."
 msgid "Configure the network again"
 msgstr "Повторити налаштування мережі"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr "Вкажіть через скільки днів файли з кошика будуть остаточно видалені."
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6181,10 +6187,6 @@ msgid "Directory"
 msgstr "Каталог"
 
 #, python-format
-msgid "Directory %s does not exist."
-msgstr "Каталогу %s не існує."
-
-#, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr "Каталог '%s' не може бути пов'язаний із записами!"
 
@@ -6396,15 +6398,8 @@ msgstr ""
 "Усі файли на диску будуть втрачені!"
 
 #, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "Ви дійсно хочете видалити %s ?"
-
-#, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "Ви дійсно хочете видалити %s?"
-
-msgid "Do you really want to delete ?"
-msgstr "Ви дійсно хочете видалити?"
 
 #, python-format
 msgid ""
@@ -6434,27 +6429,25 @@ msgstr ""
 "Ви дійсно хочете відформатувати пристрій у файлову систему Linux?\n"
 "Усі дані на пристрої будуть втрачені!"
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "Дійсно хочете видалити у кошик?"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr "Ви справді бажаєте перемістити '%s' до кошика?"
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "Ви дійсно бажаєте остаточно видалити '%s' з кошика?"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "Дійсно хочете остаточно видалити з кошика?"
 
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "Ви дійсно хочете видалити каталог %s з диску?"
 
 #, python-format
-msgid "Do you really want to remove the timer for %s?"
-msgstr "Ви дійсно хочете видалити таймер %s?"
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "Ви дійсно хочете видалити Вашу закладку з %s?"
 
 #, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "Ви дійсно хочете видалити Вашу закладку з %s?"
+msgid "Do you really want to remove the timer for %s?"
+msgstr "Ви дійсно хочете видалити таймер %s?"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -7185,11 +7178,17 @@ msgstr "Увімкніть цю опцію, щоб додати дані дис�
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr "Увімкніть цю опцію, щоб додати до файлу журналу налагодження екранні імена та дані роздільної здатності."
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr "Увімкніть цей параметр, щоб додати інформацію про накопичувач, виявлену під час завантаження системи та подій гарячого підключення, до файлу журналу налагодження."
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Увімкніть цей параметр, щоб додати дані налагодження таймера до файлу журналу налагодження."
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
 msgstr "Увімкніть цей параметр, щоб відобразити всі доступні екрани інформації в списку пунктів меню 'Інформація'."
+
+msgid "Enable this option to show unknown storage devices in device manager."
+msgstr "Увімкніть, щоб відображати невідомі пристрої зберігання в диспетчері пристроїв."
 
 msgid "Enable this setting if your aerial system needs power."
 msgstr "Включити цю настройку, якщо Ваша антена потребує живлення."
@@ -7632,6 +7631,10 @@ msgstr "Створення директорії %s невдале!"
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
 msgstr "Помилка: Створення цільового каталогу піконів: (%s)"
+
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
+msgstr "Каталогу %s не існує!"
 
 #, python-format
 msgid "Error: Failed to run service scan!  (%s)"
@@ -8287,7 +8290,7 @@ msgstr "Перевірка файлової системи"
 msgid "File System Packages"
 msgstr "Пакети файлової системи"
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr "Файл зайнятий.\n"
 
 msgid ""
@@ -9595,6 +9598,9 @@ msgstr "Імідж створено:"
 msgid "Image creation failed!"
 msgstr "Помилка створення Іміджу!"
 
+msgid "Image version"
+msgstr "Версія іміджа"
+
 msgid "ImageWizard"
 msgstr "Майстер іміджу"
 
@@ -9715,6 +9721,9 @@ msgstr "Введення даних з пульта керування"
 
 msgid "Include screen load data"
 msgstr "Включити дані завантаження екрана"
+
+msgid "Include storage device data"
+msgstr "Включити дані пристрою зберігання"
 
 msgid "Include teletext details"
 msgstr "Додати деталі телетексту"
@@ -9956,6 +9965,9 @@ msgstr "Внутрішній"
 
 msgid "Internal Flash"
 msgstr "Внутрішня Пам’ять"
+
+msgid "Internal SSD"
+msgstr "Внутрішній SSD"
 
 msgid "Internal USB"
 msgstr "Внутрішній USB"
@@ -13099,7 +13111,7 @@ msgstr "Замість цього виконайте онлайн-прошивк
 msgid "Perform the upgrade?"
 msgstr "Виконати оновлення?"
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr "Остаточно видалити всі записи в кошик для сміття?"
 
 msgid "Permanently ignore this device"
@@ -13289,6 +13301,9 @@ msgstr "Відтворити вибраний канал"
 
 msgid "Playback Settings"
 msgstr "Налаштування відтворення"
+
+msgid "Playback Time:"
+msgstr "Час відтворення:"
 
 msgid "Playback, Recording & Time Shift"
 msgstr "Запис і таймшифт"
@@ -18113,6 +18128,9 @@ msgstr "Показати символи підкреслення в назвах
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr "Показати невідоме відео розширення, в наступному вищому або високому розширенні екрану."
 
+msgid "Show unknown devices"
+msgstr "Показати невідомі пристрої"
+
 msgid "Show unknown video format as"
 msgstr "Показати невідомий формат відео як"
 
@@ -19405,7 +19423,7 @@ msgid "TMDB Search"
 msgstr "TMDB Пошук"
 
 msgid "TRANSLATOR_INFO"
-msgstr "Переклад: kvinto - 07.01.2024"
+msgstr "Переклад: kvinto - 11.02.2025"
 
 msgid "TS file is too large for ISO9660 level 1!"
 msgstr "TS файл занадто великий для ISO9660 рівень 1!"
@@ -19665,6 +19683,9 @@ msgstr "Журнал записів %s не містить інформації.
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
 msgstr "Не вдається отримати файл '%s', спробуйте пізніше."
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
+msgstr "Режим ШІ, який використовується для перекладу мов. Ви можете вибрати той, який дає найточніший переклад для вашої цільової мови."
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
 msgstr "Службу перекладу на основі штучного інтелекту буде оптимізовано для забезпечення найкращої продуктивності на основі вибраної швидкості завантаження з Інтернету."
@@ -22362,7 +22383,7 @@ msgstr "Якщо включено, зображення із співвідно�
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr "Якщо включено, при перемиканні каналів буде перехід до наступного фавориту, коли останній канал поточного фаворита буде досягнутий."
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr "Коли ця функція включена, записи що видаляються, будуть переміщені в корзину,замість того, щоб бути видаленими."
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -22380,7 +22401,7 @@ msgstr "Якщо включено, можливо закрити медіапр�
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr "Якщо включено, вимірюйте споживання енергії, щоб визначити, коли ротор перестає обертатися (якщо підтримується тюнером)."
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr "Якщо включено, мережевий кошик буде зондуватись для очищення."
 
 msgid "When enabled, number markers will be hidden."
@@ -24088,6 +24109,22 @@ msgstr "так (зберігати фіди)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Channel List Menu"
+#~ msgstr "Меню списку каналів"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "Ви дійсно хочете видалити?"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "Ви дійсно хочете видалити %s ?"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "Дійсно хочете видалити у кошик?"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "Дійсно хочете остаточно видалити з кошика?"
 
 #~ msgid "Bus: "
 #~ msgstr "Шина: "

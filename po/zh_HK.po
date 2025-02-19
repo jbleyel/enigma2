@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
 "PO-Revision-Date: 2024-07-23 13:09+0000\n"
 "Last-Translator: Ricky From Hong Kong <lamricky11@hotmail.com>\n"
 "Language-Team: Chinese (Traditional, Hong Kong) <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/zh_Hant_HK/>\n"
@@ -1730,19 +1730,22 @@ msgstr ""
 msgid "AFL"
 msgstr "PAL"
 
-msgid "AI-Powered Translation color"
+msgid "AI Translation color"
 msgstr ""
 
-msgid "AI-Powered Translation enabled"
+msgid "AI Translation enabled"
 msgstr ""
 
-msgid "AI-Powered Translation language"
+msgid "AI Translation language"
 msgstr ""
 
-msgid "AI-Powered Translation optimization"
+msgid "AI Translation mode"
 msgstr ""
 
-msgid "AI-Powered Translation subscription code"
+msgid "AI Translation optimization"
+msgstr ""
+
+msgid "AI Translation subscription code"
 msgstr ""
 
 msgid "ARM"
@@ -1857,6 +1860,9 @@ msgid "Activate the configured network settings."
 msgstr ""
 
 msgid "Activate the flash expander, save all changed settings and exit"
+msgstr ""
+
+msgid "Activate this device"
 msgstr ""
 
 #, fuzzy
@@ -2450,6 +2456,9 @@ msgid "Arabic"
 msgstr "阿拉伯語"
 
 msgid "Arabic (Egyptian)"
+msgstr ""
+
+msgid "Arabic (Iraq)"
 msgstr ""
 
 msgid "Arabic (Moroccan)"
@@ -3665,6 +3674,9 @@ msgid ""
 "Switch to live TV and restart time shift ?"
 msgstr ""
 
+msgid "Can't move to trashcan!"
+msgstr ""
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3794,9 +3806,6 @@ msgid "Cannot determine %s limit ..., aborting !"
 msgstr ""
 
 msgid "Cannot find any signal ..., aborting !"
-msgstr ""
-
-msgid "Cannot move to trash can"
 msgstr ""
 
 msgid "Cape Verde"
@@ -3945,9 +3954,6 @@ msgstr "頻道"
 #, fuzzy
 msgid "Channel List"
 msgstr "頻道"
-
-msgid "Channel List Menu"
-msgstr "頻道列表功能表"
 
 msgid "Channel Selection"
 msgstr ""
@@ -4793,7 +4799,7 @@ msgstr ""
 msgid "Configure the longitude of your location."
 msgstr ""
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr ""
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4808,7 +4814,7 @@ msgstr ""
 msgid "Configure the network again"
 msgstr "重新配置網路"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr ""
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6379,10 +6385,6 @@ msgid "Directory"
 msgstr "目錄"
 
 #, python-format
-msgid "Directory %s does not exist."
-msgstr ""
-
-#, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr ""
 
@@ -6598,15 +6600,8 @@ msgid ""
 msgstr ""
 
 #, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "確定刪除 %s？"
-
-#, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "確定刪除「%s」？"
-
-msgid "Do you really want to delete ?"
-msgstr "確定刪除？"
 
 #, python-format
 msgid ""
@@ -6630,27 +6625,25 @@ msgid ""
 "All data on the device will be lost!"
 msgstr ""
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "確定要移到垃圾筒？"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr ""
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "確定要從垃圾筒永久刪除「%s」？"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "確定要從垃圾筒永久刪除？"
 
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "確定要從磁碟上刪除目錄「%s」？"
 
 #, python-format
-msgid "Do you really want to remove the timer for %s?"
-msgstr "確定要刪除%s的計時器？"
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "確定要刪除%s的書簽？"
 
 #, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "確定要刪除%s的書簽？"
+msgid "Do you really want to remove the timer for %s?"
+msgstr "確定要刪除%s的計時器？"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -7395,10 +7388,16 @@ msgstr ""
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr ""
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr ""
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr ""
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
+msgstr ""
+
+msgid "Enable this option to show unknown storage devices in device manager."
 msgstr ""
 
 msgid "Enable this setting if your aerial system needs power."
@@ -7831,6 +7830,10 @@ msgstr "錯誤：創建目錄 %s 失敗！"
 
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
+msgstr ""
+
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
 msgstr ""
 
 #, python-format
@@ -8515,7 +8518,7 @@ msgstr "檔系統檢視"
 msgid "File System Packages"
 msgstr ""
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr ""
 
 msgid ""
@@ -9912,6 +9915,9 @@ msgstr ""
 msgid "Image creation failed!"
 msgstr ""
 
+msgid "Image version"
+msgstr ""
+
 #, fuzzy
 msgid "ImageWizard"
 msgstr "嚮導"
@@ -10033,6 +10039,9 @@ msgid "Include remote control data"
 msgstr "按OK鍵確認."
 
 msgid "Include screen load data"
+msgstr ""
+
+msgid "Include storage device data"
 msgstr ""
 
 msgid "Include teletext details"
@@ -10297,6 +10306,9 @@ msgstr "間隔"
 
 msgid "Internal Flash"
 msgstr "內部Flash"
+
+msgid "Internal SSD"
+msgstr ""
 
 #, fuzzy
 msgid "Internal USB"
@@ -13630,7 +13642,7 @@ msgstr ""
 msgid "Perform the upgrade?"
 msgstr ""
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr ""
 
 msgid "Permanently ignore this device"
@@ -13829,6 +13841,9 @@ msgid "Play the selected service"
 msgstr ""
 
 msgid "Playback Settings"
+msgstr ""
+
+msgid "Playback Time:"
 msgstr ""
 
 #, fuzzy
@@ -18948,6 +18963,9 @@ msgstr ""
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr ""
 
+msgid "Show unknown devices"
+msgstr ""
+
 msgid "Show unknown video format as"
 msgstr ""
 
@@ -20576,6 +20594,9 @@ msgstr ""
 
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
+msgstr ""
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
 msgstr ""
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
@@ -23297,7 +23318,7 @@ msgstr ""
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr ""
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr ""
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -23315,7 +23336,7 @@ msgstr ""
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr ""
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr ""
 
 msgid "When enabled, number markers will be hidden."
@@ -25051,6 +25072,22 @@ msgstr "是 (保留)"
 
 msgid "®"
 msgstr ""
+
+#~ msgid "Channel List Menu"
+#~ msgstr "頻道列表功能表"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "確定刪除？"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "確定刪除 %s？"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "確定要移到垃圾筒？"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "確定要從垃圾筒永久刪除？"
 
 #~ msgid "Bus: "
 #~ msgstr "匯流排:"

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
-"PO-Revision-Date: 2025-01-22 22:55+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
+"PO-Revision-Date: 2025-02-13 21:46+0000\n"
 "Last-Translator: Petr Turek <turekdesign99@gmail.com>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/cs/>\n"
 "Language: cs\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.10-rc\n"
 
 msgid ""
 "\n"
@@ -1725,19 +1725,22 @@ msgstr "Překódování AC3 plus"
 msgid "AFL"
 msgstr "AFL"
 
-msgid "AI-Powered Translation color"
+msgid "AI Translation color"
 msgstr "Barva překladu s technologií AI"
 
-msgid "AI-Powered Translation enabled"
+msgid "AI Translation enabled"
 msgstr "Překlad pomocí AI povolen"
 
-msgid "AI-Powered Translation language"
+msgid "AI Translation language"
 msgstr "Překladatelský jazyk založený na AI"
 
-msgid "AI-Powered Translation optimization"
+msgid "AI Translation mode"
+msgstr "Režim překladu AI"
+
+msgid "AI Translation optimization"
 msgstr "Optimalizace překladu s technologií AI"
 
-msgid "AI-Powered Translation subscription code"
+msgid "AI Translation subscription code"
 msgstr "Kód předplatného překladu s podporou AI"
 
 msgid "ARM"
@@ -1847,6 +1850,9 @@ msgstr "Aktivovat konfiguraci nastavení sítě."
 
 msgid "Activate the flash expander, save all changed settings and exit"
 msgstr "Aktivovat flash expandér, uložit všechna změněná nastavení a ukončit"
+
+msgid "Activate this device"
+msgstr "Aktivujte toto zařízení"
 
 msgid "Activate time shift End"
 msgstr "Aktivace konce časového posunu"
@@ -2405,6 +2411,9 @@ msgstr "Arabsky"
 
 msgid "Arabic (Egyptian)"
 msgstr "Arabština (Egyptština)"
+
+msgid "Arabic (Iraq)"
+msgstr "Arabština (Irák)"
 
 msgid "Arabic (Moroccan)"
 msgstr "Arabština (Marocká)"
@@ -3563,6 +3572,9 @@ msgstr ""
 "Nelze se připojit k aktuálnímu TV vysílání !\n"
 "Přepnout do aktuálního vysílání TV a restartovat Timeshift?"
 
+msgid "Can't move to trashcan!"
+msgstr "Nelze přesunout do koše!"
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3688,9 +3700,6 @@ msgstr "Nelze určit %s limit ..., ruší se!"
 
 msgid "Cannot find any signal ..., aborting !"
 msgstr "Nelze najít žádný signál ..., končím!"
-
-msgid "Cannot move to trash can"
-msgstr "Nelze přesunout do koše"
 
 msgid "Cape Verde"
 msgstr "Kapverdy"
@@ -3823,9 +3832,6 @@ msgstr "Info o kanálu"
 
 msgid "Channel List"
 msgstr "Seznam kanálů"
-
-msgid "Channel List Menu"
-msgstr "Nabídka Seznam kanálů"
 
 msgid "Channel Selection"
 msgstr "Výběr kanálú"
@@ -4647,7 +4653,7 @@ msgstr "Nastavuje zeměpisnou šířku Vašeho místa."
 msgid "Configure the longitude of your location."
 msgstr "Nastavuje zeměpisnou délku Vašeho místa."
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr "Nastavuje minimální množství volného místa na disku využitelné pro nahrávání. Jestliže volné místo klesne pod tuto hodnotu, smazané položky budou odstraněny z koše."
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4662,7 +4668,7 @@ msgstr "Nastavuje síťovou masku."
 msgid "Configure the network again"
 msgstr "Nastavte znovu vaši síť"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr "Nastavuje počet dnů, po kterých jsou položky umístěné v koši automaticky smazány."
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6176,10 +6182,6 @@ msgid "Directory"
 msgstr "Adresář"
 
 #, python-format
-msgid "Directory %s does not exist."
-msgstr "Adresář %s neexistuje."
-
-#, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr "Adresář '%s' nelze propojit s nahrávkami!"
 
@@ -6391,15 +6393,8 @@ msgstr ""
 "Nelze se vrátit zpět!"
 
 #, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "Opravdu chcete smazat %s ?"
-
-#, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "Opravdu chcete smazat \"%s\"?"
-
-msgid "Do you really want to delete ?"
-msgstr "Opravdu chcete smazat ?"
 
 #, python-format
 msgid ""
@@ -6429,27 +6424,25 @@ msgstr ""
 "Opravdu chcete naformátovat zařízení v systému souborů Linux?\n"
 "Všechna data v zařízení budou ztracena!"
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "Opravdu chcete přesunout do koše?"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr "Opravdu chcete přesunout '%s' do koše?"
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "Opravdu chcete trvale odstranit '%s' z koše?"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "Opravdu chcete trvale odstranit z koše ?"
 
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "Opravdu chcete odstranit adresář '%s' z disku?"
 
 #, python-format
-msgid "Do you really want to remove the timer for %s?"
-msgstr "Chcete opravdu odstranit časovač pro %s?"
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "Opravdu chcete odstranit záložku pro '%s'?"
 
 #, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "Opravdu chcete odstranit záložku pro '%s'?"
+msgid "Do you really want to remove the timer for %s?"
+msgstr "Chcete opravdu odstranit časovač pro %s?"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -7180,11 +7173,17 @@ msgstr "Tuto možnost povolte, chcete-li do souboru protokolu ladění přidat d
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr "Tuto možnost povolte, chcete-li do souboru protokolu ladění přidat názvy obrazovek a údaje o rozlišení."
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr "Povolte tuto možnost, chcete-li do souboru protokolu ladění přidat informace o úložném zařízení zjištěné během spouštění systému a událostí připojení za provozu."
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Tuto možnost povolte, chcete-li do souboru protokolu ladění přidat údaje o ladění časovače."
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
 msgstr "Povolením této možnosti zobrazíte všechny dostupné informační obrazovky v seznamu položek nabídky Informace."
+
+msgid "Enable this option to show unknown storage devices in device manager."
+msgstr "Povolením této možnosti zobrazíte ve správci zařízení neznámá úložná zařízení."
 
 msgid "Enable this setting if your aerial system needs power."
 msgstr "Povolte toto nastavení, pokud váš anténní systém potřebuje napájení."
@@ -7627,6 +7626,10 @@ msgstr "Chyba: Vytvoření adresáře '%s' se nezdařilo!"
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
 msgstr "Chyba: Vytváření cílového adresáře picon: (%s)"
+
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
+msgstr "Chyba: Adresář %s neexistuje!"
 
 #, python-format
 msgid "Error: Failed to run service scan!  (%s)"
@@ -8282,7 +8285,7 @@ msgstr "Kontrola souborového systému"
 msgid "File System Packages"
 msgstr "Balíčky souborového systému"
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr "Soubor je asi zaneprázdněn.\n"
 
 msgid ""
@@ -9590,6 +9593,9 @@ msgstr "Obrázek vytvořen:"
 msgid "Image creation failed!"
 msgstr "Vytvoření obrázku se nezdařilo!"
 
+msgid "Image version"
+msgstr "Verze obrázku"
+
 msgid "ImageWizard"
 msgstr "Průvodce obnovením"
 
@@ -9710,6 +9716,9 @@ msgstr "Zahrnout data dálkového ovládání"
 
 msgid "Include screen load data"
 msgstr "Zahrnout údaje o načtení obrazovky"
+
+msgid "Include storage device data"
+msgstr "Zahrnout data úložného zařízení"
 
 msgid "Include teletext details"
 msgstr "Zahrnout podrobnosti o teletextu"
@@ -9951,6 +9960,9 @@ msgstr "Interní"
 
 msgid "Internal Flash"
 msgstr "Interní Flash"
+
+msgid "Internal SSD"
+msgstr "Interní SSD"
 
 msgid "Internal USB"
 msgstr "Interní USB"
@@ -13094,7 +13106,7 @@ msgstr "Proveďte místo toho on-line kontrolu flashe"
 msgid "Perform the upgrade?"
 msgstr "Provést aktualizaci?"
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr "Trvale odstranit všechny záznamy z koše?"
 
 msgid "Permanently ignore this device"
@@ -13284,6 +13296,9 @@ msgstr "Přehrát vybranou službu"
 
 msgid "Playback Settings"
 msgstr "Nastavení přehrávání"
+
+msgid "Playback Time:"
+msgstr "Doba přehrávání:"
 
 msgid "Playback, Recording & Time Shift"
 msgstr "Nahrávání a Timeshift"
@@ -18108,6 +18123,9 @@ msgstr "Zobrazit podtržítka"
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr "Zobrazit neznámé rozlišení videa jako nejbližší vyšší nebo nejvyšší rozlišení obrazovky."
 
+msgid "Show unknown devices"
+msgstr "Zobrazit neznámá zařízení"
+
 msgid "Show unknown video format as"
 msgstr "Zobrazit neznámý formát videa jako"
 
@@ -19660,6 +19678,9 @@ msgstr "Protokol revizí '%s' neobsahuje žádné informace."
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
 msgstr "Soubor '%s' nelze načíst, zkuste to prosím později."
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
+msgstr "Režim AI používaný pro překlad jazyků. Můžete si vybrat ten, který poskytuje nejpřesnější překlad pro váš cílový jazyk."
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
 msgstr "Služba AI-Powered Translation bude optimalizována tak, aby poskytovala nejlepší výkon na základě zvolené rychlosti odesílání internetového připojení."
@@ -22357,7 +22378,7 @@ msgstr "Jestliže je povoleno, pak obsah s poměrem stran 4:3 bude roztažen na 
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr "Při povolení bude po dosažení posledního programu v aktuálním přehledu pokračovat přepínání v následujícím přehledu."
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr "Jestliže je povoleno, pak smazané nahrávky jsou umístěny do koše, místo toho, aby byly ihned odstraněny."
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -22375,7 +22396,7 @@ msgstr "Jestliže je povoleno, je možné opouštět movieplayer pomocí Exit."
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr "Pokud je povoleno, přijímač se bude snažit měřením spotřeby proudu určit, kdy motor ukončí natáčení (pokud je podporováno tunerem)."
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr "Pokud je povoleno, síťové koše jsou sondovány kvůli čištění."
 
 msgid "When enabled, number markers will be hidden."
@@ -24083,6 +24104,22 @@ msgstr "ano (uchovat zdroje)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Channel List Menu"
+#~ msgstr "Nabídka Seznam kanálů"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "Opravdu chcete smazat ?"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "Opravdu chcete smazat %s ?"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "Opravdu chcete přesunout do koše?"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "Opravdu chcete trvale odstranit z koše ?"
 
 #~ msgid "Bus: "
 #~ msgstr "Sběrnice: "

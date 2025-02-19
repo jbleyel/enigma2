@@ -212,7 +212,10 @@ class ChannelSelectionBase(Screen):
 				"next": (self.nextMarker, _("Move to next marker")),
 				"pageDown": (self.servicelist.goPageDown, _("Move down a screen"))
 			}, prio=0, description=_("Channel Selection Navigation Actions"))
-
+		self.modes = {
+			MODE_RADIO: "Radio Mode",
+			MODE_TV: "TV Mode"
+		}
 		self.mode = MODE_TV
 		self.baseTitle = _("Channel Selection")
 		self.function = EDIT_OFF
@@ -294,17 +297,23 @@ class ChannelSelectionBase(Screen):
 	def moveEnd(self):  # This is used by InfoBarGenerics.
 		self.servicelist.goBottom()
 
-	def setTvMode(self):
-		self.mode = MODE_TV
-		self.servicePath = self.servicePathTV
+	def getCurrentMode(self):
+		return self.mode
+
+	def setCurrentMode(self, mode):
+		if mode not in (MODE_RADIO, MODE_TV):
+			mode = MODE_TV
+		self.servicePath = self.servicePathRadio if mode == MODE_RADIO else self.servicePathTV
+		self.mode = mode
 		self.getBouquetMode()
 		self.buildTitle()
+		print(f"[ChannelSelection] {self.modes[self.mode]} selected.")
+
+	def setTvMode(self):
+		self.setCurrentMode(MODE_TV)
 
 	def setRadioMode(self):
-		self.mode = MODE_RADIO
-		self.servicePath = self.servicePathRadio
-		self.getBouquetMode()
-		self.buildTitle()
+		self.setCurrentMode(MODE_RADIO)
 
 	def getBouquetMode(self):
 		if self.mode == MODE_TV:

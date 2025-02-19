@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV Italian translation\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
-"PO-Revision-Date: 2025-01-24 13:02+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
+"PO-Revision-Date: 2025-02-12 12:56+0000\n"
 "Last-Translator: Massimo Pissarello <mapi68@gmail.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/it/>\n"
 "Language: it\n"
@@ -1692,20 +1692,23 @@ msgstr "Transcodifica AC3plus"
 msgid "AFL"
 msgstr "AFL"
 
-msgid "AI-Powered Translation color"
-msgstr "Colore di traduzione basato sull'intelligenza artificiale"
+msgid "AI Translation color"
+msgstr "Colore di traduzione AI"
 
-msgid "AI-Powered Translation enabled"
-msgstr "Traduzione basata sull'intelligenza artificiale abilitata"
+msgid "AI Translation enabled"
+msgstr "Traduzione AI abilitata"
 
-msgid "AI-Powered Translation language"
-msgstr "Linguaggio di traduzione basato sull'intelligenza artificiale"
+msgid "AI Translation language"
+msgstr "Lingua di traduzione AI"
 
-msgid "AI-Powered Translation optimization"
-msgstr "Ottimizzazione della traduzione basata sull'IA"
+msgid "AI Translation mode"
+msgstr "Modalità di traduzione AI"
 
-msgid "AI-Powered Translation subscription code"
-msgstr "Codice di abbonamento alla traduzione basata sull'intelligenza artificiale"
+msgid "AI Translation optimization"
+msgstr "Ottimizzazione della traduzione AI"
+
+msgid "AI Translation subscription code"
+msgstr "Codice di abbonamento alla traduzione AI"
 
 msgid "ARM"
 msgstr "ARM"
@@ -1814,6 +1817,9 @@ msgstr "Attiva impostazioni di rete configurate."
 
 msgid "Activate the flash expander, save all changed settings and exit"
 msgstr "Attiva espansore flash, salva tutte le impostazioni modificate ed esci"
+
+msgid "Activate this device"
+msgstr "Attiva questo dispositivo"
 
 msgid "Activate time shift End"
 msgstr "Attiva fine del timeshift"
@@ -2372,6 +2378,9 @@ msgstr "Arabo"
 
 msgid "Arabic (Egyptian)"
 msgstr "Arabo (egiziano)"
+
+msgid "Arabic (Iraq)"
+msgstr "Arabo (Iraq)"
 
 msgid "Arabic (Moroccan)"
 msgstr "Arabo (marocchino)"
@@ -3530,6 +3539,9 @@ msgstr ""
 "Non riesco a passare alla TV in diretta!\n"
 "Passare alla TV in diretta e riavviare timeshift?"
 
+msgid "Can't move to trashcan!"
+msgstr "Impossibile spostare nel cestino!"
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3655,9 +3667,6 @@ msgstr "Impossibile determinare il limite %s..., interruzione!"
 
 msgid "Cannot find any signal ..., aborting !"
 msgstr "Impossibile trovare alcun segnale... annullo tutto!"
-
-msgid "Cannot move to trash can"
-msgstr "Impossibile spostare nel cestino"
 
 msgid "Cape Verde"
 msgstr "Capo Verde"
@@ -3790,9 +3799,6 @@ msgstr "Info canale"
 
 msgid "Channel List"
 msgstr "Elenco canali"
-
-msgid "Channel List Menu"
-msgstr "Menu elenco canali"
 
 msgid "Channel Selection"
 msgstr "Selezione canale"
@@ -4612,7 +4618,7 @@ msgstr "Configura latitudine della tua posizione."
 msgid "Configure the longitude of your location."
 msgstr "Configura longitudine della tua posizione."
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr "Configura quantità minima di spazio su disco disponibile per le registrazioni. Quando la quantità di spazio scende al di sotto di questo valore, gli elementi eliminati verranno rimossi dal cestino."
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4627,7 +4633,7 @@ msgstr "Configura maschera di rete."
 msgid "Configure the network again"
 msgstr "Configura di nuovo la rete"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr "Configura numero di giorni dopo i quali gli elementi vengono automaticamente rimossi dal cestino."
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6141,10 +6147,6 @@ msgid "Directory"
 msgstr "Cartella"
 
 #, python-format
-msgid "Directory %s does not exist."
-msgstr "La cartella %s non esiste."
-
-#, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr "Impossibile collegare la cartella '%s' alle registrazioni!"
 
@@ -6356,15 +6358,8 @@ msgstr ""
 "Non puoi tornare indietro!"
 
 #, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "Vuoi davvero eliminare %s?"
-
-#, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "Vuoi davvero eliminare '%s'?"
-
-msgid "Do you really want to delete ?"
-msgstr "Vuoi davvero eliminare?"
 
 #, python-format
 msgid ""
@@ -6394,27 +6389,25 @@ msgstr ""
 "Vuoi davvero formattare il dispositivo nel file system Linux?\n"
 "Tutti i dati sul dispositivo andranno persi!"
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "Vuoi davvero spostarlo nel cestino?"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr "Vuoi davvero spostare '%s' nel cestino?"
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "Vuoi davvero rimuovere definitivamente '%s' dal cestino?"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "Vuoi davvero rimuovere definitivamente dal cestino?"
 
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "Vuoi davvero rimuovere la cartella %s dal disco?"
 
 #, python-format
-msgid "Do you really want to remove the timer for %s?"
-msgstr "Vuoi davvero rimuovere il timer per %s?"
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "Vuoi davvero rimuovere il segnalibro di %s?"
 
 #, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "Vuoi davvero rimuovere il segnalibro di %s?"
+msgid "Do you really want to remove the timer for %s?"
+msgstr "Vuoi davvero rimuovere il timer per %s?"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -7144,11 +7137,17 @@ msgstr "Abilita questa opzione per aggiungere dati del controllo remoto al file 
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr "Abilita questa opzione per aggiungere nomi di schermate e dati di risoluzione al file di registro di debug."
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr "Abilita questa opzione per aggiungere al file di registro di debug le informazioni sul dispositivo di archiviazione rilevato durante l'avvio del sistema e gli eventi di hot plug."
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Abilita questa opzione per aggiungere dati di debug del timer al file di registro di debug."
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
 msgstr "Abilita questa opzione per mostrare tutte le schermate Informazioni disponibili nell'elenco delle voci del menu Informazioni."
+
+msgid "Enable this option to show unknown storage devices in device manager."
+msgstr "Abilita questa opzione per mostrare i dispositivi di archiviazione sconosciuti in gestione dispositivi."
 
 msgid "Enable this setting if your aerial system needs power."
 msgstr "Abilita questa impostazione se l'antenna necessita di alimentazione."
@@ -7589,6 +7588,10 @@ msgstr "Errore: creazione della cartella '%s' non riuscita!"
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
 msgstr "Errore: creazione della cartella di destinazione picon %s non riuscita"
+
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
+msgstr "Errore: la cartella '%s' non esiste!"
 
 #, python-format
 msgid "Error: Failed to run service scan!  (%s)"
@@ -8244,7 +8247,7 @@ msgstr "Controllo file system"
 msgid "File System Packages"
 msgstr "Pacchetti file system"
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr "Il file sembra occupato.\n"
 
 msgid ""
@@ -9552,6 +9555,9 @@ msgstr "Immagine creata:"
 msgid "Image creation failed!"
 msgstr "Creazione immagine fallita!"
 
+msgid "Image version"
+msgstr "Versione immagine"
+
 msgid "ImageWizard"
 msgstr "Creazione guidata immagine"
 
@@ -9672,6 +9678,9 @@ msgstr "Includi dati del telecomando"
 
 msgid "Include screen load data"
 msgstr "Includi dati di caricamento dello schermo"
+
+msgid "Include storage device data"
+msgstr "Includi dati del dispositivo di archiviazione"
 
 msgid "Include teletext details"
 msgstr "Includi dettagli del televideo"
@@ -9913,6 +9922,9 @@ msgstr "Interna"
 
 msgid "Internal Flash"
 msgstr "Flash interna"
+
+msgid "Internal SSD"
+msgstr "SSD interno"
 
 msgid "Internal USB"
 msgstr "USB interna"
@@ -13054,7 +13066,7 @@ msgstr "Esegui invece un flash in linea"
 msgid "Perform the upgrade?"
 msgstr "Eseguire l'aggiornamento?"
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr "Eliminare definitivamente tutte le registrazioni nel cestino?"
 
 msgid "Permanently ignore this device"
@@ -13244,6 +13256,9 @@ msgstr "Riproduci servizio selezionato"
 
 msgid "Playback Settings"
 msgstr "Impostazioni riproduzione"
+
+msgid "Playback Time:"
+msgstr "Tempo di riproduzione:"
 
 msgid "Playback, Recording & Time Shift"
 msgstr "Riproduzione, registrazione e timeshift"
@@ -18063,6 +18078,9 @@ msgstr "Mostra caratteri di sottolineatura"
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr "Mostra risoluzione video sconosciuta come risoluzione dello schermo successiva o più alta."
 
+msgid "Show unknown devices"
+msgstr "Mostra dispositivi sconosciuti"
+
 msgid "Show unknown video format as"
 msgstr "Mostra formato video sconosciuto come"
 
@@ -19613,6 +19631,9 @@ msgstr "Il registro commit %s non contiene informazioni."
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
 msgstr "Impossibile recuperare il file '%s', riprova più tardi."
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
+msgstr "La modalità AI usata per tradurre le lingue. Puoi scegliere quella che fornisce la traduzione più accurata per la tua lingua di destinazione."
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
 msgstr "Il servizio di traduzione basato sull'intelligenza artificiale sarà ottimizzato per fornire le migliori prestazioni in base alla velocità di caricamento della connessione Internet selezionata."
@@ -22310,7 +22331,7 @@ msgstr "Se abilitato, il contenuto con un aspect ratio di 4:3 verrà ampliato pe
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr "Se abilitato, passerà al bouquet successivo se verrà raggiunto l'ultimo canale del bouquet attuale mentre si cambia canale."
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr "Se abilitato, le registrazioni eliminate verranno spostate nel cestino, invece di essere eliminate immediatamente."
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -22328,7 +22349,7 @@ msgstr "Se abilitato, sarà possibile lasciare il movieplayer con esci."
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr "Se abilitato, misurerà il consumo di energia per rilevare quando il motore smette di girare (se supportato dal tuner)."
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr "Se abilitato, il cestino di rete sarà visualizzato prima dello svuotamento."
 
 msgid "When enabled, number markers will be hidden."
@@ -24035,6 +24056,22 @@ msgstr "sì (mantieni feed)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Channel List Menu"
+#~ msgstr "Menu elenco canali"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "Vuoi davvero eliminare?"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "Vuoi davvero eliminare %s?"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "Vuoi davvero spostarlo nel cestino?"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "Vuoi davvero rimuovere definitivamente dal cestino?"
 
 #~ msgid "Bus: "
 #~ msgstr "Bus: "

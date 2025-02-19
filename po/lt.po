@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tuxbox-enigma 0.0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
 "PO-Revision-Date: 2023-06-04 19:16+0000\n"
 "Last-Translator: Adga56 <adga45@gmail.com>\n"
 "Language-Team: Lithuanian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/lt/>\n"
@@ -1737,19 +1737,22 @@ msgstr "AC3plus perkodavimas"
 msgid "AFL"
 msgstr "AFL"
 
-msgid "AI-Powered Translation color"
+msgid "AI Translation color"
 msgstr ""
 
-msgid "AI-Powered Translation enabled"
+msgid "AI Translation enabled"
 msgstr ""
 
-msgid "AI-Powered Translation language"
+msgid "AI Translation language"
 msgstr ""
 
-msgid "AI-Powered Translation optimization"
+msgid "AI Translation mode"
 msgstr ""
 
-msgid "AI-Powered Translation subscription code"
+msgid "AI Translation optimization"
+msgstr ""
+
+msgid "AI Translation subscription code"
 msgstr ""
 
 msgid "ARM"
@@ -1858,6 +1861,9 @@ msgid "Activate the configured network settings."
 msgstr "Aktyvuoti tinklo nustatymų konfigūraciją."
 
 msgid "Activate the flash expander, save all changed settings and exit"
+msgstr ""
+
+msgid "Activate this device"
 msgstr ""
 
 msgid "Activate time shift End"
@@ -2418,6 +2424,9 @@ msgid "Arabic"
 msgstr "Arabų"
 
 msgid "Arabic (Egyptian)"
+msgstr ""
+
+msgid "Arabic (Iraq)"
 msgstr ""
 
 msgid "Arabic (Moroccan)"
@@ -3577,6 +3586,9 @@ msgstr ""
 "Nepavyksta perjungti į tiesioginę transliaciją!\n"
 "Perjungti į tiesioginę transliaciją ir paleisti laiko poslinkį iš naujo?"
 
+msgid "Can't move to trashcan!"
+msgstr "Perkelti į šiukšlinę negalima"
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3702,9 +3714,6 @@ msgstr "Negalima nustatyti %s ribos ..., nutraukiama !"
 
 msgid "Cannot find any signal ..., aborting !"
 msgstr "Jokio signalo nerasta …,  nutraukiama !"
-
-msgid "Cannot move to trash can"
-msgstr "Perkelti į šiukšlinę negalima"
 
 msgid "Cape Verde"
 msgstr "Žaliasis kišulys"
@@ -3837,9 +3846,6 @@ msgstr "Kanalo informacija"
 
 msgid "Channel List"
 msgstr "Kanalų sąrašas"
-
-msgid "Channel List Menu"
-msgstr "Kanalų sąrašo meniu"
 
 msgid "Channel Selection"
 msgstr "Kanalo pasirinkimas"
@@ -4662,7 +4668,7 @@ msgstr "Konfigūruokite savo buvimo vietos platumą."
 msgid "Configure the longitude of your location."
 msgstr "Konfigūruokite savo buvimo vietos ilgumą."
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr "Konfigūruokite kokį minimalų kiekį diske bus galima įrašyti. Kai laisvos vietos suma nukrenta žemiau šios reikšmės, ištrinti elementai bus pašalinti iš šiukšliadėžės."
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4677,7 +4683,7 @@ msgstr "Konfigūruokite potinklio kaukę."
 msgid "Configure the network again"
 msgstr "Konfigūruokite savo tinklą dar kartą"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr "Konfigūruokite dienų skaičių, po kurių elementai bus automatiškai pašalinti iš šiukšlinės."
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6191,10 +6197,6 @@ msgid "Directory"
 msgstr "Katalogas"
 
 #, python-format
-msgid "Directory %s does not exist."
-msgstr "Katalogo %s nėra."
-
-#, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr "Katalogas \"%s\" negali būti susietas su įrašais!"
 
@@ -6406,15 +6408,8 @@ msgstr ""
 "Šio veiksmo atstatyti atgal negalėsite!"
 
 #, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "Ar tikrai norite trinti %s ?"
-
-#, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "Ar tikrai norite pašalinti %s?"
-
-msgid "Do you really want to delete ?"
-msgstr "Ar tikrai norite trinti ?"
 
 #, python-format
 msgid ""
@@ -6442,27 +6437,25 @@ msgid ""
 "All data on the device will be lost!"
 msgstr ""
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "Ar tikrai norite perkelti į šiukšliadėžę?"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr ""
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "Ar tikrai norite negrįžtamai pašalinti '%s' iš šiukšliadėžės?"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "Ar tikrai norite negrįžtamai pašalinti iš šiukšliadėžės?"
 
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "Ar tikrai norite pašalinti %s katalogą iš disko?"
 
 #, python-format
-msgid "Do you really want to remove the timer for %s?"
-msgstr "Ar tikrai norite pašalinti laikmatį %s?"
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "Ar tikrai norite pašalinti savo %s žymę?"
 
 #, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "Ar tikrai norite pašalinti savo %s žymę?"
+msgid "Do you really want to remove the timer for %s?"
+msgstr "Ar tikrai norite pašalinti laikmatį %s?"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -7187,10 +7180,16 @@ msgstr "Įjunkite šią parinktį, jei į derinimo žurnalo failą norite įtrau
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr "Įjunkite šią parinktį, jei į derinimo žurnalo failą norite įtraukti ekrano pavadinimus ir skiriamosios gebos duomenis."
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr ""
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Įjunkite šią parinktį, kad pridėtumėte laikmačio derinimo duomenis prie derinimo žurnalo failo."
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
+msgstr ""
+
+msgid "Enable this option to show unknown storage devices in device manager."
 msgstr ""
 
 msgid "Enable this setting if your aerial system needs power."
@@ -7634,6 +7633,10 @@ msgstr "Katalogo sukurti %s nepavyko."
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
 msgstr ""
+
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
+msgstr "Katalogo %s nėra."
 
 #, python-format
 msgid "Error: Failed to run service scan!  (%s)"
@@ -8291,7 +8294,7 @@ msgstr "Failų sistemos tikrinimas"
 msgid "File System Packages"
 msgstr ""
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr "Failas tikriausiai užimtas.\n"
 
 msgid ""
@@ -9599,6 +9602,9 @@ msgstr ""
 msgid "Image creation failed!"
 msgstr ""
 
+msgid "Image version"
+msgstr ""
+
 msgid "ImageWizard"
 msgstr "Atvaizdo vedlys"
 
@@ -9719,6 +9725,9 @@ msgstr "Įtraukti nuotolinio valdymo duomenis"
 
 msgid "Include screen load data"
 msgstr "Įtraukti ekrano įkėlimo duomenis"
+
+msgid "Include storage device data"
+msgstr ""
 
 msgid "Include teletext details"
 msgstr ""
@@ -9960,6 +9969,9 @@ msgstr "Vidinis"
 
 msgid "Internal Flash"
 msgstr "Vidinė atmintis"
+
+msgid "Internal SSD"
+msgstr ""
 
 msgid "Internal USB"
 msgstr "Vidinis USB"
@@ -13100,7 +13112,7 @@ msgstr "Vietoj to atlikite internetinį įdiegimą"
 msgid "Perform the upgrade?"
 msgstr ""
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr "Negrįžtamai pašalinti visus įrašus iš šiukšlinės?"
 
 msgid "Permanently ignore this device"
@@ -13290,6 +13302,9 @@ msgstr ""
 
 msgid "Playback Settings"
 msgstr "Atkūrimo nustatymai"
+
+msgid "Playback Time:"
+msgstr ""
 
 msgid "Playback, Recording & Time Shift"
 msgstr "Įrašai ir laiko poslinkis"
@@ -18102,6 +18117,9 @@ msgstr "Rodyti pabraukimo simbolius"
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr "Rodyti nežinomą vaizdo raišką, kaip kitą didesnę arba kaip didžiausią ekrano raišką."
 
+msgid "Show unknown devices"
+msgstr ""
+
 msgid "Show unknown video format as"
 msgstr "Rodyti nežinomą vaizdo formatą kaip"
 
@@ -19647,6 +19665,9 @@ msgstr "%s naujinių žurnale nėra informacijos."
 
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
+msgstr ""
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
 msgstr ""
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
@@ -22315,7 +22336,7 @@ msgstr "Kai čia įjungta, 4:3 kraštinių santykio vaizdas bus išplėstas, įt
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr "Kai čia įjungta, pasiekus paskutinį šio paketo kanalą ir jungiant sekantį, bus įjungtas pirmas sekančio paketo kanalas."
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr "Kai čia įjungta, pašalinti vaizdo įrašai bus perkelti į šiukšlinę, užuot juos galutinai ištrynus."
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -22333,7 +22354,7 @@ msgstr "Kai čia įjungta, filmų grotuvą galima uždaryti 'EXIT' mygtuku."
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr "Kai čia įjungta, bus matuojama variklio suvartojama galia, kad nustatyti, kada pozicionierius nustojo suktis (jei imtuvas tai palaiko)."
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr "Kai čia įjungta, bus bandoma išvalyti ir tinklo šiukšliadėžes."
 
 msgid "When enabled, number markers will be hidden."
@@ -24036,6 +24057,22 @@ msgstr "taip (išsaugoti šaltinius)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Channel List Menu"
+#~ msgstr "Kanalų sąrašo meniu"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "Ar tikrai norite trinti ?"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "Ar tikrai norite trinti %s ?"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "Ar tikrai norite perkelti į šiukšliadėžę?"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "Ar tikrai norite negrįžtamai pašalinti iš šiukšliadėžės?"
 
 #~ msgid "Bus: "
 #~ msgstr "Jungtis: "

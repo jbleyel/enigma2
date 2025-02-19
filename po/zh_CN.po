@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: openATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
-"PO-Revision-Date: 2025-01-16 10:00+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
+"PO-Revision-Date: 2025-02-12 12:56+0000\n"
 "Last-Translator: Mark Stone <grystyle@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -1693,19 +1693,22 @@ msgstr "AC3+ 转码"
 msgid "AFL"
 msgstr "AFL"
 
-msgid "AI-Powered Translation color"
+msgid "AI Translation color"
 msgstr "人工智能翻译颜色"
 
-msgid "AI-Powered Translation enabled"
+msgid "AI Translation enabled"
 msgstr "已启用人工智能翻译"
 
-msgid "AI-Powered Translation language"
+msgid "AI Translation language"
 msgstr "人工智能翻译语言"
 
-msgid "AI-Powered Translation optimization"
+msgid "AI Translation mode"
+msgstr "AI 翻译模式"
+
+msgid "AI Translation optimization"
 msgstr "人工智能翻译优化"
 
-msgid "AI-Powered Translation subscription code"
+msgid "AI Translation subscription code"
 msgstr "人工智能翻译订阅代码"
 
 msgid "ARM"
@@ -1815,6 +1818,9 @@ msgstr "启用已配置的网络设置。"
 
 msgid "Activate the flash expander, save all changed settings and exit"
 msgstr "激活闪存扩展器，保存所有更改的设置并退出"
+
+msgid "Activate this device"
+msgstr "激活此设备"
 
 msgid "Activate time shift End"
 msgstr "激活时移结束"
@@ -2373,6 +2379,9 @@ msgstr "阿拉伯语"
 
 msgid "Arabic (Egyptian)"
 msgstr "阿拉伯语（埃及）"
+
+msgid "Arabic (Iraq)"
+msgstr "阿拉伯语（伊拉克）"
 
 msgid "Arabic (Moroccan)"
 msgstr "阿拉伯语（摩洛哥）"
@@ -3531,6 +3540,9 @@ msgstr ""
 "无法打开电视直播！\n"
 "是否切换到电视直播并重启时移？"
 
+msgid "Can't move to trashcan!"
+msgstr "无法移动到回收站！"
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3656,9 +3668,6 @@ msgstr "无法确定 %s 限制...，正在中止！"
 
 msgid "Cannot find any signal ..., aborting !"
 msgstr "无法找到任何信号...，正在中止！"
-
-msgid "Cannot move to trash can"
-msgstr "无法移动到回收站"
 
 msgid "Cape Verde"
 msgstr "佛得角"
@@ -3791,9 +3800,6 @@ msgstr "频道信息"
 
 msgid "Channel List"
 msgstr "频道列表"
-
-msgid "Channel List Menu"
-msgstr "频道列表菜单"
 
 msgid "Channel Selection"
 msgstr "频道选择"
@@ -4613,7 +4619,7 @@ msgstr "设置您所在位置的纬度。"
 msgid "Configure the longitude of your location."
 msgstr "设置您所在位置的经度。"
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr "配置可用于录制的最小磁盘空间量。 当空间量低于此值时，已删除的项目将从回收站中删除。"
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4628,7 +4634,7 @@ msgstr "配置子网掩码。"
 msgid "Configure the network again"
 msgstr "重新配置网络"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr "配置项目在多少天后自动从垃圾箱中删除。"
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6142,10 +6148,6 @@ msgid "Directory"
 msgstr "目录"
 
 #, python-format
-msgid "Directory %s does not exist."
-msgstr "不存在 %s 目录 。"
-
-#, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr "目录“%s”无法链接到录像！"
 
@@ -6357,15 +6359,8 @@ msgstr ""
 "将无法恢复 ！"
 
 #, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "真的要删除 %s ？"
-
-#, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "真的要删除“%s”吗？"
-
-msgid "Do you really want to delete ?"
-msgstr "真的要删除？"
 
 #, python-format
 msgid ""
@@ -6395,27 +6390,25 @@ msgstr ""
 "您确实要在 Linux 文件系统中格式化设备吗？\n"
 "设备上的所有数据都将丢失！"
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "真的要移动到回收站？"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr "确定要将“%s”移动到回收站吗？"
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "真的要从垃圾桶中永久删除“%s”吗？"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "真的要从回收站永久删除 ？"
 
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "真的要从磁盘中删除目录“%s”吗？"
 
 #, python-format
-msgid "Do you really want to remove the timer for %s?"
-msgstr "真的要删除 %s 的定时器?"
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "真的要删除“%s”的书签吗？"
 
 #, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "真的要删除“%s”的书签吗？"
+msgid "Do you really want to remove the timer for %s?"
+msgstr "真的要删除 %s 的定时器?"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -6594,7 +6587,7 @@ msgstr[0] "完成 - 已安装，升级或删除了 %d 个软件包 (%s)"
 msgstr[1] "完成 - 已安装，升级或删除了 %d 个软件包 (%s)"
 
 msgid "Down"
-msgstr "下 箭头"
+msgstr "下"
 
 msgid "Down / Inactive"
 msgstr "Down / 非活动"
@@ -7145,11 +7138,17 @@ msgstr "启用此选项可将远程控制数据添加到调试日志文件中。
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr "启用此选项可将屏幕名称和分辨率数据添加到调试日志文件中。"
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr "启用此选项，可将系统启动期间检测到的存储设备信息以及热插拔事件添加到调试日志文件中。"
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "启用此选项可将定时器调试数据添加到调试日志文件。"
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
 msgstr "启用此选项可显示信息菜单项列表中所有可用的信息屏幕。"
+
+msgid "Enable this option to show unknown storage devices in device manager."
+msgstr "启用此选项，可在设备管理器中显示未知存储设备。"
 
 msgid "Enable this setting if your aerial system needs power."
 msgstr "如果您的天线系统需要电源，请启用此设置。"
@@ -7590,6 +7589,10 @@ msgstr "错误：创建目录“%s”失败！"
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
 msgstr "错误：正在创建频道图标目标目录：（%s）"
+
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
+msgstr "错误：目录“%s”不存在！"
 
 #, python-format
 msgid "Error: Failed to run service scan!  (%s)"
@@ -8245,7 +8248,7 @@ msgstr "文件系统检查"
 msgid "File System Packages"
 msgstr "文件系统软件包"
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr "文件似乎忙。\n"
 
 msgid ""
@@ -8954,7 +8957,7 @@ msgid "HH:mm:ss"
 msgstr "24小时制 时时:分分:秒秒"
 
 msgid "HI-cleanup for external subtitles"
-msgstr "HI-cleanup外挂字幕"
+msgstr "外挂听障字幕清理"
 
 msgid "HLG Support"
 msgstr "HLG 支持"
@@ -9553,6 +9556,9 @@ msgstr "创建的镜像："
 msgid "Image creation failed!"
 msgstr "镜像创建失败！"
 
+msgid "Image version"
+msgstr "镜像版本"
+
 msgid "ImageWizard"
 msgstr "镜像向导"
 
@@ -9673,6 +9679,9 @@ msgstr "包含遥控数据"
 
 msgid "Include screen load data"
 msgstr "包括屏幕加载数据"
+
+msgid "Include storage device data"
+msgstr "包括存储设备数据"
 
 msgid "Include teletext details"
 msgstr "包括图文电视详细信息"
@@ -9914,6 +9923,9 @@ msgstr "内部"
 
 msgid "Internal Flash"
 msgstr "内部闪存"
+
+msgid "Internal SSD"
+msgstr "内置固态硬盘"
 
 msgid "Internal USB"
 msgstr "内部 USB"
@@ -10385,7 +10397,7 @@ msgid "Lebanon"
 msgstr "黎巴嫩"
 
 msgid "Left"
-msgstr "左 箭头"
+msgstr "左"
 
 msgid "Left USB"
 msgstr "左侧 USB"
@@ -10693,7 +10705,7 @@ msgid "Long << / >>"
 msgstr "长按 << / >>"
 
 msgid "Long Left/Right"
-msgstr "长按 左/右 箭头"
+msgstr "长按 左/右 键"
 
 msgid "Long filenames"
 msgstr "长文件名"
@@ -13055,7 +13067,7 @@ msgstr "改为执行在线刷机"
 msgid "Perform the upgrade?"
 msgstr "是否执行升级？"
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr "永久删除所有回收站中的录像吗？"
 
 msgid "Permanently ignore this device"
@@ -13245,6 +13257,9 @@ msgstr "播放选择的频道"
 
 msgid "Playback Settings"
 msgstr "回放设置"
+
+msgid "Playback Time:"
+msgstr "播放时间："
 
 msgid "Playback, Recording & Time Shift"
 msgstr "回放、录像和时移"
@@ -16200,7 +16215,7 @@ msgid "Select refresh rate"
 msgstr "选择刷新率"
 
 msgid "Select seekbar to be activated by arrow L/R (long) or << >> (long)."
-msgstr "选择要激活的进度条，通过（长按）左/右箭头或（长按）<< >>。"
+msgstr "选择要激活的进度条，通过（长按）左/右键或（长按）<< >>。"
 
 msgid "Select service information to view:"
 msgstr "选择要查看的频道信息："
@@ -18064,6 +18079,9 @@ msgstr "显示下划线字符"
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr "将未知的视频分辨率显示为下一个更高或最高的屏幕分辨率。"
 
+msgid "Show unknown devices"
+msgstr "显示未知设备"
+
 msgid "Show unknown video format as"
 msgstr "将未知的视频格式显示为"
 
@@ -19614,6 +19632,9 @@ msgstr "“%s”提交日志不包含任何信息。"
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
 msgstr "无法检索“%s”文件，请稍后再试。"
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
+msgstr "用于翻译语言的 AI 模式。您可以选择为目标语言提供最准确翻译的模式。"
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
 msgstr "人工智能驱动的翻译服务将根据所选的互联网连接上传速度进行优化，以提供最佳性能。"
@@ -21218,7 +21239,7 @@ msgid "Unzipping Image"
 msgstr "正在解压镜像"
 
 msgid "Up"
-msgstr "上 箭头"
+msgstr "上"
 
 msgid "Up / Active"
 msgstr "Up / 活动"
@@ -22311,7 +22332,7 @@ msgstr "启用时，宽高比为4:3的内容将被拉伸以适合屏幕。"
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr "启用后，换台到当前频道群的最后一个频道时，继续到下一个频道群。"
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr "启用后，已删除的录像会移至回收站，而不是立即删除。"
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -22329,7 +22350,7 @@ msgstr "启用后，可按 “EXIT” 键退出电影播放器。"
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr "启用时，测量功率消耗以检测极轴何时停止转动（当调谐器支持时）。"
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr "启用时，将探测网络回收站以进行清洁。"
 
 msgid "When enabled, number markers will be hidden."
@@ -24036,6 +24057,22 @@ msgstr "是（保留订阅源）"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Channel List Menu"
+#~ msgstr "频道列表菜单"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "真的要删除？"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "真的要删除 %s ？"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "真的要移动到回收站？"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "真的要从回收站永久删除 ？"
 
 #~ msgid "Bus: "
 #~ msgstr "总线："

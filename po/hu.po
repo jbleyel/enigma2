@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: hu_po v3.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
 "PO-Revision-Date: 2022-03-10 14:56+0000\n"
 "Last-Translator: H. Árkosi Róbert <robreg@zsurob.hu>\n"
 "Language-Team: Hungarian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/hu/>\n"
@@ -1732,19 +1732,22 @@ msgstr "AC3 plusz transzkódolás"
 msgid "AFL"
 msgstr "AFL"
 
-msgid "AI-Powered Translation color"
+msgid "AI Translation color"
 msgstr ""
 
-msgid "AI-Powered Translation enabled"
+msgid "AI Translation enabled"
 msgstr ""
 
-msgid "AI-Powered Translation language"
+msgid "AI Translation language"
 msgstr ""
 
-msgid "AI-Powered Translation optimization"
+msgid "AI Translation mode"
 msgstr ""
 
-msgid "AI-Powered Translation subscription code"
+msgid "AI Translation optimization"
+msgstr ""
+
+msgid "AI Translation subscription code"
 msgstr ""
 
 #, fuzzy
@@ -1855,6 +1858,9 @@ msgid "Activate the configured network settings."
 msgstr "A megadott hálózati beállítások aktiválása."
 
 msgid "Activate the flash expander, save all changed settings and exit"
+msgstr ""
+
+msgid "Activate this device"
 msgstr ""
 
 msgid "Activate time shift End"
@@ -2415,6 +2421,9 @@ msgid "Arabic"
 msgstr "Arab"
 
 msgid "Arabic (Egyptian)"
+msgstr ""
+
+msgid "Arabic (Iraq)"
 msgstr ""
 
 msgid "Arabic (Moroccan)"
@@ -3564,6 +3573,9 @@ msgstr ""
 "Nem lehet az élő TV adásra váltani!\n"
 "Váltson át az élő adásra és indítsa újra a Timeshift-t?"
 
+msgid "Can't move to trashcan!"
+msgstr "Nem helyezthető a kukába"
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3696,9 +3708,6 @@ msgstr ""
 
 msgid "Cannot find any signal ..., aborting !"
 msgstr "Nem található jel... művelet megszakítva!"
-
-msgid "Cannot move to trash can"
-msgstr "Nem helyezthető a kukába"
 
 #, fuzzy
 msgid "Cape Verde"
@@ -3833,9 +3842,6 @@ msgstr "Csatorna információ"
 
 msgid "Channel List"
 msgstr "Csatornalista"
-
-msgid "Channel List Menu"
-msgstr "Csatornalista menü"
 
 msgid "Channel Selection"
 msgstr "Csatorna választás"
@@ -4653,7 +4659,7 @@ msgstr "Az antenna telepítés helyének földrajzi szélessége."
 msgid "Configure the longitude of your location."
 msgstr "Az antenna telepítés helyének földrajzi hosszúsága."
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr "A felvételekhez szükséges minimális szabad tárhely. Ha az elérhető szabad tárterület a megadott érték alá esik, a kukába helyezett elemek véglegesen törölve lesznek."
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4668,7 +4674,7 @@ msgstr "Alhálózati maszk beállítása."
 msgid "Configure the network again"
 msgstr "Állítsa be újra hálózatát"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr "Állítsa be azon napok számát, amelyek után az elemek automatikusan eltávolításra kerülnek a kukákból."
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6196,10 +6202,6 @@ msgid "Directory"
 msgstr "Mappa"
 
 #, python-format
-msgid "Directory %s does not exist."
-msgstr "A %s mappa nem létezik."
-
-#, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr ""
 
@@ -6411,15 +6413,8 @@ msgstr ""
 "Ez visszafordíthatatlan lesz!"
 
 #, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "Biztos benne, hogy törölni szeretné: %s?"
-
-#, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "Biztos benne, hogy törölni szeretné ezt: %s?"
-
-msgid "Do you really want to delete ?"
-msgstr "Biztos benne, hogy törölni szeretne?"
 
 #, python-format
 msgid ""
@@ -6443,27 +6438,25 @@ msgid ""
 "All data on the device will be lost!"
 msgstr ""
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "Biztos benne, hogy a kukába rakja?"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr ""
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "Biztos benne, hogy végleg eltávolítja a(z) %s a kukából?"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "Biztos benne, hogy végleg el szeretné távolítani a kukából?"
 
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "Biztos benne, hogy el szeretné távolítani a %s mappát a háttértárról?"
 
 #, python-format
-msgid "Do you really want to remove the timer for %s?"
-msgstr "Tényleg el szeretné távolítani a(z) %s időzítőt?"
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "Biztos benne, hogy el szeretné távolítani a(z) %s könyvjelzőt?"
 
 #, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "Biztos benne, hogy el szeretné távolítani a(z) %s könyvjelzőt?"
+msgid "Do you really want to remove the timer for %s?"
+msgstr "Tényleg el szeretné távolítani a(z) %s időzítőt?"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -7188,10 +7181,16 @@ msgstr ""
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr ""
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr ""
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr ""
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
+msgstr ""
+
+msgid "Enable this option to show unknown storage devices in device manager."
 msgstr ""
 
 msgid "Enable this setting if your aerial system needs power."
@@ -7632,6 +7631,10 @@ msgstr "A %s mappa létrehozása nem sikerült."
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
 msgstr ""
+
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
+msgstr "A %s mappa nem létezik."
 
 #, python-format
 msgid "Error: Failed to run service scan!  (%s)"
@@ -8288,7 +8291,7 @@ msgstr "Fájlrendszer ellenőrzése"
 msgid "File System Packages"
 msgstr ""
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr "A fájl használatban van.\n"
 
 msgid ""
@@ -9609,6 +9612,9 @@ msgstr ""
 msgid "Image creation failed!"
 msgstr ""
 
+msgid "Image version"
+msgstr ""
+
 msgid "ImageWizard"
 msgstr "ImageWizard"
 
@@ -9732,6 +9738,9 @@ msgid "Include remote control data"
 msgstr "Távirányító típusának beállítása"
 
 msgid "Include screen load data"
+msgstr ""
+
+msgid "Include storage device data"
 msgstr ""
 
 msgid "Include teletext details"
@@ -9977,6 +9986,9 @@ msgstr "Belső"
 
 msgid "Internal Flash"
 msgstr "Belső Flash"
+
+msgid "Internal SSD"
+msgstr ""
 
 msgid "Internal USB"
 msgstr "Belső USB"
@@ -13179,7 +13191,7 @@ msgstr ""
 msgid "Perform the upgrade?"
 msgstr ""
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr "A kuka véglegesen kiüríthető?"
 
 msgid "Permanently ignore this device"
@@ -13370,6 +13382,9 @@ msgid "Play the selected service"
 msgstr ""
 
 msgid "Playback Settings"
+msgstr ""
+
+msgid "Playback Time:"
 msgstr ""
 
 msgid "Playback, Recording & Time Shift"
@@ -18207,6 +18222,9 @@ msgstr ""
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr "Az ismeretlen videofelbontása a következő magasabb vagy legmagasabb képernyőfelbontásként."
 
+msgid "Show unknown devices"
+msgstr ""
+
 msgid "Show unknown video format as"
 msgstr "Ismeretlen videó formátum megjelenítése"
 
@@ -19772,6 +19790,9 @@ msgstr ""
 
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
+msgstr ""
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
 msgstr ""
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
@@ -22425,7 +22446,7 @@ msgstr "Egy 4:3-as kép méretarányú tartalom szét lesz nyújtva a képernyő
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr "Ha engedélyezi, akkor a csatornaváltás közben, ha a csatornacsomag utolsó csatornájához értünk, ugorjon-e a következő csatornacsomagra, vagy sem."
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr "A törölt fájlok kukába kerüljenek, azonnali megsemmisítés helyett."
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -22443,7 +22464,7 @@ msgstr "Lehessen kilépni a lejátszóból az EXIT gomb megnyomásával."
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr "Ezzel a funkcióval a motor forgását az áramfelvétel mérésével lehet ellenőrizni (amennyiben a tuner támogatja)."
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr "Ha engedélyezve van, akkor a hálózati kuka is ürítésre kerül."
 
 msgid "When enabled, number markers will be hidden."
@@ -24152,6 +24173,22 @@ msgstr "igen (állapotok megtartása)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Channel List Menu"
+#~ msgstr "Csatornalista menü"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "Biztos benne, hogy törölni szeretne?"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "Biztos benne, hogy törölni szeretné: %s?"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "Biztos benne, hogy a kukába rakja?"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "Biztos benne, hogy végleg el szeretné távolítani a kukából?"
 
 #~ msgid "Bus: "
 #~ msgstr "Busz: "

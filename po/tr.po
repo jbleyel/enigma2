@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apachi70 (OpenATV),(Teamblue)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
 "PO-Revision-Date: 2024-08-04 16:47+0000\n"
 "Last-Translator: Tmp341 <tmp341@gmail.com>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/tr/>\n"
@@ -1718,19 +1718,22 @@ msgstr "AC3plus transcoding"
 msgid "AFL"
 msgstr "AFL"
 
-msgid "AI-Powered Translation color"
+msgid "AI Translation color"
 msgstr "Yapay zeka destekli tercüme rengi"
 
-msgid "AI-Powered Translation enabled"
+msgid "AI Translation enabled"
 msgstr "Yapay zeka destekli tercüme etkinleştirildi"
 
-msgid "AI-Powered Translation language"
+msgid "AI Translation language"
 msgstr "Yapay zeka destekli tercüme dili"
 
-msgid "AI-Powered Translation optimization"
+msgid "AI Translation mode"
 msgstr ""
 
-msgid "AI-Powered Translation subscription code"
+msgid "AI Translation optimization"
+msgstr ""
+
+msgid "AI Translation subscription code"
 msgstr "Yapay zeka destekli tercüme abonelik kodu"
 
 msgid "ARM"
@@ -1851,6 +1854,9 @@ msgstr "Yapılandırılmış ağ ayarlarını etkinleştirin."
 
 msgid "Activate the flash expander, save all changed settings and exit"
 msgstr "Flaş genişleticiyi etkinleştirin, değiştirilen tüm ayarları kaydedin ve çıkın"
+
+msgid "Activate this device"
+msgstr ""
 
 msgid "Activate time shift End"
 msgstr "Timeshift End'i etkinleştir"
@@ -2446,6 +2452,9 @@ msgid "Arabic"
 msgstr "Arapça"
 
 msgid "Arabic (Egyptian)"
+msgstr ""
+
+msgid "Arabic (Iraq)"
 msgstr ""
 
 msgid "Arabic (Moroccan)"
@@ -3653,6 +3662,9 @@ msgstr ""
 "TV yayınlayamayacağım!\n"
 "Canlı TV'ye geçin ve Timeshift'i yeniden başlatın?"
 
+msgid "Can't move to trashcan!"
+msgstr "Çöp sepetine taşınamadı"
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3785,9 +3797,6 @@ msgstr "%s sınırı belirlenemiyor ..., iptal ediliyor!"
 
 msgid "Cannot find any signal ..., aborting !"
 msgstr "Hiç sinyol bulunamadı..., durduruluyor!"
-
-msgid "Cannot move to trash can"
-msgstr "Çöp sepetine taşınamadı"
 
 msgid "Cape Verde"
 msgstr "Cape Verde"
@@ -3927,9 +3936,6 @@ msgstr "Kanal Bilgisi"
 
 msgid "Channel List"
 msgstr "Kanal Listesi"
-
-msgid "Channel List Menu"
-msgstr "Kanal listesi menüsü"
 
 #
 msgid "Channel Selection"
@@ -4781,7 +4787,7 @@ msgstr "Konumunuzun enlemini belirtin."
 msgid "Configure the longitude of your location."
 msgstr "Konumunuzun boylamını belirtin."
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr "Kayıt için kullanılacak asgari disk alanını belirtin. Alan miktarı bu değerin altına düşünce silinmiş öğeler çöp kutusundan kaldırılacak."
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4797,7 +4803,7 @@ msgstr "Ağ maskesini düzenleyin."
 msgid "Configure the network again"
 msgstr "Kablosuz ağınızı yeniden yapılandırın"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr "Öğelerin çöp kutusundan otomatik olarak kaldırıldığı günlerin sayısını yapılandırın."
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6375,11 +6381,6 @@ msgstr "Klasörler"
 msgid "Directory"
 msgstr "Klasör"
 
-#
-#, python-format
-msgid "Directory %s does not exist."
-msgstr "%s klasörü oluşturulmamış."
-
 #, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr "Bir dizinde yararlı bir şekilde '%s' çalıştıramazsınız!"
@@ -6603,17 +6604,10 @@ msgstr ""
 "Dosya sistemini dönüştürmek istiyor musunuz?\n"
 "Geri dönüşü yoktur!"
 
-#, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "%s silmek istiyor musunuz?"
-
 #
 #, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "%s 'i silmek istediğinizden emin misiniz?"
-
-msgid "Do you really want to delete ?"
-msgstr "Silmek istiyor musunuz?"
 
 #, python-format
 msgid ""
@@ -6644,29 +6638,27 @@ msgstr ""
 "Cihazı gerçekten Linux dosya sisteminde biçimlendirmek istiyor musunuz?\n"
 "Cihazdaki tüm veriler kaybolacaktır!"
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "Gerçekten çöp kutusuna gitmek mi istiyorsun?"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr ""
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "'%s' çöp sepetinden kalıcı olarak kaldırmak istiyor muzunuz?"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "Çöp sepetinden kalıcı olarak kaldırmak istiyor muzunuz?"
 
 #
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "%s klasörünü kaldırmak istiyor musunuz?"
 
+#
+#, python-format
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "%s adlı yer imini kaldırmak istiyor musunuz?"
+
 #, python-format
 msgid "Do you really want to remove the timer for %s?"
 msgstr "%s için zamanlayıcıyı gerçekten silmek istiyor musunuz?"
-
-#
-#, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "%s adlı yer imini kaldırmak istiyor musunuz?"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -7428,10 +7420,16 @@ msgstr "Hata ayıklama günlük dosyasına uzaktan kontrol verileri eklemek içi
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr "Hata ayıklama günlük dosyasına ekran adları ve çözünürlük verileri eklemek için bu seçeneği etkinleştirin."
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr ""
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Zamanlayıcı hata ayıklama verilerini hata ayıklama günlük dosyasına eklemek için bu seçeneği etkinleştirin."
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
+msgstr ""
+
+msgid "Enable this option to show unknown storage devices in device manager."
 msgstr ""
 
 msgid "Enable this setting if your aerial system needs power."
@@ -7892,6 +7890,11 @@ msgstr "Hata oluştu: '%s' dizini oluşturulamadı!"
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
 msgstr "Hata oluştu: Picon hedef dizini oluşturuluyor: (%s)"
+
+#
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
+msgstr "%s klasörü oluşturulmamış."
 
 #, python-format
 msgid "Error: Failed to run service scan!  (%s)"
@@ -8581,7 +8584,7 @@ msgstr "Dosya sistemi kontrolü"
 msgid "File System Packages"
 msgstr "Dosya Sistemi Paketleri"
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr "Dosya kullanımda.\n"
 
 msgid ""
@@ -9952,6 +9955,9 @@ msgstr "Image oluştur:"
 msgid "Image creation failed!"
 msgstr "Image oluşturma başarısız oldu!"
 
+msgid "Image version"
+msgstr ""
+
 msgid "ImageWizard"
 msgstr "Image Sihirbazı"
 
@@ -10074,6 +10080,9 @@ msgstr "Uzaktan kumanda verilerini dahil et"
 
 msgid "Include screen load data"
 msgstr "Ekran yükleme verilerini dahil et"
+
+msgid "Include storage device data"
+msgstr ""
 
 msgid "Include teletext details"
 msgstr ""
@@ -10338,6 +10347,9 @@ msgstr "İç"
 #
 msgid "Internal Flash"
 msgstr "Dahili flaş"
+
+msgid "Internal SSD"
+msgstr ""
 
 msgid "Internal USB"
 msgstr "Dahili USB"
@@ -13660,7 +13672,7 @@ msgstr "Bunun yerine bir çevrimiçi flaş gerçekleştirin"
 msgid "Perform the upgrade?"
 msgstr "Yükseltmeyi gerçekleştirelim mi?"
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr "Çöp sepetindeki tüm kayıtlar kalıcı olarak silinsin mi?"
 
 msgid "Permanently ignore this device"
@@ -13862,6 +13874,9 @@ msgstr "Seçilen servisi oynat"
 
 msgid "Playback Settings"
 msgstr "Oynatma Ayarları"
+
+msgid "Playback Time:"
+msgstr ""
 
 msgid "Playback, Recording & Time Shift"
 msgstr "Kayıtlar & Zaman Kaydırma"
@@ -18910,6 +18925,9 @@ msgstr "Dosya adlarında alt çizgi karakterlerini göster"
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr "Bilinmeyen Video çözünürlüğünü bir sonraki daha yüksek veya en yüksek ekran çözünürlüğünde göster."
 
+msgid "Show unknown devices"
+msgstr ""
+
 msgid "Show unknown video format as"
 msgstr "Bilinmeyen video biçimini olarak göster"
 
@@ -20548,6 +20566,9 @@ msgstr "%s kaydetme günlüğü hiçbir bilgi içermiyor."
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
 msgstr "'%s' dosyası alınamıyor, lütfen daha sonra tekrar deneyin."
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
+msgstr ""
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
 msgstr ""
@@ -23363,7 +23384,7 @@ msgstr "Etkinleşince 4:3 görüntü oranı ekranı dolduracak şekilde genişle
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr "Etkinleştirildiğinde, kanal değiştirilirken mevcut buketin son kanalına ulaşıldığında sonraki bukete devam edin."
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr "Etkinleşince, silinen kayıtlar hemen silinmek yerine çöp sepetine taşınır."
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -23381,7 +23402,7 @@ msgstr "Etkinleştirildiğinde, movieplayer'ı çıkışla bırakmak mümkündü
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr "Etkinleştirilince, (tuner destekliyorsa) rotor durduğunda güç tüketimi ölçülür."
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr "Etkinleştirildiğinde, ağ çöp kutularının temizlenmesi için problanır."
 
 msgid "When enabled, number markers will be hidden."
@@ -25208,6 +25229,22 @@ msgstr "evet (beslemeleri tut)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Channel List Menu"
+#~ msgstr "Kanal listesi menüsü"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "Silmek istiyor musunuz?"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "%s silmek istiyor musunuz?"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "Gerçekten çöp kutusuna gitmek mi istiyorsun?"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "Çöp sepetinden kalıcı olarak kaldırmak istiyor muzunuz?"
 
 #~ msgid "Bus: "
 #~ msgstr "Yol: "

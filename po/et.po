@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV-Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
 "PO-Revision-Date: 2022-12-04 20:43+0000\n"
 "Last-Translator: rimasx <riks_12@hot.ee>\n"
 "Language-Team: Estonian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/et/>\n"
@@ -1708,19 +1708,22 @@ msgstr "AC3+ transkodeerimine"
 msgid "AFL"
 msgstr "AFL"
 
-msgid "AI-Powered Translation color"
+msgid "AI Translation color"
 msgstr ""
 
-msgid "AI-Powered Translation enabled"
+msgid "AI Translation enabled"
 msgstr ""
 
-msgid "AI-Powered Translation language"
+msgid "AI Translation language"
 msgstr ""
 
-msgid "AI-Powered Translation optimization"
+msgid "AI Translation mode"
 msgstr ""
 
-msgid "AI-Powered Translation subscription code"
+msgid "AI Translation optimization"
+msgstr ""
+
+msgid "AI Translation subscription code"
 msgstr ""
 
 msgid "ARM"
@@ -1831,6 +1834,9 @@ msgid "Activate the configured network settings."
 msgstr "Jõusta määratud võrguseaded."
 
 msgid "Activate the flash expander, save all changed settings and exit"
+msgstr ""
+
+msgid "Activate this device"
 msgstr ""
 
 msgid "Activate time shift End"
@@ -2397,6 +2403,9 @@ msgid "Arabic"
 msgstr "Araabia"
 
 msgid "Arabic (Egyptian)"
+msgstr ""
+
+msgid "Arabic (Iraq)"
 msgstr ""
 
 msgid "Arabic (Moroccan)"
@@ -3572,6 +3581,9 @@ msgstr ""
 "Otsesaatele lülitumine ei ole võimalik!\n"
 "Kas lülituda otsesaatele ja taaskäivitada ajanihe?"
 
+msgid "Can't move to trashcan!"
+msgstr "Prügikasti saatmine ei ole võimalik"
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3704,9 +3716,6 @@ msgstr ""
 
 msgid "Cannot find any signal ..., aborting !"
 msgstr "Mingit signaali ei leita, katkestame!"
-
-msgid "Cannot move to trash can"
-msgstr "Prügikasti saatmine ei ole võimalik"
 
 #, fuzzy
 msgid "Cape Verde"
@@ -3841,10 +3850,6 @@ msgstr "Kanaliinfo"
 
 msgid "Channel List"
 msgstr "Kanalinimekiri"
-
-#
-msgid "Channel List Menu"
-msgstr "Kanalinimekirja menüü"
 
 msgid "Channel Selection"
 msgstr "Kanalivalik"
@@ -4675,7 +4680,7 @@ msgstr "Määra oma asukoha laiuskraad."
 msgid "Configure the longitude of your location."
 msgstr "Määra oma asukoha pikkuskraad."
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr "Määra väikseim kettaruum (GB), mis peab olema vaba enne salvestuse algamist. Selleks kustutatakse vajadusel faile prügikastist."
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4690,7 +4695,7 @@ msgstr "Seadista võrgumask."
 msgid "Configure the network again"
 msgstr "Seadista võrk uuesti"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr "Määra päevade arv, pärast mida salvestised kustutatakse automaatselt prügikastist."
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6238,10 +6243,6 @@ msgid "Directory"
 msgstr "Kataloog"
 
 #, python-format
-msgid "Directory %s does not exist."
-msgstr "Kataloogi %s ei eksisteeri."
-
-#, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr ""
 
@@ -6459,15 +6460,8 @@ msgstr ""
 "Seda ei saa tagasi pöörata!"
 
 #, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "Kas kustutada %s?"
-
-#, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "Kas kustutada %s?"
-
-msgid "Do you really want to delete ?"
-msgstr "Kas kustutada?"
 
 #, python-format
 msgid ""
@@ -6491,27 +6485,25 @@ msgid ""
 "All data on the device will be lost!"
 msgstr ""
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "Kas liigutada prügikasti?"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr ""
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "Kas eemaldada %s lõplikult prügikastist?"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "Kas kustutada lõplikult prügikastist?"
 
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "Kas kustutada kataloog %s kõvakettalt?"
 
 #, python-format
-msgid "Do you really want to remove the timer for %s?"
-msgstr "Kas eemaldada \"%s\" taimer?"
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "Kas kustutada %s järjehoidja?"
 
 #, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "Kas kustutada %s järjehoidja?"
+msgid "Do you really want to remove the timer for %s?"
+msgstr "Kas eemaldada \"%s\" taimer?"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -7256,10 +7248,16 @@ msgstr ""
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr ""
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr ""
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr ""
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
+msgstr ""
+
+msgid "Enable this option to show unknown storage devices in device manager."
 msgstr ""
 
 msgid "Enable this setting if your aerial system needs power."
@@ -7705,6 +7703,10 @@ msgstr "Kataloogi %s loomine nurjus."
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
 msgstr ""
+
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
+msgstr "Kataloogi %s ei eksisteeri."
 
 #, python-format
 msgid "Error: Failed to run service scan!  (%s)"
@@ -8366,7 +8368,7 @@ msgstr "Failisüsteemi kontroll"
 msgid "File System Packages"
 msgstr ""
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr "Fail on hõivatud.\n"
 
 msgid ""
@@ -9716,6 +9718,9 @@ msgstr ""
 msgid "Image creation failed!"
 msgstr ""
 
+msgid "Image version"
+msgstr ""
+
 #
 msgid "ImageWizard"
 msgstr "Püsivara abiline"
@@ -9838,6 +9843,9 @@ msgid "Include remote control data"
 msgstr "Määra puldi tüüp"
 
 msgid "Include screen load data"
+msgstr ""
+
+msgid "Include storage device data"
 msgstr ""
 
 msgid "Include teletext details"
@@ -10088,6 +10096,9 @@ msgstr "Sisemine"
 
 msgid "Internal Flash"
 msgstr "Sisemälu"
+
+msgid "Internal SSD"
+msgstr ""
 
 msgid "Internal USB"
 msgstr "Sisemine USB pesa"
@@ -13383,7 +13394,7 @@ msgstr ""
 msgid "Perform the upgrade?"
 msgstr ""
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr "Kas kustutada lõplikult kõik failid prügikastist?"
 
 msgid "Permanently ignore this device"
@@ -13580,6 +13591,9 @@ msgid "Play the selected service"
 msgstr ""
 
 msgid "Playback Settings"
+msgstr ""
+
+msgid "Playback Time:"
 msgstr ""
 
 msgid "Playback, Recording & Time Shift"
@@ -18511,6 +18525,9 @@ msgstr ""
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr "Kuva tundmatu videolahutus kõrguselt järgmise või kõrgeima lahutusena."
 
+msgid "Show unknown devices"
+msgstr ""
+
 msgid "Show unknown video format as"
 msgstr "Tundmatu videovormingu kuvamine"
 
@@ -20099,6 +20116,9 @@ msgstr ""
 
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
+msgstr ""
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
 msgstr ""
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
@@ -22825,7 +22845,7 @@ msgstr "Kui lubatud, venitatakse 4:3 sisuga pilti täitmaks kogu ekraani."
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr "Kui lubatud, liigutakse kanalivahetusel käesoleva lemmiknimekirja lõppu jõudes järgmisesse lemmiknimekirja."
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr "Kui lubatud, ei kustutata salvestisi silmapilkselt, vaid liigutatakse prügikasti."
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -22844,7 +22864,7 @@ msgstr "Kui lubatud, saab lõpetada taasesituse EXIT nupuga."
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr "Kui lubatud, mõõdetakse energia kulu, tuvastamaks ajami pööramise lõppemist (kui vastuvõtja seda toetab)."
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr "Kui lubatud, uuritakse kustutamisel ka võrgukettaid."
 
 msgid "When enabled, number markers will be hidden."
@@ -24588,6 +24608,23 @@ msgstr "Jah (säilita fiidid)"
 
 msgid "®"
 msgstr ""
+
+#
+#~ msgid "Channel List Menu"
+#~ msgstr "Kanalinimekirja menüü"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "Kas kustutada?"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "Kas kustutada %s?"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "Kas liigutada prügikasti?"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "Kas kustutada lõplikult prügikastist?"
 
 #~ msgid "Bus: "
 #~ msgstr "Siin: "

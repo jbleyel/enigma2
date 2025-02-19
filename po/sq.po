@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-07 09:29+0000\n"
+"POT-Creation-Date: 2025-02-11 08:26+0000\n"
 "PO-Revision-Date: 2023-12-11 00:50+0000\n"
 "Last-Translator: W L <wl@mailhole.de>\n"
 "Language-Team: Albanian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/sq/>\n"
@@ -1702,19 +1702,22 @@ msgstr "Transkodimi AC3plus"
 msgid "AFL"
 msgstr "AFL"
 
-msgid "AI-Powered Translation color"
+msgid "AI Translation color"
 msgstr ""
 
-msgid "AI-Powered Translation enabled"
+msgid "AI Translation enabled"
 msgstr ""
 
-msgid "AI-Powered Translation language"
+msgid "AI Translation language"
 msgstr ""
 
-msgid "AI-Powered Translation optimization"
+msgid "AI Translation mode"
 msgstr ""
 
-msgid "AI-Powered Translation subscription code"
+msgid "AI Translation optimization"
+msgstr ""
+
+msgid "AI Translation subscription code"
 msgstr ""
 
 msgid "ARM"
@@ -1823,6 +1826,9 @@ msgid "Activate the configured network settings."
 msgstr "Aktivizo rregullimet e rrjetit të konfiguruar."
 
 msgid "Activate the flash expander, save all changed settings and exit"
+msgstr ""
+
+msgid "Activate this device"
 msgstr ""
 
 msgid "Activate time shift End"
@@ -2381,6 +2387,9 @@ msgid "Arabic"
 msgstr "Arabisht"
 
 msgid "Arabic (Egyptian)"
+msgstr ""
+
+msgid "Arabic (Iraq)"
 msgstr ""
 
 msgid "Arabic (Moroccan)"
@@ -3540,6 +3549,9 @@ msgstr ""
 "Nuk mund të shkoj në TV drejtpërdrejt!\n"
 "Kaloni në TV drejtpërdrejt dhe rinisni Timeshift?"
 
+msgid "Can't move to trashcan!"
+msgstr "Nuk mund të zhvendoset në koshin e plehrave"
+
 msgid ""
 "Can't play the next time shift file!\n"
 "Switch to live TV and restart time shift ?"
@@ -3665,9 +3677,6 @@ msgstr "Nuk mund të përcaktojë kufirin %s ..., duke abortuar!"
 
 msgid "Cannot find any signal ..., aborting !"
 msgstr "Nuk mund të gjej asnjë sinjal ..., aborti!"
-
-msgid "Cannot move to trash can"
-msgstr "Nuk mund të zhvendoset në koshin e plehrave"
 
 msgid "Cape Verde"
 msgstr "Kepi Verde"
@@ -3800,9 +3809,6 @@ msgstr "Informacioni i kanalit"
 
 msgid "Channel List"
 msgstr "Lista e kanaleve"
-
-msgid "Channel List Menu"
-msgstr "Menuja e listës së kanaleve"
 
 msgid "Channel Selection"
 msgstr "Zgjedhja e kanalit"
@@ -4616,7 +4622,7 @@ msgstr "Konfiguro gjerësinë e vendndodhjes suaj."
 msgid "Configure the longitude of your location."
 msgstr "Konfiguro gjatësinë e vendndodhjes suaj."
 
-msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trash can."
+msgid "Configure the minimum amount of disk space to be available for recordings. When the amount of space drops below this value, deleted items will be removed from the trashcan."
 msgstr "Konfiguro sasinë minimale të hapësirës në disk që të jetë e disponueshme për regjistrime. Kur sasia e hapësirës bie nën këtë vlerë, artikujt e fshirë do të hiqen nga koshi i plehrave."
 
 msgid "Configure the minimum width before showing the 'i' icon, '0' is equal to not showing the icon at all."
@@ -4631,7 +4637,7 @@ msgstr "Konfiguro maskën e rrjetit."
 msgid "Configure the network again"
 msgstr "Konfiguro sërish rrjetin"
 
-msgid "Configure the number of days after which items are automatically removed from the trash can."
+msgid "Configure the number of days after which items are automatically removed from the trashcan."
 msgstr "Konfiguro numrin e ditëve pas të cilave artikujt hiqen automatikisht nga koshi i plehrave."
 
 msgid "Configure the number of days old timers are kept before they are automatically removed from the timer list."
@@ -6143,10 +6149,6 @@ msgid "Directory"
 msgstr "Drejtoria"
 
 #, python-format
-msgid "Directory %s does not exist."
-msgstr "Drejtoria %s nuk ekziston."
-
-#, python-format
 msgid "Directory '%s' can't be linked to recordings!"
 msgstr "Drejtoria '%s' nuk mund të lidhet me regjistrimet!"
 
@@ -6358,15 +6360,8 @@ msgstr ""
 "Ju nuk mund të ktheheni!"
 
 #, python-format
-msgid "Do you really want to delete %s ?"
-msgstr "Dëshiron vërtet të fshish %s?"
-
-#, python-format
 msgid "Do you really want to delete '%s'?"
 msgstr "Dëshiron vërtet të fshish %s?"
-
-msgid "Do you really want to delete ?"
-msgstr "Dëshiron vërtet të fshish?"
 
 #, python-format
 msgid ""
@@ -6394,27 +6389,25 @@ msgid ""
 "All data on the device will be lost!"
 msgstr ""
 
-msgid "Do you really want to move to trashcan ?"
-msgstr "Dëshiron vërtet të zhvendosesh në koshin e plehrave?"
+#, python-format
+msgid "Do you really want to move '%s' to the trashcan?"
+msgstr ""
 
 #, python-format
-msgid "Do you really want to permanently remove '%s' from trash can ?"
+msgid "Do you really want to permanently remove '%s' from the trashcan?"
 msgstr "Dëshiron vërtet të heqësh përgjithmonë '%s' nga koshi i plehrave?"
-
-msgid "Do you really want to permanently remove from trash can ?"
-msgstr "Dëshiron vërtet ta heqësh përgjithmonë nga koshi i plehrave?"
 
 #, python-format
 msgid "Do you really want to remove directory '%s' from the disk?"
 msgstr "Dëshiron vërtet të heqësh directory %s nga disku?"
 
 #, python-format
-msgid "Do you really want to remove the timer for %s?"
-msgstr "Dëshiron vërtet të heqësh kohëmatësin për %s?"
+msgid "Do you really want to remove the bookmark for '%s'?"
+msgstr "Dëshiron vërtet të heqësh faqeshënuesin tënd të %s?"
 
 #, python-format
-msgid "Do you really want to remove your bookmark for '%s'?"
-msgstr "Dëshiron vërtet të heqësh faqeshënuesin tënd të %s?"
+msgid "Do you really want to remove the timer for %s?"
+msgstr "Dëshiron vërtet të heqësh kohëmatësin për %s?"
 
 msgid ""
 "Do you really want to restart OSCam?\n"
@@ -7138,10 +7131,16 @@ msgstr "Aktivizo këtë opsion për të shtuar të dhënat e telekomandës në s
 msgid "Enable this option to add screen names and resolution data to the debug log file."
 msgstr "Aktivizoni këtë opsion për të shtuar emrat e ekranit dhe të dhënat e rezolucionit në skedarin e regjistrit të korrigjimit."
 
+msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr ""
+
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr ""
 
 msgid "Enable this option to show all the available Information screens in the Information menu item list."
+msgstr ""
+
+msgid "Enable this option to show unknown storage devices in device manager."
 msgstr ""
 
 msgid "Enable this setting if your aerial system needs power."
@@ -7581,6 +7580,10 @@ msgstr "Krijimi i drejtorisë %s dështoi."
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
 msgstr ""
+
+#, python-format
+msgid "Error: Directory '%s' does not exist!"
+msgstr "Drejtoria %s nuk ekziston."
 
 #, python-format
 msgid "Error: Failed to run service scan!  (%s)"
@@ -8236,7 +8239,7 @@ msgstr "Kontrolli i sistemit të skedarëve"
 msgid "File System Packages"
 msgstr ""
 
-msgid "File appears to be busy.\n"
+msgid "File appears to be busy!\n"
 msgstr "Skedari duket se është i zënë.\n"
 
 msgid ""
@@ -9544,6 +9547,9 @@ msgstr ""
 msgid "Image creation failed!"
 msgstr ""
 
+msgid "Image version"
+msgstr ""
+
 msgid "ImageWizard"
 msgstr "ImageWizard"
 
@@ -9663,6 +9669,9 @@ msgid "Include remote control data"
 msgstr ""
 
 msgid "Include screen load data"
+msgstr ""
+
+msgid "Include storage device data"
 msgstr ""
 
 msgid "Include teletext details"
@@ -9904,6 +9913,9 @@ msgid "Internal"
 msgstr "Internale"
 
 msgid "Internal Flash"
+msgstr ""
+
+msgid "Internal SSD"
 msgstr ""
 
 msgid "Internal USB"
@@ -13017,7 +13029,7 @@ msgstr ""
 msgid "Perform the upgrade?"
 msgstr ""
 
-msgid "Permanently delete all recordings in the trash can?"
+msgid "Permanently delete all recordings in the trashcan?"
 msgstr ""
 
 msgid "Permanently ignore this device"
@@ -13206,6 +13218,9 @@ msgid "Play the selected service"
 msgstr ""
 
 msgid "Playback Settings"
+msgstr ""
+
+msgid "Playback Time:"
 msgstr ""
 
 msgid "Playback, Recording & Time Shift"
@@ -17983,6 +17998,9 @@ msgstr ""
 msgid "Show unknown Videoresolution as next higher or as highest screen resolution."
 msgstr ""
 
+msgid "Show unknown devices"
+msgstr ""
+
 msgid "Show unknown video format as"
 msgstr ""
 
@@ -19519,6 +19537,9 @@ msgstr "Regjistri i kryerjes së %s nuk përmban asnjë informacion."
 
 #, python-format
 msgid "The '%s' file can't be retrieved, please try again later."
+msgstr ""
+
+msgid "The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language."
 msgstr ""
 
 msgid "The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected."
@@ -22130,7 +22151,7 @@ msgstr "Kur aktivizohet, përmbajtja me një raport pamjeje 4:3 do të shtrihet 
 msgid "When enabled, continue to the next bouquet when the last channel of the current bouquet is reached while changing channels."
 msgstr "Kur aktivizohet, vazhdoni te buqeta tjetër kur të arrihet kanali i fundit i buqetës aktuale gjatë ndërrimit të kanaleve."
 
-msgid "When enabled, deleted recordings are moved to the trash can, instead of being deleted immediately."
+msgid "When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately."
 msgstr "Kur aktivizohet, regjistrimet e fshira zhvendosen në koshin e plehrave, në vend që të fshihen menjëherë."
 
 msgid "When enabled, external subtitles will be always turned on for playback movie."
@@ -22148,7 +22169,7 @@ msgstr "Kur aktivizohet, është e mundur të lini luajtësin e filmit me dalje.
 msgid "When enabled, measure power consumption to detect when the rotor stops turning (when supported by the tuner)."
 msgstr "Kur aktivizohet, matni konsumin e energjisë për të zbuluar kur rotori ndalon së rrotulluari (kur mbështetet nga sintonizuesi)."
 
-msgid "When enabled, network trash cans are probed for cleaning."
+msgid "When enabled, network trashcans are probed for cleaning."
 msgstr "Kur aktivizohet, koshi i plehrave në rrjet hetohen për pastrim."
 
 msgid "When enabled, number markers will be hidden."
@@ -23844,6 +23865,22 @@ msgstr "Po (mbani ushqim)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Channel List Menu"
+#~ msgstr "Menuja e listës së kanaleve"
+
+#~ msgid "Do you really want to delete?"
+#~ msgstr "Dëshiron vërtet të fshish?"
+
+#, python-format
+#~ msgid "Do you really want to delete %s ?"
+#~ msgstr "Dëshiron vërtet të fshish %s?"
+
+#~ msgid "Do you really want to move to trashcan ?"
+#~ msgstr "Dëshiron vërtet të zhvendosesh në koshin e plehrave?"
+
+#~ msgid "Do you really want to permanently remove from trash can ?"
+#~ msgstr "Dëshiron vërtet ta heqësh përgjithmonë nga koshi i plehrave?"
 
 #~ msgid "Bus: "
 #~ msgstr "Autobusi: "
