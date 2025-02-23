@@ -106,13 +106,13 @@ void resetBsodCounter()
 
 bool bsodRestart()
 {
-	return bsodrestart;
+	return bsodrestart; //unused
 }
 void bsodFatal(const char *component)
 {
 	//handle python crashes	
 	bool bsodpython = (eConfigManager::getConfigBoolValue("config.crash.bsodpython", false) && eConfigManager::getConfigBoolValue("config.crash.bsodpython_ready", false));
-	//hide bs after x bs counts and no more write crash log	-> setting values 0-10 (always write the first crashlog)
+	//hide bs after x bs counts and no more write crash log	-> setting values 0-10 (always write the first and last crashlog)
 	int bsodhide = eConfigManager::getConfigIntValue("config.crash.bsodhide", 5);
 	//restart after x bs counts -> setting values 0-10 (0 = never restart)
 	int bsodmax = eConfigManager::getConfigIntValue("config.crash.bsodmax", 5);
@@ -148,8 +148,13 @@ void bsodFatal(const char *component)
 	const char* logp2 = NULL;
 	unsigned int logs2 = 0;
 	retrieveLogBuffer(&logp1, &logs1, &logp2, &logs2);
-    std::vector<char> logt1(logp1, logp1 + logs1);
-    std::vector<char> logt2(logp2, logp2 + logs2);
+	/* We need a copy to clearRingBuffer */
+	char logb1[logs1+1];
+	char logb2[logs2+1];
+	memcpy(logb1, logp1, logs1);
+	memcpy(logb2, logp2, logs2);
+	logp1 = logb1;
+	logp2 = logb2;
 
 	FILE *f;
 	std::string crashlog_name;
@@ -233,10 +238,10 @@ void bsodFatal(const char *component)
 
 		/* dump the log ringbuffer */
 		fprintf(f, "\n\n");
-		if (!logt1.empty())
-			fwrite(logt1.data(), 1, logs1, f);
-		if (!logt2.empty())
-			fwrite(logt2.data(), 1, logs2, f);
+		if (logp1)
+			fwrite(logp1, 1, logs1, f);
+		if (logp2)
+			fwrite(logp2, 1, logs2, f);
 
 		/* dump the kernel log */
 		getKlog(f);
@@ -303,13 +308,13 @@ void bsodFatal(const char *component)
 	std::string logtail;
 	int lines = 20;
 	
-	if (!logt2.empty())
+	if (logp2)
 	{
 		unsigned int size = logs2;
 		while (size) {
-			const char* r = (const char*)memrchr(logt2.data(), '\n', size);
+			const char* r = (const char*)memrchr(logp2, '\n', size);
 			if (r) {
-				size = r - logt2.data();
+				size = r - logp2;
 				--lines;
 				if (!lines) {
 					logtail = std::string(r, logs2 - size);
@@ -317,27 +322,27 @@ void bsodFatal(const char *component)
 				} 
 			}
 			else {
-				logtail = std::string(logt2.data(), logs2);
+				logtail = std::string(logp2, logs2);
 				break;
 			}
 		}
 	}
 
-	if (lines && !logt1.empty())
+	if (lines && logp1)
 	{
 		unsigned int size = logs1;
 		while (size) {
-			const char* r = (const char*)memrchr(logt1.data(), '\n', size);
+			const char* r = (const char*)memrchr(logp1, '\n', size);
 			if (r) {
 				--lines;
-				size = r - logt1.data();
+				size = r - logp1;
 				if (!lines) {
 					logtail += std::string(r, logs1 - size);
 					break;
 				} 
 			}
 			else {
-				logtail += std::string(logt1.data(), logs1);
+				logtail += std::string(logp1, logs1);
 				break;
 			}
 		}

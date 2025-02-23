@@ -519,7 +519,7 @@
 		<item level="2" text="Enable GStreamer pipeline graphs *" description="Allows you to enable the GStreamer pipeline graphs. These are .dot files that describe the topology of your pipeline, along with the caps negotiated in each link.">config.crash.gstdot</item>
 		<item level="2" text="Enable core dumps *" description="Core dumps are helpful for developers in case of a FATAL SIGNAL crash in the C++ code. Typical core dump size is 110 MB so adjust maximum space used and choose proper location.">config.crash.coredump</item>
 	</setup>
-	<setup key="MovieSelection" title="Movie List Settings" showOpenWebif="1">
+	<setup key="MovieSelection" title="Movie Selection Settings" showOpenWebif="1">
 		<item level="0" text="Use 'Trash' in movie list" description="When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately.">config.usage.movielist_trashcan</item>
 		<item level="0" text="Purge 'Trash' after (days)" description="Configure the number of days after which items are automatically removed from the trashcan.">config.usage.movielist_trashcan_days</item>
 		<item level="0" text="Clean network 'Trash'" description="When enabled, network trashcans are probed for cleaning.">config.usage.movielist_trashcan_network_clean</item>
@@ -1015,6 +1015,7 @@
 		<item level="2" text="Screen saver movement" description="Select how long the screen saver image will stay in the same location on the screen before it will be moved." conditional="config.usage.screenSaverStartTimer.value">config.usage.screenSaverMoveTimer</item>
 		<item level="2" text="Show all Information screens" description="Enable this option to show all the available Information screens in the Information menu item list.">config.usage.informationShowAllMenuScreens</item>
 		<item level="2" text="Show extra spacing in Information" description="Enable to add some extra spacing to the Information screens. This can improve readability.">config.usage.informationExtraSpacing</item>
+		<item level="0" text="Show Movie Selection in Main Menu" description="Select 'Yes' to show the 'Movie Selection' entry in the Main Menu. This can provide access to the Movie Selection screen when there is no assigned button on the remote control." restart="gui">config.usage.movieSelectionInMenu</item>
 		<item level="0" text="1st InfoBar timeout" description="Set the time to hide the infobar.">config.usage.infobar_timeout</item>
 		<item level="0" text="2nd InfoBar" description="Enable and set the duration of the second InfoBar (press 'OK' twice) that may include additional information.">config.usage.show_second_infobar</item>
 		<item level="0" text="2nd InfoBar timeout" description="Set the time to hide the second infobar. The bar also disappears on pressing 'OK'.">config.usage.second_infobar_timeout</item>

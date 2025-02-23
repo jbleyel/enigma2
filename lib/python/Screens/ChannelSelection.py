@@ -42,6 +42,7 @@ from Screens.PictureInPicture import PictureInPicture
 from Screens.RdsDisplay import RassInteractive
 from Screens.Screen import Screen
 from Screens.Setup import Setup
+import Screens.Standby
 from Screens.TimerEdit import TimerSanityConflict
 from Screens.TimerEntry import InstantRecordTimerEntry, TimerEntry
 from Screens.VirtualKeyBoard import VirtualKeyboard
@@ -220,7 +221,6 @@ class ChannelSelectionBase(Screen):
 		self.baseTitle = _("Channel Selection")
 		self.function = EDIT_OFF
 		self.getBouquetMode()
-		self.subservicesBouquet = subservices_tv_ref
 		self.instanceInfoBarSubserviceSelection = None
 		self.onLayoutFinish.append(self.layoutFinished)
 		self.onShown.append(self.applyKeyMap)
@@ -530,7 +530,7 @@ class ChannelSelectionBase(Screen):
 							ref.setName(_("Current transponder"))
 							self.servicelist.addService(ref, beforeCurrent=True)
 							if self.getSubservices():  # Add subservices selection if available.
-								ref = eServiceReference(self.subservicesBouquet)
+								ref = eServiceReference(subservices_tv_ref)
 								ref.setName(self.getServiceName(ref))
 								self.servicelist.addService(ref, beforeCurrent=True)
 						for (service_name, service_ref) in addCableAndTerrestrialLater:
@@ -691,7 +691,7 @@ class ChannelSelectionBase(Screen):
 	def getBouquetList(self):
 		bouquets = []
 		if self.isSubservices():
-			bouquets.append((self.getServiceName(self.subservicesBouquet), self.subservicesBouquet))
+			bouquets.append((self.getServiceName(subservices_tv_ref), subservices_tv_ref))
 		serviceHandler = eServiceCenter.getInstance()
 		if config.usage.multibouquet.value:
 			list = serviceHandler.list(self.bouquet_root)
@@ -754,7 +754,7 @@ class ChannelSelectionBase(Screen):
 		subservices = subservices or self.getSubservices(service)
 		if subservices:
 			self.clearPath()
-			self.enterPath(self.subservicesBouquet)
+			self.enterPath(subservices_tv_ref)
 			self.fillVirtualSubservices(service, subservices)
 
 	def getSubservices(self, service=None):
@@ -782,10 +782,7 @@ class ChannelSelectionBase(Screen):
 		self.setCurrentSelection(service or self.session.nav.getCurrentlyPlayingServiceReference())
 
 	def isSubservices(self, path=None):
-		if not path:  # Current
-			path = self.getRoot()
-		if path:
-			return self.subservicesBouquet.getPath() == path.getPath()
+		return subservices_tv_ref == (path or self.getRoot())
 
 	def getMutableList(self, root=eServiceReference()):  # Override for subservices
 		# ChannelContextMenu.inBouquet = True --> Wrong menu
@@ -2378,12 +2375,8 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 			iPlayableService.evStart: self.__evServiceStart,
 			iPlayableService.evEnd: self.__evServiceEnd
 		})
-		try:
-			if ChannelSelection.instance:
-				raise AssertionError("[ChannelSelection] Class InfoBar is a singleton class and just one instance of this class is allowed!")
-		except Exception:
-			pass
-		ChannelSelection.instance = self
+		if not ChannelSelection.instance: # Use only the first instance of ChannelSelection
+			ChannelSelection.instance = self
 		self.startServiceRef = None
 		self.history_tv = []
 		self.history_radio = []
@@ -2495,8 +2488,22 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 				self.setModeRadio()
 		else:
 			self.setModeTv()
+
+		if self != ChannelSelection.instance: # Handle last service only for the first instance.
+			return
+
+		standbyScreen = None
+		if Screens.Standby.inStandby:  # Find Standby screen if already inStandby.
+			for screen in self.session.allDialogs:
+				if screen.__class__.__name__ == "Standby":
+					standbyScreen = screen
+					break
+
 		lastservice = eServiceReference(self.lastservice.value)
 		if lastservice.valid():
+			if standbyScreen:
+				standbyScreen.prev_running_service = lastservice # Save the last service in Standby screen.
+				return
 			if self.isSubservices():
 				self.zap(ref=lastservice)
 				self.enterSubservices()
@@ -3502,6 +3509,7 @@ class ChannelSelectionSetup(Setup):
 				for index, dialog in enumerate(session.dialog_stack):
 					if isinstance(dialog[0], ChannelSelection):
 						oldDialogIndex = (index, dialog[1])
+				ChannelSelection.instance = None
 				InfoBarInstance.servicelist = session.instantiateDialog(ChannelSelection)
 				InfoBarInstance.servicelist.summaries = oldSummarys
 				InfoBarInstance.servicelist.isTmp = False
