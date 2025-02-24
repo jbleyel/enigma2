@@ -22,11 +22,11 @@
 void retrieveLogBuffer(const char **p1, unsigned int *s1, const char **p2, unsigned int *s2);
 void clearRingBuffer();
 
-static const std::string getConfigString(const char *key, const char *defaultValue)
+static const std::string getConfigString(const char* key, const char* defaultValue)
 {
 	std::string value = eConfigManager::getConfigValue(key);
 
-	// we get at least the default value if python is still alive
+	//we get at least the default value if python is still alive
 	if (!value.empty())
 		return value;
 
@@ -34,7 +34,7 @@ static const std::string getConfigString(const char *key, const char *defaultVal
 }
 
 /* get the kernel log aka dmesg */
-static void getKlog(FILE *f)
+static void getKlog(FILE* f)
 {
 	fprintf(f, "\n\ndmesg\n\n");
 
@@ -44,7 +44,7 @@ static void getKlog(FILE *f)
 		fprintf(f, "Error reading klog %d - %m\n", errno);
 		return;
 	}
-	else if (len == 0)
+	else if(len == 0)
 	{
 		return;
 	}
@@ -62,12 +62,11 @@ static void getKlog(FILE *f)
 	fprintf(f, "%s\n", &buf[0]);
 }
 
-static void stringFromFile(FILE *f, const char *context, const char *filename)
+static void stringFromFile(FILE* f, const char* context, const char* filename)
 {
 	std::ifstream in(filename);
 
-	if (in.good())
-	{
+	if (in.good()) {
 		std::string line;
 		std::getline(in, line);
 		fprintf(f, "%s=%s\n", context, line.c_str());
@@ -75,23 +74,24 @@ static void stringFromFile(FILE *f, const char *context, const char *filename)
 	}
 }
 
-static void dumpFile(FILE *f, const char *filename)
+static void dumpFile(FILE* f, const char* filename)
 {
 	std::ifstream in(filename);
-	if (in.good())
-	{
+	if (in.good()) {
 		do
 		{
 			std::string line;
 			std::getline(in, line);
 			fprintf(f, "%s\n", line.c_str());
-		} while (in.good());
+		}
+		while (in.good());
 		in.close();
 	}
 }
 
+
 static bool bsodhandled = false;
-static bool bsodrestart = true;
+static bool bsodrestart =  true;
 static int bsodcnt = 0;
 
 int getBsodCounter()
@@ -106,35 +106,23 @@ void resetBsodCounter()
 
 bool bsodRestart()
 {
-	return bsodrestart; // unused
+	return bsodrestart; //unused
 }
-/**
- * @brief Handles fatal errors and crashes, generating a crash log and optionally restarting the system.
- *
- * This function is called when a fatal error or crash occurs. It handles the following tasks:
- * - Determines if the crash is related to Python and whether to handle it specially.
- * - Manages crash count and decides whether to hide the blue screen of death (BSOD) after a certain number of crashes.
- * - Generates a crash log file with detailed information about the crash.
- * - Displays a BSOD message on the screen.
- * - Optionally restarts the system or raises a signal to terminate the process.
- *
- * @param component A string representing the component that caused the crash. If NULL, it indicates a Python exception.
- */
 void bsodFatal(const char *component)
 {
-	// handle python crashes
+	//handle python crashes	
 	bool bsodpython = (eConfigManager::getConfigBoolValue("config.crash.bsodpython", false) && eConfigManager::getConfigBoolValue("config.crash.bsodpython_ready", false));
-	// hide bs after x bs counts and no more write crash log	-> setting values 0-10 (always write the first and last crashlog)
+	//hide bs after x bs counts and no more write crash log	-> setting values 0-10 (always write the first and last crashlog)
 	int bsodhide = eConfigManager::getConfigIntValue("config.crash.bsodhide", 5);
-	// restart after x bs counts -> setting values 0-10 (0 = never restart)
+	//restart after x bs counts -> setting values 0-10 (0 = never restart)
 	int bsodmax = eConfigManager::getConfigIntValue("config.crash.bsodmax", 5);
-	// force restart after max crashes
+	//force restart after max crashes
 	int bsodmaxmax = 100;
 
 	bsodcnt++;
 	if ((bsodmax && bsodcnt > bsodmax) || component || bsodcnt > bsodmaxmax)
 		bsodpython = false;
-	if (bsodpython && bsodcnt - 1 && bsodcnt > bsodhide && (!bsodmax || bsodcnt < bsodmax) && bsodcnt < bsodmaxmax)
+	if (bsodpython && bsodcnt-1 && bsodcnt > bsodhide && (!bsodmax || bsodcnt < bsodmax) && bsodcnt < bsodmaxmax)
 	{
 		sleep(1);
 		return;
@@ -142,10 +130,8 @@ void bsodFatal(const char *component)
 	bsodrestart = true;
 
 	/* show no more than one bsod while shutting down/crashing */
-	if (bsodhandled)
-	{
-		if (component)
-		{
+	if (bsodhandled) {
+		if (component) {
 			sleep(1);
 			raise(SIGKILL);
 		}
@@ -157,14 +143,14 @@ void bsodFatal(const char *component)
 		component = "Enigma2";
 
 	/* Retrieve current ringbuffer state */
-	const char *logp1 = NULL;
+	const char* logp1 = NULL;
 	unsigned int logs1 = 0;
-	const char *logp2 = NULL;
+	const char* logp2 = NULL;
 	unsigned int logs2 = 0;
 	retrieveLogBuffer(&logp1, &logs1, &logp2, &logs2);
 	/* We need a copy to clearRingBuffer */
-	char logb1[logs1 + 1];
-	char logb2[logs2 + 1];
+	char logb1[logs1+1];
+	char logb2[logs2+1];
 	memcpy(logb1, logp1, logs1);
 	memcpy(logb2, logp2, logs2);
 	logp1 = logb1;
@@ -179,7 +165,7 @@ void bsodFatal(const char *component)
 	time_t now_time = time(0);
 	struct tm loctime = {};
 	localtime_r(&now_time, &loctime);
-	strftime(dated, 21, "%Y%m%d-%H%M%S", &loctime);
+	strftime (dated, 21, "%Y%m%d-%H%M%S", &loctime);
 
 	os << getConfigString("config.crash.debug_path", "/home/root/logs/");
 	os << dated;
@@ -195,7 +181,7 @@ void bsodFatal(const char *component)
 		 * crash log is the most interesting one. */
 		crashlog_name = "/home/root/logs/enigma2_crash.log";
 		if ((access(crashlog_name.c_str(), F_OK) == 0) ||
-			((f = fopen(crashlog_name.c_str(), "wb")) == NULL))
+		    ((f = fopen(crashlog_name.c_str(), "wb")) == NULL))
 		{
 			/* Re-write the same file in /tmp/ because it's expected to
 			 * be in RAM. So the first crash log will end up in /home
@@ -215,31 +201,32 @@ void bsodFatal(const char *component)
 		strftime(tm_str, sizeof(tm_str), "%a %b %_d %T %Y", &tm);
 
 		fprintf(f,
-				"OpenATV Enigma2 crash log\n\n"
-				"crashdate=%s\n"
-				"compiledate=%s\n"
-				"skin=%s\n"
-				"sourcedate=%s\n"
-				"branch=%s\n"
-				"rev=%s\n"
-				"component=%s\n\n",
-				tm_str,
-				__DATE__,
-				getConfigString("config.skin.primary_skin", "Default Skin").c_str(),
-				enigma2_date,
-				enigma2_branch,
-				E2REV,
-				component);
+			"OpenATV Enigma2 crash log\n\n"
+			"crashdate=%s\n"
+			"compiledate=%s\n"
+			"skin=%s\n"
+			"sourcedate=%s\n"
+			"branch=%s\n"
+			"rev=%s\n"
+			"component=%s\n\n",
+			tm_str,
+			__DATE__,
+			getConfigString("config.skin.primary_skin", "Default Skin").c_str(),
+			enigma2_date,
+			enigma2_branch,
+			E2REV,
+			component);
 
 		eModelInformation &modelinformation = eModelInformation::getInstance();
 
-		const std::list<std::string> enigmainfovalues{
+		const std::list<std::string> enigmainfovalues {
 			"model",
 			"machinebuild",
 			"imageversion",
-			"imagebuild"};
+			"imagebuild"
+		};
 
-		for (std::list<std::string>::const_iterator i = enigmainfovalues.begin(); i != enigmainfovalues.end(); ++i)
+		for(std::list<std::string>::const_iterator i = enigmainfovalues.begin(); i != enigmainfovalues.end(); ++i)
 		{
 			fprintf(f, "%s=%s\n", i->c_str(), modelinformation.getValue(i->c_str()).c_str());
 		}
@@ -265,7 +252,7 @@ void bsodFatal(const char *component)
 		clearRingBuffer();
 	}
 
-	if (bsodpython && bsodcnt == 1 && !bsodhide) // write always the first crashlog
+	if (bsodpython && bsodcnt == 1 && !bsodhide) //write always the first crashlog
 	{
 		bsodrestart = false;
 		bsodhandled = false;
@@ -280,7 +267,7 @@ void bsodFatal(const char *component)
 	p.resetClip(eRect(ePoint(0, 0), my_dc->size()));
 	p.setBackgroundColor(gRGB(0x27408B));
 	p.setForegroundColor(gRGB(0xFFFFFF));
-	int hd = my_dc->size().width() == 1920;
+	int hd =  my_dc->size().width() == 1920;
 	ePtr<gFont> font = new gFont("Regular", hd ? 30 : 20);
 	p.setFont(font);
 	p.clear();
@@ -316,29 +303,25 @@ void bsodFatal(const char *component)
 		os << os_text.str();
 	}
 
-	p.renderText(usable_area, os.str().c_str(), gPainter::RT_WRAP | gPainter::RT_HALIGN_LEFT);
+	p.renderText(usable_area, os.str().c_str(), gPainter::RT_WRAP|gPainter::RT_HALIGN_LEFT);
 
 	std::string logtail;
 	int lines = 20;
-
+	
 	if (logp2)
 	{
 		unsigned int size = logs2;
-		while (size)
-		{
-			const char *r = (const char *)memrchr(logp2, '\n', size);
-			if (r)
-			{
+		while (size) {
+			const char* r = (const char*)memrchr(logp2, '\n', size);
+			if (r) {
 				size = r - logp2;
 				--lines;
-				if (!lines)
-				{
+				if (!lines) {
 					logtail = std::string(r, logs2 - size);
 					break;
-				}
+				} 
 			}
-			else
-			{
+			else {
 				logtail = std::string(logp2, logs2);
 				break;
 			}
@@ -348,21 +331,17 @@ void bsodFatal(const char *component)
 	if (lines && logp1)
 	{
 		unsigned int size = logs1;
-		while (size)
-		{
-			const char *r = (const char *)memrchr(logp1, '\n', size);
-			if (r)
-			{
+		while (size) {
+			const char* r = (const char*)memrchr(logp1, '\n', size);
+			if (r) {
 				--lines;
 				size = r - logp1;
-				if (!lines)
-				{
+				if (!lines) {
 					logtail += std::string(r, logs1 - size);
 					break;
-				}
+				} 
 			}
-			else
-			{
+			else {
 				logtail += std::string(logp1, logs1);
 				break;
 			}
@@ -393,17 +372,15 @@ void bsodFatal(const char *component)
 	{
 		bsodrestart = false;
 		bsodhandled = false;
-		p.setBackgroundColor(gRGB(0, 0, 0, 0xFF));
+		p.setBackgroundColor(gRGB(0,0,0,0xFF));
 		p.clear();
 		return;
 	}
-	if (component)
-	{
+	if (component) {
 		/*
 		 *  We need to use a signal that generate core dump.
 		 */
-		if (eConfigManager::getConfigBoolValue("config.crash.coredump", false))
-			raise(SIGTRAP);
+		if (eConfigManager::getConfigBoolValue("config.crash.coredump", false)) raise(SIGTRAP);
 		raise(SIGKILL);
 	}
 }
@@ -413,11 +390,11 @@ void oops(const mcontext_t &context)
 #if defined(__MIPSEL__)
 	eLog(lvlFatal, "PC: %08lx", (unsigned long)context.pc);
 	int i;
-	for (i = 0; i < 32; i += 4)
+	for (i=0; i<32; i += 4)
 	{
 		eLog(lvlFatal, "    %08x %08x %08x %08x",
-			 (int)context.gregs[i + 0], (int)context.gregs[i + 1],
-			 (int)context.gregs[i + 2], (int)context.gregs[i + 3]);
+			(int)context.gregs[i+0], (int)context.gregs[i+1],
+			(int)context.gregs[i+2], (int)context.gregs[i+3]);
 	}
 #elif defined(__arm__)
 	eLog(lvlFatal, "PC: %08lx", (unsigned long)context.arm_pc);
@@ -445,16 +422,17 @@ void print_backtrace()
 	{
 		Dl_info info;
 
-		if (dladdr(array[cnt], &info) && info.dli_fname != NULL && info.dli_fname[0] != '\0')
+		if (dladdr(array[cnt], &info)
+			&& info.dli_fname != NULL && info.dli_fname[0] != '\0')
 		{
-			eLog(lvlFatal, "%s(%s) [0x%lX]", info.dli_fname, info.dli_sname != NULL ? info.dli_sname : "n/a", (unsigned long int)array[cnt]);
+			eLog(lvlFatal, "%s(%s) [0x%lX]", info.dli_fname, info.dli_sname != NULL ? info.dli_sname : "n/a", (unsigned long int) array[cnt]);
 		}
 	}
 }
 
 void handleFatalSignal(int signum, siginfo_t *si, void *ctx)
 {
-	ucontext_t *uc = (ucontext_t *)ctx;
+	ucontext_t *uc = (ucontext_t*)ctx;
 	oops(uc->uc_mcontext);
 	print_backtrace();
 	eLog(lvlFatal, "-------FATAL SIGNAL");
@@ -469,7 +447,7 @@ void bsodCatchSignals()
 	if (sigemptyset(&act.sa_mask) == -1)
 		perror("sigemptyset");
 
-	/* start handling segfaults etc. */
+		/* start handling segfaults etc. */
 	sigaction(SIGSEGV, &act, 0);
 	sigaction(SIGILL, &act, 0);
 	sigaction(SIGBUS, &act, 0);

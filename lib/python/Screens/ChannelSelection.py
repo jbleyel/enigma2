@@ -2375,7 +2375,7 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 			iPlayableService.evStart: self.__evServiceStart,
 			iPlayableService.evEnd: self.__evServiceEnd
 		})
-		if not ChannelSelection.instance: # Use only the first instance of ChannelSelection
+		if not ChannelSelection.instance:  # Use only the first instance of ChannelSelection
 			ChannelSelection.instance = self
 		self.startServiceRef = None
 		self.history_tv = []
@@ -2489,7 +2489,7 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 		else:
 			self.setModeTv()
 
-		if self != ChannelSelection.instance: # Handle last service only for the first instance.
+		if self != ChannelSelection.instance:  # Handle last service only for the first instance.
 			return
 
 		standbyScreen = None
@@ -2502,7 +2502,10 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 		lastservice = eServiceReference(self.lastservice.value)
 		if lastservice.valid():
 			if standbyScreen:
-				standbyScreen.prev_running_service = lastservice # Save the last service in Standby screen.
+				standbyScreen.prev_running_service = lastservice  # Save the last service in Standby screen.
+				standbyScreen.correctChannelNumber = True
+				self.curRoot = self.startRoot
+				self.setCurrentSelection(lastservice)
 				return
 			if self.isSubservices():
 				self.zap(ref=lastservice)
