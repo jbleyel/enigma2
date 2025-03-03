@@ -213,10 +213,7 @@ class ChannelSelectionBase(Screen):
 				"next": (self.nextMarker, _("Move to next marker")),
 				"pageDown": (self.servicelist.goPageDown, _("Move down a screen"))
 			}, prio=0, description=_("Channel Selection Navigation Actions"))
-		self.modes = {
-			MODE_RADIO: "Radio Mode",
-			MODE_TV: "TV Mode"
-		}
+
 		self.mode = MODE_TV
 		self.baseTitle = _("Channel Selection")
 		self.function = EDIT_OFF
@@ -301,13 +298,14 @@ class ChannelSelectionBase(Screen):
 		return self.mode
 
 	def setCurrentMode(self, mode):
-		if mode not in (MODE_RADIO, MODE_TV):
+		if mode != MODE_RADIO:
 			mode = MODE_TV
 		self.servicePath = self.servicePathRadio if mode == MODE_RADIO else self.servicePathTV
 		self.mode = mode
 		self.getBouquetMode()
 		self.buildTitle()
-		print(f"[ChannelSelection] {self.modes[self.mode]} selected.")
+		# modeString = {MODE_RADIO: "Radio", MODE_TV: "TV"}.get(mode)
+		# print(f"[ChannelSelection] DEBUG {modeString} Mode selected.")
 
 	def setTvMode(self):
 		self.setCurrentMode(MODE_TV)

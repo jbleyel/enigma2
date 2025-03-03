@@ -238,7 +238,7 @@ class PowerKey:
 		globalActionMap.actions["power_down"] = self.powerdown
 		globalActionMap.actions["power_up"] = self.powerup
 		globalActionMap.actions["power_long"] = self.powerlong
-		globalActionMap.actions["deepstandby"] = self.shutdown  # Frontpanel long power button press.
+		globalActionMap.actions["deepstandby"] = self.shutdown  # Front panel long power button press.
 		globalActionMap.actions["discrete_off"] = self.standby
 		globalActionMap.actions["sleeptimer"] = self.openSleepTimer
 		globalActionMap.actions["powertimer_standby"] = self.sleepStandby
@@ -432,6 +432,8 @@ def runScreenTest():
 		runNextScreen(session, screensToRun)
 	enigma.eProfileWrite("VolumeControl Screen")
 	vol = VolumeControl(session)
+	enigma.eProfileWrite("VolumeAdjust")
+	vol = VolumeAdjust(session)
 	enigma.eProfileWrite("Processing Screen")
 	processing = Processing(session)
 	enigma.eProfileWrite("Global MessageBox Screen")
@@ -449,9 +451,6 @@ def runScreenTest():
 	initTrashcan(session)
 	enigma.eProfileWrite("VideoModeAutoStart")
 	from Screens.VideoMode import autostart
-	autostart(session)
-	enigma.eProfileWrite("VolumeAdjustAutoStart")
-	from Screens.VolumeAdjust import autostart
 	autostart(session)
 	enigma.eProfileWrite("RunReactor")
 	enigma.eProfileDone()
@@ -843,7 +842,7 @@ enigma.eProfileWrite("CIHandler")
 from Screens.Ci import CiHandler
 
 enigma.eProfileWrite("VolumeControl")
-from Components.VolumeControl import VolumeControl
+from Screens.VolumeControl import VolumeAdjust, VolumeControl
 
 enigma.eProfileWrite("Processing")
 from Screens.Processing import Processing
