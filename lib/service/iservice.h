@@ -74,6 +74,7 @@ public:
 	void setAlternativeUrl( const std::string &n, bool isSR = false ) { alternativeurl=n; isStreamRelay=isSR; }
 	void setSubUri( const std::string &n ) { suburi=n; }
 	bool getIsStreamRelay() const { return isStreamRelay; }
+	std::string getAlternativeUrl() const { return alternativeurl; }
 
 	unsigned int getUnsignedData(unsigned int num) const
 	{
