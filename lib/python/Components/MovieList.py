@@ -452,7 +452,7 @@ class MovieList(GUIComponent):
 					picon = getPiconName(ref)
 					picon = loadPNG(picon)
 				except Exception as err:
-					print("[MovieList] Load picon get failed: '{str(err)}'!")
+					print(f"[MovieList] Load picon get failed: '{str(err)}'!")
 			if fileExtension in (".ts", ".stream"):
 				if ext == "1":
 					res.append(MultiContentEntryText(pos=(textPosX, 0), size=(width - textPosX - serviceSize - listMarginX - listEndX, ih), font=0, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER, text=data.txt))
@@ -588,7 +588,7 @@ class MovieList(GUIComponent):
 					self.list.append((serviceref, info, begin, -1))
 					numberOfDirs += 1
 				continue
-			if serviceref.getPath().endswith(".jpg"): # Ignore all JPEG files as they are often added as movie posters but should not be listed as extra media.
+			if serviceref.getPath().endswith(".jpg"):  # Ignore all JPEG files as they are often added as movie posters but should not be listed as extra media.
 				continue
 			# Convert space-separated list of tags into a set.
 			this_tags = info.getInfoString(serviceref, iServiceInformation.sTags).split(" ")

@@ -78,8 +78,8 @@ def getFolderSize(path):
 				continue  # Skip hard links which were already counted.
 			have.add(st.st_ino)
 			total_bytes += st.st_blocks * 512
-		for d in dirnames:
-			dp = join(dirpath, d)
+		# for d in dirnames:
+		#	dp = join(dirpath, d)
 	return total_bytes
 
 
@@ -177,7 +177,7 @@ class Harddisk:
 			else:
 				raise Exception("no hdX or sdX or mmcX")
 		except Exception as err:
-			# print(f"[Harddisk] Error {err.errno}: Failed to get model!  ({err.strerror})")
+			print(f"[Harddisk] Error {err.errno}: Failed to get model!  ({err.strerror})")
 			return "-?-"
 
 	def free(self):
@@ -267,8 +267,8 @@ class Harddisk:
 	def readStats(self):
 		if exists(f"/sys/block/{self.device}/stat"):
 			with open(f"/sys/block/{self.device}/stat") as fd:
-				l = fd.read()
-			data = l.split(None, 5)
+				line = fd.read()
+			data = line.split(None, 5)
 			return int(data[0]), int(data[4])
 		else:
 			return -1, -1

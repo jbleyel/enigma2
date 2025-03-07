@@ -28,9 +28,9 @@ visuallyImpairedCommentary = "NAR qad"
 def InitUsageConfig():
 	AvailRemotes = [splitext(x)[0] for x in glob("/usr/share/enigma2/hardware/*.xml")]
 	RemoteChoices = []
-	DefaultRemote = BoxInfo.getItem("rcname")
+	# DefaultRemote = BoxInfo.getItem("rcname")
 
-	remoteSelectable = False
+	# remoteSelectable = False
 	if AvailRemotes is not None:
 		for remote in AvailRemotes:
 			pngfile = "%s.png" % remote
