@@ -234,7 +234,7 @@ class InfoBarStreamRelay:
 				playrefmod = playrefstring
 			playref = eServiceReference("%s%s%s:%s" % (playrefmod, url.replace(":", "%3a"), playrefstring.replace(":", "%3a"), ServiceReference(playref).getServiceName()))
 			print(f"[{self.__class__.__name__}] Play service {playref.toCompareString()} via streamrelay")
-			playref.setAlternativeUrl(playrefstring)
+			playref.setAlternativeUrl(playrefstring, True)
 			return playref, True
 		return playref, False
 
@@ -522,7 +522,8 @@ class SecondInfoBar(Screen):
 			"openSimilarList": (self.openSimilarList, _("Open Similar List Channel List")),
 		}, prio=-1, description=_("2nd InfoBar Actions"))
 		self.__event_tracker = ServiceEventTracker(screen=self, eventmap={
-			iPlayableService.evUpdatedEventInfo: self.getEvent
+			iPlayableService.evUpdatedEventInfo: self.getEvent,
+			iPlayableService.evUpdateTags: self.getEvent
 		})
 		self.onShow.append(self.__Show)
 		self.onHide.append(self.__Hide)
@@ -1927,6 +1928,7 @@ class InfoBarEPG:
 		self.defaultGuideType = self.getDefaultGuidetype()
 		self.__event_tracker = ServiceEventTracker(screen=self, eventmap={
 			iPlayableService.evUpdatedEventInfo: self.__evEventInfoChanged,
+			iPlayableService.evUpdateTags: self.__evEventInfoChanged
 		})
 		self["EPGActions"] = HelpableActionMap(self, "InfobarEPGActions", {
 			"IPressed": (self.IPressed, _("show program information...")),
