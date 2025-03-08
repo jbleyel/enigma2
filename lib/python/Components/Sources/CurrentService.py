@@ -1,9 +1,9 @@
-from enigma import iPlayableService
+from enigma import iPlayableService, eServiceCenter
 
 from Components.Element import cached
-import NavigationInstance
 from Components.PerServiceDisplay import PerServiceBase
 from Components.Sources.Source import Source
+import NavigationInstance
 
 
 class CurrentService(PerServiceBase, Source):
@@ -22,8 +22,11 @@ class CurrentService(PerServiceBase, Source):
 			iPlayableService.evHBBTVInfo: self.serviceEvent
 		}, with_event=True)
 		self.navcore = navcore
+		self.info = None
+		self.onManualNewService = []
 
 	def serviceEvent(self, event):
+		self.info = None
 		self.changed((self.CHANGED_SPECIFIC, event))
 
 	@cached
@@ -38,16 +41,28 @@ class CurrentService(PerServiceBase, Source):
 	@cached
 	def getCurrentServiceRef(self):
 		if NavigationInstance.instance is not None:
-			return NavigationInstance.instance.getCurrentlyPlayingServiceOrGroup()
+			return NavigationInstance.instance.getCurrentServiceReferenceOriginal()
 		return None
 
-	serviceref = property(getCurrentServiceRef)  # TODO: serviceRef
+	serviceref = property(getCurrentServiceRef)
+
+	def newService(self, ref):
+		if ref and isinstance(ref, bool):
+			self.info = None
+		elif ref:
+			self.info = eServiceCenter.getInstance().info(ref)
+		else:
+			self.info = None
+
+		for x in self.onManualNewService:
+			x()
+
+		self.changed((self.CHANGED_SPECIFIC, iPlayableService.evStart))
+
 
 	@cached
 	def getCurrentBouquetName(self):
-		if NavigationInstance.instance is not None:
-			return NavigationInstance.instance.currentBouquetName
-		return ""
+		return NavigationInstance.instance.currentBouquetName if NavigationInstance.instance is not None else ""
 
 	currentBouquetName = property(getCurrentBouquetName)
 

@@ -293,13 +293,13 @@ class Harddisk:
 	def runIdle(self):
 		if not self.max_idle_time:
 			return
-		t = time()
-		idle_time = t - self.last_access
+		now = time()
+		idle_time = now - self.last_access
 		stats = self.readStats()
-		l = sum(stats)
-		if l != self.last_stat and l >= 0:  # Access.
-			self.last_stat = l
-			self.last_access = t
+		sumStats = sum(stats)
+		if sumStats != self.last_stat and sumStats >= 0:  # Access.
+			self.last_stat = sumStats
+			self.last_access = now
 			idle_time = 0
 			self.is_sleeping = False
 		if idle_time >= self.max_idle_time and not self.is_sleeping:

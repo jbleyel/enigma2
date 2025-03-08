@@ -3,14 +3,14 @@ from os.path import exists, join
 from Components.Harddisk import harddiskmanager
 from Components.Scanner import Scanner, ScanPath
 from Plugins.Plugin import PluginDescriptor
-from Screens.DVD import DVDPlayer, DVDOverlay
+from Screens.DVD import DVDPlayer as _DVDPlayer, DVDOverlay as _DVDOverlay
 from Tools.Directories import fileExists
 
 detected_DVD = None
 
 
 def main(session, **kwargs):
-	session.open(DVDPlayer)
+	session.open(_DVDPlayer)
 
 
 def play(session, **kwargs):
@@ -21,18 +21,15 @@ def play(session, **kwargs):
 		return
 
 
-def DVDPlayer(*args, **kwargs):
-	# for backward compatibility with plugins that do "from DVDPlayer.plugin import DVDPlayer"
-	return DVDPlayer(*args, **kwargs)
+def DVDPlayer(*args, **kwargs):  # for backward compatibility with plugins that do "from DVDPlayer.plugin import DVDPlayer"
+	return _DVDPlayer(*args, **kwargs)
 
 
-def DVDOverlay(*args, **kwargs):
-	# for backward compatibility with plugins that do "from DVDPlayer.plugin import DVDOverlay"
-	return DVDOverlay(*args, **kwargs)
+def DVDOverlay(*args, **kwargs):  # for backward compatibility with plugins that do "from DVDPlayer.plugin import DVDOverlay"
+	return _DVDOverlay(*args, **kwargs)
 
 
 def filescan_open(list, session, **kwargs):
-	from Screens import DVD
 	if len(list) == 1 and list[0].mimetype == "video/x-dvd":
 		cd = harddiskmanager.getCD()
 		if cd and (exists(join(harddiskmanager.getAutofsMountpoint(cd), "VIDEO_TS"))

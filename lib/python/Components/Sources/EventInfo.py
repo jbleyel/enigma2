@@ -1,6 +1,6 @@
 from time import time
 
-from enigma import eEPGCache, eServiceReference, iPlayableService, iServiceInformation, eTimer
+from enigma import eEPGCache, eServiceReference, eServiceCenter, iPlayableService, iServiceInformation, eTimer
 
 from Components.Element import cached
 from Components.PerServiceDisplay import PerServiceBase
@@ -24,7 +24,8 @@ class pServiceEvent:
 		self.m_Begin = int(time())
 		self.m_Duration = 0
 
-		sTagTitle = info.getInfoString(iServiceInformation.sTagTitle)
+		isPtr = not isinstance(service, eServiceReference)
+		sTagTitle = info.getInfoString(iServiceInformation.sTagTitle) if isPtr else info.getInfoString(service, iServiceInformation.sTagTitle)
 		if sTagTitle:
 			sTagTitleList = sTagTitle.split(" - ")
 			element1 = sTagTitleList[0] if len(sTagTitleList) >= 1 else ""
@@ -36,15 +37,15 @@ class pServiceEvent:
 			if element3 != "":
 				self.m_EventNameNow = "%s - %s" % (element1, element2)
 				self.m_EventNameNext = element3
-		sTagGenre = info.getInfoString(iServiceInformation.sTagGenre)
+		sTagGenre = info.getInfoString(iServiceInformation.sTagGenre) if isPtr else info.getInfoString(service, iServiceInformation.sTagGenre)
 		if sTagGenre:
 			element4 = sTagGenre
 			self.m_ShortDescriptionNow = element4
-		sTagOrganization = info.getInfoString(iServiceInformation.sTagOrganization)
+		sTagOrganization = info.getInfoString(iServiceInformation.sTagOrganization) if isPtr else info.getInfoString(service, iServiceInformation.sTagOrganization)
 		if sTagOrganization:
 			element5 = sTagOrganization
 			self.m_ExtendedDescriptionNow = element5
-		sTagLocation = info.getInfoString(iServiceInformation.sTagLocation)
+		sTagLocation = info.getInfoString(iServiceInformation.sTagLocation) if isPtr else info.getInfoString(service, iServiceInformation.sTagLocation)
 		if sTagLocation:
 			element6 = sTagLocation
 			self.m_ExtendedDescriptionNow += "\n\n" + element6
@@ -97,14 +98,18 @@ class EventInfo(PerServiceBase, Source):
 		}, with_event=True)
 		self.nowOrNext = nowOrNext
 		self.epgQuery = eEPGCache.getInstance().lookupEventTime
-		self.refreshTimer = eTimer()
-		self.refreshTimer.callback.append(self.gotEventPoll)
+		self.__service = None
 
 	@cached
 	def getEvent(self):
-		service = self.navcore.getCurrentService()
-		info = service and service.info()
-		result = info and info.getEvent(self.nowOrNext)
+		isPtr = not isinstance(self.__service, eServiceReference)
+		service = self.navcore.getCurrentService() if isPtr else self.__service
+		if isPtr:
+			info = service and service.info()
+			result = info and info.getEvent(self.nowOrNext)
+		else:
+			info = eServiceCenter.getInstance().info(self.__service)
+			result = info and info.getEvent(self.__service, self.nowOrNext)
 		if info:
 			if not result or result.getEventName() == "":
 				serviceRef = info.getInfoString(iServiceInformation.sServiceref)
@@ -113,16 +118,11 @@ class EventInfo(PerServiceBase, Source):
 					serviceEvent = pServiceEvent(info, self.nowOrNext, service)
 					if serviceEvent.getEventName():
 						return serviceEvent
-					else:
-						self.refreshTimer.start(1000, True)  # This is only a workaround
 		return result
 
 	event = property(getEvent)
 
-	def gotEventPoll(self):
-		self.gotEvent(iPlayableService.evUpdatedEventInfo)
-
-	def gotEvent(self, what):
+	def gotEvent(self, what, from_timer=False):
 		if what == iPlayableService.evEnd:
 			self.changed((self.CHANGED_CLEAR,))
 		else:
@@ -131,3 +131,11 @@ class EventInfo(PerServiceBase, Source):
 	def destroy(self):
 		PerServiceBase.destroy(self)
 		Source.destroy(self)
+
+	def updateSource(self, ref):
+		if not ref:
+			self.__service = None
+			self.changed((self.CHANGED_CLEAR,))
+			return
+		self.__service = ref
+		self.changed((self.CHANGED_ALL,))
