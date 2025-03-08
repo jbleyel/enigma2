@@ -112,7 +112,7 @@ class EventInfo(PerServiceBase, Source):
 			result = info and info.getEvent(self.__service, self.nowOrNext)
 		if info:
 			if not result or result.getEventName() == "":
-				serviceRef = info.getInfoString(iServiceInformation.sServiceref)
+				serviceRef = info.getInfoString(iServiceInformation.sServiceref) if isPtr else self.__service.toString()
 				result = self.epgQuery(eServiceReference(serviceRef), -1, self.nowOrNext and 1 or 0)
 				if not result and serviceRef.split(":")[0] in ["4097", "5001", "5002", "5003"]:  # No EPG try to get meta.
 					serviceEvent = pServiceEvent(info, self.nowOrNext, service)
