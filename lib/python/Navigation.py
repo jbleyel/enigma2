@@ -286,14 +286,25 @@ class Navigation:
 		self.playService(self.currentlyPlayingServiceOrGroup, forceRestart=True)
 
 	def playService(self, ref, checkParentalControl=True, forceRestart=False, adjust=True, ignoreStreamRelay=False):
+
+		if exists("/proc/stb/lcd/symbol_signal"):
+			signal = "1" if config.lcd.mode.value and ref and "0:0:0:0:0:0:0:0:0" not in ref.toString() else "0"
+			fileWriteLine("/proc/stb/lcd/symbol_signal", signal, source=MODULE_NAME)
+
 		# Some plugins send None as ref becasue want to shutdown enigma play system.
 		# So we have to stop current service if someone send None.
 		if ref is None:
 			self.stopService()
 			return 0
 
-		from Components.ServiceEventTracker import InfoBarCount
-		InfoBarInstance = InfoBarCount == 1 and InfoBar.instance
+		if ref and oldref and ref == oldref and not forceRestart:
+			print("[Navigation] Ignore request to play already running service.  (1)")
+			return 1
+
+#		from Components.ServiceEventTracker import InfoBarCount
+#		InfoBarInstance = InfoBarCount == 1 and InfoBar.instance
+		InfoBarInstance = InfoBar.instance
+
 		oldref = self.currentlyPlayingServiceOrGroup
 		currentServiceSource = None
 		if InfoBarInstance:
@@ -305,14 +316,7 @@ class Navigation:
 			if currentServiceSource:
 				currentServiceSource.newService(False)
 
-		if ref and oldref and ref == oldref and not forceRestart:
-			print("[Navigation] Ignore request to play already running service.  (1)")
-			return 1
 		print(f"[Navigation] Playing ref '{ref and ref.toString()}'.")
-		if exists("/proc/stb/lcd/symbol_signal"):
-			signal = "1" if config.lcd.mode.value and ref and "0:0:0:0:0:0:0:0:0" not in ref.toString() else "0"
-			fileWriteLine("/proc/stb/lcd/symbol_signal", signal, source=MODULE_NAME)
-
 		self.currentlyPlayingServiceReference = ref
 		self.currentlyPlayingServiceOrGroup = ref
 		self.originalPlayingServiceReference = ref
