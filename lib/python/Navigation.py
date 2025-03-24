@@ -282,6 +282,7 @@ class Navigation:
 		# print(f"[Navigation] Record_event {rec_service}, {event}.")
 		for x in self.record_event:
 			x(rec_service, event)
+
 	def restartService(self):
 		self.playService(self.currentlyPlayingServiceOrGroup, forceRestart=True)
 
@@ -297,6 +298,8 @@ class Navigation:
 			self.stopService()
 			return 0
 
+		oldref = self.currentlyPlayingServiceOrGroup
+
 		if ref and oldref and ref == oldref and not forceRestart:
 			print("[Navigation] Ignore request to play already running service.  (1)")
 			return 1
@@ -305,7 +308,6 @@ class Navigation:
 #		InfoBarInstance = InfoBarCount == 1 and InfoBar.instance
 		InfoBarInstance = InfoBar.instance
 
-		oldref = self.currentlyPlayingServiceOrGroup
 		currentServiceSource = None
 		if InfoBarInstance:
 			currentServiceSource = InfoBarInstance.session.screen["CurrentService"]
@@ -417,7 +419,6 @@ class Navigation:
 			self.currentlyPlayingServiceOrGroup = InfoBarInstance.servicelist.servicelist.getCurrent()
 		return 1
 
-
 	def serviceHook(self, ref):
 		wrappererror = None
 		nref = ref
@@ -433,8 +434,6 @@ class Navigation:
 			if wrappererror:
 				AddPopup(text=wrappererror, type=MessageBox.TYPE_ERROR, timeout=5, id="channelzapwrapper")
 		return nref, wrappererror
-
-
 
 	def getCurrentlyPlayingServiceReference(self):
 		return self.currentlyPlayingServiceReference
