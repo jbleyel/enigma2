@@ -168,16 +168,16 @@ class Harddisk:
 				return self.modelName
 			if self.device[:2] == "hd":
 				return readFile(join("/proc/ide", self.device, "model"))
-			elif self.device[:2] == "sd":
+			elif self.device[:2] in ("sd", "sr"):
 				vendor = readFile(join(self.phys_path, "vendor"))
 				model = readFile(join(self.phys_path, "model"))
 				return f"{vendor}({model})"
 			elif self.device.startswith("mmcblk"):
 				return readFile(self.sysfsPath("device/name"))
 			else:
-				raise Exception("no hdX or sdX or mmcX")
+				raise Exception("No hdX, sdX, srX or mmcX")
 		except Exception as err:
-			print(f"[Harddisk] Error {err.errno}: Failed to get model!  ({err.strerror})")
+			print(f"[Harddisk] Error: Failed to get model for {self.device}!  ({err})")
 			return "-?-"
 
 	def free(self):
