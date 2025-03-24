@@ -2488,11 +2488,9 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 		else:
 			self.setModeTv()
 
-		if self != ChannelSelection.instance:  # Handle last service only for the first instance.
-			return
-
 		standbyScreen = None
-		if Screens.Standby.inStandby:  # Find Standby screen if already inStandby.
+		doPlay = False
+		if self == ChannelSelection.instance and Screens.Standby.inStandby:  # Find Standby screen if already inStandby.
 			for screen in self.session.allDialogs:
 				if screen.__class__.__name__ == "Standby":
 					standbyScreen = screen
@@ -2503,16 +2501,17 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 			if standbyScreen:
 				standbyScreen.prev_running_service = lastservice  # Save the last service in Standby screen.
 				standbyScreen.correctChannelNumber = True
-				self.curRoot = self.startRoot
-				self.setCurrentSelection(lastservice)
-				return
+			elif self == ChannelSelection.instance:
+				doPlay = True  # Do real playback only for the first instance and only if not in Standby
+
 			if self.isSubservices():
-				self.zap(ref=lastservice)
+				self.zap(ref=lastservice, doPlay=doPlay)
 				self.enterSubservices()
 			else:
-				self.zap()
+				self.zap(doPlay=doPlay)
 
 	def channelSelected(self):
+		print("channelSelected ChannelSelection")
 		ref = self.getCurrentSelection()
 		try:
 			doClose = not config.usage.servicelistpreview_mode.value or ref == self.session.nav.getCurrentlyPlayingServiceOrGroup()
@@ -2599,7 +2598,7 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 		if hasattr(self.session, "pip"):
 			self.session.pip.inactive()
 
-	def zap(self, enable_pipzap=False, preview_zap=False, checkParentalControl=True, ref=None):
+	def zap(self, enable_pipzap=False, preview_zap=False, checkParentalControl=True, ref=None, doPlay=True):
 		self.curRoot = self.startRoot
 		nref = ref or self.getCurrentSelection()
 		ref = self.session.nav.getCurrentlyPlayingServiceOrGroup()
@@ -2620,7 +2619,7 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 					self.setStartRoot(self.curRoot)
 					self.setCurrentSelection(ref)
 		elif ref is None or ref != nref:
-			Screens.InfoBar.InfoBar.instance.checkTimeshiftRunning(boundFunction(self.zapCheckTimeshiftCallback, enable_pipzap, preview_zap, nref))
+			Screens.InfoBar.InfoBar.instance.checkTimeshiftRunning(boundFunction(self.zapCheckTimeshiftCallback, enable_pipzap, preview_zap, nref, doPlay))
 		elif not preview_zap:
 			self.lastroot.value = ""  # force save root.
 			self.saveRoot()
@@ -2632,10 +2631,11 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 			self.rootChanged = False
 			self.revertMode = None
 
-	def zapCheckTimeshiftCallback(self, enable_pipzap, preview_zap, nref, answer):
+	def zapCheckTimeshiftCallback(self, enable_pipzap, preview_zap, nref, doPlay, answer):
 		if answer:
 			self.new_service_played = True
-			self.session.nav.playService(nref)
+			if doPlay:
+				self.session.nav.playService(nref)
 			if not preview_zap:
 				self.lastroot.value = ""  # Force save root.
 				self.saveRoot()
