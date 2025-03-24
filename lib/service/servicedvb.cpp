@@ -3626,6 +3626,15 @@ void eDVBServicePlay::newSubtitleStream()
 	m_event((iPlayableService*)this, evUpdatedInfo);
 }
 
+// How many seconds before subtitle pages are considered to have bad timing.
+#define MAX_SUBTITLE_LIFESPAN 90
+
+// Used to sort subtitles in chronological order
+bool compare_pts(const eDVBTeletextSubtitlePage &a, const eDVBTeletextSubtitlePage &b)
+{
+	return a.m_pts < b.m_pts;
+}
+
 void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 {
 	if (m_subtitle_widget)
@@ -3695,10 +3704,11 @@ void eDVBServicePlay::checkSubtitleTiming()
 		else
 			return;
 
-		int diff = show_time - pos;
+		pts_t diff = show_time - pos;
 //		eDebug("[eDVBServicePlay] Subtitle show %d page.pts=%lld pts=%lld diff=%d", type, show_time, pos, diff);
 
-		if (diff < 20*90)
+		if (diff < 20 * 90 || diff > MAX_SUBTITLE_LIFESPAN * 90000)
+//		if (diff < 20*90)
 		{
 			if (type == TELETEXT)
 			{
@@ -3725,7 +3735,7 @@ void eDVBServicePlay::newDVBSubtitlePage(const eDVBSubtitlePage &p)
 		pts_t pos = 0;
 		if (m_decoder)
 			m_decoder->getPTS(0, pos);
-		if ( pos-p.m_show_time > SUBT_TXT_ABNORMAL_PTS_DIFFS && (m_is_pvr || m_timeshift_enabled))
+		if ( abs(pos - p.m_show_time) > SUBT_TXT_ABNORMAL_PTS_DIFFS && (m_is_pvr || m_timeshift_enabled))
 			// Where subtitles are delivered out of sync with video, only treat subtitles in the past as having bad timing.
 			// Those that are delivered too early are cached for displaying at the appropriate later time
 			// Note that this can be due to buggy drivers, as well as problems with the broadcast
