@@ -3641,7 +3641,25 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 	{
 		int subtitledelay = 0;
 		pts_t pts;
-		m_decoder->getPTS(0, pts);
+		eDVBTeletextSubtitlePage tmppage = page;
+		if (m_decoder)
+			m_decoder->getPTS(0, pts);
+		pts_t diff = tmppage.m_pts - pts;
+
+		if (diff < 0 || diff > (MAX_SUBTITLE_LIFESPAN * 90000))
+		{
+		
+		}
+		else
+		{
+			subtitledelay = eSubtitleSettings::subtitle_bad_timing_delay;
+			tmppage.m_pts += subtitledelay;
+			m_subtitle_pages.push_back(tmppage);
+			m_subtitle_pages.sort(compare_pts);
+		}
+
+		/*
+
 		if (m_is_pvr || m_timeshift_enabled)
 		{
 			// This is wrong!
@@ -3650,12 +3668,11 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 		}
 		else
 		{
-			/* check the setting for subtitle delay in live playback, either with pts, or without pts */
+			// check the setting for subtitle delay in live playback, either with pts, or without pts 
 			subtitledelay = eSubtitleSettings::subtitle_bad_timing_delay;
 		}
 
 		// eDebug("[eDVBServicePlay] Subtitle get  TTX have_pts=%d pvr=%d timeshift=%d page.pts=%lld pts=%lld delay=%d", page.m_have_pts, m_is_pvr, m_timeshift_enabled, page.m_pts, pts, subtitledelay);
-		eDVBTeletextSubtitlePage tmppage = page;
 		tmppage.m_have_pts = true;
 
 		if (abs(tmppage.m_pts - pts) > SUBT_TXT_ABNORMAL_PTS_DIFFS)
@@ -3663,7 +3680,7 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 
 		tmppage.m_pts += subtitledelay;
 		m_subtitle_pages.push_back(tmppage);
-
+		*/
 		checkSubtitleTiming();
 	}
 }
