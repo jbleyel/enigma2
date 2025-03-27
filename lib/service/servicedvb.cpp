@@ -3722,7 +3722,7 @@ void eDVBServicePlay::checkSubtitleTiming()
 			return;
 
 		pts_t diff = show_time - pos;
-//		eDebug("[eDVBServicePlay] Subtitle show %d page.pts=%lld pts=%lld diff=%d", type, show_time, pos, diff);
+		eDebug("[eDVBServicePlay] Subtitle show %d page.pts=%lld pts=%lld diff=%d", type, show_time, pos, diff);
 
 		if (diff < 20 * 90 || diff > MAX_SUBTITLE_LIFESPAN * 90000)
 //		if (diff < 20*90)
