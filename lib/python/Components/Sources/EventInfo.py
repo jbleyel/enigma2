@@ -50,7 +50,7 @@ class pServiceEvent:
 			element6 = sTagLocation
 			self.m_ExtendedDescriptionNow += "\n\n" + element6
 
-		seek = service and service.seek()
+		seek = service and isPtr and service.seek()
 		if seek:
 			length = seek.getLength()
 			pos = seek.getPlayPosition()
