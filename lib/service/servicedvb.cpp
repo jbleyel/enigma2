@@ -3655,7 +3655,7 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 			subtitledelay = eSubtitleSettings::subtitle_bad_timing_delay;
 			tmppage.m_pts += subtitledelay;
 			m_subtitle_pages.push_back(tmppage);
-			m_subtitle_pages.sort(compare_pts);
+			// m_subtitle_pages.sort(compare_pts);
 		}
 
 		/*
