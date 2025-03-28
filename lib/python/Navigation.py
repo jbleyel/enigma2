@@ -411,7 +411,7 @@ class Navigation:
 				self.skipServiceReferenceReset = False
 				if isStreamRelay and not self.isCurrentServiceStreamRelay:
 					self.isCurrentServiceStreamRelay = True
-				if InfoBarInstance and "%3a//" in playref.toString() and not is_handled:
+				if InfoBarInstance and "%3a//" in playref.toString():
 					self.originalPlayingServiceReference = None
 					InfoBarInstance.serviceStarted()
 				return 0
