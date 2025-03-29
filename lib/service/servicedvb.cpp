@@ -3642,12 +3642,11 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 		if (m_decoder)
 			m_decoder->getPTS(0, pts);
 
+		eDVBTeletextSubtitlePage tmppage = page;
 		pts_t diff = tmppage.m_pts - pts;
 
 		if (diff > 0 && diff < SUBT_TXT_ABNORMAL_PTS_DIFFS) // handle subs only if diff > 0 and < 20sec
 		{
-
-			eDVBTeletextSubtitlePage tmppage = page;
 			tmppage.m_have_pts = true;
 	
 	//		if (abs(tmppage.m_pts - pts) > SUBT_TXT_ABNORMAL_PTS_DIFFS)
@@ -3664,7 +3663,6 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 		{
 			eDebug("[eDVBServicePlay] Subtitle ignore page TTX have_pts=%d pvr=%d timeshift=%d page.pts=%lld pts=%lld delay=%d", page.m_have_pts, m_is_pvr, m_timeshift_enabled, page.m_pts, pts, subtitledelay);
 		}
-
 
 		checkSubtitleTiming();
 	}
