@@ -3659,7 +3659,7 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 			eDebug("[eDVBServicePlay] Subtitle get TTX have_pts=%d pvr=%d timeshift=%d page.pts=%lld pts=%lld delay=%d", page.m_have_pts, m_is_pvr, m_timeshift_enabled, page.m_pts, pts, subtitledelay);
 			if (tmppage.elements.size() > 0)
 			{
-				eDebug("[eDVBServicePlay] Subtitle TTX '%s'",tmppage.elements[0].text.c_str());
+				eDebug("[eDVBServicePlay] Subtitle TTX '%s'",tmppage.m_elements[0].text.c_str());
 			}
 		}
 		else
