@@ -3628,6 +3628,7 @@ void eDVBServicePlay::newSubtitleStream()
 
 // How many seconds before subtitle pages are considered to have bad timing.
 #define MAX_SUBTITLE_LIFESPAN 90
+
 // Used to sort subtitles in chronological order
 bool compare_pts(const eDVBTeletextSubtitlePage &a, const eDVBTeletextSubtitlePage &b)
 {
@@ -3638,7 +3639,7 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 {
 	if (m_subtitle_widget)
 	{
-		int subtitledelay = (m_is_pvr || m_timeshift_enabled) ? 0 : eSubtitleSettings::subtitle_bad_timing_delay;
+		//int subtitledelay = (m_is_pvr || m_timeshift_enabled) ? 0 : eSubtitleSettings::subtitle_bad_timing_delay;
 		
 		pts_t pts = 0;
 		if (m_decoder)
@@ -3647,6 +3648,27 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 		eDVBTeletextSubtitlePage tmppage = page;
 		pts_t diff = tmppage.m_pts - pts;
 
+		if (diff < 0 || diff > (MAX_SUBTITLE_LIFESPAN * 90000))
+		{
+//			eDebug("[eDVBServicePlay] newSubtitlePage bad timing pvr=%d, timeshift=%d, diff=%lld", m_is_pvr, m_timeshift_enabled, diff);
+			if (m_is_pvr || m_timeshift_enabled)
+			{
+				/* Intentionally drop the subtitle page
+				tmppage.m_pts = pos + eConfigManager::getConfigIntValue("config.subtitles.subtitle_noPTSrecordingdelay", 315000);
+				m_subtitle_pages.push_back(tmppage);
+				m_subtitle_pages.sort(compare_pts);
+				*/
+			}
+		}
+		else
+		{
+			tmppage.m_pts += eSubtitleSettings::subtitle_bad_timing_delay;
+			m_subtitle_pages.push_back(tmppage);
+			m_subtitle_pages.sort(compare_pts);
+		}
+
+
+		/*
 		if (diff > 0 && diff < SUBT_TXT_ABNORMAL_PTS_DIFFS) // handle subs only if diff > 0 and < 20sec
 		{
 			tmppage.m_have_pts = true;
@@ -3665,7 +3687,8 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 		{
 			eDebug("[eDVBServicePlay] Subtitle ignore page TTX have_pts=%d pvr=%d timeshift=%d page.pts=%lld pts=%lld delay=%d", page.m_have_pts, m_is_pvr, m_timeshift_enabled, page.m_pts, pts, subtitledelay);
 		}
-
+		*/
+		
 		checkSubtitleTiming();
 	}
 }
@@ -3707,7 +3730,7 @@ void eDVBServicePlay::checkSubtitleTiming()
 			return;
 
 		int diff = show_time - pos;
-		eDebug("[eDVBServicePlay] checkSubtitleTiming show %d page.pts=%lld pts=%lld diff=%d", type, show_time, pos, diff);
+		// eDebug("[eDVBServicePlay] checkSubtitleTiming show %d page.pts=%lld pts=%lld diff=%d", type, show_time, pos, diff);
 
 		if (diff < 20 * 90 || diff > MAX_SUBTITLE_LIFESPAN * 90000)
 		{
