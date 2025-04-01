@@ -3654,7 +3654,6 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 {
 	if (m_subtitle_widget)
 	{
-		//int subtitledelay = (m_is_pvr || m_timeshift_enabled) ? 0 : eSubtitleSettings::subtitle_bad_timing_delay;
 		
 		pts_t pts = 0;
 		if (m_decoder)
@@ -3663,47 +3662,13 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 		eDVBTeletextSubtitlePage tmppage = page;
 		pts_t diff = tmppage.m_pts - pts;
 
-		if (diff < 0 || diff > (MAX_SUBTITLE_LIFESPAN * 90000))
+		if (diff > 0 && diff < (MAX_SUBTITLE_LIFESPAN * 90000))
 		{
-//			eDebug("[eDVBServicePlay] newSubtitlePage bad timing pvr=%d, timeshift=%d, diff=%lld", m_is_pvr, m_timeshift_enabled, diff);
-			if (m_is_pvr || m_timeshift_enabled)
-			{
-				/* Intentionally drop the subtitle page
-				tmppage.m_pts = pos + eConfigManager::getConfigIntValue("config.subtitles.subtitle_noPTSrecordingdelay", 315000);
-				m_subtitle_pages.push_back(tmppage);
-				m_subtitle_pages.sort(compare_pts);
-				*/
-			}
-		}
-		else
-		{
-			tmppage.m_pts += eSubtitleSettings::subtitle_bad_timing_delay;
+			tmppage.m_pts += (m_is_pvr || m_timeshift_enabled) ? 0 : eSubtitleSettings::subtitle_bad_timing_delay;
 			m_subtitle_pages.push_back(tmppage);
 			m_subtitle_pages.sort(compare_pts);
 		}
 
-
-		/*
-		if (diff > 0 && diff < SUBT_TXT_ABNORMAL_PTS_DIFFS) // handle subs only if diff > 0 and < 20sec
-		{
-			tmppage.m_have_pts = true;
-	
-	//		if (abs(tmppage.m_pts - pts) > SUBT_TXT_ABNORMAL_PTS_DIFFS)
-	//			tmppage.m_pts = pts; // fix abnormal pts diffs
-	
-			tmppage.m_pts += subtitledelay;
-			m_subtitle_pages.push_back(tmppage);
-			m_subtitle_pages.sort(compare_pts);
-			eDebug("[eDVBServicePlay] Subtitle get TTX have_pts=%d pvr=%d timeshift=%d page.pts=%lld pts=%lld delay=%d", page.m_have_pts, m_is_pvr, m_timeshift_enabled, page.m_pts, pts, subtitledelay);
-			if (tmppage.m_elements.size() > 0)
-				eDebug("[eDVBServicePlay] Subtitle TTX '%s'",tmppage.m_elements[0].m_text.c_str());
-		}
-		else
-		{
-			eDebug("[eDVBServicePlay] Subtitle ignore page TTX have_pts=%d pvr=%d timeshift=%d page.pts=%lld pts=%lld delay=%d", page.m_have_pts, m_is_pvr, m_timeshift_enabled, page.m_pts, pts, subtitledelay);
-		}
-		*/
-		
 		checkSubtitleTiming();
 	}
 }
