@@ -2425,7 +2425,7 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 		if self.dopipzap and hasattr(self.session, "pip"):
 			self.servicelist.setPlayableIgnoreService(self.session.pip.getCurrentService() or eServiceReference())
 		else:
-#			self.servicelist.setPlayableIgnoreService(self.session.nav.getCurrentServiceReferenceOriginal() or eServiceReference())
+			# self.servicelist.setPlayableIgnoreService(self.session.nav.getCurrentServiceReferenceOriginal() or eServiceReference())
 			service = self.session.nav.getCurrentService()
 			if service:
 				info = service.info()

@@ -304,8 +304,8 @@ class Navigation:
 			print("[Navigation] Ignore request to play already running service.  (1)")
 			return 1
 
-#		from Components.ServiceEventTracker import InfoBarCount
-#		InfoBarInstance = InfoBarCount == 1 and InfoBar.instance
+		# from Components.ServiceEventTracker import InfoBarCount
+		# InfoBarInstance = InfoBarCount == 1 and InfoBar.instance
 		InfoBarInstance = InfoBar.instance
 
 		currentServiceSource = None
