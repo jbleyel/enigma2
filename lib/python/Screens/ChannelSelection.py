@@ -2511,7 +2511,6 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 				self.zap(doPlay=doPlay)
 
 	def channelSelected(self):
-		print("channelSelected ChannelSelection")
 		ref = self.getCurrentSelection()
 		try:
 			doClose = not config.usage.servicelistpreview_mode.value or ref == self.session.nav.getCurrentlyPlayingServiceOrGroup()
