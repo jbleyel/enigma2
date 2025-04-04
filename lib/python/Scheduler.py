@@ -1,4 +1,5 @@
 from bisect import insort
+from ctypes import pythonapi, py_object, c_long
 from datetime import datetime
 from os import fsync, remove, rename
 from os.path import exists
@@ -10,6 +11,8 @@ from enigma import eActionMap, quitMainloop
 
 import NavigationInstance
 from timer import Timer, TimerEntry
+from threading import Thread
+
 from Components.config import config
 from Components.SystemInfo import getBoxDisplayName
 from Components.TimerSanityCheck import TimerSanityCheck
@@ -458,6 +461,7 @@ class SchedulerEntry(TimerEntry):
 		self.resetState()
 		self.messageBoxAnswerPending = False
 		self.keyPressHooked = False
+		self.cancelFunction = None
 
 	def __repr__(self, getType=False):
 		timertype = {
@@ -812,6 +816,10 @@ class SchedulerEntry(TimerEntry):
 				functionTimerEntry = functionTimer.getItem(self.function)
 				if functionTimerEntry:
 					functionTimerEntryFunction = functionTimerEntry.get("fnc")
+					functionTimerCancelFunction = functionTimerEntry.get("cancel")
+					functionTimerIsThreaded = functionTimerEntry.get("isThreaded")
+					if DEBUG:
+						print(f"[Scheduler] functionTimerEntryFunction = {functionTimerEntryFunction}")
 
 					doFunc = False
 					#if self.exec_fnc_when == "standby" and Screens.Standby.inStandby:
@@ -826,7 +834,7 @@ class SchedulerEntry(TimerEntry):
 					if doFunc:
 						self.end += 7200
 						if functionTimerEntryFunction and callable(functionTimerEntryFunction):
-							functionTimerEntryFunction()
+							self.startFunctionTimer(functionTimerEntryFunction, functionTimerCancelFunction if callable(functionTimerCancelFunction) else None, functionTimerIsThreaded)
 
 						#if "isThreaded" in functionTimerEntry and not functionTimerEntry["isThreaded"]:
 						#	self.is_threaded = False
@@ -841,6 +849,33 @@ class SchedulerEntry(TimerEntry):
 				return True
 
 		elif nextState == self.StateEnded:
+			if DEBUG:
+				print("[Scheduler] DEBUG nextState self.StateEnded")
+			if self.timerType == TIMERTYPE.OTHER and self.function:
+				if self.cancelled or self.failed:
+					if self.cancelFunction and callable(self.cancelFunction):
+						if DEBUG:
+							print("[Scheduler] DEBUG Call cancelFunction")
+						self.cancelFunction()
+
+					functionTimerEntry = functionTimer.getItem(self.function)
+					if functionTimerEntry:
+						functionTimerIsThreaded = functionTimerEntry.get("isThreaded")
+						if functionTimerIsThreaded and self.timerThread.is_alive():
+							self.timerThread.join(timeout=1)
+#							threadId = self.timerThread.ident
+#							exc = py_object(SystemExit)
+#							res = pythonapi.PyThreadState_SetAsyncExc(c_long(threadId), exc)
+#							if res == 0:
+#								print("[Scheduler] Thread can not be terminated!")
+#							elif res > 1:
+#								pythonapi.PyThreadState_SetAsyncExc(threadId, None)
+#								print("[Scheduler] Thread can not be terminated!")
+#							elif res == 1:
+#								print("[Scheduler] Thread successfully terminated.")
+#							del exc
+#							del res
+
 			if self.afterEvent == AFTEREVENT.WAKEUP:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("wakeuppowertimer")
 				if Screens.Standby.inStandby:
@@ -918,6 +953,21 @@ class SchedulerEntry(TimerEntry):
 			if DEBUG:
 				print("[Scheduler] Reset wakeup state.")
 		wasTimerWakeup = False
+
+	def startFunctionTimer(self, entryFunction, cancelFunction, isThreaded):
+		if DEBUG:
+			print("[Scheduler] DEBUG startFunctionTimer")
+		self.cancelFunction = cancelFunction
+		if isThreaded:
+			self.timerThread = Thread(target=entryFunction, args=(self), daemon=True)
+			self.timerThread.start()
+		else:
+			entryFunction(self)
+			self.functionTimerCallback()
+
+	def functionTimerCallback(self):
+		self.end = int(time()) - 1
+		self.timeChanged()
 
 	def getNextActivation(self):
 		if self.state in (self.StateEnded, self.StateFailed):

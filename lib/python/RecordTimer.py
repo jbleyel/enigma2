@@ -10,6 +10,7 @@ from enigma import eEPGCache, getBestPlayableServiceReference, eStreamServer, eS
 import NavigationInstance
 from timer import Timer, TimerEntry
 from Components.config import config
+from Components.DataBaseAPI import moviedb
 from Components.Harddisk import findMountPoint
 import Components.RecordingConfig
 Components.RecordingConfig.InitRecordingConfig()
@@ -958,6 +959,8 @@ class RecordTimerEntry(TimerEntry):
 				self.log(12, "Stop recording.")
 			if not self.justplay:
 				if self.record_service:
+					fname = self.Filename + self.record_service.getFilenameExtension()
+					moviedb.updateSingleEntry(fname, withBoxPath=True)
 					NavigationInstance.instance.stopRecordService(self.record_service)
 					self.record_service = None
 			if self.lastend and self.failed:
