@@ -95,6 +95,7 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 		self.nimCountries = international.getNIMCountries()
 		self.nim = nimmanager.nim_slots[slotid]
 		self.nimConfig = self.nim.config
+		self.autodiseqc_enabled = self.nimConfig.dvbs.diseqcA.value == '3600'
 		self.createSetup()
 		self.onLayoutFinish.append(self.layoutFinished)
 
@@ -232,6 +233,7 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 			self.list.append(getConfigListEntry(_("Port A"), nim.diseqcA, _("Select the satellite which is connected to Port-A of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'.")))
 		if mode in ("toneburst_a_b", "diseqc_a_b", "diseqc_a_b_c_d"):
 			self.list.append(getConfigListEntry(_("Port B"), nim.diseqcB, _("Select the satellite which is connected to Port-B of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'.")))
+			self.autodiseqc_enabled = self.autodiseqc_enabled or (nim.diseqcB.value == "3600")
 			if mode == "diseqc_a_b_c_d":
 				self.list.append(getConfigListEntry(_("Port C"), nim.diseqcC, _("Select the satellite which is connected to Port-C of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'.")))
 				self.list.append(getConfigListEntry(_("Port D"), nim.diseqcD, _("Select the satellite which is connected to Port-D of your switch. If you are unsure select 'Automatic' and the receiver will attempt to determine this for you. If nothing is connected to this port, select 'Nothing connected'.")))
