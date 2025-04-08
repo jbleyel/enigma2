@@ -94,7 +94,7 @@ static std::string getTunerLetterDM(int NimNumber)
 	{
 		std::string ret = std::string(srcCI);
 		free(srcCI);
-#ifdef HAVE_DM_FBC
+#ifdef 0 //HAVE_DM_FBC
 		if (ret.size() == 1)
 		{
 			int corr = 1;
