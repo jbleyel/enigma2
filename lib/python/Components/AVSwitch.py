@@ -25,7 +25,7 @@ def InitAVSwitch():
 		avSwitch.createConfig()
 		print(f"[AVSwitch] Setting EDID override to '{configElement.value}'.")
 
-	delayChoices = [(i, ngettext("%d milisecond", "%d miliseconds", i) % i) for i in list(range(0, 3000, 100))]  # noqa: F821
+	delayChoices = [(i, _("%d ms") % i) for i in list(range(0, 3000, 100))]  # noqa: F821
 	config.av.passthrough_fix_long = ConfigSelection(choices=delayChoices, default=1200)
 	config.av.passthrough_fix_short = ConfigSelection(choices=delayChoices, default=100)
 
