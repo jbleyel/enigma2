@@ -35,6 +35,7 @@ pthread_mutex_t eDVBCIInterfaces::m_slot_lock = PTHREAD_RECURSIVE_MUTEX_INITIALI
 
 static char *readInputCI(int NimNumber)
 {
+	eDebug("[CI] readInputCI %d", NimNumber);
 	char id1[] = "NIM Socket";
 	char id2[] = "Input_Name";
 	char keys1[] = "1234567890";
@@ -84,12 +85,14 @@ static char *readInputCI(int NimNumber)
 		fclose(f);
 	}
 
+	eDebug("[CI] readInputCI inputName %s", inputName);
 	return inputName;
 }
 
 static std::string getTunerLetterDM(int NimNumber)
 {
 	char *srcCI = readInputCI(NimNumber);
+	eDebug("[CI] getTunerLetterDM %d / srcCI %s", NimNumber, srcCI);
 	if (srcCI)
 	{
 		std::string ret = std::string(srcCI);
@@ -109,6 +112,7 @@ static std::string getTunerLetterDM(int NimNumber)
 */
 		return ret;
 	}
+	eDebug("[CI] getTunerLetter %d", NimNumber);
 	return eDVBCISlot::getTunerLetter(NimNumber);
 }
 
