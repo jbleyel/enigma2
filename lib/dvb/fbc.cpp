@@ -13,41 +13,30 @@
 
 int eFBCTunerManager::ReadProcInt(int fe_index, const std::string & entry)
 {
-#ifdef HAVE_DM_FBC
-	std::string value;
-	std::stringstream path;
 	std::ifstream file;
-
-	path << "/proc/stb/frontend/" << fe_index << "/" << entry;
+	std::stringstream path << "/proc/stb/frontend/" << fe_index << "/" << entry;
 	file.open(path.str().c_str());
-
 	if(!file.is_open())
 		return(-1);
 
+#ifdef HAVE_DM_FBC
+	std::string value;
 	file >> value;
+#else
+	int value;
+	file >> value;
+#endif
 
 	if(file.bad() || file.fail())
 		return(-1);
+
+#ifdef HAVE_DM_FBC
 	eDebug("[eFBCTunerManager::ReadProcInt] val: %s", value.c_str());
 	return(value == "A" ? 0 : 1);
 #else
-	int value;
-	std::stringstream path;
-	std::ifstream file;
-
-	path << "/proc/stb/frontend/" << fe_index << "/" << entry;
-	file.open(path.str().c_str());
-
-	if(!file.is_open())
-		return(-1);
-
-	file >> value;
-
-	if(file.bad() || file.fail())
-		return(-1);
-
 	return(value);
 #endif
+
 }
 
 void eFBCTunerManager::WriteProcInt(int fe_index, const std::string & entry, int value)
@@ -74,8 +63,10 @@ void eFBCTunerManager::WriteProcStr(int fe_index, const std::string & entry, int
 
 	if(!file.is_open())
 		return;
-	eDebug("[eFBCTunerManager::WriteProcStr] val: %d", value);
-	file << (value == 0 ? "A" : "B");
+
+    char letter = 'A' + (value / 8);
+    eDebug("[eFBCTunerManager::WriteProcStr] val: %d, letter: %c", value, letter);
+    file << letter;
 }
 
 #ifdef HAVE_DM_FBC
