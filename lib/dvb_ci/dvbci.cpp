@@ -670,10 +670,14 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 								eDVBFrontend *fe = (eDVBFrontend *)&(*frontend);
 								tunernum = fe->getSlotID();
 							}
+
+							eDebug("[CI] (2)Slot %d, tunernum %d", ci_it->getSlotID(), tunernum);
+
 							if (tunernum != -1)
 							{
 								setInputSource(tunernum, ci_source.str());
 #ifdef DREAMBOX_DUAL_TUNER
+								eDebug("[CI] (3)Slot %d, tunernum %d , ci_source %s", ci_it->getSlotID(), tunernum, ci_source.str().c_str());
 								ci_it->setSource(getTunerLetterDM(tunernum));
 #else
 								ci_it->setSource(eDVBCISlot::getTunerLetter(tunernum));
