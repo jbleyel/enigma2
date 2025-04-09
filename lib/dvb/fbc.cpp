@@ -64,9 +64,9 @@ void eFBCTunerManager::WriteProcStr(int fe_index, const std::string & entry, int
 	if(!file.is_open())
 		return;
 
-    char letter = 'A' + (value / 8);
-    eDebug("[eFBCTunerManager::WriteProcStr] val: %d, letter: %c", value, letter);
-    file << letter;
+	int inputValue = 0;
+	eDebug("[eFBCTunerManager::WriteProcStr] inputValue: %d", inputValue);
+	file << (inputValue == 0 ? "A" : "B");
 }
 
 #ifdef HAVE_DM_FBC

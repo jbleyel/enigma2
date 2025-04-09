@@ -1325,8 +1325,6 @@ class NimManager:
 		fbc_tuner = 1
 
 		HasFBCtuner = ["Vuplus DVB-C NIM(BCM3158)", "Vuplus DVB-C NIM(BCM3148)", "Vuplus DVB-S NIM(7376 FBC)", "Vuplus DVB-S NIM(45308X FBC)", "Vuplus DVB-S NIM(45208 FBC)", "DVB-S2 NIM(45208 FBC)", "DVB-S2X NIM(45308X FBC)", "DVB-S2 NIM(45308 FBC)", "DVB-C NIM(3128 FBC)", "BCM45208", "BCM45308X", "BCM45308X FBC", "BCM3158"]
-#		if BoxInfo.getItem("brand") == "dreambox":
-#			HasFBCtuner = []
 
 		for id, entry in entries.items():
 			if not ("name" in entry and "type" in entry):
@@ -1355,7 +1353,8 @@ class NimManager:
 				entry["supports_blind_scan"] = False
 
 			entry["fbc"] = [0, 0, 0]  # not fbc
-			if entry["name"] and ("fbc" in entry["name"].lower() or ("45308X" in entry["name"].upper() and BoxInfo.getItem("model") in ("dm900", "dm920")) or (entry["name"] in HasFBCtuner and entry["frontend_device"] is not None and access("/proc/stb/frontend/%d/fbc_id" % entry["frontend_device"], F_OK))):
+
+			if entry["name"] and ("fbc" in entry["name"].lower() or (("45308X" in entry["name"].upper() or "45208" in entry["name"].upper()) and BoxInfo.getItem("model") in ("dm900", "dm920")) or (entry["name"] in HasFBCtuner and entry["frontend_device"] is not None and access("/proc/stb/frontend/%d/fbc_id" % entry["frontend_device"], F_OK))):
 				fbc_number += 1
 				if fbc_number <= (entry["type"] and "DVB-C" in entry["type"] and 1 or 2):
 					entry["fbc"] = [1, fbc_number, fbc_tuner]  # fbc root
