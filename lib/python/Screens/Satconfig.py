@@ -964,7 +964,7 @@ class NimSelection(Screen):
 		self.updateList(index)
 
 	def showNim(self, nim):
-		return not nim.isEmpty()
+		return not (nim.isEmpty() or (nim.isCompatible("DVB-C") and nim.isFBCTuner() and not nim.isFBCRoot()))
 
 	def updateList(self, index=None):
 		self.list = []
