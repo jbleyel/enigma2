@@ -14,7 +14,8 @@
 int eFBCTunerManager::ReadProcInt(int fe_index, const std::string & entry)
 {
 	std::ifstream file;
-	std::stringstream path << "/proc/stb/frontend/" << fe_index << "/" << entry;
+	std::stringstream path;
+	path << "/proc/stb/frontend/" << fe_index << "/" << entry;
 	file.open(path.str().c_str());
 	if(!file.is_open())
 		return(-1);
