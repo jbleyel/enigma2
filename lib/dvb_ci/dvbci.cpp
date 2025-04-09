@@ -39,7 +39,8 @@ static char *readInputCI(int NimNumber)
 	char id1[] = "NIM Socket";
 	char id2[] = "Input_Name";
 	char keys1[] = "1234567890";
-	char keys2[] = "12ABCDabcd";
+    char keys2[] = "123456789ABCDabcd";
+//	char keys2[] = "12ABCDabcd";
 	char *inputName = 0;
 	char buf[256];
 	FILE *f;
@@ -59,6 +60,7 @@ static char *readInputCI(int NimNumber)
 				break;
 		}
 
+
 		while (fgets(buf, sizeof(buf), f))
 		{
 			if (strcasestr(buf, id1))
@@ -71,6 +73,8 @@ static char *readInputCI(int NimNumber)
 			p = strchr(p + strlen(id2), ':');
 			if (!p)
 				continue;
+
+			eDebug("[CI] readInputCI %d / %s", NimNumber, p);
 
 			p++;
 			p += strcspn(p, keys2);
