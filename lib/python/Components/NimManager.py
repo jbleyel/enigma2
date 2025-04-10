@@ -1447,6 +1447,9 @@ class NimManager:
 					slots.append(slot)
 		# remove nims, that have a conntectedTo reference on
 		for testnim in slots[:]:
+			if self.nim_slots[testnim].isFBCLink():
+				slots.remove(testnim)
+				continue
 			for nim in self.getNimListOfType("DVB-S", slotid):
 				try:
 					nimConfig = self.getNimConfig(nim)
