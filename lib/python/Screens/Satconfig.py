@@ -306,7 +306,6 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 		self.multiType = None
 		self.diseqcModeEntry = None
 		self.advancedSatsEntry = None
-		self.advancedInputChoics = None
 		self.advancedLnbsEntry = None
 		self.advancedDiseqcMode = None
 		self.advancedUsalsEntry = None

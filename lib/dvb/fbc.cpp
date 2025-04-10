@@ -33,7 +33,6 @@ int eFBCTunerManager::ReadProcInt(int fe_index, const std::string & entry)
 		return(-1);
 
 #ifdef HAVE_DM_FBC
-	eDebug("[eFBCTunerManager::ReadProcInt] val: %s", value.c_str());
 	return(value == "A" ? 0 : 1);
 #else
 	return(value);
@@ -69,7 +68,6 @@ void eFBCTunerManager::WriteProcStr(int fe_index, const std::string & entry, int
 	char configStr[255];
 	snprintf(configStr, 255, "config.Nims.%d.dvbs.input", fe_index);
 	std::string str = eSimpleConfig::getString(configStr, "A");
-	eDebug("[eFBCTunerManager::WriteProcStr] inputValue: %s", str.c_str());
 	file << str.c_str();
 }
 

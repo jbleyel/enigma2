@@ -35,12 +35,10 @@ pthread_mutex_t eDVBCIInterfaces::m_slot_lock = PTHREAD_RECURSIVE_MUTEX_INITIALI
 
 static char *readInputCI(int NimNumber)
 {
-	eDebug("[CI] readInputCI %d", NimNumber);
 	char id1[] = "NIM Socket";
 	char id2[] = "Input_Name";
 	char keys1[] = "1234567890";
     char keys2[] = "123456789ABCDabcd";
-//	char keys2[] = "12ABCDabcd";
 	char *inputName = 0;
 	char buf[256];
 	FILE *f;
@@ -60,7 +58,6 @@ static char *readInputCI(int NimNumber)
 				break;
 		}
 
-
 		while (fgets(buf, sizeof(buf), f))
 		{
 			if (strcasestr(buf, id1))
@@ -73,8 +70,6 @@ static char *readInputCI(int NimNumber)
 			p = strchr(p + strlen(id2), ':');
 			if (!p)
 				continue;
-
-			eDebug("[CI] readInputCI %d / %s", NimNumber, p);
 
 			p++;
 			p += strcspn(p, keys2);
@@ -89,34 +84,18 @@ static char *readInputCI(int NimNumber)
 		fclose(f);
 	}
 
-	eDebug("[CI] readInputCI inputName %s", inputName);
 	return inputName;
 }
 
 static std::string getTunerLetterDM(int NimNumber)
 {
 	char *srcCI = readInputCI(NimNumber);
-	eDebug("[CI] getTunerLetterDM %d / srcCI %s", NimNumber, srcCI);
 	if (srcCI)
 	{
 		std::string ret = std::string(srcCI);
 		free(srcCI);
-/*
-#ifdef HAVE_DM_FBC
-		if (ret.size() == 1)
-		{
-			int corr = 1;
-			if (NimNumber > 7)
-			{
-				corr = -7;
-			}
-			return ret + std::to_string(NimNumber + corr);
-		}
-#endif
-*/
 		return ret;
 	}
-	eDebug("[CI] getTunerLetter %d", NimNumber);
 	return eDVBCISlot::getTunerLetter(NimNumber);
 }
 
@@ -678,14 +657,10 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 								eDVBFrontend *fe = (eDVBFrontend *)&(*frontend);
 								tunernum = fe->getSlotID();
 							}
-
-							eDebug("[CI] (2)Slot %d, tunernum %d", ci_it->getSlotID(), tunernum);
-
 							if (tunernum != -1)
 							{
 								setInputSource(tunernum, ci_source.str());
 #ifdef DREAMBOX_DUAL_TUNER
-								eDebug("[CI] (3)Slot %d, tunernum %d , ci_source %s", ci_it->getSlotID(), tunernum, ci_source.str().c_str());
 								ci_it->setSource(getTunerLetterDM(tunernum));
 #else
 								ci_it->setSource(eDVBCISlot::getTunerLetter(tunernum));
