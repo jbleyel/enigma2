@@ -306,6 +306,7 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 		self.multiType = None
 		self.diseqcModeEntry = None
 		self.advancedSatsEntry = None
+		self.advancedInputChoics = None
 		self.advancedLnbsEntry = None
 		self.advancedDiseqcMode = None
 		self.advancedUsalsEntry = None
@@ -386,6 +387,8 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 			elif nimConfig.configMode.value == "nothing":
 				pass
 			elif nimConfig.configMode.value == "advanced":  # Advanced SATs.
+				if len(nimConfig.advanced.input.choices) > 1:
+					self.advancedInputChoics = getConfigListEntry(_("Input"), nimConfig.advanced.input, _("Select the input you want to use."))
 				self.advancedSatsEntry = getConfigListEntry(_("Satellite"), nimConfig.advanced.sats, _("Select the satellite you want to configure. Once configured you can select and configure other satellites that will be accessed using this same tuner."))
 				self.list.append(self.advancedSatsEntry)
 				current_config_sats = nimConfig.advanced.sats.value
