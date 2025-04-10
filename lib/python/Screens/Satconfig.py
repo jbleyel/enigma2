@@ -387,8 +387,6 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 			elif nimConfig.configMode.value == "nothing":
 				pass
 			elif nimConfig.configMode.value == "advanced":  # Advanced SATs.
-				if len(nimConfig.advanced.input.choices) > 1:
-					self.advancedInputChoics = getConfigListEntry(_("Input"), nimConfig.advanced.input, _("Select the input you want to use."))
 				self.advancedSatsEntry = getConfigListEntry(_("Satellite"), nimConfig.advanced.sats, _("Select the satellite you want to configure. Once configured you can select and configure other satellites that will be accessed using this same tuner."))
 				self.list.append(self.advancedSatsEntry)
 				current_config_sats = nimConfig.advanced.sats.value
@@ -410,6 +408,9 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 				self.list.append(getConfigListEntry(_("SCPC optimized search range"), nimConfig.scpcSearchRange, _("Your receiver can use SCPC optimized search range. Consult your receiver's manual for more information.")))
 			if exists("/proc/stb/frontend/%d/t2mirawmode" % self.nim.slot) and config.usage.setup_level.index >= 2:  # Expert mode.
 				self.list.append(getConfigListEntry(_("T2MI RAW Mode"), nimConfig.t2miRawMode, _("With T2MI RAW mode disabled (default) we can use single T2MI PLP de-encapsulation. With T2MI RAW mode enabled we can use astra-sm to analyze T2MI")))
+			if len(nimConfig.input.choices) > 1:
+				self.list.append(getConfigListEntry(_("Input"), nimConfig.input, _("Select the input you want to use.")))
+
 		elif self.nim.isCompatible("DVB-C"):
 			self.configMode = getConfigListEntry(_("Configuration mode"), self.nimConfig.dvbc.configMode, _("Select 'Enabled' if this tuner has a signal cable connected, otherwise select 'Nothing connected'."))
 			self.list.append(self.configMode)

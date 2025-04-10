@@ -2167,10 +2167,6 @@ def InitNimManager(nimmgr, update_slots=None):
 							print("[NimManager] [configModeChanged] slot_id=%s / rootDefaults=%s" % (slot_id, rootDefaults))
 
 			nim.advanced = ConfigSubsection()
-			if exists("/proc/stb/frontend/%d/input" % slot_id):
-				nim.advanced.input = ConfigSelection([("A", _("Input 1")), ("B", _("Input 2"))], "A")
-			else:
-				nim.advanced.input = ConfigSelection([("A", _("Input 1"))], "A")
 			nim.advanced.sat = ConfigSubDict()
 			nim.advanced.sats = getConfigSatlist(sat, advanced_satlist_choices)
 			nim.advanced.lnb = ConfigSubDict()
@@ -2209,6 +2205,12 @@ def InitNimManager(nimmgr, update_slots=None):
 		if exists("/proc/stb/frontend/%d/use_scpc_optimized_search_range" % fe_id):
 			with open("/proc/stb/frontend/%d/use_scpc_optimized_search_range" % fe_id, "w") as fd:
 				fd.write("1" if configElement.value else "0")
+
+	def inputChanged(configElement):
+		fe_id = configElement.slot_id
+		if exists("/proc/stb/frontend/%d/input" % fe_id):
+			with open("/proc/stb/frontend/%d/input" % fe_id, "w") as fd:
+				fd.write(configElement.value)
 
 	def toneAmplitudeChanged(configElement):
 		fe_id = configElement.fe_id
@@ -2277,6 +2279,12 @@ def InitNimManager(nimmgr, update_slots=None):
 			nim.fastTurningBegin = ConfigDateTime(default=mktime(btime.timetuple()), formatstring=_("%H:%M"), increment=900)
 			etime = datetime(1970, 1, 1, 19, 0)
 			nim.fastTurningEnd = ConfigDateTime(default=mktime(etime.timetuple()), formatstring=_("%H:%M"), increment=900)
+			if exists("/proc/stb/frontend/%d/input" % x):
+				nim.input = ConfigSelection([("A", _("Input 1")), ("B", _("Input 2"))], "A")
+				nim.input.slot_id = x
+				nim.input.addNotifier(inputChanged)
+			else:
+				nim.input = ConfigSelection([("A", _("Input 1"))], "A")
 
 	def createCableConfig(nim, x):
 		try:
