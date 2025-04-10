@@ -2206,12 +2206,6 @@ def InitNimManager(nimmgr, update_slots=None):
 			with open("/proc/stb/frontend/%d/use_scpc_optimized_search_range" % fe_id, "w") as fd:
 				fd.write("1" if configElement.value else "0")
 
-	def inputChanged(configElement):
-		fe_id = configElement.slot_id
-		if exists("/proc/stb/frontend/%d/input" % fe_id):
-			with open("/proc/stb/frontend/%d/input" % fe_id, "w") as fd:
-				fd.write(configElement.value)
-
 	def toneAmplitudeChanged(configElement):
 		fe_id = configElement.fe_id
 		# slot_id = configElement.slot_id
@@ -2281,8 +2275,6 @@ def InitNimManager(nimmgr, update_slots=None):
 			nim.fastTurningEnd = ConfigDateTime(default=mktime(etime.timetuple()), formatstring=_("%H:%M"), increment=900)
 			if exists("/proc/stb/frontend/%d/input" % x):
 				nim.input = ConfigSelection([("A", _("Input 1")), ("B", _("Input 2"))], "A")
-				nim.input.slot_id = x
-				nim.input.addNotifier(inputChanged)
 			else:
 				nim.input = ConfigSelection([("A", _("Input 1"))], "A")
 

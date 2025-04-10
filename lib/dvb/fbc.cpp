@@ -2,6 +2,7 @@
 #include <lib/dvb/dvb.h>
 #include <lib/dvb/sec.h>
 #include <lib/base/object.h>
+#include <lib/base/esimpleconfig.h>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -65,9 +66,11 @@ void eFBCTunerManager::WriteProcStr(int fe_index, const std::string & entry, int
 	if(!file.is_open())
 		return;
 
-	int inputValue = 0;
-	eDebug("[eFBCTunerManager::WriteProcStr] inputValue: %d", inputValue);
-	file << (inputValue == 0 ? "A" : "B");
+	char configStr[255];
+	snprintf(configStr, 255, "config.Nims.%d.dvbs.input", fe_index);
+	std::string str = eSimpleConfig::getString(configStr, "A");
+	eDebug("[eFBCTunerManager::WriteProcStr] inputValue: %s", str.c_str());
+	file << str.c_str();
 }
 
 #ifdef HAVE_DM_FBC
