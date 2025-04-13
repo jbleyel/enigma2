@@ -1,7 +1,14 @@
+from time import localtime, mktime
 from enigma import pNavigation
 
 from Components.config import ConfigClock, ConfigInteger, ConfigSelection, ConfigSubsection, ConfigYesNo, config
 from Components.SystemInfo import BoxInfo
+
+
+def calculateTime(hours, minutes, day_offset=0):
+    cur_time = localtime()
+    unix_time = mktime((cur_time.tm_year, cur_time.tm_mon, cur_time.tm_mday, hours, minutes, 0, cur_time.tm_wday, cur_time.tm_yday, cur_time.tm_isdst)) + day_offset
+    return unix_time
 
 
 def InitRecordingConfig():
@@ -66,9 +73,18 @@ def InitRecordingConfig():
 	config.recording.prepare_time = ConfigSelection(default=20, choices=[(x, _("%d Seconds") % x) for x in range(20, 121, 10)])
 	config.recording.timerviewshowfreespace = ConfigYesNo(default=True)
 
-	config.recording.enable_descramble_in_standby = ConfigYesNo(default=False)
-	config.recording.decrypt_start_time = ConfigClock(default=(1 * 60 * 60))
-	config.recording.decrypt_end_time = ConfigClock(default=(6 * 60 * 60))
+	if BoxInfo.getItem("CanDescrambleInStandby"):
+		# config.recording.never_decrypt = ConfigYesNo(default=True)
+		config.recording.enable_descramble_in_standby = ConfigYesNo(default=True)
+		config.recording.force_standby_for_descramble = ConfigYesNo(default=True)
+		config.recording.decrypt_start_time = ConfigClock(default=calculateTime(0, 1))
+		config.recording.decrypt_end_time = ConfigClock(default=calculateTime(23, 59))
+	else:
+		# config.recording.never_decrypt = ConfigYesNo(default=False)
+		config.recording.enable_descramble_in_standby = ConfigYesNo(default=False)
+		config.recording.force_standby_for_descramble = ConfigYesNo(default=False)
+		config.recording.decrypt_start_time = ConfigClock(default=calculateTime(0, 1))
+		config.recording.decrypt_end_time = ConfigClock(default=calculateTime(23, 59))
 
 
 def recType(configString):

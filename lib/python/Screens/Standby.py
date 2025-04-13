@@ -13,6 +13,7 @@ import Components.RecordingConfig
 from Components.Sources.StreamService import StreamServiceList
 from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Components.Task import job_manager
+from Components.VirtualVideoDir import VirtualVideoDir
 from GlobalActions import globalActionMap
 import Screens.InfoBar
 from Screens.MessageBox import MessageBox, MessageBoxSummary
@@ -361,6 +362,9 @@ class TryQuitMainloop(MessageBox):
 		self.ptsmainloopvalue = retvalue
 		recordings = session.nav.getRecordings(False, Components.RecordingConfig.recType(config.recording.warn_box_restart_rec_types.getValue()))
 		jobs = len(job_manager.getPendingJobs())
+		virtual_video_dir = VirtualVideoDir()
+		scrambled_movies = virtual_video_dir.getSList()
+
 		inTimeshift = Screens.InfoBar.InfoBar and Screens.InfoBar.InfoBar.instance and Screens.InfoBar.InfoBar.ptsGetTimeshiftStatus(Screens.InfoBar.InfoBar.instance)
 		self.connected = False
 		reason = ""
@@ -396,7 +400,14 @@ class TryQuitMainloop(MessageBox):
 			reason = _("A file from media is in use!")
 			default_yes = False
 			timeout = 30
-
+		elif jobs and retvalue in (QUIT_SHUTDOWN, QUIT_REBOOT, QUIT_KODI):
+			reason = _('%d jobs are running in the background!') % jobs
+			default_yes = False
+			timeout = 30
+		elif len(scrambled_movies) and retvalue in (QUIT_SHUTDOWN, QUIT_REBOOT, QUIT_KODI) and config.recording.force_standby_for_descramble.value:
+			reason = _('There are unscrambled movies, which will be unscrambled in standby')
+			default_yes = False
+			timeout = 30
 		if reason and inStandby:
 			session.nav.record_event.append(self.getRecordEvent)
 			self.skinName = ""
