@@ -1,6 +1,6 @@
 from enigma import pNavigation
 
-from Components.config import ConfigInteger, ConfigSelection, ConfigSubsection, ConfigYesNo, config
+from Components.config import ConfigClock, ConfigInteger, ConfigSelection, ConfigSubsection, ConfigYesNo, config
 from Components.SystemInfo import BoxInfo
 
 
@@ -63,6 +63,10 @@ def InitRecordingConfig():
 	config.recording.ask_to_abort_pip = ConfigSelection(default="abort_msg", choices=choices)
 	config.recording.prepare_time = ConfigSelection(default=20, choices=[(x, _("%d Seconds") % x) for x in range(20, 121, 10)])
 	config.recording.timerviewshowfreespace = ConfigYesNo(default=True)
+
+	config.recording.enable_descramble_in_standby = ConfigYesNo(default=False)
+	config.recording.decrypt_start_time = ConfigClock(default=(1 * 60 * 60))
+	config.recording.decrypt_end_time = ConfigClock(default=(6 * 60 * 60))
 
 
 def recType(configString):
