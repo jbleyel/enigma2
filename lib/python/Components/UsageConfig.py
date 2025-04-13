@@ -663,6 +663,9 @@ def InitUsageConfig():
 
 	config.usage.alternateGitHubDNS = ConfigYesNo(default=False)
 
+	config.usage.days_mark_as_new = ConfigInteger(default=3, limits=(0, 31))
+	config.usage.only_unseen_mark_as_new = ConfigYesNo(default=False)
+
 	nims = [
 		("-1", _("Auto")),
 		("expert_mode", _("Expert mode")),
