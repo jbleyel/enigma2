@@ -5,6 +5,8 @@ from Components.SystemInfo import BoxInfo
 
 
 def InitRecordingConfig():
+	if hasattr(config, "recording"):
+		return
 	config.recording = ConfigSubsection()
 	config.recording.asktozap = ConfigYesNo(default=True)  # Actually this is "recordings always have priority" where 'Yes' does mean don't ask. The RecordTimer will ask when value is 0.
 	choices = [(x, ngettext("%d Minute", "%d Minutes", x) % x) for x in range(121)]
