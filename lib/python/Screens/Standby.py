@@ -10,7 +10,6 @@ from Components.Harddisk import harddiskmanager
 from Components.ImportChannels import ImportChannels
 from Components.Label import Label
 import Components.RecordingConfig
-from Components.PvrDescrambleConvert import pvr_descramble_convert
 from Components.Sources.StreamService import StreamServiceList
 from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Components.Task import job_manager
@@ -439,6 +438,7 @@ class TryQuitMainloop(MessageBox):
 					if rec_time > 0 and (rec_time - time()) < 360:
 						self.timer.start(360)  # wait for next starting timer
 					else:
+						from Components.PvrDescrambleConvert import pvr_descramble_convert
 						if not pvr_descramble_convert.scrambledRecordsLeft():
 							self.close(True)  # immediate shutdown
 			elif event == iRecordableService.evStart:
