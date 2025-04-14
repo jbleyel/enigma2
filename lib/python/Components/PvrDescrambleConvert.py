@@ -171,6 +171,7 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 
 	def scrambledRecordsLeft(self):
 		scrambled_videos = self.virtual_video_dir.getSList()
+		print("[PVRDescramble] scrambledRecordsLeft : ", scrambled_videos)
 		if not len(scrambled_videos):
 			return False
 		pvrlist_tried = 0
@@ -190,6 +191,7 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		return True
 
 	def enterStandby(self, configElement):
+		print("[PVRDescramble] enterStandby")
 		self.pvrLists_tried = []
 		if config.recording.enable_descramble_in_standby.value:
 			instandby = self.getInstandby()
@@ -199,6 +201,7 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 			self.beginConvert()
 
 	def beginConvert(self):
+		print("[PVRDescrambleConvert] beginConvert")
 		begin = config.recording.decrypt_start_time.value
 		end = config.recording.decrypt_end_time.value
 		if not checkTimeSpan(begin, end):
@@ -215,6 +218,7 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		self.startConvertTimer()
 
 	def leaveStandby(self):
+		print("[PVRDescramble] leaveStandby")
 		self.want_shutdown = False
 		self.removeRecordEventCB()
 		self.convertTimer.stop()
@@ -224,24 +228,29 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		self.stopConvert()
 
 	def startConvertTimer(self):
+		print("[PVRDescrambleConvert] startConvertTimer")
 		self.convertTimer.start(3000, True)
 
 	def startStopConvertTimer(self):
+		print("[PVRDescrambleConvert] startStopConvertTimer")
 		self.stopConvertTimer.start(500, True)
 
 	def appendRecordEventCB(self):
+		print("[PVRDescrambleConvert] appendRecordEventCB")
 		nav = self.getNavigation()
 		if nav:
 			if self.gotRecordEvent not in nav.record_event:
 				nav.record_event.append(self.gotRecordEvent)
 
 	def removeRecordEventCB(self):
+		print("[PVRDescrambleConvert] removeRecordEventCB")
 		nav = self.getNavigation()
 		if nav:
 			if self.gotRecordEvent in nav.record_event:
 				nav.record_event.remove(self.gotRecordEvent)
 
 	def gotRecordEvent(self, service, event):
+		print("[PVRDescrambleConvert] gotRecordEvent : ", service, event)
 		if service.getServiceType() == SERVICETYPE_PVR_DESCRAMBLE:
 			if self.converting:
 				if self.convertFilename:
@@ -267,6 +276,7 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 					self.beginConvert()
 
 	def loadScrambledPvrList(self):
+		print("[PVRDescramble] loadScrambledPvrList")
 		self.pvrLists = []
 
 		serviceHandler = eServiceCenter.getInstance()
@@ -343,16 +353,19 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 			self.prepareTimer.start(10000, True)
 
 	def prepareFinished(self):
+		print("[PVRDescrambleConvert] prepareFinished")
 		if self.my_nav and self.my_nav is not None:
 			self.my_nav.stopService()
 		self.prepareTimer.stop()
 		self.second_prepareTimer.start(1000, True)
 
 	def second_prepareFinished(self):
+		print("[PVRDescrambleConvert] second_prepareFinished")
 		self.second_prepareTimer.stop()
 		self.startConvert()
 
 	def startConvert(self):
+		print("[PVRDescrambleConvert] startConvert")
 
 		(_begin, sref, name, length, real_ref) = self.currentPvr
 
@@ -455,6 +468,7 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		return pvr_ori_del
 
 	def stopConvert(self, convertFinished=False):
+		print("[PVRDescrambleConvert] stopConvert")
 		name = "Unknown"
 		if self.currentPvr:
 			(_begin, sref, name, length, real_ref) = self.currentPvr

@@ -35,7 +35,7 @@ from Tools.XMLTools import stringToXML
 InfoBar = False
 
 MODULE_NAME = __name__.split(".")[-1]
-DEBUG = config.crash.debugTimers.value
+DEBUG = True  # config.crash.debugTimers.value
 
 TIMER_XML_FILE = resolveFilename(SCOPE_CONFIG, "timers.xml")
 TIMER_FLAG_FILE = "/tmp/was_rectimer_wakeup"
@@ -964,9 +964,9 @@ class RecordTimerEntry(TimerEntry):
 				self.log(12, "Stop recording.")
 			if not self.justplay:
 				if self.record_service:
-					fname = self.Filename + self.record_service.getFilenameExtension()
+#					fname = self.Filename + self.record_service.getFilenameExtension()
 #					moviedb.updateSingleEntry(fname, withBoxPath=True)
-#					NavigationInstance.instance.stopRecordService(self.record_service)
+					NavigationInstance.instance.stopRecordService(self.record_service)
 					self.record_service = None
 			if self.lastend and self.failed:
 				self.end = self.lastend
