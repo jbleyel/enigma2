@@ -2464,10 +2464,12 @@ RESULT eDVBChannel::getDemux(ePtr<iDVBDemux> &demux, int cap)
 
 		   this poses a big problem for PiP. */
 
+/*
 		if (cap & capHoldDecodeReference) // this is set in eDVBResourceManager::allocateDemux for Dm500HD/DM800 and DM8000
 			;
 		else if (cap & capDecode)
 			our_demux = 0;
+*/
 	}
 	else
 		demux = *our_demux;

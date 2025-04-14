@@ -712,7 +712,6 @@
 		<item level="2" text="Show warning before restart" description="Configure for which types of recordings a warning about active recordings is shown when attempting to restart the box or the GUI.">config.recording.warn_box_restart_rec_types</item>
 		<item level="2" text="Show free space in timer view" description="When 'Enabled', the timer view will show the free space on the target device. This will wake the device from sleep mode.">config.recording.timerviewshowfreespace</item>
 		<if requires="CanDescrambleInStandby">
-			<item level="2" text="Never decrypt while recording CI services" description="Services which are assigned to CI modules will not be descrambled during recording. The recordings will be descrambled in standby. This allows multiple recordings of scrambled services.">config.recording.never_decrypt</item>
 			<item level="2" text="Enable descrambling in standby">config.recording.enable_descramble_in_standby</item>
 			<item level="2" text="Use standby before shutdown when scrambled records are detected">config.recording.force_standby_for_descramble</item>
 			<item level="2" text="Begin of time intervall for descrambling in standby">config.recording.decrypt_start_time</item>
