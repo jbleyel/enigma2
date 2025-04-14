@@ -22,6 +22,7 @@ eDVBServiceRecord::eDVBServiceRecord(const eServiceReferenceDVB &ref, bool isstr
 	m_record_ecm = false;
 	m_packet_size = 188;
 	m_descramble = true;
+	m_pvr_descramble = false;
 	m_is_stream_client = isstreamclient;
 	m_is_pvr = !m_ref.path.empty() && !m_is_stream_client;
 	m_tuned = 0;
@@ -66,7 +67,12 @@ void eDVBServiceRecord::serviceEvent(int event)
 		if (m_state == stateIdle)
 			doPrepare();
 		else if (m_want_record) /* doRecord can be called from Prepared and Recording state */
-			doRecord();
+		{
+			if (m_pvr_descramble)
+				updateDecoder();
+			else
+				doRecord();
+		}
 		m_event((iRecordableService*)this, evNewProgramInfo);
 		break;
 	}
@@ -83,6 +89,12 @@ void eDVBServiceRecord::serviceEvent(int event)
 		stop();
 		m_event((iRecordableService*)this, evRecordAborted);
 		break;
+	case eDVBServicePMTHandler::eventStartPvrDescramble:
+		if (m_want_record)
+		{
+			doRecord();
+		}
+		break;
 	}
 }
 
@@ -96,6 +108,13 @@ RESULT eDVBServiceRecord::prepare(const char *filename, time_t begTime, time_t e
 	m_descramble = config_recording_never_decrypt ? false : descramble;
 	bool write_descramble = m_descramble; // remember descramble flag to fix icam recordings
 	m_record_ecm = config_recording_always_ecm ? true : recordecm;
+
+	// force descramble for _pvrdesc.ts
+	if (strstr(filename, "_pvrdesc.ts"))
+	{
+		m_pvr_descramble = true;
+		m_descramble = true;
+	}
 	m_packet_size = packetsize;
 
 	// eDebug("[eDVBServiceRecord] prepare filename %s / m_record_ecm = %d / m_descramble = %d", filename, m_record_ecm, m_descramble);
@@ -264,7 +283,14 @@ int eDVBServiceRecord::doPrepare()
 					packetsize = meta.m_packet_size;
 					m_descramble = meta.m_scrambled;
 				}
-				servicetype = eDVBServicePMTHandler::offline;
+				if(m_pvr_descramble)
+				{
+					servicetype = eDVBServicePMTHandler::pvrDescramble;
+				}
+				else
+				{
+					servicetype = eDVBServicePMTHandler::offline;
+				}
 				eRawFile *f = new eRawFile(packetsize);
 				f->open(m_ref.path.c_str());
 				source = ePtr<iTsSource>(f);
@@ -512,6 +538,77 @@ int eDVBServiceRecord::doRecord()
 	m_error = 0;
 	m_event((iRecordableService*)this, evRecordRunning);
 	return 0;
+}
+
+void eDVBServiceRecord::updateDecoder()
+{
+	int vpid = -1, vpidtype = -1, apid = -1, apidtype = -1, pcrpid = -1;
+
+	eDVBServicePMTHandler &h = m_service_handler;
+
+	eDVBServicePMTHandler::program program;
+	if (m_service_handler.getProgramInfo(program))
+		eDebug("getting program info failed.");
+	else
+	{
+		eDebugNoNewLine("have %zd video stream(s)", program.videoStreams.size());
+		if (!program.videoStreams.empty())
+		{
+			eDebugNoNewLine(" (");
+			for (std::vector<eDVBServicePMTHandler::videoStream>::const_iterator
+				i(program.videoStreams.begin());
+				i != program.videoStreams.end(); ++i)
+			{
+				if (vpid == -1)
+				{
+					vpid = i->pid;
+					vpidtype = i->type;
+				}
+				if (i != program.videoStreams.begin())
+					eDebugNoNewLine(", ");
+				eDebugNoNewLine("%04x", i->pid);
+			}
+			eDebugNoNewLine(")");
+		}
+
+		eDebugNoNewLine(", and %zd audio stream(s)", program.audioStreams.size());
+		if (!program.audioStreams.empty())
+		{
+			eDebugNoNewLine(" (");
+			for (std::vector<eDVBServicePMTHandler::audioStream>::const_iterator
+				i(program.audioStreams.begin());
+				i != program.audioStreams.end(); ++i)
+			{
+				if (i != program.audioStreams.begin())
+					eDebugNoNewLine(", ");
+				eDebugNoNewLine("%04x", i->pid);
+			}
+			eDebugNoNewLine(")");
+		}
+
+		apid = program.audioStreams[program.defaultAudioStream].pid;
+		apidtype = program.audioStreams[program.defaultAudioStream].type;
+
+		eDebugNoNewLine(", and the pcr pid is %04x", program.pcrPid);
+		pcrpid = program.pcrPid;
+	}
+
+	if (!m_decoder)
+	{
+		h.getDecodeDemux(m_decode_demux);
+		if (m_decode_demux)
+		{
+			m_decode_demux->getMPEGDecoder(m_decoder, 0);
+		}
+	}
+
+	if (m_decoder)
+	{
+		m_decoder->setVideoPID(vpid, vpidtype);
+		m_decoder->setAudioPID(apid, apidtype);
+		m_decoder->setSyncPCR(-1);
+		m_decoder->play();
+	}
 }
 
 RESULT eDVBServiceRecord::frontendInfo(ePtr<iFrontendInformation> &ptr)

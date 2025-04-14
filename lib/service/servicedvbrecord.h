@@ -41,6 +41,7 @@ private:
 	int m_state, m_want_record;
 	bool m_record_ecm;
 	bool m_descramble;
+	bool m_pvr_descramble;
 	bool m_is_stream_client;
 	bool m_is_pvr;
 	int m_packet_size;
@@ -65,6 +66,7 @@ private:
 
 	int doPrepare();
 	int doRecord();
+	void updateDecoder();
 
 			/* events */
 	void serviceEvent(int event);
