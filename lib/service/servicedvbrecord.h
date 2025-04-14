@@ -35,6 +35,10 @@ public:
 		// iSubserviceList
 	int getNumberOfSubservices();
 	RESULT getSubservice(eServiceReference &subservice, unsigned int n);
+
+protected:
+	ePtr<iDVBDemux> m_decode_demux;
+	ePtr<iTSMPEGDecoder> m_decoder;
 private:
 	enum { stateIdle, statePrepared, stateRecording };
 	bool m_simulate;
