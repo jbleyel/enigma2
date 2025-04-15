@@ -191,6 +191,7 @@ public:
 	int tuneExt(eServiceReferenceDVB &ref, ePtr<iTsSource> &, const char *streaminfo_file, eCueSheet *sg=0, bool simulate=false, eDVBService *service = 0, serviceType type = livetv, bool descramble = true);
 
 	void free();
+	bool isCiConnected();
 private:
 	bool m_have_cached_program;
 	program m_cached_program;

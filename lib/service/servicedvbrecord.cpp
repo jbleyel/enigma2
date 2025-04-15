@@ -324,6 +324,21 @@ int eDVBServiceRecord::doRecord()
 
 	if (!m_record && m_tuned && !m_streaming && !m_simulate)
 	{
+		if (m_pvr_descramble)
+		{
+			if (m_service_handler.isPmtReady())
+			{
+				if (!m_service_handler.isCiConnected())
+				{
+					m_event((iRecordableService*)this, evRecordFailed);
+					return errNoCiConnected;
+				}
+			}
+			else
+			{
+				return 0;
+			}
+		}
 		eDebug("[eDVBServiceRecord] Recording to %s...", m_filename.c_str());
 		::remove(m_filename.c_str());
 		int fd = ::open(m_filename.c_str(), O_WRONLY | O_CREAT | O_LARGEFILE | O_CLOEXEC, 0666);
@@ -492,6 +507,8 @@ int eDVBServiceRecord::doRecord()
 				{
 					if (i->capid >= 0) pids_to_record.insert(i->capid);
 				}
+				pids_to_record.insert(EventInformationSection::PID);
+				pids_to_record.insert(TimeAndDateSection::PID);
 			}
 
 			bool include_ait = eConfigManager::getConfigBoolValue("config.recording.include_ait");
