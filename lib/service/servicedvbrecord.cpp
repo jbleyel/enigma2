@@ -31,6 +31,7 @@ eDVBServiceRecord::eDVBServiceRecord(const eServiceReferenceDVB &ref, bool isstr
 	m_streaming = 0;
 	m_simulate = false;
 	m_last_event_id = -1;
+	m_serviceType = eDVBServicePMTHandler::recording;
 }
 
 void eDVBServiceRecord::serviceEvent(int event)
@@ -228,18 +229,17 @@ int eDVBServiceRecord::doPrepare()
 		/* allocate a ts recorder if we don't already have one. */
 	if (m_state == stateIdle)
 	{
-		eDVBServicePMTHandler::serviceType servicetype;
 
 		if(tryFallbackTuner(/*REF*/m_ref, /*REF*/m_is_stream_client, m_is_pvr, m_simulate))
 			eDebug("[eDVBServiceRecord] fallback tuner selected");
 
 		if (m_streaming)
 		{
-			servicetype = m_record_ecm ? eDVBServicePMTHandler::scrambled_streamserver : eDVBServicePMTHandler::streamserver;
+			m_serviceType = m_record_ecm ? eDVBServicePMTHandler::scrambled_streamserver : eDVBServicePMTHandler::streamserver;
 		}
 		else
 		{
-			servicetype = m_record_ecm ? eDVBServicePMTHandler::scrambled_recording : eDVBServicePMTHandler::recording;
+			m_serviceType = m_record_ecm ? eDVBServicePMTHandler::scrambled_recording : eDVBServicePMTHandler::recording;
 		}
 		m_pids_active.clear();
 		m_state = statePrepared;
@@ -265,7 +265,7 @@ int eDVBServiceRecord::doPrepare()
 					m_descramble = true;
 
 				m_record_ecm = false;
-				servicetype = eDVBServicePMTHandler::streamclient;
+				m_serviceType = eDVBServicePMTHandler::streamclient;
 				eHttpStream *f = new eHttpStream();
 				f->open(m_ref.path.c_str());
 				source = ePtr<iTsSource>(f);
@@ -285,11 +285,11 @@ int eDVBServiceRecord::doPrepare()
 				}
 				if(m_pvr_descramble)
 				{
-					servicetype = eDVBServicePMTHandler::pvrDescramble;
+					m_serviceType = eDVBServicePMTHandler::pvrDescramble;
 				}
 				else
 				{
-					servicetype = eDVBServicePMTHandler::offline;
+					m_serviceType = eDVBServicePMTHandler::offline;
 				}
 				eRawFile *f = new eRawFile(packetsize);
 				f->open(m_ref.path.c_str());
@@ -301,7 +301,7 @@ int eDVBServiceRecord::doPrepare()
 		{
 			m_event((iRecordableService*)this, evTuneStart);
 		}
-		return m_service_handler.tuneExt(m_ref, source, m_ref.path.c_str(), 0, m_simulate, NULL, servicetype, m_descramble);
+		return m_service_handler.tuneExt(m_ref, source, m_ref.path.c_str(), 0, m_simulate, NULL, m_serviceType, m_descramble);
 	}
 	return 0;
 }
