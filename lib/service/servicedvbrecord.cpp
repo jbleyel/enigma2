@@ -118,12 +118,12 @@ RESULT eDVBServiceRecord::prepare(const char *filename, time_t begTime, time_t e
 	{
 		m_pvr_descramble = true;
 		m_descramble = true;
+		m_record_ecm = false;
+		write_descramble = true;
 	}
 	m_packet_size = packetsize;
 
-	eDebug("[eDVBServiceRecord] prepare m_ref %s", m_ref.toString().c_str());
-	eDebug("[eDVBServiceRecord] prepare m_ref.path %s", m_ref.path.c_str());
-	eDebug("[eDVBServiceRecord] prepare filename %s / m_record_ecm = %d / m_descramble = %d / m_state = %d / m_pvr_descramble = %d", filename, m_record_ecm, m_descramble, m_state, m_pvr_descramble);
+	eTrace("[eDVBServiceRecord] prepare filename %s / m_record_ecm = %d / m_descramble = %d / m_pvr_descramble = %d", filename, m_record_ecm, m_descramble, m_pvr_descramble);
 
 	if (m_state == stateIdle)
 	{
@@ -231,10 +231,8 @@ RESULT eDVBServiceRecord::stop()
 
 int eDVBServiceRecord::doPrepare()
 {
-		/* allocate a ts recorder if we don't already have one. */
-
-	eDebug("[eDVBServiceRecord] doPrepare m_ref %s", m_ref.toString().c_str());
-	eDebug("[eDVBServiceRecord] doPrepare m_state %d", m_state);
+	/* allocate a ts recorder if we don't already have one. */
+	eTrace("[eDVBServiceRecord] doPrepare m_ref %s", m_ref.toString().c_str());
 
 	if (m_state == stateIdle)
 	{
@@ -257,9 +255,6 @@ int eDVBServiceRecord::doPrepare()
 		 * NOTE: we do not have to create a source for simulated recordings,
 		 * we will not get to the point where the source is going to be used
 		 */
-
-		eDebug("[eDVBServiceRecord] doPrepare m_ref %s", m_ref.path.c_str());
-		eDebug("[eDVBServiceRecord] doPrepare m_simulate %d", m_simulate);
 	 
 
 		if (!m_simulate && !m_ref.path.empty())
@@ -316,7 +311,7 @@ int eDVBServiceRecord::doPrepare()
 			m_event((iRecordableService*)this, evTuneStart);
 		}
 
-		eDebug("[eDVBServiceRecord] doPrepare m_ref:%s / m_simulate:%d / m_serviceType:%d / m_is_stream_client:%d / m_descramble:%d / m_pvr_descramble:%d", m_ref.path.c_str(), m_simulate, m_serviceType, m_is_stream_client, m_descramble, m_pvr_descramble);
+		eTrace("[eDVBServiceRecord] doPrepare m_ref:%s / m_simulate:%d / m_serviceType:%d / m_is_stream_client:%d / m_descramble:%d / m_pvr_descramble:%d", m_ref.path.c_str(), m_simulate, m_serviceType, m_is_stream_client, m_descramble, m_pvr_descramble);
 
 		return m_service_handler.tuneExt(m_ref, source, m_ref.path.c_str(), 0, m_simulate, NULL, m_serviceType, m_descramble);
 	}
