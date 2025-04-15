@@ -1119,6 +1119,9 @@ int eDVBServicePMTHandler::tune(eServiceReferenceDVB &ref, int use_decode_demux,
 
 int eDVBServicePMTHandler::tuneExt(eServiceReferenceDVB &ref, ePtr<iTsSource> &source, const char *streaminfo_file, eCueSheet *cue, bool simulate, eDVBService *service, serviceType type, bool descramble)
 {
+
+	eDebug("[eDVBServicePMTHandler] tuneExt %s", ref.toString().c_str());
+
 	RESULT res=0;
 	m_reference = ref;
 

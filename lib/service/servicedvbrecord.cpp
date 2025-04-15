@@ -304,6 +304,9 @@ int eDVBServiceRecord::doPrepare()
 		{
 			m_event((iRecordableService*)this, evTuneStart);
 		}
+
+		eDebug("[eDVBServiceRecord] doPrepare m_ref:%s / m_simulate:%d / m_serviceType:%d / m_is_stream_client:%d / m_descramble:%d / m_pvr_descramble:%d", m_ref.path.c_str(), m_simulate, m_serviceType, m_is_stream_client, m_descramble, m_pvr_descramble);
+
 		return m_service_handler.tuneExt(m_ref, source, m_ref.path.c_str(), 0, m_simulate, NULL, m_serviceType, m_descramble);
 	}
 	return 0;
