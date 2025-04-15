@@ -1174,6 +1174,9 @@ RESULT eDVBResourceManager::allocateDemux(eDVBRegisteredFrontend *fe, ePtr<eDVBA
 //	cap |= capHoldDecodeReference; // this is checked in eDVBChannel::getDemux
 	bool use_decode_demux = (fe || (cap & iDVBChannel::capDecode));
 
+	// TEST
+	use_decode_demux = !(cap & iDVBChannel::capDecode);
+
 	if (!use_decode_demux)
 	{
 		i = m_demux.end();
