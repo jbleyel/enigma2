@@ -17,10 +17,12 @@ Components.RecordingConfig.InitRecordingConfig()
 from Components.SystemInfo import getBoxDisplayName
 from Components.TimerSanityCheck import TimerSanityCheck
 from Components.UsageConfig import defaultMoviePath, calcFrontendPriorityIntval
+from Components.VirtualVideoDir import VirtualVideoDir
 from Screens.MessageBox import MessageBox
 import Screens.Standby
 from ServiceReference import ServiceReference
 from Tools.ASCIItranslit import legacyEncode
+from Tools.CIHelper import cihelper
 from Tools.Directories import SCOPE_CONFIG, fileReadXML, getRecordingFilename, resolveFilename
 from Tools.Notifications import AddNotification, AddNotificationWithCallback, AddPopup
 from Tools import Trashcan
@@ -717,6 +719,7 @@ class RecordTimerEntry(TimerEntry):
 		self.PVRFilename = filename
 		self.isPVRDescramble = False
 		self.pvrConvert = False
+		self.virtual_video_dir = VirtualVideoDir()
 
 		self.log_entries = []
 		self.check_justplay()
@@ -1291,6 +1294,10 @@ class RecordTimerEntry(TimerEntry):
 				eventId = self.eit
 				if eventId is None:
 					eventId = -1
+
+			if self.descramble and cihelper.ServiceIsAssigned(recordingReference) > -1:
+				self.virtual_video_dir.writeSList(append=f"{self.Filename}{self.record_service.getFilenameExtension()}")
+
 			prepareResult = self.record_service.prepare(f"{self.Filename}{self.record_service.getFilenameExtension()}", self.begin, self.end, eventId, name.replace("\n", " "), description.replace("\n", " "), " ".join(self.tags), bool(self.descramble), bool(self.record_ecm))
 			if prepareResult:
 				if prepareResult == -255:
