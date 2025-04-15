@@ -261,7 +261,7 @@ class CommonDataBase():
 			return False
 		if not self.cursor:
 			if self.dbstate.isRemoteLocked():
-				if len(self.dbstate.available_stbs):
+				if len(self.dbstate.availableStbs):
 					return False
 			else:
 				self.dbstate.lockDB()
@@ -495,8 +495,8 @@ class CommonDataBase():
 				for x in structure:
 					if x.startswith("fp_"):
 						r_stb = str(x.lstrip("fp_"))
-						if r_stb not in self.dbstate.available_stbs:
-							self.dbstate.available_stbs.append(r_stb)
+						if r_stb not in self.dbstate.availableStbs:
+							self.dbstate.availableStbs.append(r_stb)
 		return self.tableStructure
 
 	def addColumn(self, column, c_type="TEXT"):
