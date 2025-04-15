@@ -250,10 +250,13 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 				nav.record_event.remove(self.gotRecordEvent)
 
 	def gotRecordEvent(self, service, event):
-		print("[PVRDescrambleConvert] gotRecordEvent : ", service, event)
+		print("[PVRDescrambleConvert] gotRecordEvent : ", service, event, service.getServiceType())
 		if service.getServiceType() == SERVICETYPE_PVR_DESCRAMBLE:
+			print("[PVRDescrambleConvert] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.converting / self.convertFilename", self.converting, self.convertFilename)
 			if self.converting:
 				if self.convertFilename:
+					print("[PVRDescrambleConvert] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.convertFilename[0]", self.convertFilename[0])
+					print("[PVRDescrambleConvert] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.pvrLists_tried", self.pvrLists_tried)
 					pvr_ori = self.convertFilename[0]
 					if pvr_ori not in self.pvrLists_tried:
 						self.pvrLists_tried.append(pvr_ori)
@@ -277,6 +280,7 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 
 	def loadScrambledPvrList(self):
 		print("[PVRDescramble] loadScrambledPvrList")
+		print("[PVRDescramble] loadScrambledPvrList self.pvrLists_tried:", self.pvrLists_tried)
 		self.pvrLists = []
 
 		serviceHandler = eServiceCenter.getInstance()
@@ -294,6 +298,8 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 			if not path:
 				continue
 
+			print("[PVRDescramble] loadScrambledPvrList", path)
+
 			info = serviceHandler.info(sref)
 
 			real_sref = "1:0:0:0:0:0:0:0:0:0:"
@@ -309,6 +315,9 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 			name = info.getName(sref)
 			scrambled = info.getInfo(sref, iServiceInformation.sIsCrypted)
 			length = info.getLength(sref)
+
+			print("[PVRDescramble] loadScrambledPvrList", name, length, scrambled)
+
 			if path in self.pvrLists_tried:
 				continue
 
