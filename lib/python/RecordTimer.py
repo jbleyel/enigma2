@@ -1295,6 +1295,7 @@ class RecordTimerEntry(TimerEntry):
 				if eventId is None:
 					eventId = -1
 
+			print("[RecordTimer] Recording self.descramble / ServiceIsAssigned", self.descramble, cihelper.ServiceIsAssigned(recordingReference))
 			if self.descramble and cihelper.ServiceIsAssigned(recordingReference) > -1:
 				self.virtual_video_dir.writeSList(append=f"{self.Filename}{self.record_service.getFilenameExtension()}")
 
