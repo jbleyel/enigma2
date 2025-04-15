@@ -121,7 +121,9 @@ RESULT eDVBServiceRecord::prepare(const char *filename, time_t begTime, time_t e
 	}
 	m_packet_size = packetsize;
 
-	eDebug("[eDVBServiceRecord] prepare filename %s / m_record_ecm = %d / m_descramble = %d", filename, m_record_ecm, m_descramble);
+	eDebug("[eDVBServiceRecord] prepare m_ref %s", m_ref.toString().c_str());
+	eDebug("[eDVBServiceRecord] prepare m_ref.path %s", m_ref.path.c_str());
+	eDebug("[eDVBServiceRecord] prepare filename %s / m_record_ecm = %d / m_descramble = %d / m_state = %d / m_pvr_descramble = %d", filename, m_record_ecm, m_descramble, m_state, m_pvr_descramble);
 
 	if (m_state == stateIdle)
 	{
@@ -230,6 +232,10 @@ RESULT eDVBServiceRecord::stop()
 int eDVBServiceRecord::doPrepare()
 {
 		/* allocate a ts recorder if we don't already have one. */
+
+	eDebug("[eDVBServiceRecord] doPrepare m_ref %s", m_ref.toString().c_str());
+	eDebug("[eDVBServiceRecord] doPrepare m_state %d", m_state);
+
 	if (m_state == stateIdle)
 	{
 
@@ -251,6 +257,11 @@ int eDVBServiceRecord::doPrepare()
 		 * NOTE: we do not have to create a source for simulated recordings,
 		 * we will not get to the point where the source is going to be used
 		 */
+
+		eDebug("[eDVBServiceRecord] doPrepare m_ref %s", m_ref.path.c_str());
+		eDebug("[eDVBServiceRecord] doPrepare m_simulate %d", m_simulate);
+	 
+
 		if (!m_simulate && !m_ref.path.empty())
 		{
 			if (m_is_stream_client)
