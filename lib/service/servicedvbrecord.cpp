@@ -121,7 +121,7 @@ RESULT eDVBServiceRecord::prepare(const char *filename, time_t begTime, time_t e
 	}
 	m_packet_size = packetsize;
 
-	// eDebug("[eDVBServiceRecord] prepare filename %s / m_record_ecm = %d / m_descramble = %d", filename, m_record_ecm, m_descramble);
+	eDebug("[eDVBServiceRecord] prepare filename %s / m_record_ecm = %d / m_descramble = %d", filename, m_record_ecm, m_descramble);
 
 	if (m_state == stateIdle)
 	{

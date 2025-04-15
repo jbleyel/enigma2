@@ -125,6 +125,7 @@ class VirtualVideoDir:
 			if exists(movie) and not exists(movie + ".del"):
 				ref = self.getServiceRef(movie)
 				vlist.append(ref)
+		print("[VirtualVideoDir] getSList", vlist)
 		return vlist
 
 	def writeSList(self, append="", overwrite=False):
@@ -144,6 +145,7 @@ class VirtualVideoDir:
 			result.extend(append)
 		elif append != "":
 			result.append(append)
+		print("[VirtualVideoDir] writeSList", result)
 		if not fileWriteLines(self.SCRAMBLE_LIST_FILE, result):
 			if self.isLocked < 11:
 				sleep(.300)

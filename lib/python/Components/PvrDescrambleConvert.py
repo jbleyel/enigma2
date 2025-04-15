@@ -313,7 +313,7 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 				continue
 
 			if scrambled == 1:
-				if False:
+				if True:
 					print("====" * 20)
 					print("[loadScrambledPvrList] sref.toString() : ", sref.toString())
 					print("[loadScrambledPvrList] sref.getPath() : ", path)
