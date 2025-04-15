@@ -307,7 +307,7 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 
 			# convert separe-separated list of tags into a set
 			name = info.getName(sref)
-			scrambled = info.getInfo(sref, iServiceInformation.sIsScrambled)
+			scrambled = info.getInfo(sref, iServiceInformation.sIsCrypted)
 			length = info.getLength(sref)
 			if path in self.pvrLists_tried:
 				continue
