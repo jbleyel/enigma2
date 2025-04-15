@@ -1054,6 +1054,7 @@ public:
 		evPvrTuneStart,
 		evRecordAborted,
 		evGstRecordEnded,
+		evPvrEof,
 	};
 	enum {
 		NoError=0,
