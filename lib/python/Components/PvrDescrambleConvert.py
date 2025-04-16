@@ -379,7 +379,8 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		(_begin, sref, name, length, real_ref) = self.currentPvr
 
 		m_path = sref.getPath()
-		sref = eServiceReference(real_ref + m_path)
+		sref = eServiceReference(real_ref)
+		sref.setPath(m_path)
 
 		begin = int(time())
 		end = begin + 3600  # dummy
@@ -516,11 +517,19 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		new_meta = pvr_ori + ".meta"
 		orig_content = []
 		tmp_content = []
+
+		print("[PVRDescrambleConvert] keepMetaData new_meta", new_meta)
+		print("[PVRDescrambleConvert] keepMetaData del_meta", del_meta)
+
 		if exists(new_meta) and exists(del_meta):
 			with open(del_meta) as f:
 				orig_content = f.readlines()
 			with open(new_meta) as f:
 				tmp_content = f.readlines()
+
+		print("[PVRDescrambleConvert] keepMetaData orig_content", orig_content)
+		print("[PVRDescrambleConvert] keepMetaData tmp_content", tmp_content)
+
 		if len(orig_content) >= 9 and len(tmp_content) >= 9:
 			orig_content[8] = tmp_content[8]
 			new_content = ""
