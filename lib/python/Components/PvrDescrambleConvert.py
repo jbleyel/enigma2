@@ -534,8 +534,8 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		print("[PVRDescrambleConvert] keepMetaData orig_content", orig_content)
 		print("[PVRDescrambleConvert] keepMetaData tmp_content", tmp_content)
 
-		if len(orig_content) >= 9 and len(tmp_content) >= 9:
-			orig_content[8] = tmp_content[8]
+		if len(orig_content) >= 10 and len(tmp_content) >= 10:
+			orig_content[9] = tmp_content[9]
 			new_content = ""
 			for x in orig_content:
 				new_content += x
