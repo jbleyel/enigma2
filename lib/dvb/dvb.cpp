@@ -2565,13 +2565,13 @@ RESULT eDVBChannel::playSource(ePtr<iTsSource> &source, const char *streaminfo_f
 		if (m_decoder_demux)
 		{
 			uint8_t demux = 0;
-			m_decoder_demux->getCADemuxID(demux);
+			m_decoder_demux->get().getCADemuxID(demux);
 			eDebug("[eDVBChannel] DEBUG playSource use m_decoder_demux = %d", demux);
 		}
 		if (m_demux)
 		{
 			uint8_t demux = 0;
-			m_demux->getCADemuxID(demux);
+			m_demux->get().getCADemuxID(demux);
 			eDebug("[eDVBChannel] DEBUG playSource use m_demux = %d", demux);
 		}
 
