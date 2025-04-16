@@ -399,6 +399,10 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		recording = RecordTimerEntry(sref, begin, end, name, description, eventid, dirname=preferredInstantRecordPath(), filename=filename)
 		recording.dontSave = True
 		recording.autoincrease = True
+		recording.marginAfter = 0
+		recording.marginBefore = 0
+		recording.eventBegin = begin
+		recording.eventEnd = end
 		recording.setAutoincreaseEnd()
 		recording.pvrConvert = True  # do not handle evStart event
 
