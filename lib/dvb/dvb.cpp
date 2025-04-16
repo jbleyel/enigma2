@@ -2417,13 +2417,13 @@ int eDVBChannel::getDvrId()
 	if (m_decoder_demux)
 	{
 		uint8_t demux = 0;
-		m_decoder_demux->getCADemuxID(demux);
+		m_decoder_demux->get().getCADemuxID(demux);
 		eDebug("[eDVBChannel] DEBUG getDvrId use m_decoder_demux = %d", demux);
 	}
 	if (m_demux)
 	{
 		uint8_t demux = 0;
-		m_demux->getCADemuxID(demux);
+		m_demux->get().getCADemuxID(demux);
 		eDebug("[eDVBChannel] DEBUG getDvrId use m_demux = %d", demux);
 	}
 
@@ -2460,14 +2460,14 @@ RESULT eDVBChannel::getDemux(ePtr<iDVBDemux> &demux, int cap)
 	if(m_decoder_demux)
 	{
 		uint8_t demux = 0;
-		m_decoder_demux->getCADemuxID(demux);
+		m_decoder_demux->get().getCADemuxID(demux);
 		eDebug("[eDVBChannel] DEBUG getDemux cap=%02X / m_decoder_demux %d", cap, demux);
 	}
 
 	if(m_demux)
 	{
 		uint8_t demux = 0;
-		m_demux->getCADemuxID(demux);
+		m_demux->get().getCADemuxID(demux);
 		eDebug("[eDVBChannel] DEBUG getDemux cap=%02X / m_demux %d", cap, demux);
 	}
 
