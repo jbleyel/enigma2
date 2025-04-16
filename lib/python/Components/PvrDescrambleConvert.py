@@ -359,14 +359,14 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		self.my_nav = self.getNavigation()
 		if self.my_nav and self.my_nav is not None:
 			self.my_nav.playService(eServiceReference(real_ref))
-			self.prepareTimer.start(10000, True)
+			self.prepareTimer.start(15000, True)
 
 	def prepareFinished(self):
 		print("[PVRDescrambleConvert] prepareFinished")
 		if self.my_nav and self.my_nav is not None:
 			self.my_nav.stopService()
 		self.prepareTimer.stop()
-		self.second_prepareTimer.start(1000, True)
+		self.second_prepareTimer.start(2000, True)
 
 	def second_prepareFinished(self):
 		print("[PVRDescrambleConvert] second_prepareFinished")
@@ -539,8 +539,12 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 			new_content = ""
 			for x in orig_content:
 				new_content += x
+			print("[PVRDescrambleConvert] keepMetaData write file", new_meta)
+			print("[PVRDescrambleConvert] keepMetaData new_content", new_content)
 			with open(new_meta, "w") as f:
 				f.write(new_content)
+		else:
+			print("[PVRDescrambleConvert] keepMetaData NOT write")
 
 	def deletePvr(self, filename):
 		serviceHandler = eServiceCenter.getInstance()
