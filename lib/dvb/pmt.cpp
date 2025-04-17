@@ -163,6 +163,12 @@ void eDVBServicePMTHandler::registerCAService()
 		demuxes[1] = m_decode_demux_num;
 	else
 		demuxes[1] = demuxes[0];
+	eDebug("[eDVBServicePMTHandler] register CA service ref='%s'", m_reference.toString().c_str());
+	eDebug("[eDVBServicePMTHandler] register CA service name='%s'", m_reference.name.c_str());
+	eDebug("[eDVBServicePMTHandler] register CA service path='%s'", m_reference.path.c_str());
+	// TEST 
+	m_reference.name = "";
+	eDebug("[eDVBServicePMTHandler] register CA service ref='%s'", m_reference.toString().c_str());
 	eDVBCAHandler::getInstance()->registerService(m_reference, adapterid, demuxes, (int)m_service_type, m_ca_servicePtr);
 }
 
