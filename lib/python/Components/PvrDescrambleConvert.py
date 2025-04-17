@@ -298,25 +298,23 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 			if not path:
 				continue
 
-			print("[PVRDescramble] loadScrambledPvrList", path)
+			print("[PVRDescramble] loadScrambledPvrList path=", path)
 
 			info = serviceHandler.info(sref)
 
 			real_sref = "1:0:0:0:0:0:0:0:0:0:"
 			if info is not None:
 				real_sref = info.getInfoString(sref, iServiceInformation.sServiceref)
+				real_sref = eServiceReference(real_sref).toReferenceString()  # Remove name
 
 			if info is None:
 				info = stubInfo
 
 			begin = info.getInfo(sref, iServiceInformation.sTimeCreate)
 
-			# convert separe-separated list of tags into a set
 			name = info.getName(sref)
 			scrambled = info.getInfo(sref, iServiceInformation.sIsCrypted)
 			length = info.getLength(sref)
-
-			print("[PVRDescramble] loadScrambledPvrList", name, length, scrambled)
 
 			if path in self.pvrLists_tried:
 				continue
@@ -359,14 +357,14 @@ class PVRDescrambleConvert(PVRDescrambleConvertInfos):
 		self.my_nav = self.getNavigation()
 		if self.my_nav and self.my_nav is not None:
 			self.my_nav.playService(eServiceReference(real_ref))
-			self.prepareTimer.start(15000, True)
+			self.prepareTimer.start(10000, True)
 
 	def prepareFinished(self):
 		print("[PVRDescrambleConvert] prepareFinished")
 		if self.my_nav and self.my_nav is not None:
 			self.my_nav.stopService()
 		self.prepareTimer.stop()
-		self.second_prepareTimer.start(2000, True)
+		self.second_prepareTimer.start(1000, True)
 
 	def second_prepareFinished(self):
 		print("[PVRDescrambleConvert] second_prepareFinished")

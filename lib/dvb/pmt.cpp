@@ -1293,6 +1293,7 @@ void eDVBServicePMTHandler::free()
 	m_PAT.stop();
 	m_service = 0;
 	m_channel = 0;
+	m_sr_channel = 0;
 	m_pvr_channel = 0;
 	m_demux = 0;
 }
@@ -1317,6 +1318,7 @@ void eDVBServicePMTHandler::removeCaHandler()
 	if (m_channel)
 		eDVBCIInterfaces::getInstance()->removePMTHandler(this);
 }
+
 bool eDVBServicePMTHandler::isCiConnected()
 {
 	return eDVBCIInterfaces::getInstance()->isCiConnected(this);
