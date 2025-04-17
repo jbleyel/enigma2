@@ -24,9 +24,9 @@ BASEINIT = None
 lock = Lock()
 
 
-config.misc.movielist_use_moviedb_autoupdate = ConfigYesNo(default=True)
+config.misc.movielist_use_moviedb_autoupdate = ConfigYesNo(default=False)
 config.misc.db_path = ConfigDirectory(default="/media/hdd/")
-config.misc.db_enabled = ConfigYesNo(default=True)
+config.misc.db_enabled = ConfigYesNo(default=False)
 config.misc.timer_show_movie_available = ConfigSelection(choices=[
 	(0, _("Off")),
 	(1, _("Title")),
