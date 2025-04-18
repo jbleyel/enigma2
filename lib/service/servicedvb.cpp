@@ -1132,7 +1132,7 @@ eDVBServicePlay::~eDVBServicePlay()
 #ifdef PASSTHROUGH_FIX
 void eDVBServicePlay::forcePassthrough()
 {
-	eDebug("[eDVBServicePlay] Setting 'passthrough' to force correct operation");
+	eTrace("[eDVBServicePlay] Setting 'passthrough' to force correct operation");
 	CFile::writeStr("/proc/stb/audio/ac3", "passthrough");
 }
 #endif

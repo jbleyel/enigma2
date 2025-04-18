@@ -257,8 +257,6 @@ int eDVBServiceRecord::doPrepare()
 		 * NOTE: we do not have to create a source for simulated recordings,
 		 * we will not get to the point where the source is going to be used
 		 */
-	 
-
 		if (!m_simulate && !m_ref.path.empty())
 		{
 			if (m_is_stream_client)
