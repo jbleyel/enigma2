@@ -9,11 +9,6 @@
 
 #include <openssl/aes.h>
 
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <string>
-
 eDVBCICcSession::eDVBCICcSession(eDVBCISlot *slot, int version) : m_slot(slot), m_akh_index(0),
 																  m_root_ca_store(nullptr), m_cust_cert(nullptr), m_device_cert(nullptr),
 																  m_ci_cust_cert(nullptr), m_ci_device_cert(nullptr),
@@ -747,15 +742,6 @@ int eDVBCICcSession::generate_uri_confirm()
 	SHA256_Update(&sha, m_ci_elements.get_ptr(URI_MESSAGE), m_ci_elements.get_buf(NULL, URI_MESSAGE));
 	SHA256_Update(&sha, uck, 32);
 	SHA256_Final(uri_confirm, &sha);
-
-
-    std::ostringstream oss;
-    for (int i = 0; i < 32; ++i) {
-        oss << std::hex << std::setw(2) << std::setfill('0') << (int)uri_confirm[i];
-    }
-	std::string key = oss.str();
-
-	eDebug("[CI%d RCC] str '%s'", key.c_str());
 
 	m_ci_elements.set(URI_CONFIRM, uri_confirm, 32);
 
