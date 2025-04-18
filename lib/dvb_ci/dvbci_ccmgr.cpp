@@ -735,7 +735,7 @@ int eDVBCICcSession::generate_uri_confirm()
 	uint8_t uck[32];
 	uint8_t uri_confirm[32];
 
-	// eDebug("[CI%d RCC] uri_confirm...", m_slot->getSlotID());
+	eDebug("[CI%d RCC] uri_confirm...", m_slot->getSlotID());
 
 	// UCK
 	SHA256_Init(&sha);
@@ -755,7 +755,7 @@ int eDVBCICcSession::generate_uri_confirm()
     }
 	std::string key = oss.str();
 
-	eDebug("[CI%d RCC] str '%s'", key.c_str());
+	eDebug("[CI%d RCC] str '%s'", m_slot->getSlotID(), key.c_str());
 
 	m_ci_elements.set(URI_CONFIRM, uri_confirm, 32);
 
