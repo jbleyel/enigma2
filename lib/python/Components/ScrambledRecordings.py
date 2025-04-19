@@ -11,6 +11,10 @@ class ScrambledRecordings:
 	def __init__(self):
 		self.isLocked = 0
 
+	def stripMovieName(self, movie):
+		movie = movie.rstrip("\n")
+		return movie.replace("\x00", "")
+
 	def readList(self):
 		files = []
 		lines = fileReadLines(self.SCRAMBLE_LIST_FILE, default=[])
