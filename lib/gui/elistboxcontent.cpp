@@ -666,24 +666,25 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 		{
 			/* handle left part. get item from tuple, convert to string, display. */
 			text = PyTuple_GET_ITEM(item, 0);
+			const char *string;
 
 			if (PyTuple_Check(text))
 			{
 				text = PyTuple_GET_ITEM(text, 0);
 				text = PyObject_Str(text); /* creates a new object - old object was borrowed! */
-				const char *string = (text && PyUnicode_Check(text)) ? PyUnicode_AsUTF8(text) : "<not-a-string>";
+				string = (text && PyUnicode_Check(text)) ? PyUnicode_AsUTF8(text) : "<not-a-string>";
 				Py_XDECREF(text);
 			}
 			else
 			{
 				text = PyObject_Str(text); /* creates a new object - old object was borrowed! */
-				const char *string = (text && PyUnicode_Check(text)) ? PyUnicode_AsUTF8(text) : "<not-a-string>";
+				string = (text && PyUnicode_Check(text)) ? PyUnicode_AsUTF8(text) : "<not-a-string>";
 				Py_XDECREF(text);
 			}
 
 			/* when we have no label, align value to the left. (FIXME:
-			   don't we want to specifiy this individually?) */
-			int value_alignment_left = !*string;
+			don't we want to specifiy this individually?) */
+			value_alignment_left = !*string;
 
 			/* now, handle the value. get 2nd part from tuple*/
 			if (PyTuple_Size(item) >= 2) // when no 2nd entry is in tuple this is a non selectable entry without config part
