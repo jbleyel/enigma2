@@ -967,7 +967,7 @@ eServiceMP3::~eServiceMP3()
 #ifdef PASSTHROUGH_FIX
 void eServiceMP3::forcePassthrough()
 {
-	eDebug("[eServiceMP3] Setting 'passthrough' to force correct operation");
+	eTrace("[eServiceMP3] Setting 'passthrough' to force correct operation");
 	CFile::writeStr("/proc/stb/audio/ac3", "passthrough");
 	clearBuffers();
 }
@@ -2034,14 +2034,12 @@ int eServiceMP3::selectAudioStream(int i, bool skipAudioFix)
 				const gchar *g_type = gst_structure_get_name(str);
 				audiotype_t apidtype = gstCheckAudioPad(str);
 				gst_caps_unref(caps);
-				eDebug("[eServiceMP3] PASSTHROUGH_FIX apidtype %d", apidtype);
 				if (apidtype == atAC3 || apidtype == atEAC3 || apidtype == atAAC || apidtype == atUnknown || apidtype == atPCM) {
 					std::string pass = CFile::read("/proc/stb/audio/ac3");
 					if(pass.find("passthrough") != std::string::npos)
 					{
 						int longAudioDelay = eSimpleConfig::getInt("config.av.passthrough_fix_long", 1200);
 						int shortAudioDelay = eSimpleConfig::getInt("config.av.passthrough_fix_short", 100);
-						eDebug("[eServiceMP3] PASSTHROUGH_FIX longAudioDelay %d / shortAudioDelay %d", longAudioDelay, shortAudioDelay);
 						m_passthrough_fix_timer->stop();
 						m_passthrough_fix_timer->start(apidtype == atEAC3 && i > 0 && current_audio_orig > -1 ? longAudioDelay : shortAudioDelay, true);
 					}

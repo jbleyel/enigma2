@@ -480,9 +480,8 @@ BoxInfo.setItem("samba", exists("/etc/init.d/samba"))
 BoxInfo.setItem("AISubs", exists("/etc/init.d/aisocket"))
 
 # Vu+ EAC3Fix
-BoxInfo.setItem("VuEAC3Fix", MODEL in ("vuultimo4k", "vuduo4kse", "gbmv200"))
+BoxInfo.setItem("VuEAC3Fix", MODEL in ("vuultimo4k", "vuduo4kse"))
 
-BoxInfo.setItem("CanDescrambleInStandby", True)
-#BoxInfo.setItem("CanDescrambleInStandby", MODEL in ("vuultimo4k", "vuuno4k", "vusolo4k", "vuuno4kse", "vuduo4k", "vuduo4kse"))
+BoxInfo.setItem("CanDescrambleInStandby", MODEL in ("vuultimo4k", "vuuno4k", "vusolo4k", "vuuno4kse", "vuduo4k", "vuduo4kse", "vuzero4k"))
 
 updateSysSoftCam()
