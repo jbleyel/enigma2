@@ -667,9 +667,19 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 			/* handle left part. get item from tuple, convert to string, display. */
 			text = PyTuple_GET_ITEM(item, 0);
 
-			text = PyObject_Str(text); /* creates a new object - old object was borrowed! */
-			const char *string = (text && PyUnicode_Check(text)) ? PyUnicode_AsUTF8(text) : "<not-a-string>";
-			Py_XDECREF(text);
+			if (PyTuple_Check(text))
+			{
+				text = PyTuple_GET_ITEM(text, 0);
+				text = PyObject_Str(text); /* creates a new object - old object was borrowed! */
+				const char *string = (text && PyUnicode_Check(text)) ? PyUnicode_AsUTF8(text) : "<not-a-string>";
+				Py_XDECREF(text);
+			}
+			else
+			{
+				text = PyObject_Str(text); /* creates a new object - old object was borrowed! */
+				const char *string = (text && PyUnicode_Check(text)) ? PyUnicode_AsUTF8(text) : "<not-a-string>";
+				Py_XDECREF(text);
+			}
 
 			/* when we have no label, align value to the left. (FIXME:
 			   don't we want to specifiy this individually?) */
@@ -679,8 +689,24 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 			if (PyTuple_Size(item) >= 2) // when no 2nd entry is in tuple this is a non selectable entry without config part
 				value = PyTuple_GET_ITEM(item, 1);
 
+			int indent = 0;
+
+			if (PyTuple_Size(item) >= 4)
+			{
+				ePyObject options = PyTuple_GET_ITEM(item, 3);
+				if (options && PyDict_Check(options))
+				{
+					ePyObject entry = PyDict_GetItemString(options, "indent");
+					if (entry && PyLong_Check(entry))
+					{
+						indent = PyLong_AsLong(entry);
+						indent = indent * style.getValue(eWindowStyleSkinned::valueIndentSize);
+					}
+				}
+			} 
+
 			ePtr<gFont> fnt3;
-			int leftOffset = style.getValue(eWindowStyleSkinned::valueEntryLeftOffset);
+			int leftOffset = style.getValue(eWindowStyleSkinned::valueEntryLeftOffset) + indent;
 
 			if (value)
 			{
@@ -949,6 +975,13 @@ int eListboxPythonConfigContent::getHeaderLeftOffset()
 	ePtr<eWindowStyle> style;
 	m_listbox->getStyle(style);
 	return style->getValue(eWindowStyleSkinned::valueHeaderLeftOffset);
+}
+
+int eListboxPythonConfigContent::getIndentSize()
+{
+	ePtr<eWindowStyle> style;
+	m_listbox->getStyle(style);
+	return style->getValue(eWindowStyleSkinned::valueIndentSize);
 }
 
 
