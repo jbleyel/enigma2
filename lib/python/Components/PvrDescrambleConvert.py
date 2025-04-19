@@ -117,7 +117,6 @@ class PVRDescrambleConvert():
 		self.oldService = None
 		self.wantShutdown = False
 		self.navigation = None
-
 		self.scrambledRecordings = ScrambledRecordings()
 
 	def getRecordings(self):
@@ -143,7 +142,7 @@ class PVRDescrambleConvert():
 		self.beginConvert()
 
 	def scrambledRecordsLeft(self):
-		scrambledFiles = self.scrambledRecordings.getList()
+		scrambledFiles = self.scrambledRecordings.readList()
 		print("[PVRDescramble] scrambledRecordsLeft : ", scrambledFiles)
 		if scrambledFiles:
 			tried = 0
@@ -227,7 +226,7 @@ class PVRDescrambleConvert():
 			if self.converting:
 				if self.convertFilename:
 					print("[PVRDescrambleConvert] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.convertFilename[0]", self.convertFilename[0])
-					print("[PVRDescrambleConvert] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.pvrLists_tried", self.pvrListsTried)
+					print("[PVRDescrambleConvert] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.pvrListsTried", self.pvrListsTried)
 					pvrOri = self.convertFilename[0]
 					if pvrOri not in self.pvrListsTried:
 						self.pvrListsTried.append(pvrOri)
@@ -251,10 +250,10 @@ class PVRDescrambleConvert():
 
 	def loadScrambledPvrList(self):
 		print("[PVRDescramble] loadScrambledPvrList")
-		print("[PVRDescramble] loadScrambledPvrList self.pvrLists_tried:", self.pvrListsTried)
+		print("[PVRDescramble] loadScrambledPvrList self.pvrListsTried:", self.pvrListsTried)
 		self.pvrLists = []
 		serviceHandler = eServiceCenter.getInstance()
-		for sref in self.scrambledRecordings.getList():
+		for sref in self.scrambledRecordings.readList():
 			if not sref.valid() or sref.flags & eServiceReference.mustDescent:
 				continue
 			path = sref.getPath()

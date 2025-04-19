@@ -363,7 +363,7 @@ class TryQuitMainloop(MessageBox):
 		recordings = session.nav.getRecordings(False, Components.RecordingConfig.recType(config.recording.warn_box_restart_rec_types.getValue()))
 		jobs = len(job_manager.getPendingJobs())
 		scrambledRecordings = ScrambledRecordings()
-		scrambledList = scrambledRecordings.getList()
+		scrambledList = scrambledRecordings.readList()
 
 		inTimeshift = Screens.InfoBar.InfoBar and Screens.InfoBar.InfoBar.instance and Screens.InfoBar.InfoBar.ptsGetTimeshiftStatus(Screens.InfoBar.InfoBar.instance)
 		self.connected = False
