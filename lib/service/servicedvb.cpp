@@ -2342,12 +2342,14 @@ int eDVBServicePlay::selectAudioStream(int i)
 	}
 
 #ifdef PASSTHROUGH_FIX
+	eDebug("[eDVBServicePlay] PASSTHROUGH_FIX apidtype %d", apidtype);
 	if (apidtype == eDVBPMTParser::audioStream::atAC3 || apidtype == eDVBPMTParser::audioStream::atAAC || apidtype == eDVBPMTParser::audioStream::atDDP) {
 		// Check if the audio type is AC3, AAC, or DDP and ensure passthrough mode is set correctly.
 		std::string pass = CFile::read("/proc/stb/audio/ac3");
 		if(pass.find("passthrough") != std::string::npos)
 		{
 			int shortAudioDelay = eSimpleConfig::getInt("config.av.passthrough_fix_short", 100);
+			eDebug("[eDVBServicePlay] PASSTHROUGH_FIX shortAudioDelay %d", shortAudioDelay);
 			m_passthrough_fix_timer->stop();
 			m_passthrough_fix_timer->start(shortAudioDelay, true);
 		}
