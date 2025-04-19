@@ -7,9 +7,10 @@ from time import localtime, mktime, time
 from enigma import eTimer, eServiceReference, eServiceCenter, iServiceInformation, iRecordableService, quitMainloop
 
 from Components.config import config
+from Components.ScrambledRecordings import ScrambledRecordings
 from Components.UsageConfig import preferredInstantRecordPath, defaultMoviePath
 
-from RecordTimer import RecordTimerEntry, ScrambledRecordings
+from RecordTimer import RecordTimerEntry
 from Screens.MessageBox import MessageBox
 from ServiceReference import ServiceReference
 

@@ -15,6 +15,7 @@ from Components.Harddisk import findMountPoint
 import Components.RecordingConfig
 Components.RecordingConfig.InitRecordingConfig()
 from Components.SystemInfo import getBoxDisplayName
+from Components.ScrambledRecordings import ScrambledRecordings
 from Components.TimerSanityCheck import TimerSanityCheck
 from Components.UsageConfig import defaultMoviePath, calcFrontendPriorityIntval
 from Screens.MessageBox import MessageBox
@@ -1449,47 +1450,3 @@ class RecordTimerEntry(TimerEntry):
 			NavigationInstance.instance.record_event.append(self.gotRecordEvent)
 
 	record_service = property(lambda self: self.__record_service, setRecordService)
-
-
-class ScrambledRecordings:
-	SCRAMBLE_LIST_FILE = "/etc/enigma2/.scrambled_video_list"
-
-	def __init__(self):
-		self.isLocked = 0
-
-	def readList(self):
-		files = []
-		lines = fileReadLines(self.SCRAMBLE_LIST_FILE, default=[])
-		for line in lines:
-			movie = self.stripMovieName(line)
-			if exists(movie) and not exists(movie + ".del"):
-				ref = self.getServiceRef(movie)
-				files.append(ref)
-		print("[ScrambledRecordings] getreadListSList", files)
-		return files
-
-	def writeList(self, append="", overwrite=False):
-		result = []
-		serviceHandler = eServiceCenter.getInstance()
-		if not overwrite:
-			lines = fileReadLines(self.SCRAMBLE_LIST_FILE, default=[])
-			for x in lines:
-				movie = self.stripMovieName(x)
-				if movie and exists(str(movie)):
-					sref = self.getServiceRef(movie)
-					info = serviceHandler.info(sref)
-					scrambled = info.getInfo(sref, iServiceInformation.sIsCrypted)
-					if scrambled == 1:
-						result.append(x)
-		if isinstance(append, list):
-			result.extend(append)
-		elif append != "":
-			result.append(append)
-		print("[ScrambledRecordings] writeList", result)
-		if not fileWriteLines(self.SCRAMBLE_LIST_FILE, result):
-			if self.isLocked < 11:
-				sleep(.300)
-				self.isLocked += 1
-				self.writeList(append=append)
-			else:
-				self.isLocked = 0
