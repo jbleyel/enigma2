@@ -3,9 +3,9 @@ from datetime import datetime
 from os import access, fsync, makedirs, remove, rename, statvfs, W_OK
 from os.path import exists, isdir, realpath, ismount
 from threading import Thread, Timer as ThreadTimer
-from time import ctime, localtime, strftime, time
+from time import ctime, localtime, sleep, strftime, time
 
-from enigma import eEPGCache, getBestPlayableServiceReference, eStreamServer, eServiceEventEnums, eServiceReference, iRecordableService, quitMainloop, eActionMap, setPreferredTuner, pNavigation
+from enigma import eEPGCache, getBestPlayableServiceReference, eStreamServer, eServiceEventEnums, eServiceCenter, eServiceReference, iRecordableService, iServiceInformation, quitMainloop, eActionMap, setPreferredTuner, pNavigation
 
 import NavigationInstance
 from timer import Timer, TimerEntry
@@ -17,13 +17,12 @@ Components.RecordingConfig.InitRecordingConfig()
 from Components.SystemInfo import getBoxDisplayName
 from Components.TimerSanityCheck import TimerSanityCheck
 from Components.UsageConfig import defaultMoviePath, calcFrontendPriorityIntval
-from Components.VirtualVideoDir import VirtualVideoDir
 from Screens.MessageBox import MessageBox
 import Screens.Standby
 from ServiceReference import ServiceReference
 from Tools.ASCIItranslit import legacyEncode
 from Tools.CIHelper import cihelper
-from Tools.Directories import SCOPE_CONFIG, fileReadXML, getRecordingFilename, resolveFilename
+from Tools.Directories import SCOPE_CONFIG, fileReadXML, fileReadLines, fileWriteLines, getRecordingFilename, resolveFilename
 from Tools.Notifications import AddNotification, AddNotificationWithCallback, AddPopup
 from Tools import Trashcan
 from Tools.XMLTools import stringToXML
@@ -719,7 +718,7 @@ class RecordTimerEntry(TimerEntry):
 		self.PVRFilename = filename
 		self.isPVRDescramble = False
 		self.pvrConvert = False
-		self.virtual_video_dir = VirtualVideoDir()
+		self.scrambledRecordings = ScrambledRecordings()
 
 		self.log_entries = []
 		self.check_justplay()
@@ -1299,7 +1298,7 @@ class RecordTimerEntry(TimerEntry):
 
 			print("[RecordTimer] Recording self.isPVRDescramble / self.descramble", self.isPVRDescramble, self.descramble)
 			if not self.isPVRDescramble and not self.descramble and cihelper.ServiceIsAssigned(recordingReference) > -1:
-				self.virtual_video_dir.writeSList(append=f"{self.Filename}{self.record_service.getFilenameExtension()}")
+				self.scrambledRecordings.writeList(append=f"{self.Filename}{self.record_service.getFilenameExtension()}")
 
 			prepareResult = self.record_service.prepare(f"{self.Filename}{self.record_service.getFilenameExtension()}", self.begin, self.end, eventId, name.replace("\n", " "), description.replace("\n", " "), " ".join(self.tags), bool(self.descramble), bool(self.record_ecm))
 			if prepareResult:
@@ -1450,3 +1449,47 @@ class RecordTimerEntry(TimerEntry):
 			NavigationInstance.instance.record_event.append(self.gotRecordEvent)
 
 	record_service = property(lambda self: self.__record_service, setRecordService)
+
+
+class ScrambledRecordings:
+	SCRAMBLE_LIST_FILE = "/etc/enigma2/.scrambled_video_list"
+
+	def __init__(self):
+		self.isLocked = 0
+
+	def readList(self):
+		files = []
+		lines = fileReadLines(self.SCRAMBLE_LIST_FILE, default=[])
+		for line in lines:
+			movie = self.stripMovieName(line)
+			if exists(movie) and not exists(movie + ".del"):
+				ref = self.getServiceRef(movie)
+				files.append(ref)
+		print("[ScrambledRecordings] getreadListSList", files)
+		return files
+
+	def writeList(self, append="", overwrite=False):
+		result = []
+		serviceHandler = eServiceCenter.getInstance()
+		if not overwrite:
+			lines = fileReadLines(self.SCRAMBLE_LIST_FILE, default=[])
+			for x in lines:
+				movie = self.stripMovieName(x)
+				if movie and exists(str(movie)):
+					sref = self.getServiceRef(movie)
+					info = serviceHandler.info(sref)
+					scrambled = info.getInfo(sref, iServiceInformation.sIsCrypted)
+					if scrambled == 1:
+						result.append(x)
+		if isinstance(append, list):
+			result.extend(append)
+		elif append != "":
+			result.append(append)
+		print("[ScrambledRecordings] writeList", result)
+		if not fileWriteLines(self.SCRAMBLE_LIST_FILE, result):
+			if self.isLocked < 11:
+				sleep(.300)
+				self.isLocked += 1
+				self.writeList(append=append)
+			else:
+				self.isLocked = 0
