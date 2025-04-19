@@ -743,12 +743,6 @@ int eDVBCICcSession::generate_uri_confirm()
 	SHA256_Update(&sha, uck, 32);
 	SHA256_Final(uri_confirm, &sha);
 
-	eTraceNoNewLineStart("[CI%d RCC] URI_MESSAGE: ", m_slot->getSlotID());
-	traceHexdump(m_ci_elements.get_ptr(URI_MESSAGE), m_ci_elements.get_buf(NULL, URI_MESSAGE));
-
-//	eTraceNoNewLineStart("[CI%d RCC] uri_confirm: ", m_slot->getSlotID());
-//	traceHexdump(uri_confirm, 32);
-
 	m_ci_elements.set(URI_CONFIRM, uri_confirm, 32);
 
 	return 0;
@@ -799,14 +793,10 @@ void eDVBCICcSession::check_new_key()
 void eDVBCICcSession::set_descrambler_key()
 {
 	eDebug("[CI%d RCC] set_descrambler_key", m_slot->getSlotID());
-	bool set_key = (m_current_ca_demux_id != m_slot->getCADemuxID()) || (m_slot->getTunerNum() > 7);
-
-	eDebug("[CI%d RCC] set_descrambler_key set_key=%d / getTunerNum=%d", m_slot->getSlotID(), set_key, m_slot->getTunerNum());
-	eDebug("[CI%d RCC] set_descrambler_key m_descrambler_fd=%d / m_current_ca_demux_id=%d / getCADemuxID=%d", m_slot->getSlotID(), m_descrambler_fd, m_current_ca_demux_id, m_slot->getCADemuxID());
+	bool set_key = (m_current_ca_demux_id != m_slot->getCADemuxID()) || (m_slot->getTunerNum() > 7) || (m_slot->getTunerNum() == -1);
 
 	if (m_descrambler_fd != -1 && m_current_ca_demux_id != m_slot->getCADemuxID())
 	{
-		eDebug("[CI%d RCC] set_descrambler_key A", m_slot->getSlotID());
 		descrambler_deinit(m_descrambler_fd);
 		m_descrambler_fd = descrambler_init(m_slot, m_slot->getCADemuxID());
 		m_current_ca_demux_id = m_slot->getCADemuxID();
@@ -814,7 +804,6 @@ void eDVBCICcSession::set_descrambler_key()
 
 	if (m_descrambler_fd == -1 && m_slot->getCADemuxID() > -1)
 	{
-		eDebug("[CI%d RCC] set_descrambler_key B", m_slot->getSlotID());
 		m_descrambler_fd = descrambler_init(m_slot, m_slot->getCADemuxID());
 		m_current_ca_demux_id = m_slot->getCADemuxID();
 	}
