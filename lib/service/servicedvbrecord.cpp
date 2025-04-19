@@ -65,7 +65,7 @@ void eDVBServiceRecord::serviceEvent(int event)
 	}
 	case eDVBServicePMTHandler::eventNewProgramInfo:
 	{
-		eDebug("[eDVBServiceRecord] eventNewProgramInfo m_state=%d / m_want_record=%d / m_pvr_descramble=%d", m_state, m_want_record, m_pvr_descramble);
+		// eDebug("[eDVBServiceRecord] eventNewProgramInfo m_state=%d / m_want_record=%d / m_pvr_descramble=%d", m_state, m_want_record, m_pvr_descramble);
 		if (m_state == stateIdle)
 			doPrepare();
 		else if (m_want_record) /* doRecord can be called from Prepared and Recording state */
@@ -95,7 +95,6 @@ void eDVBServiceRecord::serviceEvent(int event)
 		m_event((iRecordableService*)this, evRecordAborted);
 		break;
 	case eDVBServicePMTHandler::eventStartPvrDescramble:
-		eDebug("[eDVBServiceRecord] eventStartPvrDescramble m_want_record", m_want_record);
 		if (m_want_record)
 		{
 			doRecord();
@@ -571,8 +570,7 @@ int eDVBServiceRecord::doRecord()
 
 void eDVBServiceRecord::updateDecoder()
 {
-	eDebug("eDVBServiceRecord::updateDecoder");
-	int vpid = -1, vpidtype = -1, apid = -1, apidtype = -1, pcrpid = -1;
+	int vpid = -1, vpidtype = -1, apid = -1, apidtype = -1;
 
 	eDVBServicePMTHandler &h = m_service_handler;
 
@@ -620,7 +618,6 @@ void eDVBServiceRecord::updateDecoder()
 		apidtype = program.audioStreams[program.defaultAudioStream].type;
 
 		eDebugNoNewLine(", and the pcr pid is %04x\n", program.pcrPid);
-		pcrpid = program.pcrPid;
 	}
 
 	if (!m_decoder)
@@ -634,7 +631,6 @@ void eDVBServiceRecord::updateDecoder()
 
 	if (m_decoder)
 	{
-		eDebug("eDVBServiceRecord::updateDecoder m_decoder vpid=%d / apid=%d", vpid, apid);
 		m_decoder->setVideoPID(vpid, vpidtype);
 		m_decoder->setAudioPID(apid, apidtype);
 		m_decoder->setSyncPCR(-1);
