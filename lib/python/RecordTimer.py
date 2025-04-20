@@ -1305,7 +1305,6 @@ class RecordTimerEntry(TimerEntry):
 				eventId = self.eit
 				if eventId is None:
 					eventId = -1
-
 			prepareResult = self.record_service.prepare(f"{self.Filename}{self.record_service.getFilenameExtension()}", self.begin, self.end, eventId, name.replace("\n", " "), description.replace("\n", " "), " ".join(self.tags), bool(self.descramble), bool(self.record_ecm))
 			if prepareResult:
 				if prepareResult == -255:

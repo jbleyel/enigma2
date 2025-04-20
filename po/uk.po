@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-21 10:33+0000\n"
-"PO-Revision-Date: 2025-03-09 12:13+0000\n"
+"POT-Creation-Date: 2025-04-10 18:45+0000\n"
+"PO-Revision-Date: 2025-04-14 12:33+0000\n"
 "Last-Translator: kvinto <badsystem@ukr.net>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/uk/>\n"
 "Language: uk\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.10.3-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 msgid ""
@@ -4865,11 +4865,17 @@ msgstr "Підключено через інший тюнер"
 msgid "Connected to"
 msgstr "Під'єднано до"
 
+msgid "Connected transcoding, limit - no PiP!"
+msgstr "Підключене перекодування, обмеження - немає PiP!"
+
 msgid "Connected: "
 msgstr "Під'єднано: "
 
 msgid "Connection information"
 msgstr "Інформація про підключення"
+
+msgid "Connector"
+msgstr "Роз'єм"
 
 msgid "Console"
 msgstr "Консоль"
@@ -9841,6 +9847,12 @@ msgstr "Вхід"
 msgid "Input "
 msgstr "Вхід "
 
+msgid "Input 1"
+msgstr "Вхід 1"
+
+msgid "Input 2"
+msgstr "Вхід 2"
+
 msgid "Input Device Settings"
 msgstr "Налаштування Пристрою введення"
 
@@ -13046,6 +13058,12 @@ msgstr "Пропуск"
 msgid "Pass-through"
 msgstr "Проходити через"
 
+msgid "Passthrough audio handling delay AC3"
+msgstr "Затримка обробки наскрізного аудіо AC3"
+
+msgid "Passthrough audio handling delay AC3+"
+msgstr "Затримка обробки наскрізного аудіо AC3+"
+
 msgid "Password"
 msgstr "Пароль"
 
@@ -15580,7 +15598,7 @@ msgid "Scheduled save of epg.dat"
 msgstr "Заплановане збереження epg.dat"
 
 msgid "Scheduler"
-msgstr "Планувальник"
+msgstr "Таймер живлення"
 
 msgid "Scheduler Actions"
 msgstr "Дії таймера живлення"
@@ -15589,7 +15607,7 @@ msgid "Scheduler Overview"
 msgstr "Перегляд таймерів живлення"
 
 msgid "Scheduler Settings"
-msgstr "Параметри планувальника"
+msgstr "Параметри таймера живлення"
 
 msgid "Scheduler Standby"
 msgstr "Таймер живлення в режимі очікування"
@@ -16451,6 +16469,9 @@ msgstr "Виберіть виділений слот і перезавантаж
 
 msgid "Select the initial position of the timeline marker. The marker is the vertical line drawn on the EPG that shows the current time. The larger the value the more the marker will move to the right showing more history and less of upcoming events."
 msgstr "Виберіть початкове положення маркера шкали часу. Маркер — це вертикальна лінія, намальована на EPG, яка показує поточний час. Чим більше значення, тим більше маркер переміщуватиметься праворуч, показуючи більше історії та менше майбутніх подій."
+
+msgid "Select the input connector you want to use."
+msgstr "Виберіть вхідний роз’єм, який ви хочете використовувати."
 
 msgid "Select the last item in list or move to the end of text"
 msgstr "Виберіть останній елемент у списку, або перейдіть до кінця тексту"
@@ -18071,7 +18092,7 @@ msgid "Show the OSCam information screen"
 msgstr "Показати Екран Інформації OSCam"
 
 msgid "Show the Scheduler"
-msgstr "Показати планувальник"
+msgstr "Показати Таймер живлення"
 
 msgid "Show the SleepTimer"
 msgstr "Показати таймер сну"
@@ -19431,7 +19452,7 @@ msgid "TMDB Search"
 msgstr "TMDB Пошук"
 
 msgid "TRANSLATOR_INFO"
-msgstr "Переклад: kvinto - 21.02.2025"
+msgstr "Переклад: kvinto - 01.04.2025"
 
 msgid "TS file is too large for ISO9660 level 1!"
 msgstr "TS файл занадто великий для ISO9660 рівень 1!"
@@ -21659,6 +21680,12 @@ msgstr "Використано флеш"
 msgid "Used service scan type"
 msgstr "Тип пошуку каналів"
 
+msgid "Used to specify delay when switching between services and AC3 passthrough is enabled."
+msgstr "Використовується для вказівки затримки під час перемикання між каналами та ввімкненим пропуском AC3."
+
+msgid "Used to specify delay when switching between services and AC3+/Atmos passthrough is enabled."
+msgstr "Використовується для визначення затримки під час перемикання між каналами та ввімкненим проходженням AC3+/Atmos."
+
 msgid "Used:"
 msgstr "Використано:"
 
@@ -23698,9 +23725,6 @@ msgstr "на Двошаровому диску використано."
 msgid "of a SINGLE layer medium used."
 msgstr "на Одношаровому диску використано."
 
-msgid "off"
-msgstr "вимкн"
-
 msgid "off or wpa2 on"
 msgstr "викл. чи вкл. wpa2"
 
@@ -24120,6 +24144,9 @@ msgstr "так (зберігати фіди)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "off"
+#~ msgstr "вимкн"
 
 #, python-format
 #~ msgid "%s (%04o)"
