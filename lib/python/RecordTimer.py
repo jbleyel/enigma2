@@ -3,9 +3,9 @@ from datetime import datetime
 from os import access, fsync, makedirs, remove, rename, statvfs, W_OK
 from os.path import exists, isdir, realpath, ismount
 from threading import Thread, Timer as ThreadTimer
-from time import ctime, localtime, sleep, strftime, time
+from time import ctime, localtime, strftime, time
 
-from enigma import eEPGCache, getBestPlayableServiceReference, eStreamServer, eServiceEventEnums, eServiceCenter, eServiceReference, iRecordableService, iServiceInformation, quitMainloop, eActionMap, setPreferredTuner, pNavigation
+from enigma import eEPGCache, getBestPlayableServiceReference, eStreamServer, eServiceEventEnums, eServiceReference, iRecordableService, quitMainloop, eActionMap, setPreferredTuner, pNavigation
 
 import NavigationInstance
 from timer import Timer, TimerEntry
@@ -23,7 +23,7 @@ import Screens.Standby
 from ServiceReference import ServiceReference
 from Tools.ASCIItranslit import legacyEncode
 from Tools.CIHelper import cihelper
-from Tools.Directories import SCOPE_CONFIG, fileReadXML, fileReadLines, fileWriteLines, getRecordingFilename, resolveFilename
+from Tools.Directories import SCOPE_CONFIG, fileReadXML, getRecordingFilename, resolveFilename
 from Tools.Notifications import AddNotification, AddNotificationWithCallback, AddPopup
 from Tools import Trashcan
 from Tools.XMLTools import stringToXML
@@ -698,6 +698,12 @@ class RecordTimerEntry(TimerEntry):
 		else:
 			self.descramble = descramble
 			self.record_ecm = record_ecm
+
+		if self.descramble or not self.record_ecm:
+			if cihelper.ServiceIsAssigned(self.service_ref.ref):
+				self.descramble = False
+				self.record_ecm = True
+
 		config.usage.frontend_priority_intval.setValue(calcFrontendPriorityIntval(config.usage.frontend_priority, config.usage.frontend_priority_multiselect, config.usage.frontend_priority_strictly))
 		config.usage.recording_frontend_priority_intval.setValue(calcFrontendPriorityIntval(config.usage.recording_frontend_priority, config.usage.recording_frontend_priority_multiselect, config.usage.recording_frontend_priority_strictly))
 		self.needChangePriorityFrontend = config.usage.recording_frontend_priority_intval.value != "-2" and config.usage.recording_frontend_priority_intval.value != config.usage.frontend_priority_intval.value
@@ -968,9 +974,8 @@ class RecordTimerEntry(TimerEntry):
 			if not self.justplay:
 				if self.record_service:
 					scamble = not self.descramble or config.recording.never_decrypt.value
-					recordingReference = self.service_ref and self.service_ref.ref
-					print("[RecordTimer] Recording self.isPVRDescramble / scamble", self.isPVRDescramble, scamble)
-					if not self.failed and not self.isPVRDescramble and scamble and cihelper.ServiceIsAssigned(recordingReference) > -1:
+					if not self.failed and not self.isPVRDescramble and scamble:
+						print(f"[RecordTimer] Add Recording to pending descramble list: {self.Filename}")
 						self.scrambledRecordings.writeList(append=f"{self.Filename}{self.record_service.getFilenameExtension()}")
 
 #					fname = self.Filename + self.record_service.getFilenameExtension()
