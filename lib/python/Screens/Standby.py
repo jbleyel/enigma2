@@ -368,10 +368,10 @@ class TryQuitMainloop(MessageBox):
 		inTimeshift = Screens.InfoBar.InfoBar and Screens.InfoBar.InfoBar.instance and Screens.InfoBar.InfoBar.ptsGetTimeshiftStatus(Screens.InfoBar.InfoBar.instance)
 		self.connected = False
 		reason = ""
-		next_rec_time = -1
+		nextRecordingTime = -1
 		self.descramble = False
 		if not recordings:
-			next_rec_time = session.nav.RecordTimer.getNextRecordingTime()
+			nextRecordingTime = session.nav.RecordTimer.getNextRecordingTime()
 #		if jobs:
 #			reason = (ngettext("%d job is running in the background!", "%d jobs are running in the background!", jobs) % jobs) + '\n'
 #			if jobs == 1:
@@ -386,7 +386,7 @@ class TryQuitMainloop(MessageBox):
 			reason = _("You seem to be in time shift!") + '\n'
 			default_yes = True
 			timeout = 30
-		elif recordings or (next_rec_time > 0 and (next_rec_time - time()) < 360):
+		elif recordings or (nextRecordingTime > 0 and (nextRecordingTime - time()) < 360):
 			reason = _("Recording(s) are in progress or coming up in few seconds!") + '\n'
 			default_yes = False
 			timeout = 30
@@ -406,10 +406,16 @@ class TryQuitMainloop(MessageBox):
 			default_yes = False
 			timeout = 30
 		elif len(scrambledList) and retvalue == QUIT_SHUTDOWN and config.recording.force_standby_for_descramble.value:
-			lenght = 0
+			duration = 0
 			for scrambledListItem in scrambledList:
-				lenght += scrambledListItem[1]
-			reason = _("There are %d scrambled recordings, which will be unscrambled during Standby\nThe process takes aprox. %d minutes to finish.\nSelect 'No' to goto Standby instead and start the descrambling.") % (len(scrambledList), int(lenght / 60))
+				duration += scrambledListItem[1]
+			count = len(scrambledList)
+			reason = [
+				ngettext("There is %d scrambled recording, which will be unscrambled during Standby.", "There are %d scrambled recordings, which will be unscrambled during Standby.", count) % count,
+				_("The process will take approximately %d minutes to complete.") % int(duration // 60),
+				 _("Select 'No' to shut down immediately instead of starting the descramble.")
+			]
+			reason = f"{reason[0]} {reason[1]}\n\n{reason[2]}"
 			default_yes = False
 			self.descramble = True
 			timeout = 30
