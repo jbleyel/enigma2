@@ -117,6 +117,8 @@ class PVRDescrambleConvert():
 		self.oldService = None
 		self.wantShutdown = False
 		self.navigation = None
+		self.successCount = 0
+		self.failedCount = 0
 		self.scrambledRecordings = ScrambledRecordings()
 
 	def getRecordings(self):
@@ -163,6 +165,8 @@ class PVRDescrambleConvert():
 	def enterStandby(self, configElement):
 		print("[PVRDescramble] enterStandby")
 		self.pvrListsTried = []
+		self.successCount = 0
+		self.failedCount = 0
 		if config.recording.enable_descramble_in_standby.value:
 			instandby = self.getInstandby()
 			if not self.leaveStandby in instandby.onClose:
@@ -311,8 +315,15 @@ class PVRDescrambleConvert():
 
 		self.currentPvr = self.pvrLists.pop(0)
 		if self.currentPvr is None:
+
 			if self.wantShutdown:
 				quitMainloop(1)
+
+			message = [
+				_("Descramble in Standby finished"),
+				_("Amount %d / Success %d / Failed %d") % (self.successCount + self.failedCount, self.successCount, self.failedCount),
+			]
+			self.addNotification(f"{message[0]}\n\n{message[1]}")
 			return
 
 		(_begin, sref, name, length, real_ref) = self.currentPvr
@@ -461,10 +472,12 @@ class PVRDescrambleConvert():
 						self.keepMetaData(originalFileName)
 						if originalDeleteFilename:
 							self.deletePvr(originalDeleteFilename)
-						self.addNotification(_("A PVR descramble converting is finished.\n%s") % name)
+						self.successCount += 1
 					else:
+						self.failedCount += 1
 						self.deletePvr(convertedFileName)
 				else:
+					self.failedCount += 1
 					if originalFileName in self.pvrListsTried and not self.descrableError:
 						self.pvrListsTried.remove(originalFileName)
 					self.descrableError = False

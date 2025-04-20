@@ -413,7 +413,7 @@ class TryQuitMainloop(MessageBox):
 			reason = [
 				ngettext("There is %d scrambled recording, which will be unscrambled during Standby.", "There are %d scrambled recordings, which will be unscrambled during Standby.", count) % count,
 				_("The process will take approximately %d minutes to complete.") % int(duration // 60),
-				 _("Select 'No' to shut down immediately instead of starting the descramble.")
+				 _("Select 'Yes' to shut down immediately instead of starting the descramble.")
 			]
 			reason = f"{reason[0]} {reason[1]}\n\n{reason[2]}"
 			default_yes = False
@@ -460,9 +460,7 @@ class TryQuitMainloop(MessageBox):
 					if rec_time > 0 and (rec_time - time()) < 360:
 						self.timer.start(360)  # wait for next starting timer
 					else:
-						from Components.PvrDescrambleConvert import pvr_descramble_convert
-						if not pvr_descramble_convert.scrambledRecordsLeft():
-							self.close(True)  # immediate shutdown
+						self.close(True)  # immediate shutdown
 			elif event == iRecordableService.evStart:
 				self.stopTimer("getRecordEvent")
 
@@ -491,7 +489,11 @@ class TryQuitMainloop(MessageBox):
 			quitMainloop(self.retval)
 		else:
 			if self.descramble:
-				self.session.open(Standby2)
+				from Components.PvrDescrambleConvert import pvr_descramble_convert
+				if pvr_descramble_convert.scrambledRecordsLeft():
+					self.session.open(Standby2)
+				else:
+					self.close(True)  # immediate shutdown
 			MessageBox.close(self, True)
 
 	def __onShow(self):
