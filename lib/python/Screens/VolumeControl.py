@@ -28,6 +28,9 @@ class Volume(Screen):
 		self["VolumeText"] = Label()
 		self["Volume"] = VolumeBar()
 
+	def getVolume(self):
+		return self["Volume"].getValue()
+
 	def setValue(self, volume):
 		print(f"[VolumeControl] Volume set to {volume}.")
 		self["VolumeText"].setText(str(volume))
@@ -36,26 +39,27 @@ class Volume(Screen):
 
 class VolumeAdjustSettings(Setup):
 	def __init__(self, session):
+		self.volumeControl = eDVBVolumecontrol.getInstance()
+		self.initialVolume = self.volumeControl.getVolume()
+		self.initialOffset = self.volumeControl.getVolumeOffset()
 		self.volumeOffsets = VolumeAdjust.instance.getVolumeOffsets()
 		self.volumeRemembered = VolumeAdjust.instance.getVolumeRemembered()
+		self.activeServiceReference, serviceName = VolumeAdjust.instance.getPlayingServiceReference()
+		self.activeServiceReference = self.activeServiceReference.toString() if self.activeServiceReference else None
 		self.initialVolumeOffsets = deepcopy(self.volumeOffsets)
 		self.initialVolumeRemembered = deepcopy(self.volumeRemembered)
 		Setup.__init__(self, session, setup="VolumeAdjust")
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
 		self["offsetActions"] = HelpableActionMap(self, ["ColorActions", "TVRadioActions"], {
-			"yellow": (self.keyAddRemoveService, _("Add/Remove the current service to/from the Volume Offsets list")),
-			"tvMode": (self.keyAddTVService, _("Add a TV service to the Volume Offsets list")),
-			"radioMode": (self.keyAddRadioService, _("Add a RADIO service to the Volume Offsets list")),
-			"tvRadioMode": (self.keyAddService, _("Add a service to the Volume Offsets list"))
+			"yellow": (self.keyAddRemoveService, _("Add/Remove the current service to/from the Volume Offset list")),
+			"tvMode": (self.keyAddTVService, _("Add a TV service to the Volume Offset list")),
+			"radioMode": (self.keyAddRadioService, _("Add a RADIO service to the Volume Offset list")),
+			"tvRadioMode": (self.keyAddService, _("Add a service to the Volume Offset list"))
 		}, prio=0, description=_("Volume Adjust Actions"))
 		self["currentAction"] = HelpableActionMap(self, ["ColorActions"], {
-			"blue": (self.keyAddServiceReference, _("Add the current/active service to the Volume Offsets list"))
+			"blue": (self.keyAddServiceReference, _("Add the current/active service to the Volume Offset list"))
 		}, prio=0, description=_("Volume Adjust Actions"))
-		serviceReference = self.session.nav.getCurrentlyPlayingServiceReference()  # IanSav: Should this be using the VolumeAdjust code?
-		self.activeServiceReference = serviceReference.toCompareString() if serviceReference else None
-		self.volumeControl = eDVBVolumecontrol.getInstance()
-		self.serviceVolume = self.volumeControl.getVolume()
 
 	def layoutFinished(self):
 		Setup.layoutFinished(self)
@@ -65,33 +69,38 @@ class VolumeAdjustSettings(Setup):
 		self.list = []
 		Setup.createSetup(self)
 		volumeList = self["config"].getList()
-		if config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSETS and self.volumeOffsets:
+		if config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSET and self.volumeOffsets:
 			volumeList.append(getConfigListEntry(_("Currently Defined Volume Offsets:")))
-			for volumeOffset in self.volumeOffsets.keys():
-				[name, delta] = self.volumeOffsets[volumeOffset]
-				default = config.volumeAdjust.defaultOffset.value if delta == VolumeAdjust.NEW_VALUE else delta
-				entry = NoSave(ConfigSelectionNumber(min=VolumeAdjust.OFFSET_MIN, max=VolumeAdjust.OFFSET_MAX, stepwidth=1, default=default, wraparound=False))
-				if delta == VolumeAdjust.NEW_VALUE:
-					delta = config.volumeAdjust.defaultOffset.value
+			for serviceReference in self.volumeOffsets.keys():
+				[serviceName, offset] = self.volumeOffsets[serviceReference]
+				default = config.volumeAdjust.defaultOffset.value if offset == VolumeAdjust.NEW_VALUE else offset
+				entry = NoSave(ConfigSelectionNumber(default=default, min=VolumeAdjust.OFFSET_MIN, max=VolumeAdjust.OFFSET_MAX, stepwidth=1, wraparound=False))
+				if offset == VolumeAdjust.NEW_VALUE:
+					offset = config.volumeAdjust.defaultOffset.value
 					entry.default = VolumeAdjust.NEW_VALUE  # This triggers a cancel confirmation for unedited new entries.
-				volumeList.append(getConfigListEntry(f"-   {name}", entry, _("Set the volume offset for the '%s' service.") % name, volumeOffset))
+				volumeList.append(getConfigListEntry(f"-   {serviceName}", entry, _("Set the volume offset for the '%s' service.") % serviceName, serviceReference))
 		elif config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_LAST and self.volumeRemembered:
 			volumeList.append(getConfigListEntry(_("Currently Remembered Volume Levels:")))
-			for volumeRemember in self.volumeRemembered.keys():
-				[name, last] = self.volumeRemembered[volumeRemember]
-				entry = NoSave(ConfigSelectionNumber(min=VolumeAdjust.LAST_MIN, max=VolumeAdjust.LAST_MAX, stepwidth=1, default=last, wraparound=False))
-				volumeList.append(getConfigListEntry(f"-   {name}", entry, _("Set the volume level for the '%s' service.") % name, volumeRemember))
+			for serviceReference in self.volumeRemembered.keys():
+				[serviceName, last] = self.volumeRemembered[serviceReference]
+				if serviceReference == self.activeServiceReference:  # Update the current service volume to the current volume level.
+					last = self.volumeControl.getVolume()
+				entry = NoSave(ConfigSelectionNumber(default=last, min=VolumeAdjust.LAST_MIN, max=VolumeAdjust.LAST_MAX, stepwidth=1, wraparound=False))
+				volumeList.append(getConfigListEntry(f"-   {serviceName}", entry, _("Set the volume level for the '%s' service.") % serviceName, serviceReference))
 		self["config"].setList(volumeList)
 
 	def selectionChanged(self):  # Redefine the method of the same in in the Setup class.
+		# volume = self.volumeControl.getVolume()
+		# if volume != self.initialVolume:
+		# 	self.initialVolume = volume
 		if len(self["config"].getCurrent()) > 3:
-			if (config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSETS and self.volumeOffsets) or (config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_LAST and self.volumeRemembered):
+			if (config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSET and self.volumeOffsets) or (config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_LAST and self.volumeRemembered):
 				self["key_yellow"].setText(_("Remove Service"))
-		elif config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSETS:
+		elif config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSET:
 			self["key_yellow"].setText(_("Add Service"))
 		else:
 			self["key_yellow"].setText("")
-		if config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSETS and self.activeServiceReference not in self.volumeOffsets.keys():
+		if config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSET and self.activeServiceReference not in self.volumeOffsets.keys():
 			self["key_blue"].setText(_("Add Current"))
 			self["currentAction"].setEnabled(True)
 		else:
@@ -100,27 +109,28 @@ class VolumeAdjustSettings(Setup):
 		Setup.selectionChanged(self)
 
 	def changedEntry(self):  # Redefine the method of the same in in the Setup class. Setup method calls createSetup() when a ConfigBoolean or ConfigSelection based class is changed!
+		# volume = self.volumeControl.getVolume()
+		# if volume != self.initialVolume:
+		# 	self.initialVolume = volume
 		current = self["config"].getCurrent()
 		if len(current) > 3:
 			value = current[1].value
 			serviceReference = current[3]
 			match config.volumeAdjust.adjustMode.value:
-				case 1:
-					name, delta = self.volumeOffsets[serviceReference]
-					self.volumeOffsets[serviceReference] = [name, value]
+				case VolumeAdjust.MODE_OFFSET:
+					serviceName, offset = self.volumeOffsets[serviceReference]
+					self.volumeOffsets[serviceReference] = [serviceName, value]
 					if serviceReference == self.activeServiceReference:  # Apply the offset if we are setting an offset for the current service.
-						volume = VolumeAdjust.DEFAULT_VOLUME + value
-						self.volumeControl.setVolume(volume, volume)  # Volume left, volume right.
-				case 2:
-					name, last = self.volumeRemembered[serviceReference]
-					self.volumeRemembered[serviceReference] = [name, value]
+						self.volumeControl.setVolumeOffset(value)
+				case VolumeAdjust.MODE_LAST:
+					serviceName, last = self.volumeRemembered[serviceReference]
+					self.volumeRemembered[serviceReference] = [serviceName, value]
 					if serviceReference == self.activeServiceReference:  # Apply the offset if we are setting an offset for the current service.
 						self.volumeControl.setVolume(value, value)  # Volume left, volume right.
 		else:
 			Setup.changedEntry(self)
 
 	def keySave(self):  # Redefine the method of the same in in the Setup class.
-		# IanSav: Do we need to save the changes now or do it when we shut down like VolumeControl?
 		if self.volumeOffsets != self.initialVolumeOffsets or self.volumeRemembered != self.initialVolumeRemembered:  # Save the volume data if there are any changes.
 			VolumeAdjust.instance.saveVolumeXML()
 		VolumeAdjust.instance.refreshSettings()
@@ -133,8 +143,10 @@ class VolumeAdjustSettings(Setup):
 			self.volumeOffsets = deepcopy(self.initialVolumeOffsets)
 		if self.volumeRemembered != self.initialVolumeRemembered:
 			self.volumeRemembered = deepcopy(self.initialVolumeRemembered)
-		if self.volumeControl.getVolume() != self.serviceVolume:  # Reset the offset if we were setting an offset for the current service.
-			self.volumeControl.setVolume(self.serviceVolume, self.serviceVolume)  # Volume left, volume right.
+		if self.volumeControl.getVolume() != self.initialVolume:  # Reset the volume if we were setting a volume for the current service.
+			self.volumeControl.setVolume(self.initialVolume, self.initialVolume)
+		if self.volumeControl.getVolumeOffset() != self.initialOffset:  # Reset the offset if we were setting an offset for the current service.
+			self.volumeControl.setVolumeOffset(self.initialOffset)
 		Setup.cancelConfirm(self, result)
 
 	def keyAddRemoveService(self):
@@ -142,20 +154,20 @@ class VolumeAdjustSettings(Setup):
 		if len(current) > 3:
 			serviceReference = current[3]
 			match config.volumeAdjust.adjustMode.value:
-				case 1:
-					name = self.volumeOffsets[serviceReference][0]
+				case VolumeAdjust.MODE_OFFSET:
+					serviceName = self.volumeOffsets[serviceReference][0]
 					del self.volumeOffsets[serviceReference]
-				case 2:
-					name = self.volumeRemembered[serviceReference][0]
+				case VolumeAdjust.MODE_LAST:
+					serviceName = self.volumeRemembered[serviceReference][0]
 					del self.volumeRemembered[serviceReference]
 				case _:
-					name = "?"
+					serviceName = "?"
 			index = self["config"].getCurrentIndex()
 			self.createSetup()
 			configLength = len(self["config"].getList())
 			self["config"].setCurrentIndex(index if index < configLength else configLength - 1)
-			self.setFootnote(_("Service '%s' deleted.") % name)
-		elif config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSETS:
+			self.setFootnote(_("Service '%s' deleted.") % serviceName)
+		elif config.volumeAdjust.adjustMode.value == VolumeAdjust.MODE_OFFSET:
 			self.keyAddService()
 
 	def keyAddTVService(self):
@@ -171,8 +183,8 @@ class VolumeAdjustSettings(Setup):
 
 	def addServiceCallback(self, serviceReference):
 		if serviceReference:
-			serviceReference = serviceReference.toCompareString()
 			serviceName = VolumeAdjust.instance.getServiceName(serviceReference)
+			serviceReference = serviceReference.toString()
 			if serviceReference in self.volumeOffsets.keys():
 				self.setFootnote(_("Service '%s' is already defined.") % serviceName)
 			else:
@@ -282,13 +294,12 @@ class VolumeAdjust:
 	LAST_MAX = 100
 
 	MODE_DISABLED = 0
-	MODE_OFFSETS = 1
+	MODE_OFFSET = 1
 	MODE_LAST = 2
 
 	instance = None
 
 	def __init__(self, session):
-		print(f"[VolumeControl] DEBUG: VolumeAdjust instance address {id(self)}.")
 		if VolumeAdjust.instance:
 			print("[VolumeControl] Error: Only one VolumeAdjust instance is allowed!")
 		else:
@@ -298,7 +309,7 @@ class VolumeAdjust:
 			config.volumeAdjust = ConfigSubsection()
 			config.volumeAdjust.adjustMode = ConfigSelection(default=self.MODE_DISABLED, choices=[
 				(self.MODE_DISABLED, _("Disabled")),
-				(self.MODE_OFFSETS, _("Defined volume offsets")),
+				(self.MODE_OFFSET, _("Defined volume offset")),
 				(self.MODE_LAST, _("Last used/set volume"))
 			])
 			config.volumeAdjust.defaultOffset = ConfigSelectionNumber(default=self.DEFAULT_OFFSET, min=self.OFFSET_MIN, max=self.OFFSET_MAX, stepwidth=1, wraparound=False)
@@ -310,16 +321,9 @@ class VolumeAdjust:
 			self.eventTracker = ServiceEventTracker(screen=self, eventmap={
 				iPlayableService.evStart: self.eventStart,
 				iPlayableService.evEnd: self.eventEnd,
-				iPlayableService.evUpdatedInfo: self.processVolumeAdjustment
+				iPlayableService.evUpdatedInfo: self.eventUpdatedInfo
 			})
-			self.adjustMode = config.volumeAdjust.adjustMode.value  # Pre-load some stable config items to save time.
-			self.mpegMax = config.volumeAdjust.mpegMax.value
-			self.dolbyEnabled = config.volumeAdjust.dolbyEnabled.value
-			self.defaultOffset = config.volumeAdjust.defaultOffset.value
-			self.newService = [False, None]
-			self.lastAdjustedValue = 0  # Remember delta from last automatic volume up/down.
-			self.currentVolume = 0  # Only set when AC3 or DTS is available.
-			self.pluginStarted = False  # IanSav: This code is no longer a plugin?!?!
+			self.refreshSettings()  # Pre-load some stable config data to save processing time.
 			self.loadVolumeXML()
 			self.session.onShutdown.append(self.saveVolumeXML)
 
@@ -328,23 +332,23 @@ class VolumeAdjust:
 		volumeRemembered = {}
 		volumeDom = fileReadXML(self.VOLUME_FILE, source=MODULE_NAME)
 		if volumeDom is None:
-			print(f"[VolumeControl] Volume adjustment data initialized.")
+			print("[VolumeControl] Volume adjustment data initialized.")
 		else:
 			print(f"[VolumeControl] Volume adjustment data initialized from '{self.VOLUME_FILE}'.")
 			for offsets in volumeDom.findall("offsets"):
-				for offset in offsets.findall("offset"):
-					reference = offset.get("reference")
-					name = offset.get("name")
-					delta = int(offset.get("delta", 0))
-					if reference and name:
-						volumeOffsets[reference] = [name, delta]
+				for entry in offsets.findall("offset"):
+					serviceReference = entry.get("serviceReference")
+					serviceName = entry.get("serviceName")
+					offset = int(entry.get("value", 0))
+					if serviceReference and serviceName:
+						volumeOffsets[serviceReference] = [serviceName, offset]
 			for remembered in volumeDom.findall("remembered"):
-				for remember in remembered.findall("remember"):
-					reference = remember.get("reference")
-					name = remember.get("name")
-					last = int(remember.get("last", self.DEFAULT_VOLUME))
-					if reference and name:
-						volumeRemembered[reference] = [name, last]
+				for entry in remembered.findall("remember"):
+					serviceReference = entry.get("serviceReference")
+					serviceName = entry.get("serviceName")
+					last = int(entry.get("value", self.DEFAULT_VOLUME))
+					if serviceReference and serviceName:
+						volumeRemembered[serviceReference] = [serviceName, last]
 		self.volumeOffsets = volumeOffsets
 		self.volumeRemembered = volumeRemembered
 
@@ -354,134 +358,119 @@ class VolumeAdjust:
 		xml.append("<volumexml>")
 		if self.volumeOffsets:
 			xml.append("\t<offsets>")
-			for volumeOffset in self.volumeOffsets.keys():
-				[name, delta] = self.volumeOffsets[volumeOffset]
-				xml.append(f"\t\t<offset reference=\"{volumeOffset}\" name=\"{name}\" delta=\"{delta}\" />")
+			for serviceReference in self.volumeOffsets.keys():
+				[serviceName, offset] = self.volumeOffsets[serviceReference]
+				xml.append(f"\t\t<offset serviceReference=\"{serviceReference}\" serviceName=\"{serviceName}\" value=\"{offset}\" />")
 			xml.append("\t</offsets>")
 		if self.volumeRemembered:
 			xml.append("\t<remembered>")
-			for volumeRemember in self.volumeRemembered.keys():
-				[name, last] = self.volumeRemembered[volumeRemember]
-				xml.append(f"\t\t<remember reference=\"{volumeRemember}\" name=\"{name}\" last=\"{last}\" />")
+			for serviceReference in self.volumeRemembered.keys():
+				[serviceName, last] = self.volumeRemembered[serviceReference]
+				xml.append(f"\t\t<remember serviceReference=\"{serviceReference}\" serviceName=\"{serviceName}\" value=\"{last}\" />")
 			xml.append("\t</remembered>")
 		xml.append("</volumexml>")
 		if fileWriteLines(self.VOLUME_FILE, xml, source=MODULE_NAME):
 			print(f"[VolumeControl] Volume adjustment data saved to '{self.VOLUME_FILE}'.")
 		else:
-			print(f"[VolumeControl] Volume adjustment data could not be saved to '{self.VOLUME_FILE}'!")
+			print(f"[VolumeControl] Error: Volume adjustment data could not be saved to '{self.VOLUME_FILE}'!")
 
 	def eventStart(self):
-		print("[VolumeControl] eventStart DEBUG: Service start.")
-		self.newService = [True, None]
-
+		serviceReference, serviceName = self.getPlayingServiceReference()
+		if serviceReference and serviceReference.valid():
+			serviceReference = serviceReference.toString()
+			self.volumeControl.setVolumeOffset(0)
+			volume = self.volumeControl.getVolume()
+			match self.adjustMode:
+				case self.MODE_OFFSET:
+					print(f"[VolumeControl] Volume for service '{serviceName}' reset to {volume} until audio data available.")
+				case self.MODE_LAST:
+					[serviceName, last] = self.volumeRemembered.get(serviceReference, [serviceName, volume])
+					if last != volume:
+						self.updateVolumeControlUI(last)
+						print(f"[VolumeControl] Volume for service '{serviceName}' being restored to {last}.")
+						self.volumeControl.setVolume(last, last)  # Set new volume.
+					self.volumeRemembered[serviceReference] = [serviceName, last]
+			self.serviceReference = serviceReference
+			self.serviceName = serviceName
+		else:
+			self.serviceReference = None
+			self.serviceName = ""
+		self.serviceAudio = None
+						
 	def eventEnd(self):
-		print("[VolumeControl] eventEnd DEBUG: Service end.")
-		if self.adjustMode == self.MODE_OFFSETS:
-			# If played service had AC3 or DTS audio and volume value was changed with RC, take new delta value from the config.
-			if self.currentVolume and self.volumeControl.getVolume() != self.currentVolume:
-				self.lastAdjustedValue = self.newService[1] and self.volumeOffsets.get(self.newService[1].toString(), [self.getServiceName(self.newService[1]), self.defaultOffset])
-		elif self.adjustMode == self.MODE_LAST:
-			serviceReference = self.newService[1]
-			if serviceReference and serviceReference.valid():
-				self.volumeRemembered[serviceReference.toString()] = [self.getServiceName(serviceReference), self.volumeControl.getVolume()]
-		self.newService = [False, None]
+		if self.serviceReference:
+			match self.adjustMode:
+				case self.MODE_OFFSET:
+					offset = self.volumeControl.getVolumeOffset()
+					if offset:
+						self.volumeControl.setVolumeOffset(0)
+						print(f"[VolumeControl] Volume offset of {offset} for service '{self.serviceName}' removed.")
+				case self.MODE_LAST:
+					volume = self.volumeControl.getVolume()
+					self.volumeRemembered[self.serviceReference] = [self.serviceName, volume]
+					print(f"[VolumeControl] Volume for service '{self.serviceName}' saved as {volume}.")
+			self.serviceReference = None
+			self.serviceName = ""
+			self.serviceAudio = None
 
-	def processVolumeAdjustment(self):  # This is the routine to change the volume adjustment.
+	def eventUpdatedInfo(self):
 		def isCurrentAudioAC3DTS():
 			audioTracks = self.session.nav.getCurrentService().audioTracks()
 			result = False
 			if audioTracks:
 				try:  # Uhh, servicemp3 sometimes leads to OverflowError errors!
 					description = audioTracks.getTrackInfo(audioTracks.getCurrentTrack()).getDescription()
-					print(f"[VolumeControl] DEBUG: Audio description: '{description}'.")
-					if self.dolbyEnabled:
-						if "AC3" in description or "DTS" in description or "Dolby Digital" == description:
-							result = True
-						elif description and description.split()[0] in ("AC3", "AC-3", "A_AC3", "A_AC-3", "A-AC-3", "E-AC-3", "A_EAC3", "DTS", "DTS-HD", "AC4", "AAC-HE"):
-							result = True
+					if "AC3" in description or "DTS" in description or description == "Dolby Digital":
+						result = True
+					elif description and description.split()[0] in ("AC3", "AC-3", "A_AC3", "A_AC-3", "A-AC-3", "E-AC-3", "A_EAC3", "DTS", "DTS-HD", "AC4", "AAC-HE"):
+						result = True
 				except Exception:
-					pass
-			print("[VolumeControl] DEBUG: AudioAC3Dolby is {result}.")
+					description = "Unknown"
+			# print(f"[VolumeControl] isCurrentAudioAC3DTS DEBUG: Audio description '{description}' means AudioAC3Dolby is {result}.")
 			return result
 
-		def getPlayingServiceReference():
-			serviceReference = self.session.nav.getCurrentlyPlayingServiceReference()
-			if serviceReference:
-				referenceString = serviceReference.toString()
-				if "%3a//" not in referenceString and referenceString.rsplit(":", 1)[1].startswith("/"):  # Check if a movie is playing.
-					info = eServiceCenter.getInstance().info(serviceReference)  # Get the eServicereference information if available.
-					if info:
-						serviceReference = eServiceReference(info.getInfoString(serviceReference, iServiceInformation.sServiceref))  # Get new eServicereference from meta file. No need to know if eServiceReference is valid.
-			return serviceReference
+		# print(f"[VolumeControl] eventUpdatedInfo DEBUG: Service '{self.serviceName}' changed.")
+		if self.serviceReference and self.adjustMode == self.MODE_OFFSET:
+			if self.serviceReference in self.volumeOffsets.keys():
+				isAC3 = isCurrentAudioAC3DTS()
+				if isAC3 != self.serviceAudio:
+					self.serviceAudio = isAC3
+					[serviceName, offset] = self.volumeOffsets[self.serviceReference]  # The test above ensures that serviceReference is defined.
+					# if not isAC3 and volume > self.mpegMax:
+					# 	offset = volume - self.mpegMax
+					if offset:  # For now it is assumed that serviceName is the same as self.serviceName so the offset is assumed to be appropriate!
+						offset = self.volumeControl.setVolumeOffset(offset)
+						volume = self.volumeControl.getVolume()
+						print(f"[VolumeControl] Volume for service '{serviceName}' being adjusted by {offset} to {volume}.")
+						self.updateVolumeControlUI(volume)
+				# else:
+				# 	print(f"[VolumeControl] eventUpdatedInfo DEBUG: Audio track unchanged from {isAC3}.")
+			else:
+				self.updateVolumeControlUI(self.volumeControl.getVolume())
 
-		def setVolume(value):
-			self.volumeControl.setVolume(value, value)  # Set new volume.
-			if VolumeControl.instance:
-				VolumeControl.instance.volumeDialog.setValue(value)  # Update volume control progress bar value.
-				if config.volumeAdjust.showVolumeBar.value:
-					VolumeControl.instance.volumeDialog.show()
-					VolumeControl.instance.hideVolTimer.start(config.volumeControl.hideTimer.value * 1000, True)
-			# config.volumeControl.volume.value = self.volumeControl.getVolume()  # IanSav: Isn't this now only done when Enigma2 shuts down?
-			# config.volumeControl.volume.save()  # IanSav: Isn't this now only done when Enigma2 shuts down?
-
-		if self.adjustMode and self.newService[0]:
-			serviceReference = self.session.nav.getCurrentlyPlayingServiceReference()
-			if serviceReference:
-				print("[VolumeControl] DEBUG: Service changed.")
-				self.newService = [False, serviceReference]
-				self.currentVolume = 0
-				if self.adjustMode == self.MODE_OFFSETS:
-					self.currentAC3DTS = isCurrentAudioAC3DTS()
-					if self.pluginStarted:
-						if self.currentAC3DTS:  # Is this a AC3 or DTS sound track?
-							serviceReference = getPlayingServiceReference()
-							volume = self.volumeControl.getVolume()
-							currentVolume = volume  # Remember current volume.
-							volume -= self.lastAdjustedValue  # Go back to original value first.
-							[name, delta] = self.volumeOffsets.get(serviceReference.toString(), [self.getServiceName(serviceReference), self.defaultOffset])  # Get the delta from config.
-							if delta < 0:  # Adjust volume down.
-								if volume + delta < 0:
-									delta = volume * -1
-							else:  # Adjust volume up.
-								if volume >= 100 - delta:  # Check if delta + volume < 100.
-									delta = 100 - volume  # Correct delta value.
-							self.lastAdjustedValue = delta  # Save delta value.
-							if (volume + delta != currentVolume):
-								if delta == 0:
-									delta = volume - currentVolume  # Correction for debug print only.
-								setVolume(volume + self.lastAdjustedValue)
-								print(f"[VolumeControl] Adjust volume for service '{self.getServiceName(serviceReference)}' by +{delta} to {self.volumeControl.getVolume()}.")
-							self.currentVolume = self.volumeControl.getVolume()  # ac3||dts service , save current volume
-						else:  # This must be standar MPED / PCM audio.
-							if self.lastAdjustedValue != 0:
-								volume = self.volumeControl.getVolume()
-								delta = volume - self.lastAdjustedValue  # Restore to original volume.
-								if delta > self.mpegMax:
-									delta = self.mpegMax
-								setVolume(delta)
-								print(f"[VolumeControl] Adjust volume for service '{self.getServiceName(self.session.nav.getCurrentlyPlayingServiceReference())}' by -{volume - delta} to {self.volumeControl.getVolume()}.")
-								self.lastAdjustedValue = 0  # mpeg audio, no delta here
-						return  # Get out of here, nothing more to do.
-				elif self.adjustMode == self.MODE_LAST:
-					if self.pluginStarted:
-						serviceReference = getPlayingServiceReference()
-						if serviceReference.valid():
-							[name, last] = self.volumeRemembered.get(serviceReference.toString(), [self.getServiceName(serviceReference), -1])
-							if last != -1 and last != self.volumeControl.getVolume():
-								setVolume(last)
-								print(f"[VolumeControl] Set volume for service '{name}' to last saved value of {self.volumeControl.getVolume()}.")  # IanSav: Can we use last to save time?
-						return  # Get out of here, nothing more to do.
-			if not self.pluginStarted:
-				if self.adjustMode == self.MODE_OFFSETS:
-					# starting plugin, if service audio is ac3 or dts --> get delta from config...volume value is set by enigma2-system at start
-					if self.currentAC3DTS:
-						[name, delta] = self.volumeOffsets.get(serviceReference.toString(), [self.getServiceName(serviceReference), self.defaultOffset])
-						self.lastAdjustedValue = delta
-						self.currentVolume = self.volumeControl.getVolume()  # ac3||dts service , save current volume
-				self.pluginStarted = True
+	def getPlayingServiceReference(self):
+		serviceReference = self.session.nav.getCurrentlyPlayingServiceReference()
+		if serviceReference:
+			serviceName = self.getServiceName(serviceReference)
+			# print(f"[VolumeControl] getPlayingServiceReference DEBUG: serviceName='{serviceName}' serviceReference='{serviceReference.toString()}'.")
+			if serviceReference.getPath().startswith("/"):  # Check if a movie is playing.
+				info = eServiceCenter.getInstance().info(serviceReference)  # Get the eServicereference information if available.
+				if info:
+					serviceReference = eServiceReference(info.getInfoString(serviceReference, iServiceInformation.sServiceref))  # Get eServicereference from meta file. No need to know if eServiceReference is valid.
+					serviceName = self.getServiceName(serviceReference)
+					# print(f"[VolumeControl] getPlayingServiceReference DEBUG: resolved serviceName='{serviceName}' serviceReference='{serviceReference.toString()}'.")
+		return serviceReference, serviceName
 
 	def getServiceName(self, serviceReference):
 		return ServiceReference(serviceReference).getServiceName().replace("\xc2\x86", "").replace("\xc2\x87", "") if serviceReference else ""
+
+	def updateVolumeControlUI(self, volume):
+		if VolumeControl.instance:
+			if VolumeControl.instance.volumeDialog.getVolume() != volume:  # Update volume control progress bar value if the volume has changed.
+				VolumeControl.instance.volumeDialog.setValue(volume)
+			if self.showVolumeBar and not VolumeControl.instance.isMuted():  # Show volume control if not muted.
+				VolumeControl.instance.volumeDialog.show()
+				VolumeControl.instance.hideTimer.start(config.volumeControl.hideTimer.value * 1000, True)
 
 	def getVolumeOffsets(self):
 		return self.volumeOffsets
@@ -493,7 +482,9 @@ class VolumeAdjust:
 		self.adjustMode = config.volumeAdjust.adjustMode.value
 		self.defaultOffset = config.volumeAdjust.defaultOffset.value
 		self.dolbyEnabled = config.volumeAdjust.dolbyEnabled.value
+		self.dolbyOffset = config.volumeAdjust.dolbyOffset.value
 		self.mpegMax = config.volumeAdjust.mpegMax.value
+		self.showVolumeBar = config.volumeAdjust.showVolumeBar.value
 
 
 # NOTE: This code does not remember the current volume as other code can change
@@ -507,7 +498,6 @@ class VolumeControl:
 		def updateStep(configElement):
 			self.volumeControl.setVolumeSteps(configElement.value)
 
-		print(f"[VolumeControl] DEBUG: VolumeControl instance address {id(self)}.")
 		if VolumeControl.instance:
 			print("[VolumeControl] Error: Only one VolumeControl instance is allowed!")
 		else:
@@ -540,9 +530,9 @@ class VolumeControl:
 				self.volumeControl.volumeMute()
 				self.muteDialog.show()
 			volume = config.volumeControl.volume.value
-			self.volumeDialog.setValue(volume)
 			self.volumeControl.setVolume(volume, volume)
-			# Compatibility interface for shared plugins.
+			self.volumeDialog.setValue(volume)
+			# Next 2 lines are a compatibility interface for shared plugins.
 			self.volctrl = self.volumeControl
 			self.hideVolTimer = self.hideTimer
 			session.onShutdown.append(self.shutdown)
@@ -560,16 +550,15 @@ class VolumeControl:
 		self.volumeControl.setVolumeSteps(config.volumeControl.pressStep.value)
 
 	def keyVolumeMute(self):  # This will toggle the current mute status.
-		print(f"[VolumeControl] DEBUG: keyVolumeMute instance address {id(self)}.")
-		isMuted = self.volumeControl.volumeToggleMute()
-		if isMuted:
+		mute = self.volumeControl.volumeToggleMute()
+		if mute:
 			self.muteDialog.show()
 			self.volumeDialog.hide()
 		else:
 			self.muteDialog.hide()
 			self.volumeDialog.setValue(self.volumeControl.getVolume())
 			self.volumeDialog.show()
-		config.volumeControl.mute.value = isMuted
+		config.volumeControl.mute.value = mute
 		self.hideTimer.start(config.volumeControl.hideTimer.value * 1000, True)
 
 	def keyVolumeMuteLong(self):  # Long press MUTE will keep the mute icon on-screen without a timeout.
@@ -588,8 +577,11 @@ class VolumeControl:
 		self.muteDialog.hide()
 		self.volumeDialog.hide()
 
+	def isMuted(self):
+		return self.volumeControl.isMuted()
+
 	def shutdown(self):
-		config.volumeControl.volume.setValue(self.volumeControl.getVolume())
+		config.volumeControl.volume.setValue(self.volumeControl.getBaseVolume())
 		config.volumeControl.save()
 		print("[VolumeControl] Volume control settings saved.")
 

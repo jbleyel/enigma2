@@ -967,6 +967,12 @@ class RecordTimerEntry(TimerEntry):
 				self.log(12, "Stop recording.")
 			if not self.justplay:
 				if self.record_service:
+					scamble = not self.descramble or config.recording.never_decrypt.value
+					recordingReference = self.service_ref and self.service_ref.ref
+					print("[RecordTimer] Recording self.isPVRDescramble / scamble", self.isPVRDescramble, scamble)
+					if not self.failed and not self.isPVRDescramble and scamble and cihelper.ServiceIsAssigned(recordingReference) > -1:
+						self.scrambledRecordings.writeList(append=f"{self.Filename}{self.record_service.getFilenameExtension()}")
+
 #					fname = self.Filename + self.record_service.getFilenameExtension()
 #					moviedb.updateSingleEntry(fname, withBoxPath=True)
 					NavigationInstance.instance.stopRecordService(self.record_service)
@@ -1294,12 +1300,6 @@ class RecordTimerEntry(TimerEntry):
 				eventId = self.eit
 				if eventId is None:
 					eventId = -1
-
-			scamble = not self.descramble or config.recording.never_decrypt.value
-
-			print("[RecordTimer] Recording self.isPVRDescramble / scamble", self.isPVRDescramble, scamble)
-			if not self.isPVRDescramble and scamble and cihelper.ServiceIsAssigned(recordingReference) > -1:
-				self.scrambledRecordings.writeList(append=f"{self.Filename}{self.record_service.getFilenameExtension()}")
 
 			prepareResult = self.record_service.prepare(f"{self.Filename}{self.record_service.getFilenameExtension()}", self.begin, self.end, eventId, name.replace("\n", " "), description.replace("\n", " "), " ".join(self.tags), bool(self.descramble), bool(self.record_ecm))
 			if prepareResult:

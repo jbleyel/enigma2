@@ -405,7 +405,7 @@ class TryQuitMainloop(MessageBox):
 			default_yes = False
 			timeout = 30
 		elif len(scrambledList) and retvalue in (QUIT_SHUTDOWN, QUIT_REBOOT, QUIT_KODI) and config.recording.force_standby_for_descramble.value:
-			reason = _('There are unscrambled movies, which will be unscrambled in standby')
+			reason = _('There are scrambled recordings, which will be unscrambled during Standby')
 			default_yes = False
 			timeout = 30
 		if reason and inStandby:
