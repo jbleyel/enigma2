@@ -8,7 +8,8 @@ from enigma import eTimer, eServiceReference, eServiceCenter, iServiceInformatio
 
 from Components.config import config
 from Components.ScrambledRecordings import ScrambledRecordings
-from Components.UsageConfig import preferredInstantRecordPath, defaultMoviePath
+from Components.SystemInfo import BoxInfo
+from Components.UsageConfig import preferredInstantRecordPath
 
 from RecordTimer import RecordTimerEntry
 from Screens.MessageBox import MessageBox
@@ -119,6 +120,7 @@ class PVRDescrambleConvert():
 		self.navigation = None
 		self.successCount = 0
 		self.failedCount = 0
+		self.debug = True
 		self.scrambledRecordings = ScrambledRecordings()
 
 	def getRecordings(self):
@@ -145,7 +147,8 @@ class PVRDescrambleConvert():
 
 	def scrambledRecordsLeft(self):
 		scrambledFiles = self.scrambledRecordings.readList()
-		print("[PVRDescramble] scrambledRecordsLeft : ", scrambledFiles)
+		if self.debug:
+			print(f"[PVRDescramble] scrambledRecordsLeft : {scrambledFiles}")
 		if scrambledFiles:
 			tried = 0
 			self.wantShutdown = True
@@ -163,26 +166,29 @@ class PVRDescrambleConvert():
 		return False
 
 	def enterStandby(self, configElement):
-		print("[PVRDescramble] enterStandby")
+		if self.debug:
+			print("[PVRDescramble] enterStandby")
 		self.pvrListsTried = []
 		self.successCount = 0
 		self.failedCount = 0
-		if config.recording.enable_descramble_in_standby.value:
+		if BoxInfo.getItem("CanDescrambleInStandby") and config.recording.standbyDescramble.value:
 			instandby = self.getInstandby()
 			if not self.leaveStandby in instandby.onClose:
 				instandby.onClose.append(self.leaveStandby)
-			print("[PVRDescramble] enterStandby")
 			self.beginConvert()
 
 	def beginConvert(self):
-		print("[PVRDescrambleConvert] beginConvert")
-		begin = config.recording.decrypt_start_time.value
-		end = config.recording.decrypt_end_time.value
+		if self.debug:
+			print("[PVRDescramble] beginConvert")
+		begin = config.recording.standbyDescrambleStart.value
+		end = config.recording.standbyDescrambleEnd.value
 		if not checkTimeSpan(begin, end):
-			print("[PVRDescramble] not in allowed time intervall --> skip descrambling")
+			if self.debug:
+				print("[PVRDescramble] not in allowed time intervall --> skip descrambling")
 			seconds = secondsToTimespanBegin(begin, end)
-			startDate = datetime.fromtimestamp(int(time() + seconds)).strftime("%Y-%m-%d %H:%M:%S")
-			print("[PVRDescramble] next check in %d seconds (%s)" % (seconds, startDate))
+			if self.debug:
+				startDate = datetime.fromtimestamp(int(time() + seconds)).strftime("%Y-%m-%d %H:%M:%S")
+				print("[PVRDescramble] next check in %d seconds (%s)" % (seconds, startDate))
 			self.timeIntervallTimer.startLongTimer(seconds)
 			return
 
@@ -192,7 +198,8 @@ class PVRDescrambleConvert():
 		self.startConvertTimer()
 
 	def leaveStandby(self):
-		print("[PVRDescramble] leaveStandby")
+		if self.debug:
+			print("[PVRDescramble] leaveStandby")
 		self.wantShutdown = False
 		self.removeRecordEventCB()
 		self.convertTimer.stop()
@@ -202,35 +209,42 @@ class PVRDescrambleConvert():
 		self.stopConvert()
 
 	def startConvertTimer(self):
-		print("[PVRDescrambleConvert] startConvertTimer")
+		if self.debug:
+			print("[PVRDescramble] startConvertTimer")
 		self.convertTimer.start(3000, True)
 
 	def startStopConvertTimer(self):
-		print("[PVRDescrambleConvert] startStopConvertTimer")
+		if self.debug:
+			print("[PVRDescramble] startStopConvertTimer")
 		self.stopConvertTimer.start(500, True)
 
 	def appendRecordEventCB(self):
-		print("[PVRDescrambleConvert] appendRecordEventCB")
+		if self.debug:
+			print("[PVRDescramble] appendRecordEventCB")
 		nav = self.getNavigation()
 		if nav:
 			if self.gotRecordEvent not in nav.record_event:
 				nav.record_event.append(self.gotRecordEvent)
 
 	def removeRecordEventCB(self):
-		print("[PVRDescrambleConvert] removeRecordEventCB")
+		if self.debug:
+			print("[PVRDescramble] removeRecordEventCB")
 		nav = self.getNavigation()
 		if nav:
 			if self.gotRecordEvent in nav.record_event:
 				nav.record_event.remove(self.gotRecordEvent)
 
 	def gotRecordEvent(self, service, event):
-		print("[PVRDescrambleConvert] gotRecordEvent : ", service, event, service.getServiceType())
+		if self.debug:
+			print("[PVRDescramble] gotRecordEvent : ", service, event, service.getServiceType())
 		if service.getServiceType() == SERVICETYPE_PVR_DESCRAMBLE:
-			print("[PVRDescrambleConvert] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.converting / self.convertFilename", self.converting, self.convertFilename)
+			if self.debug:
+				print("[PVRDescramble] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.converting / self.convertFilename", self.converting, self.convertFilename)
 			if self.converting:
 				if self.convertFilename:
-					print("[PVRDescrambleConvert] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.convertFilename[0]", self.convertFilename[0])
-					print("[PVRDescrambleConvert] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.pvrListsTried", self.pvrListsTried)
+					if self.debug:
+						print("[PVRDescramble] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.convertFilename[0]", self.convertFilename[0])
+						print("[PVRDescramble] gotRecordEvent SERVICETYPE_PVR_DESCRAMBLE self.pvrListsTried", self.pvrListsTried)
 					pvrOri = self.convertFilename[0]
 					if pvrOri not in self.pvrListsTried:
 						self.pvrListsTried.append(pvrOri)
@@ -253,8 +267,9 @@ class PVRDescrambleConvert():
 					self.beginConvert()
 
 	def loadScrambledPvrList(self):
-		print("[PVRDescramble] loadScrambledPvrList")
-		print("[PVRDescramble] loadScrambledPvrList self.pvrListsTried:", self.pvrListsTried)
+		if self.debug:
+			print("[PVRDescramble] loadScrambledPvrList")
+			print("[PVRDescramble] loadScrambledPvrList self.pvrListsTried:", self.pvrListsTried)
 		self.pvrLists = []
 		serviceHandler = eServiceCenter.getInstance()
 		for sref in self.scrambledRecordings.readList():
@@ -264,7 +279,8 @@ class PVRDescrambleConvert():
 			if not path:
 				continue
 
-			print("[PVRDescramble] loadScrambledPvrList path=", path)
+			if self.debug:
+				print("[PVRDescramble] loadScrambledPvrList path=", path)
 
 			info = serviceHandler.info(sref)
 
@@ -286,7 +302,7 @@ class PVRDescrambleConvert():
 				continue
 
 			if scrambled == 1:
-				if True:
+				if self.debug:
 					print("====" * 20)
 					print("[loadScrambledPvrList] sref.toString() : ", sref.toString())
 					print("[loadScrambledPvrList] sref.getPath() : ", path)
@@ -303,49 +319,54 @@ class PVRDescrambleConvert():
 		self.pvrLists.sort()
 
 	def checkBeforeStartConvert(self):
-		return self.pvrLists and (not bool(self.getRecordings())) and (not self.converting) and self.getInstandby()
+		return not bool(self.getRecordings()) and (not self.converting) and self.getInstandby()
 
 	def prepareConvert(self):
-
-		print("[PVRDescramble] get unscrambled recordings")
+		if self.debug:
+			print("[PVRDescramble] get unscrambled recordings")
 		self.loadScrambledPvrList()
+		if self.checkBeforeStartConvert():
+			if self.pvrLists:
+				self.currentPvr = self.pvrLists.pop(0)
+			else:
+				self.currentPvr
 
-		if not self.checkBeforeStartConvert():
-			return
+			if self.currentPvr is None:
+				if self.debug:
+					print(f"[PVRDescramble] no more unscrambled recordings / wantShutdown {self.wantShutdown}")
+				if self.wantShutdown:
+					quitMainloop(1)
+				else:
+					message = [
+						_("Descramble in Standby finished"),
+						_("Amount %d / Success %d / Failed %d") % (self.successCount + self.failedCount, self.successCount, self.failedCount),
+					]
+					self.addNotification(f"{message[0]}\n\n{message[1]}")
+				return
 
-		self.currentPvr = self.pvrLists.pop(0)
-		if self.currentPvr is None:
-
-			if self.wantShutdown:
-				quitMainloop(1)
-
-			message = [
-				_("Descramble in Standby finished"),
-				_("Amount %d / Success %d / Failed %d") % (self.successCount + self.failedCount, self.successCount, self.failedCount),
-			]
-			self.addNotification(f"{message[0]}\n\n{message[1]}")
-			return
-
-		(_begin, sref, name, length, real_ref) = self.currentPvr
-		self.my_nav = self.getNavigation()
-		if self.my_nav and self.my_nav is not None:
-			self.my_nav.playService(eServiceReference(real_ref))
-			self.prepareTimer.start(10000, True)
+			(_begin, sref, name, length, real_ref) = self.currentPvr
+			self.my_nav = self.getNavigation()
+			if self.my_nav and self.my_nav is not None:
+				self.my_nav.playService(eServiceReference(real_ref))
+				self.prepareTimer.start(10000, True)
 
 	def prepareFinished(self):
-		print("[PVRDescrambleConvert] prepareFinished")
+		if self.debug:
+			print("[PVRDescramble] prepareFinished")
 		if self.my_nav and self.my_nav is not None:
 			self.my_nav.stopService()
 		self.prepareTimer.stop()
 		self.secondPrepareTimer.start(1000, True)
 
 	def secondPrepareFinished(self):
-		print("[PVRDescrambleConvert] second_prepareFinished")
+		if self.debug:
+			print("[PVRDescramble] second_prepareFinished")
 		self.secondPrepareTimer.stop()
 		self.startConvert()
 
 	def startConvert(self):
-		print("[PVRDescrambleConvert] startConvert")
+		if self.debug:
+			print("[PVRDescramble] startConvert")
 
 		(_begin, sref, name, length, real_ref) = self.currentPvr
 
@@ -385,18 +406,19 @@ class PVRDescrambleConvert():
 				self.converting = recording
 				self.convertFilename = (sref.getPath(), f"{filename}.ts")
 			else:
-				print("[PVRDescrambleConvert] error, wrong recordings info.")
+				print("[PVRDescramble] error, wrong recordings info.")
 		else:
 			self.currentPvr = None
 			self.beginConvert()
 
 			if len(simulTimerList) > 1:  # with other recording
-				print("[PVRDescrambleConvert] conflicts !")
+				print("[PVRDescramble] conflicts !")
 			else:
-				print(f"[PVRDescrambleConvert] Couldn't record due to invalid service {sref}")
+				print(f"[PVRDescramble] Couldn't record due to invalid service {sref}")
 			recording.autoincrease = False
 
-		print(f"[PVRDescrambleConvert] startConvert, self.converting : {self.converting}")
+		if self.debug:
+			print(f"[PVRDescramble] startConvert, self.converting : {self.converting}")
 
 	def removeStr(self, fileName, s):
 		if fileName.find(s) == -1:
@@ -409,7 +431,6 @@ class PVRDescrambleConvert():
 		outName = self.removeStr(pvrName, ".ts") + f"_del.ts{subName}"
 
 		if fileExists(targetName, "w"):
-			#print("RENAME %s -> %s" % (targetName, outName))
 			rename(targetName, outName)
 			return outName
 
@@ -420,7 +441,6 @@ class PVRDescrambleConvert():
 		outName = self.removeStr(pvrName, "_pvrdesc") + subName
 
 		if fileExists(targetName, "w"):
-			#print("RENAME %s -> %s" % (targetName, outName))
 			rename(targetName, outName)
 			return outName
 
@@ -450,7 +470,8 @@ class PVRDescrambleConvert():
 		return originalDeleteFilename
 
 	def stopConvert(self, convertFinished=False):
-		print("[PVRDescrambleConvert] stopConvert")
+		if self.debug:
+			print("[PVRDescramble] stopConvert")
 		name = "Unknown"
 		if self.currentPvr:
 			(_begin, sref, name, length, real_ref) = self.currentPvr
@@ -492,28 +513,30 @@ class PVRDescrambleConvert():
 		origMetaContent = []
 		newMetaContent = []
 
-		print(f"[PVRDescrambleConvert] keepMetaData newMetaFileName {newMetaFileName}")
-		print(f"[PVRDescrambleConvert] keepMetaData originalMetaFileName {originalMetaFileName}")
+		if self.debug:
+			print(f"[PVRDescramble] keepMetaData newMetaFileName {newMetaFileName}")
+			print(f"[PVRDescramble] keepMetaData originalMetaFileName {originalMetaFileName}")
 
 		if exists(newMetaFileName) and exists(originalMetaFileName):
 			origMetaContent = fileReadLines(originalMetaFileName, default=[])
 			newMetaContent = fileReadLines(newMetaFileName, default=[])
 
-		print(f"[PVRDescrambleConvert] keepMetaData origMetaContent {origMetaContent}")
-		print(f"[PVRDescrambleConvert] keepMetaData newMetaContent {newMetaContent}")
+		if self.debug:
+			print(f"[PVRDescramble] keepMetaData origMetaContent {origMetaContent}")
+			print(f"[PVRDescramble] keepMetaData newMetaContent {newMetaContent}")
 
 		if len(origMetaContent) >= 10 and len(newMetaContent) >= 10:
 			origMetaContent[9] = newMetaContent[9]
 			fileWriteLines(newMetaFileName, origMetaContent)
 		else:
-			print("[PVRDescrambleConvert] keepMetaData NOT write")
+			print("[PVRDescramble] keepMetaData NOT write")
 
 	def deletePvr(self, filename):
 		serviceHandler = eServiceCenter.getInstance()
 		ref = eServiceReference(1, 0, filename)
 		offline = serviceHandler.offlineOperations(ref)
 		if offline.deleteFromDisk(0):
-			print(f"[PVRDescrambleConvert] delete failed : {filename}")
+			print(f"[PVRDescramble] delete failed : {filename}")
 
 	def addNotification(self, text):
 		AddNotification(MessageBox, text, type=MessageBox.TYPE_INFO, timeout=5)

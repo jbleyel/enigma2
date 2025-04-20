@@ -362,8 +362,11 @@ class TryQuitMainloop(MessageBox):
 		self.ptsmainloopvalue = retvalue
 		recordings = session.nav.getRecordings(False, Components.RecordingConfig.recType(config.recording.warn_box_restart_rec_types.getValue()))
 		jobs = len(job_manager.getPendingJobs())
-		scrambledRecordings = ScrambledRecordings()
-		scrambledList = scrambledRecordings.readList(returnLength=True)
+		if BoxInfo.getItem("CanDescrambleInStandby"):
+			scrambledRecordings = ScrambledRecordings()
+			scrambledList = scrambledRecordings.readList(returnLength=True)
+		else:
+			scrambledList = []
 
 		inTimeshift = Screens.InfoBar.InfoBar and Screens.InfoBar.InfoBar.instance and Screens.InfoBar.InfoBar.ptsGetTimeshiftStatus(Screens.InfoBar.InfoBar.instance)
 		self.connected = False
@@ -405,14 +408,14 @@ class TryQuitMainloop(MessageBox):
 			reason = _('%d jobs are running in the background!') % jobs
 			default_yes = False
 			timeout = 30
-		elif len(scrambledList) and retvalue == QUIT_SHUTDOWN and config.recording.force_standby_for_descramble.value:
+		elif len(scrambledList) and retvalue == QUIT_SHUTDOWN and config.recording.standbyDescrambleShutdown.value:
 			duration = 0
 			for scrambledListItem in scrambledList:
 				duration += scrambledListItem[1]
 			count = len(scrambledList)
 			reason = [
 				ngettext("There is %d scrambled recording, which will be unscrambled during Standby.", "There are %d scrambled recordings, which will be unscrambled during Standby.", count) % count,
-				_("The process will take approximately %d minutes to complete.") % int(duration // 60),
+				_("The process will take approximately %d minutes to complete.") % min(int(duration // 60), 2),
 				 _("Select 'Yes' to shut down immediately instead of starting the descramble.")
 			]
 			reason = f"{reason[0]} {reason[1]}\n\n{reason[2]}"

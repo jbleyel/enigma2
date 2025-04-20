@@ -712,11 +712,11 @@
 		<item level="2" text="Show warning before restart" description="Configure for which types of recordings a warning about active recordings is shown when attempting to restart the box or the GUI.">config.recording.warn_box_restart_rec_types</item>
 		<item level="2" text="Show free space in timer view" description="When 'Enabled', the timer view will show the free space on the target device. This will wake the device from sleep mode.">config.recording.timerviewshowfreespace</item>
 		<if requires="CanDescrambleInStandby">
-			<item level="2" text="Descramble in Standby" description="Set to 'Enabled' to descramble queued scrambled recordings in Standby.">config.recording.enable_descramble_in_standby</item>
-			<if conditional="config.recording.enable_descramble_in_standby">
-				<item level="2" text="Descramble recordings before Shutdown" description="Set to 'Enabled' to descramble queued scrambled recordings in Standby mode before shutting down.">config.recording.force_standby_for_descramble</item>
-				<item level="2" text="Descramble start time" description="Select a time, when in Standby mode, after which the descramble can proceed.">config.recording.decrypt_start_time</item>
-				<item level="2" text="Descramble end time" description="Select a time, when in Standby, before which descramble can proceed.">config.recording.decrypt_end_time</item>
+			<item level="2" text="Descramble in Standby" description="Set to 'Enabled' to descramble queued scrambled recordings in Standby.">config.recording.standbyDescramble</item>
+			<if conditional="config.recording.standbyDescramble">
+				<item level="2" text="Descramble recordings before Shutdown" description="Set to 'Enabled' to descramble queued scrambled recordings in Standby mode before shutting down.">config.recording.standbyDescrambleShutdown</item>
+				<item level="2" text="Descramble start time" description="Select a time, when in Standby mode, after which the descramble can proceed.">config.recording.standbyDescrambleStart</item>
+				<item level="2" text="Descramble end time" description="Select a time, when in Standby, before which descramble can proceed.">config.recording.standbyDescrambleEnd</item>
 			</if>
 		</if>
 	</setup>

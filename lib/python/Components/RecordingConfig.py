@@ -74,13 +74,13 @@ def InitRecordingConfig():
 	config.recording.timerviewshowfreespace = ConfigYesNo(default=True)
 
 	if BoxInfo.getItem("CanDescrambleInStandby"):
-		config.recording.enable_descramble_in_standby = ConfigYesNo(default=True)
-		config.recording.force_standby_for_descramble = ConfigYesNo(default=True)
+		config.recording.standbyDescramble = ConfigYesNo(default=True)
+		config.recording.standbyDescrambleShutdown = ConfigYesNo(default=True)
 	else:
-		config.recording.enable_descramble_in_standby = ConfigYesNo(default=False)
-		config.recording.force_standby_for_descramble = ConfigYesNo(default=False)
-	config.recording.decrypt_start_time = ConfigClock(default=calculateTime(0, 1))
-	config.recording.decrypt_end_time = ConfigClock(default=calculateTime(23, 59))
+		config.recording.standbyDescramble = ConfigYesNo(default=False)
+		config.recording.standbyDescrambleShutdown = ConfigYesNo(default=False)
+	config.recording.standbyDescrambleStart = ConfigClock(default=calculateTime(0, 1))
+	config.recording.standbyDescrambleEnd = ConfigClock(default=calculateTime(23, 59))
 
 
 def recType(configString):
