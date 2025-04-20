@@ -713,7 +713,7 @@
 		<item level="2" text="Show free space in timer view" description="When 'Enabled', the timer view will show the free space on the target device. This will wake the device from sleep mode.">config.recording.timerviewshowfreespace</item>
 		<if requires="CanDescrambleInStandby">
 			<item level="2" text="Descramble in Standby" description="Set to 'Enabled' to descramble queued scrambled recordings in Standby.">config.recording.standbyDescramble</item>
-			<if conditional="config.recording.standbyDescramble" indent="1">
+			<if conditional="config.recording.standbyDescramble.value" indent="1">
 				<item level="2" text="Descramble recordings before Shutdown" description="Set to 'Enabled' to descramble queued scrambled recordings in Standby mode before shutting down.">config.recording.standbyDescrambleShutdown</item>
 				<item level="2" text="Descramble start time" description="Select a time, when in Standby mode, after which the descramble can proceed.">config.recording.standbyDescrambleStart</item>
 				<item level="2" text="Descramble end time" description="Select a time, when in Standby, before which descramble can proceed.">config.recording.standbyDescrambleEnd</item>
