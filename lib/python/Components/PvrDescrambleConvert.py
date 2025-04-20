@@ -120,7 +120,7 @@ class PVRDescrambleConvert():
 		self.navigation = None
 		self.successCount = 0
 		self.failedCount = 0
-		self.debug = True
+		self.debug = config.crash.debugTimers.value
 		self.scrambledRecordings = ScrambledRecordings()
 
 	def getRecordings(self):

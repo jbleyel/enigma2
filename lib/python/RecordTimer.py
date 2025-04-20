@@ -37,7 +37,7 @@ from Tools.XMLTools import stringToXML
 InfoBar = False
 
 MODULE_NAME = __name__.split(".")[-1]
-DEBUG = True  # config.crash.debugTimers.value
+DEBUG = config.crash.debugTimers.value
 
 TIMER_XML_FILE = resolveFilename(SCOPE_CONFIG, "timers.xml")
 TIMER_FLAG_FILE = "/tmp/was_rectimer_wakeup"

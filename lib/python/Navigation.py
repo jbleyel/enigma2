@@ -450,7 +450,6 @@ class Navigation:
 		return self.currentlyPlayingServiceOrGroup
 
 	def getCurrentServiceReferenceOriginal(self):
-		print(f"[Navigation] getCurrentServiceReferenceOriginal: {self.originalPlayingServiceReference} / {self.currentlyPlayingServiceOrGroup}")
 		return self.originalPlayingServiceReference or self.currentlyPlayingServiceOrGroup
 
 	def getCurrentServiceRef(self):

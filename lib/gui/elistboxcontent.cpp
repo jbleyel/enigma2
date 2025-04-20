@@ -693,14 +693,12 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 				Py_XDECREF(text);
 			}
 
-			/* when we have no label, align value to the left. (FIXME:
-			don't we want to specifiy this individually?) */
+			// when we have no label, align value to the left. (FIXME: don't we want to specifiy this individually?)
 			int value_alignment_left = !*string;
 
 			/* now, handle the value. get 2nd part from tuple*/
 			if (PyTuple_Size(item) >= 2) // when no 2nd entry is in tuple this is a non selectable entry without config part
 				value = PyTuple_GET_ITEM(item, 1);
-
 
 			ePtr<gFont> fnt3;
 			int leftOffset = style.getValue(eWindowStyleSkinned::valueEntryLeftOffset);

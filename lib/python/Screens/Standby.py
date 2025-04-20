@@ -495,8 +495,6 @@ class TryQuitMainloop(MessageBox):
 				from Components.PvrDescrambleConvert import pvr_descramble_convert
 				if pvr_descramble_convert.scrambledRecordsLeft():
 					self.session.open(Standby2)
-				else:
-					self.close(True)  # immediate shutdown
 			MessageBox.close(self, True)
 
 	def __onShow(self):
