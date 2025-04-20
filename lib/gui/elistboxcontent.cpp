@@ -667,9 +667,20 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 			/* handle left part. get item from tuple, convert to string, display. */
 			text = PyTuple_GET_ITEM(item, 0);
 			const char *string;
+			int indent = 0;
 
 			if (PyTuple_Check(text))
 			{
+				if (PyTuple_Size(text) > 1)
+				{
+					ePyObject pindent = PyTuple_GET_ITEM(text, 1);
+					if (pindent && PyLong_Check(pindent))
+					{
+						indent = PyLong_AsLong(pindent);
+						indent = indent * style.getValue(eWindowStyleSkinned::valueIndentSize);
+					}
+				}
+
 				text = PyTuple_GET_ITEM(text, 0);
 				text = PyObject_Str(text); /* creates a new object - old object was borrowed! */
 				string = (text && PyUnicode_Check(text)) ? PyUnicode_AsUTF8(text) : "<not-a-string>";
@@ -690,24 +701,9 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 			if (PyTuple_Size(item) >= 2) // when no 2nd entry is in tuple this is a non selectable entry without config part
 				value = PyTuple_GET_ITEM(item, 1);
 
-			int indent = 0;
-
-			if (PyTuple_Size(item) >= 4)
-			{
-				ePyObject options = PyTuple_GET_ITEM(item, 3);
-				if (options && PyDict_Check(options))
-				{
-					ePyObject entry = PyDict_GetItemString(options, "indent");
-					if (entry && PyLong_Check(entry))
-					{
-						indent = PyLong_AsLong(entry);
-						indent = indent * style.getValue(eWindowStyleSkinned::valueIndentSize);
-					}
-				}
-			} 
 
 			ePtr<gFont> fnt3;
-			int leftOffset = style.getValue(eWindowStyleSkinned::valueEntryLeftOffset) + indent;
+			int leftOffset = style.getValue(eWindowStyleSkinned::valueEntryLeftOffset);
 
 			if (value)
 			{
@@ -761,7 +757,7 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 					left = 0;
 				if(width == -1)
 				{
-					left = offset.x() + leftOffset;
+					left = offset.x() + leftOffset + indent;
 					width = m_itemsize.width() - left * 2;
 				}
 				
@@ -771,7 +767,7 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 			}
 
 
-			eRect labelrect(ePoint(offset.x() + leftOffset, offset.y()), m_itemsize);
+			eRect labelrect(ePoint(offset.x() + leftOffset + indent, offset.y()), m_itemsize);
 			painter.renderText(labelrect, string, alphablendflag | gPainter::RT_HALIGN_LEFT | gPainter::RT_VALIGN_CENTER, border_color, border_size);
 
 			/*  check if this is really a tuple */

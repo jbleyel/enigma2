@@ -1177,11 +1177,6 @@ RESULT eDVBResourceManager::allocateDemux(eDVBRegisteredFrontend *fe, ePtr<eDVBA
 		--i;
 	}
 
-	if (fe)
-		eDebug("[eDVBResourceManager] allocate demux fe use_decode_demux=%d / fesource=%d", use_decode_demux, fesource);
-	else
-		eDebug("[eDVBResourceManager] allocate demux no fe use_decode_demux=%d / fesource=%d", use_decode_demux, fesource);
-
 	while (i != m_demux.end())
 	{
 		if (i->m_adapter == adapter)
@@ -2411,19 +2406,6 @@ int eDVBChannel::reserveDemux()
 
 int eDVBChannel::getDvrId()
 {
-	if (m_decoder_demux)
-	{
-		uint8_t demux = 0;
-		m_decoder_demux->get().getCADemuxID(demux);
-		eDebug("[eDVBChannel] DEBUG getDvrId use m_decoder_demux = %d", demux);
-	}
-	if (m_demux)
-	{
-		uint8_t demux = 0;
-		m_demux->get().getCADemuxID(demux);
-		eDebug("[eDVBChannel] DEBUG getDvrId use m_demux = %d", demux);
-	}
-
 	ePtr<eDVBAllocatedDemux> dmx = m_decoder_demux ? m_decoder_demux : m_demux;
 	if (dmx)
 	{
@@ -2466,7 +2448,6 @@ RESULT eDVBChannel::getDemux(ePtr<iDVBDemux> &demux, int cap)
 	if (!our_demux)
 	{
 		demux = 0;
-		// eDebug"[eDVBChannel] DEBUG getDemux call allocateDemuxu");
 		if (m_mgr->allocateDemux(m_frontend ? (eDVBRegisteredFrontend*)*m_frontend : (eDVBRegisteredFrontend*)0, our_demux, cap))
 			return -1;
 
@@ -2527,20 +2508,6 @@ RESULT eDVBChannel::playSource(ePtr<iTsSource> &source, const char *streaminfo_f
 
 	if (m_pvr_fd_dst < 0)
 	{
-		/*
-		if (m_decoder_demux)
-		{
-			uint8_t demux = 0;
-			m_decoder_demux->get().getCADemuxID(demux);
-			eDebug("[eDVBChannel] DEBUG playSource use m_decoder_demux = %d", demux);
-		}
-		if (m_demux)
-		{
-			uint8_t demux = 0;
-			m_demux->get().getCADemuxID(demux);
-			eDebug("[eDVBChannel] DEBUG playSource use m_demux = %d", demux);
-		}
-		*/
 		ePtr<eDVBAllocatedDemux> &demux = m_demux ? m_demux : m_decoder_demux;
 		if (demux)
 		{
