@@ -363,12 +363,13 @@ class TryQuitMainloop(MessageBox):
 		recordings = session.nav.getRecordings(False, Components.RecordingConfig.recType(config.recording.warn_box_restart_rec_types.getValue()))
 		jobs = len(job_manager.getPendingJobs())
 		scrambledRecordings = ScrambledRecordings()
-		scrambledList = scrambledRecordings.readList()
+		scrambledList = scrambledRecordings.readList(returnLength=True)
 
 		inTimeshift = Screens.InfoBar.InfoBar and Screens.InfoBar.InfoBar.instance and Screens.InfoBar.InfoBar.ptsGetTimeshiftStatus(Screens.InfoBar.InfoBar.instance)
 		self.connected = False
 		reason = ""
 		next_rec_time = -1
+		self.descramble = False
 		if not recordings:
 			next_rec_time = session.nav.RecordTimer.getNextRecordingTime()
 #		if jobs:
@@ -404,9 +405,13 @@ class TryQuitMainloop(MessageBox):
 			reason = _('%d jobs are running in the background!') % jobs
 			default_yes = False
 			timeout = 30
-		elif len(scrambledList) and retvalue in (QUIT_SHUTDOWN, QUIT_REBOOT, QUIT_KODI) and config.recording.force_standby_for_descramble.value:
-			reason = _('There are scrambled recordings, which will be unscrambled during Standby')
+		elif len(scrambledList) and retvalue == QUIT_SHUTDOWN and config.recording.force_standby_for_descramble.value:
+			lenght = 0
+			for scrambledListItem in scrambledList:
+				lenght += scrambledListItem[1]
+			reason = _("There are %d scrambled recordings, which will be unscrambled during Standby\nThe process takes aprox. %d minutes to finish.\nSelect 'No' to goto Standby instead and start the descrambling.") % (len(scrambledList), int(lenght / 60))
 			default_yes = False
+			self.descramble = True
 			timeout = 30
 		if reason and inStandby:
 			session.nav.record_event.append(self.getRecordEvent)
@@ -479,6 +484,8 @@ class TryQuitMainloop(MessageBox):
 
 			quitMainloop(self.retval)
 		else:
+			if self.descramble:
+				self.session.open(Standby2)
 			MessageBox.close(self, True)
 
 	def __onShow(self):

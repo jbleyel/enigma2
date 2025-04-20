@@ -14,12 +14,17 @@ class ScrambledRecordings:
 	def getServiceRef(self, movie):
 		return eServiceReference(f"{"1" if movie.endswith("ts") else "4097"}:0:0:0:0:0:0:0:0:0:{movie}")
 
-	def readList(self):
+	def readList(self, returnLength=False):
 		files = []
 		lines = fileReadLines(self.SCRAMBLE_LIST_FILE, default=[])
 		for line in lines:
 			if exists(line) and not exists(f"{line}.del"):
-				files.append(self.getServiceRef(line))
+				sref = self.getServiceRef(line)
+				if returnLength:
+					info = eServiceCenter.getInstance().info(sref)
+					files.append((sref, info and info.getLength(sref) or 0))
+				else:
+					files.append(sref)
 		return files
 
 	def writeList(self, append="", overwrite=False):

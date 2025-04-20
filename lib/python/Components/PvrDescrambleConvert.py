@@ -14,7 +14,7 @@ from RecordTimer import RecordTimerEntry
 from Screens.MessageBox import MessageBox
 from ServiceReference import ServiceReference
 
-from Tools.Directories import fileExists
+from Tools.Directories import fileExists, fileReadLines, fileWriteLines
 from Tools.Notifications import AddNotification
 
 
@@ -89,7 +89,7 @@ class StubInfo:
 		return 0
 
 	def getInfoString(self, sref, w):
-		return ''
+		return ""
 
 
 stubInfo = StubInfo()
@@ -177,7 +177,7 @@ class PVRDescrambleConvert():
 		if not checkTimeSpan(begin, end):
 			print("[PVRDescramble] not in allowed time intervall --> skip descrambling")
 			seconds = secondsToTimespanBegin(begin, end)
-			startDate = datetime.fromtimestamp(int(time() + seconds)).strftime('%Y-%m-%d %H:%M:%S')
+			startDate = datetime.fromtimestamp(int(time() + seconds)).strftime("%Y-%m-%d %H:%M:%S")
 			print("[PVRDescramble] next check in %d seconds (%s)" % (seconds, startDate))
 			self.timeIntervallTimer.startLongTimer(seconds)
 			return
@@ -351,10 +351,10 @@ class PVRDescrambleConvert():
 		if isinstance(sref, eServiceReference):
 			sref = ServiceReference(sref)
 
-		if m_path.endswith('.ts'):
+		if m_path.endswith(".ts"):
 			m_path = m_path[:-3]
 
-		filename = m_path + "_pvrdesc"
+		filename = f"{m_path}_pvrdesc"
 
 		recording = RecordTimerEntry(sref, begin, end, name, description, eventid, dirname=preferredInstantRecordPath(), filename=filename)
 		recording.dontSave = True
@@ -372,7 +372,7 @@ class PVRDescrambleConvert():
 			recordings = self.getRecordings()
 			if len(recordings) == 1:
 				self.converting = recording
-				self.convertFilename = (sref.getPath(), filename + ".ts")
+				self.convertFilename = (sref.getPath(), f"{filename}.ts")
 			else:
 				print("[PVRDescrambleConvert] error, wrong recordings info.")
 		else:
@@ -382,22 +382,20 @@ class PVRDescrambleConvert():
 			if len(simulTimerList) > 1:  # with other recording
 				print("[PVRDescrambleConvert] conflicts !")
 			else:
-				print("[PVRDescrambleConvert] Couldn't record due to invalid service %s" % sref)
+				print(f"[PVRDescrambleConvert] Couldn't record due to invalid service {sref}")
 			recording.autoincrease = False
 
-		print("[PVRDescrambleConvert] startConvert, self.converting : ", self.converting)
+		print(f"[PVRDescrambleConvert] startConvert, self.converting : {self.converting}")
 
 	def removeStr(self, fileName, s):
 		if fileName.find(s) == -1:
 			return fileName
-
 		sp = fileName.split(s)
-
 		return sp[0] + sp[1]
 
 	def renameDelPvr(self, pvrName, subName):
 		targetName = pvrName + subName
-		outName = self.removeStr(pvrName, ".ts") + "_del" + ".ts" + subName
+		outName = self.removeStr(pvrName, ".ts") + f"_del.ts{subName}"
 
 		if fileExists(targetName, "w"):
 			#print("RENAME %s -> %s" % (targetName, outName))
@@ -417,29 +415,28 @@ class PVRDescrambleConvert():
 
 		return None
 
-	def renamePvr(self, pvr_ori, pvr_convert):
-		pvr_ori_del = self.renameDelPvr(pvr_ori, "")
-		if not pvr_ori_del:
+	def renamePvr(self, originalFileName, convertedFileName):
+		originalDeleteFilename = self.renameDelPvr(originalFileName, "")
+		if not originalDeleteFilename:
 			return None
 
-		self.renameDelPvr(pvr_ori, ".meta")
-		self.renameDelPvr(pvr_ori, ".ap")
-		self.renameDelPvr(pvr_ori, ".sc")
-		self.renameDelPvr(pvr_ori, ".cuts")
+		self.renameDelPvr(originalFileName, ".meta")
+		self.renameDelPvr(originalFileName, ".ap")
+		self.renameDelPvr(originalFileName, ".sc")
+		self.renameDelPvr(originalFileName, ".cuts")
 
-		pvr_convert_fixed = self.renameConvertPvr(pvr_convert, "")
-		if not pvr_convert_fixed:
+		if not self.renameConvertPvr(convertedFileName, ""):
 			return None
 
-		self.renameConvertPvr(pvr_convert, ".meta")
-		self.renameConvertPvr(pvr_convert, ".ap")
-		self.renameConvertPvr(pvr_convert, ".sc")
-		self.renameConvertPvr(pvr_convert, ".cuts")
+		self.renameConvertPvr(convertedFileName, ".meta")
+		self.renameConvertPvr(convertedFileName, ".ap")
+		self.renameConvertPvr(convertedFileName, ".sc")
+		self.renameConvertPvr(convertedFileName, ".cuts")
 
-		if exists(pvr_convert[:-3] + '.eit'):
-			remove(pvr_convert[:-3] + '.eit')
+		if exists(f"{convertedFileName[:-3]}.eit"):
+			remove(f"{convertedFileName[:-3]}.eit")
 
-		return pvr_ori_del
+		return originalDeleteFilename
 
 	def stopConvert(self, convertFinished=False):
 		print("[PVRDescrambleConvert] stopConvert")
@@ -456,53 +453,45 @@ class PVRDescrambleConvert():
 			self.convertFilename = None
 
 			if convertFilename:
-				(pvr_ori, pvr_convert) = convertFilename
+				(originalFileName, convertedFileName) = convertFilename
 				if convertFinished:
 					# check size
-					if exists(pvr_convert) and stat(pvr_convert).st_size:
-						pvr_ori_del = self.renamePvr(pvr_ori, pvr_convert)
-						self.keepMetaData(pvr_ori)
-						if pvr_ori_del:
-							self.deletePvr(pvr_ori_del)
+					if exists(convertedFileName) and stat(convertedFileName).st_size:
+						originalDeleteFilename = self.renamePvr(originalFileName, convertedFileName)
+						self.keepMetaData(originalFileName)
+						if originalDeleteFilename:
+							self.deletePvr(originalDeleteFilename)
 						self.addNotification(_("A PVR descramble converting is finished.\n%s") % name)
 					else:
-						self.deletePvr(pvr_convert)
+						self.deletePvr(convertedFileName)
 				else:
-					if convertFilename[0] in self.pvrListsTried and not self.descrableError:
-						self.pvrListsTried.remove(convertFilename[0])
+					if originalFileName in self.pvrListsTried and not self.descrableError:
+						self.pvrListsTried.remove(originalFileName)
 					self.descrableError = False
-					self.deletePvr(pvr_convert)
+					self.deletePvr(convertedFileName)
 			self.scrambledRecordings.writeList()
 
 		sync()
 
-	def keepMetaData(self, pvr_ori):
-		del_meta = pvr_ori[:-3] + "_del" + ".ts.meta"
-		new_meta = pvr_ori + ".meta"
-		orig_content = []
-		tmp_content = []
+	def keepMetaData(self, originalFileName):
+		originalMetaFileName = f"{originalFileName[:-3]}_del.ts.meta"
+		newMetaFileName = f"{originalFileName}.meta"
+		origMetaContent = []
+		newMetaContent = []
 
-		print("[PVRDescrambleConvert] keepMetaData new_meta", new_meta)
-		print("[PVRDescrambleConvert] keepMetaData del_meta", del_meta)
+		print(f"[PVRDescrambleConvert] keepMetaData newMetaFileName {newMetaFileName}")
+		print(f"[PVRDescrambleConvert] keepMetaData originalMetaFileName {originalMetaFileName}")
 
-		if exists(new_meta) and exists(del_meta):
-			with open(del_meta) as f:
-				orig_content = f.readlines()
-			with open(new_meta) as f:
-				tmp_content = f.readlines()
+		if exists(newMetaFileName) and exists(originalMetaFileName):
+			origMetaContent = fileReadLines(originalMetaFileName, default=[])
+			newMetaContent = fileReadLines(newMetaFileName, default=[])
 
-		print("[PVRDescrambleConvert] keepMetaData orig_content", orig_content)
-		print("[PVRDescrambleConvert] keepMetaData tmp_content", tmp_content)
+		print(f"[PVRDescrambleConvert] keepMetaData origMetaContent {origMetaContent}")
+		print(f"[PVRDescrambleConvert] keepMetaData newMetaContent {newMetaContent}")
 
-		if len(orig_content) >= 10 and len(tmp_content) >= 10:
-			orig_content[9] = tmp_content[9]
-			new_content = ""
-			for x in orig_content:
-				new_content += x
-			print("[PVRDescrambleConvert] keepMetaData write file", new_meta)
-			print("[PVRDescrambleConvert] keepMetaData new_content", new_content)
-			with open(new_meta, "w") as f:
-				f.write(new_content)
+		if len(origMetaContent) >= 10 and len(newMetaContent) >= 10:
+			origMetaContent[9] = newMetaContent[9]
+			fileWriteLines(newMetaFileName, origMetaContent)
 		else:
 			print("[PVRDescrambleConvert] keepMetaData NOT write")
 
@@ -511,7 +500,7 @@ class PVRDescrambleConvert():
 		ref = eServiceReference(1, 0, filename)
 		offline = serviceHandler.offlineOperations(ref)
 		if offline.deleteFromDisk(0):
-			print("[PVRDescrambleConvert] delete failed : ", filename)
+			print(f"[PVRDescrambleConvert] delete failed : {filename}")
 
 	def addNotification(self, text):
 		AddNotification(MessageBox, text, type=MessageBox.TYPE_INFO, timeout=5)
