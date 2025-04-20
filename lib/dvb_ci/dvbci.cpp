@@ -446,6 +446,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 		pmthandler->getService(service);
 
 		eTrace("[CI] recheck %p %s", pmthandler, ref.toString().c_str());
+		bool PVR = !ref.path.empty();
 		for (eSmartPtrList<eDVBCISlot>::iterator ci_it(m_slots.begin()); ci_it != m_slots.end(); ++ci_it)
 			if (ci_it->plugged && ci_it->getCAManager())
 			{
@@ -496,7 +497,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 			if (ca_manager)
 			{
 				int mask = 0;
-				if (!ci_it->possible_services.empty())
+				if (!ci_it->possible_services.empty() && !PVR)
 				{
 					mask |= 1;
 					serviceSet::iterator it = ci_it->possible_services.find(ref);
@@ -520,7 +521,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 						}
 					}
 				}
-				if (!useThis && !ci_it->possible_providers.empty())
+				if (!useThis && !ci_it->possible_providers.empty() && !PVR)
 				{
 					eDVBNamespace ns = ref.getDVBNamespace();
 					mask |= 2;
@@ -539,7 +540,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 						}
 					}
 				}
-				if (!useThis && !ci_it->possible_caids.empty())
+				if (!useThis && !ci_it->possible_caids.empty() && !PVR)
 				{
 					mask |= 4;
 					for (CAID_LIST::iterator ca(caids.begin()); ca != caids.end(); ++ca)
