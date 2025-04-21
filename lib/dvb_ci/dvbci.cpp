@@ -588,13 +588,6 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 						}
 					}
 				}
-
-				if(mask && PVR)
-				{
-					user_mapped = false;
-					useThis = true;
-				}
-	
 			}
 
 			if (useThis)
