@@ -529,7 +529,17 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 					eDebug("[CI] The CI in Slot %d possible_providers not empty", ci_it->getSlotID());
 					eDVBNamespace ns = ref.getDVBNamespace();
 					mask |= 2;
-					if (!service) // subservice?
+
+					if(PVR && !service)
+					{
+						eTrace("[CI] getting service for PVR");
+						eDVBDB::getInstance()->getService(ref, service);
+						if (service)
+						{
+							eTrace("[CI] service success / provider %s", service->m_provider_name.c_str());
+						}
+					} 
+					else if (!service) // subservice?
 					{
 						eServiceReferenceDVB parent_ref = ref.getParentServiceReference();
 						eDVBDB::getInstance()->getService(parent_ref, service);
