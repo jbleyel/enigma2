@@ -447,6 +447,8 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 
 		eTrace("[CI] recheck %p %s", pmthandler, ref.toString().c_str());
 		bool PVR = !ref.path.empty();
+		ref.path = "";
+
 		for (eSmartPtrList<eDVBCISlot>::iterator ci_it(m_slots.begin()); ci_it != m_slots.end(); ++ci_it)
 			if (ci_it->plugged && ci_it->getCAManager())
 			{
@@ -578,7 +580,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 				}
 			}
 
-			if(PVR)
+			if(mask && PVR)
 			{
 				user_mapped = false;
 				useThis = true;
