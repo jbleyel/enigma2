@@ -497,7 +497,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 			if (ca_manager)
 			{
 				int mask = 0;
-				if (!ci_it->possible_services.empty() && !PVR)
+				if (!ci_it->possible_services.empty())
 				{
 					mask |= 1;
 					serviceSet::iterator it = ci_it->possible_services.find(ref);
@@ -521,7 +521,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 						}
 					}
 				}
-				if (!useThis && !ci_it->possible_providers.empty() && !PVR)
+				if (!useThis && !ci_it->possible_providers.empty())
 				{
 					eDVBNamespace ns = ref.getDVBNamespace();
 					mask |= 2;
@@ -540,7 +540,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 						}
 					}
 				}
-				if (!useThis && !ci_it->possible_caids.empty() && !PVR)
+				if (!useThis && !ci_it->possible_caids.empty())
 				{
 					mask |= 4;
 					for (CAID_LIST::iterator ca(caids.begin()); ca != caids.end(); ++ca)
@@ -714,7 +714,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 					gotPMT(pmthandler);
 				}
 
-				if (it->cislot && user_mapped) // CI assigned to this pmthandler in this run.. and user mapped? then we break here.. we dont like to link other CIs to user mapped CIs
+				if (it->cislot && user_mapped && !PVR) // CI assigned to this pmthandler in this run.. and user mapped? then we break here.. we dont like to link other CIs to user mapped CIs
 				{
 					eTrace("[CI] user mapped CI assigned... dont link CIs!");
 					break;
