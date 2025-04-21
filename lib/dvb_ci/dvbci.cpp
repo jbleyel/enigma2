@@ -499,6 +499,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 				int mask = 0;
 				if (!ci_it->possible_services.empty())
 				{
+					eDebug("[CI] The CI in Slot %d possible_services not empty", ci_it->getSlotID());
 					mask |= 1;
 					serviceSet::iterator it = ci_it->possible_services.find(ref);
 					if (it != ci_it->possible_services.end())
@@ -523,6 +524,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 				}
 				if (!useThis && !ci_it->possible_providers.empty())
 				{
+					eDebug("[CI] The CI in Slot %d possible_providers not empty", ci_it->getSlotID());
 					eDVBNamespace ns = ref.getDVBNamespace();
 					mask |= 2;
 					if (!service) // subservice?
@@ -542,6 +544,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 				}
 				if (!useThis && !ci_it->possible_caids.empty())
 				{
+					eDebug("[CI] The CI in Slot %d possible_caids not empty", ci_it->getSlotID());
 					mask |= 4;
 					for (CAID_LIST::iterator ca(caids.begin()); ca != caids.end(); ++ca)
 					{
@@ -554,6 +557,9 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 						}
 					}
 				}
+
+				eDebug("[CI] The CI in Slot %d useThis %d mask %d", ci_it->getSlotID(), useThis, mask);
+
 				if (!useThis && !mask)
 				{
 					const std::vector<uint16_t> &ci_caids = ca_manager->getCAIDs();
@@ -573,7 +579,10 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 			}
 
 			if(PVR)
+			{
 				user_mapped = false;
+				useThis = true;
+			}
 
 			if (useThis)
 			{
