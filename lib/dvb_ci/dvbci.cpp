@@ -572,6 +572,9 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 				}
 			}
 
+			if(PVR)
+				user_mapped = false;
+
 			if (useThis)
 			{
 				// check if this CI is already assigned to this pmthandler
@@ -714,7 +717,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 					gotPMT(pmthandler);
 				}
 
-				if (it->cislot && user_mapped && !PVR) // CI assigned to this pmthandler in this run.. and user mapped? then we break here.. we dont like to link other CIs to user mapped CIs
+				if (it->cislot && user_mapped) // CI assigned to this pmthandler in this run.. and user mapped? then we break here.. we dont like to link other CIs to user mapped CIs
 				{
 					eTrace("[CI] user mapped CI assigned... dont link CIs!");
 					break;
