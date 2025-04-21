@@ -446,7 +446,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 		pmthandler->getService(service);
 
 		eTrace("[CI] recheck %p %s", pmthandler, ref.toString().c_str());
-		bool PVR = !ref.path.empty();
+		bool PVR = !ref.path.empty() && ref.path.starts_with("/") && ref.path.ends_with(".ts");
 		ref.path = "";
 
 		for (eSmartPtrList<eDVBCISlot>::iterator ci_it(m_slots.begin()); ci_it != m_slots.end(); ++ci_it)
