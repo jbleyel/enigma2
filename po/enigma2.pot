@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-20 18:15+0000\n"
+"POT-Creation-Date: 2025-04-25 10:13+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1735,9 +1735,6 @@ msgstr ""
 msgid "Access point"
 msgstr ""
 
-msgid "Access point:"
-msgstr ""
-
 msgid "Access to geolocation information requires an Internet connection."
 msgstr ""
 
@@ -1855,6 +1852,9 @@ msgstr ""
 msgid "Add RecordTimer"
 msgstr ""
 
+msgid "Add Service"
+msgstr ""
+
 msgid "Add Service To Bouquet"
 msgstr ""
 
@@ -1876,10 +1876,16 @@ msgstr ""
 msgid "Add a DNS entry"
 msgstr ""
 
+msgid "Add a RADIO service to the Volume Offset list"
+msgstr ""
+
 msgid "Add a RecordTimer"
 msgstr ""
 
 msgid "Add a RecordTimer for current event"
+msgstr ""
+
+msgid "Add a TV service to the Volume Offset list"
 msgstr ""
 
 msgid "Add a ZapTimer for current event"
@@ -1906,7 +1912,7 @@ msgstr ""
 msgid "Add a new title"
 msgstr ""
 
-msgid "Add a service to the Volume Offsets list"
+msgid "Add a service to the Volume Offset list"
 msgstr ""
 
 msgid "Add a timer for the current event"
@@ -1978,7 +1984,7 @@ msgstr ""
 msgid "Add the current directory as a bookmark"
 msgstr ""
 
-msgid "Add the current service to the Volume Offsets list"
+msgid "Add the current/active service to the Volume Offset list"
 msgstr ""
 
 msgid "Add the selected service to a bouquet or alternative"
@@ -2000,6 +2006,9 @@ msgid "Add/Remove highlighted plugin to/from remove list"
 msgstr ""
 
 msgid "Add/Remove highlighted plugin to/from update list"
+msgstr ""
+
+msgid "Add/Remove the current service to/from the Volume Offset list"
 msgstr ""
 
 msgid "Adding schedule..."
@@ -2369,7 +2378,7 @@ msgstr ""
 msgid "Aragonese"
 msgstr ""
 
-msgid "Are you ready to run the script ?"
+msgid "Are you ready to run the script?"
 msgstr ""
 
 msgid "Are you sure to cancel all changes?"
@@ -2458,9 +2467,6 @@ msgid "Armenian"
 msgstr ""
 
 msgid "Artist"
-msgstr ""
-
-msgid "Arts & Culture"
 msgstr ""
 
 msgid "Arts/Culture"
@@ -2633,6 +2639,9 @@ msgstr ""
 msgid "Auto multi-selection"
 msgstr ""
 
+msgid "Auto show volume level"
+msgstr ""
+
 msgid "Auto shut down"
 msgstr ""
 
@@ -2706,9 +2715,6 @@ msgid "Automatically update Log-Fullscreen View"
 msgstr ""
 
 msgid "Autostart"
-msgstr ""
-
-msgid "Autostart:"
 msgstr ""
 
 msgid "Available format variables"
@@ -2987,9 +2993,6 @@ msgid "Bislama"
 msgstr ""
 
 msgid "Bitrate"
-msgstr ""
-
-msgid "Bitrate:"
 msgstr ""
 
 msgid "Black"
@@ -3477,16 +3480,16 @@ msgid "Can't create backup directory!"
 msgstr ""
 
 msgid ""
-"Can't going to live TV!\n"
-"Switch to live TV and restart time shift ?"
+"Can't go to live TV!\n"
+"Switch to live TV and restart time shift?"
 msgstr ""
 
 msgid "Can't move to trashcan!"
 msgstr ""
 
 msgid ""
-"Can't play the next time shift file!\n"
-"Switch to live TV and restart time shift ?"
+"Can't play the next time shift buffer file!\n"
+"Switch to live TV and restart time shift?"
 msgstr ""
 
 msgid "Can't play the previous time shift file! You can try again."
@@ -3600,12 +3603,12 @@ msgstr ""
 msgid "Cannot delete file"
 msgstr ""
 
-#. TRANSLATORS: "Cannot determine (east/west) limit ..., aborting !"
+#. TRANSLATORS: "Cannot determine (east/west) limit ..., aborting!"
 #, python-format
-msgid "Cannot determine %s limit ..., aborting !"
+msgid "Cannot determine %s limit ..., aborting!"
 msgstr ""
 
-msgid "Cannot find any signal ..., aborting !"
+msgid "Cannot find any signal ..., aborting!"
 msgstr ""
 
 msgid "Cape Verde"
@@ -3632,7 +3635,7 @@ msgstr ""
 msgid "Catalan / Valencian"
 msgstr ""
 
-msgid "Catchup player commands"
+msgid "Catch Up Player Actions"
 msgstr ""
 
 msgid "Cayman Islands"
@@ -3827,9 +3830,6 @@ msgstr ""
 msgid "Channel zap delay mode"
 msgstr ""
 
-msgid "Channel:"
-msgstr ""
-
 msgid "ChannelEPG Settings"
 msgstr ""
 
@@ -3846,9 +3846,6 @@ msgid "Chap."
 msgstr ""
 
 msgid "Chapter"
-msgstr ""
-
-msgid "Chapter:"
 msgstr ""
 
 msgid "Character device"
@@ -5215,6 +5212,9 @@ msgstr ""
 msgid "Currently Defined Volume Offsets:"
 msgstr ""
 
+msgid "Currently Remembered Volume Levels:"
+msgstr ""
+
 msgid "Custom"
 msgstr ""
 
@@ -5683,6 +5683,9 @@ msgstr ""
 msgid "Defined / Active"
 msgstr ""
 
+msgid "Defined volume offset"
+msgstr ""
+
 msgid "Defines how fast the time jumps are repeated. Values lower than 500ms may be problematic with NAS."
 msgstr ""
 
@@ -5886,9 +5889,6 @@ msgstr ""
 msgid "Delete the currently displayed log file"
 msgstr ""
 
-msgid "Delete the currently highlighted service from the Volume Offsets list"
-msgstr ""
-
 msgid "Delete the currently selected timer"
 msgstr ""
 
@@ -6072,7 +6072,7 @@ msgstr ""
 #, python-format
 msgid ""
 "Difference between timer begin and end must be equal or greater than %d minutes.\n"
-"End Action was disabled !"
+"End Action was disabled!"
 msgstr ""
 
 msgid "Digit entry for service selection"
@@ -6696,9 +6696,6 @@ msgstr ""
 msgid "EPG only"
 msgstr ""
 
-msgid "EPG:"
-msgstr ""
-
 msgid "EPGSearch"
 msgstr ""
 
@@ -6844,9 +6841,6 @@ msgid "Enable BT Audio"
 msgstr ""
 
 msgid "Enable Bouquet Edit"
-msgstr ""
-
-msgid "Enable Dolby Digital / Dolby AC-3 offsets"
 msgstr ""
 
 msgid "Enable EIT EPG"
@@ -7112,9 +7106,6 @@ msgid "Encryption key"
 msgstr ""
 
 msgid "Encryption key type"
-msgstr ""
-
-msgid "Encryption:"
 msgstr ""
 
 msgid "End"
@@ -7932,9 +7923,6 @@ msgstr ""
 msgid "Failed to write /tmp/positionersetup.log: "
 msgstr ""
 
-msgid "Failed:"
-msgstr ""
-
 msgid "Falkland Islands (Malvinas)"
 msgstr ""
 
@@ -7942,6 +7930,9 @@ msgid "Fallback API did not return a valid result."
 msgstr ""
 
 msgid "Fallback Font *"
+msgstr ""
+
+msgid "Fallback Remote Receiver Settings"
 msgstr ""
 
 msgid "Fallback Timer"
@@ -7966,9 +7957,6 @@ msgid "Fallback remote receiver for DVB-C"
 msgstr ""
 
 msgid "Fallback remote receiver for DVB-T"
-msgstr ""
-
-msgid "Fallback remote receiver setup"
 msgstr ""
 
 msgid "Fallback tuner setup"
@@ -8399,16 +8387,10 @@ msgstr ""
 msgid "Free memory"
 msgstr ""
 
-msgid "Free memory:"
-msgstr ""
-
 msgid "Free swap"
 msgstr ""
 
 msgid "Free to Air (FTA) Service"
-msgstr ""
-
-msgid "Free:"
 msgstr ""
 
 msgid "French"
@@ -8439,9 +8421,6 @@ msgid "Frequency scan step size(khz)"
 msgstr ""
 
 msgid "Frequency steps"
-msgstr ""
-
-msgid "Frequency:"
 msgstr ""
 
 msgid "Frequency: "
@@ -8595,7 +8574,7 @@ msgstr ""
 msgid "Germany"
 msgstr ""
 
-msgid "Getting Event Info failed!"
+msgid "Getting event information failed!"
 msgstr ""
 
 msgid "Getting plugin information. Please wait..."
@@ -9136,9 +9115,6 @@ msgid "Hostname cannot be resolved to IP address!"
 msgstr ""
 
 msgid "Hostname or IP address"
-msgstr ""
-
-msgid "Hostname: "
 msgstr ""
 
 msgid "Hotbird 13.0e"
@@ -10260,6 +10236,9 @@ msgstr ""
 msgid "Last used share: "
 msgstr ""
 
+msgid "Last used/set volume"
+msgstr ""
+
 msgctxt "third event: 'third' event label"
 msgid "Later"
 msgstr ""
@@ -10877,7 +10856,7 @@ msgid "Maxdown: "
 msgstr ""
 
 #, python-format
-msgid "Maximum minutes to jump %d !"
+msgid "Maximum minutes to jump %d!"
 msgstr ""
 
 msgid "Maximum no of days"
@@ -10993,9 +10972,6 @@ msgid "Message Box Actions"
 msgstr ""
 
 msgid "Message pop up timeout"
-msgstr ""
-
-msgid "Message..."
 msgstr ""
 
 msgid "Metering mode"
@@ -12036,7 +12012,7 @@ msgstr ""
 msgid "No tags are set on these movies."
 msgstr ""
 
-msgid "No time shift found to save as recording!"
+msgid "No time shift buffer found to save as recording!"
 msgstr ""
 
 msgid "No timeout"
@@ -12130,9 +12106,6 @@ msgstr ""
 msgid "NodeID"
 msgstr ""
 
-msgid "NodeID: "
-msgstr ""
-
 msgid "Nominate how many IP Addresses are to be checked for active connections."
 msgstr ""
 
@@ -12223,7 +12196,7 @@ msgstr ""
 
 #, python-format
 msgid ""
-"Not enough free Diskspace!\n"
+"Not enough free disk space!\n"
 "\n"
 "Filesize: %sMB\n"
 "Free Space: %sMB\n"
@@ -12258,9 +12231,6 @@ msgstr ""
 
 msgctxt "now/next: 'now' event label"
 msgid "Now"
-msgstr ""
-
-msgid "Now save time shift as movie and continues recording"
 msgstr ""
 
 msgid "Now, use the contrast setting to turn up the brightness of the background as much as possible, but make sure that you can still see the difference between the two brightest levels of shades.If you have done that, press OK."
@@ -12653,22 +12623,22 @@ msgstr ""
 msgid "Overscan Test"
 msgstr ""
 
-msgid "Overwrite Bootlogo Files ?"
+msgid "Overwrite Bootlogo Files?"
 msgstr ""
 
-msgid "Overwrite Driver Files ?"
+msgid "Overwrite Driver Files?"
 msgstr ""
 
-msgid "Overwrite Emu Files ?"
+msgid "Overwrite Emu Files?"
 msgstr ""
 
-msgid "Overwrite Picon Files ?"
+msgid "Overwrite Picon Files?"
 msgstr ""
 
-msgid "Overwrite Setting Files ?"
+msgid "Overwrite Setting Files?"
 msgstr ""
 
-msgid "Overwrite Spinner Files ?"
+msgid "Overwrite Spinner Files?"
 msgstr ""
 
 msgid "Overwrite bootlogo files during software upgrade?"
@@ -13061,9 +13031,6 @@ msgstr ""
 msgid "Play all audio files in the directory"
 msgstr ""
 
-msgid "Play archive"
-msgstr ""
-
 msgid "Play audio in background"
 msgstr ""
 
@@ -13071,6 +13038,9 @@ msgid "Play audio-CD..."
 msgstr ""
 
 msgid "Play back media files"
+msgstr ""
+
+msgid "Play catch up service archive"
 msgstr ""
 
 msgid "Play entry"
@@ -13841,9 +13811,6 @@ msgstr ""
 msgid "Progress info font size"
 msgstr ""
 
-msgid "Progress:"
-msgstr ""
-
 msgid "Properties of current title"
 msgstr ""
 
@@ -13893,9 +13860,6 @@ msgid "Provider"
 msgstr ""
 
 msgid "Provider Name: "
-msgstr ""
-
-msgid "Provider: "
 msgstr ""
 
 msgid "Providers"
@@ -14110,11 +14074,11 @@ msgid "Reader"
 msgstr ""
 
 #, python-format
-msgid "Ready to install \"%s\" ?"
+msgid "Ready to install \"%s\"?"
 msgstr ""
 
 #, python-format
-msgid "Ready to remove \"%s\" ?"
+msgid "Ready to remove \"%s\"?"
 msgstr ""
 
 msgid "Real Life"
@@ -14223,9 +14187,6 @@ msgstr ""
 msgid "Record now"
 msgstr ""
 
-msgid "Record started! Stopping time shift now ..."
-msgstr ""
-
 #, python-format
 msgid "Record time limited due to conflicting timer:%s"
 msgstr ""
@@ -14279,6 +14240,9 @@ msgid "Recording running"
 msgstr ""
 
 msgid "Recording started"
+msgstr ""
+
+msgid "Recording started, stopping time shift now."
 msgstr ""
 
 msgid "Recording stopped"
@@ -15103,9 +15067,6 @@ msgstr ""
 msgid "SSID"
 msgstr ""
 
-msgid "SSID:"
-msgstr ""
-
 msgid "Sailing"
 msgstr ""
 
@@ -15284,13 +15245,16 @@ msgstr ""
 msgid "Save time shift as movie and stop recording"
 msgstr ""
 
+msgid "Save time shift buffer now and continue recording"
+msgstr ""
+
 msgid "Saved lines in script messages"
 msgstr ""
 
 msgid "Saving EPG Cache..."
 msgstr ""
 
-msgid "Saving time shift as movie now. This might take a while!"
+msgid "Saving time shift buffer, this might take a while."
 msgstr ""
 
 msgid "Saving time shift files"
@@ -15364,9 +15328,6 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "Scanning failed!"
-msgstr ""
-
-msgid "Scanning..."
 msgstr ""
 
 #. TRANSLATORS: The receiver is performing a service scan, progress percentage is printed in '%d' (and '%%' will show a single '%' symbol).
@@ -15541,6 +15502,9 @@ msgstr ""
 msgid "Select 'Band' if using a 'Universal' LNB, otherwise consult your LNB specifications."
 msgstr ""
 
+msgid "Select 'Disabled' to disable all automated volume adjustments. Select 'Defined volume offsets' to assign a specified offset to the service's volume level. Select 'Last used/set volume' to remember the volume level last used for each service."
+msgstr ""
+
 msgid "Select 'Enable' to start the CI+ helper."
 msgstr ""
 
@@ -15572,9 +15536,6 @@ msgid "Select 'Yes' if network traffic should be checked before activating the t
 msgstr ""
 
 msgid "Select 'Yes' if this tuner is connected to the SCR device through another tuner, otherwise select 'No'."
-msgstr ""
-
-msgid "Select 'Yes' if volume adjustments should be applied to Dolby sound tracks."
 msgstr ""
 
 msgid "Select 'Yes' if you are using a multi-switch which requires a DiSEqC Port-A command signal. Select 'No' for all other setups."
@@ -15773,6 +15734,9 @@ msgid "Select 'Yes' to show the channel list after switching between Radio and T
 msgstr ""
 
 msgid "Select 'Yes' to show the current directory in the list of directories. Note that File Commander must be restarted for this change to take effect."
+msgstr ""
+
+msgid "Select 'Yes' to show the volume level on any automated changes of volume level."
 msgstr ""
 
 msgid "Select 'Yes' to show this plugin in the Plugin Browser."
@@ -16622,9 +16586,6 @@ msgstr ""
 msgid "Servers"
 msgstr ""
 
-msgid "Servers:"
-msgstr ""
-
 msgid "Service"
 msgstr ""
 
@@ -16903,13 +16864,17 @@ msgstr ""
 msgid "Set the time to hide the second infobar. The bar also disappears on pressing 'OK'."
 msgstr ""
 
-msgid "Set the time to wait for execute the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, PowerTimer, SleepTimer etc."
+msgid "Set the time to wait for execute the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, Scheduler, SleepTimer etc."
 msgstr ""
 
 msgid "Set the top left location of the busy spinner. The coordinates are scaled such that the top left is at (0,0) and the bottom right is at (1260,700). Note that the position is the top left of the spinner and not the centre of the spinner."
 msgstr ""
 
 msgid "Set the type of the progress indication in the channel selection screen."
+msgstr ""
+
+#, python-format
+msgid "Set the volume level for the '%s' service."
 msgstr ""
 
 #, python-format
@@ -17485,6 +17450,10 @@ msgstr ""
 msgid "Show build information"
 msgstr ""
 
+#, python-format
+msgid "Show cards with uphop %s"
+msgstr ""
+
 msgid "Show channel number in InfoBar"
 msgstr ""
 
@@ -18012,9 +17981,6 @@ msgid "Signal quality"
 msgstr ""
 
 msgid "Signal strength"
-msgstr ""
-
-msgid "Signal strength:"
 msgstr ""
 
 msgid "Signal: "
@@ -18693,9 +18659,6 @@ msgstr ""
 msgid "Status unavailable!"
 msgstr ""
 
-msgid "Status:"
-msgstr ""
-
 msgid "Step"
 msgstr ""
 
@@ -18771,10 +18734,10 @@ msgstr ""
 msgid "Stop time shift"
 msgstr ""
 
-msgid "Stop time shift and save time shift buffer as movie"
+msgid "Stop time shift and save time shift buffer as a movie"
 msgstr ""
 
-msgid "Stop time shift and save time shift buffer as movie and start recording of current event"
+msgid "Stop time shift and save time shift buffer as a movie and start recording of current event"
 msgstr ""
 
 msgid "Stop time shift while recording"
@@ -19146,7 +19109,7 @@ msgstr ""
 msgid "Sync NTP every (minutes)"
 msgstr ""
 
-msgid "Sync failure moving back to origin !"
+msgid "Sync failure moving back to origin!"
 msgstr ""
 
 msgid "Sync mode"
@@ -19581,8 +19544,8 @@ msgid "The authors are NOT RESPONSIBLE for DATA LOSS OR DAMAGE!"
 msgstr ""
 
 msgid ""
-"The available disk space for time shift is less than specified in the settings.\n"
-"What do you want to do ?"
+"The available disk space for time shift buffer is less than specified in the settings.\n"
+"What do you want to do?"
 msgstr ""
 
 msgid "The backup can take up to about 15 minutes to complete."
@@ -19601,11 +19564,6 @@ msgid "The backup succeeded. We will now continue to explain the upgrade process
 msgstr ""
 
 msgid "The bitrate of the video encoder. Larger value improves quality and increases file size."
-msgstr ""
-
-msgid ""
-"The buffer time for time shift exceeds the specified limit in the settings.\n"
-"What do you want to do ?"
 msgstr ""
 
 msgid ""
@@ -19709,6 +19667,11 @@ msgstr ""
 msgid "The time is multiplied by the current repeat counter."
 msgstr ""
 
+msgid ""
+"The time shift buffer exceeds the limit specified in the settings.\n"
+"What do you want to do?"
+msgstr ""
+
 #, python-format
 msgid "The timer file '%s' is corrupt and could not be loaded."
 msgstr ""
@@ -19786,7 +19749,7 @@ msgstr ""
 msgid "There is no information to show for '%s'."
 msgstr ""
 
-msgid "There is no signal to lock on !"
+msgid "There is no signal to lock on!"
 msgstr ""
 
 msgid "There might not be enough space on the selected partition. Do you really want to continue?"
@@ -20325,9 +20288,6 @@ msgstr ""
 msgid "Timer selection"
 msgstr ""
 
-msgid "Timer selection..."
-msgstr ""
-
 msgid "Timer type"
 msgstr ""
 
@@ -20414,6 +20374,9 @@ msgid "Toggle auto refresh On/Off"
 msgstr ""
 
 msgid "Toggle between bouquet/EPG lists"
+msgstr ""
+
+msgid "Toggle between the available TV and RADIO services"
 msgstr ""
 
 msgid "Toggle display of image information"
@@ -20529,9 +20492,6 @@ msgid "Transcode"
 msgstr ""
 
 msgid "Transcoding"
-msgstr ""
-
-msgid "Transcoding: "
 msgstr ""
 
 msgid "Translate Subs On This Service"
@@ -20784,9 +20744,6 @@ msgstr ""
 msgid "Type of scan"
 msgstr ""
 
-msgid "Type: "
-msgstr ""
-
 msgid "UBINIZE"
 msgstr ""
 
@@ -20970,28 +20927,8 @@ msgstr ""
 msgid "Until standby/restart"
 msgstr ""
 
-msgid "Unused 0x22"
-msgstr ""
-
-msgid "Unused 0x52"
-msgstr ""
-
-msgid "Unused 0x53"
-msgstr ""
-
-msgid "Unused 0x54"
-msgstr ""
-
-msgid "Unused 0x71"
-msgstr ""
-
-msgid "Unused 0x72"
-msgstr ""
-
-msgid "Unused 0xb1"
-msgstr ""
-
-msgid "Unused 0xb2"
+#, python-format
+msgid "Unused %s"
 msgstr ""
 
 msgid "Unzipping Image"
@@ -21620,9 +21557,6 @@ msgid ""
 "The next output port will be automatically tried in 10 seconds."
 msgstr ""
 
-msgid "Video: "
-msgstr ""
-
 #, python-format
 msgid "Video: %s fps"
 msgstr ""
@@ -21730,16 +21664,19 @@ msgstr ""
 msgid "Volume"
 msgstr ""
 
-msgid "Volume Adjust"
-msgstr ""
-
 msgid "Volume Adjust Actions"
 msgstr ""
 
 msgid "Volume Adjust Service Selection"
 msgstr ""
 
+msgid "Volume Adjust Service Selection Actions"
+msgstr ""
+
 msgid "Volume Adjust Settings"
+msgstr ""
+
+msgid "Volume adjustment mode"
 msgstr ""
 
 msgid "Volume down"
@@ -22182,7 +22119,7 @@ msgstr ""
 msgid "Where do you want to save temporary time shift recordings?"
 msgstr ""
 
-msgid "Which event do you want to save permanently?"
+msgid "Which time shift buffer event do you want to save?"
 msgstr ""
 
 msgid "While available"
@@ -22440,12 +22377,12 @@ msgstr ""
 msgid "You have chosen to restore the settings. Enigma2 will restart after restore. Press OK to start the restore now."
 msgstr ""
 
-msgid "You have chosen to save the current time shift"
+msgid "You have chosen to save the current time shift buffer"
 msgstr ""
 
 msgid ""
 "You have chosen to save the current time shift event, but the event has not yet finished\n"
-"What do you want to do ?"
+"What do you want to do?"
 msgstr ""
 
 msgid "You have no script to run."
@@ -22472,7 +22409,7 @@ msgstr ""
 msgid "You seem to be in time shift!"
 msgstr ""
 
-msgid "You seem to be in time shift, Do you want to leave time shift ?"
+msgid "You seem to be in time shift, do you want to leave time shift?"
 msgstr ""
 
 msgid "You seem to be in time shift, the service will briefly stop as time shift stops."
@@ -22541,7 +22478,7 @@ msgstr ""
 #, python-format
 msgid ""
 "Your %s %s will be restarted after the removal of service\n"
-"Do you want to remove now ?"
+"Do you want to remove now?"
 msgstr ""
 
 msgid ""
@@ -22707,13 +22644,7 @@ msgstr ""
 msgid "Zoom In/Out TV"
 msgstr ""
 
-msgid "Zoom In/Out TV..."
-msgstr ""
-
 msgid "Zoom Off"
-msgstr ""
-
-msgid "Zoom Off..."
 msgstr ""
 
 msgid "Zoom from left"
@@ -23308,9 +23239,6 @@ msgstr ""
 msgid "not used"
 msgstr ""
 
-msgid "not_tested"
-msgstr ""
-
 msgid "nothing connected"
 msgstr ""
 
@@ -23469,36 +23397,6 @@ msgid "show all cards"
 msgstr ""
 
 msgid "show all tags"
-msgstr ""
-
-msgid "show cards with uphop 0"
-msgstr ""
-
-msgid "show cards with uphop 1"
-msgstr ""
-
-msgid "show cards with uphop 2"
-msgstr ""
-
-msgid "show cards with uphop 3"
-msgstr ""
-
-msgid "show cards with uphop 4"
-msgstr ""
-
-msgid "show cards with uphop 5"
-msgstr ""
-
-msgid "show cards with uphop 6"
-msgstr ""
-
-msgid "show cards with uphop 7"
-msgstr ""
-
-msgid "show cards with uphop 8"
-msgstr ""
-
-msgid "show cards with uphop 9"
 msgstr ""
 
 msgid "show program information..."
@@ -23718,9 +23616,6 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "with errors"
-msgstr ""
-
-msgid "with_errors"
 msgstr ""
 
 msgid "working"

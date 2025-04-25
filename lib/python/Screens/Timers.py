@@ -876,7 +876,7 @@ class RecordTimerOverview(TimerOverviewBase):
 			shortDescription = event.getShortDescription()
 			if shortDescription and description != shortDescription:
 				if description and shortDescription:
-					description = "%s %s\n\n%s %s" % (_("Timer:"), description, _("EPG:"), shortDescription)
+					description = "%s %s\n\n%s: %s" % (_("Timer:"), description, _("EPG"), shortDescription)
 				elif shortDescription:
 					description = shortDescription
 					timer.description = shortDescription
@@ -1592,7 +1592,7 @@ class RecordTimerEdit(Setup):
 			self.timerMarginAfter.value = 0
 		if self.timerEndTime.value == self.timerStartTime.value and self.timerAfterEvent.value != "nothing":
 			self.timerAfterEvent.value = "nothing"
-			self.session.open(MessageBox, _("Difference between timer begin and end must be equal or greater than %d minutes.\nEnd Action was disabled !") % 1, MessageBox.TYPE_INFO, timeout=30, windowTitle=self.getTitle())
+			self.session.open(MessageBox, _("Difference between timer begin and end must be equal or greater than %d minutes.\nEnd Action was disabled!") % 1, MessageBox.TYPE_INFO, timeout=30, windowTitle=self.getTitle())
 		self.timer.resetRepeated()
 		if self.timerRepeat.value == "once":
 			startDate = self.timerStartDate.value

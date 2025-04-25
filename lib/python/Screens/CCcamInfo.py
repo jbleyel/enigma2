@@ -390,7 +390,7 @@ def CCcamServerListEntry(name, color):
 def CCcamShareListEntry(hostname, type, caid, system, uphops, maxdown):
 	res = [(hostname, type, caid, system, uphops, maxdown),
 			MultiContentEntryText(pos=(0, 0), size=(300 * sf, 25 * sf), font=0, text=hostname),
-			MultiContentEntryText(pos=(300 * sf, 0), size=(300 * sf, 25 * sf), font=0, text=_("Type: ") + type, flags=RT_HALIGN_RIGHT),
+			MultiContentEntryText(pos=(300 * sf, 0), size=(300 * sf, 25 * sf), font=0, text=_("Type") + ": " + type, flags=RT_HALIGN_RIGHT),
 			MultiContentEntryText(pos=(0, 20 * sf), size=(300 * sf, 25 * sf), font=0, text=_("CaID: ") + caid),
 			MultiContentEntryText(pos=(300 * sf, 20 * sf), size=(300 * sf, 25 * sf), font=0, text=_("System: ") + system, flags=RT_HALIGN_RIGHT),
 			MultiContentEntryText(pos=(0, 40 * sf), size=(300 * sf, 25 * sf), font=0, text=_("Uphops: ") + uphops),
@@ -749,7 +749,7 @@ class CCcamInfoMain(Screen):
 
 							ecmEmm = "ECM: " + ecm + " - EMM: " + emm
 
-							infoList.append([username, _("Hostname: ") + hostname, _("Connected: ") + connected, _("Idle Time: ") + idleTime, _("Version: ") + version, _("Last used share: ") + share, ecmEmm])
+							infoList.append([username, _("Hostname") + ": " + hostname, _("Connected: ") + connected, _("Idle Time: ") + idleTime, _("Version: ") + version, _("Last used share: ") + share, ecmEmm])
 							clientList.append(username)
 		self.set_title = _("CCcam Client Info")
 		self.openSubMenu(clientList, infoList, self.set_title)
@@ -780,7 +780,7 @@ class CCcamInfoMain(Screen):
 							if nodeid == "":
 								nodeid = "N/A"
 
-							infoList.append([hostname, _("Cards: ") + cards, _("Type: ") + type, _("Version: ") + version, _("NodeID: ") + nodeid, _("Connected: ") + connected])
+							infoList.append([hostname, _("Cards: ") + cards, _("Type") + ": " + type, _("Version: ") + version, _("NodeID") + ": " + nodeid, _("Connected: ") + connected])
 
 		self.session.openWithCallback(self.workingFinished, CCcamInfoServerMenu, infoList, self.url)
 
@@ -821,7 +821,7 @@ class CCcamInfoMain(Screen):
 							if len(caid) == 3:
 								caid = "0" + caid
 
-							infoList.append([hostname, _("Type: ") + type, _("CaID: ") + caid, _("System: ") + system, _("Uphops: ") + uphops, _("Maxdown: ") + maxdown])
+							infoList.append([hostname, _("Type") + ": " + type, _("CaID: ") + caid, _("System: ") + system, _("Uphops: ") + uphops, _("Maxdown: ") + maxdown])
 							sharesList.append(hostname + " - " + _("CaID: ") + caid)
 
 		self.set_title = _("CCcam Shares Info")
@@ -846,8 +846,8 @@ class CCcamInfoMain(Screen):
 							providername = list[3].replace(" ", "")
 							system = list[4].replace(" ", "")
 
-							infoList.append([_("CaID: ") + caid, _("Provider: ") + provider, _("Provider Name: ") + providername, _("System: ") + system])
-							providersList.append(_("CaID: ") + caid + " - " + _("Provider: ") + provider)
+							infoList.append([_("CaID: ") + caid, _("Provider") + ": " + provider, _("Provider Name: ") + providername, _("System: ") + system])
+							providersList.append(_("CaID: ") + caid + " - " + _("Provider") + ": " + provider)
 
 		self.set_title = _("CCcam Provider Info")
 		self.openSubMenu(providersList, infoList, self.set_title)
@@ -883,7 +883,7 @@ class CCcamInfoMain(Screen):
 					if x != "":
 						items.append(x)
 
-				self.showInfo("%s\n\n  %s %s\n  %s %s\n  %s %s" % (_("Free memory:"), _("Total:"), items[0], _("Used:"), items[1], _("Free:"), items[2]), _("Free memory"))
+				self.showInfo("%s:\n\n  %s %s\n  %s %s\n  %s: %s" % (_("Free memory"), _("Total:"), items[0], _("Used:"), items[1], _("Free"), items[2]), _("Free memory"))
 			else:
 				self.showInfo(result, _("Free memory"))
 		else:
@@ -947,19 +947,22 @@ class CCcamShareViewMenu(Screen):
 		self["reshare"] = Label()
 		self["title"] = Label()
 
+		def buttonHelp(value):
+			return _("Show cards with uphop %s") % value
+
 		self["actions"] = HelpableNumberActionMap(self, "CCcamInfoActions",
 			{
 				"cancel": (self.exit, _("close share view")),
-				"0": (self.getUphop, _("show cards with uphop 0")),
-				"1": (self.getUphop, _("show cards with uphop 1")),
-				"2": (self.getUphop, _("show cards with uphop 2")),
-				"3": (self.getUphop, _("show cards with uphop 3")),
-				"4": (self.getUphop, _("show cards with uphop 4")),
-				"5": (self.getUphop, _("show cards with uphop 5")),
-				"6": (self.getUphop, _("show cards with uphop 6")),
-				"7": (self.getUphop, _("show cards with uphop 7")),
-				"8": (self.getUphop, _("show cards with uphop 8")),
-				"9": (self.getUphop, _("show cards with uphop 9")),
+				"0": (self.getUphop, buttonHelp(0)),
+				"1": (self.getUphop, buttonHelp(1)),
+				"2": (self.getUphop, buttonHelp(2)),
+				"3": (self.getUphop, buttonHelp(3)),
+				"4": (self.getUphop, buttonHelp(4)),
+				"5": (self.getUphop, buttonHelp(5)),
+				"6": (self.getUphop, buttonHelp(6)),
+				"7": (self.getUphop, buttonHelp(7)),
+				"8": (self.getUphop, buttonHelp(8)),
+				"9": (self.getUphop, buttonHelp(9)),
 				"green": (self.showAll, _("show all cards")),
 				"incUphop": (self.incUphop, _("increase uphop by 1")),
 				"decUphop": (self.decUphop, _("decrease uphop by 1")),
@@ -1155,7 +1158,7 @@ class CCcamShareViewMenu(Screen):
 			self.getProviders()
 
 	def getServer(self):
-		server = _("Servers:") + " \n"
+		server = _("Servers") + ": \n"
 		sel = self["list"].getCurrent()
 		if sel is not None:
 			e = 0

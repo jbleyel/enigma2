@@ -1244,8 +1244,8 @@ class NumberZap(Screen):
 		self.field = str(number)
 		self.searchNumber = searchNumberFunction
 		self.startBouquet = None
-		self["channel"] = Label(_("Channel:"))
-		self["channel_summary"] = StaticText(_("Channel:"))
+		self["channel"] = Label(_("Channel") + ":")
+		self["channel_summary"] = StaticText(_("Channel") + ":")
 		self["number"] = Label(self.numberString)
 		self["servicenumber"] = Label(self.numberString)
 		self["number_summary"] = StaticText(self.numberString)
@@ -2315,11 +2315,13 @@ class InfoBarRdsDecoder:
 
 class Seekbar(Screen):
 	def __init__(self, session, fwd):
-		Screen.__init__(self, session)
+		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Seek"))
 		self.fwd = fwd
 		self.percent = 0.0
 		self.length = None
+		self.first_digit = True
+		self.digit_time = 0.0
 		service = session.nav.getCurrentService()
 		if service:
 			self.seek = service.seek()
@@ -2332,19 +2334,45 @@ class Seekbar(Screen):
 				else:
 					self.close()
 		self["cursor"] = MovingPixmap()
+		#self["PositionGauge"] = Label() # TODO BW
 		self["time"] = Label()
-		self["actions"] = HelpableActionMap(self, ["WizardActions", "DirectionActions"], {
+		self["actions"] = HelpableNumberActionMap(self, ["WizardActions", "DirectionActions", "NumberActions"], {
 			"back": (self.exit, _("Cancel selection")),
 			"ok": (self.keyOK, _("Seek forward long")),
 			"left": (self.keyLeft, _("Seek back short")),
-			"right": (self.keyRight, _("Seek forward  short"))
+			"right": (self.keyRight, _("Seek forward  short")),
+			"1": (self.keyNumberGlobal, _("Skip to 10% position; add 1%")),
+			"2": (self.keyNumberGlobal, _("Skip to 20% position; add 2%")),
+			"3": (self.keyNumberGlobal, _("Skip to 30% position; add 3%")),
+			"4": (self.keyNumberGlobal, _("Skip to 40% position; add 4%")),
+			"5": (self.keyNumberGlobal, _("Skip to 50% position; add 5%")),
+			"6": (self.keyNumberGlobal, _("Skip to 60% position; add 6%")),
+			"7": (self.keyNumberGlobal, _("Skip to 70% position; add 7%")),
+			"8": (self.keyNumberGlobal, _("Skip to 80% position; add 8%")),
+			"9": (self.keyNumberGlobal, _("Skip to 90% position; add 9%")),
+			"0": (self.keyNumberGlobal, _("Skip to 0% position (start)")),
 		}, prio=-1, description=_("Seek Actions"))
 		self.cursorTimer = eTimer()
 		self.cursorTimer.callback.append(self.updateCursor)
 		self.cursorTimer.start(200, False)
+		#self.onLayoutFinish.append(self.__layoutFinished) # TODO BW
+
+	def __layoutFinished(self):
+		self.cursor_y = self["cursor"].instance.position().y()
+		if hasattr(self["PositionGauge"].instance, "position") and self["PositionGauge"].instance.position().x() > 0:
+			self.PositionGauge_x = self["PositionGauge"].instance.position().x()
+		else:
+			self.PositionGauge_x = 145
+		if hasattr(self["PositionGauge"].instance, "size") and self["PositionGauge"].instance.size().width() > 0:
+			self.PositionGauge_w = self["PositionGauge"].instance.size().width()
+			self.PositionGauge_w = float(self.PositionGauge_w) / 100.0 - 0.2
+		else:
+			self.PositionGauge_w = 2.7
 
 	def updateCursor(self):
 		if self.length:
+			#x = self.PositionGauge_x + int(self.PositionGauge_w * self.percent) # TODO BW
+			#self["cursor"].moveTo(x, self.cursor_y, 1) # TODO BW
 			screenwidth = getDesktop(0).size().width()
 			if screenwidth and screenwidth == 1920:
 				x = 218 + int(4.05 * self.percent)
@@ -2369,18 +2397,31 @@ class Seekbar(Screen):
 		self.percent -= float(config.seek.sensibility.value) / 10.0
 		if self.percent < 0.0:
 			self.percent = 0.0
+		self.first_digit = True
 
 	def keyRight(self):
 		self.percent += float(config.seek.sensibility.value) / 10.0
 		if self.percent > 100.0:
 			self.percent = 100.0
+		self.first_digit = True
 
 	def keyNumberGlobal(self, number):
-		sel = self["config"].getCurrent()[1]
-		if sel == self.positionEntry:
-			self.percent = float(number) * 10.0
+		now = time()
+		if now - self.digit_time >= 1.0:
+			self.first_digit = True
+		self.digit_time = now
+		if self.first_digit:
+			self.percent = min(max(float(number) * 10.0, 0), 90)
+			self.first_digit = False
 		else:
-			ConfigListScreen.keyNumberGlobal(self, number)
+			self.percent += number
+			self.first_digit = True
+
+		#sel = self["config"].getCurrent()[1]
+		#if sel == self.positionEntry:
+		#	self.percent = float(number) * 10.0
+		#else:
+		#	ConfigListScreen.keyNumberGlobal(self, number)
 
 
 class InfoBarSeek:
@@ -4141,7 +4182,7 @@ class InfoBarRedButton:
 class InfoBarTimerButton:
 	def __init__(self):
 		self["TimerButtonActions"] = HelpableActionMap(self, "InfobarTimerButtonActions", {
-			"timerSelection": (self.timerSelection, _("Timer selection...")),
+			"timerSelection": (self.timerSelection, _("Timer selection")),
 		}, prio=0, description=_("Timer Actions"))
 
 	def timerSelection(self):
@@ -4259,7 +4300,7 @@ class InfoBarResolutionSelection:
 		resList = []
 		resList.append((_("Exit"), "exit"))
 		resList.append((_("Auto(not available)"), "auto"))
-		resList.append((_("Video: ") + "%dx%d@%gHz" % (xRes, yRes, fps), ""))
+		resList.append((_("Video") + ": %dx%d@%gHz" % (xRes, yRes, fps), ""))
 		resList.append(("--", ""))
 		# Do we need a new sorting with this way here or should we disable some choices?
 		videoModes = avSwitch.readPreferredModes(readOnly=True)
@@ -4843,8 +4884,8 @@ class InfoBarZoom:
 		self.zoomrate = 0
 		self.zoomin = 1
 		self["ZoomActions"] = HelpableActionMap(self, "InfobarZoomActions", {
-			"ZoomInOut": (self.ZoomInOut, _("Zoom In/Out TV...")),
-			"ZoomOff": (self.ZoomOff, _("Zoom Off...")),
+			"ZoomInOut": (self.ZoomInOut, _("Zoom In/Out TV")),
+			"ZoomOff": (self.ZoomOff, _("Zoom Off")),
 		}, prio=2, description=_("Zoom Actions"))
 
 	def ZoomInOut(self):

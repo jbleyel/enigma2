@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV-Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-10 18:45+0000\n"
+"POT-Creation-Date: 2025-04-21 09:40+0000\n"
 "PO-Revision-Date: 2022-12-04 20:43+0000\n"
 "Last-Translator: rimasx <riks_12@hot.ee>\n"
 "Language-Team: Estonian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/et/>\n"
@@ -896,6 +896,10 @@ msgid "%d feed catalog package was updated."
 msgid_plural "%d feed catalog packages were updated."
 msgstr[0] "%d kataloogi pakett värskendati."
 msgstr[1] "%d kataloogi paketti värskendati."
+
+#, python-format
+msgid "%d jobs are running in the background!"
+msgstr ""
 
 #, python-format
 msgid "%d kB"
@@ -1898,6 +1902,9 @@ msgstr "Lisa uus Quad PiP kanal"
 msgid "Add RecordTimer"
 msgstr "Lisa salvestustaimer"
 
+msgid "Add Service"
+msgstr ""
+
 msgid "Add Service To Bouquet"
 msgstr "Lisa kanal lemmiknimekirja"
 
@@ -1919,11 +1926,17 @@ msgstr "Lisa kanalivahetustaimer"
 msgid "Add a DNS entry"
 msgstr ""
 
+msgid "Add a RADIO service to the Volume Offset list"
+msgstr ""
+
 msgid "Add a RecordTimer"
 msgstr "Lisa salvestustaimer"
 
 msgid "Add a RecordTimer for current event"
 msgstr "Lisa käesolevale saatele salvestustaimer"
+
+msgid "Add a TV service to the Volume Offset list"
+msgstr ""
 
 msgid "Add a ZapTimer for current event"
 msgstr "Lisa käesolevale saatele kanalivahetustaimer"
@@ -1949,7 +1962,7 @@ msgstr ""
 msgid "Add a new title"
 msgstr "Lisa uus pealkiri"
 
-msgid "Add a service to the Volume Offsets list"
+msgid "Add a service to the Volume Offset list"
 msgstr ""
 
 msgid "Add a timer for the current event"
@@ -2023,7 +2036,7 @@ msgstr ""
 msgid "Add the current directory as a bookmark"
 msgstr ""
 
-msgid "Add the current service to the Volume Offsets list"
+msgid "Add the current/active service to the Volume Offset list"
 msgstr ""
 
 msgid "Add the selected service to a bouquet or alternative"
@@ -2045,6 +2058,9 @@ msgid "Add/Remove highlighted plugin to/from remove list"
 msgstr ""
 
 msgid "Add/Remove highlighted plugin to/from update list"
+msgstr ""
+
+msgid "Add/Remove the current service to/from the Volume Offset list"
 msgstr ""
 
 msgid "Adding schedule..."
@@ -2337,6 +2353,10 @@ msgstr ""
 msgid "Amlogic remote"
 msgstr ""
 
+#, python-format
+msgid "Amount %d / Success %d / Failed %d"
+msgstr ""
+
 msgid "An attempt is made to capture the current TV status. If this is not possible due to incorrect or missing status messages it may cause the receiver to respond unexpectedly. On the other hand, tries to respond better to different operating conditions."
 msgstr ""
 
@@ -2417,7 +2437,7 @@ msgid "Aragonese"
 msgstr ""
 
 #
-msgid "Are you ready to run the script ?"
+msgid "Are you ready to run the script?"
 msgstr "Kas käivitada skript?"
 
 msgid "Are you sure to cancel all changes?"
@@ -2698,6 +2718,9 @@ msgid "Auto install log"
 msgstr ""
 
 msgid "Auto multi-selection"
+msgstr ""
+
+msgid "Auto show volume level"
 msgstr ""
 
 msgid "Auto shut down"
@@ -3571,8 +3594,8 @@ msgid "Can't create backup directory!"
 msgstr ""
 
 msgid ""
-"Can't going to live TV!\n"
-"Switch to live TV and restart time shift ?"
+"Can't go to live TV!\n"
+"Switch to live TV and restart time shift?"
 msgstr ""
 "Otsesaatele lülitumine ei ole võimalik!\n"
 "Kas lülituda otsesaatele ja taaskäivitada ajanihe?"
@@ -3581,8 +3604,8 @@ msgid "Can't move to trashcan!"
 msgstr "Prügikasti saatmine ei ole võimalik"
 
 msgid ""
-"Can't play the next time shift file!\n"
-"Switch to live TV and restart time shift ?"
+"Can't play the next time shift buffer file!\n"
+"Switch to live TV and restart time shift?"
 msgstr ""
 "Järgmise ajanihkefaili taasesitus ei ole võimalik!\n"
 "Kas lülituda otsesaatele ja taaskäivitada ajanihe?"
@@ -3705,12 +3728,12 @@ msgstr "Tühistatud kasutaja nõudmisel"
 msgid "Cannot delete file"
 msgstr "Faili ei saa kustutada"
 
-#. TRANSLATORS: "Cannot determine (east/west) limit ..., aborting !"
+#. TRANSLATORS: "Cannot determine (east/west) limit ..., aborting!"
 #, python-format
-msgid "Cannot determine %s limit ..., aborting !"
+msgid "Cannot determine %s limit ..., aborting!"
 msgstr ""
 
-msgid "Cannot find any signal ..., aborting !"
+msgid "Cannot find any signal ..., aborting!"
 msgstr "Mingit signaali ei leita, katkestame!"
 
 #, fuzzy
@@ -3736,6 +3759,9 @@ msgid "Cascade PiP"
 msgstr "PiP-kaskaad"
 
 msgid "Catalan / Valencian"
+msgstr ""
+
+msgid "Catch Up Player Actions"
 msgstr ""
 
 msgid "Cayman Islands"
@@ -5351,6 +5377,9 @@ msgstr ""
 msgid "Currently Defined Volume Offsets:"
 msgstr ""
 
+msgid "Currently Remembered Volume Levels:"
+msgstr ""
+
 msgid "Custom"
 msgstr "Kohandatud"
 
@@ -5835,6 +5864,9 @@ msgstr ""
 msgid "Defined / Active"
 msgstr ""
 
+msgid "Defined volume offset"
+msgstr ""
+
 msgid "Defines how fast the time jumps are repeated. Values lower than 500ms may be problematic with NAS."
 msgstr "Määrab, kui tihti ajahüpet korratakse. Väärtused alla 500ms võivad NAS kasutamisel osutuda probleemseks."
 
@@ -6042,9 +6074,6 @@ msgstr "Kustuta ajanihke puhver ja taaskäivita ajanihe"
 msgid "Delete the currently displayed log file"
 msgstr ""
 
-msgid "Delete the currently highlighted service from the Volume Offsets list"
-msgstr ""
-
 msgid "Delete the currently selected timer"
 msgstr ""
 
@@ -6102,6 +6131,21 @@ msgid "Depth"
 msgstr "Sügavus"
 
 msgid "Descending"
+msgstr ""
+
+msgid "Descramble end time"
+msgstr ""
+
+msgid "Descramble in Standby"
+msgstr ""
+
+msgid "Descramble in Standby finished"
+msgstr ""
+
+msgid "Descramble recordings before Shutdown"
+msgstr ""
+
+msgid "Descramble start time"
 msgstr ""
 
 msgid "Descrambling options"
@@ -6216,7 +6260,7 @@ msgstr "Õigekiri"
 #, python-format
 msgid ""
 "Difference between timer begin and end must be equal or greater than %d minutes.\n"
-"End Action was disabled !"
+"End Action was disabled!"
 msgstr ""
 "Taimeri alguse ja lõpu vahe peab olema vähemalt %d või rohkem minutit.\n"
 "Tegevus keelati!"
@@ -7031,9 +7075,6 @@ msgstr "Luba BT heli"
 
 msgid "Enable Bouquet Edit"
 msgstr "Muuda lemmiknimekirju"
-
-msgid "Enable Dolby Digital / Dolby AC-3 offsets"
-msgstr ""
 
 msgid "Enable EIT EPG"
 msgstr "EIT EPG lubatud"
@@ -8167,6 +8208,9 @@ msgstr ""
 msgid "Fallback Font *"
 msgstr ""
 
+msgid "Fallback Remote Receiver Settings"
+msgstr ""
+
 msgid "Fallback Timer"
 msgstr ""
 
@@ -8190,9 +8234,6 @@ msgstr "Kaugvastuvõtja Port"
 
 msgid "Fallback remote receiver for DVB-T"
 msgstr "Kaugvastuvõtja Port"
-
-msgid "Fallback remote receiver setup"
-msgstr ""
 
 msgid "Fallback tuner setup"
 msgstr "Kaugvastuvõtja tuuneri seaded"
@@ -8842,7 +8883,7 @@ msgstr "Saksa"
 msgid "Germany"
 msgstr "Saksamaa"
 
-msgid "Getting Event Info failed!"
+msgid "Getting event information failed!"
 msgstr "Saateinfo hankimine nurjus!"
 
 msgid "Getting plugin information. Please wait..."
@@ -10567,6 +10608,9 @@ msgstr ""
 msgid "Last used share: "
 msgstr "Viimati kasutatud: "
 
+msgid "Last used/set volume"
+msgstr ""
+
 msgctxt "third event: 'third' event label"
 msgid "Later"
 msgstr "Hiljem"
@@ -11218,7 +11262,7 @@ msgid "Maxdown: "
 msgstr "Maks.alla: "
 
 #, python-format
-msgid "Maximum minutes to jump %d !"
+msgid "Maximum minutes to jump %d!"
 msgstr "Suurim arv minutites hüppeks %d !"
 
 msgid "Maximum no of days"
@@ -12452,7 +12496,7 @@ msgstr ""
 msgid "No tags are set on these movies."
 msgstr "Salvestistele pole märksõnu määratud."
 
-msgid "No time shift found to save as recording!"
+msgid "No time shift buffer found to save as recording!"
 msgstr "Ajanihke faile ei leitud!"
 
 msgid "No timeout"
@@ -12658,7 +12702,7 @@ msgstr "Kõvakettal pole piisavalt ruumi. Kustuta ebavajalik ja proovi uuesti. (
 
 #, python-format
 msgid ""
-"Not enough free Diskspace!\n"
+"Not enough free disk space!\n"
 "\n"
 "Filesize: %sMB\n"
 "Free Space: %sMB\n"
@@ -12702,9 +12746,6 @@ msgstr "Mitte midagi, välju sellest menüüst"
 msgctxt "now/next: 'now' event label"
 msgid "Now"
 msgstr "Hetkel"
-
-msgid "Now save time shift as movie and continues recording"
-msgstr "Talleta ajanihe ja jätka salvestamist"
 
 msgid "Now, use the contrast setting to turn up the brightness of the background as much as possible, but make sure that you can still see the difference between the two brightest levels of shades.If you have done that, press OK."
 msgstr "Nüüd suurenda kontrastsuse seadmise abil pildi tausta heledust nii palju kui võimalik, aga veendu, et sa näed siiski erinevust kahe kõige heledama varjundi vahel. Kui see on tehtud, vajuta OK."
@@ -13114,27 +13155,27 @@ msgid "Overscan Test"
 msgstr "Üleskaneerimise test"
 
 #
-msgid "Overwrite Bootlogo Files ?"
+msgid "Overwrite Bootlogo Files?"
 msgstr "Kas kirjutada käivituslogod üle?"
 
 #
-msgid "Overwrite Driver Files ?"
+msgid "Overwrite Driver Files?"
 msgstr "Kas kirjutada ajurid üle?"
 
 #
-msgid "Overwrite Emu Files ?"
+msgid "Overwrite Emu Files?"
 msgstr "Kas kirjutada EMU failid üle?"
 
 #
-msgid "Overwrite Picon Files ?"
+msgid "Overwrite Picon Files?"
 msgstr "Kas kirjutada pikonid üle?"
 
 #
-msgid "Overwrite Setting Files ?"
+msgid "Overwrite Setting Files?"
 msgstr "Kas kirjutada kanalinimekirjad üle?"
 
 #
-msgid "Overwrite Spinner Files ?"
+msgid "Overwrite Spinner Files?"
 msgstr "Kas kirjutada spinnerid üle?"
 
 msgid "Overwrite bootlogo files during software upgrade?"
@@ -13554,6 +13595,9 @@ msgstr "Esita heliplaat"
 # /Extensions/MediaPlayer
 msgid "Play back media files"
 msgstr "Esita meediafaile"
+
+msgid "Play catch up service archive"
+msgstr ""
 
 msgid "Play entry"
 msgstr "Esita"
@@ -14621,11 +14665,11 @@ msgid "Reader"
 msgstr "Kaardipesa"
 
 #, python-format
-msgid "Ready to install \"%s\" ?"
+msgid "Ready to install \"%s\"?"
 msgstr "Kas paigaldada \"%s\"?"
 
 #, python-format
-msgid "Ready to remove \"%s\" ?"
+msgid "Ready to remove \"%s\"?"
 msgstr "Kas eemaldada \"%s\"?"
 
 msgid "Real Life"
@@ -14737,9 +14781,6 @@ msgstr "Salvesta järgmine"
 msgid "Record now"
 msgstr "Salvesta kohe"
 
-msgid "Record started! Stopping time shift now ..."
-msgstr "Salvestamine algas! Ajanihe peatatakse..."
-
 #, python-format
 msgid "Record time limited due to conflicting timer:%s"
 msgstr "Salvestusaeg on piiratud teise taimeri %s tõttu"
@@ -14799,6 +14840,9 @@ msgstr "Salvestamise seaded"
 #, fuzzy
 msgid "Recording started"
 msgstr "Salvestuse tüüp"
+
+msgid "Recording started, stopping time shift now."
+msgstr "Salvestamine algas! Ajanihe peatatakse..."
 
 #, fuzzy
 msgid "Recording stopped"
@@ -15839,13 +15883,16 @@ msgstr "Talleta ajanihe ja jätka salvestamist"
 msgid "Save time shift as movie and stop recording"
 msgstr "Talleta ajanihe ja lõpeta salvestamine"
 
+msgid "Save time shift buffer now and continue recording"
+msgstr "Talleta ajanihe ja jätka salvestamist"
+
 msgid "Saved lines in script messages"
 msgstr ""
 
 msgid "Saving EPG Cache..."
 msgstr "EPG talletamine..."
 
-msgid "Saving time shift as movie now. This might take a while!"
+msgid "Saving time shift buffer, this might take a while."
 msgstr "Ajanihke salvestuseks muutmine. Võib minna veidi aega!"
 
 msgid "Saving time shift files"
@@ -16104,6 +16151,9 @@ msgstr "Vali 'A' või 'B*, kui antennisüsteem seda nõuab, muudel juhtudel vali
 msgid "Select 'Band' if using a 'Universal' LNB, otherwise consult your LNB specifications."
 msgstr "Universaalse LNB puhul vali 'sagedusala', muudel juhtudel vaata LNB käsiraamatust."
 
+msgid "Select 'Disabled' to disable all automated volume adjustments. Select 'Defined volume offsets' to assign a specified offset to the service's volume level. Select 'Last used/set volume' to remember the volume level last used for each service."
+msgstr ""
+
 msgid "Select 'Enable' to start the CI+ helper."
 msgstr ""
 
@@ -16136,9 +16186,6 @@ msgstr ""
 
 msgid "Select 'Yes' if this tuner is connected to the SCR device through another tuner, otherwise select 'No'."
 msgstr "Vali 'jah', kui see tuuner on ühendatud SCR seadmega teise tuuneri kaudu. Muudel juhtudel vali ei."
-
-msgid "Select 'Yes' if volume adjustments should be applied to Dolby sound tracks."
-msgstr ""
 
 msgid "Select 'Yes' if you are using a multi-switch which requires a DiSEqC Port-A command signal. Select 'No' for all other setups."
 msgstr "Vali 'jah' ainult juhul, kui kasutatav multiswich lüliti nõuab DiSEqC Port-A käsu signaali. Kõigil teistel juhtudel vali 'ei'."
@@ -16339,10 +16386,16 @@ msgstr "Kui lubatud, avatakse TV ja raadio režiimi vahetudes kanalinimekiri."
 msgid "Select 'Yes' to show the current directory in the list of directories. Note that File Commander must be restarted for this change to take effect."
 msgstr ""
 
+msgid "Select 'Yes' to show the volume level on any automated changes of volume level."
+msgstr ""
+
 msgid "Select 'Yes' to show this plugin in the Plugin Browser."
 msgstr ""
 
 msgid "Select 'Yes' to show web link packages in the Download Plugins screen."
+msgstr ""
+
+msgid "Select 'Yes' to shut down immediately instead of starting the descramble."
 msgstr ""
 
 msgid "Select 'Yes' to split tasks into separate actions."
@@ -16482,6 +16535,12 @@ msgstr ""
 #
 msgid "Select a script to run:"
 msgstr "Vali käivitatav skript:"
+
+msgid "Select a time, when in Standby mode, after which the descramble can proceed."
+msgstr ""
+
+msgid "Select a time, when in Standby, before which descramble can proceed."
+msgstr ""
 
 msgid "Select a tuner"
 msgstr "Vali tuuner"
@@ -17500,7 +17559,7 @@ msgstr "Määra aeg inforiba peitmiseks."
 msgid "Set the time to hide the second infobar. The bar also disappears on pressing 'OK'."
 msgstr "Määra teise inforiba kestus. Riba kaob ka vajutades 'OK'."
 
-msgid "Set the time to wait for execute the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, PowerTimer, SleepTimer etc."
+msgid "Set the time to wait for execute the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, Scheduler, SleepTimer etc."
 msgstr ""
 
 msgid "Set the top left location of the busy spinner. The coordinates are scaled such that the top left is at (0,0) and the bottom right is at (1260,700). Note that the position is the top left of the spinner and not the centre of the spinner."
@@ -17508,6 +17567,10 @@ msgstr ""
 
 msgid "Set the type of the progress indication in the channel selection screen."
 msgstr "Määra saate edenemise näit kanalinimekirjas."
+
+#, python-format
+msgid "Set the volume level for the '%s' service."
+msgstr ""
 
 #, python-format
 msgid "Set the volume offset for the '%s' service."
@@ -17535,6 +17598,12 @@ msgid "Set time options"
 msgstr ""
 
 msgid "Set to 'Disabled' to replace underscore characters, '_', in file and directory names with spaces."
+msgstr ""
+
+msgid "Set to 'Enabled' to descramble queued scrambled recordings in Standby mode before shutting down."
+msgstr ""
+
+msgid "Set to 'Enabled' to descramble queued scrambled recordings in Standby."
 msgstr ""
 
 msgid "Set to 'Yes', to enable automatic recording of the background timeshift buffer."
@@ -19423,10 +19492,10 @@ msgstr ""
 msgid "Stop time shift"
 msgstr "Peata ajanihe"
 
-msgid "Stop time shift and save time shift buffer as movie"
+msgid "Stop time shift and save time shift buffer as a movie"
 msgstr "Lõpeta ajanihe ja talleta ajanihke puhver"
 
-msgid "Stop time shift and save time shift buffer as movie and start recording of current event"
+msgid "Stop time shift and save time shift buffer as a movie and start recording of current event"
 msgstr "Lõpeta ajanihe, talleta ajanihke puhver ja alusta käesoleva saate salvestamist"
 
 msgid "Stop time shift while recording"
@@ -19811,7 +19880,7 @@ msgstr "Nimeviit"
 msgid "Sync NTP every (minutes)"
 msgstr "Sünkroonimise intervall"
 
-msgid "Sync failure moving back to origin !"
+msgid "Sync failure moving back to origin!"
 msgstr "Sünkroonimine nurjus, tagasi esialgsele!"
 
 msgid "Sync mode"
@@ -20279,8 +20348,8 @@ msgid "The authors are NOT RESPONSIBLE for DATA LOSS OR DAMAGE!"
 msgstr ""
 
 msgid ""
-"The available disk space for time shift is less than specified in the settings.\n"
-"What do you want to do ?"
+"The available disk space for time shift buffer is less than specified in the settings.\n"
+"What do you want to do?"
 msgstr ""
 "Ajanihke kasutuses on kettaruumi vähem kui seadistustes määratud.\n"
 "Mida soovid teha?"
@@ -20302,13 +20371,6 @@ msgstr ""
 
 msgid "The bitrate of the video encoder. Larger value improves quality and increases file size."
 msgstr "Videokooderi bitikiirus. Suurema väärtusega tuleb parema kvaliteediga suurem fail."
-
-msgid ""
-"The buffer time for time shift exceeds the specified limit in the settings.\n"
-"What do you want to do ?"
-msgstr ""
-"Ajanihke puhver ületab sätetes määratud piiri.\n"
-"Mida soovid teha?"
 
 msgid ""
 "The channel may support VPS\n"
@@ -20386,6 +20448,10 @@ msgid "The picon directory already exists and must be removed. Do you want to pr
 msgstr ""
 
 #, python-format
+msgid "The process will take approximately %d minutes to complete."
+msgstr ""
+
+#, python-format
 msgid "The results have been written to %s."
 msgstr "Tulemused on salvestatud %s."
 
@@ -20413,6 +20479,13 @@ msgstr ""
 
 msgid "The time is multiplied by the current repeat counter."
 msgstr "Aeg korrutatakse praeguse kordusloenduriga."
+
+msgid ""
+"The time shift buffer exceeds the limit specified in the settings.\n"
+"What do you want to do?"
+msgstr ""
+"Ajanihke puhver ületab sätetes määratud piiri.\n"
+"Mida soovid teha?"
 
 #, python-format
 msgid "The timer file '%s' is corrupt and could not be loaded."
@@ -20484,6 +20557,12 @@ msgid "There are pending tasks:"
 msgstr ""
 
 #, python-format
+msgid "There is %d scrambled recording, which will be unscrambled during Standby."
+msgid_plural "There are %d scrambled recordings, which will be unscrambled during Standby."
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "There is a risk that your %s %s will not boot or may malfunction after such a large on-line update."
 msgstr ""
 
@@ -20491,7 +20570,7 @@ msgstr ""
 msgid "There is no information to show for '%s'."
 msgstr ""
 
-msgid "There is no signal to lock on !"
+msgid "There is no signal to lock on!"
 msgstr "Lukustamiseks puudub signaal!"
 
 msgid "There might not be enough space on the selected partition. Do you really want to continue?"
@@ -21176,6 +21255,9 @@ msgstr ""
 
 msgid "Toggle between bouquet/EPG lists"
 msgstr "Vaheta lemmiknimekiri ja epg loend"
+
+msgid "Toggle between the available TV and RADIO services"
+msgstr ""
 
 msgid "Toggle display of image information"
 msgstr ""
@@ -22545,16 +22627,19 @@ msgstr "Pinge tüüp"
 msgid "Volume"
 msgstr "Helitugevus"
 
-msgid "Volume Adjust"
-msgstr "Helitaseme kohandamine"
-
 msgid "Volume Adjust Actions"
 msgstr ""
 
 msgid "Volume Adjust Service Selection"
 msgstr ""
 
+msgid "Volume Adjust Service Selection Actions"
+msgstr ""
+
 msgid "Volume Adjust Settings"
+msgstr ""
+
+msgid "Volume adjustment mode"
 msgstr ""
 
 msgid "Volume down"
@@ -23017,7 +23102,7 @@ msgstr "Kuhu teha varukoopia seadistustest?"
 msgid "Where do you want to save temporary time shift recordings?"
 msgstr "Kuhu talletada ajutised ajanihke failid?"
 
-msgid "Which event do you want to save permanently?"
+msgid "Which time shift buffer event do you want to save?"
 msgstr "Millise saate soovid lõplikult talletada?"
 
 msgid "While available"
@@ -23281,12 +23366,12 @@ msgstr ""
 msgid "You have chosen to restore the settings. Enigma2 will restart after restore. Press OK to start the restore now."
 msgstr ""
 
-msgid "You have chosen to save the current time shift"
+msgid "You have chosen to save the current time shift buffer"
 msgstr "Oled valinud ajanihke faili talletamise"
 
 msgid ""
 "You have chosen to save the current time shift event, but the event has not yet finished\n"
-"What do you want to do ?"
+"What do you want to do?"
 msgstr ""
 "Otsustasid selle saate ajanihke failid talletada, aga saade ei ole veel lõppenud\n"
 "Mida tuleks teha?"
@@ -23317,7 +23402,7 @@ msgstr ""
 msgid "You seem to be in time shift!"
 msgstr "Ajanihe on kasutusel!"
 
-msgid "You seem to be in time shift, Do you want to leave time shift ?"
+msgid "You seem to be in time shift, do you want to leave time shift?"
 msgstr "Ajanihe on kasutusel. Kas see tuleks peatada?"
 
 msgid "You seem to be in time shift, the service will briefly stop as time shift stops."
@@ -23398,7 +23483,7 @@ msgstr ""
 #, python-format
 msgid ""
 "Your %s %s will be restarted after the removal of service\n"
-"Do you want to remove now ?"
+"Do you want to remove now?"
 msgstr ""
 "%s %s taaskäivitub pärast teenuse eemaldamist\n"
 "Kas eemaldada kohe?"
@@ -24643,6 +24728,9 @@ msgstr "Jah (säilita fiidid)"
 
 msgid "®"
 msgstr ""
+
+#~ msgid "Volume Adjust"
+#~ msgstr "Helitaseme kohandamine"
 
 #~ msgid "off"
 #~ msgstr "Väljas"

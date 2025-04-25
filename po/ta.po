@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-10 18:45+0000\n"
+"POT-Creation-Date: 2025-04-21 09:40+0000\n"
 "PO-Revision-Date: 2025-02-12 12:57+0000\n"
 "Last-Translator: தமிழ்நேரம் <anishprabu.t@gmail.com>\n"
 "Language-Team: Tamil <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/ta/>\n"
@@ -899,6 +899,10 @@ msgid "%d feed catalog package was updated."
 msgid_plural "%d feed catalog packages were updated."
 msgstr[0] "%d ஊட்ட அட்டவணை தொகுப்பு புதுப்பிக்கப்பட்டது."
 msgstr[1] "%d ஊட்ட அட்டவணை தொகுப்புகள் புதுப்பிக்கப்பட்டன."
+
+#, python-format
+msgid "%d jobs are running in the background!"
+msgstr ""
 
 #, python-format
 msgid "%d kB"
@@ -1880,6 +1884,9 @@ msgstr "புதிய குவாட் சேனல் நுழைவு �
 msgid "Add RecordTimer"
 msgstr "ரெக்கார்ட் டைமரைச் சேர்க்கவும்"
 
+msgid "Add Service"
+msgstr ""
+
 msgid "Add Service To Bouquet"
 msgstr "பூச்செட்டில் சேவையைச் சேர்க்கவும்"
 
@@ -1901,11 +1908,17 @@ msgstr "சாப்டிமரைச் சேர்க்கவும்"
 msgid "Add a DNS entry"
 msgstr "ஒரு டிஎன்எச் நுழைவு சேர்க்கவும்"
 
+msgid "Add a RADIO service to the Volume Offset list"
+msgstr ""
+
 msgid "Add a RecordTimer"
 msgstr "ஒரு ரெக்கார்ட் டைமரைச் சேர்க்கவும்"
 
 msgid "Add a RecordTimer for current event"
 msgstr "தற்போதைய நிகழ்வுக்கு ஒரு ரெக்கார்டிமரைச் சேர்க்கவும்"
+
+msgid "Add a TV service to the Volume Offset list"
+msgstr ""
 
 msgid "Add a ZapTimer for current event"
 msgstr "தற்போதைய நிகழ்வுக்கு ஒரு சாப்டிமரைச் சேர்க்கவும்"
@@ -1931,7 +1944,7 @@ msgstr "புதிய டைமரைச் சேர்க்கவும்"
 msgid "Add a new title"
 msgstr "புதிய தலைப்பைச் சேர்க்கவும்"
 
-msgid "Add a service to the Volume Offsets list"
+msgid "Add a service to the Volume Offset list"
 msgstr "தொகுதி ஆஃப்செட்ச் பட்டியலில் ஒரு சேவையைச் சேர்க்கவும்"
 
 msgid "Add a timer for the current event"
@@ -2003,7 +2016,7 @@ msgstr "இந்த பூச்செண்டில் சேவைகளை�
 msgid "Add the current directory as a bookmark"
 msgstr "தற்போதைய கோப்பகத்தை புக்மார்க்காக சேர்க்கவும்"
 
-msgid "Add the current service to the Volume Offsets list"
+msgid "Add the current/active service to the Volume Offset list"
 msgstr "தொகுதி ஆஃப்செட்ச் பட்டியலில் தற்போதைய சேவையைச் சேர்க்கவும்"
 
 msgid "Add the selected service to a bouquet or alternative"
@@ -2026,6 +2039,9 @@ msgstr "சிறப்பம்சமாக சொருகி சேர்க�
 
 msgid "Add/Remove highlighted plugin to/from update list"
 msgstr "புதுப்பிப்பு பட்டியலில் இருந்து/சிறப்பம்சமாக சொருகி சேர்க்க/அகற்று"
+
+msgid "Add/Remove the current service to/from the Volume Offset list"
+msgstr ""
 
 msgid "Adding schedule..."
 msgstr "அட்டவணையைச் சேர்ப்பது ..."
@@ -2312,6 +2328,10 @@ msgstr "அம்லோசிக்"
 msgid "Amlogic remote"
 msgstr "அம்லோசிக் ரிமோட்"
 
+#, python-format
+msgid "Amount %d / Success %d / Failed %d"
+msgstr ""
+
 msgid "An attempt is made to capture the current TV status. If this is not possible due to incorrect or missing status messages it may cause the receiver to respond unexpectedly. On the other hand, tries to respond better to different operating conditions."
 msgstr "தற்போதைய தொலைக்காட்சி நிலையைப் பிடிக்க முயற்சி மேற்கொள்ளப்படுகிறது. தவறான அல்லது காணாமல் போன நிலை செய்திகள் காரணமாக இது சாத்தியமில்லை என்றால், ரிசீவர் எதிர்பாராத விதமாக பதிலளிக்கக்கூடும். மறுபுறம், வெவ்வேறு இயக்க நிலைமைகளுக்கு சிறப்பாக பதிலளிக்க முயற்சிக்கிறது."
 
@@ -2390,7 +2410,7 @@ msgstr "அரபு (துனிசியன்)"
 msgid "Aragonese"
 msgstr "ஆர்கோனீச்"
 
-msgid "Are you ready to run the script ?"
+msgid "Are you ready to run the script?"
 msgstr "ச்கிரிப்டை இயக்க நீங்கள் தயாரா?"
 
 msgid "Are you sure to cancel all changes?"
@@ -2663,6 +2683,9 @@ msgstr "ஆட்டோ நிறுவு பதிவு"
 
 msgid "Auto multi-selection"
 msgstr "ஆட்டோ மல்டி-தேர்வு"
+
+msgid "Auto show volume level"
+msgstr ""
 
 msgid "Auto shut down"
 msgstr "ஆட்டோ மூடப்பட்டது"
@@ -3529,8 +3552,8 @@ msgid "Can't create backup directory!"
 msgstr "காப்பு கோப்பகத்தை உருவாக்க முடியாது!"
 
 msgid ""
-"Can't going to live TV!\n"
-"Switch to live TV and restart time shift ?"
+"Can't go to live TV!\n"
+"Switch to live TV and restart time shift?"
 msgstr ""
 "டிவி லைவ் செய்ய முடியாது!\n"
 " நேரடி டிவிக்கு மாறவும், நேர மாற்றத்தை மறுதொடக்கம் செய்யவும்?"
@@ -3539,8 +3562,8 @@ msgid "Can't move to trashcan!"
 msgstr ""
 
 msgid ""
-"Can't play the next time shift file!\n"
-"Switch to live TV and restart time shift ?"
+"Can't play the next time shift buffer file!\n"
+"Switch to live TV and restart time shift?"
 msgstr ""
 "அடுத்த முறை சிப்ட் கோப்பை இயக்க முடியாது!\n"
 " நேரடி டிவிக்கு மாறவும், நேர மாற்றத்தை மறுதொடக்கம் செய்யவும்?"
@@ -3656,12 +3679,12 @@ msgstr "பயனர் கோரிக்கையின் பேரில் 
 msgid "Cannot delete file"
 msgstr "கோப்பை நீக்க முடியாது"
 
-#. TRANSLATORS: "Cannot determine (east/west) limit ..., aborting !"
+#. TRANSLATORS: "Cannot determine (east/west) limit ..., aborting!"
 #, python-format
-msgid "Cannot determine %s limit ..., aborting !"
+msgid "Cannot determine %s limit ..., aborting!"
 msgstr "%s வரம்பை தீர்மானிக்க முடியாது ..., கருக்கலைப்பு!"
 
-msgid "Cannot find any signal ..., aborting !"
+msgid "Cannot find any signal ..., aborting!"
 msgstr "எந்த சமிக்ஞையையும் கண்டுபிடிக்க முடியவில்லை ..., கருக்கலைப்பு!"
 
 msgid "Cape Verde"
@@ -3687,6 +3710,9 @@ msgstr "கேச்கேட் பிப்"
 
 msgid "Catalan / Valencian"
 msgstr "காடலான் / வலென்சியன்"
+
+msgid "Catch Up Player Actions"
+msgstr ""
 
 msgid "Cayman Islands"
 msgstr "கேமான் தீவுகள்"
@@ -5278,6 +5304,9 @@ msgstr ""
 msgid "Currently Defined Volume Offsets:"
 msgstr "தற்போது வரையறுக்கப்பட்ட தொகுதி ஆஃப்செட்டுகள்:"
 
+msgid "Currently Remembered Volume Levels:"
+msgstr ""
+
 msgid "Custom"
 msgstr "தனிப்பயன்"
 
@@ -5748,6 +5777,9 @@ msgstr "கோப்பு முறைமை மவுண்ட் விரு
 msgid "Defined / Active"
 msgstr "வரையறுக்கப்பட்ட / செயலில்"
 
+msgid "Defined volume offset"
+msgstr ""
+
 msgid "Defines how fast the time jumps are repeated. Values lower than 500ms may be problematic with NAS."
 msgstr "நேர தாவல்கள் எவ்வளவு விரைவாக மீண்டும் மீண்டும் செய்யப்படுகின்றன என்பதை வரையறுக்கிறது. 500ms க்கும் குறைவான மதிப்புகள் NAS உடன் சிக்கலாக இருக்கலாம்."
 
@@ -5951,9 +5983,6 @@ msgstr "தற்போதைய நேர சிப்ட் பஃப்பர
 msgid "Delete the currently displayed log file"
 msgstr "தற்போது காட்டப்படும் பதிவு கோப்பை நீக்கு"
 
-msgid "Delete the currently highlighted service from the Volume Offsets list"
-msgstr "தொகுதி ஆஃப்செட்ச் பட்டியலிலிருந்து தற்போது சிறப்பிக்கப்பட்டுள்ள சேவையை நீக்கவும்"
-
 msgid "Delete the currently selected timer"
 msgstr "தற்போது தேர்ந்தெடுக்கப்பட்ட டைமரை நீக்கு"
 
@@ -6011,6 +6040,21 @@ msgstr "ஆழம்"
 
 msgid "Descending"
 msgstr "இறங்கு"
+
+msgid "Descramble end time"
+msgstr ""
+
+msgid "Descramble in Standby"
+msgstr ""
+
+msgid "Descramble in Standby finished"
+msgstr ""
+
+msgid "Descramble recordings before Shutdown"
+msgstr ""
+
+msgid "Descramble start time"
+msgstr ""
 
 msgid "Descrambling options"
 msgstr "விருப்பமான விருப்பங்கள்"
@@ -6122,7 +6166,7 @@ msgstr "அகராதி"
 #, python-format
 msgid ""
 "Difference between timer begin and end must be equal or greater than %d minutes.\n"
-"End Action was disabled !"
+"End Action was disabled!"
 msgstr ""
 "நேரங்குறிகருவி தொடக்கத்திற்கும் முடிவிற்கும் இடையிலான வேறுபாடு %d நிமிடங்களை விட சமமாகவோ அல்லது அதிகமாகவோ இருக்க வேண்டும்.\n"
 " இறுதி நடவடிக்கை முடக்கப்பட்டது!"
@@ -6927,9 +6971,6 @@ msgstr "BT ஆடியோவை இயக்கவும்"
 
 msgid "Enable Bouquet Edit"
 msgstr "பூச்செண்டு திருத்தத்தை இயக்கவும்"
-
-msgid "Enable Dolby Digital / Dolby AC-3 offsets"
-msgstr "டால்பி டிசிட்டல் / டால்பி ஏசி -3 ஆஃப்செட்களை இயக்கவும்"
 
 msgid "Enable EIT EPG"
 msgstr "EIT EPG ஐ இயக்கவும்"
@@ -8049,6 +8090,9 @@ msgstr "குறைவடையும் பநிஇ சரியான மு
 msgid "Fallback Font *"
 msgstr "குறைவடையும் எழுத்துரு *"
 
+msgid "Fallback Remote Receiver Settings"
+msgstr "குறைவடையும் ரிமோட் ரிசீவர் அமைப்பு"
+
 msgid "Fallback Timer"
 msgstr "குறைவடையும் நேரங்குறிகருவி"
 
@@ -8072,9 +8116,6 @@ msgstr "டி.வி.பி-சி க்கான குறைவடையு�
 
 msgid "Fallback remote receiver for DVB-T"
 msgstr "டி.வி.பி-டி க்கான குறைவடையும் ரிமோட் ரிசீவர்"
-
-msgid "Fallback remote receiver setup"
-msgstr "குறைவடையும் ரிமோட் ரிசீவர் அமைப்பு"
 
 msgid "Fallback tuner setup"
 msgstr "குறைவடையும் ட்யூனர் அமைப்பு"
@@ -8702,7 +8743,7 @@ msgstr "செர்மன்"
 msgid "Germany"
 msgstr "செர்மனி"
 
-msgid "Getting Event Info failed!"
+msgid "Getting event information failed!"
 msgstr "நிகழ்வு தகவலைப் பெறுவது தோல்வியடைந்தது!"
 
 msgid "Getting plugin information. Please wait..."
@@ -10379,6 +10420,9 @@ msgstr "கடைசியாக பயன்படுத்தப்பட்�
 msgid "Last used share: "
 msgstr "கடைசியாக பயன்படுத்தப்பட்ட பங்கு:"
 
+msgid "Last used/set volume"
+msgstr ""
+
 msgctxt "third event: 'third' event label"
 msgid "Later"
 msgstr "பின்னர்"
@@ -10996,7 +11040,7 @@ msgid "Maxdown: "
 msgstr "அதிகபட்சம்:"
 
 #, python-format
-msgid "Maximum minutes to jump %d !"
+msgid "Maximum minutes to jump %d!"
 msgstr "%d செல்ல அதிகபட்ச நிமிடங்கள்!"
 
 msgid "Maximum no of days"
@@ -12165,7 +12209,7 @@ msgstr "சிச்டம் சாப்ட்கேம் கட்டமை�
 msgid "No tags are set on these movies."
 msgstr "இந்த திரைப்படங்களில் குறிச்சொற்கள் எதுவும் அமைக்கப்படவில்லை."
 
-msgid "No time shift found to save as recording!"
+msgid "No time shift buffer found to save as recording!"
 msgstr "பதிவு செய்வதாக சேமிக்க நேர மாற்றம் எதுவும் கிடைக்கவில்லை!"
 
 msgid "No timeout"
@@ -12363,7 +12407,7 @@ msgstr "போதுமான வட்டு இடம் இல்லை. த�
 
 #, python-format
 msgid ""
-"Not enough free Diskspace!\n"
+"Not enough free disk space!\n"
 "\n"
 "Filesize: %sMB\n"
 "Free Space: %sMB\n"
@@ -12405,9 +12449,6 @@ msgstr "எதுவும் இல்லை, இந்த மெனுவை �
 msgctxt "now/next: 'now' event label"
 msgid "Now"
 msgstr "இப்போது"
-
-msgid "Now save time shift as movie and continues recording"
-msgstr "இப்போது நேர மாற்றத்தை திரைப்படமாக சேமித்து பதிவுசெய்கிறது"
 
 msgid "Now, use the contrast setting to turn up the brightness of the background as much as possible, but make sure that you can still see the difference between the two brightest levels of shades.If you have done that, press OK."
 msgstr "இப்போது, பின்னணியின் பிரகாசத்தை முடிந்தவரை மாற்றுவதற்கு மாறுபட்ட அமைப்பைப் பயன்படுத்தவும், ஆனால் இரண்டு பிரகாசமான நிழல்களுக்கு இடையிலான வித்தியாசத்தை நீங்கள் இன்னும் காணலாம் என்பதை உறுதிப்படுத்திக் கொள்ளுங்கள். நீங்கள் அதைச் செய்திருந்தால், சரி என்பதை அழுத்தவும்."
@@ -12799,22 +12840,22 @@ msgstr "ஒட்டுமொத்த முன்னேற்றம்:"
 msgid "Overscan Test"
 msgstr "அதிகப்படியான சோதனை"
 
-msgid "Overwrite Bootlogo Files ?"
+msgid "Overwrite Bootlogo Files?"
 msgstr "பூட்லோகோ கோப்புகளை மேலெழுதவா?"
 
-msgid "Overwrite Driver Files ?"
+msgid "Overwrite Driver Files?"
 msgstr "இயக்கி கோப்புகளை மேலெழுதவா?"
 
-msgid "Overwrite Emu Files ?"
+msgid "Overwrite Emu Files?"
 msgstr "EMU கோப்புகளை மேலெழுதவா?"
 
-msgid "Overwrite Picon Files ?"
+msgid "Overwrite Picon Files?"
 msgstr "பிகான் கோப்புகளை மேலெழுதவா?"
 
-msgid "Overwrite Setting Files ?"
+msgid "Overwrite Setting Files?"
 msgstr "அமைப்புகளை மேலெழுதவா?"
 
-msgid "Overwrite Spinner Files ?"
+msgid "Overwrite Spinner Files?"
 msgstr "ச்பின்னர் கோப்புகளை மேலெழுதவா?"
 
 msgid "Overwrite bootlogo files during software upgrade?"
@@ -13215,6 +13256,9 @@ msgstr "ஆடியோ-சிடி விளையாடுங்கள் ...
 
 msgid "Play back media files"
 msgstr "மீடியா கோப்புகளை மீண்டும் இயக்கவும்"
+
+msgid "Play catch up service archive"
+msgstr ""
 
 msgid "Play entry"
 msgstr "நுழைவு விளையாடுங்கள்"
@@ -14261,11 +14305,11 @@ msgid "Reader"
 msgstr "வாசகர்"
 
 #, python-format
-msgid "Ready to install \"%s\" ?"
+msgid "Ready to install \"%s\"?"
 msgstr "\"%s\" நிறுவ தயாரா?"
 
 #, python-format
-msgid "Ready to remove \"%s\" ?"
+msgid "Ready to remove \"%s\"?"
 msgstr "\"%s\" ஐ அகற்ற தயாரா?"
 
 msgid "Real Life"
@@ -14374,9 +14418,6 @@ msgstr "அடுத்து பதிவு"
 msgid "Record now"
 msgstr "இப்போது பதிவு செய்யுங்கள்"
 
-msgid "Record started! Stopping time shift now ..."
-msgstr "பதிவு தொடங்கியது! இப்போது நேர மாற்றத்தை நிறுத்துகிறது ..."
-
 #, python-format
 msgid "Record time limited due to conflicting timer:%s"
 msgstr "முரண்பட்ட நேரங்குறிகருவி காரணமாக பதிவு நேரம் வரையறுக்கப்பட்டுள்ளது:%s"
@@ -14431,6 +14472,9 @@ msgstr "இயங்கும் பதிவு"
 
 msgid "Recording started"
 msgstr "பதிவு தொடங்கியது"
+
+msgid "Recording started, stopping time shift now."
+msgstr "பதிவு தொடங்கியது! இப்போது நேர மாற்றத்தை நிறுத்துகிறது ..."
 
 msgid "Recording stopped"
 msgstr "பதிவு நிறுத்தப்பட்டது"
@@ -15442,13 +15486,16 @@ msgstr "நேர மாற்றத்தை திரைப்படமாக 
 msgid "Save time shift as movie and stop recording"
 msgstr "நேர மாற்றத்தை திரைப்படமாக சேமித்து பதிவு செய்வதை நிறுத்துங்கள்"
 
+msgid "Save time shift buffer now and continue recording"
+msgstr "இப்போது நேர மாற்றத்தை திரைப்படமாக சேமித்து பதிவுசெய்கிறது"
+
 msgid "Saved lines in script messages"
 msgstr "ச்கிரிப்ட் செய்திகளில் சேமிக்கப்பட்ட கோடுகள்"
 
 msgid "Saving EPG Cache..."
 msgstr "ஈபிசி கேச் சேமிக்கிறது ..."
 
-msgid "Saving time shift as movie now. This might take a while!"
+msgid "Saving time shift buffer, this might take a while."
 msgstr "இப்போது திரைப்படமாக நேர மாற்றத்தை சேமிக்கிறது. இதற்கு சிறிது நேரம் ஆகலாம்!"
 
 msgid "Saving time shift files"
@@ -15699,6 +15746,9 @@ msgstr "உங்கள் வான்வழி அமைப்புக்க�
 msgid "Select 'Band' if using a 'Universal' LNB, otherwise consult your LNB specifications."
 msgstr "'யுனிவர்சல்' எல்.என்.பி.யைப் பயன்படுத்தினால் 'பேண்ட்' என்பதைத் தேர்ந்தெடுக்கவும், இல்லையெனில் உங்கள் எல்.என்.பி விவரக்குறிப்புகளை அணுகவும்."
 
+msgid "Select 'Disabled' to disable all automated volume adjustments. Select 'Defined volume offsets' to assign a specified offset to the service's volume level. Select 'Last used/set volume' to remember the volume level last used for each service."
+msgstr ""
+
 msgid "Select 'Enable' to start the CI+ helper."
 msgstr "CI+ உதவியாளரைத் தொடங்க 'இயக்கு' என்பதைத் தேர்ந்தெடுக்கவும்."
 
@@ -15731,9 +15781,6 @@ msgstr "டைமரை செயல்படுத்துவதற்கு �
 
 msgid "Select 'Yes' if this tuner is connected to the SCR device through another tuner, otherwise select 'No'."
 msgstr "இந்த ட்யூனர் மண்ணியத் திருத்திகள் சாதனத்துடன் மற்றொரு ட்யூனர் மூலம் இணைக்கப்பட்டிருந்தால் 'ஆம்' என்பதைத் தேர்ந்தெடுக்கவும், இல்லையெனில் 'இல்லை' என்பதைத் தேர்ந்தெடுக்கவும்."
-
-msgid "Select 'Yes' if volume adjustments should be applied to Dolby sound tracks."
-msgstr "டால்பி ஒலி தடங்களுக்கு தொகுதி மாற்றங்கள் பயன்படுத்தப்பட வேண்டும் என்றால் 'ஆம்' என்பதைத் தேர்ந்தெடுக்கவும்."
 
 msgid "Select 'Yes' if you are using a multi-switch which requires a DiSEqC Port-A command signal. Select 'No' for all other setups."
 msgstr "நீங்கள் ஒரு மல்டி-சுவிட்சைப் பயன்படுத்துகிறீர்கள் என்றால் 'ஆம்' என்பதைத் தேர்ந்தெடுக்கவும், இது ஒரு diseqc போர்ட்-ஒரு கட்டளை சமிக்ஞை தேவைப்படுகிறது. மற்ற எல்லா அமைப்புகளுக்கும் 'இல்லை' என்பதைத் தேர்ந்தெடுக்கவும்."
@@ -15933,11 +15980,17 @@ msgstr "ரேடியோ மற்றும் டிவி முறைகள
 msgid "Select 'Yes' to show the current directory in the list of directories. Note that File Commander must be restarted for this change to take effect."
 msgstr "கோப்பகங்களின் பட்டியலில் தற்போதைய கோப்பகத்தைக் காட்ட 'ஆம்' என்பதைத் தேர்ந்தெடுக்கவும். இந்த மாற்றம் நடைமுறைக்கு வர கோப்பு தளபதி மறுதொடக்கம் செய்யப்பட வேண்டும் என்பதை நினைவில் கொள்க."
 
+msgid "Select 'Yes' to show the volume level on any automated changes of volume level."
+msgstr ""
+
 msgid "Select 'Yes' to show this plugin in the Plugin Browser."
 msgstr "சொருகி உலாவியில் இந்த சொருகி காட்ட 'ஆம்' என்பதைத் தேர்ந்தெடுக்கவும்."
 
 msgid "Select 'Yes' to show web link packages in the Download Plugins screen."
 msgstr "பதிவிறக்க செருகுநிரல்கள் திரையில் வலை இணைப்பு தொகுப்புகளைக் காட்ட 'ஆம்' என்பதைத் தேர்ந்தெடுக்கவும்."
+
+msgid "Select 'Yes' to shut down immediately instead of starting the descramble."
+msgstr ""
 
 msgid "Select 'Yes' to split tasks into separate actions."
 msgstr "பணிகளை தனி செயல்களாகப் பிரிக்க 'ஆம்' என்பதைத் தேர்ந்தெடுக்கவும்."
@@ -16071,6 +16124,12 @@ msgstr "பார்வைக்கு ஒரு களஞ்சியத்த�
 
 msgid "Select a script to run:"
 msgstr "இயக்க ஒரு ச்கிரிப்டைத் தேர்ந்தெடுக்கவும்:"
+
+msgid "Select a time, when in Standby mode, after which the descramble can proceed."
+msgstr ""
+
+msgid "Select a time, when in Standby, before which descramble can proceed."
+msgstr ""
 
 msgid "Select a tuner"
 msgstr "ஒரு ட்யூனரைத் தேர்ந்தெடுக்கவும்"
@@ -17082,7 +17141,7 @@ msgstr "இன்போபரை மறைக்க நேரத்தை அம
 msgid "Set the time to hide the second infobar. The bar also disappears on pressing 'OK'."
 msgstr "இரண்டாவது இன்போபரை மறைக்க நேரத்தை அமைக்கவும். 'சரி' என்பதை அழுத்துவதில் பட்டி மறைந்துவிடும்."
 
-msgid "Set the time to wait for execute the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, PowerTimer, SleepTimer etc."
+msgid "Set the time to wait for execute the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, Scheduler, SleepTimer etc."
 msgstr "பணிநிறுத்தம், காத்திருப்பு அல்லது மறுதொடக்கம் செய்திகளில் இயல்புநிலை செயலை இயக்க காத்திருக்க நேரத்தை அமைக்கவும், எ.கா. ரெக்கார்டிமர், பவர்டிமர், ச்லீப் நேரங்குறிகருவி போன்றவற்றில் பயன்படுத்தப்படுகிறது."
 
 msgid "Set the top left location of the busy spinner. The coordinates are scaled such that the top left is at (0,0) and the bottom right is at (1260,700). Note that the position is the top left of the spinner and not the centre of the spinner."
@@ -17090,6 +17149,10 @@ msgstr "பிசியான ச்பின்னரின் மேல் இ
 
 msgid "Set the type of the progress indication in the channel selection screen."
 msgstr "சேனல் தேர்வுத் திரையில் முன்னேற்றக் குறிப்பின் வகையை அமைக்கவும்."
+
+#, python-format
+msgid "Set the volume level for the '%s' service."
+msgstr ""
 
 #, python-format
 msgid "Set the volume offset for the '%s' service."
@@ -17118,6 +17181,12 @@ msgstr "நேர விருப்பங்களை அமைக்கவு�
 
 msgid "Set to 'Disabled' to replace underscore characters, '_', in file and directory names with spaces."
 msgstr "அடிக்கோடிட்ட எழுத்துக்களை மாற்றுவதற்கு 'முடக்கப்பட்டதாக' அமைக்கவும், '_', கோப்பு மற்றும் அடைவு பெயர்களில் இடைவெளிகளுடன்."
+
+msgid "Set to 'Enabled' to descramble queued scrambled recordings in Standby mode before shutting down."
+msgstr ""
+
+msgid "Set to 'Enabled' to descramble queued scrambled recordings in Standby."
+msgstr ""
 
 msgid "Set to 'Yes', to enable automatic recording of the background timeshift buffer."
 msgstr "பின்னணி டைம்சிஃப்ட் பஃப்பரின் தானியங்கி பதிவை இயக்க, 'ஆம்' என அமைக்கவும்."
@@ -18952,10 +19021,10 @@ msgstr "புதுப்பிப்பை நிறுத்துங்க�
 msgid "Stop time shift"
 msgstr "நேர மாற்றத்தை நிறுத்துங்கள்"
 
-msgid "Stop time shift and save time shift buffer as movie"
+msgid "Stop time shift and save time shift buffer as a movie"
 msgstr "நேர மாற்றத்தை நிறுத்தி, நேர சிப்ட் பஃப்பரை திரைப்படமாக சேமிக்கவும்"
 
-msgid "Stop time shift and save time shift buffer as movie and start recording of current event"
+msgid "Stop time shift and save time shift buffer as a movie and start recording of current event"
 msgstr "நேர மாற்றத்தை நிறுத்தி, நேர சிப்ட் பஃப்பரை திரைப்படமாக சேமித்து தற்போதைய நிகழ்வின் பதிவு செய்யத் தொடங்குங்கள்"
 
 msgid "Stop time shift while recording"
@@ -19327,7 +19396,7 @@ msgstr "குறியீட்டு இணைப்பு"
 msgid "Sync NTP every (minutes)"
 msgstr "ஒவ்வொரு (நிமிடங்களிலும்) என்.டி.பி."
 
-msgid "Sync failure moving back to origin !"
+msgid "Sync failure moving back to origin!"
 msgstr "ஒத்திசைவு தோல்வி மீண்டும் தோற்றத்திற்கு நகரும்!"
 
 msgid "Sync mode"
@@ -19800,8 +19869,8 @@ msgid "The authors are NOT RESPONSIBLE for DATA LOSS OR DAMAGE!"
 msgstr "தரவு இழப்பு அல்லது சேதத்திற்கு ஆசிரியர்கள் பொறுப்பல்ல!"
 
 msgid ""
-"The available disk space for time shift is less than specified in the settings.\n"
-"What do you want to do ?"
+"The available disk space for time shift buffer is less than specified in the settings.\n"
+"What do you want to do?"
 msgstr ""
 "நேர மாற்றத்திற்கான கிடைக்கக்கூடிய வட்டு இடம் அமைப்புகளில் குறிப்பிடப்பட்டதை விட குறைவாக உள்ளது.\n"
 " நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?"
@@ -19823,13 +19892,6 @@ msgstr "காப்புப்பிரதி செய் பெற்றத�
 
 msgid "The bitrate of the video encoder. Larger value improves quality and increases file size."
 msgstr "வீடியோ குறியாக்கியின் பிட்ரேட். பெரிய மதிப்பு தரத்தை மேம்படுத்துகிறது மற்றும் கோப்பு அளவை அதிகரிக்கிறது."
-
-msgid ""
-"The buffer time for time shift exceeds the specified limit in the settings.\n"
-"What do you want to do ?"
-msgstr ""
-"நேர மாற்றத்திற்கான இடையக நேரம் அமைப்புகளில் குறிப்பிட்ட வரம்பை மீறுகிறது.\n"
-" நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?"
 
 msgid ""
 "The channel may support VPS\n"
@@ -19912,6 +19974,10 @@ msgid "The picon directory already exists and must be removed. Do you want to pr
 msgstr "பிகான் அடைவு ஏற்கனவே உள்ளது மற்றும் அகற்றப்பட வேண்டும். நீங்கள் தொடர விரும்புகிறீர்களா?"
 
 #, python-format
+msgid "The process will take approximately %d minutes to complete."
+msgstr ""
+
+#, python-format
 msgid "The results have been written to %s."
 msgstr "முடிவுகள் %s க்கு எழுதப்பட்டுள்ளன."
 
@@ -19943,6 +20009,13 @@ msgstr ""
 
 msgid "The time is multiplied by the current repeat counter."
 msgstr "தற்போதைய மீண்டும் மீண்டும் கவுண்டரால் நேரம் பெருக்கப்படுகிறது."
+
+msgid ""
+"The time shift buffer exceeds the limit specified in the settings.\n"
+"What do you want to do?"
+msgstr ""
+"நேர மாற்றத்திற்கான இடையக நேரம் அமைப்புகளில் குறிப்பிட்ட வரம்பை மீறுகிறது.\n"
+" நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?"
 
 #, python-format
 msgid "The timer file '%s' is corrupt and could not be loaded."
@@ -20021,6 +20094,12 @@ msgid "There are pending tasks:"
 msgstr "பணிகள் நிலுவையில் உள்ளன:"
 
 #, python-format
+msgid "There is %d scrambled recording, which will be unscrambled during Standby."
+msgid_plural "There are %d scrambled recordings, which will be unscrambled during Standby."
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "There is a risk that your %s %s will not boot or may malfunction after such a large on-line update."
 msgstr "உங்கள் %s %s துவக்காது அல்லது இவ்வளவு பெரிய ஆன்-லைன் புதுப்பிப்புக்குப் பிறகு செயலிழக்கக்கூடும் என்ற இடர் உள்ளது."
 
@@ -20028,7 +20107,7 @@ msgstr "உங்கள் %s %s துவக்காது அல்லது 
 msgid "There is no information to show for '%s'."
 msgstr "'%s' காட்ட எந்த தகவலும் இல்லை."
 
-msgid "There is no signal to lock on !"
+msgid "There is no signal to lock on!"
 msgstr "பூட்ட எந்த சமிக்ஞையும் இல்லை!"
 
 msgid "There might not be enough space on the selected partition. Do you really want to continue?"
@@ -20679,6 +20758,9 @@ msgstr "ஆட்டோ புதுப்பிப்பை இயக்கவ�
 
 msgid "Toggle between bouquet/EPG lists"
 msgstr "பூச்செண்டு/ஈபிசி பட்டியல்களுக்கு இடையில் மாற்றவும்"
+
+msgid "Toggle between the available TV and RADIO services"
+msgstr ""
 
 msgid "Toggle display of image information"
 msgstr "படத் தகவல்களின் காட்சியை மாற்றவும்"
@@ -22035,17 +22117,20 @@ msgstr "மின்னழுத்த முறை"
 msgid "Volume"
 msgstr "தொகுதி"
 
-msgid "Volume Adjust"
-msgstr "தொகுதி சரிசெய்தல்"
-
 msgid "Volume Adjust Actions"
 msgstr "தொகுதி சரிசெய்தல் செயல்கள்"
 
 msgid "Volume Adjust Service Selection"
 msgstr "தொகுதி சரிசெய்தல் பணி தேர்வை சரிசெய்யவும்"
 
+msgid "Volume Adjust Service Selection Actions"
+msgstr ""
+
 msgid "Volume Adjust Settings"
 msgstr "தொகுதி சரிசெய்தல் அமைப்புகள்"
+
+msgid "Volume adjustment mode"
+msgstr ""
 
 msgid "Volume down"
 msgstr "தொகுதி கீழே"
@@ -22495,7 +22580,7 @@ msgstr "உங்கள் அமைப்புகளை எங்கே கா
 msgid "Where do you want to save temporary time shift recordings?"
 msgstr "தற்காலிக நேர சிப்ட் பதிவுகளை எங்கு சேமிக்க விரும்புகிறீர்கள்?"
 
-msgid "Which event do you want to save permanently?"
+msgid "Which time shift buffer event do you want to save?"
 msgstr "எந்த நிகழ்வை நிரந்தரமாக சேமிக்க விரும்புகிறீர்கள்?"
 
 msgid "While available"
@@ -22758,12 +22843,12 @@ msgstr "உங்கள் அமைப்புகளை காப்புப�
 msgid "You have chosen to restore the settings. Enigma2 will restart after restore. Press OK to start the restore now."
 msgstr "அமைப்புகளை மீட்டெடுக்க நீங்கள் தேர்ந்தெடுத்துள்ளீர்கள். Enigma2 மீட்டமைத்த பிறகு மறுதொடக்கம் செய்யும். இப்போது மீட்டெடுப்பதைத் தொடங்க சரி என்பதை அழுத்தவும்."
 
-msgid "You have chosen to save the current time shift"
+msgid "You have chosen to save the current time shift buffer"
 msgstr "தற்போதைய நேர மாற்றத்தை சேமிக்க நீங்கள் தேர்ந்தெடுத்துள்ளீர்கள்"
 
 msgid ""
 "You have chosen to save the current time shift event, but the event has not yet finished\n"
-"What do you want to do ?"
+"What do you want to do?"
 msgstr ""
 "தற்போதைய நேர சிப்ட் நிகழ்வை சேமிக்க நீங்கள் தேர்ந்தெடுத்துள்ளீர்கள், ஆனால் நிகழ்வு இன்னும் முடிக்கப்படவில்லை\n"
 " நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?"
@@ -22794,7 +22879,7 @@ msgstr ""
 msgid "You seem to be in time shift!"
 msgstr "நீங்கள் நேர மாற்றத்தில் இருப்பதாகத் தெரிகிறது!"
 
-msgid "You seem to be in time shift, Do you want to leave time shift ?"
+msgid "You seem to be in time shift, do you want to leave time shift?"
 msgstr "நீங்கள் நேர மாற்றத்தில் இருப்பதாகத் தெரிகிறது, நேர மாற்றத்தை விட்டுவிட விரும்புகிறீர்களா?"
 
 msgid "You seem to be in time shift, the service will briefly stop as time shift stops."
@@ -22872,7 +22957,7 @@ msgstr ""
 #, python-format
 msgid ""
 "Your %s %s will be restarted after the removal of service\n"
-"Do you want to remove now ?"
+"Do you want to remove now?"
 msgstr ""
 "சேவையை அகற்றிய பின்னர் உங்கள் %s %s மறுதொடக்கம் செய்யப்படும்\n"
 " நீங்கள் இப்போது அகற்ற விரும்புகிறீர்களா?"
@@ -24084,6 +24169,18 @@ msgstr "ஆம் (ஊட்டங்களை வைத்திருங்க
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Delete the currently highlighted service from the Volume Offsets list"
+#~ msgstr "தொகுதி ஆஃப்செட்ச் பட்டியலிலிருந்து தற்போது சிறப்பிக்கப்பட்டுள்ள சேவையை நீக்கவும்"
+
+#~ msgid "Enable Dolby Digital / Dolby AC-3 offsets"
+#~ msgstr "டால்பி டிசிட்டல் / டால்பி ஏசி -3 ஆஃப்செட்களை இயக்கவும்"
+
+#~ msgid "Select 'Yes' if volume adjustments should be applied to Dolby sound tracks."
+#~ msgstr "டால்பி ஒலி தடங்களுக்கு தொகுதி மாற்றங்கள் பயன்படுத்தப்பட வேண்டும் என்றால் 'ஆம்' என்பதைத் தேர்ந்தெடுக்கவும்."
+
+#~ msgid "Volume Adjust"
+#~ msgstr "தொகுதி சரிசெய்தல்"
 
 #~ msgid "off"
 #~ msgstr "அணை"

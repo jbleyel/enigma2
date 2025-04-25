@@ -35,7 +35,7 @@ class SABnzbdSetupScreen(Screen):
 		Screen.setTitle(self, _("SABnzbd Settings"))
 		self.skinName = "NetworkServiceSetup"
 		self.onChangedEntry = []
-		self['lab1'] = Label(_("Autostart:"))
+		self['lab1'] = Label(_("Autostart") + ":")
 		self['labactive'] = Label(_(_("Disabled")))
 		self['lab2'] = Label(_("Current Status:"))
 		self['labstop'] = Label(_("Stopped"))
@@ -60,7 +60,7 @@ class SABnzbdSetupScreen(Screen):
 		str = six.ensure_str(str)
 		if not str:
 			restartbox = self.session.openWithCallback(self.InstallPackage, MessageBox, _('Your %s %s will be restarted after the installation of service.\n\nDo you want to install now ?') % getBoxDisplayName(), MessageBox.TYPE_YESNO)
-			restartbox.setTitle(_('Ready to install "%s" ?') % self.service_name)
+			restartbox.setTitle(_('Ready to install "%s"?') % self.service_name)
 		else:
 			self.updateService()
 
@@ -87,8 +87,8 @@ class SABnzbdSetupScreen(Screen):
 	def UninstalldataAvail(self, str, retval, extra_args):
 		str = six.ensure_str(str)
 		if str:
-			restartbox = self.session.openWithCallback(self.RemovePackage, MessageBox, _('Your %s %s will be restarted after the removal of service\nDo you want to remove now ?') % getBoxDisplayName(), MessageBox.TYPE_YESNO)
-			restartbox.setTitle(_('Ready to remove "%s" ?') % self.service_name)
+			restartbox = self.session.openWithCallback(self.RemovePackage, MessageBox, _("Your %s %s will be restarted after the removal of service\nDo you want to remove now?") % getBoxDisplayName(), MessageBox.TYPE_YESNO)
+			restartbox.setTitle(_("Ready to remove \"%s\"?") % self.service_name)
 		else:
 			self.updateService()
 
