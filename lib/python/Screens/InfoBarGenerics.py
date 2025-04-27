@@ -2608,7 +2608,7 @@ class SeekBar(Screen):
 		if skip < 0:
 			direction = -1
 			skip = abs(skip)
-		else
+		else:
 			direction = 1
 		return direction, skip
 
