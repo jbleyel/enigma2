@@ -32,6 +32,7 @@ from Components.TimerList import TimerList  # Deprecated!
 from Components.Timeshift import InfoBarTimeshift
 from Components.UsageConfig import defaultMoviePath, preferredInstantRecordPath, preferredTimerPath
 from Components.VolumeControl import VolumeControl
+from Components.Renderer.PositionGauge import PositionGauge
 from Components.Sources.Boolean import Boolean
 from Components.Sources.ServiceEvent import ServiceEvent
 from Components.Sources.StaticText import StaticText
@@ -2313,115 +2314,303 @@ class InfoBarRdsDecoder:
 		self.rds_display.show()
 
 
-class Seekbar(Screen):
+class SeekBar(Screen):
+	skin = """
+	<screen name="SeekBar" position="center,10" size="800,50" flags="wfNoBorder" resolution="1280,720">
+		<widget name="time" position="10,15" size="100,20" font="Regular;20" horizontalAlignment="right" transparent="1" verticalAlignment="center" />
+		<widget source="session.CurrentService" render="PositionGauge" position="120,15" size="560,20" foregroundColor="#0000007F" pointer="sliders/position_pointer.png:920,0" transparent="1">
+			<convert type="ServicePosition">Gauge</convert>
+		</widget>
+		<widget name="cursor" position="0,0" size="7,15" pixmap="sliders/position_arrow.png" alphatest="blend" transparent="1" zPosition="+1" />
+		<widget name="length" position="690,15" size="100,20" font="Regular;20" transparent="1" verticalAlignment="center" />
+	</screen>"""
+
+	ARROW_SYMMETRICAL = "s"
+	ARROW_DEFINED = "d"
+	SKIP_SYMMETRICAL = "s"
+	SKIP_DEFINED = "d"
+	SKIP_PERCENTAGE = "p"
+
 	def __init__(self, session, fwd):
-		Screen.__init__(self, session, enableHelp=True)
-		self.setTitle(_("Seek"))
+		def sensibilityHelp(button):
+			match button:
+				case "UP":
+					helpText = _("Skip forward %s%%") % f"{config.seek.sensibilityVertical.value:.1f}"
+				case "LEFT":
+					helpText = _("Skip backward %s%%") % f"{config.seek.sensibilityHorizontal.value:.1f}"
+				case "OK":
+					helpText = _("Skip forward %s%%") % f"{config.seek.sensibilityVertical.value:.1f}"
+				case "RIGHT":
+					helpText = _("Skip forward %s%%") % f"{config.seek.sensibilityHorizontal.value:.1f}"
+				case "DOWN":
+					helpText = _("Skip backward %s%%") % f"{config.seek.sensibilityVertical.value:.1f}"
+			return helpText
+
+		def symmetricalHelp(button):
+			match button:
+				case 1:
+					value = config.seek.symmetrical[13].value
+					helpText = ngettext("Skip backward %d second", "Skip backward %d seconds", value) % value
+				case 3:
+					value = config.seek.symmetrical[13].value
+					helpText = ngettext("Skip forward %d second", "Skip forward %d seconds", value) % value
+				case 4:
+					value = config.seek.symmetrical[46].value
+					helpText = ngettext("Skip backward %d second", "Skip backward %d seconds", value) % value
+				case 6:
+					value = config.seek.symmetrical[46].value
+					helpText = ngettext("Skip forward %d second", "Skip forward %d seconds", value) % value
+				case 7:
+					value = config.seek.symmetrical[79].value
+					helpText = ngettext("Skip backward %d second", "Skip backward %d seconds", value) % value
+				case 9:
+					value = config.seek.symmetrical[79].value
+					helpText = ngettext("Skip forward %d second", "Skip forward %d seconds", value) % value
+			return helpText
+
+		def definedHelp(button):
+			value = config.seek.defined[button].value
+			if value < 0:
+				value = abs(value)
+				helpText = ngettext("Skip backward %d second", "Skip backward %d seconds", value) % value
+			elif value > 0:
+				helpText = ngettext("Skip forward %d second", "Skip forward %d seconds", value) % value
+			else:
+				helpText = _("Skip for '%s' is disabled") % button
+			return helpText
+
+		def percentageHelp(button):
+			if button:
+				helpText = _("Skip to %s0%% position (Add %s%% on second press)") % (button, button)
+			else:
+				# helpText = _("Skip to 0% (start) position (Skip to 100% on second press)")  # Make 00 equal to 100%.
+				helpText = _("Skip to 0% (start) position")
+			return helpText
+
+		Screen.__init__(self, session, mandatoryWidgets=["length"], enableHelp=True)
 		self.fwd = fwd
 		self.percent = 0.0
 		self.length = None
-		self.first_digit = True
-		self.digit_time = 0.0
 		service = session.nav.getCurrentService()
 		if service:
 			self.seek = service.seek()
 			if self.seek:
 				self.length = self.seek.getLength()
 				position = self.seek.getPlayPosition()
+				print(f"[InfoBarGenerics] SeekBar DEBUG: Length={self.length}, Position={position}.")
 				if self.length and position and int(self.length[1]) > 0:
 					if int(position[1]) > 0:
 						self.percent = float(position[1]) * 100.0 / float(self.length[1])
 				else:
 					self.close()
-		self["cursor"] = MovingPixmap()
-		#self["PositionGauge"] = Label() # TODO BW
 		self["time"] = Label()
-		self["actions"] = HelpableNumberActionMap(self, ["WizardActions", "DirectionActions", "NumberActions"], {
-			"back": (self.exit, _("Cancel selection")),
-			"ok": (self.keyOK, _("Seek forward long")),
-			"left": (self.keyLeft, _("Seek back short")),
-			"right": (self.keyRight, _("Seek forward  short")),
-			"1": (self.keyNumberGlobal, _("Skip to 10% position; add 1%")),
-			"2": (self.keyNumberGlobal, _("Skip to 20% position; add 2%")),
-			"3": (self.keyNumberGlobal, _("Skip to 30% position; add 3%")),
-			"4": (self.keyNumberGlobal, _("Skip to 40% position; add 4%")),
-			"5": (self.keyNumberGlobal, _("Skip to 50% position; add 5%")),
-			"6": (self.keyNumberGlobal, _("Skip to 60% position; add 6%")),
-			"7": (self.keyNumberGlobal, _("Skip to 70% position; add 7%")),
-			"8": (self.keyNumberGlobal, _("Skip to 80% position; add 8%")),
-			"9": (self.keyNumberGlobal, _("Skip to 90% position; add 9%")),
-			"0": (self.keyNumberGlobal, _("Skip to 0% position (start)")),
-		}, prio=-1, description=_("Seek Actions"))
+		self["cursor"] = MovingPixmap()
+		self["length"] = Label()
+		self["actions"] = HelpableActionMap(self, ["CancelActions"], {
+			"cancel": (self.keyCancel, _("Close SeekBar"))
+		}, prio=0, description=_("SeekBar Actions"))
+		match config.seek.arrowSkipMode.value:
+			case self.SKIP_SYMMETRICAL:
+				self["arrowActions"] = HelpableActionMap(self, ["OkActions", "NavigationActions"], {
+					"ok": (self.keyOK, sensibilityHelp("UP")),  # This should go or do something more appropriate.
+					"up": (self.keyUp, sensibilityHelp("UP")),
+					"left": (self.keyLeft, sensibilityHelp("LEFT")),
+					"right": (self.keyRight, sensibilityHelp("RIGHT")),
+					"down": (self.keyDown, sensibilityHelp("DOWN"))
+				}, prio=0, description=_("SeekBar Actions"))
+			case self.ARROW_DEFINED:
+				self["arrowActions"] = HelpableActionMap(self, ["OkActions", "NavigationActions"], {
+					"ok": (self.keyOK, definedHelp(_("OK"))),
+					"up": (self.keyUp, definedHelp(_("UP"))),
+					"left": (self.keyLeft, definedHelp(_("LEFT"))),
+					"right": (self.keyRight, definedHelp(_("RIGHT"))),
+					"down": (self.keyDown, definedHelp(_("DOWN")))
+				}, prio=0, description=_("SeekBar Actions"))
+		match config.seek.numberSkipMode.value:
+			case self.SKIP_SYMMETRICAL:
+				self["numberActions"] = HelpableNumberActionMap(self, ["NumberActions"], {
+					"1": (self.keyNumberGlobal, symmetricalHelp(1)),
+					"3": (self.keyNumberGlobal, symmetricalHelp(3)),
+					"4": (self.keyNumberGlobal, symmetricalHelp(4)),
+					"6": (self.keyNumberGlobal, symmetricalHelp(6)),
+					"7": (self.keyNumberGlobal, symmetricalHelp(7)),
+					"9": (self.keyNumberGlobal, symmetricalHelp(9))
+				}, prio=0, description=_("SeekBar Actions"))
+			case self.SKIP_DEFINED:
+				self["numberActions"] = HelpableNumberActionMap(self, ["NumberActions"], {
+					"1": (self.keyNumberGlobal, definedHelp(1)),
+					"2": (self.keyNumberGlobal, definedHelp(2)),
+					"3": (self.keyNumberGlobal, definedHelp(3)),
+					"4": (self.keyNumberGlobal, definedHelp(4)),
+					"5": (self.keyNumberGlobal, definedHelp(5)),
+					"6": (self.keyNumberGlobal, definedHelp(6)),
+					"7": (self.keyNumberGlobal, definedHelp(7)),
+					"8": (self.keyNumberGlobal, definedHelp(8)),
+					"9": (self.keyNumberGlobal, definedHelp(9)),
+					"0": (self.keyNumberGlobal, definedHelp(0))
+				}, prio=0, description=_("SeekBar Actions"))
+			case self.SKIP_PERCENTAGE:
+				self["numberActions"] = HelpableNumberActionMap(self, ["NumberActions"], {
+					"1": (self.keyNumberGlobal, percentageHelp(1)),
+					"2": (self.keyNumberGlobal, percentageHelp(2)),
+					"3": (self.keyNumberGlobal, percentageHelp(3)),
+					"4": (self.keyNumberGlobal, percentageHelp(4)),
+					"5": (self.keyNumberGlobal, percentageHelp(5)),
+					"6": (self.keyNumberGlobal, percentageHelp(6)),
+					"7": (self.keyNumberGlobal, percentageHelp(7)),
+					"8": (self.keyNumberGlobal, percentageHelp(8)),
+					"9": (self.keyNumberGlobal, percentageHelp(9)),
+					"0": (self.keyNumberGlobal, percentageHelp(0))
+				}, prio=0, description=_("SeekBar Actions"))
+		self.gaugeX = 0
+		self.gaugeY = 0
+		self.gaugeW = 0
+		self.gaugeH = 0
+		self.cursorW = 0
+		self.cursorH = 0
 		self.cursorTimer = eTimer()
 		self.cursorTimer.callback.append(self.updateCursor)
-		self.cursorTimer.start(200, False)
-		#self.onLayoutFinish.append(self.__layoutFinished) # TODO BW
-
-	def __layoutFinished(self):
-		self.cursor_y = self["cursor"].instance.position().y()
-		if hasattr(self["PositionGauge"].instance, "position") and self["PositionGauge"].instance.position().x() > 0:
-			self.PositionGauge_x = self["PositionGauge"].instance.position().x()
-		else:
-			self.PositionGauge_x = 145
-		if hasattr(self["PositionGauge"].instance, "size") and self["PositionGauge"].instance.size().width() > 0:
-			self.PositionGauge_w = self["PositionGauge"].instance.size().width()
-			self.PositionGauge_w = float(self.PositionGauge_w) / 100.0 - 0.2
-		else:
-			self.PositionGauge_w = 2.7
+		self.cursorTimer.start(250)  # This is a auto repeating timer.
+		self.firstDigit = True
+		self.digitTime = 0.0
+		self.onShown.append(self.screenShown)
 
 	def updateCursor(self):
 		if self.length:
-			#x = self.PositionGauge_x + int(self.PositionGauge_w * self.percent) # TODO BW
-			#self["cursor"].moveTo(x, self.cursor_y, 1) # TODO BW
-			screenwidth = getDesktop(0).size().width()
-			if screenwidth and screenwidth == 1920:
-				x = 218 + int(4.05 * self.percent)
-				self["cursor"].moveTo(x, 23, 1)
-			else:
-				x = 145 + int(2.7 * self.percent)
-				self["cursor"].moveTo(x, 15, 1)
+			# length = float(self.seek.getLength()[1]) / 90000.0
+			# time = int(length * self.percent / 100.0)
+			# self["time"].setText(f"{time // 60}:{time % 60:02d}")
+			# cursorX = self.gaugeX + int(self.gaugeW * self.percent / 100.0) - self.cursorC
+			# self["cursor"].moveTo(cursorX, self.cursorY, 1)
+			# self["cursor"].startMoving()
+			# length = int(length)
+			# self["length"].setText(f"{length // 60}:{length % 60:02d}")
+			time = self.seek.getPlayPosition()[1] // 90000
+			self["time"].setText(f"{time // 60}:{time % 60:02d}")
+			cursorX = self.gaugeX + (self.seek.getPlayPosition()[1] * self.gaugeW / self.seek.getLength()[1]) - self.cursorC
+			self["cursor"].moveTo(cursorX, self.cursorY, 1)
 			self["cursor"].startMoving()
-			pts = int(float(self.length[1]) / 100.0 * self.percent)
-			self["time"].setText("%d:%02d" % ((pts / 60 / 90000), ((pts / 90000) % 60)))
+			length = self.seek.getLength()[1] // 90000
+			self["length"].setText(f"{length // 60}:{length % 60:02d}")
 
-	def exit(self):
+	def screenShown(self):
+		for component in self.activeComponents:
+			if isinstance(component, PositionGauge):
+				for attribute, value in component.skinAttributes:
+					match attribute:
+						case "position":
+							self.gaugeX = value[0]
+							self.gaugeY = value[1]
+						case "size":
+							self.gaugeW = value[0]
+							self.gaugeH = value[1]
+				break
+		for attribute, value in self["cursor"].skinAttributes:
+			if attribute == "size":
+				self.cursorW = value[0]
+				self.cursorH = value[1]
+				self.cursorC = (self.cursorW - 1) // 2
+				self.cursorY = self.gaugeY + (self.gaugeH // 2) - self.cursorH
+				break
+
+	def keyCancel(self):
 		self.cursorTimer.stop()
 		self.close()
 
 	def keyOK(self):
-		if self.length:
-			self.seek.seekTo(int(float(self.length[1]) / 100.0 * self.percent))
-			self.exit()
+		if config.seek.arrowSkipMode.value == "s":
+			if self.length:
+				self.seek.seekTo(int(float(self.length[1]) / 100.0 * self.percent))
+		else:
+			self.seek.seekRelative(self.adjustSkip(config.seek.defined["OK"].value))
+		self.keyCancel()
+
+	def keyUp(self):
+		if config.seek.arrowSkipMode.value == "s":
+			self.percent += config.seek.sensibilityVertical.value
+			if self.percent > 100.0:
+				self.percent = 100.0
+			self.firstDigit = True
+		else:
+			self.seek.seekRelative(self.adjustSkip(config.seek.defined["UP"].value))
 
 	def keyLeft(self):
-		self.percent -= float(config.seek.sensibility.value) / 10.0
-		if self.percent < 0.0:
-			self.percent = 0.0
-		self.first_digit = True
+		if config.seek.arrowSkipMode.value == "s":
+			self.percent -= config.seek.sensibilityHorizontal.value
+			if self.percent < 0.0:
+				self.percent = 0.0
+			self.firstDigit = True
+		else:
+			self.seek.seekRelative(self.adjustSkip(config.seek.defined["LEFT"].value))
 
 	def keyRight(self):
-		self.percent += float(config.seek.sensibility.value) / 10.0
-		if self.percent > 100.0:
-			self.percent = 100.0
-		self.first_digit = True
+		if config.seek.arrowSkipMode.value == "s":
+			self.percent += config.seek.sensibilityHorizontal.value
+			if self.percent > 100.0:
+				self.percent = 100.0
+			self.firstDigit = True
+		else:
+			self.seek.seekRelative(self.adjustSkip(config.seek.defined["RIGHT"].value))
+
+	def keyDown(self):
+		if config.seek.arrowSkipMode.value == "s":
+			self.percent -= config.seek.sensibilityVertical.value
+			if self.percent < 0.0:
+				self.percent = 0.0
+			self.firstDigit = True
+		else:
+			self.seek.seekRelative(self.adjustSkip(config.seek.defined["DOWN"].value))
 
 	def keyNumberGlobal(self, number):
-		now = time()
-		if now - self.digit_time >= 1.0:
-			self.first_digit = True
-		self.digit_time = now
-		if self.first_digit:
-			self.percent = min(max(float(number) * 10.0, 0), 90)
-			self.first_digit = False
-		else:
-			self.percent += number
-			self.first_digit = True
+		match config.seek.numberSkipMode.value:
+			case self.SKIP_SYMMETRICAL:
+				match number:
+					case 1:
+						direction = -1
+						skip = config.seek.defined[13].value * 90000
+					case 3:
+						direction = 1
+						skip = config.seek.defined[13].value * 90000
+					case 4:
+						direction = -1
+						skip = config.seek.defined[46].value * 90000
+					case 6:
+						direction = 1
+						skip = config.seek.defined[46].value * 90000
+					case 7:
+						direction = -1
+						skip = config.seek.defined[79].value * 90000
+					case 9:
+						direction = 1
+						skip = config.seek.defined[79].value * 90000
+				self.seek.seekRelative(direction, skip)
+			case self.SKIP_DEFINED:
+				self.seek.seekRelative(self.adjustSkip(config.seek.defined[number].value))
+			case self.SKIP_PERCENTAGE:
+				now = time()
+				if now - self.digitTime >= 1.0:  # Second percentage digit must be pressed within 1 second else data entry resets.
+					self.firstDigit = True
+				self.digitTime = now
+				if self.firstDigit:
+					self.percent = float(number) * 10.0
+					self.firstDigit = False
+				else:
+					# if number:  # Make 00 equal to 100%.
+					# 	self.percent += float(number)
+					# else:
+					# 	self.percent = 100.0
+					self.percent += float(number)
+					self.firstDigit = True
+				self.seek.seekTo(int(float(self.seek.getLength()[1]) * self.percent / 100.0))
 
-		#sel = self["config"].getCurrent()[1]
-		#if sel == self.positionEntry:
-		#	self.percent = float(number) * 10.0
-		#else:
-		#	ConfigListScreen.keyNumberGlobal(self, number)
+	def adjustSkip(self, skip):
+		skip *= 90000
+		if skip < 0:
+			direction = -1
+			skip = abs(skip)
+		else
+			direction = 1
+		return direction, skip
 
 
 class InfoBarSeek:
@@ -2931,13 +3120,13 @@ class InfoBarSeek:
 
 	def seekFwdManual(self, fwd=True):
 		if config.seek.baractivation.value == "leftright":
-			self.session.open(Seekbar, fwd)
+			self.session.open(SeekBar, fwd)
 		else:
 			self.session.openWithCallback(self.fwdSeekTo, MinuteInput)
 
 	def seekBackManual(self, fwd=False):
 		if config.seek.baractivation.value == "leftright":
-			self.session.open(Seekbar, fwd)
+			self.session.open(SeekBar, fwd)
 		else:
 			self.session.openWithCallback(self.rwdSeekTo, MinuteInput)
 
@@ -2947,13 +3136,13 @@ class InfoBarSeek:
 			return
 		else:
 			if config.seek.baractivation.value == "leftright":
-				self.session.open(Seekbar, fwd)
+				self.session.open(SeekBar, fwd)
 			else:
 				self.session.openWithCallback(self.fwdSeekTo, MinuteInput)
 
 	def seekFwdSeekbar(self, fwd=True):
 		if not config.seek.baractivation.value == "leftright":
-			self.session.open(Seekbar, fwd)
+			self.session.open(SeekBar, fwd)
 		else:
 			self.session.openWithCallback(self.fwdSeekTo, MinuteInput)
 
@@ -2962,7 +3151,7 @@ class InfoBarSeek:
 
 	def seekBackSeekbar(self, fwd=False):
 		if not config.seek.baractivation.value == "leftright":
-			self.session.open(Seekbar, fwd)
+			self.session.open(SeekBar, fwd)
 		else:
 			self.session.openWithCallback(self.rwdSeekTo, MinuteInput)
 
