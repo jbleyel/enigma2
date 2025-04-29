@@ -1467,12 +1467,25 @@ def InitUsageConfig():
 	config.seek.defined[0] = ConfigSelectionNumber(default=300, min=-1800, max=1800, stepwidth=1, wraparound=True)
 	config.seek.defined["UP"] = ConfigSelectionNumber(default=180, min=-1800, max=1800, stepwidth=1, wraparound=True)
 	config.seek.defined["LEFT"] = ConfigSelectionNumber(default=-10, min=-1800, max=1800, stepwidth=1, wraparound=True)
-	config.seek.defined["OK"] = ConfigSelectionNumber(default=300, min=-1800, max=1800, stepwidth=1, wraparound=True)
 	config.seek.defined["RIGHT"] = ConfigSelectionNumber(default=15, min=-1800, max=1800, stepwidth=1, wraparound=True)
 	config.seek.defined["DOWN"] = ConfigSelectionNumber(default=-120, min=-1800, max=1800, stepwidth=1, wraparound=True)
-	config.seek.selfdefined_13 = ConfigSelectionNumber(default=15, min=1, max=300, stepwidth=1, wraparound=True)
-	config.seek.selfdefined_46 = ConfigSelectionNumber(default=60, min=1, max=600, stepwidth=1, wraparound=True)
-	config.seek.selfdefined_79 = ConfigSelectionNumber(default=300, min=1, max=1200, stepwidth=1, wraparound=True)
+	config.seek.selfdefined_13 = ConfigNumber(default=15)
+	config.seek.selfdefined_46 = ConfigNumber(default=60)
+	config.seek.selfdefined_79 = ConfigNumber(default=300)
+
+	def updateLegacy(configElement):
+		match configElement:
+			case config.seek.defined[13]:
+				config.seek.selfdefined_13.value = configElement.value
+			case config.seek.defined[46]:
+				config.seek.selfdefined_46.value = configElement.value
+			case config.seek.defined[79]:
+				config.seek.selfdefined_79.value = configElement.value
+
+	config.seek.defined[13].addNotifier(updateLegacy)
+	config.seek.defined[46].addNotifier(updateLegacy)
+	config.seek.defined[79].addNotifier(updateLegacy)
+
 	config.seek.speeds_forward = ConfigSet(default=[2, 4, 8, 16, 32, 64, 128], choices=[2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128])
 	config.seek.speeds_backward = ConfigSet(default=[2, 4, 8, 16, 32, 64, 128], choices=[1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128])
 	config.seek.speeds_slowmotion = ConfigSet(default=[2, 4, 8], choices=[2, 4, 6, 8, 12, 16, 25])

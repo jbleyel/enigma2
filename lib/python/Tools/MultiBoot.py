@@ -28,7 +28,7 @@ STARTUP_ANDROID = "STARTUP_ANDROID"
 STARTUP_ANDROID_LINUXSE = "STARTUP_ANDROID_LINUXSE"
 STARTUP_RECOVERY = "STARTUP_RECOVERY"
 STARTUP_BOXMODE = "BOXMODE"  # This is known as bootCode in this code.
-BOOT_DEVICE_LIST = ("/dev/mmcblk0p1", "/dev/mmcblk1p1", "/dev/mmcblk0p3", "/dev/mmcblk0p4", "/dev/mtdblock2", "/dev/block/by-name/bootoptions")
+BOOT_DEVICE_LIST = ("/dev/mmcblk0p1", "/dev/mmcblk1p1", "/dev/mmcblk0p3", "/dev/mmcblk0p4", "/dev/mtdblock2", "/dev/block/by-name/bootoptions", "/dev/block/by-name/others")
 BOOT_DEVICE_LIST_VUPLUS = ("/dev/mmcblk0p4", "/dev/mmcblk0p7", "/dev/mmcblk0p9")  # Kexec kernel Vu+ MultiBoot.
 
 
@@ -442,7 +442,7 @@ class MultiBootClass():
 				compileDate = f"{compileDate[0:4]}-{compileDate[4:6]}-{compileDate[6:8]}"
 				version = str(info.get("version"))
 				if "." not in version and "-" not in version and version.isdigit():
-					version = f"{int(version[0:3])}.{version[3:4]}.{version[4:6]}" if len(version) == 18 else f"{int(version[0:2])}.{int(version[3:5])}"
+					version = f"{int(version[0:2])}.{version[2:3]}.{version[3:5]}" if len(version) == 17 else f"{int(version[0:2])}.{int(version[3:5])}"
 				self.imageList[self.slotCode]["detection"] = "Found an image version file"
 				creator = info.get("creator")
 				if creator is not None:
@@ -742,6 +742,18 @@ class MultiBootClass():
 		else:
 			rmdir(self.tempDir)
 			self.callback(0)
+
+	def isFat32(self, device):
+		try:
+			with open(device, "rb") as fd:
+				bootSector = fd.read(512)
+				fsType = bootSector[82:90].decode("ascii", errors="ignore").strip()
+				if fsType == "FAT32":
+					return True
+				else:
+					return int.from_bytes(bootSector[36:40], "little") != 0
+		except Exception:
+			return False
 
 
 MultiBoot = MultiBootClass()

@@ -693,3 +693,102 @@ arg=${bootargs} logo=osd0,loaded,0x7f800000 vout=1080p50hz,enable hdmimode=1080p
 			ACTION_SELECT: _("Select Device"),
 			ACTION_CREATE: _("Create Slots")
 		}.get(self.green, _("Invalid")))
+
+
+class ChkrootInit(Screen):
+	skin = """
+	<screen name="ChkrootInit" title="Chkroot MultiBoot Manager" position="center,center" size="900,600" resolution="1280,720">
+		<widget name="description" position="0,0" size="e,e-50" font="Regular;20" />
+		<widget source="key_red" render="Label" position="0,e-40" size="180,40" backgroundColor="key_red" conditional="key_red" font="Regular;20" foregroundColor="key_text" halign="center" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_green" render="Label" position="190,e-40" size="180,40" backgroundColor="key_green" conditional="key_green" font="Regular;20" foregroundColor="key_text" halign="center" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_help" render="Label" position="e-80,e-40" size="80,40" backgroundColor="key_back" conditional="key_help" font="Regular;20" foregroundColor="key_text" halign="center" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+	</screen>"""
+
+	def __init__(self, session, *args):
+		Screen.__init__(self, session, enableHelp=True)
+		self.skinName = "KexecInit"
+		self.setTitle(_("Chkroot MultiBoot Manager"))
+		self["key_red"] = StaticText()
+		self["key_green"] = StaticText()
+		self["description"] = Label()
+		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
+			"ok": (self.close, _("Close the Chkroot MultiBoot Manager")),
+			"cancel": (self.close, _("Close the Chkroot MultiBoot Manager")),
+			"red": (self.disableChkroot, _("Disable the MultiBoot option")),
+			"green": (self.rootInit, _("Start the Chkroot initialization"))
+		}, prio=-1, description=_("Chkroot Manager Actions"))
+		self["key_red"].setText(_("Disable Chkroot"))
+		self["key_green"].setText(_("Initialize"))
+		self.descriptionSuffix = _("The %s %s will reboot within 1 seconds.") % getBoxDisplayName()
+		self["description"].setText("%s\n\n%s" % (_("Press GREEN to enable MultiBoot!"), self.descriptionSuffix))
+
+	def rootInit(self):
+		def rootInitCallback(*args, **kwargs):
+			self.session.open(TryQuitMainloop, QUIT_REBOOT)
+
+		self["description"].setText("%s\n\n%s" % (_("Chkroot MultiBoot Initialization in progress!"), self.descriptionSuffix))
+		device = "/dev/block/by-name/others"
+		mountpoint = "/boot"
+		mtdRootFs = BoxInfo.getItem("mtdrootfs")
+		mtdKernel = BoxInfo.getItem("mtdkernel")
+		machinebuild = BoxInfo.getItem("machinebuild")
+		if machinebuild in ("dm900", "dm920", "dm820", "dm7080"):
+			with open("/sys/block/mmcblk0/mmcblk0p1/size", "r") as fd:
+				sectors = int(fd.read().strip())
+			if machinebuild in ("dm900", "dm920"):
+				rootMap = [
+					("mmcblk0p2", "linuxrootfs1"),
+					("mmcblk0p2", "linuxrootfs1")
+				]
+				rootMap.append(("mmcblk0p3" if sectors < 2097152 else "mmcblk0p2", "linuxrootfs2"))
+				rootMap.extend([
+					("mmcblk0p3", "linuxrootfs3"),
+					("mmcblk0p3", "linuxrootfs4"),
+					("mmcblk0p3", "linuxrootfs5"),
+					("mmcblk0p3", "linuxrootfs6")
+				])
+			else:
+				rootMap = [
+					("mmcblk0p1", "linuxrootfs1"),
+					("mmcblk0p1", "linuxrootfs1")
+				]
+				rootMap.append(("mmcblk0p2" if sectors < 2097152 else "mmcblk0p1", "linuxrootfs2"))
+				rootMap.extend([
+					("mmcblk0p2", "linuxrootfs3"),
+					("mmcblk0p2", "linuxrootfs4")
+				])
+		else:
+			rootMap = [
+				(mtdRootFs, "linuxrootfs1"),
+				(mtdRootFs, "linuxrootfs1"),
+				(mtdRootFs, "linuxrootfs2"),
+				(mtdRootFs, "linuxrootfs3"),
+				(mtdRootFs, "linuxrootfs4")
+			]
+
+		cmdList = [
+			f"mkfs.vfat -F 32 -n CHKROOT {device}",
+			f"mkdir -p {mountpoint}",
+			f"mount {device} {mountpoint}",
+		]
+
+		for idx, (rootdev, subdir) in enumerate(rootMap):
+			suffix = "" if idx == 0 else f"_{idx}"
+			cmdList.append(f"echo 'kernel=/dev/{mtdKernel} root=/dev/{rootdev} rootsubdir={subdir}' > {mountpoint}/STARTUP{suffix}")
+
+		cmdList.append(f"umount {mountpoint}")
+		Console().eBatch(cmdList, rootInitCallback, debug=True)
+
+	def disableChkroot(self):
+		def disableChkrootCallback(answer):
+			if answer:
+				fileWriteLine("/etc/.disableChkroot", "disabled\n", source=MODULE_NAME)
+				self.close()
+
+		self.session.openWithCallback(disableChkrootCallback, MessageBox, _("Permanently disable the MultiBoot option?"), simple=True)

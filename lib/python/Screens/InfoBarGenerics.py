@@ -2338,8 +2338,6 @@ class SeekBar(Screen):
 					helpText = _("Skip forward %s%%") % f"{config.seek.sensibilityVertical.value:.1f}"
 				case "LEFT":
 					helpText = _("Skip backward %s%%") % f"{config.seek.sensibilityHorizontal.value:.1f}"
-				case "OK":
-					helpText = _("Skip forward %s%%") % f"{config.seek.sensibilityVertical.value:.1f}"
 				case "RIGHT":
 					helpText = _("Skip forward %s%%") % f"{config.seek.sensibilityHorizontal.value:.1f}"
 				case "DOWN":
@@ -2348,24 +2346,13 @@ class SeekBar(Screen):
 
 		def symmetricalHelp(button):
 			match button:
-				case 1:
-					value = config.seek.symmetrical[13].value
-					helpText = ngettext("Skip backward %d second", "Skip backward %d seconds", value) % value
-				case 3:
-					value = config.seek.symmetrical[13].value
-					helpText = ngettext("Skip forward %d second", "Skip forward %d seconds", value) % value
-				case 4:
-					value = config.seek.symmetrical[46].value
-					helpText = ngettext("Skip backward %d second", "Skip backward %d seconds", value) % value
-				case 6:
-					value = config.seek.symmetrical[46].value
-					helpText = ngettext("Skip forward %d second", "Skip forward %d seconds", value) % value
-				case 7:
-					value = config.seek.symmetrical[79].value
-					helpText = ngettext("Skip backward %d second", "Skip backward %d seconds", value) % value
-				case 9:
-					value = config.seek.symmetrical[79].value
-					helpText = ngettext("Skip forward %d second", "Skip forward %d seconds", value) % value
+				case 1 | 3:
+					value = config.seek.defined[13].value
+				case 4 | 6:
+					value = config.seek.defined[46].value
+				case 7 | 9:
+					value = config.seek.defined[79].value
+			helpText = (ngettext("Skip backward %d second", "Skip backward %d seconds", value) if button % 3 else ngettext("Skip forward %d second", "Skip forward %d seconds", value)) % value
 			return helpText
 
 		def definedHelp(button):
@@ -2388,7 +2375,7 @@ class SeekBar(Screen):
 			return helpText
 
 		Screen.__init__(self, session, mandatoryWidgets=["length"], enableHelp=True)
-		self.fwd = fwd
+		self.initialPosition = None
 		self.percent = 0.0
 		self.length = None
 		service = session.nav.getCurrentService()
@@ -2397,6 +2384,7 @@ class SeekBar(Screen):
 			if self.seek:
 				self.length = self.seek.getLength()
 				position = self.seek.getPlayPosition()
+				self.initialPosition = position[1]
 				print(f"[InfoBarGenerics] SeekBar DEBUG: Length={self.length}, Position={position}.")
 				if self.length and position and int(self.length[1]) > 0:
 					if int(position[1]) > 0:
@@ -2406,13 +2394,13 @@ class SeekBar(Screen):
 		self["time"] = Label()
 		self["cursor"] = MovingPixmap()
 		self["length"] = Label()
-		self["actions"] = HelpableActionMap(self, ["CancelActions"], {
-			"cancel": (self.keyCancel, _("Close SeekBar"))
+		self["actions"] = HelpableActionMap(self, ["OkCancelActions"], {
+			"ok": (self.keyOK, "Close the SeekBar"),
+			"cancel": (self.keyCancel, _("Return to the starting point and close the SeekBar"))
 		}, prio=0, description=_("SeekBar Actions"))
 		match config.seek.arrowSkipMode.value:
 			case self.SKIP_SYMMETRICAL:
 				self["arrowActions"] = HelpableActionMap(self, ["OkActions", "NavigationActions"], {
-					"ok": (self.keyOK, sensibilityHelp("UP")),  # This should go or do something more appropriate.
 					"up": (self.keyUp, sensibilityHelp("UP")),
 					"left": (self.keyLeft, sensibilityHelp("LEFT")),
 					"right": (self.keyRight, sensibilityHelp("RIGHT")),
@@ -2420,7 +2408,6 @@ class SeekBar(Screen):
 				}, prio=0, description=_("SeekBar Actions"))
 			case self.ARROW_DEFINED:
 				self["arrowActions"] = HelpableActionMap(self, ["OkActions", "NavigationActions"], {
-					"ok": (self.keyOK, definedHelp(_("OK"))),
 					"up": (self.keyUp, definedHelp(_("UP"))),
 					"left": (self.keyLeft, definedHelp(_("LEFT"))),
 					"right": (self.keyRight, definedHelp(_("RIGHT"))),
@@ -2513,17 +2500,15 @@ class SeekBar(Screen):
 				self.cursorY = self.gaugeY + (self.gaugeH // 2) - self.cursorH
 				break
 
-	def keyCancel(self):
+	def keyOK(self):
 		self.cursorTimer.stop()
 		self.close()
 
-	def keyOK(self):
-		if config.seek.arrowSkipMode.value == "s":
-			if self.length:
-				self.seek.seekTo(int(float(self.length[1]) / 100.0 * self.percent))
-		else:
-			self.seek.seekRelative(self.adjustSkip(config.seek.defined["OK"].value))
-		self.keyCancel()
+	def keyCancel(self):
+		self.cursorTimer.stop()
+		if self.initialPosition is not None:
+			self.seek.seekTo(self.initialPosition)
+		self.close()
 
 	def keyUp(self):
 		if config.seek.arrowSkipMode.value == "s":
