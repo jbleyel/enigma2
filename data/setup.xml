@@ -655,9 +655,9 @@
 			<item level="2" text="Skip time for '%s' button" description="Set the skip time interval for the '%s' button." data="9">config.seek.defined[9]</item>
 			<item level="2" text="Skip time for '%s' button" description="Set the skip time interval for the '%s' button." data="0">config.seek.defined[0]</item>
 		</if>
-		<item level="2" text="Skip time for '%s'/'%s' buttons" description="Set the skip time interval for the '%s'/'%s' buttons." data="1,3">config.seek.selfdefined_13</item>
-		<item level="2" text="Skip time for '%s'/'%s' buttons" description="Set the skip time interval for the '%s'/'%s' buttons." data="4,6">config.seek.selfdefined_46</item>
-		<item level="2" text="Skip time for '%s'/'%s' buttons" description="Set the skip time interval for the '%s'/'%s' buttons." data="7,9">config.seek.selfdefined_79</item>
+		<item level="2" text="Legacy skip time for '%s'/'%s' buttons" description="Set the skip time interval for the '%s'/'%s' buttons." data="1,3">config.seek.selfdefined_13</item>
+		<item level="2" text="Legacy skip time for '%s'/'%s' buttons" description="Set the skip time interval for the '%s'/'%s' buttons." data="4,6">config.seek.selfdefined_46</item>
+		<item level="2" text="Legacy skip time for '%s'/'%s' buttons" description="Set the skip time interval for the '%s'/'%s' buttons." data="7,9">config.seek.selfdefined_79</item>
 		<item level="2" text="Fast forward speeds" description="Configure the possible fast forward speeds.">config.seek.speeds_forward</item>
 		<item level="2" text="Rewind speeds" description="Configure the possible rewind speeds.">config.seek.speeds_backward</item>
 		<item level="2" text="Slow motion speeds" description="Configure the slow motion speeds.">config.seek.speeds_slowmotion</item>

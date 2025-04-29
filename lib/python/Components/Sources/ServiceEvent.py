@@ -8,6 +8,7 @@ class ServiceEvent(Source):
 	def __init__(self):
 		Source.__init__(self)
 		self.service = None
+		self._event = None
 		self.bouquetName = ""
 
 	@cached
@@ -20,7 +21,10 @@ class ServiceEvent(Source):
 
 	@cached
 	def getCurrentEvent(self):
-		return self.service and self.info and self.info.getEvent(self.service)
+		if self._event is not None:
+			return self._event
+		else:
+			return self.service and self.info and self.info.getEvent(self.service)
 
 	event = property(getCurrentEvent)
 
@@ -30,8 +34,9 @@ class ServiceEvent(Source):
 
 	info = property(getInfo)
 
-	def newService(self, ref):
+	def newService(self, ref, event=None):
 		self.service = ref
+		self._event = event
 		if not ref:
 			self.changed((self.CHANGED_CLEAR,))
 		else:

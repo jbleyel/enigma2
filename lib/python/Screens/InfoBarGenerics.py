@@ -66,7 +66,7 @@ from Tools.Directories import SCOPE_CONFIG, SCOPE_SKINS, fileReadLines, fileWrit
 MODULE_NAME = __name__.split(".")[-1]
 
 AUDIO = False
-seek_withjumps_muted = False
+# seek_withjumps_muted = False
 jump_pts_adder = 0
 jump_last_pts = None
 jump_last_pos = None
@@ -2317,11 +2317,11 @@ class InfoBarRdsDecoder:
 class SeekBar(Screen):
 	skin = """
 	<screen name="SeekBar" position="center,10" size="800,50" flags="wfNoBorder" resolution="1280,720">
-		<widget name="time" position="10,15" size="100,20" font="Regular;20" horizontalAlignment="right" transparent="1" verticalAlignment="center" />
-		<widget source="session.CurrentService" render="PositionGauge" position="120,15" size="560,20" foregroundColor="#0000007F" pointer="sliders/position_pointer.png:920,0" transparent="1">
+		<widget name="target" position="10,15" size="100,20" font="Regular;20" horizontalAlignment="right" transparent="1" verticalAlignment="center" />
+		<widget source="session.CurrentService" render="PositionGauge" position="120,15" size="560,20" foregroundColor="#000000CF" pointer="sliders/position_pointer.png:545,0" transparent="1">
 			<convert type="ServicePosition">Gauge</convert>
 		</widget>
-		<widget name="cursor" position="0,0" size="7,15" pixmap="sliders/position_arrow.png" alphatest="blend" transparent="1" zPosition="+1" />
+		<widget name="cursor" position="0,0" size="7,30" pixmap="sliders/position_arrow.png" alphatest="blend" transparent="1" zPosition="+1" />
 		<widget name="length" position="690,15" size="100,20" font="Regular;20" transparent="1" verticalAlignment="center" />
 	</screen>"""
 
@@ -2375,23 +2375,7 @@ class SeekBar(Screen):
 			return helpText
 
 		Screen.__init__(self, session, mandatoryWidgets=["length"], enableHelp=True)
-		self.initialPosition = None
-		self.percent = 0.0
-		self.length = None
-		service = session.nav.getCurrentService()
-		if service:
-			self.seek = service.seek()
-			if self.seek:
-				self.length = self.seek.getLength()
-				position = self.seek.getPlayPosition()
-				self.initialPosition = position[1]
-				print(f"[InfoBarGenerics] SeekBar DEBUG: Length={self.length}, Position={position}.")
-				if self.length and position and int(self.length[1]) > 0:
-					if int(position[1]) > 0:
-						self.percent = float(position[1]) * 100.0 / float(self.length[1])
-				else:
-					self.close()
-		self["time"] = Label()
+		self["target"] = Label()
 		self["cursor"] = MovingPixmap()
 		self["length"] = Label()
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions"], {
@@ -2449,6 +2433,23 @@ class SeekBar(Screen):
 					"9": (self.keyNumberGlobal, percentageHelp(9)),
 					"0": (self.keyNumberGlobal, percentageHelp(0))
 				}, prio=0, description=_("SeekBar Actions"))
+		self.seekable = False
+		service = session.nav.getCurrentService()
+		if service:
+			self.seek = service.seek()
+			if not self.seek:
+				print("[InfoBarGenerics] SeekBar: The current service does not support seeking!")
+				self.close()
+			if self.seek.isCurrentlySeekable():
+				self.seekable = True
+		else:
+			print("[InfoBarGenerics] SeekBar: There is no current service so there is nothing to seek!")
+			self.close()
+		serviceReference = self.session.nav.getCurrentlyPlayingServiceReference()
+		self.length = self.seek.getLength()[1] if serviceReference and serviceReference.getPath() else None
+		self.eventTracker = ServiceEventTracker(screen=self, eventmap={
+			iPlayableService.evEOF: self.endOfFile
+		})
 		self.gaugeX = 0
 		self.gaugeY = 0
 		self.gaugeW = 0
@@ -2457,28 +2458,27 @@ class SeekBar(Screen):
 		self.cursorH = 0
 		self.cursorTimer = eTimer()
 		self.cursorTimer.callback.append(self.updateCursor)
-		self.cursorTimer.start(250)  # This is a auto repeating timer.
-		self.firstDigit = True
+		self.cursorTimer.start(250)  # This is a auto repeating timer to update the UI.
+		self.target = self.seek.getPlayPosition()[1]  # Set initial target position to the current media position.
+		self.start = self.target if self.seekable else None  # Remember the start position if we allow immediate media seeking.
 		self.digitTime = 0.0
+		self.firstDigit = True
 		self.onShown.append(self.screenShown)
 
+	def endOfFile(self):
+		self.cursorTimer.stop()
+		print("[InfoBarGenerics] SeekBar: The SeekBar playback has reached the end of file, exiting.")
+		self.close()
+		
 	def updateCursor(self):
-		if self.length:
-			# length = float(self.seek.getLength()[1]) / 90000.0
-			# time = int(length * self.percent / 100.0)
-			# self["time"].setText(f"{time // 60}:{time % 60:02d}")
-			# cursorX = self.gaugeX + int(self.gaugeW * self.percent / 100.0) - self.cursorC
-			# self["cursor"].moveTo(cursorX, self.cursorY, 1)
-			# self["cursor"].startMoving()
-			# length = int(length)
-			# self["length"].setText(f"{length // 60}:{length % 60:02d}")
-			time = self.seek.getPlayPosition()[1] // 90000
-			self["time"].setText(f"{time // 60}:{time % 60:02d}")
-			cursorX = self.gaugeX + (self.seek.getPlayPosition()[1] * self.gaugeW / self.seek.getLength()[1]) - self.cursorC
-			self["cursor"].moveTo(cursorX, self.cursorY, 1)
-			self["cursor"].startMoving()
-			length = self.seek.getLength()[1] // 90000
-			self["length"].setText(f"{length // 60}:{length % 60:02d}")
+		length = self.seek.getLength()[1] if self.length is None else self.length
+		target = self.target // 90000
+		self["target"].setText(f"{target // 60}:{target % 60:02d}")
+		cursorX = self.gaugeX + (self.target * self.gaugeW / length) - self.cursorC
+		self["cursor"].moveTo(cursorX, self.cursorY, 1)
+		self["cursor"].startMoving()
+		length //= 90000
+		self["length"].setText(f"{length // 60}:{length % 60:02d}")
 
 	def screenShown(self):
 		for component in self.activeComponents:
@@ -2497,105 +2497,78 @@ class SeekBar(Screen):
 				self.cursorW = value[0]
 				self.cursorH = value[1]
 				self.cursorC = (self.cursorW - 1) // 2
-				self.cursorY = self.gaugeY + (self.gaugeH // 2) - self.cursorH
+				self.cursorY = self.gaugeY + (self.gaugeH // 2) - (self.cursorH // 2)
 				break
 
 	def keyOK(self):
 		self.cursorTimer.stop()
+		self.seek.seekTo(self.target)
 		self.close()
 
 	def keyCancel(self):
 		self.cursorTimer.stop()
-		if self.initialPosition is not None:
-			self.seek.seekTo(self.initialPosition)
+		if self.seekable and self.start is not None:  # Restore the initial media position if we allowed immediate media seeking.
+			self.seek.seekTo(self.start)
 		self.close()
 
 	def keyUp(self):
-		if config.seek.arrowSkipMode.value == "s":
-			self.percent += config.seek.sensibilityVertical.value
-			if self.percent > 100.0:
-				self.percent = 100.0
-			self.firstDigit = True
-		else:
-			self.seek.seekRelative(self.adjustSkip(config.seek.defined["UP"].value))
+		self.target = self.sensibilityTarget(1, config.seek.sensibilityVertical.value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["UP"].value)
 
 	def keyLeft(self):
-		if config.seek.arrowSkipMode.value == "s":
-			self.percent -= config.seek.sensibilityHorizontal.value
-			if self.percent < 0.0:
-				self.percent = 0.0
-			self.firstDigit = True
-		else:
-			self.seek.seekRelative(self.adjustSkip(config.seek.defined["LEFT"].value))
+		self.target = self.sensibilityTarget(-1, config.seek.sensibilityHorizontal.value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["LEFT"].value)
 
 	def keyRight(self):
-		if config.seek.arrowSkipMode.value == "s":
-			self.percent += config.seek.sensibilityHorizontal.value
-			if self.percent > 100.0:
-				self.percent = 100.0
-			self.firstDigit = True
-		else:
-			self.seek.seekRelative(self.adjustSkip(config.seek.defined["RIGHT"].value))
+		self.target = self.sensibilityTarget(1, config.seek.sensibilityHorizontal.value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["RIGHT"].value)
 
 	def keyDown(self):
-		if config.seek.arrowSkipMode.value == "s":
-			self.percent -= config.seek.sensibilityVertical.value
-			if self.percent < 0.0:
-				self.percent = 0.0
-			self.firstDigit = True
-		else:
-			self.seek.seekRelative(self.adjustSkip(config.seek.defined["DOWN"].value))
+		self.target = self.sensibilityTarget(-1, config.seek.sensibilityVertical.value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["DOWN"].value)
 
 	def keyNumberGlobal(self, number):
 		match config.seek.numberSkipMode.value:
 			case self.SKIP_SYMMETRICAL:
 				match number:
-					case 1:
-						direction = -1
-						skip = config.seek.defined[13].value * 90000
-					case 3:
-						direction = 1
-						skip = config.seek.defined[13].value * 90000
-					case 4:
-						direction = -1
-						skip = config.seek.defined[46].value * 90000
-					case 6:
-						direction = 1
-						skip = config.seek.defined[46].value * 90000
-					case 7:
-						direction = -1
-						skip = config.seek.defined[79].value * 90000
-					case 9:
-						direction = 1
-						skip = config.seek.defined[79].value * 90000
-				self.seek.seekRelative(direction, skip)
+					case 1 | 3:
+						skip = config.seek.defined[13].value
+					case 4 | 6:
+						skip = config.seek.defined[46].value
+					case 7 | 9:
+						skip = config.seek.defined[79].value
+				direction = -1 if number % 3 else 1
+				self.target = self.updateTarget(skip * direction)
 			case self.SKIP_DEFINED:
-				self.seek.seekRelative(self.adjustSkip(config.seek.defined[number].value))
+				self.target = self.updateTarget(config.seek.defined[number].value)
 			case self.SKIP_PERCENTAGE:
 				now = time()
 				if now - self.digitTime >= 1.0:  # Second percentage digit must be pressed within 1 second else data entry resets.
 					self.firstDigit = True
 				self.digitTime = now
+				length = self.seek.getLength()[1] if self.length is None else self.length
 				if self.firstDigit:
-					self.percent = float(number) * 10.0
 					self.firstDigit = False
+					self.target = 0
+					self.target = self.updateTarget(float(length * number * 10) / 9000000.0)
 				else:
-					# if number:  # Make 00 equal to 100%.
-					# 	self.percent += float(number)
-					# else:
-					# 	self.percent = 100.0
-					self.percent += float(number)
 					self.firstDigit = True
-				self.seek.seekTo(int(float(self.seek.getLength()[1]) * self.percent / 100.0))
+					# if number == 0:  # Make 00 equal to 100%.
+					# 	number = 100
+					self.target = self.updateTarget(float(length * number) / 9000000.0)
 
-	def adjustSkip(self, skip):
-		skip *= 90000
-		if skip < 0:
-			direction = -1
-			skip = abs(skip)
-		else:
-			direction = 1
-		return direction, skip
+	def sensibilityTarget(self, direction, sensibility):
+		self.firstDigit = True
+		length = self.seek.getLength()[1] if self.length is None else self.length
+		skip = (direction * length * sensibility / 100.0) / 90000.0
+		return self.updateTarget(skip)
+
+	def updateTarget(self, skip):
+		target = self.target + int(skip * 90000)
+		if target < 0:
+			target = 0
+		length = self.seek.getLength()[1] if self.length is None else self.length
+		if target >= length:
+			self.endOfFile()
+		if self.seekable:
+			self.seek.seekTo(target)
+		return target
 
 
 class InfoBarSeek:
@@ -2749,11 +2722,11 @@ class InfoBarSeek:
 			self.activityTimer.start(int(config.seek.withjumps_repeat_ms.getValue()), False)
 			for c in self.onPlayStateChanged:
 				c(self.seekstate)
-		global seek_withjumps_muted
-		if seek_withjumps_muted and eDVBVolumecontrol.getInstance().isMuted(True):
-			print("[InfoBarGenerics] STILL MUTED AFTER FFWD/FBACK !!!!!!!! so we unMute")
-			seek_withjumps_muted = False
-			eDVBVolumecontrol.getInstance().volumeUnMute()
+		# global seek_withjumps_muted
+		# if seek_withjumps_muted and eDVBVolumecontrol.getInstance().isMuted(True):
+		# 	print("[InfoBarGenerics] STILL MUTED AFTER FFWD/FBACK !!!!!!!! so we unMute")
+		# 	seek_withjumps_muted = False
+		# 	eDVBVolumecontrol.getInstance().volumeUnMute()
 
 	def doActivityTimer(self):
 		if self.isSeekable():
@@ -2853,8 +2826,8 @@ class InfoBarSeek:
 		if self.seekAction != 0:
 			self.seekAction = 0
 			self.doPause(False)
-			global seek_withjumps_muted
-			seek_withjumps_muted = False
+			# global seek_withjumps_muted
+			# seek_withjumps_muted = False
 			return
 		if self.seekstate == self.SEEK_STATE_PLAY:
 			self.pauseService()
@@ -2977,8 +2950,8 @@ class InfoBarSeek:
 		if self.seekAction == 0:
 			self.LastseekAction = False
 			self.doPause(False)
-			global seek_withjumps_muted
-			seek_withjumps_muted = False
+			# global seek_withjumps_muted
+			# seek_withjumps_muted = False
 			self.setSeekState(self.SEEK_STATE_PLAY)
 
 	def isServiceTypeTS(self):
@@ -3005,8 +2978,8 @@ class InfoBarSeek:
 	def seekFwd_new(self):
 		self.LastseekAction = True
 		self.doPause(True)
-		global seek_withjumps_muted
-		seek_withjumps_muted = True
+		# global seek_withjumps_muted
+		# seek_withjumps_muted = True
 		if self.seekAction >= 0:
 			self.seekAction = self.getHigher(abs(self.seekAction), config.seek.speeds_forward.value) or config.seek.speeds_forward.value[-1]
 		else:
@@ -3019,8 +2992,8 @@ class InfoBarSeek:
 	def seekBack_new(self):
 		self.LastseekAction = True
 		self.doPause(True)
-		global seek_withjumps_muted
-		seek_withjumps_muted = True
+		# global seek_withjumps_muted
+		# seek_withjumps_muted = True
 		if self.seekAction <= 0:
 			self.seekAction = -self.getHigher(abs(self.seekAction), config.seek.speeds_backward.value) or -config.seek.speeds_backward.value[-1]
 		else:
@@ -3187,11 +3160,11 @@ class InfoBarSeek:
 	def __evEOF(self):
 		if self.seekstate == self.SEEK_STATE_EOF:
 			return
-		global seek_withjumps_muted
-		if seek_withjumps_muted and eDVBVolumecontrol.getInstance().isMuted():
-			print("[InfoBarGenerics] STILL MUTED AFTER FFWD/FBACK !!!!!!!! so we unMute")
-			seek_withjumps_muted = False
-			eDVBVolumecontrol.getInstance().volumeUnMute()
+		# global seek_withjumps_muted
+		# if seek_withjumps_muted and eDVBVolumecontrol.getInstance().isMuted():
+		# 	print("[InfoBarGenerics] STILL MUTED AFTER FFWD/FBACK !!!!!!!! so we unMute")
+		# 	seek_withjumps_muted = False
+		# 	eDVBVolumecontrol.getInstance().volumeUnMute()
 		# If we are seeking forward, we try to end up ~1s before the end, and pause there.
 		seekstate = self.seekstate
 		if self.seekstate != self.SEEK_STATE_PAUSE:

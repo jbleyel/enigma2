@@ -1474,17 +1474,21 @@ def InitUsageConfig():
 	config.seek.selfdefined_79 = ConfigNumber(default=300)
 
 	def updateLegacy(configElement):
-		match configElement:
-			case config.seek.defined[13]:
-				config.seek.selfdefined_13.value = configElement.value
-			case config.seek.defined[46]:
-				config.seek.selfdefined_46.value = configElement.value
-			case config.seek.defined[79]:
-				config.seek.selfdefined_79.value = configElement.value
+		if configElement == config.seek.defined[13]:
+			config.seek.selfdefined_13.value = configElement.value
+		elif configElement == config.seek.defined[46]:
+			config.seek.selfdefined_46.value = configElement.value
+		elif configElement == config.seek.defined[79]:
+			config.seek.selfdefined_79.value = configElement.value
+		print("[UsageConfig] updateLegacy seek.defined[13].value = %d" % config.seek.defined[13].value)
+		print("[UsageConfig] updateLegacy config.seek.selfdefined_13.value = %d" % config.seek.selfdefined_13.value)
 
 	config.seek.defined[13].addNotifier(updateLegacy)
 	config.seek.defined[46].addNotifier(updateLegacy)
 	config.seek.defined[79].addNotifier(updateLegacy)
+
+	print("[UsageConfig] seek.defined[13].value = %d" % config.seek.defined[13].value)
+	print("[UsageConfig] config.seek.selfdefined_13.value = %d" % config.seek.selfdefined_13.value)
 
 	config.seek.speeds_forward = ConfigSet(default=[2, 4, 8, 16, 32, 64, 128], choices=[2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128])
 	config.seek.speeds_backward = ConfigSet(default=[2, 4, 8, 16, 32, 64, 128], choices=[1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128])
