@@ -576,7 +576,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	m_gstdot = eSimpleConfig::getBool("config.crash.gstdot", false);
 	m_coverart = false;
 	m_subtitles_paused = false;
-	// eDebug("[eServiceMP3] construct!");
+	eDebug("[eServiceMP3] construct!");
 
 	const char *filename;
 	std::string filename_str;
@@ -586,6 +586,9 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		filename_str = m_ref.path.substr(0, pos);
 		filename = filename_str.c_str();
 		m_extra_headers = m_ref.path.substr(pos + 1);
+
+		eDebug("[eServiceMP3] filename_str %s", filename_str.c_str());
+		eDebug("[eServiceMP3] m_extra_headers %s", m_extra_headers.c_str());
 
 		pos = m_extra_headers.find("User-Agent=");
 		if (pos != std::string::npos)
@@ -597,6 +600,9 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			else
 				m_useragent = m_extra_headers.substr(hpos_start);
 		}
+
+		eDebug("[eServiceMP3] m_useragent %s", m_useragent.c_str());
+
 	}
 	else
 		filename = m_ref.path.c_str();
@@ -2947,7 +2953,7 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 				if (!name.empty() && !value.empty())
 				{
 					GValue header;
-					// eDebug("[eServiceMP3] setting extra-header '%s:%s'", name.c_str(), value.c_str());
+					eDebug("[eServiceMP3] setting extra-header '%s:%s'", name.c_str(), value.c_str());
 					memset(&header, 0, sizeof(GValue));
 					g_value_init(&header, G_TYPE_STRING);
 					g_value_set_string(&header, value.c_str());

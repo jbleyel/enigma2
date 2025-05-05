@@ -139,14 +139,20 @@ def InitUsageConfig():
 		("off", _("Off"))
 	])
 	config.usage.multibouquet = ConfigYesNo(default=True)
-	config.usage.maxchannelnumlen = ConfigSelection(default="4", choices=[(str(x), ngettext("%d Digit", "%d Digits", x) % x) for x in range(1, 6)])
-	config.usage.numzaptimeoutmode = ConfigSelection(default="standard", choices=[
-		("standard", _("Standard")),
-		("userdefined", _("User defined")),
-		("off", _("Off"))
+	config.usage.numberZapDigits = ConfigSelection(default=4, choices=[(x, ngettext("%d Digit", "%d Digits", x) % x) for x in range(1, 6)])
+	config.usage.numberZapDisplay = ConfigSelection(default="number", choices=[
+		("number", _("Number only")),
+		("name", _("Number and name")),
+		("picon", _("Number and picon")),
+		("both", _("Number, name and picon"))
 	])
-	config.usage.numzaptimeout1 = ConfigSlider(default=3000, increment=250, limits=(500, 5000))
-	config.usage.numzaptimeout2 = ConfigSlider(default=1000, increment=250, limits=(0, 5000))
+	config.usage.numberZapTimeoutFirst = ConfigSelection(default=3000, choices=[(x, ngettext("%.2f Second", "%.2f Seconds", x / 1000.0) % (x / 1000.0)) for x in range(500, 5001, 250)])
+	config.usage.numberZapTimeoutOther = ConfigSelection(default=1000, choices=[(x, ngettext("%.2f Second", "%.2f Seconds", x / 1000.0) % (x / 1000.0)) for x in range(0, 5001, 250)])
+	config.usage.numberZapTimeouts = ConfigSelection(default="default", choices=[
+		("off", _("Off")),
+		("default", _("Default")),
+		("user", _("User defined"))
+	])
 	config.usage.numzappicon = ConfigYesNo(default=False)
 	config.usage.use_pig = ConfigYesNo(default=False)
 	config.usage.update_available = NoSave(ConfigYesNo(default=False))
@@ -1442,7 +1448,8 @@ def InitUsageConfig():
 	])
 	config.seek.sensibilityHorizontal = ConfigSelection(default=1.0, choices=[(x, f"{x:.1f}%") for x in [0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0]])
 	config.seek.sensibilityVertical = ConfigSelection(default=2.0, choices=[(x, f"{x:.1f}%") for x in [0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0]])
-	config.seek.arrowSkipMode = ConfigSelection(default="s", choices=[
+	config.seek.arrowSkipMode = ConfigSelection(default="t", choices=[
+		("t", _("Traditional")),
 		("s", _("Symmetrical skips")),
 		("d", _("Defined skips"))
 	])
@@ -1469,26 +1476,32 @@ def InitUsageConfig():
 	config.seek.defined["LEFT"] = ConfigSelectionNumber(default=-10, min=-1800, max=1800, stepwidth=1, wraparound=True)
 	config.seek.defined["RIGHT"] = ConfigSelectionNumber(default=15, min=-1800, max=1800, stepwidth=1, wraparound=True)
 	config.seek.defined["DOWN"] = ConfigSelectionNumber(default=-120, min=-1800, max=1800, stepwidth=1, wraparound=True)
-	config.seek.selfdefined_13 = ConfigNumber(default=15)
-	config.seek.selfdefined_46 = ConfigNumber(default=60)
-	config.seek.selfdefined_79 = ConfigNumber(default=300)
+	config.seek.defined["CUT_13"] = ConfigSelectionNumber(default=10, min=-1800, max=1800, stepwidth=1, wraparound=True)
+	config.seek.defined["CUT_46"] = ConfigSelectionNumber(default=30, min=-1800, max=1800, stepwidth=1, wraparound=True)
+	config.seek.defined["CUT_79"] = ConfigSelectionNumber(default=90, min=-1800, max=1800, stepwidth=1, wraparound=True)
+	config.seek.defined["CUT_UP"] = ConfigSelectionNumber(default=300, min=-600, max=600, stepwidth=1, wraparound=True)
+	config.seek.defined["CUT_LEFT"] = ConfigSelectionNumber(default=-1, min=-600, max=600, stepwidth=1, wraparound=True)
+	config.seek.defined["CUT_RIGHT"] = ConfigSelectionNumber(default=1, min=-600, max=600, stepwidth=1, wraparound=True)
+	config.seek.defined["CUT_DOWN"] = ConfigSelectionNumber(default=-300, min=-600, max=600, stepwidth=1, wraparound=True)
+	config.seek.sensibility = ConfigSelectionNumber(min=1, max=10, stepwidth=1, default=10, wraparound=True)
+	config.seek.selfdefined_13 = ConfigSelectionNumber(min=1, max=300, stepwidth=1, default=15, wraparound=True)
+	config.seek.selfdefined_46 = ConfigSelectionNumber(min=1, max=600, stepwidth=1, default=60, wraparound=True)
+	config.seek.selfdefined_79 = ConfigSelectionNumber(min=1, max=1200, stepwidth=1, default=300, wraparound=True)
+#	config.seek.selfdefined_13 = ConfigNumber(default=15)
+#	config.seek.selfdefined_46 = ConfigNumber(default=60)
+#	config.seek.selfdefined_79 = ConfigNumber(default=300)
 
-	def updateLegacy(configElement):
-		if configElement == config.seek.defined[13]:
-			config.seek.selfdefined_13.value = configElement.value
-		elif configElement == config.seek.defined[46]:
-			config.seek.selfdefined_46.value = configElement.value
-		elif configElement == config.seek.defined[79]:
-			config.seek.selfdefined_79.value = configElement.value
-		print("[UsageConfig] updateLegacy seek.defined[13].value = %d" % config.seek.defined[13].value)
-		print("[UsageConfig] updateLegacy config.seek.selfdefined_13.value = %d" % config.seek.selfdefined_13.value)
-
-	config.seek.defined[13].addNotifier(updateLegacy)
-	config.seek.defined[46].addNotifier(updateLegacy)
-	config.seek.defined[79].addNotifier(updateLegacy)
-
-	print("[UsageConfig] seek.defined[13].value = %d" % config.seek.defined[13].value)
-	print("[UsageConfig] config.seek.selfdefined_13.value = %d" % config.seek.selfdefined_13.value)
+#	def updateLegacy(configElement):
+#		if configElement == config.seek.defined[13]:
+#			config.seek.selfdefined_13.value = configElement.value
+#		elif configElement == config.seek.defined[46]:
+#			config.seek.selfdefined_46.value = configElement.value
+#		elif configElement == config.seek.defined[79]:
+#			config.seek.selfdefined_79.value = configElement.value
+#
+#	config.seek.defined[13].addNotifier(updateLegacy)
+#	config.seek.defined[46].addNotifier(updateLegacy)
+#	config.seek.defined[79].addNotifier(updateLegacy)
 
 	config.seek.speeds_forward = ConfigSet(default=[2, 4, 8, 16, 32, 64, 128], choices=[2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128])
 	config.seek.speeds_backward = ConfigSet(default=[2, 4, 8, 16, 32, 64, 128], choices=[1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128])
