@@ -576,7 +576,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	m_gstdot = eSimpleConfig::getBool("config.crash.gstdot", false);
 	m_coverart = false;
 	m_subtitles_paused = false;
-	eDebug("[eServiceMP3] construct!");
+	// eDebug("[eServiceMP3] construct!");
 
 	const char *filename;
 	std::string filename_str;
@@ -586,9 +586,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		filename_str = m_ref.path.substr(0, pos);
 		filename = filename_str.c_str();
 		m_extra_headers = m_ref.path.substr(pos + 1);
-
-		eDebug("[eServiceMP3] filename_str %s", filename_str.c_str());
-		eDebug("[eServiceMP3] m_extra_headers %s", m_extra_headers.c_str());
 
 		pos = m_extra_headers.find("User-Agent=");
 		if (pos != std::string::npos)
@@ -600,9 +597,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			else
 				m_useragent = m_extra_headers.substr(hpos_start);
 		}
-
-		eDebug("[eServiceMP3] m_useragent %s", m_useragent.c_str());
-
 	}
 	else
 		filename = m_ref.path.c_str();
@@ -1030,7 +1024,7 @@ DEFINE_REF(GstMessageContainer);
 
 void eServiceMP3::setCacheEntry(bool isAudio, int pid)
 {
-	eDebug("[eServiceMP3] setCacheEntry %d %d / %s", isAudio, pid, m_ref.toString().c_str());
+	// eDebug("[eServiceMP3] setCacheEntry %d %d / %s", isAudio, pid, m_ref.toString().c_str());
 	std::string ref = replace_all(m_ref.toString(), ",", "_");
 	bool hasFoundItem = false;
 	std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
@@ -2149,7 +2143,7 @@ subtype_t getSubtitleType(GstPad* pad, gchar *g_codec=NULL)
 		if (str)
 		{
 			const gchar *g_type = gst_structure_get_name(str);
-			eDebug("[eServiceMP3] getSubtitleType::subtitle probe caps type=%s", g_type ? g_type : "(null)");
+			//eDebug("[eServiceMP3] getSubtitleType::subtitle probe caps type=%s", g_type ? g_type : "(null)");
 			if (g_type)
 			{
 				if ( !strcmp(g_type, "subpicture/x-dvd") )
@@ -2169,7 +2163,7 @@ subtype_t getSubtitleType(GstPad* pad, gchar *g_codec=NULL)
 	}
 	else if ( g_codec )
 	{
-		eDebug("[eServiceMP3] getSubtitleType::subtitle probe codec tag=%s", g_codec);
+		//eDebug("[eServiceMP3] getSubtitleType::subtitle probe codec tag=%s", g_codec);
 		if ( !strcmp(g_codec, "VOB") )
 			type = stVOB;
 		else if ( !strcmp(g_codec, "SubStation Alpha") || !strcmp(g_codec, "SSA") )
@@ -2508,8 +2502,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				}
 			}
 			gst_tag_list_free(tags);
-			m_event((iPlayableService*)this, evUpdateTags); // Use user event for tags changed notification since if we use evUpdatedInfo it causes constant refreshes of AudioSelectionLists
-//			m_event((iPlayableService*)this, evUpdatedInfo);
+			m_event((iPlayableService*)this, evUpdateTags);
 			break;
 		}
 		/* TOC entry intercept used for chapter support CVR */
@@ -2531,7 +2524,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			g_object_get (m_gst_playbin, "n-audio", &n_audio, NULL);
 			g_object_get (m_gst_playbin, "n-text", &n_text, NULL);
 
-			eDebug("[eServiceMP3] async-done - %d video, %d audio, %d subtitle", n_video, n_audio, n_text);
+			//eDebug("[eServiceMP3] async-done - %d video, %d audio, %d subtitle", n_video, n_audio, n_text);
 
 			if ( n_video + n_audio <= 0 )
 				stop();
@@ -2552,7 +2545,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 					continue;
 				GstStructure* str = gst_caps_get_structure(caps, 0);
 				const gchar *g_type = gst_structure_get_name(str);
-				eDebug("[eServiceMP3] AUDIO STRUCT=%s", g_type);
+				//eDebug("[eServiceMP3] AUDIO STRUCT=%s", g_type);
 				audio.type = gstCheckAudioPad(str);
 				audio.language_code = "und";
 				audio.codec = g_type;
@@ -2573,7 +2566,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 					}
 					gst_tag_list_free(tags);
 				}
-				eDebug("[eServiceMP3] audio stream=%i codec=%s language=%s", i, audio.codec.c_str(), audio.language_code.c_str());
+				//eDebug("[eServiceMP3] audio stream=%i codec=%s language=%s", i, audio.codec.c_str(), audio.language_code.c_str());
 				//codec_tofix = (audio.codec.find("MPEG-1 Layer 3 (MP3)") == 0 || audio.codec.find("MPEG-2 AAC") == 0) && n_audio - n_video == 1;
 				audioStreams_temp.push_back(audio);
 				gst_caps_unref(caps);
@@ -2603,7 +2596,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 					gst_tag_list_free(tags);
 				}
 
-				eDebug("[eServiceMP3] subtitle stream=%i language=%s codec=%s", i, subs.language_code.c_str(), g_codec ? g_codec : "(null)");
+				//eDebug("[eServiceMP3] subtitle stream=%i language=%s codec=%s", i, subs.language_code.c_str(), g_codec ? g_codec : "(null)");
 
 				GstPad *pad = 0;
 				g_signal_emit_by_name(m_gst_playbin, "get-text-pad", i, &pad);
@@ -2953,7 +2946,7 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 				if (!name.empty() && !value.empty())
 				{
 					GValue header;
-					eDebug("[eServiceMP3] setting extra-header '%s:%s'", name.c_str(), value.c_str());
+					// eDebug("[eServiceMP3] setting extra-header '%s:%s'", name.c_str(), value.c_str());
 					memset(&header, 0, sizeof(GValue));
 					g_value_init(&header, G_TYPE_STRING);
 					g_value_set_string(&header, value.c_str());
@@ -3105,7 +3098,7 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 	{
 		subtitleStream subs;
 
-		eDebug("[eServiceMP3] gstTextpadHasCAPS:: signal::caps = %s", gst_caps_to_string(caps));
+//		eDebug("[eServiceMP3] gstTextpadHasCAPS:: signal::caps = %s", gst_caps_to_string(caps));
 //		eDebug("[eServiceMP3] gstGhostpadHasCAPS_synced %p %d", pad, m_subtitleStreams.size());
 
 		if (m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size())
@@ -3382,7 +3375,7 @@ exit:
 
 RESULT eServiceMP3::enableSubtitles(iSubtitleUser *user, struct SubtitleTrack &track)
 {
-	eDebug ("[eServiceMP3][enableSubtitles] entered: subtitle stream %i track.pid %i", m_currentSubtitleStream, track.pid);
+	// eDebug ("[eServiceMP3][enableSubtitles] entered: subtitle stream %i track.pid %i", m_currentSubtitleStream, track.pid);
 	bool starting_subtitle = false;
 	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon)
 	{
@@ -3488,7 +3481,7 @@ RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack &track)
 
 	if (m_cachedSubtitleStream >= 0 && m_cachedSubtitleStream < (int)m_subtitleStreams.size())
 	{
-		eDebug("[eServiceMP3][getCachedSubtitle] (m_cachedSubtitleStream >= 0 && m_cachedSubtitleStream < m_subtitleStreams_size)");
+		// eDebug("[eServiceMP3][getCachedSubtitle] (m_cachedSubtitleStream >= 0 && m_cachedSubtitleStream < m_subtitleStreams_size)");
 		track.type = (m_subtitleStreams[m_cachedSubtitleStream].type == stDVB) ? 0 : 2;
 		track.pid = m_cachedSubtitleStream;
 		track.page_number = int(m_subtitleStreams[m_cachedSubtitleStream].type);

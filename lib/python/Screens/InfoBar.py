@@ -22,7 +22,7 @@ boxtype = BoxInfo.getItem("machinebuild")
 
 eProfileWrite("LOAD:InfoBarGenerics")
 from Screens.InfoBarGenerics import InfoBarShowHide, \
-	InfoBarNumberZap, InfoBarChannelSelection, InfoBarMenu, InfoBarRdsDecoder, InfoBarRedButton, InfoBarTimerButton, InfoBarVmodeButton, \
+	InfoBarNumberZap, InfoBarChannelSelection, InfoBarMenu, InfoBarRdsDecoder, InfoBarRedButton, InfoBarVmodeButton, \
 	InfoBarEPG, InfoBarSeek, InfoBarInstantRecord, InfoBarResolutionSelection, InfoBarAspectSelection, \
 	InfoBarAudioSelection, InfoBarAdditionalInfo, InfoBarNotifications, InfoBarDish, InfoBarUnhandledKey, InfoBarLongKeyDetection, \
 	InfoBarSubserviceSelection, InfoBarShowMovies, \
@@ -42,7 +42,7 @@ eProfileWrite("LOAD:InfoBar_Class")
 
 class InfoBar(InfoBarBase, InfoBarShowHide,
 	InfoBarNumberZap, InfoBarChannelSelection, InfoBarMenu, InfoBarEPG, InfoBarRdsDecoder,
-	InfoBarInstantRecord, InfoBarAudioSelection, InfoBarRedButton, InfoBarTimerButton, InfoBarResolutionSelection, InfoBarAspectSelection, InfoBarVmodeButton,
+	InfoBarInstantRecord, InfoBarAudioSelection, InfoBarRedButton, InfoBarResolutionSelection, InfoBarAspectSelection, InfoBarVmodeButton,
 	InfoBarAdditionalInfo, InfoBarNotifications, InfoBarDish, InfoBarUnhandledKey, InfoBarLongKeyDetection,
 	InfoBarSubserviceSelection, InfoBarTimeshift, InfoBarSeek, InfoBarCueSheetSupport, InfoBarBuffer,
 	InfoBarSummarySupport, InfoBarTimeshiftState, InfoBarTeletextPlugin, InfoBarExtensions,
@@ -57,28 +57,28 @@ class InfoBar(InfoBarBase, InfoBarShowHide,
 			self.skinName = "InfoBarLite"
 
 		self["actions"] = HelpableActionMap(self, "InfobarActions", {
-			"showMovies": (self.showMovies, _("Open Movie Selection")),
-			"showRadio": (self.showRadioButton, _("Open Radio bouquet selection")),
-			"showTv": (self.showTvButton, _("Open TV bouquet selection")),
-			"toogleTvRadio": (self.toogleTvRadio, _("Toggles between TV and Radio")),
-			"openBouquetList": (self.openBouquetList, _("Open Bouquet selection")),
-			"showMediaPlayer": (self.showMediaPlayer, _("Open Media Player")),
-			"openTimerList": (self.openTimerList, _("Open RecordTimer Overview")),
-			"openAutoTimerList": (self.openAutoTimerList, _("Open AutoTimer Overview")),
-			"openEPGSearch": (self.openEPGSearch, _("Open EPGSearch")),
-			"openIMDB": (self.openIMDB, _("Open IMDb")),
-			"showMC": (self.showMediaCenter, _("Open MediaCenter")),
-			"openSleepTimer": (self.openSleepTimer, _("Open SleepTimer Settings")),
-			"openSchedulerList": (self.openSchedulerList, _("Open Scheduler Overview")),
-			"ZoomInOut": (self.ZoomInOut, _("Zoom In/Out TV")),
-			"ZoomOff": (self.ZoomOff, _("Zoom Off")),
-			"showWWW": (self.showPORTAL, _("Open MediaStream")),
-			"showSetup": (self.showSetup, _("Open Setup menu")),
-			"showInformation": (self.showInformation, _("Open Information menu")),
-			"showFormat": (self.showFormat, _("Open VideoMode")),
-			"showPluginBrowser": (self.showPluginBrowser, _("Open Plugin Browser")),
-			"showBoxPortal": (self.showBoxPortal, _("Open Box Portal")),
-			"openSimpleUnmount": (self.openSimpleUnmount, _("Open Simple Umount")),
+			"showMovies": (self.showMovies, _("Open Movie Selection")),  # PLAY, VIDEO (Break), PVR (Break), FILE (Break), MEDIA (Break).
+			"showRadio": (self.showRadioButton, _("Open Radio bouquet selection")),  # RADIO (Break).
+			"showTv": (self.showTvButton, _("Open TV bouquet selection")),  # TV (Break).
+			"toogleTvRadio": (self.toogleTvRadio, _("Toggles between TV and Radio")),  # Not defined in keymap!
+			"openBouquetList": (self.openBouquetList, _("Open Bouquet selection")),  # TV (Long), RADIO (Long), FAV (Break). AB (Break).
+			"showMediaPlayer": (self.showMediaPlayer, _("Open Media Player")),  # VIDEO (Long), PVR (Long), LIST (Break).
+			"openTimerList": (self.openTimerList, _("Open RecordTimer Overview")),  # PROGRAM (Break), SLOW (Break), F5 (Break), TIME (Break).
+			"openAutoTimerList": (self.openAutoTimerList, _("Open AutoTimer Overview")),  # PROGRAM (Long), CALENDAR (Break).
+			"openEPGSearch": (self.openEPGSearch, _("Open EPGSearch")),  # SEARCH (Break).
+			"openIMDB": (self.openIMDB, _("Open IMDb")),  # SEARCH (Long).
+			"showMC": (self.showMediaCenter, _("Open MediaCenter")),  # Not defined in keymap!
+			"openSleepTimer": (self.openSleepTimer, _("Open SleepTimer Settings")),  # SLEEP (Break).
+			"openSchedulerList": (self.openSchedulerList, _("Open Scheduler Overview")),  # SLEEP (Long).
+			"ZoomInOut": (self.ZoomInOut, _("Zoom In/Out TV")),  # ZOOM (Break).
+			"ZoomOff": (self.ZoomOff, _("Zoom Off")),  # ZOOM (Long).
+			"showWWW": (self.showPORTAL, _("Open MediaStream")),  # WWW (Break), F1 (Break), F2 (Break).
+			"showSetup": (self.showSetup, _("Open Setup menu")),  # SETUP.
+			"showInformation": (self.showInformation, _("Open Information menu")),  # QUESTION.
+			"showFormat": (self.showFormat, _("Open VideoMode")),  # Not defined in keymap!
+			"showPluginBrowser": (self.showPluginBrowser, _("Open Plugin Browser")),  # DIRECTORY (Break).
+			"showBoxPortal": (self.showBoxPortal, _("Open Box Portal")),  # F6 (Break).
+			"openSimpleUnmount": (self.openSimpleUnmount, _("Open Simple Umount")),  # EJECT (Break).
 			}, prio=2, description=_("Live TV Actions"))
 
 		self["key_red"] = Label()
@@ -89,7 +89,7 @@ class InfoBar(InfoBarBase, InfoBarShowHide,
 		self.radioTV = 0
 		for x in InfoBarBase, InfoBarShowHide, \
 				InfoBarNumberZap, InfoBarChannelSelection, InfoBarMenu, InfoBarEPG, InfoBarRdsDecoder, \
-				InfoBarInstantRecord, InfoBarAudioSelection, InfoBarRedButton, InfoBarTimerButton, InfoBarUnhandledKey, InfoBarLongKeyDetection, InfoBarResolutionSelection, InfoBarVmodeButton, \
+				InfoBarInstantRecord, InfoBarAudioSelection, InfoBarRedButton, InfoBarUnhandledKey, InfoBarLongKeyDetection, InfoBarResolutionSelection, InfoBarVmodeButton, \
 				InfoBarAdditionalInfo, InfoBarNotifications, InfoBarDish, InfoBarSubserviceSelection, InfoBarAspectSelection, InfoBarBuffer, \
 				InfoBarTimeshift, InfoBarSeek, InfoBarCueSheetSupport, InfoBarSummarySupport, InfoBarTimeshiftState, \
 				InfoBarTeletextPlugin, InfoBarExtensions, InfoBarPiP, InfoBarSubtitleSupport, InfoBarJobman, InfoBarZoom, InfoBarSleepTimer, InfoBarOpenOnTopHelper, InfoBarHandleBsod, \
@@ -123,15 +123,6 @@ class InfoBar(InfoBarBase, InfoBarShowHide,
 		self.showMainMenu()
 
 	def doButtonsCheck(self):
-		if config.plisettings.ColouredButtons.value:
-			self["key_yellow"].setText(_("Search"))
-			self["key_red"].setText(_("Single EPG"))
-			if config.usage.subservice.value == 0:
-				self["key_green"].setText(_("Timers"))
-			elif config.usage.subservice.value == 1:
-				self["key_green"].setText(_("Plugins"))
-			else:
-				self["key_green"].setText(_("Subservices"))
 		self["key_blue"].setText(_("Extensions"))
 
 	def __onClose(self):
@@ -505,8 +496,8 @@ class MoviePlayer(InfoBarAspectSelection, InfoBarSimpleEventView, InfoBarBase, I
 		self["statusicon"] = MultiPixmap()
 
 		self["actions"] = HelpableActionMap(self, "MoviePlayerActions", {
-			"leavePlayer": (self.leavePlayer, _("Leave movie player")),
-			"leavePlayerOnExit": (self.leavePlayerOnExit, _("Leave movie player"))
+			"leavePlayer": (self.leavePlayer, _("Leave movie player")),  # STOP, TV, BACK.
+			"leavePlayerOnExit": (self.leavePlayerOnExit, _("Leave movie player"))  # EXIT, ESC.
 		}, prio=0, description=_("Movie Player Actions"))
 
 		self.allowPiP = True
@@ -567,9 +558,6 @@ class MoviePlayer(InfoBarAspectSelection, InfoBarSimpleEventView, InfoBarBase, I
 					setAudioTrack(service)
 
 	def doButtonsCheck(self):
-		if config.plisettings.ColouredButtons.value:
-			self["key_yellow"].setText(_("Search"))
-			self["key_green"].setText(_("Timers"))
 		self["key_blue"].setText(_("Extensions"))
 
 	def __onClose(self):

@@ -242,7 +242,7 @@ class InfoBarUnhandledKey:
 
 class InfoBarLongKeyDetection:
 	def __init__(self):
-		eActionMap.getInstance().bindAction("", -maxsize - 2, self.detection)  # Highest priority.
+		eActionMap.getInstance().bindAction("", -maxsize - 1, self.detection)  # Highest priority.
 		self.LongButtonPressed = False
 
 	def detection(self, key, flag):  # This function is called on every key press!
@@ -357,30 +357,11 @@ class InfoBarExtensions:
 		def quickMenuHelp():
 			return _("Open Extensions") if config.workaround.blueswitch.value else _("Open QuickMenu")
 
-		self.list = []
-		if config.plisettings.ColouredButtons.value:
-			self["InstantExtensionsActions"] = HelpableActionMap(self, "InfobarExtensions", {
-				"extensions": (self.keyExtensions, extensionsHelp),
-				"quickmenu": (self.keyQuickMenu, quickMenuHelp),
-				"showPluginBrowser": (self.keyPluginBrowser, _("Open Plugin Browser")),
-				"showEventInfo": (self.keyEventView, _("Open event information")),
-				"openTimerList": (self.keyTimerList, _("Open RecordTimer Overview")),
-				"openAutoTimerList": (self.keyAutoTimer, _("Open AutoTimer OverView")),
-				"openEPGSearch": (self.keyEPGSearch, _("Search EPG for current event")),
-				"openIMDB": (self.keyIMDb, _("Search IMDb for information about current event")),
-				"showMediaPlayer": (self.keyMediaPlayer, _("Open Media Player")),
-				"openDreamPlex": (self.keyDreamPlex, _("Open DreamPlex"))
-			}, prio=1, description=_("Extension Actions"))  # Lower priority.
-		else:
-			self["InstantExtensionsActions"] = HelpableActionMap(self, "InfobarExtensions", {
-				"extensions": (self.keyExtensions, _("Open Extensions")),
-				"quickmenu": (self.keyQuickMenu, _("Open QuickMenu")),
-				"showPluginBrowser": (self.keyPluginBrowser, _("Open Plugin Browser")),
-				"showEventInfo": (self.keyEventView, _("Open event information")),
-				"showMediaPlayer": (self.keyMediaPlayer, _("Open Media Player")),
-				"showDreamPlex": (self.keyDreamPlex, _("Open DreamPlex"))
-			}, prio=1, description=_("Extension Actions"))  # Lower priority.
 		self.extensionList = []
+		self["InstantExtensionsActions"] = HelpableActionMap(self, "ColorActions", {
+			"blue_long": (self.keyExtensions, extensionsHelp),
+			"blue": (self.keyQuickMenu, quickMenuHelp)
+		}, prio=1, description=_("Extension Actions"))  # Lower priority.
 		self.addExtension((lambda: _("Manually import from fallback tuner"), self.extImportChannels, lambda: config.usage.remote_fallback_extension_menu.value and config.usage.remote_fallback_import.value))
 		self.addExtension(extension=self.extLogManager, type=InfoBarExtensions.EXTENSION_LIST)
 		self.addExtension(extension=self.extOsd3DSetup, type=InfoBarExtensions.EXTENSION_LIST)
@@ -412,114 +393,17 @@ class InfoBarExtensions:
 
 		self.session.openWithCallback(showExtensionSelectionCallback, ExtensionsList, self.extensionList)
 
-	def showAutoTimerList(self):  # Used by ButtonSetup
-		self.keyAutoTimer()
-
-	def keyAutoTimer(self):
-		def keyAutoTimerCallback(session):
-			# XXX: Canceling of GUI (Overview) won't affect config values which might have been changed - is this intended?
-			# Don't parse EPG if editing was canceled.
-			if session is not None:
-				self.autoTimer.writeXml()  # Save XML.
-				self.autoTimer.parseEPG()  # Poll EPGCache.
-			if config.plugins.autotimer.autopoll.value:  # Start autopoller again if wanted.
-				if self.autoPoller is None:
-					# from Plugins.Extensions.AutoTimer.AutoPoller import AutoPoller
-					self.autoPoller = AutoPoller()
-				self.autoPoller.start()
-			else:  # Remove instance if not running in background.
-				self.autoPoller = None
-				self.autoTimer = None
-
-		if isPluginInstalled("AutoTimer"):
-			from Plugins.Extensions.AutoTimer.plugin import main, autostart
-			from Plugins.Extensions.AutoTimer.AutoTimer import AutoTimer
-			from Plugins.Extensions.AutoTimer.AutoPoller import AutoPoller
-			self.autoPoller = AutoPoller()
-			self.autoTimer = AutoTimer()
-			try:
-				self.autoTimer.readXml()
-			except SyntaxError as err:
-				self.session.open(MessageBox, _("Your config file is not well-formed:\n%s") % (str(err)), type=MessageBox.TYPE_ERROR, timeout=10)
-				return
-			if self.autoPoller is not None:   # Do not run in background while editing, this might screw things up.
-				self.autoPoller.stop()
-			from Plugins.Extensions.AutoTimer.AutoTimerOverview import AutoTimerOverview
-			self.session.openWithCallback(keyAutoTimerCallback, AutoTimerOverview, self.autoTimer)
-		else:
-			self.session.open(MessageBox, _("%s plugin is not installed!") % "AutoTimer", type=MessageBox.TYPE_INFO, timeout=10)
-
-	def keyDreamPlex(self):  # old name showDreamPlex
-		if isPluginInstalled("DreamPlex"):
-			from Plugins.Extensions.DreamPlex.plugin import DPS_MainMenu
-			self.session.open(DPS_MainMenu)
-		else:
-			self.session.open(MessageBox, _("The DreamPlex plugin is not installed!\nPlease install it."), type=MessageBox.TYPE_INFO, timeout=10)
-
-	def keyEPGSearch(self):  # Old name showEPGSearch
-		from Plugins.Extensions.EPGSearch.EPGSearch import EPGSearch
-		currentService = self.session.nav.getCurrentService()
-		if currentService:
-			info = currentService.info()
-			event = info.getEvent(0)  # 0 = Now, 1 = Next.
-			if event:
-				eventName = event.getEventName() or ""
-			else:
-				eventName = self.session.nav.getCurrentlyPlayingServiceOrGroup().toString()
-				eventName = eventName.split("/")[-1]
-				eventName = eventName.replace(".", " ").split("-")[0].rstrip()
-			if eventName:
-				self.session.open(EPGSearch, eventName, False)
-			else:
-				self.session.open(EPGSearch)
-		else:
-			self.session.open(EPGSearch)
-
-	def keyEventView(self):  # old name SelectopenEventView
-		try:
-			self.openEventView()
-		except Exception:
-			print("[InfoBarGenerics] InfoBarExtensions: Error: Failed to open EventView!")
-
 	def keyExtensions(self):
 		if config.workaround.blueswitch.value:
 			self.quickMenuStart()
 		else:
 			self.showExtensionSelection()
 
-	def keyIMDb(self):  # Old name showIMDB
-		if isPluginInstalled("IMDb"):
-			from Plugins.Extensions.IMDb.plugin import IMDB
-			currentService = self.session.nav.getCurrentService()
-			if currentService:
-				info = currentService.info()
-				event = info.getEvent(0)  # 0 = Now, 1 = Next.
-				eventName = event and event.getEventName() or ""
-				self.session.open(IMDB, eventName)
-		else:
-			self.session.open(MessageBox, _("%s plugin is not installed!") % "IMdb", type=MessageBox.TYPE_INFO, timeout=5)
-
-	def keyMediaPlayer(self):  # Old name showMediaPlayer
-		if isinstance(self, InfoBarExtensions) and isinstance(self, InfoBar):
-			try:  # If it is not installed.
-				from Plugins.Extensions.MediaPlayer.plugin import MediaPlayer
-				self.session.open(MediaPlayer)
-				# no_plugin = False
-			except Exception:
-				self.session.open(MessageBox, _("%s plugin is not installed!") % "MediaPlayer", type=MessageBox.TYPE_INFO, timeout=5)
-
-	def keyPluginBrowser(self):  # Old name showPluginBrowser duplicate function in InfoBar.py
-		from Screens.PluginBrowser import PluginBrowser
-		self.session.open(PluginBrowser)
-
 	def keyQuickMenu(self):
 		if config.workaround.blueswitch.value:
 			self.showExtensionSelection()
 		else:
 			self.quickMenuStart()
-
-	def keyTimerList(self):  # Old name showTimerList
-		self.session.open(RecordTimerOverview)
 
 	def extImportChannels(self):
 		from Components.ImportChannels import ImportChannels
@@ -605,17 +489,17 @@ class InfoBarPlugins:  # Depends on InfoBarExtensions.
 	def __init__(self):
 		self.addExtension(extension=self.getPluginList, type=InfoBarExtensions.EXTENSION_LIST)
 
-	def getPluginName(self, name):  # Used in plugins
-		return name
-
 	def getPluginList(self):  # Used in plugins
 		pluginList = []
 		for plugin in plugins.getPlugins(where=PluginDescriptor.WHERE_EXTENSIONSMENU):
-			args = getfullargspec(p.__call__)[0]  # FIME: This is a performance issue and should be replaced.
+			args = getfullargspec(plugin.__call__)[0]  # FIME: This is a performance issue and should be replaced.
 			if len(args) in (1, 2) and isinstance(self, InfoBarChannelSelection):
 				pluginList.append(((boundFunction(self.getPluginName, plugin.name), boundFunction(self.runPlugin, plugin), lambda: True), None, plugin.name))
 		pluginList.sort(key=lambda x: x[2])  # Sort by name.
 		return pluginList
+
+	def getPluginName(self, name):  # Used in plugins
+		return name
 
 	def runPlugin(self, plugin):  # Used in AudioSelection.py
 		if isinstance(self, InfoBarChannelSelection):
@@ -724,8 +608,8 @@ class NumberZap(Screen):
 			self["serviceName"] = Label(ServiceReference(self.serviceName).getServiceName())
 			self["service_summary"] = StaticText(self.serviceName)  # For Summary Screen!
 		if self.skinMode & self.SKIN_PICON:
-			self["servicePicon"] = ServiceEvent()
-			self["servicePicon"].newService(self.serviceName)
+			self["Service"] = ServiceEvent()
+			self["Service"].newService(self.serviceName)
 		self["actions"] = HelpableNumberActionMap(self, ["OkCancelActions", "NumberActions"], {
 			"ok": (self.keyOK, _("Select/Zap to the selected service")),
 			"cancel": (self.keyCancel, _("Cancel the selection")),
@@ -763,7 +647,7 @@ class NumberZap(Screen):
 
 	def layoutFinished(self):
 		if self.skinMode & self.SKIN_PICON:
-			self["servicePicon"].newService(self.serviceName)
+			self["Service"].newService(self.serviceName)
 
 	def keyOK(self):
 		if self.timeout:
@@ -786,7 +670,7 @@ class NumberZap(Screen):
 			self["serviceName"].setText(ServiceReference(self.serviceName).getServiceName())
 			self["service_summary"].setText(ServiceReference(self.serviceName).getServiceName())  # For Summary Screen!
 		if self.skinMode & self.SKIN_PICON:
-			self["servicePicon"].newService(self.serviceName)
+			self["Service"].newService(self.serviceName)
 		if len(f"{self.serviceNumber}") >= self.serviceDigits:
 			if self.timer.isActive():
 				self.timer.stop()
@@ -1527,7 +1411,6 @@ class InfoBarSeek:
 				self.updateTarget(config.seek.defined["LEFT"].value)
 			case self.ARROW_CUTLIST:
 				self.updateTarget(config.seek.defined["CUT_LEFT"].value)
-
 	def keyRight(self):
 		# print(f"[InfoBarGenerics] InfoBarSeek: RIGHT seek, mode {self.arrowSkipMode}.")
 		match self.arrowSkipMode:
@@ -1839,12 +1722,7 @@ class InfoBarSeek:
 		self.setSeekState(self.SEEK_STATE_PAUSE)
 
 	def pauseServiceYellow(self):
-		# if config.plugins.infopanel_yellowkey.list.value == "0":
 		self.audioSelection()
-		# elif config.plugins.infopanel_yellowkey.list.value == "2":
-		# 	ToggleVideo()
-		# else:
-		# 	self.playpauseService()
 
 	def unPauseService(self):
 		BoxInfo.setMutableItem("StatePlayPause", False)
@@ -3060,17 +2938,17 @@ class InfoBarChannelSelection:
 		def serviceListHelp(direction):
 			match direction:
 				case "up":
-					helpText = _("Open service list and select previous channel")
+					helpText = _("Open service list and select previous service")
 				case "down":
-					helpText = _("Open service list and select next channel")
+					helpText = _("Open service list and select next service")
 			return helpText
 
 		def pipListHelp(direction):
 			match direction:
 				case "up":
-					helpText = _("Open service list and select previous channel for PiP")
+					helpText = _("Open service list and select previous service for PiP")
 				case "down":
-					helpText = _("Open service list and select next channel for PiP")
+					helpText = _("Open service list and select next service for PiP")
 			return helpText
 
 		def serviceZapHelp(direction):
@@ -3094,8 +2972,8 @@ class InfoBarChannelSelection:
 			"switchChannelDownLong": (self.switchChannelDown, pipListHelp("down")),
 			"zapUp": (self.zapUp, _("Zap to previous service")),
 			"zapDown": (self.zapDown, _("Zap to next service")),
-			"historyBack": (self.historyBack, _("Zap to previous service in the history")),
-			"historyNext": (self.historyNext, _("Zap to next service in the history")),
+			"historyBack": (self.historyBack, _("Zap to previous service in history")),
+			"historyNext": (self.historyNext, _("Zap to next service in history")),
 			"openServiceList": (self.openServiceList, _("Open Services / Reception selection")),
 			"openSatellites": (self.openSatellites, _("Open Satellites selection")),
 			"openBouquets": (self.openBouquets, _("Open Bouquet selection")),
@@ -3519,13 +3397,13 @@ class InfoBarEPG:
 		else:
 			pluginlist = self.getEPGPluginList()
 			if pluginlist:
-				pluginlist.append((_("Select default EPG type..."), self.SelectDefaultGuidePlugin))
+				pluginlist.append((_("Select default EPG type"), self.SelectDefaultGuidePlugin))
 				self.session.openWithCallback(self.EventGuidePluginChosen, ChoiceBox, title=_("Extensions"), list=pluginlist, skinName="EPGExtensionsList")
 			else:
 				self.openSingleServiceEPG()
 
 	def SelectDefaultGuidePlugin(self):
-		self.session.openWithCallback(self.DefaultGuidePluginChosen, ChoiceBox, title=_("Please select a default EPG type..."), list=self.getEPGPluginList(), skinName="EPGExtensionsList")
+		self.session.openWithCallback(self.DefaultGuidePluginChosen, ChoiceBox, title=_("Select default EPG type:"), list=self.getEPGPluginList(), skinName="EPGExtensionsList")
 
 	def DefaultGuidePluginChosen(self, answer):
 		if answer is not None:
@@ -4037,7 +3915,7 @@ class InfoBarPiP:  # Depends on InfoBarExtensions.
 				self.addExtension((self.extShowHideName, self.showPiP, lambda: True), "blue")
 				self.addExtension((self.extMoveName, self.movePiP, self.pipShown), "green")
 				self.addExtension((self.extSwapName, self.swapPiP, lambda: self.pipShown() and isStandardInfoBar(self)), "yellow")
-				self.addExtension((self.extTogglePipZapName, self.togglePipzap, self.pipShown), "red")
+				self.addExtension((self.extTogglePipZapName, self.togglePipZap, self.pipShown), "red")
 			else:
 				self.addExtension((self.extShowHideName, self.showPiP, self.pipShown), "blue")
 				self.addExtension((self.extMoveName, self.movePiP, self.pipShown), "green")
@@ -4143,7 +4021,10 @@ class InfoBarPiP:  # Depends on InfoBarExtensions.
 		serviceList = self.servicelist
 		return _("Zap focus to main screen") if serviceList and serviceList.dopipzap else _("Zap focus to Picture in Picture")
 
-	def togglePipzap(self):  # called from ButtonSetup
+	def togglePipzap(self):
+		return self.togglePipZap()
+
+	def togglePipZap(self):
 		if not self.session.pipshown:
 			self.showPiP()
 		serviceList = self.servicelist
@@ -4171,11 +4052,6 @@ class InfoBarPiP:  # Depends on InfoBarExtensions.
 				self.showPiP()
 
 
-class InfoBarQuickMenu:  # This is for compatibility with the old QuickMenu.
-	def __init__(self):
-		pass
-
-
 class InfoBarInstantRecord:
 	"""Instant Record - Handles the instantRecord action in order to start/stop instant recordings."""
 
@@ -4195,57 +4071,6 @@ class InfoBarInstantRecord:
 
 	def instantRecord(self, serviceRef=None):  # Used in Timeshift.
 		return self.keyInstantRecord(serviceRef=serviceRef)
-
-	def recordQuestionCallback(self, answer):  # Used in Timeshift and in plugins
-		if answer is None or answer[1] == "no":
-			self.saveTimeshiftEventPopupActive = False
-		else:
-			items = []
-			recordings = self.recording[:]
-			for recording in recordings:
-				if recording not in self.session.nav.RecordTimer.timer_list:
-					self.recording.remove(recording)
-				elif recording.dontSave and recording.isRunning():
-					items.append((recording, False))
-			match answer[1]:
-				case "changeduration":
-					if len(self.recording) == 1:
-						self.changeDuration(0)
-					else:
-						self.session.openWithCallback(self.changeDuration, TimerSelection, items)
-				case "changeendtime":
-					if len(self.recording) == 1:
-						self.changeEndTime(0)
-					else:
-						self.session.openWithCallback(self.changeEndTime, TimerSelection, items)
-				case "timer":
-					self.session.open(RecordTimerOverview)
-				case "stop":
-					self.session.openWithCallback(self.stopCurrentRecording, TimerSelection, items)
-				case "indefinitely" | "manualduration" | "manualendtime" | "event":
-					if len(items) >= 2 and BoxInfo.getItem("ChipsetString") in ("meson-6", "meson-64"):
-						Notifications.AddNotification(MessageBox, _("Sorry it is only possible to record 2 channels at once!"), MessageBox.TYPE_ERROR, timeout=5)
-						return
-					self.startInstantRecording(limitEvent=answer[1] in ("event", "manualendtime") or False)
-					match answer[1]:
-						case "manualduration":
-							self.changeDuration(len(self.recording) - 1)
-						case "manualendtime":
-							self.changeEndTime(len(self.recording) - 1)
-				case "savetimeshift":
-					if self.isSeekable() and self.pts_eventcount != self.pts_currplaying:
-						InfoBarTimeshift.SaveTimeshift(self, timeshiftfile=f"pts_livebuffer_{self.pts_currplaying}")
-					else:
-						Notifications.AddNotification(MessageBox, _("Time shift will get saved at end of event."), MessageBox.TYPE_INFO, timeout=5)
-						self.save_current_timeshift = True
-						config.timeshift.isRecording.value = True
-				case "savetimeshiftEvent":
-					InfoBarTimeshift.saveTimeshiftEventPopup(self)
-				case _:
-					if answer[1].startswith("pts_livebuffer") is True:
-						InfoBarTimeshift.SaveTimeshift(self, timeshiftfile=answer[1])
-			if answer[1] != "savetimeshiftEvent":
-				self.saveTimeshiftEventPopupActive = False
 
 	def keyInstantRecord(self, serviceRef=None):
 		def isInstantRecordRunning():
@@ -4299,6 +4124,57 @@ class InfoBarInstantRecord:
 			choiceList.append((_("Do not record"), "no"))
 		if choiceList:
 			self.session.openWithCallback(self.recordQuestionCallback, ChoiceBox, title=title, list=choiceList)
+
+	def recordQuestionCallback(self, answer):  # Used in Timeshift and in plugins
+		if answer is None or answer[1] == "no":
+			self.saveTimeshiftEventPopupActive = False
+		else:
+			items = []
+			recordings = self.recording[:]
+			for recording in recordings:
+				if recording not in self.session.nav.RecordTimer.timer_list:
+					self.recording.remove(recording)
+				elif recording.dontSave and recording.isRunning():
+					items.append((recording, False))
+			match answer[1]:
+				case "changeduration":
+					if len(self.recording) == 1:
+						self.changeDuration(0)
+					else:
+						self.session.openWithCallback(self.changeDuration, TimerSelection, items)
+				case "changeendtime":
+					if len(self.recording) == 1:
+						self.changeEndTime(0)
+					else:
+						self.session.openWithCallback(self.changeEndTime, TimerSelection, items)
+				case "timer":
+					self.session.open(RecordTimerOverview)
+				case "stop":
+					self.session.openWithCallback(self.stopCurrentRecording, TimerSelection, items)
+				case "indefinitely" | "manualduration" | "manualendtime" | "event":
+					if len(items) >= 2 and BoxInfo.getItem("ChipsetString") in ("meson-6", "meson-64"):
+						Notifications.AddNotification(MessageBox, _("Sorry it is only possible to record 2 channels at once!"), MessageBox.TYPE_ERROR, timeout=5)
+						return
+					self.startInstantRecording(limitEvent=answer[1] in ("event", "manualendtime") or False)
+					match answer[1]:
+						case "manualduration":
+							self.changeDuration(len(self.recording) - 1)
+						case "manualendtime":
+							self.changeEndTime(len(self.recording) - 1)
+				case "savetimeshift":
+					if self.isSeekable() and self.pts_eventcount != self.pts_currplaying:
+						InfoBarTimeshift.SaveTimeshift(self, timeshiftfile=f"pts_livebuffer_{self.pts_currplaying}")
+					else:
+						Notifications.AddNotification(MessageBox, _("Time shift will get saved at end of event."), MessageBox.TYPE_INFO, timeout=5)
+						self.save_current_timeshift = True
+						config.timeshift.isRecording.value = True
+				case "savetimeshiftEvent":
+					InfoBarTimeshift.saveTimeshiftEventPopup(self)
+				case _:
+					if answer[1].startswith("pts_livebuffer") is True:
+						InfoBarTimeshift.SaveTimeshift(self, timeshiftfile=answer[1])
+			if answer[1] != "savetimeshiftEvent":
+				self.saveTimeshiftEventPopupActive = False
 
 	def changeDuration(self, entry):
 		def changeDurationCallback(value):
@@ -4404,7 +4280,7 @@ class InfoBarInstantRecord:
 				if recording.setAutoincreaseEnd():
 					self.session.nav.RecordTimer.record(recording)
 					self.recording.append(recording)
-					self.session.open(MessageBox, _("Record time limited due to conflicting timer:%s") % f"\n\t'{nameDate}'", MessageBox.TYPE_INFO)
+					self.session.open(MessageBox, _("Recording time limited due to conflicting timer:%s") % f"\n\t'{nameDate}'", MessageBox.TYPE_INFO)
 				else:
 					self.session.open(MessageBox, _("Could not record due to conflicting timer:%s") % f"\n\t'{name}'", MessageBox.TYPE_INFO)
 			else:
@@ -4433,39 +4309,6 @@ class InfoBarAudioSelection:
 			"yellow_key": (self.audioSelection, _("Open Audio options")),
 			"audioSelectionLong": (self.audioDownmixToggle, _("Toggle Dolby Digital down mix")),
 		}, prio=0, description=_("Audio Actions"))
-
-	# def yellow_key(self):
-	# 	if not hasattr(self, "LongButtonPressed"):
-	# 		self.LongButtonPressed = False
-	# 	global AUDIO
-	# 	if not self.LongButtonPressed:
-	# 		if config.plugins.infopanel_yellowkey.list.value == "0":
-	# 			from Screens.AudioSelection import AudioSelection
-	# 			self.session.openWithCallback(self.audioSelected, AudioSelection, infobar=self)
-	# 		elif config.plugins.infopanel_yellowkey.list.value == "2":
-	# 			AUDIO = True
-	# 			ToggleVideo()
-	# 		elif config.plugins.infopanel_yellowkey.list.value == "3":
-	# 			self.startTeletext()
-	# 		else:
-	# 			try:
-	# 				self.startTimeshift()
-	# 			except Exception:
-	# 				pass
-	# 	else:
-	# 		if config.plugins.infopanel_yellowkey.listLong.value == "0":
-	# 			from Screens.AudioSelection import AudioSelection
-	# 			self.session.openWithCallback(self.audioSelected, AudioSelection, infobar=self)
-	# 		elif config.plugins.infopanel_yellowkey.listLong.value == "2":
-	# 			AUDIO = True
-	# 			ToggleVideo()
-	# 		elif config.plugins.infopanel_yellowkey.listLong.value == "3":
-	# 			self.startTeletext()
-	# 		else:
-	# 			try:
-	# 				self.startTimeshift()
-	# 			except Exception:
-	# 				pass
 
 	def audioSelection(self):
 		def audioSelectionCallback(result=None):
@@ -4652,16 +4495,6 @@ class InfoBarRedButton:
 		# elif False:
 		# for x in self.onRedButtonActivation:
 		# x()
-
-
-class InfoBarTimerButton:
-	def __init__(self):
-		self["TimerButtonActions"] = HelpableActionMap(self, "InfobarTimerButtonActions", {
-			"timerSelection": (self.timerSelection, _("Open RecordTimer Overview")),
-		}, prio=0, description=_("Timer Actions"))
-
-	def timerSelection(self):
-		self.session.open(RecordTimerOverview)
 
 
 class InfoBarAspectSelection:
@@ -4894,7 +4727,7 @@ class InfoBarNotifications:
 				self.hide()
 				dlg.show()
 				self.notificationDialog = dlg
-				eActionMap.getInstance().bindAction("", -maxsize - 4, self.keypressNotification)
+				eActionMap.getInstance().bindAction("", -maxsize - 1, self.keypressNotification)
 			else:
 				dlg = self.session.open(n[1], *n[2], **n[3])
 			# Remember that this notification is currently active.
