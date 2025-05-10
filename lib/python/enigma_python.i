@@ -342,6 +342,12 @@ public:
 	$1 = $input->get();
 }
 
+%template(PSignal2VIS) PSignal2<void,int,const char *c>;
+
+%typemap(out) PSignal2VIS {
+	$1 = $input->get();
+}
+
 %{
 RESULT SwigFromPython(ePtr<gPixmap> &result, PyObject *obj)
 {	
