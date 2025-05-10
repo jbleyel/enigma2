@@ -359,13 +359,13 @@ void eStreamServer::connectionLost(eStreamClient *client)
 	if (it != clients.end())
 	{
 		clients.erase(it);
-		streamStatusChanged(2,it->getServiceref());
+		streamStatusChanged(2,it->getServiceref().c_str());
 	}
 }
 
 void eStreamServer::startStream(const std::string serviceref)
 {
-	streamStatusChanged(0,serviceref);
+	streamStatusChanged(0,serviceref.c_str());
 }
 
 void eStreamServer::stopStream()
@@ -373,7 +373,7 @@ void eStreamServer::stopStream()
 	eSmartPtrList<eStreamClient>::iterator it = clients.begin();
 	if (it != clients.end())
 	{
-		streamStatusChanged(1,it->getServiceref());
+		streamStatusChanged(1,it->getServiceref().c_str());
 		it->stopStream();
 	}
 }
