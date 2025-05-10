@@ -76,6 +76,12 @@ public:
 	PyObject *getConnectedClientDetails(int index);
 	PSignal1<void,int> streamStatusChanged;
 
+	enum
+	{
+		streamStatusChangedNewClient,
+		streamStatusChangedClientStopped,
+		streamStatusChangedClientDisconnected,
+	};
 
 };
 
