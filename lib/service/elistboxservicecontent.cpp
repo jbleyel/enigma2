@@ -608,6 +608,17 @@ bool eListboxPythonServiceContent::checkServiceIsRecorded(eServiceReference ref,
 		else if (ref == it->second || compareServices(ref, it->second))
 			return true;
 	}
+
+	if (type & pNavigation::isStreaming )
+	{
+		std::vector<std::string> streamServices = eNavigation::getInstance()->getStreamServiceList();
+		for (std::vector<std::string>::iterator it = streamServices.begin(); it != streamServices.end(); ++it)
+		{
+			if (ref.toString() == *it)
+				return true;
+		}
+	}
+
 	return false;
 }
 

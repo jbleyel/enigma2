@@ -16,6 +16,7 @@
 #include <lib/base/esimpleconfig.h>
 #include <lib/base/cfile.h>
 #include <lib/base/e2avahi.h>
+#include <lib/nav/core.h>
 
 #include <lib/dvb/streamserver.h>
 #include <lib/dvb/encoder.h>
@@ -360,12 +361,14 @@ void eStreamServer::connectionLost(eStreamClient *client)
 	{
 		clients.erase(it);
 		streamStatusChanged(2,it->getServiceref().c_str());
+		eNavigation::getInstance()->removeStreamService(it->getServiceref());
 	}
 }
 
 void eStreamServer::startStream(const std::string serviceref)
 {
 	streamStatusChanged(0,serviceref.c_str());
+	eNavigation::getInstance()->addStreamService(serviceref);
 }
 
 void eStreamServer::stopStream()
@@ -374,6 +377,7 @@ void eStreamServer::stopStream()
 	if (it != clients.end())
 	{
 		streamStatusChanged(1,it->getServiceref().c_str());
+		eNavigation::getInstance()->removeStreamService(it->getServiceref());
 		it->stopStream();
 	}
 }
