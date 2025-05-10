@@ -210,6 +210,7 @@ typedef long time_t;
 %immutable iCryptoInfo::usedcardid;
 %immutable eTuxtxtApp::appClosed;
 %immutable iDVBChannel::receivedTsidOnid;
+%immutable eStreamServer::streamStatusChanged;
 %include <lib/base/message.h>
 %include <lib/base/internetcheck.h>
 %include <lib/base/etpm.h>
