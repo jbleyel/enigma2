@@ -174,6 +174,8 @@ void eStreamClient::notifier(int what)
 				pos = serviceref.find('?');
 				if (pos == std::string::npos)
 				{
+					parent->startStream(serviceref);
+
 					eDebug("[eDVBServiceStream] stream ref: %s", serviceref.c_str());
 					if (eDVBServiceStream::start(serviceref.c_str(), streamFd) >= 0)
 					{
@@ -196,6 +198,9 @@ void eStreamClient::notifier(int what)
 					eDebug("[eDVBServiceStream] stream ref: %s", serviceref.c_str());
 					if (posdur != std::string::npos)
 					{
+
+						parent->startStream(serviceref);
+
 						if (eDVBServiceStream::start(serviceref.c_str(), streamFd) >= 0)
 						{
 							running = true;
@@ -346,7 +351,6 @@ void eStreamServer::newConnection(int socket)
 	ePtr<eStreamClient> client = new eStreamClient(this, socket, RemoteHost());
 	clients.push_back(client);
 	client->start();
-	streamStatusChanged(0);
 }
 
 void eStreamServer::connectionLost(eStreamClient *client)
@@ -355,8 +359,13 @@ void eStreamServer::connectionLost(eStreamClient *client)
 	if (it != clients.end())
 	{
 		clients.erase(it);
+		streamStatusChanged(2,it->getServiceref());
 	}
-	streamStatusChanged(2);
+}
+
+void eStreamServer::startStream(const std::string serviceref)
+{
+	streamStatusChanged(0,serviceref);
 }
 
 void eStreamServer::stopStream()
@@ -364,9 +373,9 @@ void eStreamServer::stopStream()
 	eSmartPtrList<eStreamClient>::iterator it = clients.begin();
 	if (it != clients.end())
 	{
+		streamStatusChanged(1,it->getServiceref());
 		it->stopStream();
 	}
-	streamStatusChanged(1);
 }
 
 bool eStreamServer::stopStreamClient(const std::string remotehost, const std::string serviceref)
