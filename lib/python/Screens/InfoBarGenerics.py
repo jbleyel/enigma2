@@ -359,7 +359,7 @@ class InfoBarExtensions:
 
 		self.extensionList = []
 		self["InstantExtensionsActions"] = HelpableActionMap(self, "ColorActions", {
-			"blue_long": (self.keyExtensions, extensionsHelp),
+			"bluelong": (self.keyExtensions, extensionsHelp),
 			"blue": (self.keyQuickMenu, quickMenuHelp)
 		}, prio=1, description=_("Extension Actions"))  # Lower priority.
 		self.addExtension((lambda: _("Manually import from fallback tuner"), self.extImportChannels, lambda: config.usage.remote_fallback_extension_menu.value and config.usage.remote_fallback_import.value))
@@ -1411,6 +1411,7 @@ class InfoBarSeek:
 				self.updateTarget(config.seek.defined["LEFT"].value)
 			case self.ARROW_CUTLIST:
 				self.updateTarget(config.seek.defined["CUT_LEFT"].value)
+
 	def keyRight(self):
 		# print(f"[InfoBarGenerics] InfoBarSeek: RIGHT seek, mode {self.arrowSkipMode}.")
 		match self.arrowSkipMode:

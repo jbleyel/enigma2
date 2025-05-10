@@ -346,6 +346,7 @@ void eStreamServer::newConnection(int socket)
 	ePtr<eStreamClient> client = new eStreamClient(this, socket, RemoteHost());
 	clients.push_back(client);
 	client->start();
+	streamStatusChanged(0);
 }
 
 void eStreamServer::connectionLost(eStreamClient *client)
@@ -355,6 +356,7 @@ void eStreamServer::connectionLost(eStreamClient *client)
 	{
 		clients.erase(it);
 	}
+	streamStatusChanged(2);
 }
 
 void eStreamServer::stopStream()
@@ -364,6 +366,7 @@ void eStreamServer::stopStream()
 	{
 		it->stopStream();
 	}
+	streamStatusChanged(1);
 }
 
 bool eStreamServer::stopStreamClient(const std::string remotehost, const std::string serviceref)
