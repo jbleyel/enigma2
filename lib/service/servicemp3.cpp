@@ -2677,6 +2677,34 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				if (m_errorInfo.missing_codec.find("video/") == 0 || (m_errorInfo.missing_codec.find("audio/") == 0 && m_audioStreams.empty()))
 					m_event((iPlayableService*)this, evUser+12);
 			}
+
+			// delay subs
+			/*
+			if (n_text == 0 && m_sourceinfo.is_hls)
+			{
+				// Schedule delayed text stream scan
+				eDebug("[eServiceMP3] No text streams found yet, scheduling delayed scan");
+				m_subtitle_scan_timer = eTimer::create(eApp);
+				CONNECT(m_subtitle_scan_timer->timeout, eServiceMP3::scanSubtitleTracks);
+				m_subtitle_scan_timer->start(2000, true); // 2 second delay
+			}
+			
+void eServiceMP3::scanSubtitleTracks()
+{
+    gint n_text = 0;
+    g_object_get(m_gst_playbin, "n-text", &n_text, NULL);
+    
+    if (n_text > 0)
+    {
+        eDebug("[eServiceMP3] Delayed subtitle scan found %d text streams", n_text);
+        // Process text streams...
+        handleSubtitleTracks(n_text);
+    }
+}
+
+			
+			*/
+
 			/*+++*workaround for mp3 playback problem on some boxes - e.g. xtrend et9200 (if press stop and play or switch to the next track is the state 'playing', but plays not.
 			Restart the player-application or paused and then play the track fix this for once.)*/
 			/*if (!m_paused && codec_tofix)
@@ -3000,7 +3028,7 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 			gst_structure_free(extras);
 		}
 
-		if (m_sourceinfo.is_hls) 
+		if (_this->m_sourceinfo.is_hls) 
 		{
 			// Force text stream detection for HLS
 			g_object_set(G_OBJECT(source), "flags", GST_PLAY_FLAG_TEXT, NULL);
@@ -3009,7 +3037,7 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 			g_object_set(G_OBJECT(source), "subtitle-encoding", "UTF-8", NULL);
 			g_object_set(G_OBJECT(source), "timed-text-use-abd", TRUE, NULL);
 		}
-				
+
 		gst_object_unref(source);
 	}
 }
