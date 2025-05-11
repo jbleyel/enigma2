@@ -897,7 +897,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		{
 			m_subs_to_pull_handler_id = g_signal_connect(dvb_subsink, "new-buffer", G_CALLBACK(gstCBsubtitleAvail), this);
 			//g_object_set(dvb_subsink, "caps", gst_caps_from_string("text/plain; text/x-plain; text/x-raw; text/x-pango-markup; subpicture/x-dvd; subpicture/x-dvb; subpicture/x-pgs; text/vtt; text/x-webvtt;"), NULL);
-			g_object_set(dvb_subsink, "caps", gst_caps_from_string(
+			
+			GstCaps *caps = gst_caps_from_string(
 				"text/plain; "
 				"text/x-plain; "
 				"text/x-raw; "
@@ -911,7 +912,10 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 				"text/x-ass; "          // Advanced SubStation Alpha  
 				"application/x-ass; "    // Alternative ASS format
 				"application/x-ssa"     // Alternative SSA format
-				), NULL);
+				);
+			
+			g_object_set(dvb_subsink, "caps", caps, NULL);
+			gst_caps_unref(caps);
 
 			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
@@ -941,15 +945,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 					}
 					gst_object_unref(urisrc);
 				}
-
-				// Add WebVTT caps to subsink explicitly
-				GstCaps *subcaps = gst_caps_from_string(
-					"text/vtt; "
-					"application/x-subtitle-vtt; " 
-					"text/x-raw,format=(string)pango-markup"
-				);
-				g_object_set(dvb_subsink, "caps", subcaps, NULL);
-				gst_caps_unref(subcaps);
 
 			}
 
