@@ -528,6 +528,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	m_use_chapter_entries = false; /* TOC chapter support CVR */
 	m_play_position_timer = eTimer::create(eApp);
 	CONNECT(m_play_position_timer->timeout, eServiceMP3::playPositionTiming);
+	m_subtitle_scan_timer = eTimer::create(eApp);
+	CONNECT(m_subtitle_scan_timer->timeout, eServiceMP3::scanSubtitleTracks);
 	m_last_seek_count = -10;
 	m_seeking_or_paused = false;
 	m_to_paused = false;
@@ -799,8 +801,16 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		m_gst_playbin = gst_element_factory_make("playbin3", "playbin");
 	else
 		m_gst_playbin = gst_element_factory_make("playbin", "playbin");
+
 	if ( m_gst_playbin )
 	{
+		if(useplaybin3)
+		{
+			g_object_set(G_OBJECT(m_gst_playbin), "force-sw-decoders", FALSE, NULL);
+			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-mode", 0, NULL);
+			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-flags", 0, NULL);
+		}
+
 		if(dvb_audiosink)
 		{
 			if (m_sourceinfo.is_audio)
@@ -819,7 +829,29 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		{
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
+			if(useplaybin3)
+			{
+				g_object_set(dvb_videosink, "sync", TRUE, NULL);
+				g_object_set(dvb_videosink, "async", TRUE, NULL);
+			}
+
 			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
+		}
+
+		/*
+		 * avoid video conversion, let the dvbmediasink handle that using native video flag
+		 * volume control is done by hardware, do not use soft volume flag
+		 */
+		guint flags = GST_PLAY_FLAG_AUDIO | GST_PLAY_FLAG_VIDEO | \
+				GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO;
+
+		if(useplaybin3 && dvb_videosink)
+		{
+			gst_element_set_state(dvb_videosink, GST_STATE_READY);
+		
+			flags = GST_PLAY_FLAG_VIDEO | GST_PLAY_FLAG_AUDIO | 
+							GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO |
+							GST_PLAY_FLAG_NATIVE_AUDIO;
 		}
 
 		if (dvb_videosink) {
@@ -836,14 +868,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 				gst_caps_unref(caps);
 			}
 		}
-
-		/*
-		 * avoid video conversion, let the dvbmediasink handle that using native video flag
-		 * volume control is done by hardware, do not use soft volume flag
-		 */
-		guint flags = GST_PLAY_FLAG_AUDIO | GST_PLAY_FLAG_VIDEO | \
-				GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO;
-
+					
 		if ( m_sourceinfo.is_streaming )
 		{
 			m_notify_source_handler_id = g_signal_connect (m_gst_playbin, "notify::source", G_CALLBACK (playbinNotifySource), this);
@@ -2695,31 +2720,12 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			}
 
 			// delay subs
-			/*
 			if (n_text == 0 && m_sourceinfo.is_hls)
 			{
 				// Schedule delayed text stream scan
 				eDebug("[eServiceMP3] No text streams found yet, scheduling delayed scan");
-				m_subtitle_scan_timer = eTimer::create(eApp);
-				CONNECT(m_subtitle_scan_timer->timeout, eServiceMP3::scanSubtitleTracks);
-				m_subtitle_scan_timer->start(2000, true); // 2 second delay
+				m_subtitle_scan_timer->start(1000, true); // 2 second delay
 			}
-			
-void eServiceMP3::scanSubtitleTracks()
-{
-    gint n_text = 0;
-    g_object_get(m_gst_playbin, "n-text", &n_text, NULL);
-    
-    if (n_text > 0)
-    {
-        eDebug("[eServiceMP3] Delayed subtitle scan found %d text streams", n_text);
-        // Process text streams...
-        handleSubtitleTracks(n_text);
-    }
-}
-
-			
-			*/
 
 			/*+++*workaround for mp3 playback problem on some boxes - e.g. xtrend et9200 (if press stop and play or switch to the next track is the state 'playing', but plays not.
 			Restart the player-application or paused and then play the track fix this for once.)*/
@@ -2873,6 +2879,82 @@ void eServiceMP3::scanSubtitleTracks()
 	g_free (sourceName);
 }
 
+void eServiceMP3::scanSubtitleTracks()
+{
+	// Stop timer
+	m_subtitle_scan_timer->stop();
+
+	if (!m_gst_playbin)
+		return;
+
+	gint n_text = 0;
+	g_object_get(m_gst_playbin, "n-text", &n_text, NULL);
+
+	if (n_text > 0)
+	{
+		eDebug("[eServiceMP3] Found delayed text streams: %d", n_text);
+
+		std::vector<subtitleStream> subtitleStreams_temp;
+
+		for (gint i = 0; i < n_text; i++)
+		{
+			gchar *g_codec = NULL, *g_lang = NULL;
+			GstTagList *tags = NULL;
+
+			g_signal_emit_by_name(m_gst_playbin, "get-text-tags", i, &tags);
+
+			subtitleStream subs;
+			subs.language_code = "und";
+			if (tags && GST_IS_TAG_LIST(tags))
+			{
+				if (gst_tag_list_get_string(tags, GST_TAG_LANGUAGE_CODE, &g_lang))
+				{
+					subs.language_code = g_lang;
+					g_free(g_lang);
+				}
+				gst_tag_list_get_string(tags, GST_TAG_SUBTITLE_CODEC, &g_codec);
+				gst_tag_list_free(tags);
+			}
+
+			eDebug("[eServiceMP3] subtitle stream=%i language=%s codec=%s", i, subs.language_code.c_str(), g_codec ? g_codec : "(null)");
+
+			GstPad *pad = NULL;
+			g_signal_emit_by_name(m_gst_playbin, "get-text-pad", i, &pad);
+			if (pad)
+			{
+				g_signal_connect(G_OBJECT(pad), "notify::caps", G_CALLBACK(gstTextpadHasCAPS), this);
+				subs.type = getSubtitleType(pad, g_codec);
+				gst_object_unref(pad);
+			}
+
+			if (i == 0 && !m_external_subtitle_extension.empty())
+			{
+				if (m_external_subtitle_extension == "srt")
+					subs.type = stSRT;
+				if (m_external_subtitle_extension == "ass")
+					subs.type = stASS;
+				if (m_external_subtitle_extension == "ssa")
+					subs.type = stSSA;
+				if (m_external_subtitle_extension == "vtt")
+					subs.type = stVTT;
+				if (!m_external_subtitle_language.empty())
+					subs.language_code = m_external_subtitle_language;
+			}
+
+			g_free(g_codec);
+			subtitleStreams_temp.push_back(subs);
+		}
+
+		bool hasChanges = m_subtitleStreams.size() != subtitleStreams_temp.size() || std::equal(m_subtitleStreams.begin(), m_subtitleStreams.end(), subtitleStreams_temp.begin());
+
+		if(hasChanges)
+		{
+			m_subtitleStreams = subtitleStreams_temp;
+			m_event((iPlayableService *)this, evUpdatedInfo);
+		}
+	}
+}
+
 void eServiceMP3::handleMessage(GstMessage *msg)
 {
 	if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_STATE_CHANGED && GST_MESSAGE_SRC(msg) != GST_OBJECT(m_gst_playbin))
@@ -2974,87 +3056,83 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 	GstElement *source = NULL;
 	eServiceMP3 *_this = (eServiceMP3 *)user_data;
 	g_object_get(object, "source", &source, NULL);
-	if (source)
+
+	if (!source)
+		return;
+
+	// Get source class once
+	GObjectClass *source_class = G_OBJECT_GET_CLASS(source);
+
+	GstElementFactory *factory = gst_element_get_factory(source);
+
+	if (factory)
 	{
-		if (g_object_class_find_property(G_OBJECT_GET_CLASS(source), "timeout") != 0)
+		const gchar *sourcename = gst_plugin_feature_get_name(GST_PLUGIN_FEATURE(factory));
+		if (sourcename && !strcmp(sourcename, "souphttpsrc"))
 		{
-			GstElementFactory *factory = gst_element_get_factory(source);
-			if (factory)
-			{
-				const gchar *sourcename = gst_plugin_feature_get_name(GST_PLUGIN_FEATURE(factory));
-				if (!strcmp(sourcename, "souphttpsrc"))
-				{
-					g_object_set(G_OBJECT(source), "timeout", HTTP_TIMEOUT, NULL);
-					g_object_set(G_OBJECT(source), "retries", 20, NULL);
-				}
-			}
-		}
-		if (g_object_class_find_property(G_OBJECT_GET_CLASS(source), "ssl-strict") != 0)
-		{
-			g_object_set(G_OBJECT(source), "ssl-strict", FALSE, NULL);
-		}
-		if (g_object_class_find_property(G_OBJECT_GET_CLASS(source), "user-agent") != 0 && !_this->m_useragent.empty())
-		{
-			g_object_set(G_OBJECT(source), "user-agent", _this->m_useragent.c_str(), NULL);
-		}
-		if (g_object_class_find_property(G_OBJECT_GET_CLASS(source), "extra-headers") != 0 && !_this->m_extra_headers.empty())
-		{
-			GstStructure *extras = gst_structure_new_empty("extras");
-			size_t pos = 0;
-			while (pos != std::string::npos)
-			{
-				std::string name, value;
-				size_t start = pos;
-				size_t len = std::string::npos;
-				pos = _this->m_extra_headers.find('=', pos);
-				if (pos != std::string::npos)
-				{
-					len = pos - start;
-					pos++;
-					name = _this->m_extra_headers.substr(start, len);
-					start = pos;
-					len = std::string::npos;
-					pos = _this->m_extra_headers.find('&', pos);
-					if (pos != std::string::npos)
-					{
-						len = pos - start;
-						pos++;
-					}
-					value = _this->m_extra_headers.substr(start, len);
-				}
-				if (!name.empty() && !value.empty())
-				{
-					GValue header;
-					// eDebug("[eServiceMP3] setting extra-header '%s:%s'", name.c_str(), value.c_str());
-					memset(&header, 0, sizeof(GValue));
-					g_value_init(&header, G_TYPE_STRING);
-					g_value_set_string(&header, value.c_str());
-					gst_structure_set_value(extras, name.c_str(), &header);
-				}
-				else
-				{
-					eDebug("[eServiceMP3] Invalid header format %s", _this->m_extra_headers.c_str());
-					break;
-				}
-			}
-			if (gst_structure_n_fields(extras) > 0)
-			{
-				g_object_set(G_OBJECT(source), "extra-headers", extras, NULL);
-			}
-			gst_structure_free(extras);
-		}
+			if (g_object_class_find_property(source_class, "timeout"))
+				g_object_set(G_OBJECT(source), "timeout", HTTP_TIMEOUT, NULL);
 
-		if (_this->m_sourceinfo.is_hls)
-		{
-			// Configure text stream properties on playbin
-			g_object_set(G_OBJECT(_this->m_gst_playbin), "subtitle-encoding", "UTF-8", NULL);
-
-			// Set HLS specific properties on source
-			g_object_set(G_OBJECT(source), "tls-validation-flags", 0, NULL);
+			if (g_object_class_find_property(source_class, "retries"))
+				g_object_set(G_OBJECT(source), "retries", 20, NULL);
 		}
-
-		gst_object_unref(source);
 	}
+
+	// SSL settings
+	if (g_object_class_find_property(source_class, "ssl-strict"))
+		g_object_set(G_OBJECT(source), "ssl-strict", FALSE, NULL);
+
+	// User agent
+	if (!_this->m_useragent.empty() && g_object_class_find_property(source_class, "user-agent"))
+	{
+		g_object_set(G_OBJECT(source), "user-agent", _this->m_useragent.c_str(), NULL);
+	}
+
+	// Extra headers
+	if (!_this->m_extra_headers.empty() && g_object_class_find_property(source_class, "extra-headers"))
+	{
+		GstStructure *extras = gst_structure_new_empty("extras");
+		size_t pos = 0;
+		size_t delim_pos;
+
+		while ((delim_pos = headers.find('=', pos)) != std::string::npos)
+		{
+			std::string name = headers.substr(pos, delim_pos - pos);
+			pos = delim_pos + 1;
+
+			delim_pos = headers.find('&', pos);
+			std::string value = headers.substr(pos, delim_pos - pos);
+
+			if (!name.empty() && !value.empty())
+			{
+				GValue header = G_VALUE_INIT;
+				g_value_init(&header, G_TYPE_STRING);
+				g_value_set_string(&header, value.c_str());
+				gst_structure_set_value(extras, name.c_str(), &header);
+				g_value_unset(&header);
+			}
+			else
+			{
+				eDebug("[eServiceMP3] Invalid header format %s", _this->m_extra_headers.c_str());
+				break;
+			}
+
+			if (delim_pos == std::string::npos)
+				break;
+
+			pos = delim_pos + 1;
+		}
+
+		if (gst_structure_n_fields(extras) > 0)
+			g_object_set(G_OBJECT(source), "extra-headers", extras, NULL);
+
+		gst_structure_free(extras);
+	}
+
+	if (_this->m_sourceinfo.is_hls)
+		g_object_set(G_OBJECT(_this->m_gst_playbin), "subtitle-encoding", "UTF-8", NULL);
+
+	gst_object_unref(source);
 }
 
 void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data)
