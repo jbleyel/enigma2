@@ -850,57 +850,72 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			if (m_sourceinfo.is_hls)
 				g_object_set(m_gst_playbin, "connection-speed", (guint64)(4495000LL), NULL);
 		}
-		g_object_set (m_gst_playbin, "flags", flags, NULL);
-		g_object_set (m_gst_playbin, "uri", uri, NULL);
+		g_object_set(m_gst_playbin, "flags", flags, NULL);
+		g_object_set(m_gst_playbin, "uri", uri, NULL);
 		if (dvb_subsink)
 		{
-			m_subs_to_pull_handler_id = g_signal_connect (dvb_subsink, "new-buffer", G_CALLBACK (gstCBsubtitleAvail), this);
-			g_object_set (dvb_subsink, "caps", gst_caps_from_string("text/plain; text/x-plain; text/x-raw; text/x-pango-markup; subpicture/x-dvd; subpicture/x-dvb; subpicture/x-pgs"), NULL);
-			g_object_set (m_gst_playbin, "text-sink", dvb_subsink, NULL);
-			g_object_set (m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+			m_subs_to_pull_handler_id = g_signal_connect(dvb_subsink, "new-buffer", G_CALLBACK(gstCBsubtitleAvail), this);
+			g_object_set(dvb_subsink, "caps", gst_caps_from_string("text/plain; text/x-plain; text/x-raw; text/x-pango-markup; subpicture/x-dvd; subpicture/x-dvb; subpicture/x-pgs; text/vtt"), NULL);
+			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
-		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE (m_gst_playbin));
+		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
 		gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
 		gst_object_unref(bus);
 
 		if (suburi != NULL)
-			g_object_set (m_gst_playbin, "suburi", suburi, NULL);
+			g_object_set(m_gst_playbin, "suburi", suburi, NULL);
 		else
 		{
-			if(m_external_subtitle_path.empty())
+			if (!m_external_subtitle_path.empty())
 			{
-				char srt_filename[ext - filename + 5];
-				strncpy(srt_filename,filename, ext - filename);
-				srt_filename[ext - filename] = '\0';
-				strcat(srt_filename, ".srt");
-				if (::access(srt_filename, R_OK) >= 0)
-				{
-					gchar *luri = g_filename_to_uri(srt_filename, NULL, NULL);
-					eDebug("[eServiceMP3] subtitle uri: %s", luri);
-					g_object_set (m_gst_playbin, "suburi", luri, NULL);
-					g_free(luri);
-				}
-
-			}
-			else {
 				if (::access(m_external_subtitle_path.c_str(), R_OK) >= 0)
 				{
 					gchar *luri = g_filename_to_uri(m_external_subtitle_path.c_str(), NULL, NULL);
-					eDebug("[eServiceMP3] m_external_subtitle uri: %s", luri);
-					g_object_set (m_gst_playbin, "suburi", luri, NULL);
-					g_free(luri);
+					if (luri)
+					{
+						eDebug("[eServiceMP3] Found external subtitle: %s", luri);
+						g_object_set(m_gst_playbin, "suburi", luri, NULL);
+						g_free(luri);
+					}
 				}
-				else {
+				else
 					m_external_subtitle_extension = "";
+			}
+			else
+			{
+				const char *ext = strrchr(filename, '.');
+				if (ext)
+				{
+					size_t base_len = ext - filename;
+					std::string base_filename(filename, base_len);
+
+					// Try SRT first, then VTT
+					const char *subtitle_exts[] = {".srt", ".vtt"};
+					for (const char *sub_ext : subtitle_exts)
+					{
+						std::string subtitle_file = base_filename + sub_ext;
+						if (::access(subtitle_file.c_str(), R_OK) == 0)
+						{
+							gchar *luri = g_filename_to_uri(subtitle_file.c_str(), NULL, NULL);
+							if (luri)
+							{
+								eDebug("[eServiceMP3] Found %s subtitle: %s", sub_ext + 1, luri);
+								g_object_set(m_gst_playbin, "suburi", luri, NULL);
+								g_free(luri);
+								break;
+							}
+						}
+					}
 				}
 			}
 		}
-	} else
+	}
+	else
 	{
 		m_event((iPlayableService*)this, evUser+12);
 		m_gst_playbin = NULL;
 		m_errorInfo.error_message = "failed to create GStreamer pipeline!\n";
-
 		eDebug("[eServiceMP3] sorry, can't play: %s",m_errorInfo.error_message.c_str());
 	}
 	g_free(uri);
@@ -2613,6 +2628,8 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						subs.type = stASS;
 					if (m_external_subtitle_extension == "ssa")
 						subs.type = stSSA;
+					if (m_external_subtitle_extension == "vtt")
+						subs.type = stVTT;
 					if (!m_external_subtitle_language.empty())
 						subs.language_code = m_external_subtitle_language;
 				}
