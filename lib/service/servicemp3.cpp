@@ -915,6 +915,24 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 
 			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+
+			if (m_sourceinfo.is_hls)
+			{
+				// Set text caps filter for HLS
+				GstCaps *textcaps = gst_caps_from_string(
+					"text/vtt,render-rectangle=(string)rectangle,"
+					"text/x-raw,format=(string)pango-markup,"
+					"application/x-subtitle-vtt"
+				);
+				
+				g_object_set(G_OBJECT(m_gst_playbin), 
+					"text-filter-caps", textcaps,
+					"subtitle-encoding", "UTF-8",
+					NULL);
+					
+				gst_caps_unref(textcaps);
+			}
+
 		}
 		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
 		gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
@@ -2724,7 +2742,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			{
 				// Schedule delayed text stream scan
 				eDebug("[eServiceMP3] No text streams found yet, scheduling delayed scan");
-				m_subtitle_scan_timer->start(1000, true); // 2 second delay
+				m_subtitle_scan_timer->start(2000, true); // 2 second delay
 			}
 
 			/*+++*workaround for mp3 playback problem on some boxes - e.g. xtrend et9200 (if press stop and play or switch to the next track is the state 'playing', but plays not.
@@ -2889,6 +2907,8 @@ void eServiceMP3::scanSubtitleTracks()
 
 	gint n_text = 0;
 	g_object_get(m_gst_playbin, "n-text", &n_text, NULL);
+
+	eDebug("[eServiceMP3] scanSubtitleTracks %d", n_text);
 
 	if (n_text > 0)
 	{
