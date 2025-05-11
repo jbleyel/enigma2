@@ -602,30 +602,34 @@ bool eListboxPythonServiceContent::checkServiceIsRecorded(eServiceReference ref,
 
 	std::vector<eServiceReference> recordedServices;
 	eNavigation::getInstance()->getRecordingsServicesOnly(recordedServices, type);
-	for (std::vector<eServiceReference>::iterator it = recordedServices.begin(); it != recordedServices.end(); ++it)
+	for (const auto& recordedService : recordedServices)
 	{
 		if (ref.flags & eServiceReference::isGroup)
 		{
-			for (std::list<eServiceReference>::iterator i(bouquet->m_services.begin()); i != bouquet->m_services.end(); ++i)
-				if (*i == *it || compareServices(*i, *it))
+			for (const auto& service : bouquet->m_services)
+			{
+				if (service == recordedService || compareServices(service, recordedService))
 					return true;
+			}
 		}
-		else if (ref == *it || compareServices(ref, *it))
+		else if (ref == recordedService || compareServices(ref, recordedService))
 			return true;
 	}
 
 	if (type & pNavigation::isStreaming )
 	{
 		std::vector<std::string> streamServices = eNavigation::getInstance()->getStreamServiceList();
-		for (std::vector<std::string>::iterator it = streamServices.begin(); it != streamServices.end(); ++it)
+		for (const auto& streamService : streamServices)
 		{
-			if (ref.flags & eServiceReference::isGroup)
+			if (ref.flags & eServiceReference::isGroup && bouquet)
 			{
-				for (std::list<eServiceReference>::iterator i(bouquet->m_services.begin()); i != bouquet->m_services.end(); ++i)
-					if (*i->toString() == *it)
+				for (const auto& service : bouquet->m_services)
+				{
+					if (service.toString() == streamService)
 						return true;
+				}
 			}
-			if (ref.toString() == *it)
+			if (ref.toString() == streamService)
 				return true;
 		}
 	}
