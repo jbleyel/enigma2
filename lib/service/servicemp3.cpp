@@ -3343,7 +3343,7 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 		subtitleStream subs;
 
 		eDebug("[eServiceMP3] gstTextpadHasCAPS:: signal::caps = %s", gst_caps_to_string(caps));
-		eDebug("[eServiceMP3] gstGhostpadHasCAPS_synced %p %d", pad, m_subtitleStreams.size());
+		//eDebug("[eServiceMP3] gstGhostpadHasCAPS_synced %p %d", pad, m_subtitleStreams.size());
 
 		if (m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size())
 			subs = m_subtitleStreams[m_currentSubtitleStream];
@@ -3354,6 +3354,7 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 
 		if ( subs.type == stUnknown )
 		{
+			eDebug("[eServiceMP3] gstTextpadHasCAPS_synced:: stUnknown m_currentSubtitleStream %d", m_currentSubtitleStream);
 			GstTagList *tags = NULL;
 			gchar *g_lang = NULL, *g_lang_title = NULL;
 			g_signal_emit_by_name (m_gst_playbin, "get-text-tags", m_currentSubtitleStream, &tags);
@@ -3381,7 +3382,7 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 				m_subtitleStreams.push_back(subs);
 		}
 
-		eDebug("[eServiceMP3] gstGhostpadHasCAPS:: m_gst_prev_subtitle_caps=%s equal=%i",gst_caps_to_string(m_gst_prev_subtitle_caps),gst_caps_is_equal(m_gst_prev_subtitle_caps, caps));
+		// eDebug("[eServiceMP3] gstGhostpadHasCAPS:: m_gst_prev_subtitle_caps=%s equal=%i",gst_caps_to_string(m_gst_prev_subtitle_caps),gst_caps_is_equal(m_gst_prev_subtitle_caps, caps));
 
 		gst_caps_unref (caps);
 	}
