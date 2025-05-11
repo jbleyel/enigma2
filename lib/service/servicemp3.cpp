@@ -3188,9 +3188,10 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 	{
 		g_object_set(G_OBJECT(_this->m_gst_playbin), "subtitle-encoding", "UTF-8", NULL);
 
-		gint n_text = 0; 
+		// Debug output for text streams
+		gint n_text = 0;
 		g_object_get(_this->m_gst_playbin, "n-text", &n_text, NULL);
-		eDebug("[eServiceMP3] HLS text streams before config: %d", n_text);
+		eDebug("[eServiceMP3] HLS text streams in notify source: %d", n_text);
 	
 		// Configure HLS source
 		GstElement *hlsdemux = NULL;
@@ -3200,13 +3201,34 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 			g_object_set(G_OBJECT(hlsdemux),
 				"parse-subtitles", TRUE,
 				NULL);
+				
+			// Add debug output for HLS demuxer
+			gchar *name = gst_element_get_name(hlsdemux);
+			eDebug("[eServiceMP3] HLS demuxer name: %s", name);
+			g_free(name);
+				
 			gst_object_unref(hlsdemux);
 		}
 	
-		// Check again
-		g_object_get(_this->m_gst_playbin, "n-text", &n_text, NULL);
-		eDebug("[eServiceMP3] HLS text streams after config: %d", n_text);
+		// Add more detailed debug output
+		GstElement *videosink = NULL;
+		g_object_get(_this->m_gst_playbin, "video-sink", &videosink, NULL);
+		if (videosink)
+		{
+			GstState state;
+			gst_element_get_state(videosink, &state, NULL, GST_CLOCK_TIME_NONE);
+			eDebug("[eServiceMP3] Video sink state: %s", gst_element_state_get_name(state));
 
+			GstCaps *caps = gst_pad_get_allowed_caps(gst_element_get_static_pad(videosink, "sink"));
+			if (caps)
+			{
+				gchar *str = gst_caps_to_string(caps);
+				eDebug("[eServiceMP3] Video sink allowed caps: %s", str);
+				g_free(str);
+				gst_caps_unref(caps);
+			}
+			gst_object_unref(videosink);
+		}
 	}
 
 	gst_object_unref(source);
