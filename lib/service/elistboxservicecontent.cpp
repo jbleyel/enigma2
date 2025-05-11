@@ -590,47 +590,71 @@ inline bool compareServices(const eServiceReference &src, const eServiceReferenc
 bool eListboxPythonServiceContent::checkServiceIsRecorded(eServiceReference ref, pNavigation::RecordType type)
 {
 
-	eBouquet *bouquet = 0;
-	if (ref.flags & eServiceReference::isGroup)
+	const bool isGroup = ref.flags & eServiceReference::isGroup;
+
+	eBouquet *bouquet = nullptr;
+	if (isGroup)
 	{
-		ePtr<iDVBChannelList> db;
-		ePtr<eDVBResourceManager> res;
-		eDVBResourceManager::getInstance(res);
-		res->getChannelList(db);
-		db->getBouquet(ref, bouquet);
+		static ePtr<eDVBResourceManager> res = nullptr;
+		if (!res)
+			eDVBResourceManager::getInstance(res);
+		if (res)
+		{
+			ePtr<iDVBChannelList> db;
+			res->getChannelList(db);
+			if (db)
+				db->getBouquet(ref, bouquet);
+		}
+		if (!bouquet)
+			return false;
 	}
 
 	std::vector<eServiceReference> recordedServices;
 	eNavigation::getInstance()->getRecordingsServicesOnly(recordedServices, type);
-	for (const auto& recordedService : recordedServices)
-	{
-		if (ref.flags & eServiceReference::isGroup)
-		{
-			for (const auto& service : bouquet->m_services)
-			{
-				if (service == recordedService || compareServices(service, recordedService))
-					return true;
-			}
-		}
-		else if (ref == recordedService || compareServices(ref, recordedService))
-			return true;
-	}
 
-	if (type & pNavigation::isStreaming )
+	if (!recordedServices.empty())
 	{
-		std::vector<std::string> streamServices = eNavigation::getInstance()->getStreamServiceList();
-		for (const auto& streamService : streamServices)
+		if (isGroup)
 		{
-			if (ref.flags & eServiceReference::isGroup && bouquet)
+			for (const auto &service : bouquet->m_services)
 			{
-				for (const auto& service : bouquet->m_services)
+				for (const auto &recordedService : recordedServices)
 				{
-					if (service.toString() == streamService)
+					if (service == recordedService || compareServices(service, recordedService))
 						return true;
 				}
 			}
-			if (ref.toString() == streamService)
-				return true;
+		}
+		else
+		{
+			for (const auto &recordedService : recordedServices)
+			{
+				if (ref == recordedService || compareServices(ref, recordedService))
+					return true;
+			}
+		}
+	}
+
+	if (type & pNavigation::isStreaming)
+	{
+		const auto &streamServices = eNavigation::getInstance()->getStreamServiceList();
+		if (!streamServices.empty())
+		{
+			const std::string refString = ref.toString();
+
+			if (isGroup)
+			{
+				for (const auto &service : bouquet->m_services)
+				{
+					if (std::find(streamServices.begin(), streamServices.end(),service.toString()) != streamServices.end())
+						return true;
+				}
+			}
+			else
+			{
+				if (std::find(streamServices.begin(), streamServices.end(),refString) != streamServices.end())
+					return true;
+			}
 		}
 	}
 	return false;
