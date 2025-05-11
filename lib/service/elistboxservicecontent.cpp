@@ -589,23 +589,28 @@ inline bool compareServices(const eServiceReference &src, const eServiceReferenc
 
 bool eListboxPythonServiceContent::checkServiceIsRecorded(eServiceReference ref, pNavigation::RecordType type)
 {
-	std::map<ePtr<iRecordableService>, eServiceReference, std::less<iRecordableService *>> recordedServices;
-	recordedServices = eNavigation::getInstance()->getRecordingsServices(type);
-	for (std::map<ePtr<iRecordableService>, eServiceReference>::iterator it = recordedServices.begin(); it != recordedServices.end(); ++it)
+
+	eBouquet *bouquet = 0;
+	if (ref.flags & eServiceReference::isGroup)
+	{
+		ePtr<iDVBChannelList> db;
+		ePtr<eDVBResourceManager> res;
+		eDVBResourceManager::getInstance(res);
+		res->getChannelList(db);
+		db->getBouquet(ref, bouquet);
+	}
+
+	std::vector<eServiceReference> recordedServices;
+	eNavigation::getInstance()->getRecordingsServicesOnly(recordedServices, type);
+	for (std::vector<eServiceReference>::iterator it = recordedServices.begin(); it != recordedServices.end(); ++it)
 	{
 		if (ref.flags & eServiceReference::isGroup)
 		{
-			ePtr<iDVBChannelList> db;
-			ePtr<eDVBResourceManager> res;
-			eDVBResourceManager::getInstance(res);
-			res->getChannelList(db);
-			eBouquet *bouquet = 0;
-			db->getBouquet(ref, bouquet);
 			for (std::list<eServiceReference>::iterator i(bouquet->m_services.begin()); i != bouquet->m_services.end(); ++i)
-				if (*i == it->second || compareServices(*i, it->second))
+				if (*i == *it || compareServices(*i, *it))
 					return true;
 		}
-		else if (ref == it->second || compareServices(ref, it->second))
+		else if (ref == *it || compareServices(ref, *it))
 			return true;
 	}
 
@@ -614,11 +619,16 @@ bool eListboxPythonServiceContent::checkServiceIsRecorded(eServiceReference ref,
 		std::vector<std::string> streamServices = eNavigation::getInstance()->getStreamServiceList();
 		for (std::vector<std::string>::iterator it = streamServices.begin(); it != streamServices.end(); ++it)
 		{
+			if (ref.flags & eServiceReference::isGroup)
+			{
+				for (std::list<eServiceReference>::iterator i(bouquet->m_services.begin()); i != bouquet->m_services.end(); ++i)
+					if (*i.toString() == *it)
+						return true;
+			}
 			if (ref.toString() == *it)
 				return true;
 		}
 	}
-
 	return false;
 }
 
