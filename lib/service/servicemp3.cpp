@@ -953,13 +953,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 					"text/x-raw,format=(string)pango-markup"
 				);
 
-				// Diese Caps dem Playbin bekannt machen
-				g_object_set(G_OBJECT(m_gst_playbin), 
-					"subtitle-caps", textcaps,
-					NULL);
-					
-				gst_caps_unref(textcaps);
-
 				// Debug Output
 				gint n_text = 0;
 				g_object_get(m_gst_playbin, "n-text", &n_text, NULL);
@@ -3194,41 +3187,16 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 		eDebug("[eServiceMP3] HLS text streams in notify source: %d", n_text);
 	
 		// Configure HLS source
-		GstElement *hlsdemux = NULL;
-		g_object_get(source, "source", &hlsdemux, NULL);
-		if (hlsdemux)
-		{
-			g_object_set(G_OBJECT(hlsdemux),
-				"parse-subtitles", TRUE,
-				NULL);
-				
-			// Add debug output for HLS demuxer
+        GstElement *hlsdemux = NULL;
+        g_object_get(source, "source", &hlsdemux, NULL);
+        if (hlsdemux) {
+            g_object_set(G_OBJECT(hlsdemux), "parse-subtitles", TRUE, NULL);
 			gchar *name = gst_element_get_name(hlsdemux);
 			eDebug("[eServiceMP3] HLS demuxer name: %s", name);
 			g_free(name);
-				
-			gst_object_unref(hlsdemux);
-		}
-	
-		// Add more detailed debug output
-		GstElement *videosink = NULL;
-		g_object_get(_this->m_gst_playbin, "video-sink", &videosink, NULL);
-		if (videosink)
-		{
-			GstState state;
-			gst_element_get_state(videosink, &state, NULL, GST_CLOCK_TIME_NONE);
-			eDebug("[eServiceMP3] Video sink state: %s", gst_element_state_get_name(state));
+            gst_object_unref(hlsdemux);
+        }
 
-			GstCaps *caps = gst_pad_get_allowed_caps(gst_element_get_static_pad(videosink, "sink"));
-			if (caps)
-			{
-				gchar *str = gst_caps_to_string(caps);
-				eDebug("[eServiceMP3] Video sink allowed caps: %s", str);
-				g_free(str);
-				gst_caps_unref(caps);
-			}
-			gst_object_unref(videosink);
-		}
 	}
 
 	gst_object_unref(source);
