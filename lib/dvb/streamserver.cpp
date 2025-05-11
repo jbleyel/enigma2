@@ -359,9 +359,10 @@ void eStreamServer::connectionLost(eStreamClient *client)
 	eSmartPtrList<eStreamClient>::iterator it = std::find(clients.begin(), clients.end(), client );
 	if (it != clients.end())
 	{
+        std::string serviceref = it->getServiceref();
 		clients.erase(it);
-		streamStatusChanged(2,it->getServiceref().c_str());
-		//eNavigation::getInstance()->removeStreamService(it->getServiceref());
+		streamStatusChanged(2,serviceref.c_str());
+		eNavigation::getInstance()->removeStreamService(serviceref);
 	}
 }
 
