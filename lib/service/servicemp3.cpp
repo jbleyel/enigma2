@@ -3186,17 +3186,21 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 		g_object_get(_this->m_gst_playbin, "n-text", &n_text, NULL);
 		eDebug("[eServiceMP3] HLS text streams in notify source: %d", n_text);
 	
-		// Configure HLS source
-        GstElement *hlsdemux = NULL;
-        g_object_get(source, "source", &hlsdemux, NULL);
-        if (hlsdemux) {
-            g_object_set(G_OBJECT(hlsdemux), "parse-subtitles", TRUE, NULL);
-			gchar *name = gst_element_get_name(hlsdemux);
-			eDebug("[eServiceMP3] HLS demuxer name: %s", name);
-			g_free(name);
-            gst_object_unref(hlsdemux);
+        if (GST_IS_BIN(source)) {
+            GstElement *hlsdemux = gst_bin_get_by_name(GST_BIN(source), "hlsdemux");
+            if (hlsdemux) {
+                g_object_set(G_OBJECT(hlsdemux), "parse-subtitles", TRUE, NULL);
+                gchar *name = gst_element_get_name(hlsdemux);
+                eDebug("[eServiceMP3] HLS demuxer name: %s", name);
+                g_free(name);
+                gst_object_unref(hlsdemux);
+            } else {
+                eDebug("[eServiceMP3] No HLS demuxer found in source");
+            }
+        } else {
+            eDebug("[eServiceMP3] Source is not a bin, cannot find HLS demuxer");
         }
-
+		
 	}
 
 	gst_object_unref(source);
