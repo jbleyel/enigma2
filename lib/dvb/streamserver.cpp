@@ -361,7 +361,7 @@ void eStreamServer::connectionLost(eStreamClient *client)
 	{
 		clients.erase(it);
 		streamStatusChanged(2,it->getServiceref().c_str());
-		eNavigation::getInstance()->removeStreamService(it->getServiceref());
+		//eNavigation::getInstance()->removeStreamService(it->getServiceref());
 	}
 }
 
