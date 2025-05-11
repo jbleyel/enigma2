@@ -3092,6 +3092,7 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 	if (!_this->m_extra_headers.empty() && g_object_class_find_property(source_class, "extra-headers"))
 	{
 		GstStructure *extras = gst_structure_new_empty("extras");
+		std::string headers = _this->m_extra_headers;
 		size_t pos = 0;
 		size_t delim_pos;
 
