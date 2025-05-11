@@ -918,19 +918,39 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 
 			if (m_sourceinfo.is_hls)
 			{
-				// Set text caps filter for HLS
-				GstCaps *textcaps = gst_caps_from_string(
-					"text/vtt,render-rectangle=(string)rectangle,"
-					"text/x-raw,format=(string)pango-markup,"
-					"application/x-subtitle-vtt"
-				);
-				
+				// Set subtitle properties on playbin
 				g_object_set(G_OBJECT(m_gst_playbin), 
-					"text-filter-caps", textcaps,
 					"subtitle-encoding", "UTF-8",
 					NULL);
-					
-				gst_caps_unref(textcaps);
+
+				// Configure urisourcebin for HLS streams
+				GstElement *urisrc = NULL;
+				g_object_get(m_gst_playbin, "source", &urisrc, NULL);
+				if (urisrc) 
+				{
+					// Set property on urisourcebin to enable WebVTT subtitle support
+					GstElement *demux = NULL;
+					g_object_get(urisrc, "source", &demux, NULL);
+					if (demux)
+					{
+						// Enable subtitle parsing
+						g_object_set(G_OBJECT(demux),
+							"parse-subtitles", TRUE,
+							NULL);
+						gst_object_unref(demux);
+					}
+					gst_object_unref(urisrc);
+				}
+
+				// Add WebVTT caps to subsink explicitly
+				GstCaps *subcaps = gst_caps_from_string(
+					"text/vtt; "
+					"application/x-subtitle-vtt; " 
+					"text/x-raw,format=(string)pango-markup"
+				);
+				g_object_set(dvb_subsink, "caps", subcaps, NULL);
+				gst_caps_unref(subcaps);
+
 			}
 
 		}
