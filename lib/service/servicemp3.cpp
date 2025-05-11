@@ -946,6 +946,25 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 					gst_object_unref(urisrc);
 				}
 
+				// Explizit WebVTT Caps für HLS setzen
+				GstCaps *textcaps = gst_caps_from_string(
+					"text/vtt;"
+					"application/x-subtitle-vtt;"
+					"text/x-raw,format=(string)pango-markup"
+				);
+
+				// Diese Caps dem Playbin bekannt machen
+				g_object_set(G_OBJECT(m_gst_playbin), 
+					"subtitle-caps", textcaps,
+					NULL);
+					
+				gst_caps_unref(textcaps);
+
+				// Debug Output
+				gint n_text = 0;
+				g_object_get(m_gst_playbin, "n-text", &n_text, NULL);
+				eDebug("[eServiceMP3] Initial text streams: %d", n_text);
+
 			}
 
 		}
@@ -3166,7 +3185,29 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 	}
 
 	if (_this->m_sourceinfo.is_hls)
+	{
 		g_object_set(G_OBJECT(_this->m_gst_playbin), "subtitle-encoding", "UTF-8", NULL);
+
+		gint n_text = 0; 
+		g_object_get(_this->m_gst_playbin, "n-text", &n_text, NULL);
+		eDebug("[eServiceMP3] HLS text streams before config: %d", n_text);
+	
+		// Configure HLS source
+		GstElement *hlsdemux = NULL;
+		g_object_get(source, "source", &hlsdemux, NULL);
+		if (hlsdemux)
+		{
+			g_object_set(G_OBJECT(hlsdemux),
+				"parse-subtitles", TRUE,
+				NULL);
+			gst_object_unref(hlsdemux);
+		}
+	
+		// Check again
+		g_object_get(_this->m_gst_playbin, "n-text", &n_text, NULL);
+		eDebug("[eServiceMP3] HLS text streams after config: %d", n_text);
+
+	}
 
 	gst_object_unref(source);
 }
@@ -3301,8 +3342,8 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 	{
 		subtitleStream subs;
 
-//		eDebug("[eServiceMP3] gstTextpadHasCAPS:: signal::caps = %s", gst_caps_to_string(caps));
-//		eDebug("[eServiceMP3] gstGhostpadHasCAPS_synced %p %d", pad, m_subtitleStreams.size());
+		eDebug("[eServiceMP3] gstTextpadHasCAPS:: signal::caps = %s", gst_caps_to_string(caps));
+		eDebug("[eServiceMP3] gstGhostpadHasCAPS_synced %p %d", pad, m_subtitleStreams.size());
 
 		if (m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size())
 			subs = m_subtitleStreams[m_currentSubtitleStream];
@@ -3340,7 +3381,7 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 				m_subtitleStreams.push_back(subs);
 		}
 
-//		eDebug("[eServiceMP3] gstGhostpadHasCAPS:: m_gst_prev_subtitle_caps=%s equal=%i",gst_caps_to_string(m_gst_prev_subtitle_caps),gst_caps_is_equal(m_gst_prev_subtitle_caps, caps));
+		eDebug("[eServiceMP3] gstGhostpadHasCAPS:: m_gst_prev_subtitle_caps=%s equal=%i",gst_caps_to_string(m_gst_prev_subtitle_caps),gst_caps_is_equal(m_gst_prev_subtitle_caps, caps));
 
 		gst_caps_unref (caps);
 	}
