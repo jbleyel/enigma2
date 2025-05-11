@@ -821,6 +821,22 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
 			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
 		}
+
+		if (dvb_videosink) {
+
+			GstState state;
+			gst_element_get_state(dvb_videosink, &state, NULL, GST_CLOCK_TIME_NONE);
+			eDebug("[eServiceMP3] Video sink state: %s", gst_element_state_get_name(state));
+
+			GstCaps *caps = gst_pad_get_allowed_caps(gst_element_get_static_pad(dvb_videosink, "sink"));
+			if (caps) {
+				gchar *str = gst_caps_to_string(caps);
+				eDebug("[eServiceMP3] Video sink allowed caps: %s", str);
+				g_free(str);
+				gst_caps_unref(caps);
+			}
+		}
+
 		/*
 		 * avoid video conversion, let the dvbmediasink handle that using native video flag
 		 * volume control is done by hardware, do not use soft volume flag
@@ -2956,7 +2972,7 @@ void eServiceMP3::HandleTocEntry(GstMessage *msg)
 void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpointer user_data)
 {
 	GstElement *source = NULL;
-	eServiceMP3 *_this = (eServiceMP3*)user_data;
+	eServiceMP3 *_this = (eServiceMP3 *)user_data;
 	g_object_get(object, "source", &source, NULL);
 	if (source)
 	{
@@ -3028,14 +3044,13 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 			gst_structure_free(extras);
 		}
 
-		if (_this->m_sourceinfo.is_hls) 
+		if (_this->m_sourceinfo.is_hls)
 		{
-			// Force text stream detection for HLS
-			g_object_set(G_OBJECT(source), "flags", GST_PLAY_FLAG_TEXT, NULL);
-			
-			// Add subtitle URI handling
-			g_object_set(G_OBJECT(source), "subtitle-encoding", "UTF-8", NULL);
-			g_object_set(G_OBJECT(source), "timed-text-use-abd", TRUE, NULL);
+			// Configure text stream properties on playbin
+			g_object_set(G_OBJECT(_this->m_gst_playbin), "subtitle-encoding", "UTF-8", NULL);
+
+			// Set HLS specific properties on source
+			g_object_set(G_OBJECT(source), "tls-validation-flags", 0, NULL);
 		}
 
 		gst_object_unref(source);
