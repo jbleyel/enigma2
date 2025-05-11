@@ -622,7 +622,7 @@ bool eListboxPythonServiceContent::checkServiceIsRecorded(eServiceReference ref,
 			if (ref.flags & eServiceReference::isGroup)
 			{
 				for (std::list<eServiceReference>::iterator i(bouquet->m_services.begin()); i != bouquet->m_services.end(); ++i)
-					if (*i.toString() == *it)
+					if (*i->toString() == *it)
 						return true;
 			}
 			if (ref.toString() == *it)
