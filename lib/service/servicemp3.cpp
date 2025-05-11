@@ -2613,7 +2613,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 					gst_tag_list_free(tags);
 				}
 
-				//eDebug("[eServiceMP3] subtitle stream=%i language=%s codec=%s", i, subs.language_code.c_str(), g_codec ? g_codec : "(null)");
+				eDebug("[eServiceMP3] subtitle stream=%i language=%s codec=%s", i, subs.language_code.c_str(), g_codec ? g_codec : "(null)");
 
 				GstPad *pad = 0;
 				g_signal_emit_by_name(m_gst_playbin, "get-text-pad", i, &pad);
