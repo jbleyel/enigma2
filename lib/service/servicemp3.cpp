@@ -872,11 +872,13 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		if ( m_sourceinfo.is_streaming )
 		{
 			m_notify_source_handler_id = g_signal_connect (m_gst_playbin, "notify::source", G_CALLBACK (playbinNotifySource), this);
+
+			m_notify_element_added_handler_id = g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
+
 			if (m_download_buffer_path != "")
 			{
 				/* use progressive download buffering */
 				flags |= GST_PLAY_FLAG_DOWNLOAD;
-				m_notify_element_added_handler_id = g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
 				/* limit file size */
 				g_object_set(m_gst_playbin, "ring-buffer-max-size", (guint64)(8LL * 1024LL * 1024LL), NULL);
 			}
@@ -3178,30 +3180,7 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 	}
 
 	if (_this->m_sourceinfo.is_hls)
-	{
 		g_object_set(G_OBJECT(_this->m_gst_playbin), "subtitle-encoding", "UTF-8", NULL);
-
-		// Debug output for text streams
-		gint n_text = 0;
-		g_object_get(_this->m_gst_playbin, "n-text", &n_text, NULL);
-		eDebug("[eServiceMP3] HLS text streams in notify source: %d", n_text);
-	
-        if (GST_IS_BIN(source)) {
-            GstElement *hlsdemux = gst_bin_get_by_name(GST_BIN(source), "hlsdemux");
-            if (hlsdemux) {
-                g_object_set(G_OBJECT(hlsdemux), "parse-subtitles", TRUE, NULL);
-                gchar *name = gst_element_get_name(hlsdemux);
-                eDebug("[eServiceMP3] HLS demuxer name: %s", name);
-                g_free(name);
-                gst_object_unref(hlsdemux);
-            } else {
-                eDebug("[eServiceMP3] No HLS demuxer found in source");
-            }
-        } else {
-            eDebug("[eServiceMP3] Source is not a bin, cannot find HLS demuxer");
-        }
-		
-	}
 
 	gst_object_unref(source);
 }
@@ -3212,6 +3191,7 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 	if (_this)
 	{
 		gchar *elementname = gst_element_get_name(element);
+        eDebug("[eServiceMP3] Element added: %s", elementname);
 
 		if (g_str_has_prefix(elementname, "queue2"))
 		{
@@ -3232,6 +3212,10 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 			 * Ignore other bins since they may have unrelated queues
 			 */
 				g_signal_connect(element, "element-added", G_CALLBACK(handleElementAdded), user_data);
+		}
+		else if (g_str_has_prefix(elementname, "hlsdemux")) {
+			eDebug("[eServiceMP3] Found HLS demuxer: %s", elementname);
+			g_object_set(G_OBJECT(element), "parse-subtitles", TRUE, NULL);
 		}
 		g_free(elementname);
 	}
