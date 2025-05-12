@@ -3265,7 +3265,8 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     GstElement *sink = gst_element_factory_make("fakesink", "sink");
     GstElement *pipeline = gst_pipeline_new("playlist_pipeline");
 
-    // Überprüfe, ob alle Elemente erfolgreich erstellt wurden
+    std::string playlist_data = "";
+
     if (!src || !sink || !pipeline)
     {
         eDebug("[eServiceMP3] Failed to create GStreamer elements");
@@ -3302,57 +3303,55 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     }),
                      &playlist_stream);
 
-    // GMainLoop erstellen
-    GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-
-    // EOS-Handler hinzufügen
-    GstBus *bus = gst_element_get_bus(pipeline);
-    g_signal_connect(bus, "message", G_CALLBACK(+[](GstBus *, GstMessage *msg, gpointer user_data) -> gboolean {
-        GMainLoop *loop = static_cast<GMainLoop *>(user_data);
-
-        switch (GST_MESSAGE_TYPE(msg))
-        {
-        case GST_MESSAGE_EOS:
-            eDebug("[eServiceMP3] End of stream reached");
-            g_main_loop_quit(loop);
-            break;
-
-        case GST_MESSAGE_ERROR:
-        {
-            GError *err = NULL;
-            gchar *debug_info = NULL;
-            gst_message_parse_error(msg, &err, &debug_info);
-            eDebug("[eServiceMP3] Error received: %s", err->message);
-            eDebug("[eServiceMP3] Debugging information: %s", debug_info ? debug_info : "none");
-            g_clear_error(&err);
-            g_free(debug_info);
-            g_main_loop_quit(loop);
-            break;
-        }
-
-        default:
-            break;
-        }
-        return TRUE;
-    }),
-                     loop);
-
     // Starte die Pipeline
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
-    // Warte auf EOS
-    g_main_loop_run(loop);
+    // Nachrichten vom Bus verarbeiten
+    GstBus *bus = gst_element_get_bus(pipeline);
+    gboolean eos_reached = FALSE;
 
-    // GMainLoop und Bus freigeben
-    g_main_loop_unref(loop);
+    while (!eos_reached)
+    {
+        GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE,
+                                                     (GstMessageType)(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
+
+        if (msg)
+        {
+            switch (GST_MESSAGE_TYPE(msg))
+            {
+            case GST_MESSAGE_EOS:
+                eDebug("[eServiceMP3] End of stream reached");
+                eos_reached = TRUE;
+                break;
+
+            case GST_MESSAGE_ERROR:
+            {
+                GError *err = NULL;
+                gchar *debug_info = NULL;
+                gst_message_parse_error(msg, &err, &debug_info);
+                eDebug("[eServiceMP3] Error received: %s", err->message);
+                eDebug("[eServiceMP3] Debugging information: %s", debug_info ? debug_info : "none");
+                g_clear_error(&err);
+                g_free(debug_info);
+                eos_reached = TRUE;
+                break;
+            }
+
+            default:
+                break;
+            }
+            gst_message_unref(msg);
+        }
+    }
+
     gst_object_unref(bus);
 
     // Pipeline stoppen und freigeben
     gst_element_set_state(pipeline, GST_STATE_NULL);
 
     // Playlist-Daten als String extrahieren
-    std::string playlist_data = playlist_stream.str();
-    eTrace("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
+    playlist_data = playlist_stream.str();
+    eDebug("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
 
     // Ressourcen freigeben
     gst_object_unref(src);
