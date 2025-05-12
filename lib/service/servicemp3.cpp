@@ -3256,107 +3256,112 @@ void eServiceMP3::loadHlsPlaylist()
     }
 }
 
-void eServiceMP3::onHandoffCallback(GstElement *element, GstBuffer *buffer, GstPad *pad, gpointer user_data)
-{
-    auto *data = static_cast<std::pair<std::shared_ptr<std::ostringstream>, std::mutex *> *>(user_data);
-    auto &playlist_stream = data->first;
-    auto &mutex = *data->second;
-
-    GstMapInfo map;
-    if (gst_buffer_map(buffer, &map, GST_MAP_READ))
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        playlist_stream->write((const char *)map.data, map.size);
-        gst_buffer_unmap(buffer, &map);
-    }
-}
-
 std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 {
-	eDebug("[eServiceMP3] Downloading HLS playlist: %s", uri);
+    eDebug("[eServiceMP3] Downloading HLS playlist: %s", uri);
 
-	GstElement *src = gst_element_factory_make("souphttpsrc", "playlist_source");
-	GstElement *sink = gst_element_factory_make("fakesink", "sink");
-	GstElement *pipeline = gst_pipeline_new("playlist_pipeline");
+    // Erstelle die Pipeline
+    GstElement *src = gst_element_factory_make("souphttpsrc", "playlist_source");
+    GstElement *sink = gst_element_factory_make("fakesink", "sink");
+    GstElement *pipeline = gst_pipeline_new("playlist_pipeline");
 
-	std::string playlist_data = "";
+    std::string playlist_data;
 
-	if (!src || !sink || !pipeline)
-	{
-		eDebug("[eServiceMP3] Failed to create GStreamer elements");
-		if (pipeline)
-			gst_object_unref(pipeline);
-		return "";
-	}
+    if (!src || !sink || !pipeline)
+    {
+        eDebug("[eServiceMP3] Failed to create GStreamer elements");
+        if (pipeline)
+            gst_object_unref(pipeline);
+        if (src)
+            gst_object_unref(src);
+        if (sink)
+            gst_object_unref(sink);
+        return "";
+    }
 
-	g_object_set(src, "location", uri, NULL);
-	g_object_set(sink, "sync", FALSE, "async", FALSE, "signal-handoffs", TRUE, NULL);
+    // Konfiguriere die Elemente
+    g_object_set(src, "location", uri, NULL);
+    g_object_set(sink, "sync", FALSE, "async", FALSE, NULL);
 
-	gst_bin_add_many(GST_BIN(pipeline), src, sink, NULL);
-	if (!gst_element_link(src, sink))
-	{
-		eDebug("[eServiceMP3] Failed to link src and sink");
-		gst_object_unref(pipeline);
-		return "";
-	}
+    gst_bin_add_many(GST_BIN(pipeline), src, sink, NULL);
+    if (!gst_element_link(src, sink))
+    {
+        eDebug("[eServiceMP3] Failed to link src and sink");
+        gst_object_unref(pipeline);
+        gst_object_unref(src);  // Freigabe erforderlich, da src nicht der Pipeline gehört
+        gst_object_unref(sink); // Freigabe erforderlich, da sink nicht der Pipeline gehört
+        return "";
+    }
 
-	auto playlist_stream = std::make_shared<std::ostringstream>();
-	std::mutex stream_mutex;
+    // Starte die Pipeline
+    gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
-	auto callback_data = new std::pair<std::shared_ptr<std::ostringstream>, std::mutex *>({playlist_stream, &stream_mutex});
-	gulong handoff_id = g_signal_connect(sink, "handoff", G_CALLBACK(onHandoffCallback), callback_data);
+    // Nachrichten vom Bus verarbeiten
+    GstBus *bus = gst_element_get_bus(pipeline);
+    gboolean eos_reached = FALSE;
 
-	gst_element_set_state(pipeline, GST_STATE_PLAYING);
+    while (!eos_reached)
+    {
+        GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE,
+                                                     (GstMessageType)(GST_MESSAGE_EOS | GST_MESSAGE_ERROR | GST_MESSAGE_ELEMENT));
 
-	GstBus *bus = gst_element_get_bus(pipeline);
-	gboolean eos_reached = FALSE;
+        if (msg)
+        {
+            switch (GST_MESSAGE_TYPE(msg))
+            {
+            case GST_MESSAGE_EOS:
+                eDebug("[eServiceMP3] End of stream reached");
+                eos_reached = TRUE;
+                break;
 
-	while (!eos_reached)
-	{
-		GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE,
-													 (GstMessageType)(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
-		if (msg)
-		{
-			switch (GST_MESSAGE_TYPE(msg))
-			{
-			case GST_MESSAGE_EOS:
-				eDebug("[eServiceMP3] End of stream reached");
-				eos_reached = TRUE;
-				break;
+            case GST_MESSAGE_ERROR:
+            {
+                GError *err = NULL;
+                gchar *debug_info = NULL;
+                gst_message_parse_error(msg, &err, &debug_info);
+                eDebug("[eServiceMP3] Error received: %s", err->message);
+                eDebug("[eServiceMP3] Debugging information: %s", debug_info ? debug_info : "none");
+                g_clear_error(&err);
+                g_free(debug_info);
+                eos_reached = TRUE;
+                break;
+            }
 
-			case GST_MESSAGE_ERROR:
-			{
-				GError *err = NULL;
-				gchar *debug_info = NULL;
-				gst_message_parse_error(msg, &err, &debug_info);
-				eDebug("[eServiceMP3] Error received: %s", err->message);
-				eDebug("[eServiceMP3] Debugging information: %s", debug_info ? debug_info : "none");
-				g_clear_error(&err);
-				g_free(debug_info);
-				eos_reached = TRUE;
-				break;
-			}
+            case GST_MESSAGE_ELEMENT:
+            {
+                const GstStructure *structure = gst_message_get_structure(msg);
+                if (gst_structure_has_name(structure, "GstBuffer"))
+                {
+                    const GValue *buffer_value = gst_structure_get_value(structure, "buffer");
+                    if (buffer_value)
+                    {
+                        GstBuffer *buffer = gst_value_get_buffer(buffer_value);
+                        GstMapInfo map;
+                        if (gst_buffer_map(buffer, &map, GST_MAP_READ))
+                        {
+                            playlist_data.append(reinterpret_cast<const char *>(map.data), map.size);
+                            gst_buffer_unmap(buffer, &map);
+                        }
+                    }
+                }
+                break;
+            }
 
-			default:
-				break;
-			}
-			gst_message_unref(msg);
-		}
-	}
+            default:
+                break;
+            }
+            gst_message_unref(msg);
+        }
+    }
 
-	gst_object_unref(bus);
+    gst_object_unref(bus); // Freigabe des Busses
 
-	g_signal_handler_disconnect(sink, handoff_id);
+    // Pipeline stoppen und freigeben
+    gst_element_set_state(pipeline, GST_STATE_NULL);
+    gst_object_unref(pipeline); // Freigabe der Pipeline
 
-	gst_element_set_state(pipeline, GST_STATE_NULL);
-	gst_object_unref(pipeline);
-	std::lock_guard<std::mutex> lock(stream_mutex);
-	playlist_data = playlist_stream->str();
-
-	delete callback_data;
-	eTrace("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
-
-	return playlist_data;
+    eTrace("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
+    return playlist_data;
 }
 // #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="textstream",LANGUAGE="de",NAME="German",DEFAULT=YES,AUTOSELECT=YES,URI="<LINK>"
 
