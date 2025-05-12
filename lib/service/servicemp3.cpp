@@ -3237,44 +3237,156 @@ void eServiceMP3::onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_
     {
         gchar *caps_str = gst_caps_to_string(caps);
         eDebug("[eServiceMP3] Pad caps: %s", caps_str);
+
+        GstStructure *structure = gst_caps_get_structure(caps, 0);
+        const gchar *uri = gst_structure_get_string(structure, "uri");
+        if (uri)
+        {
+            eDebug("[eServiceMP3] Found HLS playlist URI: %s", uri);
+
+            // Playlist herunterladen und parsen
+            std::string playlist_data = _this->downloadPlaylist(uri);
+            if (!playlist_data.empty())
+            {
+                _this->parseHlsPlaylist(playlist_data);
+            }
+        }
         g_free(caps_str);
         gst_caps_unref(caps);
     }
+}
+
+std::string eServiceMP3::downloadPlaylist(const gchar *uri)
+{
+    eDebug("[eServiceMP3] Downloading HLS playlist: %s", uri);
+
+    // Verwenden Sie GStreamer, um die Playlist herunterzuladen
+    GstElement *src = gst_element_factory_make("souphttpsrc", "playlist_source");
+    g_object_set(src, "location", uri, NULL);
+
+    GstElement *sink = gst_element_factory_make("fakesink", "sink");
+    GstElement *pipeline = gst_pipeline_new("playlist_pipeline");
+
+    gst_bin_add_many(GST_BIN(pipeline), src, sink, NULL);
+    gst_element_link(src, sink);
+
+    gst_element_set_state(pipeline, GST_STATE_PLAYING);
+
+    // Warten, bis die Playlist heruntergeladen wurde
+    GstBus *bus = gst_element_get_bus(pipeline);
+    GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_EOS | GST_MESSAGE_ERROR);
+
+    std::string playlist_data;
+    if (msg && GST_MESSAGE_TYPE(msg) == GST_MESSAGE_EOS)
+    {
+		// Playlist-Daten auslesen
+		GstSample *sample = NULL;
+		GstElement *sink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
+		if (sink)
+		{
+			g_object_get(sink, "last-sample", &sample, NULL);
+			if (sample)
+			{
+				GstBuffer *buffer = gst_sample_get_buffer(sample);
+				if (buffer)
+				{
+					GstMapInfo map;
+					if (gst_buffer_map(buffer, &map, GST_MAP_READ))
+					{
+						// Konvertiere die Daten in einen String
+						std::string playlist_data((const char *)map.data, map.size);
+						eDebug("[eServiceMP3] Playlist data: %s", playlist_data.c_str());
+
+						// Playlist-Daten zurückgeben
+						gst_buffer_unmap(buffer, &map);
+					}
+				}
+				gst_sample_unref(sample);
+			}
+			gst_object_unref(sink);
+		}
+	    eDebug("[eServiceMP3] Playlist downloaded successfully");
+    }
     else
     {
-        eDebug("[eServiceMP3] No caps found on pad: %s", pad_name);
+        eDebug("[eServiceMP3] Failed to download playlist");
     }
 
-    if (g_str_has_prefix(pad_name, "src"))
-    {
-        GstCaps *caps = gst_pad_get_current_caps(pad);
-        if (caps)
-        {
-            gchar *caps_str = gst_caps_to_string(caps);
-            eDebug("[eServiceMP3] Pad caps: %s", caps_str);
+    if (msg)
+        gst_message_unref(msg);
 
-            GstStructure *structure = gst_caps_get_structure(caps, 0);
-            const gchar *uri = gst_structure_get_string(structure, "uri");
-            if (uri)
+    gst_element_set_state(pipeline, GST_STATE_NULL);
+    gst_object_unref(pipeline);
+    gst_object_unref(bus);
+
+    return playlist_data;
+}
+
+void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
+{
+    std::istringstream stream(playlist);
+    std::string line;
+
+    while (std::getline(stream, line))
+    {
+        // Suche nach Untertitel-Definitionen
+        if (line.find("#EXT-X-MEDIA:TYPE=SUBTITLES") != std::string::npos)
+        {
+            std::string language, name, uri;
+
+            // Extrahiere die Sprache
+            size_t lang_pos = line.find("LANGUAGE=");
+            if (lang_pos != std::string::npos)
             {
-                eDebug("[eServiceMP3] Found subtitle URI: %s", uri);
+                size_t start = line.find("\"", lang_pos) + 1;
+                size_t end = line.find("\"", start);
+                language = line.substr(start, end - start);
+            }
+
+            // Extrahiere den Namen
+            size_t name_pos = line.find("NAME=");
+            if (name_pos != std::string::npos)
+            {
+                size_t start = line.find("\"", name_pos) + 1;
+                size_t end = line.find("\"", start);
+                name = line.substr(start, end - start);
+            }
+
+            // Extrahiere die URI
+            size_t uri_pos = line.find("URI=");
+            if (uri_pos != std::string::npos)
+            {
+                size_t start = line.find("\"", uri_pos) + 1;
+                size_t end = line.find("\"", start);
+                uri = line.substr(start, end - start);
+            }
+
+            if (!uri.empty())
+            {
+                eDebug("[eServiceMP3] Found subtitle: Language=%s, Name=%s, URI=%s", language.c_str(), name.c_str(), uri.c_str());
 
                 // Fügen Sie den Untertitel-Stream zur Pipeline hinzu
-                GstElement *subtitle_source = gst_element_factory_make("souphttpsrc", "subtitle_source");
-                g_object_set(subtitle_source, "location", uri, NULL);
-
-                GstElement *subtitle_demux = gst_element_factory_make("webvttdemux", "subtitle_demux");
-                GstElement *subtitle_parse = gst_element_factory_make("webvttparse", "subtitle_parse");
-                GstElement *subtitle_overlay = gst_element_factory_make("subtitleoverlay", "subtitle_overlay");
-
-                gst_bin_add_many(GST_BIN(_this->m_gst_playbin), subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
-                gst_element_link_many(subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
+                addSubtitleStream(uri);
             }
-            gst_caps_unref(caps);
         }
-    }	
-   
+    }
 }
+
+void eServiceMP3::addSubtitleStream(const std::string &uri)
+{
+    eDebug("[eServiceMP3] Adding subtitle stream: %s", uri.c_str());
+
+    GstElement *subtitle_source = gst_element_factory_make("souphttpsrc", "subtitle_source");
+    g_object_set(subtitle_source, "location", uri.c_str(), NULL);
+
+    GstElement *subtitle_demux = gst_element_factory_make("webvttdemux", "subtitle_demux");
+    GstElement *subtitle_parse = gst_element_factory_make("webvttparse", "subtitle_parse");
+    GstElement *subtitle_overlay = gst_element_factory_make("subtitleoverlay", "subtitle_overlay");
+
+    gst_bin_add_many(GST_BIN(m_gst_playbin), subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
+    gst_element_link_many(subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
+}
+
 
 audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
 {

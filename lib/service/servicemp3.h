@@ -363,6 +363,10 @@ private:
 	static void handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data);
 	static void onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_data);
 
+	void parseHlsPlaylist(const std::string &playlist);
+	void addSubtitleStream(const std::string &uri);
+	std::string downloadPlaylist(const gchar *uri);
+
 	struct subtitle_page_t
 	{
 		uint32_t start_ms;
