@@ -3359,7 +3359,6 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
                 }
                 break;
             }
-
             default:
                 eDebug("[eServiceMP3] Received unexpected message type: %s", GST_MESSAGE_TYPE_NAME(msg));
                 break;
