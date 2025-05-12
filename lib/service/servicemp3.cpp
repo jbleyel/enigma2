@@ -3288,8 +3288,8 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     {
         eDebug("[eServiceMP3] Failed to link src and sink");
         gst_object_unref(pipeline);
-        gst_object_unref(src);  // Freigabe erforderlich, da src nicht der Pipeline gehört
-        gst_object_unref(sink); // Freigabe erforderlich, da sink nicht der Pipeline gehört
+        gst_object_unref(src);
+        gst_object_unref(sink);
         return "";
     }
 
@@ -3339,15 +3339,29 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
                         GstMapInfo map;
                         if (gst_buffer_map(buffer, &map, GST_MAP_READ))
                         {
+                            eDebug("[eServiceMP3] Extracted buffer data: %s", reinterpret_cast<const char *>(map.data));
                             playlist_data.append(reinterpret_cast<const char *>(map.data), map.size);
                             gst_buffer_unmap(buffer, &map);
                         }
+                        else
+                        {
+                            eDebug("[eServiceMP3] Failed to map buffer");
+                        }
                     }
+                    else
+                    {
+                        eDebug("[eServiceMP3] No buffer value found in message");
+                    }
+                }
+                else
+                {
+                    eDebug("[eServiceMP3] GST_MESSAGE_ELEMENT does not contain GstBuffer");
                 }
                 break;
             }
 
             default:
+                eDebug("[eServiceMP3] Received unexpected message type: %s", GST_MESSAGE_TYPE_NAME(msg));
                 break;
             }
             gst_message_unref(msg);
@@ -3360,7 +3374,7 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(pipeline); // Freigabe der Pipeline
 
-    eTrace("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
+    eDebug("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
     return playlist_data;
 }
 // #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="textstream",LANGUAGE="de",NAME="German",DEFAULT=YES,AUTOSELECT=YES,URI="<LINK>"
