@@ -3274,7 +3274,7 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 
     // Warten, bis die Playlist heruntergeladen wurde
     GstBus *bus = gst_element_get_bus(pipeline);
-    GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_EOS | GST_MESSAGE_ERROR);
+	GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
 
     std::string playlist_data;
     if (msg && GST_MESSAGE_TYPE(msg) == GST_MESSAGE_EOS)
