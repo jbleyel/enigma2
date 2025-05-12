@@ -24,7 +24,6 @@
 
 #include <string>
 
-#include <glib-object.h>
 #include <gst/gst.h>
 #include <gst/pbutils/missing-plugins.h>
 #include <sys/stat.h>
@@ -3257,6 +3256,21 @@ void eServiceMP3::loadHlsPlaylist()
     }
 }
 
+static void onHandoffCallback(GstElement *element, GstBuffer *buffer, GstPad *pad, gpointer user_data)
+{
+    auto *data = static_cast<std::pair<std::shared_ptr<std::ostringstream>, std::mutex *> *>(user_data);
+    auto &playlist_stream = data->first;
+    auto &mutex = *data->second;
+
+    GstMapInfo map;
+    if (gst_buffer_map(buffer, &map, GST_MAP_READ))
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        playlist_stream->write((const char *)map.data, map.size);
+        gst_buffer_unmap(buffer, &map);
+    }
+}
+
 std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 {
     eDebug("[eServiceMP3] Downloading HLS playlist: %s", uri);
@@ -3290,21 +3304,7 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     auto playlist_stream = std::make_shared<std::ostringstream>();
     std::mutex stream_mutex;
 
-    // Signal für "handoff" verbinden
-    gulong handoff_id = g_signal_connect(sink, "handoff", G_CALLBACK(+[](GstElement *, GstBuffer *buffer, GstPad *, gpointer user_data) {
-        auto *data = static_cast<std::pair<std::shared_ptr<std::ostringstream>, std::mutex *> *>(user_data);
-        auto &playlist_stream = data->first;
-        auto &mutex = *data->second;
-
-        GstMapInfo map;
-        if (gst_buffer_map(buffer, &map, GST_MAP_READ))
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            playlist_stream->write((const char *)map.data, map.size);
-            gst_buffer_unmap(buffer, &map);
-        }
-    }),
-                     new std::pair<std::shared_ptr<std::ostringstream>, std::mutex *>({playlist_stream, &stream_mutex}));
+	gulong handoff_id = g_signal_connect(sink, "handoff", G_CALLBACK(onHandoffCallback), new std::pair<std::shared_ptr<std::ostringstream>, std::mutex *>({playlist_stream, &stream_mutex}));
 
     // Starte die Pipeline
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
