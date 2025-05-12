@@ -913,7 +913,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 				"text/x-ssa; "          // SubStation Alpha
 				"text/x-ass; "          // Advanced SubStation Alpha  
 				"application/x-ass; "    // Alternative ASS format
-				"application/x-ssa"     // Alternative SSA format
+				"application/x-ssa; "     // Alternative SSA format
+				"application/x-subtitle-vtt"
 				);
 			
 			g_object_set(dvb_subsink, "caps", caps, NULL);
@@ -3226,12 +3227,35 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 				if (caps) {
 					gchar *caps_str = gst_caps_to_string(caps);
 					eDebug("[eServiceMP3] TS demuxer subtitle caps: %s", caps_str);
+		
+					// Untertitel-Typ bestimmen
+					GstStructure *structure = gst_caps_get_structure(caps, 0);
+					const gchar *mime_type = gst_structure_get_name(structure);
+		
+					if (g_strcmp0(mime_type, "text/x-raw") == 0 || g_strcmp0(mime_type, "text/x-pango-markup") == 0) {
+						eDebug("[eServiceMP3] Detected text-based subtitles (e.g., SRT)");
+						// Hier können Sie weitere Schritte für Text-Untertitel einfügen
+					} else if (g_strcmp0(mime_type, "application/x-subtitle-vtt") == 0 || g_strcmp0(mime_type, "text/x-webvtt") == 0) {
+						eDebug("[eServiceMP3] Detected WebVTT subtitles");
+						// Hier können Sie weitere Schritte für WebVTT-Untertitel einfügen
+					} else if (g_strcmp0(mime_type, "subpicture/x-dvb") == 0) {
+						eDebug("[eServiceMP3] Detected DVB subtitles");
+						// Hier können Sie weitere Schritte für DVB-Untertitel einfügen
+					} else {
+						eDebug("[eServiceMP3] Unknown subtitle type: %s", mime_type);
+					}
+		
 					g_free(caps_str);
 					gst_caps_unref(caps);
+				} else {
+					eDebug("[eServiceMP3] No caps found on subtitle_0 pad");
 				}
 				gst_object_unref(pad);
+			} else {
+				eDebug("[eServiceMP3] No subtitle_0 pad found on TS demuxer");
 			}
-		}
+		}		
+		
 		g_free(elementname);
 	}
 }
