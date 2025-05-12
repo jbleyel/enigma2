@@ -3216,6 +3216,8 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 		}
 		else if (g_str_has_prefix(elementname, "hlsdemux")) {
 			eDebug("[eServiceMP3] Found HLS demuxer: %s", elementname);
+            // Playlist laden und parsen
+            _this->loadHlsPlaylist();
             g_signal_connect(element, "pad-added", G_CALLBACK(onHlsPadAdded), user_data);
 		}
 		else if (g_str_has_prefix(elementname, "tsdemux")) {
@@ -3231,57 +3233,26 @@ void eServiceMP3::onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_
     eServiceMP3 *_this = (eServiceMP3 *)user_data;
     const gchar *pad_name = gst_pad_get_name(pad);
     eDebug("[eServiceMP3] HLS demuxer pad added: %s", pad_name);
+}
 
-    GstCaps *caps = gst_pad_get_current_caps(pad);
-    if (caps)
+void eServiceMP3::loadHlsPlaylist()
+{
+    if (m_ref.path.empty())
     {
-        gchar *caps_str = gst_caps_to_string(caps);
-        eDebug("[eServiceMP3] Pad caps: %s", caps_str);
+        eDebug("[eServiceMP3] No URI available to load HLS playlist");
+        return;
+    }
 
-        GstStructure *structure = gst_caps_get_structure(caps, 0);
-        const gchar *uri = gst_structure_get_string(structure, "uri");
-        if (uri)
-        {
-            eDebug("[eServiceMP3] Found HLS playlist URI: %s", uri);
+    eDebug("[eServiceMP3] Loading HLS playlist from URI: %s", m_ref.path.c_str());
 
-            // Playlist herunterladen und parsen
-            std::string playlist_data = _this->downloadPlaylist(uri);
-            if (!playlist_data.empty())
-            {
-                _this->parseHlsPlaylist(playlist_data);
-            }
-        }
-        else
-        {
-            eDebug("[eServiceMP3] No URI found in caps, checking element properties");
-
-            // Überprüfen Sie die Eigenschaften des HLS-Demuxers
-            gchar *element_uri = NULL;
-            g_object_get(element, "uri", &element_uri, NULL);
-            if (element_uri)
-            {
-                eDebug("[eServiceMP3] Found HLS playlist URI from element: %s", element_uri);
-
-                // Playlist herunterladen und parsen
-                std::string playlist_data = _this->downloadPlaylist(element_uri);
-                if (!playlist_data.empty())
-                {
-                    _this->parseHlsPlaylist(playlist_data);
-                }
-                g_free(element_uri);
-            }
-            else
-            {
-                eDebug("[eServiceMP3] No URI found in element properties");
-            }
-        }
-
-        g_free(caps_str);
-        gst_caps_unref(caps);
+    std::string playlist_data = downloadPlaylist(m_ref.path.c_str());
+    if (!playlist_data.empty())
+    {
+        parseHlsPlaylist(playlist_data);
     }
     else
     {
-        eDebug("[eServiceMP3] No caps found on pad: %s", pad_name);
+        eDebug("[eServiceMP3] Failed to load HLS playlist");
     }
 }
 
@@ -3356,14 +3327,15 @@ void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
     std::istringstream stream(playlist);
     std::string line;
 
+	std::vector<subtitleStream> subtitleStreams_temp;
+
     while (std::getline(stream, line))
     {
-        // Suche nach Untertitel-Definitionen
         if (line.find("#EXT-X-MEDIA:TYPE=SUBTITLES") != std::string::npos)
         {
             std::string language, name, uri;
 
-            // Extrahiere die Sprache
+            // Sprache extrahieren
             size_t lang_pos = line.find("LANGUAGE=");
             if (lang_pos != std::string::npos)
             {
@@ -3372,7 +3344,7 @@ void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
                 language = line.substr(start, end - start);
             }
 
-            // Extrahiere den Namen
+            // Name extrahieren
             size_t name_pos = line.find("NAME=");
             if (name_pos != std::string::npos)
             {
@@ -3381,7 +3353,7 @@ void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
                 name = line.substr(start, end - start);
             }
 
-            // Extrahiere die URI
+            // URI extrahieren
             size_t uri_pos = line.find("URI=");
             if (uri_pos != std::string::npos)
             {
@@ -3394,19 +3366,42 @@ void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
             {
                 eDebug("[eServiceMP3] Found subtitle: Language=%s, Name=%s, URI=%s", language.c_str(), name.c_str(), uri.c_str());
 
-                // Fügen Sie den Untertitel-Stream zur Pipeline hinzu
-                addSubtitleStream(uri);
+				subtitleStream subs;
+				subs.language_code = language;
+				subs.title = name;
+				subs.uri = uri;
+				subs.type = stVTT;
+				subtitleStreams_temp.emplace_back(subs);
             }
         }
     }
+
+	bool hasChanges = m_subtitleStreams.size() != subtitleStreams_temp.size() || std::equal(m_subtitleStreams.begin(), m_subtitleStreams.end(), subtitleStreams_temp.begin());
+
+	if (hasChanges)
+	{
+		eTrace("[eServiceMP3] audio or subtitle stream difference -- re enumerating");
+		m_subtitleStreams.clear();
+		std::copy(subtitleStreams_temp.begin(), subtitleStreams_temp.end(), back_inserter(m_subtitleStreams));
+		eDebug("[eServiceMP3] GST_MESSAGE_ASYNC_DONE before evUpdatedInfo");
+		m_event((iPlayableService*)this, evUpdatedInfo);
+	}	
+
 }
 
-void eServiceMP3::addSubtitleStream(const std::string &uri)
+void eServiceMP3::addSubtitleStream(int index)
 {
-    eDebug("[eServiceMP3] Adding subtitle stream: %s", uri.c_str());
+    if (index < 0 || index >= (int)m_subtitleStreams.size())
+    {
+        eDebug("[eServiceMP3] Invalid subtitle index: %d", index);
+        return;
+    }
+
+    const SubtitleInfo &subtitle = m_subtitleStreams[index];
+    eDebug("[eServiceMP3] Adding subtitle stream: Language=%s, Name=%s, URI=%s", subtitle.language.c_str(), subtitle.title.c_str(), subtitle.uri.c_str());
 
     GstElement *subtitle_source = gst_element_factory_make("souphttpsrc", "subtitle_source");
-    g_object_set(subtitle_source, "location", uri.c_str(), NULL);
+    g_object_set(subtitle_source, "location", subtitle.uri.c_str(), NULL);
 
     GstElement *subtitle_demux = gst_element_factory_make("webvttdemux", "subtitle_demux");
     GstElement *subtitle_parse = gst_element_factory_make("webvttparse", "subtitle_parse");

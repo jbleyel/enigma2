@@ -232,6 +232,7 @@ public:
 		subtype_t type;
 		std::string language_code; /* iso-639, if available. */
 		std::string title;
+		std::string uri;
 		subtitleStream()
 			:pad(0)
 		{
@@ -364,8 +365,9 @@ private:
 	static void onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_data);
 
 	void parseHlsPlaylist(const std::string &playlist);
-	void addSubtitleStream(const std::string &uri);
+	void addSubtitleStream(int index);
 	std::string downloadPlaylist(const gchar *uri);
+	void loadHlsPlaylist();
 
 	struct subtitle_page_t
 	{
