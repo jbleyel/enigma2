@@ -3287,18 +3287,23 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 
     // Verwende einen shared_ptr für playlist_stream
     auto playlist_stream = std::make_shared<std::ostringstream>();
+    std::mutex stream_mutex;
 
     // Signal für "handoff" verbinden
     gulong handoff_id = g_signal_connect(sink, "handoff", G_CALLBACK(+[](GstElement *, GstBuffer *buffer, GstPad *, gpointer user_data) {
-        auto playlist_stream = static_cast<std::shared_ptr<std::ostringstream> *>(user_data);
+        auto *data = static_cast<std::pair<std::shared_ptr<std::ostringstream>, std::mutex *> *>(user_data);
+        auto &playlist_stream = data->first;
+        auto &mutex = *data->second;
+
         GstMapInfo map;
         if (gst_buffer_map(buffer, &map, GST_MAP_READ))
         {
-            (*playlist_stream)->write((const char *)map.data, map.size);
+            std::lock_guard<std::mutex> lock(mutex);
+            playlist_stream->write((const char *)map.data, map.size);
             gst_buffer_unmap(buffer, &map);
         }
     }),
-                     &playlist_stream);
+                     new std::pair<std::shared_ptr<std::ostringstream>, std::mutex *>({playlist_stream, &stream_mutex}));
 
     // Starte die Pipeline
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
@@ -3351,7 +3356,10 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     gst_object_unref(pipeline); // Freigabe der Pipeline, die auch src und sink enthält
 
     // Playlist-Daten als String extrahieren
-    playlist_data = playlist_stream->str();
+    {
+        std::lock_guard<std::mutex> lock(stream_mutex);
+        playlist_data = playlist_stream->str();
+    }
     eTrace("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
 
     return playlist_data;
