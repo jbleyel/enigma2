@@ -361,6 +361,7 @@ private:
 	void HandleTocEntry(GstMessage *msg);
 	static gint match_sinktype(const GValue *velement, const gchar *type);
 	static void handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data);
+	static void onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_data);
 
 	struct subtitle_page_t
 	{

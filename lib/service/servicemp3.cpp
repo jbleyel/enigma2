@@ -3216,48 +3216,52 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 		}
 		else if (g_str_has_prefix(elementname, "hlsdemux")) {
 			eDebug("[eServiceMP3] Found HLS demuxer: %s", elementname);
-			//g_object_set(G_OBJECT(element), "parse-subtitles", TRUE, NULL);
+            g_signal_connect(element, "pad-added", G_CALLBACK(onHlsPadAdded), user_data);
 		}
 		else if (g_str_has_prefix(elementname, "tsdemux")) {
 			eDebug("[eServiceMP3] Found TS demuxer: %s", elementname);
-		
-			GstPad *pad = gst_element_get_static_pad(element, "subtitle_0");
-			if (pad) {
-				GstCaps *caps = gst_pad_get_current_caps(pad);
-				if (caps) {
-					gchar *caps_str = gst_caps_to_string(caps);
-					eDebug("[eServiceMP3] TS demuxer subtitle caps: %s", caps_str);
-		
-					// Untertitel-Typ bestimmen
-					GstStructure *structure = gst_caps_get_structure(caps, 0);
-					const gchar *mime_type = gst_structure_get_name(structure);
-		
-					if (g_strcmp0(mime_type, "text/x-raw") == 0 || g_strcmp0(mime_type, "text/x-pango-markup") == 0) {
-						eDebug("[eServiceMP3] Detected text-based subtitles (e.g., SRT)");
-						// Hier können Sie weitere Schritte für Text-Untertitel einfügen
-					} else if (g_strcmp0(mime_type, "application/x-subtitle-vtt") == 0 || g_strcmp0(mime_type, "text/x-webvtt") == 0) {
-						eDebug("[eServiceMP3] Detected WebVTT subtitles");
-						// Hier können Sie weitere Schritte für WebVTT-Untertitel einfügen
-					} else if (g_strcmp0(mime_type, "subpicture/x-dvb") == 0) {
-						eDebug("[eServiceMP3] Detected DVB subtitles");
-						// Hier können Sie weitere Schritte für DVB-Untertitel einfügen
-					} else {
-						eDebug("[eServiceMP3] Unknown subtitle type: %s", mime_type);
-					}
-		
-					g_free(caps_str);
-					gst_caps_unref(caps);
-				} else {
-					eDebug("[eServiceMP3] No caps found on subtitle_0 pad");
-				}
-				gst_object_unref(pad);
-			} else {
-				eDebug("[eServiceMP3] No subtitle_0 pad found on TS demuxer");
-			}
 		}		
 		
 		g_free(elementname);
 	}
+}
+
+void eServiceMP3::onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_data)
+{
+    eServiceMP3 *_this = (eServiceMP3 *)user_data;
+    const gchar *pad_name = gst_pad_get_name(pad);
+    eDebug("[eServiceMP3] HLS demuxer pad added: %s", pad_name);
+
+    if (g_str_has_prefix(pad_name, "subtitle"))
+    {
+        GstCaps *caps = gst_pad_get_current_caps(pad);
+        if (caps)
+        {
+            gchar *caps_str = gst_caps_to_string(caps);
+            eDebug("[eServiceMP3] Subtitle pad caps: %s", caps_str);
+            g_free(caps_str);
+
+            // Dynamisch den URI der Untertitel extrahieren
+            GstStructure *structure = gst_caps_get_structure(caps, 0);
+            const gchar *uri = gst_structure_get_string(structure, "uri");
+            if (uri)
+            {
+                eDebug("[eServiceMP3] Found subtitle URI: %s", uri);
+
+                // Fügen Sie den Untertitel-Stream zur Pipeline hinzu
+                GstElement *subtitle_source = gst_element_factory_make("souphttpsrc", "subtitle_source");
+                g_object_set(subtitle_source, "location", uri, NULL);
+
+                GstElement *subtitle_demux = gst_element_factory_make("webvttdemux", "subtitle_demux");
+                GstElement *subtitle_parse = gst_element_factory_make("webvttparse", "subtitle_parse");
+                GstElement *subtitle_overlay = gst_element_factory_make("subtitleoverlay", "subtitle_overlay");
+
+                gst_bin_add_many(GST_BIN(_this->m_gst_playbin), subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
+                gst_element_link_many(subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
+            }
+            gst_caps_unref(caps);
+        }
+    }
 }
 
 audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
