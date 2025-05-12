@@ -3330,35 +3330,41 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
             case GST_MESSAGE_ELEMENT:
             {
                 const GstStructure *structure = gst_message_get_structure(msg);
-                if (gst_structure_has_name(structure, "GstBuffer"))
+                if (structure)
                 {
-                    const GValue *buffer_value = gst_structure_get_value(structure, "buffer");
-                    if (buffer_value)
+                    eDebug("[eServiceMP3] Received GST_MESSAGE_ELEMENT: %s", gst_structure_get_name(structure));
+
+                    if (gst_structure_has_name(structure, "GstBuffer"))
                     {
-                        GstBuffer *buffer = gst_value_get_buffer(buffer_value);
-                        GstMapInfo map;
-                        if (gst_buffer_map(buffer, &map, GST_MAP_READ))
+                        const GValue *buffer_value = gst_structure_get_value(structure, "buffer");
+                        if (buffer_value)
                         {
-                            eDebug("[eServiceMP3] Extracted buffer data: %s", reinterpret_cast<const char *>(map.data));
-                            playlist_data.append(reinterpret_cast<const char *>(map.data), map.size);
-                            gst_buffer_unmap(buffer, &map);
+                            GstBuffer *buffer = gst_value_get_buffer(buffer_value);
+                            GstMapInfo map;
+                            if (gst_buffer_map(buffer, &map, GST_MAP_READ))
+                            {
+                                eDebug("[eServiceMP3] Extracted buffer data: %s", reinterpret_cast<const char *>(map.data));
+                                playlist_data.append(reinterpret_cast<const char *>(map.data), map.size);
+                                gst_buffer_unmap(buffer, &map);
+                            }
+                            else
+                            {
+                                eDebug("[eServiceMP3] Failed to map buffer");
+                            }
                         }
                         else
                         {
-                            eDebug("[eServiceMP3] Failed to map buffer");
+                            eDebug("[eServiceMP3] No buffer value found in message");
                         }
                     }
                     else
                     {
-                        eDebug("[eServiceMP3] No buffer value found in message");
+                        eDebug("[eServiceMP3] GST_MESSAGE_ELEMENT does not contain GstBuffer");
                     }
-                }
-                else
-                {
-                    eDebug("[eServiceMP3] GST_MESSAGE_ELEMENT does not contain GstBuffer");
                 }
                 break;
             }
+
             default:
                 eDebug("[eServiceMP3] Received unexpected message type: %s", GST_MESSAGE_TYPE_NAME(msg));
                 break;
