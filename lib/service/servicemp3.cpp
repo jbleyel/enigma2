@@ -3263,13 +3263,12 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     GstElement *src = gst_element_factory_make("souphttpsrc", "playlist_source");
     g_object_set(src, "location", uri, NULL);
 
-    GstElement *sink = gst_element_factory_make("appsink", "sink");
-    g_object_set(sink, "emit-signals", TRUE, "sync", FALSE, NULL);
+    GstElement *sink = gst_element_factory_make("fakesink", "sink");
+    g_object_set(sink, "sync", FALSE, "async", FALSE, NULL);
 
     GstElement *pipeline = gst_pipeline_new("playlist_pipeline");
     gst_bin_add_many(GST_BIN(pipeline), src, sink, NULL);
     gst_element_link(src, sink);
-
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
     std::ostringstream playlist_stream;
@@ -3277,31 +3276,62 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 
     while (!eos_reached)
     {
-        GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(sink));
-        if (!sample)
+        GstBus *bus = gst_element_get_bus(pipeline);
+        GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE,
+                                                     (GstMessageType)(GST_MESSAGE_EOS | GST_MESSAGE_ERROR | GST_MESSAGE_BUFFERING));
+
+        if (msg)
         {
-            eDebug("[eServiceMP3] No more samples, EOS reached");
-            eos_reached = TRUE;
-            break;
+            switch (GST_MESSAGE_TYPE(msg))
+            {
+            case GST_MESSAGE_EOS:
+                eDebug("[eServiceMP3] End of stream reached");
+                eos_reached = TRUE;
+                break;
+
+            case GST_MESSAGE_ERROR:
+            {
+                GError *err = NULL;
+                gchar *debug_info = NULL;
+                gst_message_parse_error(msg, &err, &debug_info);
+                eDebug("[eServiceMP3] Error received from element %s: %s", GST_OBJECT_NAME(msg->src), err->message);
+                eDebug("[eServiceMP3] Debugging information: %s", debug_info ? debug_info : "none");
+                g_clear_error(&err);
+                g_free(debug_info);
+                eos_reached = TRUE;
+                break;
+            }
+
+            default:
+                break;
+            }
+            gst_message_unref(msg);
         }
 
-        GstBuffer *buffer = gst_sample_get_buffer(sample);
-        if (buffer)
+        // Playlist-Daten aus fakesink abrufen
+        GstSample *sample = NULL;
+        g_object_get(sink, "last-sample", &sample, NULL);
+        if (sample)
         {
-            GstMapInfo map;
-            if (gst_buffer_map(buffer, &map, GST_MAP_READ))
+            GstBuffer *buffer = gst_sample_get_buffer(sample);
+            if (buffer)
             {
-                playlist_stream.write((const char *)map.data, map.size);
-                gst_buffer_unmap(buffer, &map);
+                GstMapInfo map;
+                if (gst_buffer_map(buffer, &map, GST_MAP_READ))
+                {
+                    playlist_stream.write((const char *)map.data, map.size);
+                    gst_buffer_unmap(buffer, &map);
+                }
             }
+            gst_sample_unref(sample);
         }
-        gst_sample_unref(sample);
+        gst_object_unref(bus);
     }
 
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(pipeline);
 
-	std::string playlist_data = playlist_stream.str();
+    std::string playlist_data = playlist_stream.str();
     eDebug("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
 
     return playlist_data;

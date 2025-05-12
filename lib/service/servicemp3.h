@@ -10,7 +10,6 @@
 #include <gst/gst.h>
 /* for subtitles */
 #include <lib/gui/esubtitle.h>
-#include <gst/app/gstappsink.h>
 
 class eStaticServiceMP3Info;
 
