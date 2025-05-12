@@ -24,6 +24,7 @@
 
 #include <string>
 
+#include <glib-object.h>
 #include <gst/gst.h>
 #include <gst/pbutils/missing-plugins.h>
 #include <sys/stat.h>
