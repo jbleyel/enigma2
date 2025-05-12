@@ -3263,56 +3263,46 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     GstElement *src = gst_element_factory_make("souphttpsrc", "playlist_source");
     g_object_set(src, "location", uri, NULL);
 
-    GstElement *sink = gst_element_factory_make("fakesink", "sink");
-    GstElement *pipeline = gst_pipeline_new("playlist_pipeline");
+    GstElement *sink = gst_element_factory_make("appsink", "sink");
+    g_object_set(sink, "emit-signals", TRUE, "sync", FALSE, NULL);
 
+    GstElement *pipeline = gst_pipeline_new("playlist_pipeline");
     gst_bin_add_many(GST_BIN(pipeline), src, sink, NULL);
     gst_element_link(src, sink);
 
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
-    GstBus *bus = gst_element_get_bus(pipeline);
-	GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
+    std::ostringstream playlist_stream;
+    gboolean eos_reached = FALSE;
 
-    std::string playlist_data;
-    if (msg && GST_MESSAGE_TYPE(msg) == GST_MESSAGE_EOS)
+    while (!eos_reached)
     {
-		GstSample *sample = NULL;
-		GstElement *sink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
-		if (sink)
-		{
-			g_object_get(sink, "last-sample", &sample, NULL);
-			if (sample)
-			{
-				GstBuffer *buffer = gst_sample_get_buffer(sample);
-				if (buffer)
-				{
-					GstMapInfo map;
-					if (gst_buffer_map(buffer, &map, GST_MAP_READ))
-					{
-						std::string playlist_data((const char *)map.data, map.size);
-						eDebug("[eServiceMP3] Playlist data: %s", playlist_data.c_str());
+        GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(sink));
+        if (!sample)
+        {
+            eDebug("[eServiceMP3] No more samples, EOS reached");
+            eos_reached = TRUE;
+            break;
+        }
 
-						gst_buffer_unmap(buffer, &map);
-					}
-				}
-				gst_sample_unref(sample);
-			}
-			gst_object_unref(sink);
-		}
-	    eDebug("[eServiceMP3] Playlist downloaded successfully");
+        GstBuffer *buffer = gst_sample_get_buffer(sample);
+        if (buffer)
+        {
+            GstMapInfo map;
+            if (gst_buffer_map(buffer, &map, GST_MAP_READ))
+            {
+                playlist_stream.write((const char *)map.data, map.size);
+                gst_buffer_unmap(buffer, &map);
+            }
+        }
+        gst_sample_unref(sample);
     }
-    else
-    {
-        eDebug("[eServiceMP3] Failed to download playlist");
-    }
-
-    if (msg)
-        gst_message_unref(msg);
 
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(pipeline);
-    gst_object_unref(bus);
+
+	std::string playlist_data = playlist_stream.str();
+    eDebug("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
 
     return playlist_data;
 }
