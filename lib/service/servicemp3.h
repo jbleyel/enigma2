@@ -232,7 +232,7 @@ public:
 		subtype_t type;
 		std::string language_code; /* iso-639, if available. */
 		std::string title;
-		std::string uri;
+//		std::string uri;
 		subtitleStream()
 			:pad(0)
 		{

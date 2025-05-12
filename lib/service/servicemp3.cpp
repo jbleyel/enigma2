@@ -3260,7 +3260,6 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 {
     eDebug("[eServiceMP3] Downloading HLS playlist: %s", uri);
 
-    // Erstelle die Pipeline
     GstElement *src = gst_element_factory_make("souphttpsrc", "playlist_source");
     g_object_set(src, "location", uri, NULL);
 
@@ -3271,26 +3270,21 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     gst_bin_add_many(GST_BIN(pipeline), src, sink, NULL);
     gst_element_link(src, sink);
 
-    // Stringstream für die Playlist-Daten
     std::ostringstream playlist_stream;
 
-    // Signal für "handoff" verbinden, um Daten aus jedem GstBuffer zu lesen
     g_signal_connect(sink, "handoff", G_CALLBACK(+[](GstElement *, GstBuffer *buffer, GstPad *, gpointer user_data) {
         std::ostringstream *playlist_stream = static_cast<std::ostringstream *>(user_data);
         GstMapInfo map;
         if (gst_buffer_map(buffer, &map, GST_MAP_READ))
         {
-			eDebug("[eServiceMP3] handoff %d", map.size);
             playlist_stream->write((const char *)map.data, map.size);
             gst_buffer_unmap(buffer, &map);
         }
     }),
                      &playlist_stream);
 
-    // Starte die Pipeline
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
-    // Warte auf EOS oder Fehler
     GstBus *bus = gst_element_get_bus(pipeline);
     gboolean eos_reached = FALSE;
 
@@ -3304,7 +3298,7 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
             switch (GST_MESSAGE_TYPE(msg))
             {
             case GST_MESSAGE_EOS:
-                eDebug("[eServiceMP3] End of stream reached");
+				eTrace("[eServiceMP3] End of stream reached");
                 eos_reached = TRUE;
                 break;
 
@@ -3330,13 +3324,11 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 
     gst_object_unref(bus);
 
-    // Pipeline stoppen und freigeben
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(pipeline);
 
-    // Playlist-Daten als String extrahieren
     std::string playlist_data = playlist_stream.str();
-    eDebug("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
+    eTrace("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
 
     return playlist_data;
 }
@@ -3387,12 +3379,14 @@ void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
 				subtitleStream subs;
 				subs.language_code = language;
 				subs.title = name;
-				subs.uri = uri;
+//				subs.uri = uri;
 				subs.type = stVTT;
 				subtitleStreams_temp.emplace_back(subs);
             }
         }
     }
+
+//	return
 
 	bool hasChanges = m_subtitleStreams.size() != subtitleStreams_temp.size() || std::equal(m_subtitleStreams.begin(), m_subtitleStreams.end(), subtitleStreams_temp.begin());
 
@@ -3407,8 +3401,20 @@ void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
 
 }
 
+std::string getBaseUrl(const std::string &url)
+{
+    size_t pos = url.find_last_of('/');
+    if (pos != std::string::npos)
+    {
+        return url.substr(0, pos + 1);
+    }
+    return url;
+}
+
 void eServiceMP3::addSubtitleStream(int index)
 {
+	/*
+
     if (index < 0 || index >= (int)m_subtitleStreams.size())
     {
         eDebug("[eServiceMP3] Invalid subtitle index: %d", index);
@@ -3416,10 +3422,39 @@ void eServiceMP3::addSubtitleStream(int index)
     }
 
     const subtitleStream &subtitle = m_subtitleStreams[index];
-    eDebug("[eServiceMP3] Adding subtitle stream: Language=%s, Name=%s, URI=%s", subtitle.language_code.c_str(), subtitle.title.c_str(), subtitle.uri.c_str());
+    //eDebug("[eServiceMP3] Adding subtitle stream: Language=%s, Name=%s, URI=%s", subtitle.language_code.c_str(), subtitle.title.c_str(), subtitle.uri.c_str());
+
+    std::string base_url = getBaseUrl(m_ref.path);
+    std::string full_uri = base_url + subtitle.uri;
+
+    std::string subtitle_playlist_data = downloadPlaylist(full_uri.c_str());
+    if (subtitle_playlist_data.empty())
+    {
+        eDebug("[eServiceMP3] Failed to download subtitle playlist: %s", full_uri.c_str());
+        return;
+    }
+
+    std::istringstream stream(subtitle_playlist_data);
+    std::string line;
+    std::vector<std::string> subtitle_files;
+
+    while (std::getline(stream, line))
+    {
+        if (line.find(".vtt") != std::string::npos) // Suche nach WebVTT-Dateien
+        {
+            subtitle_files.push_back(line);
+            eDebug("[eServiceMP3] Found subtitle file: %s", line.c_str());
+        }
+    }
+
+    if (subtitle_files.empty())
+    {
+        eDebug("[eServiceMP3] No subtitle files found in playlist: %s", full_uri.c_str());
+        return;
+    }
 
     GstElement *subtitle_source = gst_element_factory_make("souphttpsrc", "subtitle_source");
-    g_object_set(subtitle_source, "location", subtitle.uri.c_str(), NULL);
+    g_object_set(subtitle_source, "location", subtitle_files[0].c_str(), NULL);
 
     GstElement *subtitle_demux = gst_element_factory_make("webvttdemux", "subtitle_demux");
     GstElement *subtitle_parse = gst_element_factory_make("webvttparse", "subtitle_parse");
@@ -3427,8 +3462,9 @@ void eServiceMP3::addSubtitleStream(int index)
 
     gst_bin_add_many(GST_BIN(m_gst_playbin), subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
     gst_element_link_many(subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
-}
 
+	*/
+}
 
 audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
 {
