@@ -3251,8 +3251,37 @@ void eServiceMP3::onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_
                 _this->parseHlsPlaylist(playlist_data);
             }
         }
+        else
+        {
+            eDebug("[eServiceMP3] No URI found in caps, checking element properties");
+
+            // Überprüfen Sie die Eigenschaften des HLS-Demuxers
+            gchar *element_uri = NULL;
+            g_object_get(element, "uri", &element_uri, NULL);
+            if (element_uri)
+            {
+                eDebug("[eServiceMP3] Found HLS playlist URI from element: %s", element_uri);
+
+                // Playlist herunterladen und parsen
+                std::string playlist_data = _this->downloadPlaylist(element_uri);
+                if (!playlist_data.empty())
+                {
+                    _this->parseHlsPlaylist(playlist_data);
+                }
+                g_free(element_uri);
+            }
+            else
+            {
+                eDebug("[eServiceMP3] No URI found in element properties");
+            }
+        }
+
         g_free(caps_str);
         gst_caps_unref(caps);
+    }
+    else
+    {
+        eDebug("[eServiceMP3] No caps found on pad: %s", pad_name);
     }
 }
 
