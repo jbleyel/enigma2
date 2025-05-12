@@ -3270,8 +3270,6 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     if (!src || !sink || !pipeline)
     {
         eDebug("[eServiceMP3] Failed to create GStreamer elements");
-        if (src) gst_object_unref(src);
-        if (sink) gst_object_unref(sink);
         if (pipeline) gst_object_unref(pipeline);
         return "";
     }
@@ -3283,9 +3281,7 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
     if (!gst_element_link(src, sink))
     {
         eDebug("[eServiceMP3] Failed to link src and sink");
-        gst_object_unref(pipeline);
-        gst_object_unref(src);
-        gst_object_unref(sink);
+        gst_object_unref(pipeline); // Freigabe der Pipeline, die auch src und sink enthält
         return "";
     }
 
@@ -3348,15 +3344,11 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 
     // Pipeline stoppen und freigeben
     gst_element_set_state(pipeline, GST_STATE_NULL);
+    gst_object_unref(pipeline); // Freigabe der Pipeline, die auch src und sink enthält
 
     // Playlist-Daten als String extrahieren
     playlist_data = playlist_stream.str();
-    eDebug("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
-
-    // Ressourcen freigeben
-    gst_object_unref(src);
-    gst_object_unref(sink);
-    gst_object_unref(pipeline);
+    eTrace("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
 
     return playlist_data;
 }
