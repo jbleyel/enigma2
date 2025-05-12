@@ -3232,16 +3232,27 @@ void eServiceMP3::onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_
     const gchar *pad_name = gst_pad_get_name(pad);
     eDebug("[eServiceMP3] HLS demuxer pad added: %s", pad_name);
 
-    if (g_str_has_prefix(pad_name, "subtitle"))
+    GstCaps *caps = gst_pad_get_current_caps(pad);
+    if (caps)
+    {
+        gchar *caps_str = gst_caps_to_string(caps);
+        eDebug("[eServiceMP3] Pad caps: %s", caps_str);
+        g_free(caps_str);
+        gst_caps_unref(caps);
+    }
+    else
+    {
+        eDebug("[eServiceMP3] No caps found on pad: %s", pad_name);
+    }
+
+    if (g_str_has_prefix(pad_name, "src"))
     {
         GstCaps *caps = gst_pad_get_current_caps(pad);
         if (caps)
         {
             gchar *caps_str = gst_caps_to_string(caps);
-            eDebug("[eServiceMP3] Subtitle pad caps: %s", caps_str);
-            g_free(caps_str);
+            eDebug("[eServiceMP3] Pad caps: %s", caps_str);
 
-            // Dynamisch den URI der Untertitel extrahieren
             GstStructure *structure = gst_caps_get_structure(caps, 0);
             const gchar *uri = gst_structure_get_string(structure, "uri");
             if (uri)
@@ -3261,7 +3272,8 @@ void eServiceMP3::onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_
             }
             gst_caps_unref(caps);
         }
-    }
+    }	
+   
 }
 
 audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
