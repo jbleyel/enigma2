@@ -3215,7 +3215,22 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 		}
 		else if (g_str_has_prefix(elementname, "hlsdemux")) {
 			eDebug("[eServiceMP3] Found HLS demuxer: %s", elementname);
-			g_object_set(G_OBJECT(element), "parse-subtitles", TRUE, NULL);
+			//g_object_set(G_OBJECT(element), "parse-subtitles", TRUE, NULL);
+		}
+		else if (g_str_has_prefix(elementname, "tsdemux")) {
+			eDebug("[eServiceMP3] Found TS demuxer: %s", elementname);
+		
+			GstPad *pad = gst_element_get_static_pad(element, "subtitle_0");
+			if (pad) {
+				GstCaps *caps = gst_pad_get_current_caps(pad);
+				if (caps) {
+					gchar *caps_str = gst_caps_to_string(caps);
+					eDebug("[eServiceMP3] TS demuxer subtitle caps: %s", caps_str);
+					g_free(caps_str);
+					gst_caps_unref(caps);
+				}
+				gst_object_unref(pad);
+			}
 		}
 		g_free(elementname);
 	}
