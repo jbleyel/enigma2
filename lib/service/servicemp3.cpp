@@ -3285,15 +3285,16 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
         return "";
     }
 
-    std::ostringstream playlist_stream;
+    // Verwende einen shared_ptr für playlist_stream
+    auto playlist_stream = std::make_shared<std::ostringstream>();
 
     // Signal für "handoff" verbinden
-    g_signal_connect(sink, "handoff", G_CALLBACK(+[](GstElement *, GstBuffer *buffer, GstPad *, gpointer user_data) {
-        std::ostringstream *playlist_stream = static_cast<std::ostringstream *>(user_data);
+    gulong handoff_id = g_signal_connect(sink, "handoff", G_CALLBACK(+[](GstElement *, GstBuffer *buffer, GstPad *, gpointer user_data) {
+        auto playlist_stream = static_cast<std::shared_ptr<std::ostringstream> *>(user_data);
         GstMapInfo map;
         if (gst_buffer_map(buffer, &map, GST_MAP_READ))
         {
-            playlist_stream->write((const char *)map.data, map.size);
+            (*playlist_stream)->write((const char *)map.data, map.size);
             gst_buffer_unmap(buffer, &map);
         }
     }),
@@ -3342,12 +3343,15 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 
     gst_object_unref(bus);
 
+    // Entferne den "handoff"-Callback
+    g_signal_handler_disconnect(sink, handoff_id);
+
     // Pipeline stoppen und freigeben
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(pipeline); // Freigabe der Pipeline, die auch src und sink enthält
 
     // Playlist-Daten als String extrahieren
-    playlist_data = playlist_stream.str();
+    playlist_data = playlist_stream->str();
     eTrace("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
 
     return playlist_data;
