@@ -3256,7 +3256,7 @@ void eServiceMP3::loadHlsPlaylist()
     }
 }
 
-static void onHandoffCallback(GstElement *element, GstBuffer *buffer, GstPad *pad, gpointer user_data)
+void eServiceMP3::onHandoffCallback(GstElement *element, GstBuffer *buffer, GstPad *pad, gpointer user_data)
 {
     auto *data = static_cast<std::pair<std::shared_ptr<std::ostringstream>, std::mutex *> *>(user_data);
     auto &playlist_stream = data->first;

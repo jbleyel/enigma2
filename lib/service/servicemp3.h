@@ -368,7 +368,8 @@ private:
 	void addSubtitleStream(int index);
 	std::string downloadPlaylist(const gchar *uri);
 	void loadHlsPlaylist();
-
+	static void onHandoffCallback(GstElement *, GstBuffer *, GstPad *, gpointer);
+	
 	struct subtitle_page_t
 	{
 		uint32_t start_ms;
