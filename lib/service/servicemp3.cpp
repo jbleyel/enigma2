@@ -3212,7 +3212,7 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 			 * Listen for queue2 element added to uridecodebin/decodebin2 as well.
 			 * Ignore other bins since they may have unrelated queues
 			 */
-				g_signal_connect(element, "element-added", G_CALLBACK(handleElementAdded), user_data);
+			g_signal_connect(element, "element-added", G_CALLBACK(handleElementAdded), user_data);
 		}
 		else if (g_str_has_prefix(elementname, "hlsdemux")) {
 			eDebug("[eServiceMP3] Found HLS demuxer: %s", elementname);
@@ -3260,7 +3260,6 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 {
     eDebug("[eServiceMP3] Downloading HLS playlist: %s", uri);
 
-    // Verwenden Sie GStreamer, um die Playlist herunterzuladen
     GstElement *src = gst_element_factory_make("souphttpsrc", "playlist_source");
     g_object_set(src, "location", uri, NULL);
 
@@ -3272,14 +3271,12 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
-    // Warten, bis die Playlist heruntergeladen wurde
     GstBus *bus = gst_element_get_bus(pipeline);
 	GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
 
     std::string playlist_data;
     if (msg && GST_MESSAGE_TYPE(msg) == GST_MESSAGE_EOS)
     {
-		// Playlist-Daten auslesen
 		GstSample *sample = NULL;
 		GstElement *sink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
 		if (sink)
@@ -3293,11 +3290,9 @@ std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 					GstMapInfo map;
 					if (gst_buffer_map(buffer, &map, GST_MAP_READ))
 					{
-						// Konvertiere die Daten in einen String
 						std::string playlist_data((const char *)map.data, map.size);
 						eDebug("[eServiceMP3] Playlist data: %s", playlist_data.c_str());
 
-						// Playlist-Daten zurückgeben
 						gst_buffer_unmap(buffer, &map);
 					}
 				}
@@ -3335,7 +3330,6 @@ void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
         {
             std::string language, name, uri;
 
-            // Sprache extrahieren
             size_t lang_pos = line.find("LANGUAGE=");
             if (lang_pos != std::string::npos)
             {
@@ -3344,7 +3338,6 @@ void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
                 language = line.substr(start, end - start);
             }
 
-            // Name extrahieren
             size_t name_pos = line.find("NAME=");
             if (name_pos != std::string::npos)
             {
@@ -3353,7 +3346,6 @@ void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
                 name = line.substr(start, end - start);
             }
 
-            // URI extrahieren
             size_t uri_pos = line.find("URI=");
             if (uri_pos != std::string::npos)
             {
@@ -3397,7 +3389,7 @@ void eServiceMP3::addSubtitleStream(int index)
         return;
     }
 
-    const SubtitleInfo &subtitle = m_subtitleStreams[index];
+    const subtitleStream &subtitle = m_subtitleStreams[index];
     eDebug("[eServiceMP3] Adding subtitle stream: Language=%s, Name=%s, URI=%s", subtitle.language.c_str(), subtitle.title.c_str(), subtitle.uri.c_str());
 
     GstElement *subtitle_source = gst_element_factory_make("souphttpsrc", "subtitle_source");
