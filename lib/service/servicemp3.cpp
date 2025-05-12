@@ -3390,7 +3390,7 @@ void eServiceMP3::addSubtitleStream(int index)
     }
 
     const subtitleStream &subtitle = m_subtitleStreams[index];
-    eDebug("[eServiceMP3] Adding subtitle stream: Language=%s, Name=%s, URI=%s", subtitle.language.c_str(), subtitle.title.c_str(), subtitle.uri.c_str());
+    eDebug("[eServiceMP3] Adding subtitle stream: Language=%s, Name=%s, URI=%s", subtitle.language_code.c_str(), subtitle.title.c_str(), subtitle.uri.c_str());
 
     GstElement *subtitle_source = gst_element_factory_make("souphttpsrc", "subtitle_source");
     g_object_set(subtitle_source, "location", subtitle.uri.c_str(), NULL);
