@@ -828,10 +828,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		{
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-
 			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
 		}
-
 		/*
 		 * avoid video conversion, let the dvbmediasink handle that using native video flag
 		 * volume control is done by hardware, do not use soft volume flag
@@ -840,31 +838,14 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 				GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO;
 
 
-		if (dvb_videosink) {
-
-			GstState state;
-			gst_element_get_state(dvb_videosink, &state, NULL, GST_CLOCK_TIME_NONE);
-			eDebug("[eServiceMP3] Video sink state: %s", gst_element_state_get_name(state));
-
-			GstCaps *caps = gst_pad_get_allowed_caps(gst_element_get_static_pad(dvb_videosink, "sink"));
-			if (caps) {
-				gchar *str = gst_caps_to_string(caps);
-				eDebug("[eServiceMP3] Video sink allowed caps: %s", str);
-				g_free(str);
-				gst_caps_unref(caps);
-			}
-		}
-					
 		if ( m_sourceinfo.is_streaming )
 		{
 			m_notify_source_handler_id = g_signal_connect (m_gst_playbin, "notify::source", G_CALLBACK (playbinNotifySource), this);
-
-			m_notify_element_added_handler_id = g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
-
 			if (m_download_buffer_path != "")
 			{
 				/* use progressive download buffering */
 				flags |= GST_PLAY_FLAG_DOWNLOAD;
+				m_notify_element_added_handler_id = g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
 				/* limit file size */
 				g_object_set(m_gst_playbin, "ring-buffer-max-size", (guint64)(8LL * 1024LL * 1024LL), NULL);
 			}
@@ -916,6 +897,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
+			g_object_set(m_gst_playbin, "current-video", 0, NULL);
 
 		}
 		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
