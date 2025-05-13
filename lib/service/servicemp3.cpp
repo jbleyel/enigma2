@@ -806,7 +806,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	{
 		if(useplaybin3)
 		{
-			g_object_set(G_OBJECT(m_gst_playbin), "force-sw-decoders", FALSE, NULL);
 			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-mode", 0, NULL);
 			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-flags", 0, NULL);
 		}
@@ -894,7 +893,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			{
 				g_object_set(m_gst_playbin, "connection-speed", (guint64)(4495000LL), NULL);
 
-				g_signal_connect(m_gst_playbin, "stream-collection", G_CALLBACK(on_stream_collection), this);
+				if(useplaybin3)
+					g_signal_connect(m_gst_playbin, "streams-selected", G_CALLBACK(on_stream_collection), this);
 
 			}
 
