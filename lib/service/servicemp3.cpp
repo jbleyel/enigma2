@@ -891,8 +891,15 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			g_object_set(m_gst_playbin, "buffer-duration", (gint64)(5LL * GST_SECOND), NULL);
 			g_object_set(m_gst_playbin, "buffer-size", m_buffer_size, NULL);
 			if (m_sourceinfo.is_hls)
+			{
 				g_object_set(m_gst_playbin, "connection-speed", (guint64)(4495000LL), NULL);
+
+				g_signal_connect(m_gst_playbin, "stream-collection", G_CALLBACK(on_stream_collection), this);
+
+			}
+
 		}
+
 		g_object_set(m_gst_playbin, "flags", flags, NULL);
 		g_object_set(m_gst_playbin, "uri", uri, NULL);
 		if (dvb_subsink)
@@ -1027,6 +1034,43 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	if (suburi != NULL)
 		g_free(suburi);
 }
+
+void eServiceMP3::on_stream_collection(GstElement *playbin, GstStreamCollection *collection, gpointer user_data) {
+    guint num_streams = gst_stream_collection_get_size(collection);
+	eDebug("[eServiceMP3] Stream Collection received:: %d", num_streams);
+
+    for (guint i = 0; i < num_streams; ++i) {
+        GstStream *stream = gst_stream_collection_get_stream(collection, i);
+        GstCaps *caps = gst_stream_get_caps(stream);
+        GstStreamType stream_type = gst_stream_get_stream_type(stream);
+
+		eDebug("[eServiceMP3] Stream [%d]",i);
+
+        if (stream_type == GST_STREAM_TYPE_TEXT) {
+			eDebug("[eServiceMP3] Subtitle Stream [%d]",i);
+			//  std::cout << "Subtitle Stream [" << i << "]" << std::endl;
+
+            const GstTagList *tags = gst_stream_get_tags(stream);
+            if (tags) {
+                gchar *lang = nullptr;
+                if (gst_tag_list_get_string(tags, GST_TAG_LANGUAGE_CODE, &lang)) {
+                    //std::cout << "  Language: " << lang << std::endl;
+                    g_free(lang);
+                }
+                gchar *title = nullptr;
+                if (gst_tag_list_get_string(tags, GST_TAG_TITLE, &title)) {
+                    //std::cout << "  Title:    " << title << std::endl;
+                    g_free(title);
+                }
+            } else {
+				eDebug("[eServiceMP3] Stream Collection No tags available");
+            }
+        }
+
+        gst_object_unref(stream);  // Important!
+    }
+}
+
 
 eServiceMP3::~eServiceMP3()
 {
