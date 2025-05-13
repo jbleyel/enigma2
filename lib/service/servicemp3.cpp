@@ -3192,6 +3192,39 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 	gst_object_unref(source);
 }
 
+
+void eServiceMP3::onDecodePadAdded(GstElement *element, GstPad *pad, gpointer user_data)
+{
+    eServiceMP3 *_this = (eServiceMP3 *)user_data;
+    const gchar *pad_name = gst_pad_get_name(pad);
+    eDebug("[eServiceMP3] Decodebin pad added: %s", pad_name);
+
+    GstCaps *caps = gst_pad_get_current_caps(pad);
+    if (caps)
+    {
+        gchar *caps_str = gst_caps_to_string(caps);
+        eDebug("[eServiceMP3] Pad caps: %s", caps_str);
+
+        // Prüfe, ob es sich um Untertitel, Audio oder Video handelt
+        if (g_str_has_prefix(caps_str, "application/x-subtitle") || g_str_has_prefix(caps_str, "text/x-webvtt"))
+        {
+            eDebug("[eServiceMP3] Found subtitle stream: %s", caps_str);
+            // Hier kannst du die Untertitel-Streams speichern oder weiterverarbeiten
+        }
+        else if (g_str_has_prefix(caps_str, "audio/"))
+        {
+            eDebug("[eServiceMP3] Found audio stream: %s", caps_str);
+        }
+        else if (g_str_has_prefix(caps_str, "video/"))
+        {
+            eDebug("[eServiceMP3] Found video stream: %s", caps_str);
+        }
+
+        g_free(caps_str);
+        gst_caps_unref(caps);
+    }
+}
+
 void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data)
 {
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
@@ -3219,6 +3252,8 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 			 * Ignore other bins since they may have unrelated queues
 			 */
 			g_signal_connect(element, "element-added", G_CALLBACK(handleElementAdded), user_data);
+
+			g_signal_connect(element, "pad-added", G_CALLBACK(onDecodePadAdded), user_data);
 		}
 		else if (g_str_has_prefix(elementname, "hlsdemux")) {
 			eDebug("[eServiceMP3] Found HLS demuxer: %s", elementname);
