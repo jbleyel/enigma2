@@ -1177,6 +1177,12 @@ RESULT eServiceMP3::start()
 	if (m_gst_playbin)
 	{
 		eDebug("[eServiceMP3] *** starting pipeline ****");
+
+        if (m_sourceinfo.is_hls)
+        {
+            loadHlsPlaylist();
+        }
+
 		GstStateChangeReturn ret;
 		ret = gst_element_set_state (m_gst_playbin, GST_STATE_READY);
 
@@ -3216,8 +3222,6 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 		}
 		else if (g_str_has_prefix(elementname, "hlsdemux")) {
 			eDebug("[eServiceMP3] Found HLS demuxer: %s", elementname);
-            // Playlist laden und parsen
-            _this->loadHlsPlaylist();
             g_signal_connect(element, "pad-added", G_CALLBACK(onHlsPadAdded), user_data);
 		}
 		else if (g_str_has_prefix(elementname, "tsdemux")) {
@@ -3233,7 +3237,31 @@ void eServiceMP3::onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_
     eServiceMP3 *_this = (eServiceMP3 *)user_data;
     const gchar *pad_name = gst_pad_get_name(pad);
     eDebug("[eServiceMP3] HLS demuxer pad added: %s", pad_name);
+
+    GstCaps *caps = gst_pad_get_current_caps(pad);
+    if (caps)
+    {
+        gchar *caps_str = gst_caps_to_string(caps);
+        eDebug("[eServiceMP3] Pad caps: %s", caps_str);
+        g_free(caps_str);
+        gst_caps_unref(caps);
+    }
+
 }
+
+void eServiceMP3::loadHlsPlaylist()
+{
+    if (m_ref.path.empty())
+    {
+        eDebug("[eServiceMP3] No URI available to load HLS playlist");
+        return;
+    }
+    eDebug("[eServiceMP3] Loading HLS playlist from URI: %s", m_ref.path.c_str());
+
+    g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
+}
+
+/*
 
 void eServiceMP3::loadHlsPlaylist()
 {
@@ -3255,6 +3283,8 @@ void eServiceMP3::loadHlsPlaylist()
         eDebug("[eServiceMP3] Failed to load HLS playlist");
     }
 }
+
+*/
 
 std::string eServiceMP3::downloadPlaylist(const gchar *uri)
 {
