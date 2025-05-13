@@ -796,15 +796,15 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	eDebug("[eServiceMP3] playbin uri=%s", uri);
 	if (suburi != NULL)
 		eDebug("[eServiceMP3] playbin suburi=%s", suburi);
-	bool useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
-	if(useplaybin3)
+	m_useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
+	if(m_useplaybin3)
 		m_gst_playbin = gst_element_factory_make("playbin3", "playbin");
 	else
 		m_gst_playbin = gst_element_factory_make("playbin", "playbin");
 
 	if ( m_gst_playbin )
 	{
-		if(useplaybin3)
+		if(m_useplaybin3)
 		{
 			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-mode", 0, NULL);
 			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-flags", 0, NULL);
@@ -828,7 +828,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		{
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-			if(useplaybin3)
+			if(m_useplaybin3)
 			{
 				g_object_set(dvb_videosink, "sync", TRUE, NULL);
 				g_object_set(dvb_videosink, "async", TRUE, NULL);
@@ -844,7 +844,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		guint flags = GST_PLAY_FLAG_AUDIO | GST_PLAY_FLAG_VIDEO | \
 				GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO;
 
-		if(useplaybin3 && dvb_videosink)
+		if(m_useplaybin3 && dvb_videosink)
 		{
 			gst_element_set_state(dvb_videosink, GST_STATE_READY);
 		
@@ -892,10 +892,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			if (m_sourceinfo.is_hls)
 			{
 				g_object_set(m_gst_playbin, "connection-speed", (guint64)(4495000LL), NULL);
-
-				if(useplaybin3)
-					g_signal_connect(m_gst_playbin, "streams-selected", G_CALLBACK(on_stream_collection), this);
-
 			}
 
 		}
@@ -1136,6 +1132,46 @@ void eServiceMP3::forcePassthrough()
 	clearBuffers();
 }
 #endif
+
+void eServiceMP3::analyzeStreamCollection()
+{
+    GstStreamCollection *collection = NULL;
+    g_object_get(m_gst_playbin, "stream-collection", &collection, NULL);
+
+    if (collection)
+    {
+        guint num_streams = gst_stream_collection_get_size(collection);
+        eDebug("[eServiceMP3] Number of streams in collection: %d", num_streams);
+
+        for (guint i = 0; i < num_streams; ++i)
+        {
+            GstStream *stream = gst_stream_collection_get_stream(collection, i);
+            GstCaps *caps = gst_stream_get_caps(stream);
+            GstStreamType stream_type = gst_stream_get_stream_type(stream);
+
+            if (stream_type == GST_STREAM_TYPE_TEXT)
+            {
+                eDebug("[eServiceMP3] Found subtitle stream: %s", gst_caps_to_string(caps));
+            }
+            else if (stream_type == GST_STREAM_TYPE_AUDIO)
+            {
+                eDebug("[eServiceMP3] Found audio stream: %s", gst_caps_to_string(caps));
+            }
+            else if (stream_type == GST_STREAM_TYPE_VIDEO)
+            {
+                eDebug("[eServiceMP3] Found video stream: %s", gst_caps_to_string(caps));
+            }
+
+            gst_object_unref(stream);
+        }
+
+        gst_object_unref(collection);
+    }
+    else
+    {
+        eDebug("[eServiceMP3] No stream collection available.");
+    }
+}
 
 void eServiceMP3::updateEpgCacheNowNext()
 {
@@ -2690,6 +2726,12 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 		{
 			if(GST_MESSAGE_SRC(msg) != GST_OBJECT(m_gst_playbin))
 				break;
+
+			if (m_useplaybin3)
+			{
+				analyzeStreamCollection();
+				break;
+			}
 
 			gint i, n_video = 0, n_audio = 0, n_text = 0;
 			//bool codec_tofix = false;

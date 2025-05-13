@@ -330,6 +330,7 @@ private:
 	gint m_last_seek_count;
 	bool m_seeking_or_paused;
 	bool m_to_paused;
+	bool m_useplaybin3;
 	bufferInfo m_bufferInfo;
 	errorInfo m_errorInfo;
 	std::string m_download_buffer_path;
@@ -367,6 +368,7 @@ private:
 	static void onPadAdded(GstElement *element, GstPad *pad, gpointer user_data);
 	void addSubtitleStream(int index);
 	static void on_stream_collection(GstElement *playbin, GstStreamCollection *collection, gpointer user_data);
+	void analyzeStreamCollection();
 	struct subtitle_page_t
 	{
 		uint32_t start_ms;
