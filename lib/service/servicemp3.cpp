@@ -2817,7 +2817,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			if (msgstruct)
 			{
 
-                const gchar *name = gst_structure_get_name(structure);
+                const gchar *name = gst_structure_get_name(msgstruct);
                 eDebug("[eServiceMP3] Received ELEMENT message: %s", name);
 
 				if ( gst_is_missing_plugin_message(msg) )
@@ -3231,6 +3231,23 @@ void eServiceMP3::onDecodePadAdded(GstElement *element, GstPad *pad, gpointer us
     }
 }
 
+void eServiceMP3::onPadAdded(GstElement *element, GstPad *pad, gpointer user_data)
+{
+    eServiceMP3 *_this = (eServiceMP3 *)user_data;
+    const gchar *pad_name = gst_pad_get_name(pad);
+    eDebug("[eServiceMP3] onPadAdded: %s", pad_name);
+    GstCaps *caps = gst_pad_get_current_caps(pad);
+    if (caps)
+	{
+        gchar *caps_str = gst_caps_to_string(caps);
+        eDebug("[eServiceMP3] Pad caps: %s", caps_str);
+
+		g_free(caps_str);
+        gst_caps_unref(caps);
+	}
+
+}
+
 void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data)
 {
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
@@ -3238,6 +3255,8 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 	{
 		gchar *elementname = gst_element_get_name(element);
         eDebug("[eServiceMP3] Element added: %s", elementname);
+
+		g_signal_connect(element, "pad-added", G_CALLBACK(onPadAdded), user_data);
 
 		if (g_str_has_prefix(elementname, "queue2"))
 		{
@@ -3259,14 +3278,15 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 			 */
 			g_signal_connect(element, "element-added", G_CALLBACK(handleElementAdded), user_data);
 
-			g_signal_connect(element, "pad-added", G_CALLBACK(onDecodePadAdded), user_data);
+            //g_signal_connect(element, "pad-added", G_CALLBACK(onPadAdded), user_data);
 		}
 		else if (g_str_has_prefix(elementname, "hlsdemux")) {
 			eDebug("[eServiceMP3] Found HLS demuxer: %s", elementname);
-            g_signal_connect(element, "pad-added", G_CALLBACK(onHlsPadAdded), user_data);
+            //g_signal_connect(element, "pad-added", G_CALLBACK(onPadAdded), user_data);
 		}
 		else if (g_str_has_prefix(elementname, "tsdemux")) {
 			eDebug("[eServiceMP3] Found TS demuxer: %s", elementname);
+            //g_signal_connect(element, "pad-added", G_CALLBACK(onPadAdded), user_data);
 		}		
 		
 		g_free(elementname);
