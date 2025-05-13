@@ -828,11 +828,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		{
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-			if(m_useplaybin3)
-			{
-				g_object_set(dvb_videosink, "sync", TRUE, NULL);
-				g_object_set(dvb_videosink, "async", TRUE, NULL);
-			}
 
 			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
 		}
@@ -844,14 +839,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		guint flags = GST_PLAY_FLAG_AUDIO | GST_PLAY_FLAG_VIDEO | \
 				GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO;
 
-		if(m_useplaybin3 && dvb_videosink)
-		{
-			gst_element_set_state(dvb_videosink, GST_STATE_READY);
-		
-			flags = GST_PLAY_FLAG_VIDEO | GST_PLAY_FLAG_AUDIO | 
-							GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO |
-							GST_PLAY_FLAG_NATIVE_AUDIO;
-		}
 
 		if (dvb_videosink) {
 
@@ -891,7 +878,10 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			g_object_set(m_gst_playbin, "buffer-size", m_buffer_size, NULL);
 			if (m_sourceinfo.is_hls)
 			{
-				g_object_set(m_gst_playbin, "connection-speed", (guint64)(4495000LL), NULL);
+				if(m_useplaybin3)
+					g_object_set(m_gst_playbin, "connection-speed", (guint)1000000, NULL);
+				else
+					g_object_set(m_gst_playbin, "connection-speed", (guint64)(4495000LL), NULL);
 			}
 
 		}
@@ -926,45 +916,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
-			if (m_sourceinfo.is_hls)
-			{
-				// Set subtitle properties on playbin
-				g_object_set(G_OBJECT(m_gst_playbin), 
-					"subtitle-encoding", "UTF-8",
-					NULL);
-
-				// Configure urisourcebin for HLS streams
-				GstElement *urisrc = NULL;
-				g_object_get(m_gst_playbin, "source", &urisrc, NULL);
-				if (urisrc) 
-				{
-					// Set property on urisourcebin to enable WebVTT subtitle support
-					GstElement *demux = NULL;
-					g_object_get(urisrc, "source", &demux, NULL);
-					if (demux)
-					{
-						// Enable subtitle parsing
-						g_object_set(G_OBJECT(demux),
-							"parse-subtitles", TRUE,
-							NULL);
-						gst_object_unref(demux);
-					}
-					gst_object_unref(urisrc);
-				}
-
-				// Explizit WebVTT Caps für HLS setzen
-				GstCaps *textcaps = gst_caps_from_string(
-					"text/vtt;"
-					"application/x-subtitle-vtt;"
-					"text/x-raw,format=(string)pango-markup"
-				);
-
-				// Debug Output
-				gint n_text = 0;
-				g_object_get(m_gst_playbin, "n-text", &n_text, NULL);
-				eDebug("[eServiceMP3] Initial text streams: %d", n_text);
-
-			}
 
 		}
 		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
