@@ -1178,11 +1178,6 @@ RESULT eServiceMP3::start()
 	{
 		eDebug("[eServiceMP3] *** starting pipeline ****");
 
-        if (m_sourceinfo.is_hls)
-        {
-            loadHlsPlaylist();
-        }
-
 		GstStateChangeReturn ret;
 		ret = gst_element_set_state (m_gst_playbin, GST_STATE_READY);
 
@@ -2588,6 +2583,13 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			GstTagList *tags, *result;
 			gst_message_parse_tag(msg, &tags);
 
+            if (tags)
+            {
+                gchar *tag_str = gst_tag_list_to_string(tags);
+                eDebug("[eServiceMP3] Received TAG message: %s", tag_str);
+                g_free(tag_str);
+			}
+
 			result = gst_tag_list_merge(m_stream_tags, tags, GST_TAG_MERGE_REPLACE);
 			if (result)
 			{
@@ -2814,6 +2816,10 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			const GstStructure *msgstruct = gst_message_get_structure(msg);
 			if (msgstruct)
 			{
+
+                const gchar *name = gst_structure_get_name(structure);
+                eDebug("[eServiceMP3] Received ELEMENT message: %s", name);
+
 				if ( gst_is_missing_plugin_message(msg) )
 				{
 					GstCaps *caps = NULL;
@@ -3281,235 +3287,6 @@ void eServiceMP3::onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_
         g_free(caps_str);
         gst_caps_unref(caps);
     }
-
-}
-
-void eServiceMP3::loadHlsPlaylist()
-{
-    if (m_ref.path.empty())
-    {
-        eDebug("[eServiceMP3] No URI available to load HLS playlist");
-        return;
-    }
-    eDebug("[eServiceMP3] Loading HLS playlist from URI: %s", m_ref.path.c_str());
-
-    g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
-}
-
-/*
-
-void eServiceMP3::loadHlsPlaylist()
-{
-    if (m_ref.path.empty())
-    {
-        eDebug("[eServiceMP3] No URI available to load HLS playlist");
-        return;
-    }
-
-    eDebug("[eServiceMP3] Loading HLS playlist from URI: %s", m_ref.path.c_str());
-
-    std::string playlist_data = downloadPlaylist(m_ref.path.c_str());
-    if (!playlist_data.empty())
-    {
-        parseHlsPlaylist(playlist_data);
-    }
-    else
-    {
-        eDebug("[eServiceMP3] Failed to load HLS playlist");
-    }
-}
-
-*/
-
-std::string eServiceMP3::downloadPlaylist(const gchar *uri)
-{
-    eDebug("[eServiceMP3] Downloading HLS playlist: %s", uri);
-
-    // Erstelle die Pipeline
-    GstElement *src = gst_element_factory_make("souphttpsrc", "playlist_source");
-    GstElement *sink = gst_element_factory_make("fakesink", "sink");
-    GstElement *pipeline = gst_pipeline_new("playlist_pipeline");
-
-    std::string playlist_data;
-
-    if (!src || !sink || !pipeline)
-    {
-        eDebug("[eServiceMP3] Failed to create GStreamer elements");
-        if (pipeline)
-            gst_object_unref(pipeline);
-        if (src)
-            gst_object_unref(src);
-        if (sink)
-            gst_object_unref(sink);
-        return "";
-    }
-
-    // Konfiguriere die Elemente
-    g_object_set(src, "location", uri, NULL);
-    g_object_set(sink, "sync", FALSE, "async", FALSE, NULL);
-
-    gst_bin_add_many(GST_BIN(pipeline), src, sink, NULL);
-    if (!gst_element_link(src, sink))
-    {
-        eDebug("[eServiceMP3] Failed to link src and sink");
-        gst_object_unref(pipeline);
-        gst_object_unref(src);
-        gst_object_unref(sink);
-        return "";
-    }
-
-    // Starte die Pipeline
-    gst_element_set_state(pipeline, GST_STATE_PLAYING);
-
-    // Nachrichten vom Bus verarbeiten
-    GstBus *bus = gst_element_get_bus(pipeline);
-    gboolean eos_reached = FALSE;
-
-    while (!eos_reached)
-    {
-        GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE,
-                                                     (GstMessageType)(GST_MESSAGE_EOS | GST_MESSAGE_ERROR | GST_MESSAGE_ELEMENT));
-
-        if (msg)
-        {
-            switch (GST_MESSAGE_TYPE(msg))
-            {
-            case GST_MESSAGE_EOS:
-                eDebug("[eServiceMP3] End of stream reached");
-                eos_reached = TRUE;
-                break;
-
-            case GST_MESSAGE_ERROR:
-            {
-                GError *err = NULL;
-                gchar *debug_info = NULL;
-                gst_message_parse_error(msg, &err, &debug_info);
-                eDebug("[eServiceMP3] Error received: %s", err->message);
-                eDebug("[eServiceMP3] Debugging information: %s", debug_info ? debug_info : "none");
-                g_clear_error(&err);
-                g_free(debug_info);
-                eos_reached = TRUE;
-                break;
-            }
-
-            case GST_MESSAGE_ELEMENT:
-            {
-                const GstStructure *structure = gst_message_get_structure(msg);
-                if (structure)
-                {
-                    eDebug("[eServiceMP3] Received GST_MESSAGE_ELEMENT: %s", gst_structure_get_name(structure));
-
-                    if (gst_structure_has_name(structure, "GstBuffer"))
-                    {
-                        const GValue *buffer_value = gst_structure_get_value(structure, "buffer");
-                        if (buffer_value)
-                        {
-                            GstBuffer *buffer = gst_value_get_buffer(buffer_value);
-                            GstMapInfo map;
-                            if (gst_buffer_map(buffer, &map, GST_MAP_READ))
-                            {
-                                eDebug("[eServiceMP3] Extracted buffer data: %s", reinterpret_cast<const char *>(map.data));
-                                playlist_data.append(reinterpret_cast<const char *>(map.data), map.size);
-                                gst_buffer_unmap(buffer, &map);
-                            }
-                            else
-                            {
-                                eDebug("[eServiceMP3] Failed to map buffer");
-                            }
-                        }
-                        else
-                        {
-                            eDebug("[eServiceMP3] No buffer value found in message");
-                        }
-                    }
-                    else
-                    {
-                        eDebug("[eServiceMP3] GST_MESSAGE_ELEMENT does not contain GstBuffer");
-                    }
-                }
-                break;
-            }
-
-            default:
-                eDebug("[eServiceMP3] Received unexpected message type: %s", GST_MESSAGE_TYPE_NAME(msg));
-                break;
-            }
-            gst_message_unref(msg);
-        }
-    }
-
-    gst_object_unref(bus); // Freigabe des Busses
-
-    // Pipeline stoppen und freigeben
-    gst_element_set_state(pipeline, GST_STATE_NULL);
-    gst_object_unref(pipeline); // Freigabe der Pipeline
-
-    eDebug("[eServiceMP3] Complete Playlist data: %s", playlist_data.c_str());
-    return playlist_data;
-}
-// #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="textstream",LANGUAGE="de",NAME="German",DEFAULT=YES,AUTOSELECT=YES,URI="<LINK>"
-
-void eServiceMP3::parseHlsPlaylist(const std::string &playlist)
-{
-    std::istringstream stream(playlist);
-    std::string line;
-
-	std::vector<subtitleStream> subtitleStreams_temp;
-
-    while (std::getline(stream, line))
-    {
-        if (line.find("#EXT-X-MEDIA:TYPE=SUBTITLES") != std::string::npos)
-        {
-            std::string language, name, uri;
-
-            size_t lang_pos = line.find("LANGUAGE=");
-            if (lang_pos != std::string::npos)
-            {
-                size_t start = line.find("\"", lang_pos) + 1;
-                size_t end = line.find("\"", start);
-                language = line.substr(start, end - start);
-            }
-
-            size_t name_pos = line.find("NAME=");
-            if (name_pos != std::string::npos)
-            {
-                size_t start = line.find("\"", name_pos) + 1;
-                size_t end = line.find("\"", start);
-                name = line.substr(start, end - start);
-            }
-
-            size_t uri_pos = line.find("URI=");
-            if (uri_pos != std::string::npos)
-            {
-                size_t start = line.find("\"", uri_pos) + 1;
-                size_t end = line.find("\"", start);
-                uri = line.substr(start, end - start);
-            }
-
-            if (!uri.empty())
-            {
-                eDebug("[eServiceMP3] Found subtitle: Language=%s, Name=%s, URI=%s", language.c_str(), name.c_str(), uri.c_str());
-
-				subtitleStream subs;
-				subs.language_code = language;
-				subs.title = name;
-				subs.uri = uri;
-				subs.type = stVTT;
-				subtitleStreams_temp.emplace_back(subs);
-            }
-        }
-    }
-
-	bool hasChanges = m_subtitleStreams.size() != subtitleStreams_temp.size() || std::equal(m_subtitleStreams.begin(), m_subtitleStreams.end(), subtitleStreams_temp.begin());
-
-	if (hasChanges)
-	{
-		eTrace("[eServiceMP3] audio or subtitle stream difference -- re enumerating");
-		m_subtitleStreams.clear();
-		std::copy(subtitleStreams_temp.begin(), subtitleStreams_temp.end(), back_inserter(m_subtitleStreams));
-		eDebug("[eServiceMP3] GST_MESSAGE_ASYNC_DONE before evUpdatedInfo");
-		m_event((iPlayableService*)this, evUpdatedInfo);
-	}	
 
 }
 
