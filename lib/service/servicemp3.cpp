@@ -804,7 +804,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		eDebug("[eServiceMP3] playbin suburi=%s", suburi);
 	m_useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
 	if(m_useplaybin3)
-		m_gst_playbin = gst_element_factory_make("playbin3", "playbin");
+		m_gst_playbin = gst_element_factory_make("playbin3", "playbin3");
 	else
 		m_gst_playbin = gst_element_factory_make("playbin", "playbin");
 
