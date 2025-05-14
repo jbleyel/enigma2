@@ -809,7 +809,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-mode", 0, NULL);
 			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-flags", 0, NULL);
 			// g_signal_connect(m_gst_playbin, "notify::stream-collection", G_CALLBACK(onStreamCollectionChanged), this);
-			g_signal_connect(m_gst_playbin, "streams-selected", G_CALLBACK(onStreamsSelected), this);
+			//g_signal_connect(m_gst_playbin, "streams-selected", G_CALLBACK(onStreamsSelected), this);
+			g_signal_connect(m_gst_playbin, "stream-notify", G_CALLBACK(onStreamNotify), this);
 		}
 
 		if(dvb_audiosink)
@@ -963,6 +964,44 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	g_free(uri);
 	if (suburi != NULL)
 		g_free(suburi);
+}
+
+void eServiceMP3::onStreamNotify(GstElement *playbin, guint stream_id, gpointer user_data)
+{
+    eServiceMP3 *_this = (eServiceMP3 *)user_data;
+    
+    // Hole Anzahl der Streams
+    guint n_streams = 0;
+    g_object_get(playbin, "n-streams", &n_streams, NULL);
+    
+    eDebug("[eServiceMP3::onStreamNotify] Number of streams: %d", n_streams);
+    
+    for (guint i = 0; i < n_streams; i++)
+    {
+        GstStream *stream = NULL;
+        g_signal_emit_by_name(playbin, "get-stream", i, &stream);
+        
+        if (stream)
+        {
+            GstStreamType type = gst_stream_get_stream_type(stream);
+            const gchar *stream_id = gst_stream_get_stream_id(stream);
+            
+            if (type & GST_STREAM_TYPE_TEXT)
+            {
+                eDebug("[eServiceMP3] Found subtitle stream %d: %s", i, stream_id);
+            }
+            else if (type & GST_STREAM_TYPE_AUDIO) 
+            {
+                eDebug("[eServiceMP3] Found audio stream %d: %s", i, stream_id);
+            }
+            else if (type & GST_STREAM_TYPE_VIDEO)
+            {
+                eDebug("[eServiceMP3] Found video stream %d: %s", i, stream_id);
+            }
+            
+            gst_object_unref(stream);
+        }
+    }
 }
 
 void eServiceMP3::onStreamsSelected(GstElement *playbin, gpointer user_data)

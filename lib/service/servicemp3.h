@@ -369,6 +369,7 @@ private:
 	void addSubtitleStream(int index);
 	static void onStreamCollectionChanged(GObject *object, GParamSpec *pspec, gpointer user_data);
 	static void onStreamsSelected(GstElement *playbin, gpointer user_data);
+	static void onStreamNotify(GstElement *playbin, guint stream_id, gpointer user_data);
 
 	void analyzeStreamCollection();
 	struct subtitle_page_t
