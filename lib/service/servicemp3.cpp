@@ -498,7 +498,7 @@ int eServiceMP3::ac3_delay = 0,
     eServiceMP3::pcm_delay = 0;
 
 
-static void onAudioChanged(GstElement *element, gpointer user_data)
+void eServiceMP3::onAudioChanged(GstElement *element, gpointer user_data)
 {
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 	
@@ -510,7 +510,7 @@ static void onAudioChanged(GstElement *element, gpointer user_data)
 	// Audio Streams verarbeiten
 }
 
-static void onVideoChanged(GstElement *element, gpointer user_data) 
+void eServiceMP3::onVideoChanged(GstElement *element, gpointer user_data) 
 {
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 	
@@ -522,7 +522,7 @@ static void onVideoChanged(GstElement *element, gpointer user_data)
 	// Video Streams verarbeiten  
 }
 
-static void onTextChanged(GstElement *element, gpointer user_data)
+void eServiceMP3::onTextChanged(GstElement *element, gpointer user_data)
 {
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 	

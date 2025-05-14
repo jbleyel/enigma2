@@ -371,6 +371,11 @@ private:
 	static void onStreamsSelected(GstElement *playbin, gpointer user_data);
 	static void onStreamNotify(GstElement *playbin, guint stream_id, gpointer user_data);
 
+	static void onAudioChanged(GstElement *element, gpointer user_data);
+	static void onVideoChanged(GstElement *element, gpointer user_data);
+	static void onTextChanged(GstElement *element, gpointer user_data);
+
+
 	void analyzeStreamCollection();
 	struct subtitle_page_t
 	{
