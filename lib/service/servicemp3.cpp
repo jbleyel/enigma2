@@ -871,32 +871,37 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		}
 		if(dvb_videosink && !m_sourceinfo.is_audio)
 		{
-			if(m_useplaybin3)
-			{
-				GstCaps *caps = gst_caps_new_empty_simple("video/x-raw");
-    
-				// Füge alle unterstützten Formate hinzu
-				gst_caps_set_simple(caps,
-					// Verschiedene Pixelformate
-					"format", G_TYPE_STRING, "I420,NV12,YV12,UYVY,YUY2,YVYU,BGR,BGRx,BGRA,RGB,RGBx,RGBA",
-					// Flexible Auflösungen
-					"width", GST_TYPE_INT_RANGE, 1, G_MAXINT,
-					"height", GST_TYPE_INT_RANGE, 1, G_MAXINT,
-					// Flexible Framerates
-					"framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT, 1,
-					// Verschiedene Farbräume
-					"colorimetry", G_TYPE_STRING, "bt601,bt709,smpte170m,bt2020",
-					NULL);
-			
-				// Setze die Caps auf dem videosink
-				g_object_set(G_OBJECT(dvb_videosink), "caps", caps, NULL);
-				gst_caps_unref(caps);
-			}
-
-
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
+
+			if(m_useplaybin3)
+			{
+				// Erstelle einen Bin mit videoconvert und dvbvideosink
+				GstElement *videobin = gst_bin_new(NULL);
+				GstElement *videoconvert = gst_element_factory_make("videoconvert", NULL);
+
+				// Füge die Elemente zum Bin hinzu
+				gst_bin_add_many(GST_BIN(videobin), videoconvert, dvb_videosink, NULL);
+				
+				// Verlinke die Elemente
+				gst_element_link(videoconvert, dvb_videosink);
+
+				// Erstelle Ghost-Pad für den Eingang
+				GstPad *pad = gst_element_get_static_pad(videoconvert, "sink");
+				gst_element_add_pad(videobin, gst_ghost_pad_new("sink", pad));
+				gst_object_unref(pad);
+
+				// Setze den Bin als video-sink
+				g_object_set(m_gst_playbin, "video-sink", videobin, NULL);
+
+				// Objekt-Referenzen aufräumen
+				gst_object_unref(videobin);			
+			}
+			else
+			{
+				g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
+			}
+
 		}
 		/*
 		 * avoid video conversion, let the dvbmediasink handle that using native video flag
