@@ -248,8 +248,9 @@ public:
 		gboolean is_video;
 		gboolean is_streaming;
 		gboolean is_hls;
+		gboolean is_dash;
 		sourceStream()
-			:audiotype(atUnknown), containertype(ctNone), is_audio(FALSE), is_video(FALSE), is_streaming(FALSE), is_hls(FALSE)
+			:audiotype(atUnknown), containertype(ctNone), is_audio(FALSE), is_video(FALSE), is_streaming(FALSE), is_hls(FALSE), is_dash(FALSE)
 		{
 		}
 	};

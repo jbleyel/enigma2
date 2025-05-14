@@ -743,6 +743,11 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		m_sourceinfo.containertype = ctVCD;
 		m_sourceinfo.is_video = TRUE;
 	}
+	if ( strcasecmp(ext, ".mpd") == 0 )
+	{
+		m_sourceinfo.is_dash = TRUE;
+		m_sourceinfo.is_video = TRUE;
+	}
 	if ( strstr(filename, "://") )
 		m_sourceinfo.is_streaming = TRUE;
 
@@ -851,7 +856,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			/* increase the default 2 second / 2 MB buffer limitations to 10s / 10MB */
 			g_object_set(m_gst_playbin, "buffer-duration", (gint64)(5LL * GST_SECOND), NULL);
 			g_object_set(m_gst_playbin, "buffer-size", m_buffer_size, NULL);
-			if (m_sourceinfo.is_hls)
+			if (m_sourceinfo.is_hls || m_sourceinfo.is_dash)
 				g_object_set(m_gst_playbin, "connection-speed", (guint64)(4495000LL), NULL);
 		}
 		g_object_set(m_gst_playbin, "flags", flags, NULL);
@@ -2699,7 +2704,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			{
 				// Schedule delayed text stream scan
 				eDebug("[eServiceMP3] No text streams found yet, scheduling delayed scan");
-				m_subtitle_scan_timer->start(2000, true); // 2 second delay
+				// m_subtitle_scan_timer->start(2000, true); // 2 second delay
 			}
 
 			/*+++*workaround for mp3 playback problem on some boxes - e.g. xtrend et9200 (if press stop and play or switch to the next track is the state 'playing', but plays not.
@@ -2818,7 +2823,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				 * (in which case the sink will not produce data while paused, so we won't
 				 * recover from an empty buffer)
 				 */
-				if (m_use_prefillbuffer && !m_is_live && !m_sourceinfo.is_hls && --m_ignore_buffering_messages <= 0)
+				if (m_use_prefillbuffer && !m_is_live && !m_sourceinfo.is_hls && !m_sourceinfo.is_dash && --m_ignore_buffering_messages <= 0)
 				{
 					if (m_bufferInfo.bufferPercent == 100)
 					{
@@ -3111,9 +3116,6 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 		gst_structure_free(extras);
 	}
 
-	if (_this->m_sourceinfo.is_hls)
-		g_object_set(G_OBJECT(_this->m_gst_playbin), "subtitle-encoding", "UTF-8", NULL);
-
 	gst_object_unref(source);
 }
 
@@ -3364,6 +3366,7 @@ eAutoInitPtr<eServiceFactoryMP3> init_eServiceFactoryMP3(eAutoInitNumbers::servi
 
 void eServiceMP3::gstCBsubtitleAvail(GstElement *subsink, GstBuffer *buffer, gpointer user_data)
 {
+	eDebug("[eServiceMP3] gstCBsubtitleAvail");
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 	if (_this->m_currentSubtitleStream < 0)
 	{
@@ -3375,6 +3378,7 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement *subsink, GstBuffer *buffer, gpo
 
 void eServiceMP3::gstTextpadHasCAPS(GstPad *pad, GParamSpec * unused, gpointer user_data)
 {
+	eDebug("[eServiceMP3] gstTextpadHasCAPS");
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 
 	gst_object_ref (pad);
@@ -3384,6 +3388,7 @@ void eServiceMP3::gstTextpadHasCAPS(GstPad *pad, GParamSpec * unused, gpointer u
 
 void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 {
+	eDebug("[eServiceMP3] gstTextpadHasCAPS_synced");
 	GstCaps *caps = NULL;
 
 	g_object_get (G_OBJECT (pad), "caps", &caps, NULL);
@@ -3440,6 +3445,7 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 
 void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 {
+	eDebug("[eServiceMP3] pullSubtitle");
 	if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size())
 	{
 		GstMapInfo map;
