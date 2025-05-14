@@ -497,6 +497,43 @@ void eServiceMP3InfoContainer::setBuffer(GstBuffer *buffer)
 int eServiceMP3::ac3_delay = 0,
     eServiceMP3::pcm_delay = 0;
 
+
+static void onAudioChanged(GstElement *element, gpointer user_data)
+{
+	eServiceMP3 *_this = (eServiceMP3*)user_data;
+	
+	gint n_audio = 0;
+	g_object_get(_this->m_gst_playbin, "n-audio", &n_audio, NULL);
+	
+	eDebug("onAudioChanged %d", n_audio);
+
+	// Audio Streams verarbeiten
+}
+
+static void onVideoChanged(GstElement *element, gpointer user_data) 
+{
+	eServiceMP3 *_this = (eServiceMP3*)user_data;
+	
+	gint n_video = 0;
+	g_object_get(_this->m_gst_playbin, "n-video", &n_video, NULL);
+	
+	eDebug("onVideoChanged %d", n_video);
+
+	// Video Streams verarbeiten  
+}
+
+static void onTextChanged(GstElement *element, gpointer user_data)
+{
+	eServiceMP3 *_this = (eServiceMP3*)user_data;
+	
+	gint n_text = 0;
+	g_object_get(_this->m_gst_playbin, "n-text", &n_text, NULL);
+	
+	eDebug("onTextChanged %d", n_text);
+
+	// Text Streams verarbeiten
+}
+
 eServiceMP3::eServiceMP3(eServiceReference ref):
 	m_nownext_timer(eTimer::create(eApp)),
 	m_cuesheet_changed(0),
@@ -810,7 +847,12 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-flags", 0, NULL);
 			// g_signal_connect(m_gst_playbin, "notify::stream-collection", G_CALLBACK(onStreamCollectionChanged), this);
 			//g_signal_connect(m_gst_playbin, "streams-selected", G_CALLBACK(onStreamsSelected), this);
-			g_signal_connect(m_gst_playbin, "stream-notify", G_CALLBACK(onStreamNotify), this);
+			//g_signal_connect(m_gst_playbin, "stream-notify", G_CALLBACK(onStreamNotify), this);
+
+			// Audio/Video/Text Stream Änderungen überwachen
+			g_signal_connect(m_gst_playbin, "audio-changed", G_CALLBACK(onAudioChanged), this);
+			g_signal_connect(m_gst_playbin, "video-changed", G_CALLBACK(onVideoChanged), this);
+			g_signal_connect(m_gst_playbin, "text-changed", G_CALLBACK(onTextChanged), this);
 		}
 
 		if(dvb_audiosink)
@@ -829,6 +871,29 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		}
 		if(dvb_videosink && !m_sourceinfo.is_audio)
 		{
+			if(m_useplaybin3)
+			{
+				GstCaps *caps = gst_caps_new_empty_simple("video/x-raw");
+    
+				// Füge alle unterstützten Formate hinzu
+				gst_caps_set_simple(caps,
+					// Verschiedene Pixelformate
+					"format", G_TYPE_STRING, "I420,NV12,YV12,UYVY,YUY2,YVYU,BGR,BGRx,BGRA,RGB,RGBx,RGBA",
+					// Flexible Auflösungen
+					"width", GST_TYPE_INT_RANGE, 1, G_MAXINT,
+					"height", GST_TYPE_INT_RANGE, 1, G_MAXINT,
+					// Flexible Framerates
+					"framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT, 1,
+					// Verschiedene Farbräume
+					"colorimetry", G_TYPE_STRING, "bt601,bt709,smpte170m,bt2020",
+					NULL);
+			
+				// Setze die Caps auf dem videosink
+				g_object_set(G_OBJECT(dvb_videosink), "caps", caps, NULL);
+				gst_caps_unref(caps);
+			}
+
+
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
 			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
@@ -872,6 +937,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 
 		g_object_set(m_gst_playbin, "flags", flags, NULL);
 		g_object_set(m_gst_playbin, "uri", uri, NULL);
+
+
 		if (dvb_subsink)
 		{
 			m_subs_to_pull_handler_id = g_signal_connect(dvb_subsink, "new-buffer", G_CALLBACK(gstCBsubtitleAvail), this);
