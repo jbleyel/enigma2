@@ -146,6 +146,7 @@ eServiceFactoryMP3::eServiceFactoryMP3()
 		extensions.push_back("wma");
 		extensions.push_back("webm");
 		extensions.push_back("m3u8");
+		extensions.push_back("mpd");
 		extensions.push_back("stream");
 		sc->addServiceFactory(eServiceFactoryMP3::id, this, extensions);
 	}
