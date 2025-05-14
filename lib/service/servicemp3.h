@@ -367,7 +367,8 @@ private:
 	static void onDecodePadAdded(GstElement *element, GstPad *pad, gpointer user_data);
 	static void onPadAdded(GstElement *element, GstPad *pad, gpointer user_data);
 	void addSubtitleStream(int index);
-	static void on_stream_collection(GstElement *playbin, GstStreamCollection *collection, gpointer user_data);
+	static void onStreamCollectionChanged(GObject *object, GParamSpec *pspec, gpointer user_data);
+
 	void analyzeStreamCollection();
 	struct subtitle_page_t
 	{

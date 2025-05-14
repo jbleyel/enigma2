@@ -808,6 +808,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		{
 			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-mode", 0, NULL);
 			g_object_set(G_OBJECT(m_gst_playbin), "video-multiview-flags", 0, NULL);
+			g_signal_connect(m_gst_playbin, "notify::stream-collection", G_CALLBACK(onStreamCollectionChanged), this);
 		}
 
 		if(dvb_audiosink)
@@ -895,9 +896,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			gst_caps_unref(caps);
 
 			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
-			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
-
-			g_object_set(m_gst_playbin, "current-video", 0, NULL);
+			if(!m_useplaybin3)
+				g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
 		}
 		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
@@ -964,42 +964,47 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		g_free(suburi);
 }
 
-void eServiceMP3::on_stream_collection(GstElement *playbin, GstStreamCollection *collection, gpointer user_data) {
-    guint num_streams = gst_stream_collection_get_size(collection);
-	eDebug("[eServiceMP3] Stream Collection received:: %d", num_streams);
+void eServiceMP3::onStreamCollectionChanged(GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+    eServiceMP3 *_this = (eServiceMP3 *)user_data;
 
-    for (guint i = 0; i < num_streams; ++i) {
-        GstStream *stream = gst_stream_collection_get_stream(collection, i);
-        GstCaps *caps = gst_stream_get_caps(stream);
-        GstStreamType stream_type = gst_stream_get_stream_type(stream);
+    GstStreamCollection *collection = NULL;
+    g_object_get(object, "stream-collection", &collection, NULL);
 
-		eDebug("[eServiceMP3] Stream [%d]",i);
+    if (collection)
+    {
+        guint num_streams = gst_stream_collection_get_size(collection);
+        eDebug("[eServiceMP3] Number of streams in collection: %d", num_streams);
 
-        if (stream_type == GST_STREAM_TYPE_TEXT) {
-			eDebug("[eServiceMP3] Subtitle Stream [%d]",i);
-			//  std::cout << "Subtitle Stream [" << i << "]" << std::endl;
+        for (guint i = 0; i < num_streams; ++i)
+        {
+            GstStream *stream = gst_stream_collection_get_stream(collection, i);
+            GstCaps *caps = gst_stream_get_caps(stream);
+            GstStreamType stream_type = gst_stream_get_stream_type(stream);
 
-            const GstTagList *tags = gst_stream_get_tags(stream);
-            if (tags) {
-                gchar *lang = nullptr;
-                if (gst_tag_list_get_string(tags, GST_TAG_LANGUAGE_CODE, &lang)) {
-                    //std::cout << "  Language: " << lang << std::endl;
-                    g_free(lang);
-                }
-                gchar *title = nullptr;
-                if (gst_tag_list_get_string(tags, GST_TAG_TITLE, &title)) {
-                    //std::cout << "  Title:    " << title << std::endl;
-                    g_free(title);
-                }
-            } else {
-				eDebug("[eServiceMP3] Stream Collection No tags available");
+            if (stream_type == GST_STREAM_TYPE_TEXT)
+            {
+                eDebug("[eServiceMP3] Found subtitle stream: %s", gst_caps_to_string(caps));
             }
+            else if (stream_type == GST_STREAM_TYPE_AUDIO)
+            {
+                eDebug("[eServiceMP3] Found audio stream: %s", gst_caps_to_string(caps));
+            }
+            else if (stream_type == GST_STREAM_TYPE_VIDEO)
+            {
+                eDebug("[eServiceMP3] Found video stream: %s", gst_caps_to_string(caps));
+            }
+
+            gst_object_unref(stream);
         }
 
-        gst_object_unref(stream);  // Important!
+        gst_object_unref(collection);
+    }
+    else
+    {
+        eDebug("[eServiceMP3] No stream collection available.");
     }
 }
-
 
 eServiceMP3::~eServiceMP3()
 {
@@ -2662,7 +2667,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 
 			if (m_useplaybin3)
 			{
-				analyzeStreamCollection();
+				//analyzeStreamCollection();
 				break;
 			}
 
