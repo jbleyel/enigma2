@@ -125,6 +125,7 @@ static bool parse_timecode(const std::string &s, uint64_t &ms_out) {
 bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_out) {
     std::istringstream stream(vtt_data);
     std::string line;
+
     uint64_t base_pts_90k = 0;
     uint64_t local_ms_base = 0;
 
@@ -133,10 +134,13 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
     bool expecting_text = false;
 
     while (std::getline(stream, line)) {
-        // Trim CR
+        // Remove carriage return
         if (!line.empty() && line.back() == '\r') line.pop_back();
 
-        // X-TIMESTAMP-MAP
+        // Skip empty lines
+        if (line.empty()) continue;
+
+        // Parse X-TIMESTAMP-MAP
         if (line.find("X-TIMESTAMP-MAP=") == 0) {
             auto mpegts_pos = line.find("MPEGTS:");
             auto local_pos = line.find("LOCAL:");
@@ -150,10 +154,10 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
             continue;
         }
 
-        // Zeitangabe: 00:00:02.000 --> 00:00:04.000
+        // Timecode line
         if (line.find("-->") != std::string::npos) {
+            // Optional: previous block abschließen
             if (!current_text.empty()) {
-                // voriges Segment abschließen
                 uint64_t start_90k = base_pts_90k + (start_ms - local_ms_base) * 90;
                 uint64_t end_90k = base_pts_90k + (end_ms - local_ms_base) * 90;
                 SubtitleEntry entry;
@@ -164,29 +168,30 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
                 current_text.clear();
             }
 
+            // Parse start/end
             size_t arrow = line.find("-->");
             std::string start_str = line.substr(0, arrow);
             std::string end_str = line.substr(arrow + 3);
+            if (!parse_timecode(start_str, start_ms)) continue;
+            if (!parse_timecode(end_str, end_ms)) continue;
 
-            parse_timecode(start_str, start_ms);
-            parse_timecode(end_str, end_ms);
             expecting_text = true;
             continue;
         }
 
-        // Sammle Text
+        // Ignore Cue ID line (e.g. "1166809341")
+        if (!expecting_text && line.find_first_not_of("0123456789") == std::string::npos)
+            continue;
+
+        // Text lines
         if (expecting_text) {
-            if (!line.empty()) {
-                if (!current_text.empty())
-                    current_text += "\n";
-                current_text += line;
-            } else {
-                expecting_text = false;
-            }
+            if (!current_text.empty())
+                current_text += "\n";
+            current_text += line;
         }
     }
 
-    // Letztes Segment speichern
+    // Last cue
     if (!current_text.empty()) {
         uint64_t start_90k = base_pts_90k + (start_ms - local_ms_base) * 90;
         uint64_t end_90k = base_pts_90k + (end_ms - local_ms_base) * 90;
@@ -199,6 +204,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
 
     return !subs_out.empty();
 }
+
 
 // eServiceFactoryMP3
 
