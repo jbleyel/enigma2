@@ -2579,7 +2579,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			g_object_get (m_gst_playbin, "n-audio", &n_audio, NULL);
 			g_object_get (m_gst_playbin, "n-text", &n_text, NULL);
 
-			//eDebug("[eServiceMP3] async-done - %d video, %d audio, %d subtitle", n_video, n_audio, n_text);
+			eDebug("[eServiceMP3] async-done - %d video, %d audio, %d subtitle", n_video, n_audio, n_text);
 
 			if ( n_video + n_audio <= 0 )
 				stop();
@@ -3334,6 +3334,7 @@ audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
 
 void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const &msg)
 {
+	eDebug("[eServiceMP3] gstPoll %d", msg->getType());
 	switch (msg->getType())
 	{
 		case 1:
@@ -3347,6 +3348,7 @@ void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const &msg)
 		}
 		case 2:
 		{
+			eDebug("[eServiceMP3] gstPoll case 2");
 			GstBuffer *buffer = *((GstMessageContainer*)msg);
 			if (buffer)
 			{
@@ -3356,6 +3358,7 @@ void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const &msg)
 		}
 		case 3:
 		{
+			eDebug("[eServiceMP3] gstPoll case 3");
 			GstPad *pad = *((GstMessageContainer*)msg);
 			gstTextpadHasCAPS_synced(pad);
 			break;
@@ -3452,15 +3455,15 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 		GstMapInfo map;
 		if(!gst_buffer_map(buffer, &map, GST_MAP_READ))
 		{
-			//eDebug("[eServiceMP3] pullSubtitle gst_buffer_map failed");
+			eDebug("[eServiceMP3] pullSubtitle gst_buffer_map failed");
 			return;
 		}
 		int64_t buf_pos = GST_BUFFER_PTS(buffer);
 		size_t len = map.size;
-		// eDebug("[eServiceMP3] gst_buffer_get_size %zu map.size %zu", gst_buffer_get_size(buffer), len);
+		eDebug("[eServiceMP3] gst_buffer_get_size %zu map.size %zu", gst_buffer_get_size(buffer), len);
 		int64_t duration_ns = GST_BUFFER_DURATION(buffer);
 		int subType = m_subtitleStreams[m_currentSubtitleStream].type;
-		//eDebug("[eServiceMP3] pullSubtitle type=%d size=%zu", subType, len);
+		eDebug("[eServiceMP3] pullSubtitle type=%d size=%zu", subType, len);
 		if ( subType )
 		{
 			if (subType == stDVB)
@@ -3502,7 +3505,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 			}
 			else
 			{
-				//eDebug("[eServiceMP3] unsupported subpicture... ignoring");
+				eDebug("[eServiceMP3] unsupported subpicture... ignoring");
 			}
 		}
 		gst_buffer_unmap(buffer, &map);
