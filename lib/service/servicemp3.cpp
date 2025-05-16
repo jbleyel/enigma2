@@ -3334,7 +3334,6 @@ audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
 
 void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const &msg)
 {
-	eDebug("[eServiceMP3] gstPoll %d", msg->getType());
 	switch (msg->getType())
 	{
 		case 1:
@@ -3348,7 +3347,6 @@ void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const &msg)
 		}
 		case 2:
 		{
-			eDebug("[eServiceMP3] gstPoll case 2");
 			GstBuffer *buffer = *((GstMessageContainer*)msg);
 			if (buffer)
 			{
@@ -3358,7 +3356,6 @@ void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const &msg)
 		}
 		case 3:
 		{
-			eDebug("[eServiceMP3] gstPoll case 3");
 			GstPad *pad = *((GstMessageContainer*)msg);
 			gstTextpadHasCAPS_synced(pad);
 			break;
@@ -3449,21 +3446,21 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 
 void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 {
-	eDebug("[eServiceMP3] pullSubtitle");
+	// eDebug("[eServiceMP3] pullSubtitle");
 	if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size())
 	{
 		GstMapInfo map;
 		if(!gst_buffer_map(buffer, &map, GST_MAP_READ))
 		{
-			eDebug("[eServiceMP3] pullSubtitle gst_buffer_map failed");
+			//eDebug("[eServiceMP3] pullSubtitle gst_buffer_map failed");
 			return;
 		}
 		int64_t buf_pos = GST_BUFFER_PTS(buffer);
 		size_t len = map.size;
-		eDebug("[eServiceMP3] gst_buffer_get_size %zu map.size %zu", gst_buffer_get_size(buffer), len);
+		// eDebug("[eServiceMP3] gst_buffer_get_size %zu map.size %zu", gst_buffer_get_size(buffer), len);
 		int64_t duration_ns = GST_BUFFER_DURATION(buffer);
 		int subType = m_subtitleStreams[m_currentSubtitleStream].type;
-		eDebug("[eServiceMP3] pullSubtitle type=%d size=%zu", subType, len);
+		// eDebug("[eServiceMP3] pullSubtitle type=%d size=%zu", subType, len);
 		if ( subType )
 		{
 			if (subType == stDVB)
@@ -3471,7 +3468,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 				uint8_t * data = map.data;
 				m_dvb_subtitle_parser->processBuffer(data, len, buf_pos / 1000000ULL);
 			} 
-			else if ( subType < stVOB )
+			else if ( subType < stVOB || subType == stVTT )
 			{
 				int delay_ms = eSubtitleSettings::pango_subtitles_delay / 90;
 				int subtitle_fps = eSubtitleSettings::pango_subtitles_fps;
