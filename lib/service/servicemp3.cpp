@@ -2789,6 +2789,16 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						g_free(g_lang_title);
 					}
 					gst_tag_list_get_string(tags, GST_TAG_SUBTITLE_CODEC, &g_codec);
+
+					gst_tag_list_foreach(tags, [](const GstTagList *list, const gchar *tag, gpointer user_data) {
+						gchar *val_str;
+						gst_tag_list_get_string(list, tag, &val_str);
+						if (val_str) {
+							eDebug("SUB TAG: %s = %s\n", tag, val_str);
+							g_free(val_str);
+						}
+					}, NULL);
+
 					gst_tag_list_free(tags);
 				}
 
