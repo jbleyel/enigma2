@@ -132,13 +132,16 @@ static bool parseWebVTT(const std::string &vtt_data, guint64 buffer_pts_90k, std
 
     while (std::getline(stream, line)) {
         std::smatch match;
+	    eDebug("line");
+	    eDebug(line.c_str());
         if (std::regex_match(line, match, map_regex)) {
             base_pts_90k = std::stoull(match[1]);
             local_ms = std::stoull(match[2]) * 3600000 +
                        std::stoull(match[3]) * 60000 +
                        std::stoull(match[4]) * 1000 +
                        std::stoull(match[5]);
-        }
+			eDebug("buffer_pts_90k = %" PRIu64 ", base_pts_90k = %" PRIu64 ", local_ms = %" PRIu64 "\n", buffer_pts_90k, base_pts_90k, local_ms);
+		}
         else if (std::regex_match(line, match, cue_regex)) {
             guint64 start_ms = parse_vtt_time(match[1]);
             guint64 end_ms = parse_vtt_time(match[2]);
@@ -3520,6 +3523,10 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 				std::vector<SubtitleEntry> parsed_subs;
 
 				uint64_t buf_pos_90k = static_cast<uint64_t>(buf_pos * 90 / GST_SECOND);
+
+				eDebug("SUB DEBUG")
+				eDebug("buffer_pts_90k = %" PRIu64 "\n", buf_pos_90k);
+				eDebug(">>>\n%s\n<<<", vtt_string.c_str())
 
 				if (parseWebVTT(vtt_string, buf_pos_90k, parsed_subs)) {
 					for (const auto &sub : parsed_subs) {
