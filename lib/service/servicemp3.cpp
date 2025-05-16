@@ -3516,8 +3516,10 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 
 			if (subType == stVTT)
 			{
-				std::string vtt_string(reinterpret_cast<char *>(data), data_size);
+				std::string vtt_string(reinterpret_cast<char *>(map.data), len);
 				std::vector<SubtitleEntry> parsed_subs;
+
+				uint64_t buf_pos_90k = static_cast<uint64_t>(buf_pos * 90 / GST_SECOND);
 
 				if (parseWebVTT(vtt_string, buf_pos_90k, parsed_subs)) {
 					for (const auto &sub : parsed_subs) {
