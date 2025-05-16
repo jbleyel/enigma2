@@ -107,8 +107,8 @@ static void gst_sleepms(uint32_t msec)
 
 
 struct SubtitleEntry {
-    uint64_t start_time_ns;
-    uint64_t end_time_ns;
+    uint64_t start_time_ms;
+    uint64_t end_time_ms;
     std::string text;
 };
 
@@ -126,49 +126,24 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
     std::istringstream stream(vtt_data);
     std::string line;
 
-    uint64_t base_pts_90k = 0;
-    uint64_t local_ms_base = 0;
-
     std::string current_text;
     uint64_t start_ms = 0, end_ms = 0;
     bool expecting_text = false;
 
     while (std::getline(stream, line)) {
-        // Remove carriage return
         if (!line.empty() && line.back() == '\r') line.pop_back();
-
-        // Skip empty lines
         if (line.empty()) continue;
 
-        // Parse X-TIMESTAMP-MAP
-        if (line.find("X-TIMESTAMP-MAP=") == 0) {
-            auto mpegts_pos = line.find("MPEGTS:");
-            auto local_pos = line.find("LOCAL:");
-
-            if (mpegts_pos != std::string::npos && local_pos != std::string::npos) {
-                base_pts_90k = std::strtoull(line.c_str() + mpegts_pos + 7, nullptr, 10);
-
-                std::string local_str = line.substr(local_pos + 6);
-                parse_timecode(local_str, local_ms_base);
-            }
-            continue;
-        }
-
-        // Timecode line
         if (line.find("-->") != std::string::npos) {
-            // Optional: previous block abschließen
             if (!current_text.empty()) {
-                uint64_t start_90k = base_pts_90k + (start_ms - local_ms_base) * 90;
-                uint64_t end_90k = base_pts_90k + (end_ms - local_ms_base) * 90;
                 SubtitleEntry entry;
-                entry.start_time_ns = (start_90k * GST_SECOND) / 90000;
-                entry.end_time_ns = (end_90k * GST_SECOND) / 90000;
+                entry.start_time_ms = start_ms;
+                entry.end_time_ms = end_ms;
                 entry.text = current_text;
                 subs_out.push_back(entry);
                 current_text.clear();
             }
 
-            // Parse start/end
             size_t arrow = line.find("-->");
             std::string start_str = line.substr(0, arrow);
             std::string end_str = line.substr(arrow + 3);
@@ -179,11 +154,9 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
             continue;
         }
 
-        // Ignore Cue ID line (e.g. "1166809341")
         if (!expecting_text && line.find_first_not_of("0123456789") == std::string::npos)
             continue;
 
-        // Text lines
         if (expecting_text) {
             if (!current_text.empty())
                 current_text += "\n";
@@ -191,13 +164,11 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
         }
     }
 
-    // Last cue
+    // letzter Block
     if (!current_text.empty()) {
-        uint64_t start_90k = base_pts_90k + (start_ms - local_ms_base) * 90;
-        uint64_t end_90k = base_pts_90k + (end_ms - local_ms_base) * 90;
         SubtitleEntry entry;
-        entry.start_time_ns = (start_90k * GST_SECOND) / 90000;
-        entry.end_time_ns = (end_90k * GST_SECOND) / 90000;
+        entry.start_time_ms = start_ms;
+        entry.end_time_ms = end_ms;
         entry.text = current_text;
         subs_out.push_back(entry);
     }
@@ -3556,25 +3527,19 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 			if (subType == stVTT)
 			{
 
-
 				std::string vtt_string(reinterpret_cast<char *>(map.data), len);
 				std::vector<SubtitleEntry> parsed_subs;
 
 				eDebug("SUB DEBUG line");
 				eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
-				//uint64_t buf_pos_90k = static_cast<uint64_t>(buf_pos * 90 / GST_SECOND);
-
 				if (parseWebVTT(vtt_string, parsed_subs)) {
 					for (const auto &sub : parsed_subs) {
-						printf("[SUB] %llu ns - %llu ns:\n%s\n",
-							sub.start_time_ns, sub.end_time_ns,
+						printf("[SUB] %llu ms - %llu ms:\n%s\n",
+							sub.start_time_ms, sub.end_time_ms,
 							sub.text.c_str());
 
-						uint32_t start_ms = sub.start_time_ns / 1000000;
-						uint32_t end_ms = sub.end_time_ns / 1000000;
-
-						m_subtitle_pages.insert(subtitle_pages_map_pair_t(end_ms, subtitle_page_t(start_ms, end_ms, sub.text)));
+						m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
 
 					}
 					if (!parsed_subs.empty())
