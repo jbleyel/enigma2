@@ -3556,13 +3556,14 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 			if (subType == stVTT)
 			{
 
-				eDebug("SUB DEBUG line");
-				eDebug(">>>\n%s\n<<<", line.c_str());
 
 				std::string vtt_string(reinterpret_cast<char *>(map.data), len);
 				std::vector<SubtitleEntry> parsed_subs;
 
-				uint64_t buf_pos_90k = static_cast<uint64_t>(buf_pos * 90 / GST_SECOND);
+				eDebug("SUB DEBUG line");
+				eDebug(">>>\n%s\n<<<", vtt_string.c_str());
+
+				//uint64_t buf_pos_90k = static_cast<uint64_t>(buf_pos * 90 / GST_SECOND);
 
 				if (parseWebVTT(vtt_string, parsed_subs)) {
 					for (const auto &sub : parsed_subs) {
@@ -3694,7 +3695,7 @@ void eServiceMP3::pushSubtitles()
 
 		if (m_decoder_time_valid_state < 4)
 		{
-			//eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
+			eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
 			m_prev_decoder_time = running_pts;
 			next_timer = 100;
 			goto exit;
