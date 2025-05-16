@@ -3550,9 +3550,9 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 
 				uint64_t buf_pos_90k = static_cast<uint64_t>(buf_pos * 90 / GST_SECOND);
 
-				eDebug("SUB DEBUG")
+				eDebug("SUB DEBUG");
 				eDebug("buffer_pts_90k = %lld", buf_pos_90k);
-				eDebug(">>>\n%s\n<<<", vtt_string.c_str())
+				eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
 				if (parseWebVTT(vtt_string, parsed_subs)) {
 					for (const auto &sub : parsed_subs) {
