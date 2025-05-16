@@ -23,6 +23,9 @@
 #include <lib/base/cfile.h>
 
 #include <string>
+#include <regex>
+#include <sstream>
+
 
 #include <gst/gst.h>
 #include <gst/pbutils/missing-plugins.h>
@@ -100,6 +103,69 @@ static void gst_sleepms(uint32_t msec)
 	errno = olderrno;
 }
 
+
+struct SubtitleEntry {
+    guint64 start_time_ns;
+    guint64 end_time_ns;
+    std::string text;
+};
+
+// helper: "00:00:02.000" → milliseconds
+static guint64 parse_vtt_time(const std::string &time_str) {
+    int h, m, s, ms;
+    sscanf(time_str.c_str(), "%d:%d:%d.%d", &h, &m, &s, &ms);
+    return ((h * 3600 + m * 60 + s) * 1000 + ms);
+}
+
+// main parsing logic
+static bool parseWebVTT(const std::string &vtt_data, guint64 buffer_pts_90k, std::vector<SubtitleEntry> &out_subs) {
+    guint64 base_pts_90k = 0;
+    guint64 local_ms = 0;
+
+    std::istringstream stream(vtt_data);
+    std::string line;
+    std::regex map_regex(R"(X-TIMESTAMP-MAP=MPEGTS:(\d+),LOCAL:(\d+):(\d+):(\d+)\.(\d+))");
+    std::regex cue_regex(R"((\d{2}:\d{2}:\d{2}\.\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2}\.\d{3}))");
+
+    SubtitleEntry current;
+    bool in_cue = false;
+
+    while (std::getline(stream, line)) {
+        std::smatch match;
+        if (std::regex_match(line, match, map_regex)) {
+            base_pts_90k = std::stoull(match[1]);
+            local_ms = std::stoull(match[2]) * 3600000 +
+                       std::stoull(match[3]) * 60000 +
+                       std::stoull(match[4]) * 1000 +
+                       std::stoull(match[5]);
+        }
+        else if (std::regex_match(line, match, cue_regex)) {
+            guint64 start_ms = parse_vtt_time(match[1]);
+            guint64 end_ms = parse_vtt_time(match[2]);
+
+            // relative zu X-TIMESTAMP-MAP:LOCAL
+            gint64 delta_ms = start_ms - local_ms;
+            guint64 start_pts_90k = base_pts_90k + delta_ms * 90;
+            guint64 end_pts_90k   = base_pts_90k + (end_ms - local_ms) * 90;
+
+            current.start_time_ns = (start_pts_90k * GST_SECOND) / 90000;
+            current.end_time_ns = (end_pts_90k * GST_SECOND) / 90000;
+            current.text.clear();
+            in_cue = true;
+        }
+        else if (in_cue) {
+            if (line.empty()) {
+                // Cue zu Ende
+                if (!current.text.empty())
+                    out_subs.push_back(current);
+                in_cue = false;
+            } else {
+                current.text += line + "\n";
+            }
+        }
+    }
+    return !out_subs.empty();
+}
 
 // eServiceFactoryMP3
 
@@ -3447,12 +3513,35 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 		// eDebug("[eServiceMP3] pullSubtitle type=%d size=%zu", subType, len);
 		if ( subType )
 		{
-			if (subType == stDVB)
+
+			if (subType == stVTT)
+			{
+				std::string vtt_string(reinterpret_cast<char *>(data), data_size);
+				std::vector<SubtitleEntry> parsed_subs;
+
+				if (parseWebVTT(vtt_string, buf_pos_90k, parsed_subs)) {
+					for (const auto &sub : parsed_subs) {
+						printf("[SUB] %llu ns - %llu ns:\n%s\n",
+							sub.start_time_ns, sub.end_time_ns,
+							sub.text.c_str());
+
+						uint32_t start_ms = sub.start_time_ns / 1000000;
+						uint32_t end_ms = sub.end_time_ns / 1000000;
+
+						m_subtitle_pages.insert(subtitle_pages_map_pair_t(end_ms, subtitle_page_t(start_ms, end_ms, sub.text)));
+
+					}
+					if (!parsed_subs.empty())
+						m_subtitle_sync_timer->start(1, true);					
+				}				
+
+			}
+			else if (subType == stDVB)
 			{
 				uint8_t * data = map.data;
 				m_dvb_subtitle_parser->processBuffer(data, len, buf_pos / 1000000ULL);
 			} 
-			else if ( subType < stVOB || subType == stVTT )
+			else if ( subType < stVOB)
 			{
 				int delay_ms = eSubtitleSettings::pango_subtitles_delay / 90;
 				int subtitle_fps = eSubtitleSettings::pango_subtitles_fps;
