@@ -11,6 +11,8 @@
 /* for subtitles */
 #include <lib/gui/esubtitle.h>
 
+//#define NEWPILELINE 1
+
 class eStaticServiceMP3Info;
 
 class eServiceFactoryMP3: public iServiceHandler
@@ -343,7 +345,12 @@ private:
 	};
 	int m_state;
 	bool m_gstdot;
-	GstElement *m_gst_playbin;
+
+	GstElement *m_gst_playbin = nullptr;
+#ifdef NEWPILELINE
+	GstElement *m_gst_pipeline = nullptr;
+	GstElement *m_gst_source = nullptr;
+#endif
 	GstTagList *m_stream_tags;
 	bool m_coverart;
 	std::list<eDVBSubtitlePage> m_dvb_subtitle_pages;
@@ -363,13 +370,14 @@ private:
 /* TOC processing CVR */
 	void HandleTocEntry(GstMessage *msg);
 	static gint match_sinktype(const GValue *velement, const gchar *type);
-	static void handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data);
-	static void onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_data);
-	static void onDecodePadAdded(GstElement *element, GstPad *pad, gpointer user_data);
-	static void onPadAdded(GstElement *element, GstPad *pad, gpointer user_data);
-	void addSubtitleStream(int index);
 
-	void analyzeStreamCollection();
+#ifdef NEWPILELINE
+	static void onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data);
+	static void onDecodePadAdded(GstElement *element, GstPad *pad, gpointer user_data);
+#else
+	static void handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data);
+#endif
+
 	struct subtitle_page_t
 	{
 		uint32_t start_ms;

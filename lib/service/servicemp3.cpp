@@ -802,6 +802,57 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	eDebug("[eServiceMP3] playbin uri=%s", uri);
 	if (suburi != NULL)
 		eDebug("[eServiceMP3] playbin suburi=%s", suburi);
+
+#ifdef NEWPILELINE
+
+	if (dvb_audiosink) {
+		gboolean audioMode = m_sourceinfo.is_audio;
+		g_object_set(dvb_audiosink, "e2-sync", audioMode, NULL);
+		g_object_set(dvb_audiosink, "e2-async", audioMode, NULL);
+	}
+
+	if (dvb_videosink && !m_sourceinfo.is_audio) {
+		g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
+		g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
+	}
+
+	m_gst_pipeline = gst_pipeline_new("hls-pipeline");
+	m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
+
+	if (!m_gst_pipeline || !m_gst_source) {
+		eDebug("[eServiceMP3] Fehler beim Erstellen der Pipeline");
+		return;
+	}
+
+	g_object_set(G_OBJECT(m_gst_source), "uri", uri, NULL);
+	gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
+
+	g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(&eServiceMP3::onDemuxPadAdded), this);
+
+
+	// Buffering konfigurieren
+	GstElement *queue = gst_element_factory_make("queue2", "buffer-queue");
+
+	if (queue) {
+		g_object_set(queue,
+			"use-buffering", TRUE,
+			"max-size-buffers", 0,
+			"max-size-bytes", m_buffer_size, // z.B. 10MB
+			"max-size-time", (gint64)(5 * GST_SECOND),
+			NULL);
+	}
+
+	// Download-Cache konfigurieren (nur falls m_download_buffer_path gesetzt)
+	if (!m_download_buffer_path.empty()) {
+		g_object_set(queue,
+			"temp-template", m_download_buffer_path.c_str(), // z.B. "/tmp/e2-buffer-XXXXXX"
+			NULL);
+	}
+
+	g_object_set(m_gst_source, "connection-speed", (guint64)4495000, NULL);
+
+
+#else
 	m_useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
 	if(m_useplaybin3)
 		m_gst_playbin = gst_element_factory_make("playbin3", "playbin3");
@@ -952,6 +1003,9 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	g_free(uri);
 	if (suburi != NULL)
 		g_free(suburi);
+
+#endif
+
 }
 
 eServiceMP3::~eServiceMP3()
@@ -1100,12 +1154,19 @@ RESULT eServiceMP3::start()
 	ASSERT(m_state == stIdle);
 
 	m_subtitles_paused = false;
+#ifdef NEWPILELINE
+	if (m_gst_pipeline)
+#else
 	if (m_gst_playbin)
+#endif
 	{
 		eDebug("[eServiceMP3] *** starting pipeline ****");
 		GstStateChangeReturn ret;
+#ifdef NEWPILELINE
+		ret = gst_element_set_state (m_gst_pipeline, GST_STATE_READY);
+#else
 		ret = gst_element_set_state (m_gst_playbin, GST_STATE_READY);
-
+#endif
 		switch(ret)
 		{
 		case GST_STATE_CHANGE_FAILURE:
@@ -1116,7 +1177,11 @@ RESULT eServiceMP3::start()
 			m_is_live = false;
 			break;
 		case GST_STATE_CHANGE_NO_PREROLL:
+#ifdef NEWPILELINE
+			gst_element_set_state (m_gst_pipeline, GST_STATE_PLAYING);
+#else
 			gst_element_set_state (m_gst_playbin, GST_STATE_PLAYING);
+#endif
 			m_is_live = true;
 			break;
 		default:
@@ -2511,7 +2576,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
             if (tags)
             {
                 gchar *tag_str = gst_tag_list_to_string(tags);
-                eDebug("[eServiceMP3] Received TAG message: %s", tag_str);
+                // eDebug("[eServiceMP3] Received TAG message: %s", tag_str);
                 g_free(tag_str);
 			}
 
@@ -2743,7 +2808,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			{
 
                 const gchar *name = gst_structure_get_name(msgstruct);
-                eDebug("[eServiceMP3] Received ELEMENT message: %s", name);
+                // eDebug("[eServiceMP3] Received ELEMENT message: %s", name);
 
 				if ( gst_is_missing_plugin_message(msg) )
 				{
@@ -3120,56 +3185,60 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 	gst_object_unref(source);
 }
 
+#ifdef NEWPILELINE
 
-void eServiceMP3::onDecodePadAdded(GstElement *element, GstPad *pad, gpointer user_data)
-{
-    eServiceMP3 *_this = (eServiceMP3 *)user_data;
-    const gchar *pad_name = gst_pad_get_name(pad);
-    eDebug("[eServiceMP3] Decodebin pad added: %s", pad_name);
 
-    GstCaps *caps = gst_pad_get_current_caps(pad);
-    if (caps)
-    {
-        gchar *caps_str = gst_caps_to_string(caps);
-        eDebug("[eServiceMP3] Pad caps: %s", caps_str);
+void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data) {
+    eServiceMP3* self = static_cast<eServiceMP3*>(user_data);
+    
+    // Beispiel: decodebin erzeugen
+    GstElement* decode = gst_element_factory_make("decodebin", NULL);
+    if (!decode)
+        return;
 
-        // Prüfe, ob es sich um Untertitel, Audio oder Video handelt
-        if (g_str_has_prefix(caps_str, "application/x-subtitle") || g_str_has_prefix(caps_str, "text/x-webvtt"))
-        {
-            eDebug("[eServiceMP3] Found subtitle stream: %s", caps_str);
-            // Hier kannst du die Untertitel-Streams speichern oder weiterverarbeiten
-        }
-        else if (g_str_has_prefix(caps_str, "audio/"))
-        {
-            eDebug("[eServiceMP3] Found audio stream: %s", caps_str);
-        }
-        else if (g_str_has_prefix(caps_str, "video/"))
-        {
-            eDebug("[eServiceMP3] Found video stream: %s", caps_str);
-        }
+    gst_bin_add(GST_BIN(self->m_gst_pipeline), decode);
+    gst_element_sync_state_with_parent(decode);
 
-        g_free(caps_str);
-        gst_caps_unref(caps);
+    GstPad* sinkpad = gst_element_get_static_pad(decode, "sink");
+    gst_pad_link(pad, sinkpad);
+    gst_object_unref(sinkpad);
+
+    // Neues Pad von decodebin behandeln
+    g_signal_connect(decode, "pad-added", G_CALLBACK(&eServiceMP3::onDecodePadAdded), self);
+}
+
+
+void eServiceMP3::onDecodePadAdded(GstElement *decodebin, GstPad *pad, gpointer user_data) {
+    eServiceMP3* self = static_cast<eServiceMP3*>(user_data);
+
+    GstCaps* caps = gst_pad_get_current_caps(pad);
+    if (!caps) return;
+
+    GstStructure* str = gst_caps_get_structure(caps, 0);
+    const gchar* name = gst_structure_get_name(str);
+    GstElement* sink = NULL;
+
+    eDebug("[eServiceMP3] onDecodePadAdded pad: %s", name);
+    if (g_str_has_prefix(name, "audio/"))
+        sink = dvb_audiosink;
+    else if (g_str_has_prefix(name, "video/"))
+        sink = dvb_videosink;
+    else if (g_str_has_prefix(name, "text/") || g_str_has_prefix(name, "application/x-subtitle"))
+        sink = dvb_subsink;
+
+    if (sink) {
+        gst_bin_add(GST_BIN(self->m_gst_pipeline), sink);
+        gst_element_sync_state_with_parent(sink);
+        GstPad* sinkpad = gst_element_get_static_pad(sink, "sink");
+        if (gst_pad_link(pad, sinkpad) != GST_PAD_LINK_OK)
+            eDebug("[eServiceMP3] Error link pad: %s", name);
+        gst_object_unref(sinkpad);
     }
+
+    gst_caps_unref(caps);
 }
 
-void eServiceMP3::onPadAdded(GstElement *element, GstPad *pad, gpointer user_data)
-{
-    eServiceMP3 *_this = (eServiceMP3 *)user_data;
-    const gchar *pad_name = gst_pad_get_name(pad);
-    eDebug("[eServiceMP3] onPadAdded: %s", pad_name);
-    GstCaps *caps = gst_pad_get_current_caps(pad);
-    if (caps)
-	{
-        gchar *caps_str = gst_caps_to_string(caps);
-        eDebug("[eServiceMP3] Pad caps: %s", caps_str);
-
-		g_free(caps_str);
-        gst_caps_unref(caps);
-	}
-
-}
-
+#else
 void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data)
 {
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
@@ -3177,8 +3246,6 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 	{
 		gchar *elementname = gst_element_get_name(element);
         eDebug("[eServiceMP3] Element added: %s", elementname);
-
-		g_signal_connect(element, "pad-added", G_CALLBACK(onPadAdded), user_data);
 
 		if (g_str_has_prefix(elementname, "queue2"))
 		{
@@ -3199,101 +3266,18 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 			 * Ignore other bins since they may have unrelated queues
 			 */
 			g_signal_connect(element, "element-added", G_CALLBACK(handleElementAdded), user_data);
-
-            //g_signal_connect(element, "pad-added", G_CALLBACK(onPadAdded), user_data);
 		}
-		else if (g_str_has_prefix(elementname, "hlsdemux")) {
-			eDebug("[eServiceMP3] Found HLS demuxer: %s", elementname);
-            //g_signal_connect(element, "pad-added", G_CALLBACK(onPadAdded), user_data);
-		}
-		else if (g_str_has_prefix(elementname, "tsdemux")) {
-			eDebug("[eServiceMP3] Found TS demuxer: %s", elementname);
-            //g_signal_connect(element, "pad-added", G_CALLBACK(onPadAdded), user_data);
-		}		
 		
 		g_free(elementname);
 	}
 }
+#endif
 
-void eServiceMP3::onHlsPadAdded(GstElement *element, GstPad *pad, gpointer user_data)
-{
-    eServiceMP3 *_this = (eServiceMP3 *)user_data;
-    const gchar *pad_name = gst_pad_get_name(pad);
-    eDebug("[eServiceMP3] HLS demuxer pad added: %s", pad_name);
-
-    GstCaps *caps = gst_pad_get_current_caps(pad);
-    if (caps)
-    {
-        gchar *caps_str = gst_caps_to_string(caps);
-        eDebug("[eServiceMP3] Pad caps: %s", caps_str);
-        g_free(caps_str);
-        gst_caps_unref(caps);
-    }
-
-}
 
 std::string getBaseUrl(const std::string &url)
 {
 	size_t pos = url.find_last_of('/');
 	return (pos != std::string::npos) ? url.substr(0, pos + 1): url;
-}
-
-void eServiceMP3::addSubtitleStream(int index)
-{
-
-	// TODO NOT FINISHED
-
-	/*
-
-    if (index < 0 || index >= (int)m_subtitleStreams.size())
-    {
-        eDebug("[eServiceMP3] Invalid subtitle index: %d", index);
-        return;
-    }
-
-    const subtitleStream &subtitle = m_subtitleStreams[index];
-    //eDebug("[eServiceMP3] Adding subtitle stream: Language=%s, Name=%s, URI=%s", subtitle.language_code.c_str(), subtitle.title.c_str(), subtitle.uri.c_str());
-
-    std::string base_url = getBaseUrl(m_ref.path);
-    std::string full_uri = base_url + subtitle.uri;
-
-    std::string subtitle_playlist_data = downloadPlaylist(full_uri.c_str());
-    if (subtitle_playlist_data.empty())
-    {
-        eDebug("[eServiceMP3] Failed to download subtitle playlist: %s", full_uri.c_str());
-        return;
-    }
-
-    std::istringstream stream(subtitle_playlist_data);
-    std::string line;
-    std::vector<std::string> subtitle_files;
-
-    while (std::getline(stream, line))
-    {
-        if (line.find(".vtt") != std::string::npos) // Suche nach WebVTT-Dateien
-        {
-            subtitle_files.push_back(line);
-            eDebug("[eServiceMP3] Found subtitle file: %s", line.c_str());
-        }
-    }
-
-    if (subtitle_files.empty())
-    {
-        eDebug("[eServiceMP3] No subtitle files found in playlist: %s", full_uri.c_str());
-        return;
-    }
-
-    GstElement *subtitle_source = gst_element_factory_make("souphttpsrc", "subtitle_source");
-    g_object_set(subtitle_source, "location", subtitle_files[0].c_str(), NULL);
-
-    GstElement *subtitle_demux = gst_element_factory_make("webvttdemux", "subtitle_demux");
-    GstElement *subtitle_parse = gst_element_factory_make("webvttparse", "subtitle_parse");
-    GstElement *subtitle_overlay = gst_element_factory_make("subtitleoverlay", "subtitle_overlay");
-
-    gst_bin_add_many(GST_BIN(m_gst_playbin), subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
-    gst_element_link_many(subtitle_source, subtitle_demux, subtitle_parse, subtitle_overlay, NULL);
-
-	*/
 }
 
 audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
@@ -3367,7 +3351,7 @@ eAutoInitPtr<eServiceFactoryMP3> init_eServiceFactoryMP3(eAutoInitNumbers::servi
 
 void eServiceMP3::gstCBsubtitleAvail(GstElement *subsink, GstBuffer *buffer, gpointer user_data)
 {
-	eDebug("[eServiceMP3] gstCBsubtitleAvail");
+	// eDebug("[eServiceMP3] gstCBsubtitleAvail");
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 	if (_this->m_currentSubtitleStream < 0)
 	{
@@ -3379,7 +3363,7 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement *subsink, GstBuffer *buffer, gpo
 
 void eServiceMP3::gstTextpadHasCAPS(GstPad *pad, GParamSpec * unused, gpointer user_data)
 {
-	eDebug("[eServiceMP3] gstTextpadHasCAPS");
+	// eDebug("[eServiceMP3] gstTextpadHasCAPS");
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 
 	gst_object_ref (pad);
@@ -3389,7 +3373,7 @@ void eServiceMP3::gstTextpadHasCAPS(GstPad *pad, GParamSpec * unused, gpointer u
 
 void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 {
-	eDebug("[eServiceMP3] gstTextpadHasCAPS_synced");
+	// eDebug("[eServiceMP3] gstTextpadHasCAPS_synced");
 	GstCaps *caps = NULL;
 
 	g_object_get (G_OBJECT (pad), "caps", &caps, NULL);
@@ -3446,7 +3430,7 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 
 void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 {
-	// eDebug("[eServiceMP3] pullSubtitle");
+	eDebug("[eServiceMP3] pullSubtitle");
 	if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size())
 	{
 		GstMapInfo map;
@@ -3478,7 +3462,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 					convert_fps = subtitle_fps / (double)m_framerate;
 
 				std::string line((const char*)map.data, len);
-				// eDebug("[eServiceMP3] got new text subtitle @ buf_pos = %lld ns (in pts=%lld), dur=%lld: '%s' ", buf_pos, buf_pos/11111, duration_ns, line.c_str());
+				eDebug("[eServiceMP3] got new text subtitle @ buf_pos = %lld ns (in pts=%lld), dur=%lld: '%s' ", buf_pos, buf_pos/11111, duration_ns, line.c_str());
 
 				uint32_t start_ms = buf_pos / 1000000ULL;
 				uint32_t end_ms = start_ms + (duration_ns / 1000000ULL);
