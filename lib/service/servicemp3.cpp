@@ -2791,12 +2791,24 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 					gst_tag_list_get_string(tags, GST_TAG_SUBTITLE_CODEC, &g_codec);
 
 					gst_tag_list_foreach(tags, [](const GstTagList *list, const gchar *tag, gpointer user_data) {
-						gchar *val_str;
-						gst_tag_list_get_string(list, tag, &val_str);
-						if (val_str) {
-							eDebug("SUB TAG: %s = %s\n", tag, val_str);
-							g_free(val_str);
+						GValue val = G_VALUE_INIT;
+						gst_tag_list_copy_value(&val, list, tag);
+
+						if (G_VALUE_HOLDS_STRING(&val)) {
+							eDebug("TAG: %s = %s\n", tag, g_value_get_string(&val));
+						} else if (G_VALUE_HOLDS_UINT(&val)) {
+							eDebug("TAG: %s = %u\n", tag, g_value_get_uint(&val));
+						} else if (G_VALUE_HOLDS_INT(&val)) {
+							eDebug("TAG: %s = %d\n", tag, g_value_get_int(&val));
+						} else if (G_VALUE_HOLDS_DOUBLE(&val)) {
+							eDebug("TAG: %s = %f\n", tag, g_value_get_double(&val));
+						} else if (G_VALUE_HOLDS_BOOLEAN(&val)) {
+							eDebug("TAG: %s = %s\n", tag, g_value_get_boolean(&val) ? "true" : "false");
+						} else {
+							eDebug("TAG: %s (unbekannter Typ: %s)\n", tag, G_VALUE_TYPE_NAME(&val));
 						}
+
+						g_value_unset(&val);
 					}, NULL);
 
 					gst_tag_list_free(tags);
