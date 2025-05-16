@@ -23,8 +23,10 @@
 #include <lib/base/cfile.h>
 
 #include <string>
-#include <regex>
 #include <sstream>
+#include <vector>
+#include <cstdint>
+#include <cstdlib>
 
 
 #include <gst/gst.h>
@@ -103,89 +105,91 @@ static void gst_sleepms(uint32_t msec)
 	errno = olderrno;
 }
 
+
 struct SubtitleEntry {
     uint64_t start_time_ns;
     uint64_t end_time_ns;
     std::string text;
 };
 
-// helper: "00:00:02.000" → milliseconds
-static guint64 parse_vtt_time(const std::string &time_str) {
-    int h, m, s, ms;
-    sscanf(time_str.c_str(), "%d:%d:%d.%d", &h, &m, &s, &ms);
-    return ((h * 3600 + m * 60 + s) * 1000 + ms);
+// Hilfsfunktion: "00:00:02.500" → ms
+static bool parse_timecode(const std::string &s, uint64_t &ms_out) {
+    unsigned h = 0, m = 0, sec = 0, ms = 0;
+    if (sscanf(s.c_str(), "%u:%u:%u.%u", &h, &m, &sec, &ms) == 4) {
+        ms_out = ((h * 3600 + m * 60 + sec) * 1000 + ms);
+        return true;
+    }
+    return false;
 }
-
 
 bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_out) {
     std::istringstream stream(vtt_data);
     std::string line;
-
     uint64_t base_pts_90k = 0;
     uint64_t local_ms_base = 0;
 
-    std::regex map_regex(R"(X-TIMESTAMP-MAP=MPEGTS:(\d+),LOCAL:(\d+):(\d+):(\d+)\.(\d+))");
-    std::regex timecode_regex(R"((\d+):(\d+):(\d+)\.(\d+)\s*-->\s*(\d+):(\d+):(\d+)\.(\d+))");
-
     std::string current_text;
     uint64_t start_ms = 0, end_ms = 0;
+    bool expecting_text = false;
 
     while (std::getline(stream, line)) {
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
-        }
+        // Trim CR
+        if (!line.empty() && line.back() == '\r') line.pop_back();
 
-        std::smatch match;
-        if (std::regex_match(line, match, map_regex)) {
-            base_pts_90k = std::stoull(match[1]);
-            local_ms_base =
-                std::stoull(match[2]) * 3600000 +
-                std::stoull(match[3]) * 60000 +
-                std::stoull(match[4]) * 1000 +
-                std::stoull(match[5]);
+        // X-TIMESTAMP-MAP
+        if (line.find("X-TIMESTAMP-MAP=") == 0) {
+            auto mpegts_pos = line.find("MPEGTS:");
+            auto local_pos = line.find("LOCAL:");
+
+            if (mpegts_pos != std::string::npos && local_pos != std::string::npos) {
+                base_pts_90k = std::strtoull(line.c_str() + mpegts_pos + 7, nullptr, 10);
+
+                std::string local_str = line.substr(local_pos + 6);
+                parse_timecode(local_str, local_ms_base);
+            }
             continue;
         }
 
-        if (std::regex_match(line, match, timecode_regex)) {
+        // Zeitangabe: 00:00:02.000 --> 00:00:04.000
+        if (line.find("-->") != std::string::npos) {
             if (!current_text.empty()) {
+                // voriges Segment abschließen
                 uint64_t start_90k = base_pts_90k + (start_ms - local_ms_base) * 90;
                 uint64_t end_90k = base_pts_90k + (end_ms - local_ms_base) * 90;
-
                 SubtitleEntry entry;
                 entry.start_time_ns = (start_90k * GST_SECOND) / 90000;
                 entry.end_time_ns = (end_90k * GST_SECOND) / 90000;
                 entry.text = current_text;
                 subs_out.push_back(entry);
-
                 current_text.clear();
             }
 
-            start_ms =
-                std::stoull(match[1]) * 3600000 +
-                std::stoull(match[2]) * 60000 +
-                std::stoull(match[3]) * 1000 +
-                std::stoull(match[4]);
-            end_ms =
-                std::stoull(match[5]) * 3600000 +
-                std::stoull(match[6]) * 60000 +
-                std::stoull(match[7]) * 1000 +
-                std::stoull(match[8]);
+            size_t arrow = line.find("-->");
+            std::string start_str = line.substr(0, arrow);
+            std::string end_str = line.substr(arrow + 3);
 
-            current_text.clear();
+            parse_timecode(start_str, start_ms);
+            parse_timecode(end_str, end_ms);
+            expecting_text = true;
             continue;
         }
 
-        if (!line.empty()) {
-            if (!current_text.empty())
-                current_text += "\n";
-            current_text += line;
+        // Sammle Text
+        if (expecting_text) {
+            if (!line.empty()) {
+                if (!current_text.empty())
+                    current_text += "\n";
+                current_text += line;
+            } else {
+                expecting_text = false;
+            }
         }
     }
 
+    // Letztes Segment speichern
     if (!current_text.empty()) {
         uint64_t start_90k = base_pts_90k + (start_ms - local_ms_base) * 90;
         uint64_t end_90k = base_pts_90k + (end_ms - local_ms_base) * 90;
-
         SubtitleEntry entry;
         entry.start_time_ns = (start_90k * GST_SECOND) / 90000;
         entry.end_time_ns = (end_90k * GST_SECOND) / 90000;
@@ -3546,16 +3550,15 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 			if (subType == stVTT)
 			{
 
-				std::string line((const char*)map.data, len);
 				eDebug("SUB DEBUG line");
 				eDebug(">>>\n%s\n<<<", line.c_str());
 
-				//std::string vtt_string(reinterpret_cast<char *>(map.data), len);
+				std::string vtt_string(reinterpret_cast<char *>(map.data), len);
 				std::vector<SubtitleEntry> parsed_subs;
 
 				uint64_t buf_pos_90k = static_cast<uint64_t>(buf_pos * 90 / GST_SECOND);
 
-				if (parseWebVTT(line, parsed_subs)) {
+				if (parseWebVTT(vtt_string, parsed_subs)) {
 					for (const auto &sub : parsed_subs) {
 						printf("[SUB] %llu ns - %llu ns:\n%s\n",
 							sub.start_time_ns, sub.end_time_ns,
@@ -3691,14 +3694,14 @@ void eServiceMP3::pushSubtitles()
 			goto exit;
 		}
 
-		//eDebug("[eServiceMP3] *** push subtitles, clock stable");
+		eDebug("[eServiceMP3] *** push subtitles, clock stable");
 	}
 
 	decoder_ms = running_pts / 90;
 	delay_ms = 0;
 
-#if 0
-		// eDebug("\n*** all subs: ");
+#if 1
+		 eDebug("\n*** all subs: ");
 
 		for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++)
 		{
@@ -3707,11 +3710,11 @@ void eServiceMP3::pushSubtitles()
 			diff_start_ms = start_ms - decoder_ms;
 			diff_end_ms = end_ms - decoder_ms;
 
-			// eDebug("[eServiceMP3]    start: %d, end: %d, diff_start: %d, diff_end: %d: %s",
+			 eDebug("[eServiceMP3]    start: %d, end: %d, diff_start: %d, diff_end: %d: %s",
 					start_ms, end_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
 		}
 
-		// eDebug("\n\n");
+		 eDebug("\n\n");
 #endif
 
 	if (m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size() &&
