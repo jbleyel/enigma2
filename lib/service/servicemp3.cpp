@@ -3349,8 +3349,8 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 	if (_this)
 	{
 
-	    gchar *klass = gst_element_factory_get_klass(gst_element_get_factory(element));
-		gchar *elementname = gst_element_get_name(element);
+	    const gchar *klass = gst_element_factory_get_klass(gst_element_get_factory(element));
+		const gchar *elementname = gst_element_get_name(element);
         eDebug("[eServiceMP3] Element added: %s/%s", elementname, klass);
 
     	if (g_strrstr(klass, "Text") || g_strrstr(elementname, "sub")) {
