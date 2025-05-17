@@ -968,11 +968,11 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		if ( m_sourceinfo.is_streaming )
 		{
 			m_notify_source_handler_id = g_signal_connect (m_gst_playbin, "notify::source", G_CALLBACK (playbinNotifySource), this);
+			m_notify_element_added_handler_id = g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
 			if (m_download_buffer_path != "")
 			{
 				/* use progressive download buffering */
 				flags |= GST_PLAY_FLAG_DOWNLOAD;
-				m_notify_element_added_handler_id = g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
 				/* limit file size */
 				g_object_set(m_gst_playbin, "ring-buffer-max-size", (guint64)(8LL * 1024LL * 1024LL), NULL);
 			}
@@ -2819,25 +2819,31 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				GstPad *pad = 0;
 				g_signal_emit_by_name(m_gst_playbin, "get-text-pad", i, &pad);
 				if (pad)
-					g_signal_connect(G_OBJECT(pad), "notify::caps", G_CALLBACK(gstTextpadHasCAPS), this);
-
-				subs.type = getSubtitleType(pad, g_codec);
-
-				if (i == 0 && !m_external_subtitle_extension.empty())
 				{
-					if (m_external_subtitle_extension == "srt")
-						subs.type = stSRT;
-					if (m_external_subtitle_extension == "ass")
-						subs.type = stASS;
-					if (m_external_subtitle_extension == "ssa")
-						subs.type = stSSA;
-					if (m_external_subtitle_extension == "vtt")
-						subs.type = stVTT;
-					if (!m_external_subtitle_language.empty())
-						subs.language_code = m_external_subtitle_language;
-				}
+					g_signal_connect(G_OBJECT(pad), "notify::caps", G_CALLBACK(gstTextpadHasCAPS), this);
+					GstCaps *caps = gst_pad_get_current_caps (pad);
+					eDebug("[eServiceMP3] subtitle Text pad %d caps: %s", i, gst_caps_to_string (caps));
+					gst_caps_unref (caps);
 
-				gst_object_unref(pad);
+					subs.type = getSubtitleType(pad, g_codec);
+
+					if (i == 0 && !m_external_subtitle_extension.empty())
+					{
+						if (m_external_subtitle_extension == "srt")
+							subs.type = stSRT;
+						if (m_external_subtitle_extension == "ass")
+							subs.type = stASS;
+						if (m_external_subtitle_extension == "ssa")
+							subs.type = stSSA;
+						if (m_external_subtitle_extension == "vtt")
+							subs.type = stVTT;
+						if (!m_external_subtitle_language.empty())
+							subs.language_code = m_external_subtitle_language;
+					}
+
+					gst_object_unref(pad);					
+
+				}
 				g_free(g_codec);
 				subtitleStreams_temp.push_back(subs);
 			}
@@ -3072,10 +3078,6 @@ void eServiceMP3::scanSubtitleTracks()
 			g_signal_emit_by_name(m_gst_playbin, "get-text-pad", i, &pad);
 			if (pad)
 			{
-				GstCaps *caps = gst_pad_get_current_caps (pad);
-				eDebug("[eServiceMP3] subtitle Text pad %d caps: %s", i, gst_caps_to_string (caps));
-				gst_caps_unref (caps);
-
 				g_signal_connect(G_OBJECT(pad), "notify::caps", G_CALLBACK(gstTextpadHasCAPS), this);
 				subs.type = getSubtitleType(pad, g_codec);
 				gst_object_unref(pad);
@@ -3346,8 +3348,25 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 	if (_this)
 	{
+
+	    gchar *klass = gst_element_factory_get_klass(gst_element_get_factory(element));
 		gchar *elementname = gst_element_get_name(element);
-        eDebug("[eServiceMP3] Element added: %s", elementname);
+        eDebug("[eServiceMP3] Element added: %s/%s", elementname, klass);
+
+    	if (g_strrstr(klass, "Text") || g_strrstr(name, "sub")) {
+		    GstPad *pad = gst_element_get_static_pad(element, "src");
+			if (pad) {
+				GstCaps *caps = gst_pad_get_current_caps(pad);
+				if (caps) {
+					gchar *caps_str = gst_caps_to_string(caps);
+					eDebug("  -> Caps: %s", caps_str);
+					g_free(caps_str);
+					gst_caps_unref(caps);
+				}
+				gst_object_unref(pad);
+			}
+
+		}
 
 		if (g_str_has_prefix(elementname, "queue2"))
 		{
@@ -3442,6 +3461,7 @@ void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const &msg)
 		}
 		case 3:
 		{
+			eDebug("[eServiceMP3] gstPoll 3");
 			GstPad *pad = *((GstMessageContainer*)msg);
 			gstTextpadHasCAPS_synced(pad);
 			break;
@@ -3465,7 +3485,7 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement *subsink, GstBuffer *buffer, gpo
 
 void eServiceMP3::gstTextpadHasCAPS(GstPad *pad, GParamSpec * unused, gpointer user_data)
 {
-	// eDebug("[eServiceMP3] gstTextpadHasCAPS");
+	eDebug("[eServiceMP3] gstTextpadHasCAPS");
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 
 	gst_object_ref (pad);
@@ -3475,7 +3495,7 @@ void eServiceMP3::gstTextpadHasCAPS(GstPad *pad, GParamSpec * unused, gpointer u
 
 void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 {
-	// eDebug("[eServiceMP3] gstTextpadHasCAPS_synced");
+	eDebug("[eServiceMP3] gstTextpadHasCAPS_synced");
 	GstCaps *caps = NULL;
 
 	g_object_get (G_OBJECT (pad), "caps", &caps, NULL);
