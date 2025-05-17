@@ -3072,6 +3072,10 @@ void eServiceMP3::scanSubtitleTracks()
 			g_signal_emit_by_name(m_gst_playbin, "get-text-pad", i, &pad);
 			if (pad)
 			{
+				GstCaps *caps = gst_pad_get_current_caps (pad);
+				eDebug("[eServiceMP3] subtitle Text pad %d caps: %s", i, gst_caps_to_string (caps));
+				gst_caps_unref (caps);
+
 				g_signal_connect(G_OBJECT(pad), "notify::caps", G_CALLBACK(gstTextpadHasCAPS), this);
 				subs.type = getSubtitleType(pad, g_codec);
 				gst_object_unref(pad);
