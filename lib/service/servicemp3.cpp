@@ -3389,7 +3389,7 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 			g_signal_connect(element, "element-added", G_CALLBACK(handleElementAdded), user_data);
 		}
 		
-		g_free(elementname);
+		//g_free(elementname);
 	}
 }
 #endif
