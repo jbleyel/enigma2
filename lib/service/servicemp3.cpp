@@ -3353,7 +3353,7 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 		gchar *elementname = gst_element_get_name(element);
         eDebug("[eServiceMP3] Element added: %s/%s", elementname, klass);
 
-    	if (g_strrstr(klass, "Text") || g_strrstr(name, "sub")) {
+    	if (g_strrstr(klass, "Text") || g_strrstr(elementname, "sub")) {
 		    GstPad *pad = gst_element_get_static_pad(element, "src");
 			if (pad) {
 				GstCaps *caps = gst_pad_get_current_caps(pad);
