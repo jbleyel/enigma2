@@ -112,7 +112,6 @@ struct SubtitleEntry {
     std::string text;
 };
 
-// Hilfsfunktion: "00:00:02.500" → ms
 static bool parse_timecode(const std::string &s, uint64_t &ms_out) {
     unsigned h = 0, m = 0, sec = 0, ms = 0;
     if (sscanf(s.c_str(), "%u:%u:%u.%u", &h, &m, &sec, &ms) == 4) {
@@ -154,7 +153,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
             continue;
         }
 
-        if (!expecting_text && line.find_first_not_of("0123456789") == std::string::npos)
+        if (!expecting_text || line.find_first_not_of("0123456789") == std::string::npos)
             continue;
 
         if (expecting_text) {
@@ -164,7 +163,6 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
         }
     }
 
-    // letzter Block
     if (!current_text.empty()) {
         SubtitleEntry entry;
         entry.start_time_ms = start_ms;
@@ -2870,11 +2868,11 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			}
 
 			// delay subs
-			if (n_text == 0 && m_sourceinfo.is_hls)
+			if (m_sourceinfo.is_hls)
 			{
 				// Schedule delayed text stream scan
 				eDebug("[eServiceMP3] No text streams found yet, scheduling delayed scan");
-				// m_subtitle_scan_timer->start(2000, true); // 2 second delay
+				m_subtitle_scan_timer->start(2000, true); // 2 second delay
 			}
 
 			/*+++*workaround for mp3 playback problem on some boxes - e.g. xtrend et9200 (if press stop and play or switch to the next track is the state 'playing', but plays not.
@@ -3576,15 +3574,14 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 				std::string vtt_string(reinterpret_cast<char *>(map.data), len);
 				std::vector<SubtitleEntry> parsed_subs;
 
-				eDebug("SUB DEBUG line");
-				eDebug(">>>\n%s\n<<<", vtt_string.c_str());
+				eTrace("SUB DEBUG line");
+				eTrace(">>>\n%s\n<<<", vtt_string.c_str());
 
 				if (parseWebVTT(vtt_string, parsed_subs)) {
 					for (const auto &sub : parsed_subs) {
-						printf("[SUB] %llu ms - %llu ms:\n%s\n",
+						eTrace("[SUB] %llu ms - %llu ms:\n%s",
 							sub.start_time_ms, sub.end_time_ms,
 							sub.text.c_str());
-
 						m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
 
 					}
