@@ -2764,6 +2764,29 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						audio.title = std::string(g_lang_title);
 						g_free(g_lang_title);
 					}
+
+					gst_tag_list_foreach(tags, [](const GstTagList *list, const gchar *tag, gpointer user_data) {
+						GValue val = G_VALUE_INIT;
+						gst_tag_list_copy_value(&val, list, tag);
+
+						if (G_VALUE_HOLDS_STRING(&val)) {
+							eDebug("TAG: %s = %s\n", tag, g_value_get_string(&val));
+						} else if (G_VALUE_HOLDS_UINT(&val)) {
+							eDebug("TAG: %s = %u\n", tag, g_value_get_uint(&val));
+						} else if (G_VALUE_HOLDS_INT(&val)) {
+							eDebug("TAG: %s = %d\n", tag, g_value_get_int(&val));
+						} else if (G_VALUE_HOLDS_DOUBLE(&val)) {
+							eDebug("TAG: %s = %f\n", tag, g_value_get_double(&val));
+						} else if (G_VALUE_HOLDS_BOOLEAN(&val)) {
+							eDebug("TAG: %s = %s\n", tag, g_value_get_boolean(&val) ? "true" : "false");
+						} else {
+							eDebug("TAG: %s (unbekannter Typ: %s)\n", tag, G_VALUE_TYPE_NAME(&val));
+						}
+
+						g_value_unset(&val);
+					}, NULL);
+
+
 					gst_tag_list_free(tags);
 				}
 				eDebug("[eServiceMP3] audio stream=%i codec=%s language=%s title=%s", i, audio.codec.c_str(), audio.language_code.c_str(), audio.title.c_str());
