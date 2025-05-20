@@ -2729,7 +2729,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			for (i = 0; i < n_audio; i++)
 			{
 				audioStream audio = {};
-				gchar *g_codec, *g_lang;
+				gchar *g_codec, *g_lang, g_lang_title;
 				GstTagList *tags = NULL;
 				GstPad* pad = 0;
 				g_signal_emit_by_name (m_gst_playbin, "get-audio-pad", i, &pad);
@@ -2745,6 +2745,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				audio.codec = g_type;
 				g_codec = NULL;
 				g_lang = NULL;
+				g_lang_title = NULL;
 				g_signal_emit_by_name (m_gst_playbin, "get-audio-tags", i, &tags);
 				if (tags && GST_IS_TAG_LIST(tags))
 				{
@@ -2758,9 +2759,14 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						audio.language_code = std::string(g_lang);
 						g_free(g_lang);
 					}
+					if (gst_tag_list_get_string(tags, GST_TAG_TITLE, &g_lang_title))
+					{
+						audio.title = std::string(g_lang_title);
+						g_free(g_lang_title);
+					}
 					gst_tag_list_free(tags);
 				}
-				//eDebug("[eServiceMP3] audio stream=%i codec=%s language=%s", i, audio.codec.c_str(), audio.language_code.c_str());
+				eDebug("[eServiceMP3] audio stream=%i codec=%s language=%s title=%s", i, audio.codec.c_str(), audio.language_code.c_str(), audio.title.c_str());
 				//codec_tofix = (audio.codec.find("MPEG-1 Layer 3 (MP3)") == 0 || audio.codec.find("MPEG-2 AAC") == 0) && n_audio - n_video == 1;
 				audioStreams_temp.push_back(audio);
 				gst_caps_unref(caps);
@@ -2788,6 +2794,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 					}
 					gst_tag_list_get_string(tags, GST_TAG_SUBTITLE_CODEC, &g_codec);
 
+					/*
 					gst_tag_list_foreach(tags, [](const GstTagList *list, const gchar *tag, gpointer user_data) {
 						GValue val = G_VALUE_INIT;
 						gst_tag_list_copy_value(&val, list, tag);
@@ -2808,6 +2815,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 
 						g_value_unset(&val);
 					}, NULL);
+					*/
 
 					gst_tag_list_free(tags);
 				}
@@ -3715,7 +3723,7 @@ void eServiceMP3::pushSubtitles()
 	decoder_ms = running_pts / 90;
 	delay_ms = 0;
 
-#if 1
+#if 0
 		 eDebug("\n*** all subs: ");
 
 		for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++)
