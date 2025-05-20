@@ -2729,7 +2729,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			for (i = 0; i < n_audio; i++)
 			{
 				audioStream audio = {};
-				gchar *g_codec, *g_lang, g_lang_title;
+				gchar *g_codec, *g_lang, *g_lang_title;
 				GstTagList *tags = NULL;
 				GstPad* pad = 0;
 				g_signal_emit_by_name (m_gst_playbin, "get-audio-pad", i, &pad);
@@ -3587,7 +3587,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 
 				if (parseWebVTT(vtt_string, parsed_subs)) {
 					for (const auto &sub : parsed_subs) {
-						eTrace("[SUB] %llu ms - %llu ms:\n%s",
+						eTrace("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s",
 							sub.start_time_ms, sub.end_time_ms,
 							sub.text.c_str());
 						m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
