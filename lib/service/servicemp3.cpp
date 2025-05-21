@@ -2384,7 +2384,7 @@ subtype_t getSubtitleType(GstPad* pad, gchar *g_codec=NULL)
 				else if ( !strcmp(g_type, "subpicture/x-pgs") )
 					type = stPGS;
 				else if ( !strcmp(g_type, "text/vtt") || !strcmp(g_type, "text/x-webvtt") || !strcmp(g_type, "application/x-subtitle-vtt"))
-					type = stVTT;
+					type = stWebVTT;
 				else
 					eDebug("[eServiceMP3] getSubtitleType::unsupported subtitle caps %s (%s)", g_type, g_codec ? g_codec : "(null)");
 			}
@@ -2869,7 +2869,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						if (m_external_subtitle_extension == "ssa")
 							subs.type = stSSA;
 						if (m_external_subtitle_extension == "vtt")
-							subs.type = stVTT;
+							subs.type = stWebVTT;
 						if (!m_external_subtitle_language.empty())
 							subs.language_code = m_external_subtitle_language;
 					}
@@ -3125,7 +3125,7 @@ void eServiceMP3::scanSubtitleTracks()
 				if (m_external_subtitle_extension == "ssa")
 					subs.type = stSSA;
 				if (m_external_subtitle_extension == "vtt")
-					subs.type = stVTT;
+					subs.type = stWebVTT;
 				if (!m_external_subtitle_language.empty())
 					subs.language_code = m_external_subtitle_language;
 			}
@@ -3602,8 +3602,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 		// eDebug("[eServiceMP3] pullSubtitle type=%d size=%zu", subType, len);
 		if ( subType )
 		{
-
-			if (subType == stVTT)
+			if (subType == stWebVTT)
 			{
 
 				std::string vtt_string(reinterpret_cast<char *>(map.data), len);

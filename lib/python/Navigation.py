@@ -2,7 +2,7 @@ from os import remove
 from os.path import exists
 from time import ctime, time
 
-from enigma import eServiceCenter, eServiceReference, eTimer, getBestPlayableServiceReference, iPlayableService, iServiceInformation, iRecordableServicePtr, pNavigation
+from enigma import eServiceCenter, eServiceReference, eStreamServer, eTimer, getBestPlayableServiceReference, iPlayableService, iServiceInformation, iRecordableService, iRecordableServicePtr, pNavigation
 
 import NavigationInstance
 import RecordTimer
@@ -12,6 +12,7 @@ from Components.config import config
 from Components.ImportChannels import ImportChannels
 from Components.ParentalControl import parentalControl
 from Components.PluginComponent import plugins
+from Components.RecordingConfig import recType
 from Components.SystemInfo import BoxInfo
 from Plugins.Plugin import PluginDescriptor
 from Screens.InfoBar import InfoBar, MoviePlayer
@@ -22,6 +23,7 @@ from Tools.BoundFunction import boundFunction
 from Tools.Directories import fileWriteLine
 from Tools.StbHardware import getFPWasTimerWakeup
 from Tools.Notifications import AddPopup
+from traceback import print_stack
 
 MODULE_NAME = __name__.split(".")[-1]
 
@@ -44,9 +46,14 @@ class Navigation:
 			raise NavigationInstance.instance
 		NavigationInstance.instance = self  # This is needed to prevent circular imports
 		self.ServiceHandler = eServiceCenter.getInstance()
+		self.activeStreamings = []
+		self.indicatorRecordingsCount = None
+		self.anyRecordingsCount = None
+		self.realRecordingsCount = None
 		self.pnav = pNavigation()
 		self.pnav.m_event.get().append(self.dispatchEvent)
 		self.pnav.m_record_event.get().append(self.dispatchRecordEvent)
+		eStreamServer.getInstance().streamStatusChanged.get().append(self.streamStatusChangedCB)
 		self.event = []
 		self.record_event = []
 		self.currentBouquetName = ""
@@ -283,6 +290,9 @@ class Navigation:
 
 	def dispatchRecordEvent(self, rec_service, event):
 		# print(f"[Navigation] Record_event {rec_service}, {event}.")
+		self.anyRecordingsCount = None
+		self.indicatorRecordingsCount = None
+		self.realRecordingsCount = None
 		for x in self.record_event:
 			x(rec_service, event)
 
@@ -496,8 +506,29 @@ class Navigation:
 			ret = self.pnav and self.pnav.stopRecordService(service)
 		return ret
 
+	def streamStatusChangedCB(self, status, sref):
+		print(f"[Navigation] Stream status changed: {status}, {sref}.")
+		recService = iRecordableServicePtr()  # This is only a dummy variable
+		if status == 0:
+			self.activeStreamings = [recService]  # TODO: Check if this is correct. Add support for multiple streams.
+		else:
+			self.activeStreamings = []
+
+		self.anyRecordingsCount = None
+		self.indicatorRecordingsCount = None
+		self.realRecordingsCount = None
+
+		for x in self.record_event:
+			x(recService, iRecordableService.evStart if status == 0 else iRecordableService.evEnd)
+
 	def getRecordings(self, simulate=False, type=pNavigation.isAnyRecording):
-		return self.pnav and self.pnav.getRecordings(simulate, type)
+		# print_stack()
+		if ((type == pNavigation.isAnyRecording) or (type & pNavigation.isStreaming == pNavigation.isStreaming)) and self.activeStreamings:
+			# print(f"[Navigation] Get recordings, simulate={simulate}, type={type}.")
+			# print(f"[Navigation] self.activeStreamings", self.activeStreamings)
+			return self.pnav and self.pnav.getRecordings(simulate, type) + self.activeStreamings
+		else:
+			return self.pnav and self.pnav.getRecordings(simulate, type)
 
 	def getRecordingsServices(self, type=pNavigation.isAnyRecording):
 		return self.pnav and self.pnav.getRecordingsServices(type)
@@ -529,8 +560,8 @@ class Navigation:
 				lastrecordEnd = 0
 				for timer in self.RecordTimer.timer_list:
 					if lastrecordEnd == 0 or lastrecordEnd >= timer.begin:
-						if timer.afterEvent < 2:
-							timer.afterEvent = 2
+						if timer.afterEvent < 2 and timer.forceDeepStandby is False:
+							timer.forceDeepStandby = True
 							print(f"[Navigation] Set after-event for recording '{timer.name}' to deep standby.")
 						if timer.end > lastrecordEnd:
 							lastrecordEnd = timer.end + 900
@@ -541,6 +572,21 @@ class Navigation:
 		if not self.currentlyPlayingService:
 			self.currentlyPlayingService = self.pnav and self.pnav.getCurrentService()
 		return self.currentlyPlayingService
+
+	def getAnyRecordingsCount(self):
+		if self.anyRecordingsCount is None:
+			self.anyRecordingsCount = len(self.getRecordings(False, pNavigation.isAnyRecording))
+		return self.anyRecordingsCount
+
+	def getIndicatorRecordingsCount(self):
+		if self.indicatorRecordingsCount is None:
+			self.indicatorRecordingsCount = len(self.getRecordings(False, recType(config.recording.show_rec_symbol_for_rec_types.getValue())))
+		return self.indicatorRecordingsCount
+
+	def getRealRecordingsCount(self):
+		if self.realRecordingsCount is None:
+			self.realRecordingsCount = len(self.getRecordings(False, pNavigation.isRealRecording))
+		return self.realRecordingsCount
 
 	def stopService(self):
 		if self.pnav:
