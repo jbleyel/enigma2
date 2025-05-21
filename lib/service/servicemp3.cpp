@@ -27,6 +27,8 @@
 #include <vector>
 #include <cstdint>
 #include <cstdlib>
+#include <fstream>
+#include <iostream>
 
 
 #include <gst/gst.h>
@@ -104,6 +106,41 @@ static void gst_sleepms(uint32_t msec)
 	}
 	errno = olderrno;
 }
+
+struct audioMeta {
+    int index;
+    std::string lang;
+    std::string title;
+};
+
+std::vector<audioMeta> parse_hls_audio_meta(const std::string& filename) {
+    std::ifstream file(filename);
+    std::vector<audioMeta> tracks;
+    std::string line;
+    audioMeta current;
+
+    while (std::getline(file, line)) {
+        if (line == "---") {
+            tracks.push_back(current);
+            current = audioMeta(); // reset
+        } else {
+            size_t eq_pos = line.find('=');
+            if (eq_pos != std::string::npos) {
+                std::string key = line.substr(0, eq_pos);
+                std::string value = line.substr(eq_pos + 1);
+                if (key == "index") current.index = std::stoi(value);
+                else if (key == "lang") current.lang = value;
+                else if (key == "title") current.title = value;
+            }
+        }
+    }
+
+    if (!current.title.empty())
+        tracks.push_back(current);
+
+    return tracks;
+}
+
 
 
 struct SubtitleEntry {
@@ -2726,10 +2763,15 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			std::vector<audioStream> audioStreams_temp;
 			std::vector<subtitleStream> subtitleStreams_temp;
 
+			if (m_sourceinfo.is_hls)
+				std::vector<audioMeta> audiometa = parse_hls_audio_meta("/tmp/gsthlsaudiometa.info");
+			else
+				std::vector<audioMeta> audiometa;
+
 			for (i = 0; i < n_audio; i++)
 			{
 				audioStream audio = {};
-				gchar *g_codec, *g_lang, *g_lang_title;
+				gchar *g_codec, *g_lang;
 				GstTagList *tags = NULL;
 				GstPad* pad = 0;
 				g_signal_emit_by_name (m_gst_playbin, "get-audio-pad", i, &pad);
@@ -2745,7 +2787,6 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				audio.codec = g_type;
 				g_codec = NULL;
 				g_lang = NULL;
-				g_lang_title = NULL;
 				g_signal_emit_by_name (m_gst_playbin, "get-audio-tags", i, &tags);
 				if (tags && GST_IS_TAG_LIST(tags))
 				{
@@ -2759,36 +2800,16 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						audio.language_code = std::string(g_lang);
 						g_free(g_lang);
 					}
-					if (gst_tag_list_get_string(tags, GST_TAG_TITLE, &g_lang_title))
-					{
-						audio.title = std::string(g_lang_title);
-						g_free(g_lang_title);
-					}
-
-					gst_tag_list_foreach(tags, [](const GstTagList *list, const gchar *tag, gpointer user_data) {
-						GValue val = G_VALUE_INIT;
-						gst_tag_list_copy_value(&val, list, tag);
-
-						if (G_VALUE_HOLDS_STRING(&val)) {
-							eDebug("TAG: %s = %s\n", tag, g_value_get_string(&val));
-						} else if (G_VALUE_HOLDS_UINT(&val)) {
-							eDebug("TAG: %s = %u\n", tag, g_value_get_uint(&val));
-						} else if (G_VALUE_HOLDS_INT(&val)) {
-							eDebug("TAG: %s = %d\n", tag, g_value_get_int(&val));
-						} else if (G_VALUE_HOLDS_DOUBLE(&val)) {
-							eDebug("TAG: %s = %f\n", tag, g_value_get_double(&val));
-						} else if (G_VALUE_HOLDS_BOOLEAN(&val)) {
-							eDebug("TAG: %s = %s\n", tag, g_value_get_boolean(&val) ? "true" : "false");
-						} else {
-							eDebug("TAG: %s (unbekannter Typ: %s)\n", tag, G_VALUE_TYPE_NAME(&val));
-						}
-
-						g_value_unset(&val);
-					}, NULL);
-
 
 					gst_tag_list_free(tags);
 				}
+
+				if(audiometa.size() > i)
+				{
+					audio.language_code = audiometa[i].language_code;
+					audio.title = audiometa[i].title;
+				}
+
 				eDebug("[eServiceMP3] audio stream=%i codec=%s language=%s title=%s", i, audio.codec.c_str(), audio.language_code.c_str(), audio.title.c_str());
 				//codec_tofix = (audio.codec.find("MPEG-1 Layer 3 (MP3)") == 0 || audio.codec.find("MPEG-2 AAC") == 0) && n_audio - n_video == 1;
 				audioStreams_temp.push_back(audio);
@@ -2816,29 +2837,6 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						g_free(g_lang_title);
 					}
 					gst_tag_list_get_string(tags, GST_TAG_SUBTITLE_CODEC, &g_codec);
-
-					/*
-					gst_tag_list_foreach(tags, [](const GstTagList *list, const gchar *tag, gpointer user_data) {
-						GValue val = G_VALUE_INIT;
-						gst_tag_list_copy_value(&val, list, tag);
-
-						if (G_VALUE_HOLDS_STRING(&val)) {
-							eDebug("TAG: %s = %s\n", tag, g_value_get_string(&val));
-						} else if (G_VALUE_HOLDS_UINT(&val)) {
-							eDebug("TAG: %s = %u\n", tag, g_value_get_uint(&val));
-						} else if (G_VALUE_HOLDS_INT(&val)) {
-							eDebug("TAG: %s = %d\n", tag, g_value_get_int(&val));
-						} else if (G_VALUE_HOLDS_DOUBLE(&val)) {
-							eDebug("TAG: %s = %f\n", tag, g_value_get_double(&val));
-						} else if (G_VALUE_HOLDS_BOOLEAN(&val)) {
-							eDebug("TAG: %s = %s\n", tag, g_value_get_boolean(&val) ? "true" : "false");
-						} else {
-							eDebug("TAG: %s (unbekannter Typ: %s)\n", tag, G_VALUE_TYPE_NAME(&val));
-						}
-
-						g_value_unset(&val);
-					}, NULL);
-					*/
 
 					gst_tag_list_free(tags);
 				}
