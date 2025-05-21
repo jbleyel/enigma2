@@ -2342,10 +2342,15 @@ RESULT eServiceMP3::getTrackInfo(struct iAudioTrackInfo &info, unsigned int i)
 
 	info.m_description = desc;
 
-	if (info.m_language.empty())
-	{
-		info.m_language = m_audioStreams[i].language_code;
-	}
+	info.m_language = m_audioStreams[i].language_code;
+
+	if (!info.m_language.empty())
+		info.m_language += "/";
+
+	if (!m_audioStreams[i].title.empty())
+		info.m_language += m_audioStreams[i].title;
+
+	eDebug("[eServiceMP3] getTrackInfo (%d) - m_description=%s m_language=%s", i, info.m_description, info.m_language);
 
 	return 0;
 }
@@ -2763,10 +2768,9 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			std::vector<audioStream> audioStreams_temp;
 			std::vector<subtitleStream> subtitleStreams_temp;
 
+			std::vector<audioMeta> audiometa;
 			if (m_sourceinfo.is_hls)
-				std::vector<audioMeta> audiometa = parse_hls_audio_meta("/tmp/gsthlsaudiometa.info");
-			else
-				std::vector<audioMeta> audiometa;
+				audiometa = parse_hls_audio_meta("/tmp/gsthlsaudiometa.info");
 
 			for (i = 0; i < n_audio; i++)
 			{
