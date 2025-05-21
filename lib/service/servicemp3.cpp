@@ -2350,7 +2350,7 @@ RESULT eServiceMP3::getTrackInfo(struct iAudioTrackInfo &info, unsigned int i)
 	if (!m_audioStreams[i].title.empty())
 		info.m_language += m_audioStreams[i].title;
 
-	eDebug("[eServiceMP3] getTrackInfo (%d) - m_description=%s m_language=%s", i, info.m_description, info.m_language);
+	eDebug("[eServiceMP3] getTrackInfo (%d) - m_description=%s m_language=%s", i, info.m_description.c_str(), info.m_language.c_str());
 
 	return 0;
 }
@@ -2810,8 +2810,10 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 
 				if(audiometa.size() > i)
 				{
-					audio.language_code = audiometa[i].language_code;
-					audio.title = audiometa[i].title;
+					if(!audiometa[i].lang.empty())
+						audio.language_code = audiometa[i].lang;
+					if(!audiometa[i].title.empty())
+						audio.title = audiometa[i].title;
 				}
 
 				eDebug("[eServiceMP3] audio stream=%i codec=%s language=%s title=%s", i, audio.codec.c_str(), audio.language_code.c_str(), audio.title.c_str());
@@ -3583,7 +3585,7 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 
 void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 {
-	eDebug("[eServiceMP3] pullSubtitle");
+	eTrace("[eServiceMP3] pullSubtitle");
 	if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size())
 	{
 		GstMapInfo map;
@@ -3638,7 +3640,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 					convert_fps = subtitle_fps / (double)m_framerate;
 
 				std::string line((const char*)map.data, len);
-				eDebug("[eServiceMP3] got new text subtitle @ buf_pos = %lld ns (in pts=%lld), dur=%lld: '%s' ", buf_pos, buf_pos/11111, duration_ns, line.c_str());
+				eTrace("[eServiceMP3] got new text subtitle @ buf_pos = %lld ns (in pts=%lld), dur=%lld: '%s' ", buf_pos, buf_pos/11111, duration_ns, line.c_str());
 
 				uint32_t start_ms = buf_pos / 1000000ULL;
 				uint32_t end_ms = start_ms + (duration_ns / 1000000ULL);
