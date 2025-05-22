@@ -235,7 +235,6 @@ public:
 		subtype_t type;
 		std::string language_code; /* iso-639, if available. */
 		std::string title;
-		std::string uri;
 		subtitleStream()
 			:pad(0)
 		{
@@ -318,6 +317,8 @@ private:
 	bool m_subtitles_paused;
 	bool m_use_prefillbuffer;
 	bool m_paused;
+	bool m_clear_buffers;
+	bool m_initial_start;
 	bool m_first_paused;
 	/* cuesheet load check */
 	bool m_cuesheet_loaded;
@@ -329,8 +330,6 @@ private:
 	pts_t m_media_lenght;
 	ePtr<eTimer> m_play_position_timer;
 	void playPositionTiming();
-	ePtr<eTimer> m_subtitle_scan_timer;
-	void scanSubtitleTracks();
 	gint m_last_seek_count;
 	bool m_seeking_or_paused;
 	bool m_to_paused;
@@ -410,7 +409,7 @@ private:
 	void pushSubtitles();
 	void pullSubtitle(GstBuffer *buffer);
 	void sourceTimeout();
-	void clearBuffers();
+	void clearBuffers(bool force=false);
 #ifdef PASSTHROUGH_FIX
 	void forcePassthrough();
 #endif

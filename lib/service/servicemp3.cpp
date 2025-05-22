@@ -634,14 +634,14 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	m_is_live = false;
 	m_use_prefillbuffer = false;
 	m_paused = false;
+	m_clear_buffers = true;
+	m_initial_start = false;
 	m_first_paused = false;
 	m_cuesheet_loaded = false; /* cuesheet CVR */
 	m_audiosink_not_running = false;
 	m_use_chapter_entries = false; /* TOC chapter support CVR */
 	m_play_position_timer = eTimer::create(eApp);
 	CONNECT(m_play_position_timer->timeout, eServiceMP3::playPositionTiming);
-	m_subtitle_scan_timer = eTimer::create(eApp);
-	CONNECT(m_subtitle_scan_timer->timeout, eServiceMP3::scanSubtitleTracks);
 	m_last_seek_count = -10;
 	m_seeking_or_paused = false;
 	m_to_paused = false;
@@ -1519,11 +1519,12 @@ RESULT eServiceMP3::trickSeek(gdouble ratio)
 		ret = gst_element_get_state(m_gst_playbin, &state, &pending, 3LL * GST_SECOND);
 		if (state == GST_STATE_PLAYING && pending == GST_STATE_PAUSED)
 		{
-
+			m_clear_buffers = true;
 			if (m_currentAudioStream >= 0)
 				selectAudioStream(m_currentAudioStream, true);
 			else
 				selectAudioStream(0, true);
+			m_clear_buffers = false;
 
 			if (pos_ret >= 0)
 			{
@@ -2210,11 +2211,16 @@ RESULT eServiceMP3::selectTrack(unsigned int i)
 		return m_currentAudioStream;
 	eDebug("[eServiceMP3 selectTrack %d", i);
 
-	return selectAudioStream(i);
+	m_clear_buffers = true;
+	int result = selectAudioStream(i);
+	m_clear_buffers = false;
+	return result;
 }
 
-void eServiceMP3::clearBuffers()
+void eServiceMP3::clearBuffers(bool force)
 {
+	if (!m_clear_buffers && !force) return;
+
 	bool validposition = false;
 	pts_t ppos = 0;
 	if (getPlayPosition(ppos) >= 0)
@@ -2226,16 +2232,14 @@ void eServiceMP3::clearBuffers()
 	}
 	if (validposition)
 	{
-		//flush
+		/* flush */
 		seekTo(ppos);
 	}
 }
 
-
 int eServiceMP3::selectAudioStream(int i, bool skipAudioFix)
 {
 	int current_audio, current_audio_orig;
-
 	g_object_get (m_gst_playbin, "current-audio", &current_audio_orig, NULL);
 	g_object_set (m_gst_playbin, "current-audio", i, NULL);
 	g_object_get (m_gst_playbin, "current-audio", &current_audio, NULL);
@@ -2594,10 +2598,17 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						}
 
 						if (autoaudio)
-							selectTrack(autoaudio);
+							selectAudioStream(autoaudio);
 					}
-					else {
-						selectTrack(m_currentAudioStream);
+					else
+					{
+						selectAudioStream(m_currentAudioStream);
+					}
+					m_clear_buffers = false;
+					if (!m_initial_start)
+					{
+						seekTo(0);
+						m_initial_start = true;
 					}
 					if (!m_first_paused)
 						m_event((iPlayableService*)this, evGstreamerPlayStarted);
@@ -2688,13 +2699,6 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 		{
 			GstTagList *tags, *result;
 			gst_message_parse_tag(msg, &tags);
-
-            if (tags)
-            {
-                gchar *tag_str = gst_tag_list_to_string(tags);
-                // eDebug("[eServiceMP3] Received TAG message: %s", tag_str);
-                g_free(tag_str);
-			}
 
 			result = gst_tag_list_merge(m_stream_tags, tags, GST_TAG_MERGE_REPLACE);
 			if (result)
@@ -2901,15 +2905,6 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				if (m_errorInfo.missing_codec.find("video/") == 0 || (m_errorInfo.missing_codec.find("audio/") == 0 && m_audioStreams.empty()))
 					m_event((iPlayableService*)this, evUser+12);
 			}
-
-			// delay subs
-			if (m_sourceinfo.is_hls)
-			{
-				// Schedule delayed text stream scan
-				eDebug("[eServiceMP3] No text streams found yet, scheduling delayed scan");
-				m_subtitle_scan_timer->start(2000, true); // 2 second delay
-			}
-
 			/*+++*workaround for mp3 playback problem on some boxes - e.g. xtrend et9200 (if press stop and play or switch to the next track is the state 'playing', but plays not.
 			Restart the player-application or paused and then play the track fix this for once.)*/
 			/*if (!m_paused && codec_tofix)
@@ -2944,7 +2939,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			if (msgstruct)
 			{
 
-                const gchar *name = gst_structure_get_name(msgstruct);
+                // const gchar *name = gst_structure_get_name(msgstruct);
                 // eDebug("[eServiceMP3] Received ELEMENT message: %s", name);
 
 				if ( gst_is_missing_plugin_message(msg) )
@@ -3064,84 +3059,6 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			break;
 	}
 	g_free (sourceName);
-}
-
-void eServiceMP3::scanSubtitleTracks()
-{
-	// Stop timer
-	m_subtitle_scan_timer->stop();
-
-	if (!m_gst_playbin)
-		return;
-
-	gint n_text = 0;
-	g_object_get(m_gst_playbin, "n-text", &n_text, NULL);
-
-	eDebug("[eServiceMP3] scanSubtitleTracks %d", n_text);
-
-	if (n_text > 0)
-	{
-		eDebug("[eServiceMP3] Found delayed text streams: %d", n_text);
-
-		std::vector<subtitleStream> subtitleStreams_temp;
-
-		for (gint i = 0; i < n_text; i++)
-		{
-			gchar *g_codec = NULL, *g_lang = NULL;
-			GstTagList *tags = NULL;
-
-			g_signal_emit_by_name(m_gst_playbin, "get-text-tags", i, &tags);
-
-			subtitleStream subs;
-			subs.language_code = "und";
-			if (tags && GST_IS_TAG_LIST(tags))
-			{
-				if (gst_tag_list_get_string(tags, GST_TAG_LANGUAGE_CODE, &g_lang))
-				{
-					subs.language_code = g_lang;
-					g_free(g_lang);
-				}
-				gst_tag_list_get_string(tags, GST_TAG_SUBTITLE_CODEC, &g_codec);
-				gst_tag_list_free(tags);
-			}
-
-			eDebug("[eServiceMP3] subtitle stream=%i language=%s codec=%s", i, subs.language_code.c_str(), g_codec ? g_codec : "(null)");
-
-			GstPad *pad = NULL;
-			g_signal_emit_by_name(m_gst_playbin, "get-text-pad", i, &pad);
-			if (pad)
-			{
-				g_signal_connect(G_OBJECT(pad), "notify::caps", G_CALLBACK(gstTextpadHasCAPS), this);
-				subs.type = getSubtitleType(pad, g_codec);
-				gst_object_unref(pad);
-			}
-
-			if (i == 0 && !m_external_subtitle_extension.empty())
-			{
-				if (m_external_subtitle_extension == "srt")
-					subs.type = stSRT;
-				if (m_external_subtitle_extension == "ass")
-					subs.type = stASS;
-				if (m_external_subtitle_extension == "ssa")
-					subs.type = stSSA;
-				if (m_external_subtitle_extension == "vtt")
-					subs.type = stWebVTT;
-				if (!m_external_subtitle_language.empty())
-					subs.language_code = m_external_subtitle_language;
-			}
-
-			g_free(g_codec);
-			subtitleStreams_temp.push_back(subs);
-		}
-
-		bool hasChanges = m_subtitleStreams.size() != subtitleStreams_temp.size() || std::equal(m_subtitleStreams.begin(), m_subtitleStreams.end(), subtitleStreams_temp.begin());
-
-		if(hasChanges)
-		{
-			m_subtitleStreams = subtitleStreams_temp;
-			m_event((iPlayableService *)this, evUpdatedInfo);
-		}
-	}
 }
 
 void eServiceMP3::handleMessage(GstMessage *msg)
@@ -3381,25 +3298,7 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
 	if (_this)
 	{
-
-	    const gchar *klass = gst_element_factory_get_klass(gst_element_get_factory(element));
-		const gchar *elementname = gst_element_get_name(element);
-        eDebug("[eServiceMP3] Element added: %s/%s", elementname, klass);
-
-    	if (g_strrstr(klass, "Text") || g_strrstr(elementname, "sub")) {
-		    GstPad *pad = gst_element_get_static_pad(element, "src");
-			if (pad) {
-				GstCaps *caps = gst_pad_get_current_caps(pad);
-				if (caps) {
-					gchar *caps_str = gst_caps_to_string(caps);
-					eDebug("  -> Caps: %s", caps_str);
-					g_free(caps_str);
-					gst_caps_unref(caps);
-				}
-				gst_object_unref(pad);
-			}
-
-		}
+		gchar *elementname = gst_element_get_name(element);
 
 		if (g_str_has_prefix(elementname, "queue2"))
 		{
@@ -3419,20 +3318,12 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 			 * Listen for queue2 element added to uridecodebin/decodebin2 as well.
 			 * Ignore other bins since they may have unrelated queues
 			 */
-			g_signal_connect(element, "element-added", G_CALLBACK(handleElementAdded), user_data);
+				g_signal_connect(element, "element-added", G_CALLBACK(handleElementAdded), user_data);
 		}
-		
-		//g_free(elementname);
+		g_free(elementname);
 	}
 }
 #endif
-
-
-std::string getBaseUrl(const std::string &url)
-{
-	size_t pos = url.find_last_of('/');
-	return (pos != std::string::npos) ? url.substr(0, pos + 1): url;
-}
 
 audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
 {
