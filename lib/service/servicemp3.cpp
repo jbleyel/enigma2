@@ -119,6 +119,9 @@ std::vector<audioMeta> parse_hls_audio_meta(const std::string& filename) {
     std::string line;
     audioMeta current;
 
+	if (!file.good())
+		return tracks;
+
     while (std::getline(file, line)) {
         if (line == "---") {
             tracks.push_back(current);
@@ -999,10 +1002,9 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		guint flags = GST_PLAY_FLAG_AUDIO | GST_PLAY_FLAG_VIDEO | \
 				GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO;
 
-
-		if ( m_sourceinfo.is_streaming )
+		if (m_sourceinfo.is_streaming)
 		{
-			m_notify_source_handler_id = g_signal_connect (m_gst_playbin, "notify::source", G_CALLBACK (playbinNotifySource), this);
+			m_notify_source_handler_id = g_signal_connect(m_gst_playbin, "notify::source", G_CALLBACK(playbinNotifySource), this);
 			m_notify_element_added_handler_id = g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
 			if (m_download_buffer_path != "")
 			{
@@ -1027,8 +1029,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		if (dvb_subsink)
 		{
 			m_subs_to_pull_handler_id = g_signal_connect(dvb_subsink, "new-buffer", G_CALLBACK(gstCBsubtitleAvail), this);
-			//g_object_set(dvb_subsink, "caps", gst_caps_from_string("text/plain; text/x-plain; text/x-raw; text/x-pango-markup; subpicture/x-dvd; subpicture/x-dvb; subpicture/x-pgs; text/vtt; text/x-webvtt;"), NULL);
-			
 			GstCaps *caps = gst_caps_from_string(
 				"text/plain; "
 				"text/x-plain; "
@@ -1039,13 +1039,12 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 				"subpicture/x-pgs; "
 				"text/vtt; "
 				"text/x-webvtt; "
-				"text/x-ssa; "          // SubStation Alpha
-				"text/x-ass; "          // Advanced SubStation Alpha  
-				"application/x-ass; "    // Alternative ASS format
-				"application/x-ssa; "     // Alternative SSA format
-				"application/x-subtitle-vtt"
-				);
-			
+				"text/x-ssa; "		  // SubStation Alpha
+				"text/x-ass; "		  // Advanced SubStation Alpha
+				"application/x-ass; " // Alternative ASS format
+				"application/x-ssa; " // Alternative SSA format
+				"application/x-subtitle-vtt");
+
 			g_object_set(dvb_subsink, "caps", caps, NULL);
 			gst_caps_unref(caps);
 
@@ -1106,10 +1105,10 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	}
 	else
 	{
-		m_event((iPlayableService*)this, evUser+12);
+		m_event((iPlayableService *)this, evUser + 12);
 		m_gst_playbin = NULL;
 		m_errorInfo.error_message = "failed to create GStreamer pipeline!\n";
-		eDebug("[eServiceMP3] sorry, can't play: %s",m_errorInfo.error_message.c_str());
+		eDebug("[eServiceMP3] sorry, can't play: %s", m_errorInfo.error_message.c_str());
 	}
 	g_free(uri);
 	if (suburi != NULL)
@@ -2808,10 +2807,8 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						audio.language_code = std::string(g_lang);
 						g_free(g_lang);
 					}
-
 					gst_tag_list_free(tags);
 				}
-
 				if(audiometa.size() > i)
 				{
 					if(!audiometa[i].lang.empty())
@@ -2819,7 +2816,6 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 					if(!audiometa[i].title.empty())
 						audio.title = audiometa[i].title;
 				}
-
 				eDebug("[eServiceMP3] audio stream=%i codec=%s language=%s title=%s", i, audio.codec.c_str(), audio.language_code.c_str(), audio.title.c_str());
 				//codec_tofix = (audio.codec.find("MPEG-1 Layer 3 (MP3)") == 0 || audio.codec.find("MPEG-2 AAC") == 0) && n_audio - n_video == 1;
 				audioStreams_temp.push_back(audio);
@@ -2847,7 +2843,6 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						g_free(g_lang_title);
 					}
 					gst_tag_list_get_string(tags, GST_TAG_SUBTITLE_CODEC, &g_codec);
-					
 					gst_tag_list_free(tags);
 				}
 
@@ -3476,13 +3471,12 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad *pad)
 
 void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 {
-	eTrace("[eServiceMP3] pullSubtitle");
 	if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size())
 	{
 		GstMapInfo map;
-		if(!gst_buffer_map(buffer, &map, GST_MAP_READ))
+		if (!gst_buffer_map(buffer, &map, GST_MAP_READ))
 		{
-			//eDebug("[eServiceMP3] pullSubtitle gst_buffer_map failed");
+			// eDebug("[eServiceMP3] pullSubtitle gst_buffer_map failed");
 			return;
 		}
 		int64_t buf_pos = GST_BUFFER_PTS(buffer);
@@ -3491,7 +3485,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 		int64_t duration_ns = GST_BUFFER_DURATION(buffer);
 		int subType = m_subtitleStreams[m_currentSubtitleStream].type;
 		// eDebug("[eServiceMP3] pullSubtitle type=%d size=%zu", subType, len);
-		if ( subType )
+		if (subType)
 		{
 			if (subType == stWebVTT)
 			{
@@ -3499,28 +3493,26 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 				std::string vtt_string(reinterpret_cast<char *>(map.data), len);
 				std::vector<SubtitleEntry> parsed_subs;
 
-				eTrace("SUB DEBUG line");
-				eTrace(">>>\n%s\n<<<", vtt_string.c_str());
+				// eDebug("SUB DEBUG line");
+				// eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
-				if (parseWebVTT(vtt_string, parsed_subs)) {
-					for (const auto &sub : parsed_subs) {
-						eTrace("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s",
-							sub.start_time_ms, sub.end_time_ms,
-							sub.text.c_str());
+				if (parseWebVTT(vtt_string, parsed_subs))
+				{
+					for (const auto &sub : parsed_subs)
+					{
+						// eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
 						m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
-
 					}
 					if (!parsed_subs.empty())
-						m_subtitle_sync_timer->start(1, true);					
-				}				
-
+						m_subtitle_sync_timer->start(1, true);
+				}
 			}
 			else if (subType == stDVB)
 			{
-				uint8_t * data = map.data;
+				uint8_t *data = map.data;
 				m_dvb_subtitle_parser->processBuffer(data, len, buf_pos / 1000000ULL);
-			} 
-			else if ( subType < stVOB)
+			}
+			else if (subType < stVOB)
 			{
 				int delay_ms = eSubtitleSettings::pango_subtitles_delay / 90;
 				int subtitle_fps = eSubtitleSettings::pango_subtitles_fps;
@@ -3529,14 +3521,14 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 				if (subtitle_fps > 1 && m_framerate > 0)
 					convert_fps = subtitle_fps / (double)m_framerate;
 
-				std::string line((const char*)map.data, len);
-				eTrace("[eServiceMP3] got new text subtitle @ buf_pos = %lld ns (in pts=%lld), dur=%lld: '%s' ", buf_pos, buf_pos/11111, duration_ns, line.c_str());
+				std::string line((const char *)map.data, len);
+				// eDebug("[eServiceMP3] got new text subtitle @ buf_pos = %lld ns (in pts=%lld), dur=%lld: '%s' ", buf_pos, buf_pos/11111, duration_ns, line.c_str());
 
 				uint32_t start_ms = buf_pos / 1000000ULL;
 				uint32_t end_ms = start_ms + (duration_ns / 1000000ULL);
 				if (delay_ms > 0)
 				{
-					//eDebug("[eServiceMP3] sub title delay add is %d", delay_ms);
+					// eDebug("[eServiceMP3] sub title delay add is %d", delay_ms);
 					start_ms += delay_ms;
 					end_ms += delay_ms;
 				}
@@ -3544,7 +3536,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 				{
 					if (start_ms >= (uint32_t)(delay_ms * -1))
 					{
-						//eDebug("[eServiceMP3] sub title delay substract is %d", delay_ms);
+						// eDebug("[eServiceMP3] sub title delay substract is %d", delay_ms);
 						start_ms += delay_ms;
 						end_ms += delay_ms;
 					}
@@ -3554,7 +3546,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 			}
 			else
 			{
-				eDebug("[eServiceMP3] unsupported subpicture... ignoring");
+				// eDebug("[eServiceMP3] unsupported subpicture... ignoring");
 			}
 		}
 		gst_buffer_unmap(buffer, &map);
@@ -3628,20 +3620,20 @@ void eServiceMP3::pushSubtitles()
 
 		if (m_decoder_time_valid_state < 4)
 		{
-			eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
+			//eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
 			m_prev_decoder_time = running_pts;
 			next_timer = 100;
 			goto exit;
 		}
 
-		eDebug("[eServiceMP3] *** push subtitles, clock stable");
+		//eDebug("[eServiceMP3] *** push subtitles, clock stable");
 	}
 
 	decoder_ms = running_pts / 90;
 	delay_ms = 0;
 
 #if 0
-		 eDebug("\n*** all subs: ");
+		// eDebug("\n*** all subs: ");
 
 		for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++)
 		{
@@ -3650,11 +3642,11 @@ void eServiceMP3::pushSubtitles()
 			diff_start_ms = start_ms - decoder_ms;
 			diff_end_ms = end_ms - decoder_ms;
 
-			 eDebug("[eServiceMP3]    start: %d, end: %d, diff_start: %d, diff_end: %d: %s",
+			// eDebug("[eServiceMP3]    start: %d, end: %d, diff_start: %d, diff_end: %d: %s",
 					start_ms, end_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
 		}
 
-		 eDebug("\n\n");
+		// eDebug("\n\n");
 #endif
 
 	if (m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size() &&
