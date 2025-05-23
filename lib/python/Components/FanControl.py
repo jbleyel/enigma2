@@ -33,24 +33,25 @@ class FanControl:
 			print("[FanControl]: setting fan values (standby mode): fanid = %d, voltage = %d, pwm = %d" % (fanid, cfg.vlt_standby.value, cfg.pwm_standby.value))
 
 	def getRecordEvent(self, recservice, event):
-		recordings = len(NavigationInstance.instance.getRecordings(False, pNavigation.isRealRecording))
+		NavigationInstance.instance.getRecordings
+		recordings = NavigationInstance.instance.getRealRecordingsCount()
 		if event == iRecordableService.evEnd:
 			if recordings == 0:
 				self.setVoltage_PWM_Standby()
 		elif event == iRecordableService.evStart:
-			if recordings == 1:
+			if recordings > 0:
 				self.setVoltage_PWM()
 
 	def leaveStandby(self):
 		NavigationInstance.instance.record_event.remove(self.getRecordEvent)
-		recordings = NavigationInstance.instance.getRecordings(False, pNavigation.isRealRecording)
+		recordings = NavigationInstance.instance.getRealRecordingsCount()
 		if not recordings:
 			self.setVoltage_PWM()
 
 	def standbyCounterChanged(self, configElement):
 		from Screens.Standby import inStandby
 		inStandby.onClose.append(self.leaveStandby)
-		recordings = NavigationInstance.instance.getRecordings(False, pNavigation.isRealRecording)
+		recordings = NavigationInstance.instance.getRealRecordingsCount()
 		NavigationInstance.instance.record_event.append(self.getRecordEvent)
 		if not recordings:
 			self.setVoltage_PWM_Standby()

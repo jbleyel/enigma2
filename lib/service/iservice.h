@@ -989,6 +989,7 @@ public:
 
 		evUpdateTags,
 		evUpdateIDv3Cover,
+		evGstreamerStart,
 
 		evUser = 0x100
 	};
