@@ -918,204 +918,204 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	if (suburi != NULL)
 		eDebug("[eServiceMP3] playbin suburi=%s", suburi);
 
-#ifdef NEWPILELINE
+	m_usepipeline = m_sourceinfo.is_dash; //eSimpleConfig::getBool("config.misc.usegstpipeline", false);
 
-	if (dvb_audiosink) {
-		gboolean audioMode = m_sourceinfo.is_audio;
-		g_object_set(dvb_audiosink, "e2-sync", audioMode, NULL);
-		g_object_set(dvb_audiosink, "e2-async", audioMode, NULL);
-	}
-
-	if (dvb_videosink && !m_sourceinfo.is_audio) {
-		g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
-		g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-	}
-
-	m_gst_pipeline = gst_pipeline_new("hls-pipeline");
-	m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
-
-	if (!m_gst_pipeline || !m_gst_source) {
-		eDebug("[eServiceMP3] Fehler beim Erstellen der Pipeline");
-		return;
-	}
-
-	g_object_set(G_OBJECT(m_gst_source), "uri", uri, NULL);
-	gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
-
-	g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(&eServiceMP3::onDemuxPadAdded), this);
-
-
-	// Buffering konfigurieren
-	GstElement *queue = gst_element_factory_make("queue2", "buffer-queue");
-
-	if (queue) {
-		g_object_set(queue,
-			"use-buffering", TRUE,
-			"max-size-buffers", 0,
-			"max-size-bytes", m_buffer_size, // z.B. 10MB
-			"max-size-time", (gint64)(5 * GST_SECOND),
-			NULL);
-	}
-
-	// Download-Cache konfigurieren (nur falls m_download_buffer_path gesetzt)
-	if (!m_download_buffer_path.empty()) {
-		g_object_set(queue,
-			"temp-template", m_download_buffer_path.c_str(), // z.B. "/tmp/e2-buffer-XXXXXX"
-			NULL);
-	}
-
-	g_object_set(m_gst_source, "connection-speed", (guint64)4495000, NULL);
-
-
-#else
-	m_useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
-	if(m_useplaybin3)
-		m_gst_playbin = gst_element_factory_make("playbin3", "playbin3");
-	else
-		m_gst_playbin = gst_element_factory_make("playbin", "playbin");
-
-	if ( m_gst_playbin )
+	if(m_usepipeline)
 	{
-		if(dvb_audiosink)
-		{
-			if (m_sourceinfo.is_audio)
-			{
-				g_object_set(dvb_audiosink, "e2-sync", TRUE, NULL);
-				g_object_set(dvb_audiosink, "e2-async", TRUE, NULL);
-			}
-			else
-			{
-				g_object_set(dvb_audiosink, "e2-sync", FALSE, NULL);
-				g_object_set(dvb_audiosink, "e2-async", FALSE, NULL);
-			}
-			g_object_set(m_gst_playbin, "audio-sink", dvb_audiosink, NULL);
+		m_gst_pipeline = gst_pipeline_new("hls-pipeline");
+		m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
+
+		if (!m_gst_pipeline || !m_gst_source) {
+			eDebug("[eServiceMP3] Fehler beim Erstellen der Pipeline");
+			return;
 		}
-		if(dvb_videosink && !m_sourceinfo.is_audio)
-		{
+
+		if (dvb_audiosink) {
+			gboolean audioMode = m_sourceinfo.is_audio;
+			g_object_set(dvb_audiosink, "e2-sync", audioMode, NULL);
+			g_object_set(dvb_audiosink, "e2-async", audioMode, NULL);
+		}
+
+		if (dvb_videosink && !m_sourceinfo.is_audio) {
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
 		}
-		/*
-		 * avoid video conversion, let the dvbmediasink handle that using native video flag
-		 * volume control is done by hardware, do not use soft volume flag
-		 */
-		guint flags = GST_PLAY_FLAG_AUDIO | GST_PLAY_FLAG_VIDEO | \
-				GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO;
 
-		if (m_sourceinfo.is_streaming)
-		{
-			m_notify_source_handler_id = g_signal_connect(m_gst_playbin, "notify::source", G_CALLBACK(playbinNotifySource), this);
-			if (m_download_buffer_path != "")
-			{
-				/* use progressive download buffering */
-				flags |= GST_PLAY_FLAG_DOWNLOAD;
-				m_notify_element_added_handler_id = g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
-				/* limit file size */
-				g_object_set(m_gst_playbin, "ring-buffer-max-size", (guint64)(8LL * 1024LL * 1024LL), NULL);
-			}
-			/*
-			 * regardless whether or not we configured a progressive download file, use a buffer as well
-			 * (progressive download might not work for all formats)
-			 */
-			flags |= GST_PLAY_FLAG_BUFFERING;
-			/* increase the default 2 second / 2 MB buffer limitations to 10s / 10MB */
-			g_object_set(m_gst_playbin, "buffer-duration", (gint64)(5LL * GST_SECOND), NULL);
-			g_object_set(m_gst_playbin, "buffer-size", m_buffer_size, NULL);
-			if (m_sourceinfo.is_hls || m_sourceinfo.is_dash)
-				g_object_set(m_gst_playbin, "connection-speed", (guint64)(4495000LL), NULL);
+		g_object_set(G_OBJECT(m_gst_source), "uri", uri, NULL);
+		gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
+
+		g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(&eServiceMP3::onDemuxPadAdded), this);
+
+		GstElement *queue = gst_element_factory_make("queue2", "buffer-queue");
+
+		if (queue) {
+			g_object_set(queue,
+				"use-buffering", TRUE,
+				"max-size-buffers", 0,
+				"max-size-bytes", m_buffer_size,
+				"max-size-time", (gint64)(5 * GST_SECOND),
+				NULL);
 		}
-		g_object_set(m_gst_playbin, "flags", flags, NULL);
-		g_object_set(m_gst_playbin, "uri", uri, NULL);
-		if (dvb_subsink)
-		{
-			m_subs_to_pull_handler_id = g_signal_connect(dvb_subsink, "new-buffer", G_CALLBACK(gstCBsubtitleAvail), this);
-			GstCaps *caps = gst_caps_from_string(
-				"text/plain; "
-				"text/x-plain; "
-				"text/x-raw; "
-				"text/x-pango-markup; "
-				"subpicture/x-dvd; "
-				"subpicture/x-dvb; "
-				"subpicture/x-pgs; "
-				"text/vtt; "
-				"text/x-webvtt; "
-				"text/x-ssa; "		  // SubStation Alpha
-				"text/x-ass; "		  // Advanced SubStation Alpha
-				"application/x-ass; " // Alternative ASS format
-				"application/x-ssa; " // Alternative SSA format
-				"application/x-subtitle-vtt");
 
-			g_object_set(dvb_subsink, "caps", caps, NULL);
-			gst_caps_unref(caps);
-
-			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
-			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+		if (!m_download_buffer_path.empty()) {
+			g_object_set(queue,
+				"temp-template", m_download_buffer_path.c_str(),
+				NULL);
 		}
-		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
-		gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
-		gst_object_unref(bus);
 
-		if (suburi != NULL)
-			g_object_set(m_gst_playbin, "suburi", suburi, NULL);
+		g_object_set(m_gst_source, "connection-speed", (guint64)4495000, NULL);
+	
+	}
+	else
+	{
+
+		m_useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
+		if(m_useplaybin3)
+			m_gst_playbin = gst_element_factory_make("playbin3", "playbin3");
 		else
+			m_gst_playbin = gst_element_factory_make("playbin", "playbin");
+
+		if ( m_gst_playbin )
 		{
-			if (!m_external_subtitle_path.empty())
+			if(dvb_audiosink)
 			{
-				if (::access(m_external_subtitle_path.c_str(), R_OK) >= 0)
+				if (m_sourceinfo.is_audio)
 				{
-					gchar *luri = g_filename_to_uri(m_external_subtitle_path.c_str(), NULL, NULL);
-					if (luri)
-					{
-						eDebug("[eServiceMP3] Found external subtitle: %s", luri);
-						g_object_set(m_gst_playbin, "suburi", luri, NULL);
-						g_free(luri);
-					}
+					g_object_set(dvb_audiosink, "e2-sync", TRUE, NULL);
+					g_object_set(dvb_audiosink, "e2-async", TRUE, NULL);
 				}
 				else
-					m_external_subtitle_extension = "";
+				{
+					g_object_set(dvb_audiosink, "e2-sync", FALSE, NULL);
+					g_object_set(dvb_audiosink, "e2-async", FALSE, NULL);
+				}
+				g_object_set(m_gst_playbin, "audio-sink", dvb_audiosink, NULL);
 			}
+			if(dvb_videosink && !m_sourceinfo.is_audio)
+			{
+				g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
+				g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
+				g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
+			}
+			/*
+			* avoid video conversion, let the dvbmediasink handle that using native video flag
+			* volume control is done by hardware, do not use soft volume flag
+			*/
+			guint flags = GST_PLAY_FLAG_AUDIO | GST_PLAY_FLAG_VIDEO | \
+					GST_PLAY_FLAG_TEXT | GST_PLAY_FLAG_NATIVE_VIDEO;
+
+			if (m_sourceinfo.is_streaming)
+			{
+				m_notify_source_handler_id = g_signal_connect(m_gst_playbin, "notify::source", G_CALLBACK(playbinNotifySource), this);
+				if (m_download_buffer_path != "")
+				{
+					/* use progressive download buffering */
+					flags |= GST_PLAY_FLAG_DOWNLOAD;
+					m_notify_element_added_handler_id = g_signal_connect(m_gst_playbin, "element-added", G_CALLBACK(handleElementAdded), this);
+					/* limit file size */
+					g_object_set(m_gst_playbin, "ring-buffer-max-size", (guint64)(8LL * 1024LL * 1024LL), NULL);
+				}
+				/*
+				* regardless whether or not we configured a progressive download file, use a buffer as well
+				* (progressive download might not work for all formats)
+				*/
+				flags |= GST_PLAY_FLAG_BUFFERING;
+				/* increase the default 2 second / 2 MB buffer limitations to 10s / 10MB */
+				g_object_set(m_gst_playbin, "buffer-duration", (gint64)(5LL * GST_SECOND), NULL);
+				g_object_set(m_gst_playbin, "buffer-size", m_buffer_size, NULL);
+				if (m_sourceinfo.is_hls || m_sourceinfo.is_dash)
+					g_object_set(m_gst_playbin, "connection-speed", (guint64)(4495000LL), NULL);
+			}
+			g_object_set(m_gst_playbin, "flags", flags, NULL);
+			g_object_set(m_gst_playbin, "uri", uri, NULL);
+			if (dvb_subsink)
+			{
+				m_subs_to_pull_handler_id = g_signal_connect(dvb_subsink, "new-buffer", G_CALLBACK(gstCBsubtitleAvail), this);
+				GstCaps *caps = gst_caps_from_string(
+					"text/plain; "
+					"text/x-plain; "
+					"text/x-raw; "
+					"text/x-pango-markup; "
+					"subpicture/x-dvd; "
+					"subpicture/x-dvb; "
+					"subpicture/x-pgs; "
+					"text/vtt; "
+					"text/x-webvtt; "
+					"text/x-ssa; "		  // SubStation Alpha
+					"text/x-ass; "		  // Advanced SubStation Alpha
+					"application/x-ass; " // Alternative ASS format
+					"application/x-ssa; " // Alternative SSA format
+					"application/x-subtitle-vtt");
+
+				g_object_set(dvb_subsink, "caps", caps, NULL);
+				gst_caps_unref(caps);
+
+				g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+				g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+			}
+			GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
+			gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
+			gst_object_unref(bus);
+
+			if (suburi != NULL)
+				g_object_set(m_gst_playbin, "suburi", suburi, NULL);
 			else
 			{
-				const char *ext = strrchr(filename, '.');
-				if (ext)
+				if (!m_external_subtitle_path.empty())
 				{
-					size_t base_len = ext - filename;
-					std::string base_filename(filename, base_len);
-
-					// Try SRT first, then VTT
-					const char *subtitle_exts[] = {".srt", ".vtt"};
-					for (const char *sub_ext : subtitle_exts)
+					if (::access(m_external_subtitle_path.c_str(), R_OK) >= 0)
 					{
-						std::string subtitle_file = base_filename + sub_ext;
-						if (::access(subtitle_file.c_str(), R_OK) == 0)
+						gchar *luri = g_filename_to_uri(m_external_subtitle_path.c_str(), NULL, NULL);
+						if (luri)
 						{
-							gchar *luri = g_filename_to_uri(subtitle_file.c_str(), NULL, NULL);
-							if (luri)
+							eDebug("[eServiceMP3] Found external subtitle: %s", luri);
+							g_object_set(m_gst_playbin, "suburi", luri, NULL);
+							g_free(luri);
+						}
+					}
+					else
+						m_external_subtitle_extension = "";
+				}
+				else
+				{
+					const char *ext = strrchr(filename, '.');
+					if (ext)
+					{
+						size_t base_len = ext - filename;
+						std::string base_filename(filename, base_len);
+
+						// Try SRT first, then VTT
+						const char *subtitle_exts[] = {".srt", ".vtt"};
+						for (const char *sub_ext : subtitle_exts)
+						{
+							std::string subtitle_file = base_filename + sub_ext;
+							if (::access(subtitle_file.c_str(), R_OK) == 0)
 							{
-								eDebug("[eServiceMP3] Found %s subtitle: %s", sub_ext + 1, luri);
-								g_object_set(m_gst_playbin, "suburi", luri, NULL);
-								g_free(luri);
-								break;
+								gchar *luri = g_filename_to_uri(subtitle_file.c_str(), NULL, NULL);
+								if (luri)
+								{
+									eDebug("[eServiceMP3] Found %s subtitle: %s", sub_ext + 1, luri);
+									g_object_set(m_gst_playbin, "suburi", luri, NULL);
+									g_free(luri);
+									break;
+								}
 							}
 						}
 					}
 				}
 			}
 		}
+		else
+		{
+			m_event((iPlayableService *)this, evUser + 12);
+			m_gst_playbin = NULL;
+			m_errorInfo.error_message = "failed to create GStreamer pipeline!\n";
+			eDebug("[eServiceMP3] sorry, can't play: %s", m_errorInfo.error_message.c_str());
+		}
+		g_free(uri);
+		if (suburi != NULL)
+			g_free(suburi);
 	}
-	else
-	{
-		m_event((iPlayableService *)this, evUser + 12);
-		m_gst_playbin = NULL;
-		m_errorInfo.error_message = "failed to create GStreamer pipeline!\n";
-		eDebug("[eServiceMP3] sorry, can't play: %s", m_errorInfo.error_message.c_str());
-	}
-	g_free(uri);
-	if (suburi != NULL)
-		g_free(suburi);
-
-#endif
 
 }
 
@@ -1266,19 +1266,14 @@ RESULT eServiceMP3::start()
 	ASSERT(m_state == stIdle);
 
 	m_subtitles_paused = false;
-#ifdef NEWPILELINE
-	if (m_gst_pipeline)
-#else
-	if (m_gst_playbin)
-#endif
+	if (m_gst_pipeline || m_gst_playbin)
 	{
 		eDebug("[eServiceMP3] *** starting pipeline ****");
 		GstStateChangeReturn ret;
-#ifdef NEWPILELINE
-		ret = gst_element_set_state (m_gst_pipeline, GST_STATE_READY);
-#else
-		ret = gst_element_set_state (m_gst_playbin, GST_STATE_READY);
-#endif
+		if(m_gst_pipeline)
+			ret = gst_element_set_state (m_gst_pipeline, GST_STATE_READY);
+		else
+			ret = gst_element_set_state (m_gst_playbin, GST_STATE_READY);
 		switch(ret)
 		{
 		case GST_STATE_CHANGE_FAILURE:
@@ -1289,11 +1284,10 @@ RESULT eServiceMP3::start()
 			m_is_live = false;
 			break;
 		case GST_STATE_CHANGE_NO_PREROLL:
-#ifdef NEWPILELINE
-			gst_element_set_state (m_gst_pipeline, GST_STATE_PLAYING);
-#else
-			gst_element_set_state (m_gst_playbin, GST_STATE_PLAYING);
-#endif
+			if(m_gst_pipeline)
+				gst_element_set_state (m_gst_pipeline, GST_STATE_PLAYING);
+			else
+				gst_element_set_state (m_gst_playbin, GST_STATE_PLAYING);
 			m_is_live = true;
 			break;
 		default:
@@ -3256,60 +3250,7 @@ void eServiceMP3::playbinNotifySource(GObject *object, GParamSpec *unused, gpoin
 	gst_object_unref(source);
 }
 
-#ifdef NEWPILELINE
 
-
-void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data) {
-    eServiceMP3* self = static_cast<eServiceMP3*>(user_data);
-    
-    // Beispiel: decodebin erzeugen
-    GstElement* decode = gst_element_factory_make("decodebin", NULL);
-    if (!decode)
-        return;
-
-    gst_bin_add(GST_BIN(self->m_gst_pipeline), decode);
-    gst_element_sync_state_with_parent(decode);
-
-    GstPad* sinkpad = gst_element_get_static_pad(decode, "sink");
-    gst_pad_link(pad, sinkpad);
-    gst_object_unref(sinkpad);
-
-    // Neues Pad von decodebin behandeln
-    g_signal_connect(decode, "pad-added", G_CALLBACK(&eServiceMP3::onDecodePadAdded), self);
-}
-
-
-void eServiceMP3::onDecodePadAdded(GstElement *decodebin, GstPad *pad, gpointer user_data) {
-    eServiceMP3* self = static_cast<eServiceMP3*>(user_data);
-
-    GstCaps* caps = gst_pad_get_current_caps(pad);
-    if (!caps) return;
-
-    GstStructure* str = gst_caps_get_structure(caps, 0);
-    const gchar* name = gst_structure_get_name(str);
-    GstElement* sink = NULL;
-
-    eDebug("[eServiceMP3] onDecodePadAdded pad: %s", name);
-    if (g_str_has_prefix(name, "audio/"))
-        sink = dvb_audiosink;
-    else if (g_str_has_prefix(name, "video/"))
-        sink = dvb_videosink;
-    else if (g_str_has_prefix(name, "text/") || g_str_has_prefix(name, "application/x-subtitle"))
-        sink = dvb_subsink;
-
-    if (sink) {
-        gst_bin_add(GST_BIN(self->m_gst_pipeline), sink);
-        gst_element_sync_state_with_parent(sink);
-        GstPad* sinkpad = gst_element_get_static_pad(sink, "sink");
-        if (gst_pad_link(pad, sinkpad) != GST_PAD_LINK_OK)
-            eDebug("[eServiceMP3] Error link pad: %s", name);
-        gst_object_unref(sinkpad);
-    }
-
-    gst_caps_unref(caps);
-}
-
-#else
 void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data)
 {
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
@@ -3340,7 +3281,6 @@ void eServiceMP3::handleElementAdded(GstBin *bin, GstElement *element, gpointer 
 		g_free(elementname);
 	}
 }
-#endif
 
 audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure)
 {
@@ -4178,4 +4118,54 @@ void eServiceMP3::saveCuesheet()
 		eDebug("[eServiceMP3] cuts file has been write");
 	}
 	m_cuesheet_changed = 0;
+}
+
+void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data) {
+    eServiceMP3* self = static_cast<eServiceMP3*>(user_data);
+    
+    // Beispiel: decodebin erzeugen
+    GstElement* decode = gst_element_factory_make("decodebin", NULL);
+    if (!decode)
+        return;
+
+    gst_bin_add(GST_BIN(self->m_gst_pipeline), decode);
+    gst_element_sync_state_with_parent(decode);
+
+    GstPad* sinkpad = gst_element_get_static_pad(decode, "sink");
+    gst_pad_link(pad, sinkpad);
+    gst_object_unref(sinkpad);
+
+    // Neues Pad von decodebin behandeln
+    g_signal_connect(decode, "pad-added", G_CALLBACK(&eServiceMP3::onDecodePadAdded), self);
+}
+
+
+void eServiceMP3::onDecodePadAdded(GstElement *decodebin, GstPad *pad, gpointer user_data) {
+    eServiceMP3* self = static_cast<eServiceMP3*>(user_data);
+
+    GstCaps* caps = gst_pad_get_current_caps(pad);
+    if (!caps) return;
+
+    GstStructure* str = gst_caps_get_structure(caps, 0);
+    const gchar* name = gst_structure_get_name(str);
+    GstElement* sink = NULL;
+
+    eDebug("[eServiceMP3] onDecodePadAdded pad: %s", name);
+    if (g_str_has_prefix(name, "audio/"))
+        sink = dvb_audiosink;
+    else if (g_str_has_prefix(name, "video/"))
+        sink = dvb_videosink;
+    else if (g_str_has_prefix(name, "text/") || g_str_has_prefix(name, "application/x-subtitle"))
+        sink = dvb_subsink;
+
+    if (sink) {
+        gst_bin_add(GST_BIN(self->m_gst_pipeline), sink);
+        gst_element_sync_state_with_parent(sink);
+        GstPad* sinkpad = gst_element_get_static_pad(sink, "sink");
+        if (gst_pad_link(pad, sinkpad) != GST_PAD_LINK_OK)
+            eDebug("[eServiceMP3] Error link pad: %s", name);
+        gst_object_unref(sinkpad);
+    }
+
+    gst_caps_unref(caps);
 }

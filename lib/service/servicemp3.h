@@ -335,6 +335,7 @@ private:
 	bool m_seeking_or_paused;
 	bool m_to_paused;
 	bool m_useplaybin3;
+	bool m_usepipeline;
 	bufferInfo m_bufferInfo;
 	errorInfo m_errorInfo;
 	std::string m_download_buffer_path;
@@ -346,12 +347,7 @@ private:
 	};
 	int m_state;
 	bool m_gstdot;
-
 	GstElement *m_gst_playbin = nullptr;
-#ifdef NEWPILELINE
-	GstElement *m_gst_pipeline = nullptr;
-	GstElement *m_gst_source = nullptr;
-#endif
 	GstTagList *m_stream_tags;
 	bool m_coverart;
 	std::list<eDVBSubtitlePage> m_dvb_subtitle_pages;
@@ -372,12 +368,7 @@ private:
 	void HandleTocEntry(GstMessage *msg);
 	static gint match_sinktype(const GValue *velement, const gchar *type);
 
-#ifdef NEWPILELINE
-	static void onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data);
-	static void onDecodePadAdded(GstElement *element, GstPad *pad, gpointer user_data);
-#else
 	static void handleElementAdded(GstBin *bin, GstElement *element, gpointer user_data);
-#endif
 
 	struct subtitle_page_t
 	{
@@ -428,6 +419,12 @@ private:
 	std::string m_external_subtitle_path;
 	std::string m_external_subtitle_language;
 	std::string m_external_subtitle_extension;
+
+	static void onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data);
+	static void onDecodePadAdded(GstElement *element, GstPad *pad, gpointer user_data);
+	GstElement *m_gst_pipeline = nullptr;
+	GstElement *m_gst_source = nullptr;
+
 
 };
 
