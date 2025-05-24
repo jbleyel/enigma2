@@ -166,12 +166,30 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
     std::string line;
 
     std::string current_text;
-    uint64_t start_ms = 0, end_ms = 0;
-    bool expecting_text = false;
+    uint64_t start_ms = 0, end_ms = 0, mpegts_offset = 0, local_offset_ms = 0;
+	bool expecting_text = false;
 
     while (std::getline(stream, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (line.empty()) continue;
+
+		if (line.rfind("X-TIMESTAMP-MAP=", 0) == 0) {
+			size_t mpegts_pos = line.find("MPEGTS:");
+			size_t local_pos = line.find("LOCAL:");
+
+			if (mpegts_pos != std::string::npos && local_pos != std::string::npos) {
+				mpegts_pos += 7;
+				local_pos += 6;
+
+				size_t comma_pos = line.find(',', mpegts_pos);
+				std::string mpegts_str = line.substr(mpegts_pos, comma_pos - mpegts_pos);
+				std::string local_str = line.substr(local_pos);
+
+				mpegts_offset = std::stoull(mpegts_str);
+				parse_timecode(local_str, local_offset_ms);
+			}
+			continue;
+		}
 
         if (line.find("-->") != std::string::npos) {
             if (!current_text.empty()) {
@@ -188,6 +206,14 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
             std::string end_str = line.substr(arrow + 3);
             if (!parse_timecode(start_str, start_ms)) continue;
             if (!parse_timecode(end_str, end_ms)) continue;
+
+			if (mpegts_offset > 0) {
+				const uint64_t local_mpegts_ms = mpegts_offset / 90; // MPEGTS-Ticks (90 kHz) → ms
+				const int64_t delta = static_cast<int64_t>(local_mpegts_ms) - static_cast<int64_t>(local_offset_ms);
+
+				start_ms += delta;
+				end_ms += delta;
+			}
 
             expecting_text = true;
             continue;
