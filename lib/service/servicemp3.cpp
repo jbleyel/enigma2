@@ -3657,9 +3657,11 @@ void eServiceMP3::pushSubtitles()
 		end_ms = (current->second.end_ms * convert_fps) + delay_ms;
 
 		int64_t decoder_ms_effective = decoder_ms;
-		if (start_ms - decoder_ms_effective > WRAP_THRESHOLD_MS) {
+
+		if (start_ms > decoder_ms && start_ms - decoder_ms > WRAP_THRESHOLD_MS) {
 			decoder_ms_effective += WRAP_MS;
-		} else if (decoder_ms_effective - end_ms > WRAP_THRESHOLD_MS) {
+		}
+		else if (decoder_ms > end_ms && decoder_ms - end_ms > WRAP_THRESHOLD_MS) {
 			decoder_ms_effective -= WRAP_MS;
 		}
 
