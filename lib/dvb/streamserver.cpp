@@ -200,7 +200,7 @@ void eStreamClient::notifier(int what)
 					if (posdur != std::string::npos)
 					{
 
-						parent->startStream(serviceref);
+						parent->startStream(serviceref, m_remotehost);
 
 						if (eDVBServiceStream::start(serviceref.c_str(), streamFd) >= 0)
 						{
