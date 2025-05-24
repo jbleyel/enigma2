@@ -3455,14 +3455,14 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 				std::string vtt_string(reinterpret_cast<char *>(map.data), len);
 				std::vector<SubtitleEntry> parsed_subs;
 
-				// eDebug("SUB DEBUG line");
-				// eDebug(">>>\n%s\n<<<", vtt_string.c_str());
+				eDebug("SUB DEBUG line");
+				eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
 				if (parseWebVTT(vtt_string, parsed_subs))
 				{
 					for (const auto &sub : parsed_subs)
 					{
-						// eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
+						eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
 						m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
 					}
 					if (!parsed_subs.empty())
@@ -3594,7 +3594,7 @@ void eServiceMP3::pushSubtitles()
 	decoder_ms = running_pts / 90;
 	delay_ms = 0;
 
-#if 0
+#if 1
 		// eDebug("\n*** all subs: ");
 
 		for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++)
@@ -3604,8 +3604,7 @@ void eServiceMP3::pushSubtitles()
 			diff_start_ms = start_ms - decoder_ms;
 			diff_end_ms = end_ms - decoder_ms;
 
-			// eDebug("[eServiceMP3]    start: %d, end: %d, diff_start: %d, diff_end: %d: %s",
-					start_ms, end_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
+			eDebug("[eServiceMP3] start: %d, end: %d, diff_start: %d, diff_end: %d: %s", start_ms, end_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
 		}
 
 		// eDebug("\n\n");
