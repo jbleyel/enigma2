@@ -1797,13 +1797,13 @@ RESULT eServiceMP3::getPlayPosition(pts_t &pts)
 	/* pos is in nanoseconds. we have 90 000 pts per second. */
 	m_last_seek_pos = pos / 11111LL;
 	pts = m_last_seek_pos;
-	//eDebug("[eServiceMP3] current play pts = %" G_GINT64_FORMAT, pts);
+	eDebug("[eServiceMP3] current play pts = %" G_GINT64_FORMAT, pts);
 	return 0;
 }
 
 RESULT eServiceMP3::setTrickmode(int trick)
 {
-		/* trickmode is not yet supported by our dvbmediasinks. */
+	/* trickmode is not yet supported by our dvbmediasinks. */
 	return -1;
 }
 
@@ -3608,20 +3608,20 @@ void eServiceMP3::pushSubtitles()
 
 		if (m_decoder_time_valid_state < 4)
 		{
-			//eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
+			eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
 			m_prev_decoder_time = running_pts;
 			next_timer = 100;
 			goto exit;
 		}
 
-		//eDebug("[eServiceMP3] *** push subtitles, clock stable");
+		eDebug("[eServiceMP3] *** push subtitles, clock stable");
 	}
 
 	decoder_ms = running_pts / 90;
 	delay_ms = 0;
 
-#if 1
-		// eDebug("\n*** all subs: ");
+#if 0
+		eDebug("\n*** all subs: ");
 
 		for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++)
 		{
@@ -3633,7 +3633,7 @@ void eServiceMP3::pushSubtitles()
 			eDebug("[eServiceMP3] start: %d, end: %d, diff_start: %d, diff_end: %d: %s", start_ms, end_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
 		}
 
-		// eDebug("\n\n");
+		eDebug("\n\n");
 #endif
 
 	if (m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size() &&
@@ -3653,20 +3653,19 @@ void eServiceMP3::pushSubtitles()
 		diff_start_ms = start_ms - decoder_ms;
 		diff_end_ms = end_ms - decoder_ms;
 
-#if 0
-		// eDebug("[eServiceMP3] *** next subtitle: decoder: %d, start: %d, end: %d, duration_ms: %d, diff_start: %d, diff_end: %d : %s",
-			decoder_ms, start_ms, end_ms, end_ms - start_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
+#if 1
+		 eDebug("[eServiceMP3] *** next subtitle: decoder: %d, start: %d, end: %d, duration_ms: %d, diff_start: %d, diff_end: %d : %s", decoder_ms, start_ms, end_ms, end_ms - start_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
 #endif
 
 		if (diff_end_ms < 0)
 		{
-			//eDebug("[eServiceMP3] *** current sub has already ended, skip: %d\n", diff_end_ms);
+			eDebug("[eServiceMP3] *** current sub has already ended, skip: %d\n", diff_end_ms);
 			continue;
 		}
 
 		if (diff_start_ms > 20)
 		{
-			//eDebug("[eServiceMP3] *** current sub in the future, start timer, %d\n", diff_start_ms);
+			eDebug("[eServiceMP3] *** current sub in the future, start timer, %d\n", diff_start_ms);
 			next_timer = diff_start_ms;
 			goto exit;
 		}
@@ -3675,7 +3674,7 @@ void eServiceMP3::pushSubtitles()
 
 		if (m_subtitle_widget && !m_paused)
 		{
-			//eDebug("[eServiceMP3] *** current sub actual, show!");
+			eDebug("[eServiceMP3] *** current sub actual, show!");
 
 			ePangoSubtitlePage pango_page;
 			gRGB rgbcol(0xD0,0xD0,0xD0);
@@ -3690,7 +3689,7 @@ void eServiceMP3::pushSubtitles()
 			m_subtitle_widget->setPage(pango_page);
 		}
 
-		//eDebug("[eServiceMP3] *** no next sub scheduled, check NEXT subtitle");
+		eDebug("[eServiceMP3] *** no next sub scheduled, check NEXT subtitle");
 	}
 
 	// no more subs in cache, fall through
@@ -3698,7 +3697,7 @@ void eServiceMP3::pushSubtitles()
 exit:
 	if (next_timer == 0)
 	{
-		//eDebug("[eServiceMP3] *** next timer = 0, set default timer!");
+		eDebug("[eServiceMP3] *** next timer = 0, set default timer!");
 		next_timer = 1000;
 	}
 
