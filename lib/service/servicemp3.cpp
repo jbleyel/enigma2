@@ -2947,7 +2947,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				if (m_sourceinfo.is_hls)
 				{
 					gint64 duration = 0;
-					if (!gst_element_query_duration(playbin, GST_FORMAT_TIME, &duration) || duration <= 0) {
+					if (!gst_element_query_duration(m_gst_playbin, GST_FORMAT_TIME, &duration) || duration <= 0) {
 						m_is_live = true;
 					}
 					eDebug("[eServiceMP3] GST_MESSAGE_ASYNC_DONE check HLS Live:%d", m_is_live);
