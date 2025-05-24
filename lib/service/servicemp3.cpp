@@ -1307,9 +1307,11 @@ RESULT eServiceMP3::start()
 			stop();
 			return -1;
 		case GST_STATE_CHANGE_SUCCESS:
+			eDebug("[eServiceMP3] GST_STATE_CHANGE_SUCCESS");
 			m_is_live = false;
 			break;
 		case GST_STATE_CHANGE_NO_PREROLL:
+			eDebug("[eServiceMP3] GST_STATE_CHANGE_NO_PREROLL");
 			if(m_gst_pipeline)
 				gst_element_set_state (m_gst_pipeline, GST_STATE_PLAYING);
 			else
@@ -1709,9 +1711,10 @@ RESULT eServiceMP3::getPlayPosition(pts_t &pts)
 	// allow only one ioctl call per second
 	// in case of seek procedure , the position
 	// is updated by the seektoImpl function.
+	eDebug("[eServiceMP3] getPlayPosition m_last_seek_count = %d", m_last_seek_count);
 	if(m_last_seek_count <= 0)
 	{
-		//eDebug("[eServiceMP3] ** START USE LAST SEEK TIMER");
+		// eDebug("[eServiceMP3] ** START USE LAST SEEK TIMER");
 		if (m_last_seek_count == -10)
 		{
 			eDebug("[eServiceMP3] ** START USE LAST SEEK TIMER");
@@ -1751,6 +1754,7 @@ RESULT eServiceMP3::getPlayPosition(pts_t &pts)
 	//if ((dvb_audiosink || dvb_videosink) && !m_paused && !m_seeking_or_paused && !m_sourceinfo.is_hls)
 	if ((dvb_audiosink || dvb_videosink) && !m_paused && !m_seeking_or_paused)
 	{
+		eDebug("[eServiceMP3] getPlayPosition Check dvb_audiosink or dvb_videosink");
 		if (m_sourceinfo.is_audio)
 		{
 			g_signal_emit_by_name(dvb_audiosink, "get-decoder-time", &pos);
@@ -1764,14 +1768,19 @@ RESULT eServiceMP3::getPlayPosition(pts_t &pts)
 			if(!m_audiosink_not_running)
 			{
 				g_signal_emit_by_name(dvb_audiosink, "get-decoder-time", &pos);
+				eDebug("[eServiceMP3] getPlayPosition get-decoder-time audio pos = %" G_GINT64_FORMAT, pos);
 				if (!GST_CLOCK_TIME_IS_VALID(pos) || 0)
+				{
 				 	g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
+					eDebug("[eServiceMP3] getPlayPosition get-decoder-time video pos = %" G_GINT64_FORMAT, pos);
+				}
 				if(!GST_CLOCK_TIME_IS_VALID(pos))
 					return -1;
 			}
 			else
 			{
 				g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
+				eDebug("[eServiceMP3] getPlayPosition get-decoder-time video pos = %" G_GINT64_FORMAT, pos);
 				if(!GST_CLOCK_TIME_IS_VALID(pos))
 					return -1;
 			}
@@ -1782,7 +1791,7 @@ RESULT eServiceMP3::getPlayPosition(pts_t &pts)
 		GstFormat fmt = GST_FORMAT_TIME;
 		if (!gst_element_query_position(m_gst_playbin, fmt, &pos))
 		{
-			//eDebug("[eServiceMP3] gst_element_query_position failed in getPlayPosition");
+			eDebug("[eServiceMP3] gst_element_query_position failed in getPlayPosition");
 			if (m_last_seek_pos > 0)
 			{
 				pts = m_last_seek_pos;
@@ -1812,6 +1821,9 @@ RESULT eServiceMP3::isCurrentlySeekable()
 	int ret = 3; /* just assume that seeking and fast/slow winding are possible */
 
 	if (!m_gst_playbin)
+		return 0;
+	
+	if(m_is_live) // Assume to be not seekable if we are live
 		return 0;
 
 	return ret;
@@ -2931,6 +2943,16 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 					eDebug("[eServiceMP3] GST_MESSAGE_ASYNC_DONE before evUpdatedInfo");
 					m_event((iPlayableService *)this, evUpdatedInfo);
 				}
+
+				if (m_sourceinfo.is_hls)
+				{
+					gint64 duration = 0;
+					if (!gst_element_query_duration(playbin, GST_FORMAT_TIME, &duration) || duration <= 0) {
+						m_is_live = true;
+					}
+					eDebug("[eServiceMP3] GST_MESSAGE_ASYNC_DONE check HLS Live:%d", m_is_live);
+				}
+
 			}
 			else
 			{
