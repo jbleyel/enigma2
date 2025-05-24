@@ -342,9 +342,9 @@ public:
 	$1 = $input->get();
 }
 
-%template(PSignal2VIS) PSignal2<void,int,const char *c>;
+%template(PSignal3VISS) PSignal3<void,int,const char *,const char *>;
 
-%typemap(out) PSignal2VIS {
+%typemap(out) PSignal3VISS {
 	$1 = $input->get();
 }
 

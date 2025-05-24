@@ -506,7 +506,7 @@ class Navigation:
 			ret = self.pnav and self.pnav.stopRecordService(service)
 		return ret
 
-	def streamStatusChangedCB(self, status, sref):
+	def streamStatusChangedCB(self, status, sref, host):
 		print(f"[Navigation] Stream status changed: {status}, {sref}.")
 		recService = iRecordableServicePtr()  # This is only a dummy variable
 		if status == 0:
