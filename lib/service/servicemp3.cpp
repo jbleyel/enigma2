@@ -3593,8 +3593,12 @@ void eServiceMP3::pushSubtitles()
 	pts_t running_pts = 0;
 	int32_t next_timer = 0, decoder_ms, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
 	double convert_fps = 1.0;
+	bool decoder_ms_wrap = true;
 	subtitle_pages_map_t::iterator current;
 	// wait until clock is stable.
+	constexpr uint64_t MPEGTS_WRAP = (1ULL << 33); // 8589934592
+	constexpr int64_t WRAP_THRESHOLD_MS = MPEGTS_WRAP / 90 / 2; // ~13.25 hours
+
 	if (getPlayPosition(running_pts) < 0)
 		m_decoder_time_valid_state = 0;
 	if (m_decoder_time_valid_state == 0)
@@ -3616,9 +3620,6 @@ void eServiceMP3::pushSubtitles()
 
 		eDebug("[eServiceMP3] *** push subtitles, clock stable");
 	}
-
-	constexpr uint64_t MPEGTS_WRAP = (1ULL << 33); // 8589934592
-	constexpr int64_t WRAP_THRESHOLD_MS = MPEGTS_WRAP / 90 / 2; // ~13.25 hours
 
 	decoder_ms = running_pts / 90;
 	delay_ms = 0;
@@ -3649,7 +3650,6 @@ void eServiceMP3::pushSubtitles()
 			convert_fps = subtitle_fps / (double)m_framerate;
 	}
 
-	bool decoder_ms_wrap = true;
 
 	for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++)
 	{
