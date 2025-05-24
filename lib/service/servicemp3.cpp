@@ -3593,11 +3593,11 @@ void eServiceMP3::pushSubtitles()
 	pts_t running_pts = 0;
 	int32_t next_timer = 0, decoder_ms, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
 	double convert_fps = 1.0;
-	bool decoder_ms_wrap = true;
 	subtitle_pages_map_t::iterator current;
 	// wait until clock is stable.
 	constexpr uint64_t MPEGTS_WRAP = (1ULL << 33); // 8589934592
-	constexpr int64_t WRAP_THRESHOLD_MS = MPEGTS_WRAP / 90 / 2; // ~13.25 hours
+	constexpr uint64_t WRAP_MS     = MPEGTS_WRAP / 90; // 95443717 ms
+	constexpr uint64_t WRAP_THRESHOLD_MS = WRAP_MS / 2; // ≈ 47 Mio ms (13.25 h)
 
 	if (getPlayPosition(running_pts) < 0)
 		m_decoder_time_valid_state = 0;
@@ -3656,19 +3656,18 @@ void eServiceMP3::pushSubtitles()
 		start_ms = (current->second.start_ms * convert_fps) + delay_ms;
 		end_ms = (current->second.end_ms * convert_fps) + delay_ms;
 
-		if (decoder_ms_wrap)
-		{
-			if (start_ms - decoder_ms > WRAP_THRESHOLD_MS) {
-				decoder_ms += MPEGTS_WRAP / 90;
-			}
-			decoder_ms_wrap = false; // only wrap once
+		int64_t decoder_ms_effective = decoder_ms;
+		if (start_ms - decoder_ms_effective > WRAP_THRESHOLD_MS) {
+			decoder_ms_effective += WRAP_MS;
+		} else if (decoder_ms_effective - end_ms > WRAP_THRESHOLD_MS) {
+			decoder_ms_effective -= WRAP_MS;
 		}
 
-		diff_start_ms = start_ms - decoder_ms;
-		diff_end_ms = end_ms - decoder_ms;
+		diff_start_ms = start_ms - decoder_ms_effective;
+		diff_end_ms = end_ms - decoder_ms_effective;
 
 #if 1
-		 eDebug("[eServiceMP3] *** next subtitle: decoder: %d, start: %d, end: %d, duration_ms: %d, diff_start: %d, diff_end: %d : %s", decoder_ms, start_ms, end_ms, end_ms - start_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
+		 eDebug("[eServiceMP3] *** next subtitle: decoder: %d decodereffective: %lld, start: %d, end: %d, duration_ms: %d, diff_start: %d, diff_end: %d : %s", decoder_ms, decoder_ms_effective, start_ms, end_ms, end_ms - start_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
 #endif
 
 		if (diff_end_ms < 0)
