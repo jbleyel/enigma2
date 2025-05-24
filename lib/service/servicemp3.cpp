@@ -3599,6 +3599,8 @@ void eServiceMP3::pushSubtitles()
 	constexpr uint64_t WRAP_MS     = MPEGTS_WRAP / 90; // 95443717 ms
 	constexpr uint64_t WRAP_THRESHOLD_MS = WRAP_MS / 2; // ≈ 47 Mio ms (13.25 h)
 
+	eDebug("[eServiceMP3] pushSubtitles islive=%d", m_is_live);
+
 	if (getPlayPosition(running_pts) < 0)
 		m_decoder_time_valid_state = 0;
 	if (m_decoder_time_valid_state == 0)
