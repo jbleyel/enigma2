@@ -952,26 +952,44 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 
 	if(m_usepipeline)
 	{
-		m_gst_pipeline = gst_pipeline_new("hls-pipeline");
-	    m_gst_source = gst_element_factory_make("adaptivedemux2", "dashmux");
-		// m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
-
-	    GstElement *parsebin = gst_element_factory_make("parsebin", NULL);
-
-		gst_bin_add_many(GST_BIN(m_gst_pipeline), m_gst_source, parsebin, NULL);
-		gst_element_link_many(m_gst_source, parsebin, NULL);
-
-		if (!m_gst_pipeline || !m_gst_source) {
-			eDebug("[eServiceMP3] Fehler beim Erstellen der Pipeline");
+	    m_gst_pipeline = gst_pipeline_new("dash-pipeline");
+		if (!m_gst_pipeline) {
+			eDebug("[eServiceMP3] Failed to create pipeline");
+			return;
+		}
+		// m_gst_pipeline = gst_pipeline_new("hls-pipeline");
+	    m_gst_source = gst_element_factory_make("uridecodebin3", "source");
+		if (!m_gst_source) {
+			eDebug("[eServiceMP3] Failed to create uridecodebin3");
+			gst_object_unref(m_gst_pipeline);
 			return;
 		}
 
-		// Buffer settings for adaptive streaming
-		g_object_set(G_OBJECT(m_gst_pipeline),
-			"buffer-size", (guint64)(32LL * 1024LL * 1024LL),  // 32MB Buffer
-			"buffer-duration", (gint64)(10LL * GST_SECOND),    // 10s Buffer
-			NULL);
+		//m_gst_source = gst_element_factory_make("adaptivedemux2", "dashmux");
+		// m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
 
+	    GstElement *parsebin = gst_element_factory_make("parsebin", NULL);
+		if (!parsebin) {
+			eDebug("[eServiceMP3] Failed to create parsebin");
+			gst_object_unref(m_gst_source);
+			gst_object_unref(m_gst_pipeline);
+			return;
+		}
+
+		// Add elements to pipeline
+	    gst_bin_add_many(GST_BIN(m_gst_pipeline), m_gst_source, parsebin, NULL);
+
+		// Link elements
+		if (!gst_element_link(m_gst_source, parsebin)) {
+			eDebug("[eServiceMP3] Failed to link elements");
+			gst_object_unref(m_gst_pipeline);
+			return;
+		}
+
+		// Connect pad-added signal
+		g_signal_connect(parsebin, "pad-added", G_CALLBACK(onDemuxPadAdded), this);
+
+		/*
 		if (dvb_audiosink) {
 			gboolean audioMode = m_sourceinfo.is_audio;
 			g_object_set(dvb_audiosink, "e2-sync", audioMode, NULL);
@@ -982,11 +1000,18 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
 		}
+		*/
 
-		g_object_set(G_OBJECT(m_gst_source), "uri", uri, NULL);
-		gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
+	    // Set properties
+		g_object_set(G_OBJECT(source),
+			"uri", m_ref.path.c_str(),
+			"connection-speed", (guint64)4495000,
+			"download-buffering", TRUE,
+			"buffer-duration", (gint64)(10LL * GST_SECOND),    // 10s Buffer
+			"buffer-size", (guint64)(32LL * 1024LL * 1024LL),  // 32MB Buffer
+			NULL);
 
-		g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(&eServiceMP3::onDemuxPadAdded), this);
+		/*
 		
 		GstElement *queue = gst_element_factory_make("queue2", "buffer-queue");
 
@@ -1004,8 +1029,15 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 				"temp-template", m_download_buffer_path.c_str(),
 				NULL);
 		}
+		*/
 
-		g_object_set(m_gst_source, "connection-speed", (guint64)4495000, NULL);
+		// Set pipeline to READY state
+		GstStateChangeReturn ret = gst_element_set_state(m_gst_pipeline, GST_STATE_READY);
+		if (ret == GST_STATE_CHANGE_FAILURE) {
+			eDebug("[eServiceMP3] Failed to set pipeline to READY");
+			gst_object_unref(m_gst_pipeline);
+			return;
+		}
 	
 	}
 	else
