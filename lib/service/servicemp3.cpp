@@ -149,6 +149,7 @@ std::vector<audioMeta> parse_hls_audio_meta(const std::string& filename) {
 struct SubtitleEntry {
     uint64_t start_time_ms;
     uint64_t end_time_ms;
+	uint64_t vtt_mpegts_base;
     std::string text;
 };
 
@@ -166,7 +167,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
     std::string line;
 
     std::string current_text;
-    uint64_t start_ms = 0, end_ms = 0, mpegts_offset = 0, local_offset_ms = 0;
+    uint64_t start_ms = 0, end_ms = 0, vtt_mpegts_base = 0, local_offset_ms = 0;
 	bool expecting_text = false;
 
     while (std::getline(stream, line)) {
@@ -185,7 +186,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
 				std::string mpegts_str = line.substr(mpegts_pos, comma_pos - mpegts_pos);
 				std::string local_str = line.substr(local_pos);
 
-				mpegts_offset = std::stoull(mpegts_str);
+				vtt_mpegts_base = std::stoull(mpegts_str);
 				parse_timecode(local_str, local_offset_ms);
 			}
 			continue;
@@ -196,6 +197,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
                 SubtitleEntry entry;
                 entry.start_time_ms = start_ms;
                 entry.end_time_ms = end_ms;
+				entry.vtt_mpegts_base = vtt_mpegts_base;
                 entry.text = current_text;
                 subs_out.push_back(entry);
                 current_text.clear();
@@ -207,8 +209,8 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
             if (!parse_timecode(start_str, start_ms)) continue;
             if (!parse_timecode(end_str, end_ms)) continue;
 
-			if (mpegts_offset > 0) {
-				const uint64_t local_mpegts_ms = mpegts_offset / 90; // MPEGTS-Ticks (90 kHz) → ms
+			if (vtt_mpegts_base > 0 && vtt_mpegts_base < 900000) {
+				const uint64_t local_mpegts_ms = vtt_mpegts_base / 90; // MPEGTS-Ticks (90 kHz) → ms
 				const int64_t delta = static_cast<int64_t>(local_mpegts_ms) - static_cast<int64_t>(local_offset_ms);
 
 				start_ms += delta;
@@ -233,6 +235,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
         SubtitleEntry entry;
         entry.start_time_ms = start_ms;
         entry.end_time_ms = end_ms;
+		entry.vtt_mpegts_base = vtt_mpegts_base;
         entry.text = current_text;
         subs_out.push_back(entry);
     }
@@ -1711,7 +1714,7 @@ RESULT eServiceMP3::getPlayPosition(pts_t &pts)
 	// allow only one ioctl call per second
 	// in case of seek procedure , the position
 	// is updated by the seektoImpl function.
-	eDebug("[eServiceMP3] getPlayPosition m_last_seek_count = %d", m_last_seek_count);
+	//eDebug("[eServiceMP3] getPlayPosition m_last_seek_count = %d", m_last_seek_count);
 	if(m_last_seek_count <= 0)
 	{
 		// eDebug("[eServiceMP3] ** START USE LAST SEEK TIMER");
@@ -1754,7 +1757,7 @@ RESULT eServiceMP3::getPlayPosition(pts_t &pts)
 	//if ((dvb_audiosink || dvb_videosink) && !m_paused && !m_seeking_or_paused && !m_sourceinfo.is_hls)
 	if ((dvb_audiosink || dvb_videosink) && !m_paused && !m_seeking_or_paused)
 	{
-		eDebug("[eServiceMP3] getPlayPosition Check dvb_audiosink or dvb_videosink");
+		//eDebug("[eServiceMP3] getPlayPosition Check dvb_audiosink or dvb_videosink");
 		if (m_sourceinfo.is_audio)
 		{
 			g_signal_emit_by_name(dvb_audiosink, "get-decoder-time", &pos);
@@ -3506,12 +3509,32 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 				eDebug("SUB DEBUG line");
 				eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
+				uint64_t running_pts = 0, decoder_ms = 0;
+				if(m_is_live && m_sourceinfo.is_hls)
+				{
+					if (getPlayPosition(running_pts) == 0)
+						decoder_ms = running_pts / 90;
+				} 
+
 				if (parseWebVTT(vtt_string, parsed_subs))
 				{
 					for (const auto &sub : parsed_subs)
 					{
-						eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
-						m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
+						if (sub.vtt_mpegts_base)
+						{
+							uint64_t vtt_base_ms = sub.vtt_mpegts_base / 90;
+							int64_t offset = static_cast<int64_t>(vtt_base_ms) - static_cast<int64_t>(decoder_ms);
+							uint64_t adjusted_start = sub.start_time_ms + offset;
+							uint64_t adjusted_end = sub.end_time_ms + offset;
+							eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
+							eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", adjusted_start, adjusted_end, sub.text.c_str());
+							m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
+						}
+						else
+						{
+							eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
+							m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
+						}
 					}
 					if (!parsed_subs.empty())
 						m_subtitle_sync_timer->start(1, true);
@@ -3617,12 +3640,6 @@ void eServiceMP3::pushSubtitles()
 	double convert_fps = 1.0;
 	subtitle_pages_map_t::iterator current;
 	// wait until clock is stable.
-	constexpr uint64_t MPEGTS_WRAP = (1ULL << 33); // 8589934592
-	constexpr uint64_t WRAP_MS     = MPEGTS_WRAP / 90; // 95443717 ms
-	constexpr uint64_t WRAP_THRESHOLD_MS = WRAP_MS / 2; // ≈ 47 Mio ms (13.25 h)
-
-	eDebug("[eServiceMP3] pushSubtitles islive=%d", m_is_live);
-
 	if (getPlayPosition(running_pts) < 0)
 		m_decoder_time_valid_state = 0;
 	if (m_decoder_time_valid_state == 0)
@@ -3645,6 +3662,7 @@ void eServiceMP3::pushSubtitles()
 		eDebug("[eServiceMP3] *** push subtitles, clock stable");
 	}
 
+	eDebug("[eServiceMP3] pushSubtitles running_pts=%d", running_pts);
 	decoder_ms = running_pts / 90;
 	delay_ms = 0;
 
@@ -3674,26 +3692,15 @@ void eServiceMP3::pushSubtitles()
 			convert_fps = subtitle_fps / (double)m_framerate;
 	}
 
-
 	for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++)
 	{
 		start_ms = (current->second.start_ms * convert_fps) + delay_ms;
 		end_ms = (current->second.end_ms * convert_fps) + delay_ms;
-
-		int64_t decoder_ms_effective = decoder_ms;
-
-		if (start_ms > decoder_ms && start_ms - decoder_ms > WRAP_THRESHOLD_MS) {
-			decoder_ms_effective += WRAP_MS;
-		}
-		else if (decoder_ms > end_ms && decoder_ms - end_ms > WRAP_THRESHOLD_MS) {
-			decoder_ms_effective -= WRAP_MS;
-		}
-
-		diff_start_ms = start_ms - decoder_ms_effective;
-		diff_end_ms = end_ms - decoder_ms_effective;
+		diff_start_ms = start_ms - decoder_ms;
+		diff_end_ms = end_ms - decoder_ms;
 
 #if 1
-		 eDebug("[eServiceMP3] *** next subtitle: decoder: %d decodereffective: %lld, start: %d, end: %d, duration_ms: %d, diff_start: %d, diff_end: %d : %s", decoder_ms, decoder_ms_effective, start_ms, end_ms, end_ms - start_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
+		 eDebug("[eServiceMP3] *** next subtitle: decoder: %d start: %d, end: %d, duration_ms: %d, diff_start: %d, diff_end: %d : %s", decoder_ms, start_ms, end_ms, end_ms - start_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
 #endif
 
 		if (diff_end_ms < 0)
