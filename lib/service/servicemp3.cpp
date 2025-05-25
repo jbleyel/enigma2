@@ -4274,9 +4274,8 @@ void eServiceMP3::saveCuesheet()
 
 void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data)
 {
-	eDebug("[eServiceMP3] onDemuxPadAdded");
-
 	eServiceMP3 *self = static_cast<eServiceMP3 *>(user_data);
+	eDebug("[eServiceMP3] onDemuxPadAdded");
 
 	GstCaps *caps = gst_pad_get_current_caps(pad);
 	if (!caps)
@@ -4295,11 +4294,17 @@ void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_
 		{
 			if (dvb_videosink)
 			{
-				if (!gst_bin_find(GST_BIN(self->m_gst_pipeline), GST_OBJECT_NAME(dvb_videosink)))
+				GstElement *sink_element = gst_bin_get_by_name(GST_BIN(self->m_gst_pipeline), GST_OBJECT_NAME(dvb_videosink));
+				if (!sink_element)
 				{
 					gst_bin_add(GST_BIN(self->m_gst_pipeline), dvb_videosink);
 					gst_element_sync_state_with_parent(dvb_videosink);
 				}
+				else
+				{
+					gst_object_unref(sink_element);
+				}
+
 				GstPad *sinkpad = gst_element_get_static_pad(dvb_videosink, "sink");
 				GstPadLinkReturn ret = gst_pad_link(pad, sinkpad);
 				gst_object_unref(sinkpad);
@@ -4313,11 +4318,17 @@ void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_
 		{
 			if (dvb_audiosink)
 			{
-				if (!gst_bin_find(GST_BIN(self->m_gst_pipeline), GST_OBJECT_NAME(dvb_audiosink)))
+				GstElement *sink_element = gst_bin_get_by_name(GST_BIN(self->m_gst_pipeline), GST_OBJECT_NAME(dvb_audiosink));
+				if (!sink_element)
 				{
 					gst_bin_add(GST_BIN(self->m_gst_pipeline), dvb_audiosink);
 					gst_element_sync_state_with_parent(dvb_audiosink);
 				}
+				else
+				{
+					gst_object_unref(sink_element);
+				}
+
 				GstPad *sinkpad = gst_element_get_static_pad(dvb_audiosink, "sink");
 				GstPadLinkReturn ret = gst_pad_link(pad, sinkpad);
 				gst_object_unref(sinkpad);
