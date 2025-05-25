@@ -972,7 +972,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		g_object_set(G_OBJECT(m_gst_source),
 			"uri", uri,
 			"connection-speed", (guint64)4495000,
-			"buffer-size", (guint64)(32LL * 1024LL * 1024LL),  // 32MB Buffer
+			"buffer-size", (gint)10 * 1024 * 1024; // 10MB,
 			NULL);
 
 		g_free(uri);
