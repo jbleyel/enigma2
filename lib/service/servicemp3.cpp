@@ -4262,22 +4262,59 @@ void eServiceMP3::saveCuesheet()
 }
 
 void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data) {
-    eServiceMP3* self = static_cast<eServiceMP3*>(user_data);
-    
-    // Beispiel: decodebin erzeugen
-    GstElement* decode = gst_element_factory_make("decodebin", NULL);
-    if (!decode)
-        return;
+	eServiceMP3 *self = static_cast<eServiceMP3 *>(user_data);
 
-    gst_bin_add(GST_BIN(self->m_gst_pipeline), decode);
-    gst_element_sync_state_with_parent(decode);
+	eDebug("[eServiceMP3] onDemuxPadAdded");
 
-    GstPad* sinkpad = gst_element_get_static_pad(decode, "sink");
-    gst_pad_link(pad, sinkpad);
-    gst_object_unref(sinkpad);
+	GstCaps *caps = gst_pad_get_current_caps(pad);
+	if (!caps)
+		caps = gst_pad_query_caps(pad, NULL);
 
-    // Neues Pad von decodebin behandeln
-    g_signal_connect(decode, "pad-added", G_CALLBACK(&eServiceMP3::onDecodePadAdded), self);
+	if (caps)
+	{
+		GstStructure *str = gst_caps_get_structure(caps, 0);
+		const gchar *name = gst_structure_get_name(str);
+
+		eDebug("[eServiceMP3] onDemuxPadAdded pad type=%s", name);
+
+		if (g_str_has_prefix(name, "video/"))
+		{
+			if (dvb_videosink)
+			{
+				GstPad *sinkpad = gst_element_get_static_pad(dvb_videosink, "sink");
+				if (GST_PAD_LINK_FAILED(gst_pad_link(pad, sinkpad)))
+				{
+					eDebug("[eServiceMP3] onDemuxPadAdded video link failed");
+				}
+				gst_object_unref(sinkpad);
+			}
+		}
+		else if (g_str_has_prefix(name, "audio/"))
+		{
+			if (dvb_audiosink)
+			{
+				GstPad *sinkpad = gst_element_get_static_pad(dvb_audiosink, "sink");
+				if (GST_PAD_LINK_FAILED(gst_pad_link(pad, sinkpad)))
+				{
+					eDebug("[eServiceMP3] onDemuxPadAdded audio link failed");
+				}
+				gst_object_unref(sinkpad);
+			}
+		}
+		else if (g_str_has_prefix(name, "text/") || g_str_has_prefix(name, "application/x-subtitle"))
+		{
+			if (dvb_subsink)
+			{
+				GstPad *sinkpad = gst_element_get_static_pad(dvb_subsink, "sink");
+				if (GST_PAD_LINK_FAILED(gst_pad_link(pad, sinkpad)))
+				{
+					eDebug("[eServiceMP3] onDemuxPadAdded subtitle link failed");
+				}
+				gst_object_unref(sinkpad);
+			}
+		}
+		gst_caps_unref(caps);
+	}
 }
 
 
