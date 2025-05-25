@@ -965,9 +965,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			return;
 		}
 
-		// Add source to pipeline
-		gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
-
 		//m_gst_source = gst_element_factory_make("adaptivedemux2", "dashmux");
 		// m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
 
@@ -978,35 +975,46 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			"download-buffering", TRUE,
 			"buffer-duration", (gint64)(10LL * GST_SECOND),    // 10s Buffer
 			"buffer-size", (guint64)(32LL * 1024LL * 1024LL),  // 32MB Buffer
+	        "use-buffering", TRUE,
 			NULL);
 
 		g_free(uri);
 		if (suburi != NULL)
 			g_free(suburi);
 
+
+		// Add sinks
+		if (dvb_audiosink) {
+			g_object_set(dvb_audiosink, "e2-sync", FALSE, NULL);
+			g_object_set(dvb_audiosink, "e2-async", FALSE, NULL);
+			gst_bin_add(GST_BIN(m_gst_pipeline), dvb_audiosink);
+		}
+
+		if (dvb_videosink) {
+			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
+			g_object_set(dvb_videosink, "e2-async", FALSE, NULL); 
+			gst_bin_add(GST_BIN(m_gst_pipeline), dvb_videosink);
+		}
+
+		// Add source to pipeline
+		gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
+
 		// Connect pad-added signal
 		g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(onDemuxPadAdded), this);
+
+		// Set pipeline state
+		GstStateChangeReturn ret = gst_element_set_state(m_gst_pipeline, GST_STATE_READY);
+		if (ret == GST_STATE_CHANGE_FAILURE) {
+			eDebug("[eServiceMP3] Failed to set pipeline to READY"); 
+			gst_object_unref(m_gst_pipeline);
+			return;
+		}
 
 
 	    // Connect bus messages
 		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_pipeline));
 		gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
 		gst_object_unref(bus);
-
-
-		/*
-		if (dvb_audiosink) {
-			gboolean audioMode = m_sourceinfo.is_audio;
-			g_object_set(dvb_audiosink, "e2-sync", audioMode, NULL);
-			g_object_set(dvb_audiosink, "e2-async", audioMode, NULL);
-		}
-
-		if (dvb_videosink && !m_sourceinfo.is_audio) {
-			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
-			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-		}
-		*/
-
 
 
 		/*
