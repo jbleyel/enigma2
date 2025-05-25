@@ -953,12 +953,24 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 	if(m_usepipeline)
 	{
 		m_gst_pipeline = gst_pipeline_new("hls-pipeline");
-		m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
+	    m_gst_source = gst_element_factory_make("adaptivedemux2", "dashmux");
+		// m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
+
+	    GstElement *parsebin = gst_element_factory_make("parsebin", NULL);
+
+		gst_bin_add_many(GST_BIN(m_gst_pipeline), m_gst_source, parsebin, NULL);
+		gst_element_link_many(m_gst_source, parsebin, NULL);
 
 		if (!m_gst_pipeline || !m_gst_source) {
 			eDebug("[eServiceMP3] Fehler beim Erstellen der Pipeline");
 			return;
 		}
+
+		// Buffer settings for adaptive streaming
+		g_object_set(G_OBJECT(m_gst_pipeline),
+			"buffer-size", (guint64)(32LL * 1024LL * 1024LL),  // 32MB Buffer
+			"buffer-duration", (gint64)(10LL * GST_SECOND),    // 10s Buffer
+			NULL);
 
 		if (dvb_audiosink) {
 			gboolean audioMode = m_sourceinfo.is_audio;
@@ -975,7 +987,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
 
 		g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(&eServiceMP3::onDemuxPadAdded), this);
-
+		
 		GstElement *queue = gst_element_factory_make("queue2", "buffer-queue");
 
 		if (queue) {
@@ -2698,6 +2710,21 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			}
 			else if ( err->domain == GST_RESOURCE_ERROR )
 			{
+				if(m_sourceinfo.is_dash)
+				{
+					switch(err->code)
+					{
+						case GST_RESOURCE_ERROR_NOT_FOUND:
+							eDebug("[eServiceMP3] Segment not found");
+							stop();
+							break;
+							
+						case GST_RESOURCE_ERROR_OPEN_READ:
+							eDebug("[eServiceMP3] Cannot open segment for reading"); 
+							stop();
+							break;
+					}
+				}
 				if ( err->code == GST_RESOURCE_ERROR_OPEN_READ || err->code == GST_RESOURCE_ERROR_READ )
 				{
 					stop();
@@ -3068,6 +3095,18 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 			break;
 		}
 		case GST_MESSAGE_BUFFERING:
+			if(m_sourceinfo.is_dash)
+			{
+				gint percent = 0;
+				gst_message_parse_buffering(msg, &percent);
+				if(percent < 100)
+					gst_element_set_state(m_gst_pipeline, GST_STATE_PAUSED);
+				else 
+					gst_element_set_state(m_gst_pipeline, GST_STATE_PLAYING);
+				
+				m_bufferInfo.bufferPercent = percent;
+				break;
+			}
 			if (m_sourceinfo.is_streaming)
 			{
 				//GstBufferingMode mode;
