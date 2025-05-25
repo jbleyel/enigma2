@@ -965,6 +965,19 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			return;
 		}
 
+		// Debug output um zu sehen ob dieser Code ausgeführt wird
+		eDebug("[eServiceMP3] Connecting pad-added signal for source");
+		
+		// Signal verbinden
+		g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(onDemuxPadAdded), this);
+		
+		// Verifizieren dass das Signal existiert
+		guint signal_id = g_signal_lookup("pad-added", G_OBJECT_TYPE(m_gst_source));
+		if (signal_id == 0)
+			eDebug("[eServiceMP3] pad-added signal not found!");
+		else
+			eDebug("[eServiceMP3] pad-added signal connected successfully");
+
 		//m_gst_source = gst_element_factory_make("adaptivedemux2", "dashmux");
 		// m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
 
@@ -996,8 +1009,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		// Add source to pipeline
 		gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
 
-		// Connect pad-added signal
-		g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(onDemuxPadAdded), this);
 
 		// Set pipeline state
 		GstStateChangeReturn ret = gst_element_set_state(m_gst_pipeline, GST_STATE_READY);
@@ -4261,10 +4272,11 @@ void eServiceMP3::saveCuesheet()
 	m_cuesheet_changed = 0;
 }
 
-void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data) {
-	eServiceMP3 *self = static_cast<eServiceMP3 *>(user_data);
-
+void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_data)
+{
 	eDebug("[eServiceMP3] onDemuxPadAdded");
+
+	eServiceMP3 *self = static_cast<eServiceMP3 *>(user_data);
 
 	GstCaps *caps = gst_pad_get_current_caps(pad);
 	if (!caps)
@@ -4272,51 +4284,52 @@ void eServiceMP3::onDemuxPadAdded(GstElement *demux, GstPad *pad, gpointer user_
 
 	if (caps)
 	{
+		gchar *caps_str = gst_caps_to_string(caps);
 		GstStructure *str = gst_caps_get_structure(caps, 0);
 		const gchar *name = gst_structure_get_name(str);
 
-		eDebug("[eServiceMP3] onDemuxPadAdded pad type=%s", name);
+		eDebug("[eServiceMP3] onDemuxPadAdded got caps: %s", caps_str);
+		g_free(caps_str);
 
 		if (g_str_has_prefix(name, "video/"))
 		{
 			if (dvb_videosink)
 			{
-				GstPad *sinkpad = gst_element_get_static_pad(dvb_videosink, "sink");
-				if (GST_PAD_LINK_FAILED(gst_pad_link(pad, sinkpad)))
+				if (!gst_bin_find(GST_BIN(self->m_gst_pipeline), GST_OBJECT_NAME(dvb_videosink)))
 				{
-					eDebug("[eServiceMP3] onDemuxPadAdded video link failed");
+					gst_bin_add(GST_BIN(self->m_gst_pipeline), dvb_videosink);
+					gst_element_sync_state_with_parent(dvb_videosink);
 				}
+				GstPad *sinkpad = gst_element_get_static_pad(dvb_videosink, "sink");
+				GstPadLinkReturn ret = gst_pad_link(pad, sinkpad);
 				gst_object_unref(sinkpad);
+				if (ret != GST_PAD_LINK_OK)
+					eDebug("[eServiceMP3] video pad link failed: %d", ret);
+				else
+					eDebug("[eServiceMP3] video pad linked successfully");
 			}
 		}
 		else if (g_str_has_prefix(name, "audio/"))
 		{
 			if (dvb_audiosink)
 			{
+				if (!gst_bin_find(GST_BIN(self->m_gst_pipeline), GST_OBJECT_NAME(dvb_audiosink)))
+				{
+					gst_bin_add(GST_BIN(self->m_gst_pipeline), dvb_audiosink);
+					gst_element_sync_state_with_parent(dvb_audiosink);
+				}
 				GstPad *sinkpad = gst_element_get_static_pad(dvb_audiosink, "sink");
-				if (GST_PAD_LINK_FAILED(gst_pad_link(pad, sinkpad)))
-				{
-					eDebug("[eServiceMP3] onDemuxPadAdded audio link failed");
-				}
+				GstPadLinkReturn ret = gst_pad_link(pad, sinkpad);
 				gst_object_unref(sinkpad);
-			}
-		}
-		else if (g_str_has_prefix(name, "text/") || g_str_has_prefix(name, "application/x-subtitle"))
-		{
-			if (dvb_subsink)
-			{
-				GstPad *sinkpad = gst_element_get_static_pad(dvb_subsink, "sink");
-				if (GST_PAD_LINK_FAILED(gst_pad_link(pad, sinkpad)))
-				{
-					eDebug("[eServiceMP3] onDemuxPadAdded subtitle link failed");
-				}
-				gst_object_unref(sinkpad);
+				if (ret != GST_PAD_LINK_OK)
+					eDebug("[eServiceMP3] audio pad link failed: %d", ret);
+				else
+					eDebug("[eServiceMP3] audio pad linked successfully");
 			}
 		}
 		gst_caps_unref(caps);
 	}
 }
-
 
 void eServiceMP3::onDecodePadAdded(GstElement *decodebin, GstPad *pad, gpointer user_data) {
     eServiceMP3* self = static_cast<eServiceMP3*>(user_data);
