@@ -209,6 +209,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
             if (!parse_timecode(start_str, start_ms)) continue;
             if (!parse_timecode(end_str, end_ms)) continue;
 
+			/*
 			if (vtt_mpegts_base > 0 && vtt_mpegts_base < 900000) {
 				const uint64_t local_mpegts_ms = vtt_mpegts_base / 90; // MPEGTS-Ticks (90 kHz) → ms
 				const int64_t delta = static_cast<int64_t>(local_mpegts_ms) - static_cast<int64_t>(local_offset_ms);
@@ -216,7 +217,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
 				start_ms += delta;
 				end_ms += delta;
 			}
-
+			*/
             expecting_text = true;
             continue;
         }
@@ -3522,13 +3523,14 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 					{
 						if (sub.vtt_mpegts_base)
 						{
-							uint64_t vtt_base_ms = sub.vtt_mpegts_base / 90;
-							int64_t offset = static_cast<int64_t>(decoder_ms) - static_cast<int64_t>(vtt_base_ms);
-							uint64_t adjusted_start = sub.start_time_ms + offset;
-							uint64_t adjusted_end = sub.end_time_ms + offset;
+
+							uint64_t vtt_base_ms = sub.vtt_mpegts_base / 90;  // MPEGTS (90kHz) → ms
+							uint64_t adjusted_start = sub.start_time_ms + vtt_base_ms;
+							uint64_t adjusted_end = sub.end_time_ms + vtt_base_ms;				
 
 							eDebug("[SUB RAW ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
 							eDebug("[SUB ADJ ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", adjusted_start, adjusted_end, sub.text.c_str());
+							eDebug("[DECODER ] decoder_ms = %llu", decoder_ms);
 
 							m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end,subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
 						}
