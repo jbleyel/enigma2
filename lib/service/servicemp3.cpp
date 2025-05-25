@@ -985,7 +985,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			g_free(suburi);
 
 		// Connect pad-added signal
-		g_signal_connect(parsebin, "pad-added", G_CALLBACK(onDemuxPadAdded), this);
+		g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(onDemuxPadAdded), this);
 
 
 	    // Connect bus messages
