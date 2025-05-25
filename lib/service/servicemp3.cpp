@@ -1003,13 +1003,18 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		*/
 
 	    // Set properties
-		g_object_set(G_OBJECT(source),
-			"uri", m_ref.path.c_str(),
+		g_object_set(G_OBJECT(m_gst_source),
+			"uri", uri,
 			"connection-speed", (guint64)4495000,
 			"download-buffering", TRUE,
 			"buffer-duration", (gint64)(10LL * GST_SECOND),    // 10s Buffer
 			"buffer-size", (guint64)(32LL * 1024LL * 1024LL),  // 32MB Buffer
 			NULL);
+
+		g_free(uri);
+		if (suburi != NULL)
+			g_free(suburi);
+
 
 		/*
 		
