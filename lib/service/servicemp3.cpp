@@ -3523,12 +3523,14 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 						if (sub.vtt_mpegts_base)
 						{
 							uint64_t vtt_base_ms = sub.vtt_mpegts_base / 90;
-							int64_t offset = static_cast<int64_t>(vtt_base_ms) - static_cast<int64_t>(decoder_ms);
+							int64_t offset = static_cast<int64_t>(decoder_ms) - static_cast<int64_t>(vtt_base_ms);
 							uint64_t adjusted_start = sub.start_time_ms + offset;
 							uint64_t adjusted_end = sub.end_time_ms + offset;
-							eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
-							eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", adjusted_start, adjusted_end, sub.text.c_str());
-							m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
+
+							eDebug("[SUB RAW ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
+							eDebug("[SUB ADJ ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", adjusted_start, adjusted_end, sub.text.c_str());
+
+							m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end,subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
 						}
 						else
 						{
