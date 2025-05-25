@@ -3509,7 +3509,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 				eDebug("SUB DEBUG line");
 				eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
-				uint64_t running_pts = 0, decoder_ms = 0;
+				pts_t running_pts = 0, decoder_ms;
 				if(m_is_live && m_sourceinfo.is_hls)
 				{
 					if (getPlayPosition(running_pts) == 0)
