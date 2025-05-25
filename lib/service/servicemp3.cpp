@@ -2862,7 +2862,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						}
 						gst_tag_list_free(tags);
 					}
-					if (audiometa.size() > i)
+					if ((int)audiometa.size() > i)
 					{
 						if (!audiometa[i].lang.empty())
 							audio.language_code = audiometa[i].lang;
@@ -3662,7 +3662,7 @@ void eServiceMP3::pushSubtitles()
 		eDebug("[eServiceMP3] *** push subtitles, clock stable");
 	}
 
-	eDebug("[eServiceMP3] pushSubtitles running_pts=%d", running_pts);
+	eDebug("[eServiceMP3] pushSubtitles running_pts=%lld", running_pts);
 	decoder_ms = running_pts / 90;
 	delay_ms = 0;
 
