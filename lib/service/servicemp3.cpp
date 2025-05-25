@@ -965,10 +965,21 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			return;
 		}
 
-		// Debug output um zu sehen ob dieser Code ausgeführt wird
-		eDebug("[eServiceMP3] Connecting pad-added signal for source");
+	    // Set properties
+		g_object_set(G_OBJECT(m_gst_source),
+			"uri", uri,
+			"connection-speed", (guint64)4495000,
+			"buffer-size", (gint)10 * 1024 * 1024, // 10MB,
+			NULL);
+
+		g_free(uri);
+		if (suburi != NULL)
+			g_free(suburi);
 		
-		// Signal verbinden
+		// Add source to pipeline 
+		gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
+
+		// Connect pad-added signal AFTER adding to pipeline
 		g_signal_connect(m_gst_source, "pad-added", G_CALLBACK(onDemuxPadAdded), this);
 		
 		// Verifizieren dass das Signal existiert
@@ -980,17 +991,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 
 		//m_gst_source = gst_element_factory_make("adaptivedemux2", "dashmux");
 		// m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
-
-	    // Set properties
-		g_object_set(G_OBJECT(m_gst_source),
-			"uri", uri,
-			"connection-speed", (guint64)4495000,
-			"buffer-size", (gint)10 * 1024 * 1024, // 10MB,
-			NULL);
-
-		g_free(uri);
-		if (suburi != NULL)
-			g_free(suburi);
 
 
 		// Add sinks
@@ -1006,9 +1006,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			gst_bin_add(GST_BIN(m_gst_pipeline), dvb_videosink);
 		}
 
-		// Add source to pipeline
-		gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
-
 
 		// Set pipeline state
 		GstStateChangeReturn ret = gst_element_set_state(m_gst_pipeline, GST_STATE_READY);
@@ -1018,12 +1015,12 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			return;
 		}
 
-
 	    // Connect bus messages
+		/*
 		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_pipeline));
 		gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
 		gst_object_unref(bus);
-
+		*/
 
 		/*
 		
