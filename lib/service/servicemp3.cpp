@@ -965,29 +965,34 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 			return;
 		}
 
+		// Add source to pipeline
+		gst_bin_add(GST_BIN(m_gst_pipeline), m_gst_source);
+
 		//m_gst_source = gst_element_factory_make("adaptivedemux2", "dashmux");
 		// m_gst_source = gst_element_factory_make("adaptivedemux2", "hlsdemux");
 
-	    GstElement *parsebin = gst_element_factory_make("parsebin", NULL);
-		if (!parsebin) {
-			eDebug("[eServiceMP3] Failed to create parsebin");
-			gst_object_unref(m_gst_source);
-			gst_object_unref(m_gst_pipeline);
-			return;
-		}
+	    // Set properties
+		g_object_set(G_OBJECT(m_gst_source),
+			"uri", uri,
+			"connection-speed", (guint64)4495000,
+			"download-buffering", TRUE,
+			"buffer-duration", (gint64)(10LL * GST_SECOND),    // 10s Buffer
+			"buffer-size", (guint64)(32LL * 1024LL * 1024LL),  // 32MB Buffer
+			NULL);
 
-		// Add elements to pipeline
-	    gst_bin_add_many(GST_BIN(m_gst_pipeline), m_gst_source, parsebin, NULL);
-
-		// Link elements
-		if (!gst_element_link(m_gst_source, parsebin)) {
-			eDebug("[eServiceMP3] Failed to link elements");
-			gst_object_unref(m_gst_pipeline);
-			return;
-		}
+		g_free(uri);
+		if (suburi != NULL)
+			g_free(suburi);
 
 		// Connect pad-added signal
 		g_signal_connect(parsebin, "pad-added", G_CALLBACK(onDemuxPadAdded), this);
+
+
+	    // Connect bus messages
+		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_pipeline));
+		gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
+		gst_object_unref(bus);
+
 
 		/*
 		if (dvb_audiosink) {
@@ -1002,18 +1007,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		}
 		*/
 
-	    // Set properties
-		g_object_set(G_OBJECT(m_gst_source),
-			"uri", uri,
-			"connection-speed", (guint64)4495000,
-			"download-buffering", TRUE,
-			"buffer-duration", (gint64)(10LL * GST_SECOND),    // 10s Buffer
-			"buffer-size", (guint64)(32LL * 1024LL * 1024LL),  // 32MB Buffer
-			NULL);
-
-		g_free(uri);
-		if (suburi != NULL)
-			g_free(suburi);
 
 
 		/*
@@ -1036,13 +1029,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		}
 		*/
 
-		// Set pipeline to READY state
-		GstStateChangeReturn ret = gst_element_set_state(m_gst_pipeline, GST_STATE_READY);
-		if (ret == GST_STATE_CHANGE_FAILURE) {
-			eDebug("[eServiceMP3] Failed to set pipeline to READY");
-			gst_object_unref(m_gst_pipeline);
-			return;
-		}
 	
 	}
 	else
