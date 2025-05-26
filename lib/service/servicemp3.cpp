@@ -3207,18 +3207,46 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 
 void eServiceMP3::handleMessage(GstMessage *msg)
 {
+    if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
+        gchar *debug;
+        GError *err;
+        gst_message_parse_error(msg, &err, &debug);
+        eDebug("[eServiceMP3] handleMessage: Error %s", err->message);
+        eDebug("[eServiceMP3] handleMessage: Debug info %s", debug);
+        g_error_free(err);
+        g_free(debug);
+		gst_message_unref(msg);
+    }
+    else if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_STATE_CHANGED) {
+        GstState old_state, new_state;
+        gst_message_parse_state_changed(msg, &old_state, &new_state, NULL);
+        eDebug("[eServiceMP3] handleMessage: State changed from %s to %s", 
+               gst_element_state_get_name(old_state),
+               gst_element_state_get_name(new_state));
+		
+		if (m_gst_playbin && GST_MESSAGE_SRC(msg) == GST_OBJECT(m_gst_playbin))
+			m_pump.send(new GstMessageContainer(1, msg, NULL, NULL));
+		else if (m_gst_pipeline && GST_MESSAGE_SRC(msg) == GST_OBJECT(m_gst_pipeline))
+			m_pump.send(new GstMessageContainer(1, msg, NULL, NULL));
+		else
+			gst_message_unref(msg);
+
+    }
+
+}
+/*
+void eServiceMP3::handleMessage(GstMessage *msg)
+{
 	if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_STATE_CHANGED && GST_MESSAGE_SRC(msg) != GST_OBJECT(m_gst_playbin))
 	{
-		/*
-		 * ignore verbose state change messages for all active elements;
-		 * we only need to handle state-change events for the playbin
-		 */
+		
+		// ignore verbose state change messages for all active elements we only need to handle state-change events for the playbin
 		gst_message_unref(msg);
 		return;
 	}
 	m_pump.send(new GstMessageContainer(1, msg, NULL, NULL));
 }
-
+*/
 GstBusSyncReply eServiceMP3::gstBusSyncHandler(GstBus *bus, GstMessage *message, gpointer user_data)
 {
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
