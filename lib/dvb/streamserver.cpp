@@ -75,6 +75,7 @@ void eStreamClient::notifier(int what)
 	{
 		rsn->stop();
 		stop();
+		eDebug("[eStreamClient] notifier connectionLost");
 		parent->connectionLost(this);
 		return;
 	}
@@ -136,6 +137,7 @@ void eStreamClient::notifier(int what)
 				const char *reply = "HTTP/1.0 401 Authorization Required\r\nWWW-Authenticate: Basic realm=\"streamserver\"\r\n\r\n";
 				writeAll(streamFd, reply, strlen(reply));
 				rsn->stop();
+				eDebug("[eStreamClient] notifier authenticated connectionLost");
 				parent->connectionLost(this);
 				return;
 			}
@@ -295,6 +297,7 @@ void eStreamClient::notifier(int what)
 		const char *reply = "HTTP/1.0 400 Bad Request\r\n\r\n";
 		writeAll(streamFd, reply, strlen(reply));
 		rsn->stop();
+		eDebug("[eStreamClient] notifier BAD connectionLost");
 		parent->connectionLost(this);
 		return;
 	}
@@ -305,6 +308,7 @@ void eStreamClient::stopStream()
 {
 	ePtr<eStreamClient> ref = this;
 	rsn->stop();
+	eDebug("[eStreamClient] stopStream connectionLost");
 	parent->connectionLost(this);
 }
 
@@ -356,7 +360,7 @@ void eStreamServer::newConnection(int socket)
 
 void eStreamServer::connectionLost(eStreamClient *client)
 {
-	eDebug("[eStreamServer] connectionLost");
+	eDebug("[eStreamServer] connectionLost client ref %s", client->getServiceref().c_str());
 	eSmartPtrList<eStreamClient>::iterator it = std::find(clients.begin(), clients.end(), client );
 	if (it != clients.end())
 	{
