@@ -75,7 +75,6 @@ void eStreamClient::notifier(int what)
 	{
 		rsn->stop();
 		stop();
-		eDebug("[eStreamClient] notifier connectionLost");
 		parent->connectionLost(this);
 		return;
 	}
@@ -137,7 +136,6 @@ void eStreamClient::notifier(int what)
 				const char *reply = "HTTP/1.0 401 Authorization Required\r\nWWW-Authenticate: Basic realm=\"streamserver\"\r\n\r\n";
 				writeAll(streamFd, reply, strlen(reply));
 				rsn->stop();
-				eDebug("[eStreamClient] notifier authenticated connectionLost");
 				parent->connectionLost(this);
 				return;
 			}
@@ -297,7 +295,6 @@ void eStreamClient::notifier(int what)
 		const char *reply = "HTTP/1.0 400 Bad Request\r\n\r\n";
 		writeAll(streamFd, reply, strlen(reply));
 		rsn->stop();
-		eDebug("[eStreamClient] notifier BAD connectionLost");
 		parent->connectionLost(this);
 		return;
 	}
@@ -308,7 +305,6 @@ void eStreamClient::stopStream()
 {
 	ePtr<eStreamClient> ref = this;
 	rsn->stop();
-	eDebug("[eStreamClient] stopStream connectionLost");
 	parent->connectionLost(this);
 }
 
@@ -367,7 +363,6 @@ void eStreamServer::connectionLost(eStreamClient *client)
 		if(serviceref.empty())
 			serviceref = it->getDVBService().toString();
         std::string client = it->getRemoteHost();
-		eDebug("[eStreamServer] connectionLost client %s / sref %s", client.c_str(), serviceref.c_str());
 		clients.erase(it);
 		streamStatusChanged(2,serviceref.c_str(), client.c_str());
 		eNavigation::getInstance()->removeStreamService(serviceref);
@@ -382,12 +377,10 @@ void eStreamServer::startStream(const std::string serviceref, const std::string 
 
 void eStreamServer::stopStream()
 {
-	eDebug("[eStreamServer] stopStream");
 	eSmartPtrList<eStreamClient>::iterator it = clients.begin();
 	if (it != clients.end())
 	{
 		streamStatusChanged(1,it->getServiceref().c_str(), it->getRemoteHost().c_str());
-		eDebug("[eStreamServer] stopStream %s", it->getServiceref().c_str());
 		eNavigation::getInstance()->removeStreamService(it->getServiceref());
 		it->stopStream();
 	}
@@ -395,10 +388,8 @@ void eStreamServer::stopStream()
 
 bool eStreamServer::stopStreamClient(const std::string remotehost, const std::string serviceref)
 {
-	eDebug("[eStreamServer] stopStreamClient remotehost %s / serviceref %s", remotehost.c_str(), serviceref.c_str());
 	for (eSmartPtrList<eStreamClient>::iterator it = clients.begin(); it != clients.end(); ++it)
 	{
-		eDebug("[eStreamServer] stopStreamClient it->getRemoteHost() %s / it->getServiceref() %s", it->getRemoteHost().c_str(), it->getServiceref().c_str());
 		if(it->getRemoteHost() == remotehost && it->getServiceref() == serviceref)
 		{
 			it->stopStream();

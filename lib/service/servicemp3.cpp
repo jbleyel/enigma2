@@ -1012,12 +1012,15 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 
 
 		// Set pipeline state
+
 		GstStateChangeReturn ret = gst_element_set_state(m_gst_pipeline, GST_STATE_READY);
 		if (ret == GST_STATE_CHANGE_FAILURE) {
 			eDebug("[eServiceMP3] Failed to set pipeline to READY"); 
 			gst_object_unref(m_gst_pipeline);
 			return;
 		}
+
+		ret = gst_element_set_state(m_gst_pipeline, GST_STATE_PLAYING);
 
 	    // Connect bus messages
 		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_pipeline));
