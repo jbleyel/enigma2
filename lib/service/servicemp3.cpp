@@ -3204,7 +3204,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 	}
 	g_free (sourceName);
 }
-
+/*
 void eServiceMP3::handleMessage(GstMessage *msg)
 {
     if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
@@ -3234,7 +3234,7 @@ void eServiceMP3::handleMessage(GstMessage *msg)
     }
 
 }
-/*
+*/
 void eServiceMP3::handleMessage(GstMessage *msg)
 {
 	if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_STATE_CHANGED && GST_MESSAGE_SRC(msg) != GST_OBJECT(m_gst_playbin))
@@ -3246,7 +3246,7 @@ void eServiceMP3::handleMessage(GstMessage *msg)
 	}
 	m_pump.send(new GstMessageContainer(1, msg, NULL, NULL));
 }
-*/
+
 GstBusSyncReply eServiceMP3::gstBusSyncHandler(GstBus *bus, GstMessage *message, gpointer user_data)
 {
 	eServiceMP3 *_this = (eServiceMP3*)user_data;
