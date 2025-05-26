@@ -995,14 +995,18 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 
 		// Add sinks
 		if (dvb_audiosink) {
-			g_object_set(dvb_audiosink, "e2-sync", FALSE, NULL);
-			g_object_set(dvb_audiosink, "e2-async", FALSE, NULL);
+			g_object_set(dvb_audiosink, "e2-sync", TRUE, NULL);
+			g_object_set(dvb_audiosink, "e2-async", TRUE, NULL);
+			g_object_set(dvb_audiosink, "sync", TRUE, NULL);
+			g_object_set(dvb_audiosink, "async", TRUE, NULL);
 			gst_bin_add(GST_BIN(m_gst_pipeline), dvb_audiosink);
 		}
 
 		if (dvb_videosink) {
-			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
-			g_object_set(dvb_videosink, "e2-async", FALSE, NULL); 
+			g_object_set(dvb_videosink, "e2-sync", TRUE, NULL);
+			g_object_set(dvb_videosink, "e2-async", TRUE, NULL); 
+			g_object_set(dvb_videosink, "sync", TRUE, NULL);
+			g_object_set(dvb_videosink, "async", TRUE, NULL); 
 			gst_bin_add(GST_BIN(m_gst_pipeline), dvb_videosink);
 		}
 

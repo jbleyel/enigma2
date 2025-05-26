@@ -361,6 +361,7 @@ void eStreamServer::newConnection(int socket)
 void eStreamServer::connectionLost(eStreamClient *client)
 {
 	eDebug("[eStreamServer] connectionLost client ref %s", client->getServiceref().c_str());
+	eDebug("[eStreamServer] connectionLost m_ref %s", client->getDVBService().toString().c_str());
 	eSmartPtrList<eStreamClient>::iterator it = std::find(clients.begin(), clients.end(), client );
 	if (it != clients.end())
 	{
