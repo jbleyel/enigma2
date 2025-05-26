@@ -1020,11 +1020,10 @@ eServiceMP3::eServiceMP3(eServiceReference ref):
 		}
 
 	    // Connect bus messages
-		/*
 		GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_pipeline));
 		gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
 		gst_object_unref(bus);
-		*/
+		
 
 		/*
 		

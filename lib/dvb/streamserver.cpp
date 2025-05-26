@@ -360,14 +360,14 @@ void eStreamServer::newConnection(int socket)
 
 void eStreamServer::connectionLost(eStreamClient *client)
 {
-	eDebug("[eStreamServer] connectionLost client ref %s", client->getServiceref().c_str());
-	eDebug("[eStreamServer] connectionLost m_ref %s", client->getDVBService().toString().c_str());
 	eSmartPtrList<eStreamClient>::iterator it = std::find(clients.begin(), clients.end(), client );
 	if (it != clients.end())
 	{
-		eDebug("[eStreamServer] connectionLost it->getServiceref() %s", it->getServiceref().c_str());
         std::string serviceref = it->getServiceref();
+		if(serviceref.empty())
+			serviceref = it->getDVBService().toString();
         std::string client = it->getRemoteHost();
+		eDebug("[eStreamServer] connectionLost client %s / sref %s", client.c_str(), serviceref.c_str());
 		clients.erase(it);
 		streamStatusChanged(2,serviceref.c_str(), client.c_str());
 		eNavigation::getInstance()->removeStreamService(serviceref);
