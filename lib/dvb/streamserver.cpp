@@ -356,9 +356,11 @@ void eStreamServer::newConnection(int socket)
 
 void eStreamServer::connectionLost(eStreamClient *client)
 {
+	eDebug("[eStreamServer] connectionLost");
 	eSmartPtrList<eStreamClient>::iterator it = std::find(clients.begin(), clients.end(), client );
 	if (it != clients.end())
 	{
+		eDebug("[eStreamServer] connectionLost it->getServiceref() %s", it->getServiceref().c_str());
         std::string serviceref = it->getServiceref();
         std::string client = it->getRemoteHost();
 		clients.erase(it);
@@ -375,10 +377,12 @@ void eStreamServer::startStream(const std::string serviceref, const std::string 
 
 void eStreamServer::stopStream()
 {
+	eDebug("[eStreamServer] stopStream");
 	eSmartPtrList<eStreamClient>::iterator it = clients.begin();
 	if (it != clients.end())
 	{
 		streamStatusChanged(1,it->getServiceref().c_str(), it->getRemoteHost().c_str());
+		eDebug("[eStreamServer] stopStream %s", it->getServiceref().c_str());
 		eNavigation::getInstance()->removeStreamService(it->getServiceref());
 		it->stopStream();
 	}
@@ -386,8 +390,10 @@ void eStreamServer::stopStream()
 
 bool eStreamServer::stopStreamClient(const std::string remotehost, const std::string serviceref)
 {
+	eDebug("[eStreamServer] stopStreamClient remotehost %s / serviceref %s", remotehost.c_str(), serviceref.c_str());
 	for (eSmartPtrList<eStreamClient>::iterator it = clients.begin(); it != clients.end(); ++it)
 	{
+		eDebug("[eStreamServer] stopStreamClient it->getRemoteHost() %s / it->getServiceref() %s", it->getRemoteHost().c_str(), it->getServiceref().c_str());
 		if(it->getRemoteHost() == remotehost && it->getServiceref() == serviceref)
 		{
 			it->stopStream();
