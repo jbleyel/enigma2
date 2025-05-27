@@ -3662,25 +3662,23 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 						
 						if (decoder_pts >= 0)
 						{
-							// Initialize reference PTS if not set
-							if (m_initial_decoder_pts < 0)
-							{
-								m_initial_decoder_pts = decoder_pts;
-								eDebug("[SUB] Initial decoder PTS: %" PRId64, m_initial_decoder_pts);
-							}
-
-							// Calculate relative to stream start
-							int64_t relative_mpegts = static_cast<int64_t>(sub.vtt_mpegts_base - m_initial_decoder_pts);
-							int64_t relative_decoder = decoder_pts - m_initial_decoder_pts;
+							// Both values are in 90kHz
+							const uint64_t pts_mask = (1ULL << 33) - 1;  // 33-bit mask
+							uint64_t mpegts = sub.vtt_mpegts_base & pts_mask;
+							uint64_t dec_pts = decoder_pts & pts_mask;
 							
-							// Now we can safely subtract
-							delta = relative_mpegts - relative_decoder;
+							// Calculate delta considering wraparound
+							delta = mpegts - dec_pts;
+							if (delta > ((1LL << 32)))  // More than half the PTS range
+								delta -= (1LL << 33);    // Wrapped forward
+							else if (delta < -((1LL << 32)))
+								delta += (1LL << 33);    // Wrapped backward
 							
-							// Convert delta to milliseconds for subtitle timing
+							// Convert to milliseconds
 							delta = delta / 90;
-
-							eDebug("[SUB DEBUG] mpegts=%" PRId64 " decoder=%" PRId64 " delta_ms=%" PRId64,
-								relative_mpegts, relative_decoder, delta);
+							
+							eDebug("[SUB DEBUG] mpegts=%" PRIu64 " decoder=%" PRIu64 " masked_mpegts=%" PRIu64 " masked_decoder=%" PRIu64 " delta_ms=%" PRId64,
+								sub.vtt_mpegts_base, decoder_pts, mpegts, dec_pts, delta);
 						}
 
 						int64_t adjusted_start = sub.start_time_ms + delta;
@@ -3689,7 +3687,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 						// Log for debugging
 						eDebug("[SUB RAW ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s",
 							   sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
-						eDebug("[SUB ADJ ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s",
+						eDebug("[SUB ADJ ] %" PRId64 " ms - %" PRId64 " ms:\n%s",
 							   adjusted_start, adjusted_end, sub.text.c_str());
 
 						m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end,subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
