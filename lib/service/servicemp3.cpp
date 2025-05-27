@@ -3812,7 +3812,7 @@ void eServiceMP3::pushSubtitles()
 		}
 	}
 
-	eDebug("[eServiceMP3] pushSubtitles running_pts=%lld", running_pts);
+	// eDebug("[eServiceMP3] pushSubtitles running_pts=%lld", running_pts);
 	decoder_ms = running_pts / 90;
 	delay_ms = 0;
 
@@ -3842,15 +3842,31 @@ void eServiceMP3::pushSubtitles()
 			convert_fps = subtitle_fps / (double)m_framerate;
 	}
 
+	eDebug("[eServiceMP3] pushSubtitles running_pts=%lld decoder_ms=%d delay=%d fps=%.2f", 
+		running_pts, decoder_ms, delay_ms, convert_fps);
+
 	for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++)
 	{
-		start_ms = (current->second.start_ms * convert_fps) + delay_ms;
-		end_ms = (current->second.end_ms * convert_fps) + delay_ms;
+		// For WebVTT subtitles, timestamps are already adjusted during parsing
+		if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT)
+		{
+			start_ms = current->second.start_ms;
+			end_ms = current->second.end_ms;
+		}
+		else
+		{
+			// For other subtitle types, apply fps conversion and delay
+			start_ms = (current->second.start_ms * convert_fps) + delay_ms;
+			end_ms = (current->second.end_ms * convert_fps) + delay_ms;
+		}
+
 		diff_start_ms = start_ms - decoder_ms;
 		diff_end_ms = end_ms - decoder_ms;
 
 #if 1
-		 eDebug("[eServiceMP3] *** next subtitle: decoder: %d start: %d, end: %d, duration_ms: %d, diff_start: %d, diff_end: %d : %s", decoder_ms, start_ms, end_ms, end_ms - start_ms, diff_start_ms, diff_end_ms, current->second.text.c_str());
+		eDebug("[eServiceMP3] *** next subtitle: decoder: %d start: %d, end: %d, duration_ms: %d, diff_start: %d, diff_end: %d : %s", 
+			decoder_ms, start_ms, end_ms, end_ms - start_ms, 
+			diff_start_ms, diff_end_ms, current->second.text.c_str());
 #endif
 
 		if (diff_end_ms < 0)
@@ -3867,7 +3883,6 @@ void eServiceMP3::pushSubtitles()
 		}
 
 		// showtime
-
 		if (m_subtitle_widget && !m_paused)
 		{
 			eDebug("[eServiceMP3] *** current sub actual, show!");
@@ -3880,7 +3895,7 @@ void eServiceMP3::pushSubtitles()
 			if (!m_subtitles_paused)
 				pango_page.m_timeout = end_ms - decoder_ms;		// take late start into account
 			else
-				pango_page.m_timeout = 60000;	//paused, subs must stay on (60s for now), avoid timeout in lib/gui/esubtitle.cpp: m_hide_subtitles_timer->start(m_pango_page.m_timeout, true);
+				pango_page.m_timeout = 60000;	//paused, subs must stay on (60s for now)
 
 			m_subtitle_widget->setPage(pango_page);
 		}
