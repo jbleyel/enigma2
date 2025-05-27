@@ -3825,7 +3825,9 @@ void eServiceMP3::pushSubtitles()
 	}
 
 	// eDebug("[eServiceMP3] pushSubtitles running_pts=%lld", running_pts);
-	decoder_ms = running_pts / 90;
+	// Handle PTS wrapping for decoder time
+	const uint64_t pts_mask = (1ULL << 33) - 1;
+	decoder_ms = (running_pts & pts_mask) / 90;
 	delay_ms = 0;
 
 #if 0
@@ -3854,7 +3856,7 @@ void eServiceMP3::pushSubtitles()
 			convert_fps = subtitle_fps / (double)m_framerate;
 	}
 
-	eDebug("[eServiceMP3] pushSubtitles running_pts=%lld decoder_ms=%d delay=%d fps=%.2f", 
+	eDebug("[eServiceMP3] pushSubtitles running_pts=%" PRId64 " decoder_ms=%d delay=%d fps=%.2f", 
 		running_pts, decoder_ms, delay_ms, convert_fps);
 
 	for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++)
@@ -3872,8 +3874,19 @@ void eServiceMP3::pushSubtitles()
 			end_ms = (current->second.end_ms * convert_fps) + delay_ms;
 		}
 
+		// Calculate differences considering PTS wrapping
 		diff_start_ms = start_ms - decoder_ms;
 		diff_end_ms = end_ms - decoder_ms;
+		
+		if (diff_start_ms > (1 << 31))
+			diff_start_ms -= (1LL << 32);
+		else if (diff_start_ms < -(1 << 31))
+			diff_start_ms += (1LL << 32);
+			
+		if (diff_end_ms > (1 << 31))
+			diff_end_ms -= (1LL << 32);
+		else if (diff_end_ms < -(1 << 31))
+			diff_end_ms += (1LL << 32);
 
 #if 1
 		eDebug("[eServiceMP3] *** next subtitle: decoder: %d start: %d, end: %d, duration_ms: %d, diff_start: %d, diff_end: %d : %s", 
