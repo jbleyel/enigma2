@@ -426,6 +426,7 @@ private:
 	GstElement *m_gst_pipeline = nullptr;
 	GstElement *m_gst_source = nullptr;
 
+	int64_t m_initial_decoder_pts = -1;
 
 };
 

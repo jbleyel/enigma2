@@ -3659,21 +3659,28 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 					{
 						int64_t decoder_pts = getLiveDecoderTime();
 						int64_t delta = 0;
+						
 						if (decoder_pts >= 0)
 						{
-							// Both decoder_pts and vtt_mpegts_base are in 90kHz
-							// Convert to signed values before subtraction to handle wraparound
-							int64_t mpegts_signed = static_cast<int64_t>(sub.vtt_mpegts_base);
-							delta = mpegts_signed - decoder_pts;
+							// Initialize reference PTS if not set
+							if (m_initial_decoder_pts < 0)
+							{
+								m_initial_decoder_pts = decoder_pts;
+								eDebug("[SUB] Initial decoder PTS: %" PRId64, m_initial_decoder_pts);
+							}
+
+							// Calculate relative to stream start
+							int64_t relative_mpegts = static_cast<int64_t>(sub.vtt_mpegts_base - m_initial_decoder_pts);
+							int64_t relative_decoder = decoder_pts - m_initial_decoder_pts;
 							
-							// Handle wraparound - if delta is more than half the PTS range, adjust it
-							if (delta > (1LL << 32))
-								delta -= (1LL << 33);
-							else if (delta < -(1LL << 32))
-								delta += (1LL << 33);
+							// Now we can safely subtract
+							delta = relative_mpegts - relative_decoder;
 							
 							// Convert delta to milliseconds for subtitle timing
 							delta = delta / 90;
+
+							eDebug("[SUB DEBUG] mpegts=%" PRId64 " decoder=%" PRId64 " delta_ms=%" PRId64,
+								relative_mpegts, relative_decoder, delta);
 						}
 
 						int64_t adjusted_start = sub.start_time_ms + delta;
