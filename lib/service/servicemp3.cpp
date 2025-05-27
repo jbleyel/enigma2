@@ -203,7 +203,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
 				std::string local_str = line.substr(local_pos);
 
 				vtt_mpegts_base = std::stoull(mpegts_str);
-				if (vtt_mpegts_base < 900000) // Ignore less than 900000
+				if (vtt_mpegts_base < 1000000) // Ignore less than 1000000
 					vtt_mpegts_base = 0;
 				parse_timecode(local_str, local_offset_ms);
 			}
@@ -1237,7 +1237,11 @@ eServiceMP3::~eServiceMP3()
 	{
 		g_signal_handler_disconnect (dvb_subsink, m_subs_to_pull_handler_id);
 		if (m_subtitle_widget)
+		{
+			int oldsubs = m_currentSubtitleStream;  // remember the last subtitle stream
 			disableSubtitles();
+			setCacheEntry(false, oldsubs);
+		}
 	}
 
 	if (m_gst_playbin)
