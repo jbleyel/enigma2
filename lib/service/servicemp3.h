@@ -415,6 +415,7 @@ private:
 	std::string m_extra_headers;
 	RESULT trickSeek(gdouble ratio);
 	ePtr<iTSMPEGDecoder> m_decoder; // for showSinglePic when radio
+	int64_t getLiveDecoderTime();
 
 	std::string m_external_subtitle_path;
 	std::string m_external_subtitle_language;

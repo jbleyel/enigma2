@@ -232,6 +232,8 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
 				continue;
 
 			// Apply timestamp mapping adjustment
+			// ignore for now
+			/*
 			if (vtt_mpegts_base > 0)
 			{
 				const uint64_t local_mpegts_ms = vtt_mpegts_base / 90; // MPEGTS-Ticks (90 kHz) → ms
@@ -240,7 +242,7 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
 				start_ms += delta;
 				end_ms += delta;
 			}
-
+			*/
 			expecting_text = true;
 			continue;
 		}
@@ -1890,6 +1892,18 @@ RESULT eServiceMP3::getPlayPosition(pts_t &pts)
 	pts = m_last_seek_pos;
 	eDebug("[eServiceMP3] current play pts = %" G_GINT64_FORMAT, pts);
 	return 0;
+}
+
+int64_t eServiceMP3::getLiveDecoderTime()
+{
+    gint64 pos = 0;
+    if (dvb_videosink)
+    {
+        g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
+        // pos will be in 90kHz clock rate
+        return pos;
+    }
+    return -1;
 }
 
 RESULT eServiceMP3::setTrickmode(int trick)
@@ -3632,60 +3646,34 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 
 			eDebug("SUB DEBUG line");
 			eDebug(">>>\n%s\n<<<", vtt_string.c_str());
-
-			// Use decoder clock as reference
-			uint64_t decoder_ms = 0;
-			pts_t running_pts = 0;
-			pts_t decoder_pts = 0;
-			// eDebug("[DEBUG] raw running_pts = %" PRIu64, running_pts);
-			if (getPlayPosition(running_pts) == 0)
-			{
-				if (running_pts > 1000000000ULL) // likely nanoseconds
-					decoder_ms = running_pts / 1000000ULL;
-				else if (running_pts > 90000) // likely 90kHz ticks
-					decoder_ms = running_pts / 90;
-				else // maybe already ms
-					decoder_ms = running_pts;
-
-				eDebug("[DEBUG] running_pts = %" PRIu64 ", decoder_ms = %" PRIu64, running_pts, decoder_ms);
-			}
-
-			else
-			{
-				eDebug("[eServiceMP3] getPlayPosition failed, skipping subtitle");
-				gst_buffer_unmap(buffer, &map);
-				return;
-			}
-
+	
 			if (parseWebVTT(vtt_string, parsed_subs))
 			{
 				for (const auto &sub : parsed_subs)
 				{
 					if (sub.vtt_mpegts_base)
 					{
+						int64_t decoder_pts = getLiveDecoderTime();
+						int64_t delta = 0;
+						if (decoder_pts >= 0)
+						{
+							// Both decoder_pts and vtt_mpegts_base are in 90kHz
+							delta = static_cast<int64_t>(sub.vtt_mpegts_base) - decoder_pts;
+							
+							// Convert delta to milliseconds for subtitle timing
+							delta = delta / 90;
+						}
 
-						/*uint64_t adjusted_start = sub.start_time_ms;
-						uint64_t adjusted_end = sub.end_time_ms;*/
-						int64_t adjusted_start = static_cast<int64_t>(sub.start_time_ms) - 9000;
-						int64_t adjusted_end = static_cast<int64_t>(sub.end_time_ms) - 9000;
-						// Skip expired subtitles
-						if (adjusted_end <= decoder_ms)
-							continue;
-
-						// Clamp to max 3 seconds if needed
-						if (adjusted_end - adjusted_start > 3000)
-							adjusted_end = adjusted_start + 3000;
+						int64_t adjusted_start = sub.start_time_ms + delta;
+						int64_t adjusted_end = sub.end_time_ms + delta;
 
 						// Log for debugging
 						eDebug("[SUB RAW ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s",
 							   sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
 						eDebug("[SUB ADJ ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s",
 							   adjusted_start, adjusted_end, sub.text.c_str());
-						eDebug("[DECODER ] decoder_ms = %" PRIu64, decoder_ms);
 
-						m_subtitle_pages.insert(subtitle_pages_map_pair_t(
-							adjusted_end,
-							subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
+						m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end,subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
 					}
 					else
 					{
