@@ -113,72 +113,88 @@ struct audioMeta {
     std::string title;
 };
 
-std::vector<audioMeta> parse_hls_audio_meta(const std::string& filename) {
-    std::ifstream file(filename);
-    std::vector<audioMeta> tracks;
-    std::string line;
-    audioMeta current;
+std::vector<audioMeta> parse_hls_audio_meta(const std::string &filename)
+{
+	std::ifstream file(filename);
+	std::vector<audioMeta> tracks;
+	std::string line;
+	audioMeta current;
 
 	if (!file.good())
 		return tracks;
 
-    while (std::getline(file, line)) {
-        if (line == "---") {
-            tracks.push_back(current);
-            current = audioMeta(); // reset
-        } else {
-            size_t eq_pos = line.find('=');
-            if (eq_pos != std::string::npos) {
-                std::string key = line.substr(0, eq_pos);
-                std::string value = line.substr(eq_pos + 1);
-                if (key == "index") current.index = std::stoi(value);
-                else if (key == "lang") current.lang = value;
-                else if (key == "title") current.title = value;
-            }
-        }
-    }
+	while (std::getline(file, line))
+	{
+		if (line == "---")
+		{
+			tracks.push_back(current);
+			current = audioMeta(); // reset
+		}
+		else
+		{
+			size_t eq_pos = line.find('=');
+			if (eq_pos != std::string::npos)
+			{
+				std::string key = line.substr(0, eq_pos);
+				std::string value = line.substr(eq_pos + 1);
+				if (key == "index")
+					current.index = std::stoi(value);
+				else if (key == "lang")
+					current.lang = value;
+				else if (key == "title")
+					current.title = value;
+			}
+		}
+	}
 
-    if (!current.title.empty())
-        tracks.push_back(current);
+	if (!current.title.empty())
+		tracks.push_back(current);
 
-    return tracks;
+	return tracks;
 }
 
-
-
-struct SubtitleEntry {
-    uint64_t start_time_ms;
-    uint64_t end_time_ms;
+struct SubtitleEntry
+{
+	uint64_t start_time_ms;
+	uint64_t end_time_ms;
 	uint64_t vtt_mpegts_base;
-    std::string text;
+	std::string text;
 };
 
-static bool parse_timecode(const std::string &s, uint64_t &ms_out) {
-    unsigned h = 0, m = 0, sec = 0, ms = 0;
-    if (sscanf(s.c_str(), "%u:%u:%u.%u", &h, &m, &sec, &ms) == 4) {
-        ms_out = ((h * 3600 + m * 60 + sec) * 1000 + ms);
-        return true;
-    }
-    return false;
+static bool parse_timecode(const std::string &s, uint64_t &ms_out)
+{
+	unsigned h = 0, m = 0, sec = 0, ms = 0;
+	if (sscanf(s.c_str(), "%u:%u:%u.%u", &h, &m, &sec, &ms) == 4)
+	{
+		ms_out = ((h * 3600 + m * 60 + sec) * 1000 + ms);
+		return true;
+	}
+	return false;
 }
 
-bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_out) {
-    std::istringstream stream(vtt_data);
-    std::string line;
+bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_out)
+{
+	std::istringstream stream(vtt_data);
+	std::string line;
 
-    std::string current_text;
-    uint64_t start_ms = 0, end_ms = 0, vtt_mpegts_base = 0, local_offset_ms = 0;
+	std::string current_text;
+	uint64_t start_ms = 0, end_ms = 0, vtt_mpegts_base = 0, local_offset_ms = 0;
 	bool expecting_text = false;
 
-    while (std::getline(stream, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line.empty()) continue;
+	while (std::getline(stream, line))
+	{
+		if (!line.empty() && line.back() == '\r')
+			line.pop_back();
+		if (line.empty())
+			continue;
 
-		if (line.rfind("X-TIMESTAMP-MAP=", 0) == 0) {
+		if (line.rfind("X-TIMESTAMP-MAP=", 0) == 0)
+		{
 			size_t mpegts_pos = line.find("MPEGTS:");
 			size_t local_pos = line.find("LOCAL:");
 
-			if (mpegts_pos != std::string::npos && local_pos != std::string::npos) {
+			if (mpegts_pos != std::string::npos && local_pos != std::string::npos)
+			{
 				mpegts_pos += 7;
 				local_pos += 6;
 
@@ -187,63 +203,71 @@ bool parseWebVTT(const std::string &vtt_data, std::vector<SubtitleEntry> &subs_o
 				std::string local_str = line.substr(local_pos);
 
 				vtt_mpegts_base = std::stoull(mpegts_str);
+				if (vtt_mpegts_base < 900000) // Ignore less than 900000
+					vtt_mpegts_base = 0;
 				parse_timecode(local_str, local_offset_ms);
 			}
 			continue;
 		}
 
-        if (line.find("-->") != std::string::npos) {
-            if (!current_text.empty()) {
-                SubtitleEntry entry;
-                entry.start_time_ms = start_ms;
-                entry.end_time_ms = end_ms;
+		if (line.find("-->") != std::string::npos)
+		{
+			if (!current_text.empty())
+			{
+				SubtitleEntry entry;
+				entry.start_time_ms = start_ms;
+				entry.end_time_ms = end_ms;
 				entry.vtt_mpegts_base = vtt_mpegts_base;
-                entry.text = current_text;
-                subs_out.push_back(entry);
-                current_text.clear();
-            }
+				entry.text = current_text;
+				subs_out.push_back(entry);
+				current_text.clear();
+			}
 
-            size_t arrow = line.find("-->");
-            std::string start_str = line.substr(0, arrow);
-            std::string end_str = line.substr(arrow + 3);
-            if (!parse_timecode(start_str, start_ms)) continue;
-            if (!parse_timecode(end_str, end_ms)) continue;
+			size_t arrow = line.find("-->");
+			std::string start_str = line.substr(0, arrow);
+			std::string end_str = line.substr(arrow + 3);
+			if (!parse_timecode(start_str, start_ms))
+				continue;
+			if (!parse_timecode(end_str, end_ms))
+				continue;
 
-			/*
-			if (vtt_mpegts_base > 0 && vtt_mpegts_base < 900000) {
+			// Apply timestamp mapping adjustment
+			if (vtt_mpegts_base > 0)
+			{
 				const uint64_t local_mpegts_ms = vtt_mpegts_base / 90; // MPEGTS-Ticks (90 kHz) → ms
 				const int64_t delta = static_cast<int64_t>(local_mpegts_ms) - static_cast<int64_t>(local_offset_ms);
 
 				start_ms += delta;
 				end_ms += delta;
 			}
-			*/
-            expecting_text = true;
-            continue;
-        }
 
-        if (!expecting_text || line.find_first_not_of("0123456789") == std::string::npos)
-            continue;
+			expecting_text = true;
+			continue;
+		}
 
-        if (expecting_text) {
-            if (!current_text.empty())
-                current_text += "\n";
-            current_text += line;
-        }
-    }
+		if (!expecting_text || line.find_first_not_of("0123456789") == std::string::npos)
+			continue;
 
-    if (!current_text.empty()) {
-        SubtitleEntry entry;
-        entry.start_time_ms = start_ms;
-        entry.end_time_ms = end_ms;
+		if (expecting_text)
+		{
+			if (!current_text.empty())
+				current_text += "\n";
+			current_text += line;
+		}
+	}
+
+	if (!current_text.empty())
+	{
+		SubtitleEntry entry;
+		entry.start_time_ms = start_ms;
+		entry.end_time_ms = end_ms;
 		entry.vtt_mpegts_base = vtt_mpegts_base;
-        entry.text = current_text;
-        subs_out.push_back(entry);
-    }
+		entry.text = current_text;
+		subs_out.push_back(entry);
+	}
 
-    return !subs_out.empty();
+	return !subs_out.empty();
 }
-
 
 // eServiceFactoryMP3
 
@@ -3598,102 +3622,120 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 	{
 		GstMapInfo map;
 		if (!gst_buffer_map(buffer, &map, GST_MAP_READ))
-		{
-			// eDebug("[eServiceMP3] pullSubtitle gst_buffer_map failed");
 			return;
-		}
-		int64_t buf_pos = GST_BUFFER_PTS(buffer);
-		size_t len = map.size;
-		// eDebug("[eServiceMP3] gst_buffer_get_size %zu map.size %zu", gst_buffer_get_size(buffer), len);
-		int64_t duration_ns = GST_BUFFER_DURATION(buffer);
 		int subType = m_subtitleStreams[m_currentSubtitleStream].type;
-		// eDebug("[eServiceMP3] pullSubtitle type=%d size=%zu", subType, len);
-		if (subType)
+		if (subType == stWebVTT)
 		{
-			if (subType == stWebVTT)
+
+			std::string vtt_string(reinterpret_cast<char *>(map.data), map.size);
+			std::vector<SubtitleEntry> parsed_subs;
+
+			eDebug("SUB DEBUG line");
+			eDebug(">>>\n%s\n<<<", vtt_string.c_str());
+
+			// Use decoder clock as reference
+			uint64_t decoder_ms = 0;
+			pts_t running_pts = 0;
+			pts_t decoder_pts = 0;
+			// eDebug("[DEBUG] raw running_pts = %" PRIu64, running_pts);
+			if (getPlayPosition(running_pts) == 0)
 			{
+				if (running_pts > 1000000000ULL) // likely nanoseconds
+					decoder_ms = running_pts / 1000000ULL;
+				else if (running_pts > 90000) // likely 90kHz ticks
+					decoder_ms = running_pts / 90;
+				else // maybe already ms
+					decoder_ms = running_pts;
 
-				std::string vtt_string(reinterpret_cast<char *>(map.data), len);
-				std::vector<SubtitleEntry> parsed_subs;
+				eDebug("[DEBUG] running_pts = %" PRIu64 ", decoder_ms = %" PRIu64, running_pts, decoder_ms);
+			}
 
-				eDebug("SUB DEBUG line");
-				eDebug(">>>\n%s\n<<<", vtt_string.c_str());
+			else
+			{
+				eDebug("[eServiceMP3] getPlayPosition failed, skipping subtitle");
+				gst_buffer_unmap(buffer, &map);
+				return;
+			}
 
-				pts_t running_pts = 0, decoder_ms;
-				if(m_is_live && m_sourceinfo.is_hls)
+			if (parseWebVTT(vtt_string, parsed_subs))
+			{
+				for (const auto &sub : parsed_subs)
 				{
-					if (getPlayPosition(running_pts) == 0)
-						decoder_ms = running_pts / 90;
-				} 
-
-				if (parseWebVTT(vtt_string, parsed_subs))
-				{
-					for (const auto &sub : parsed_subs)
+					if (sub.vtt_mpegts_base)
 					{
-						if (sub.vtt_mpegts_base)
-						{
 
-							uint64_t vtt_base_ms = sub.vtt_mpegts_base / 90;  // MPEGTS (90kHz) → ms
-							uint64_t adjusted_start = sub.start_time_ms + vtt_base_ms;
-							uint64_t adjusted_end = sub.end_time_ms + vtt_base_ms;				
+						/*uint64_t adjusted_start = sub.start_time_ms;
+						uint64_t adjusted_end = sub.end_time_ms;*/
+						int64_t adjusted_start = static_cast<int64_t>(sub.start_time_ms) - 9000;
+						int64_t adjusted_end = static_cast<int64_t>(sub.end_time_ms) - 9000;
+						// Skip expired subtitles
+						if (adjusted_end <= decoder_ms)
+							continue;
 
-							eDebug("[SUB RAW ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
-							eDebug("[SUB ADJ ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", adjusted_start, adjusted_end, sub.text.c_str());
-							eDebug("[DECODER ] decoder_ms = %llu", decoder_ms);
+						// Clamp to max 3 seconds if needed
+						if (adjusted_end - adjusted_start > 3000)
+							adjusted_end = adjusted_start + 3000;
 
-							m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end,subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
-						}
-						else
-						{
-							eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
-							m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
-						}
+						// Log for debugging
+						eDebug("[SUB RAW ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s",
+							   sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
+						eDebug("[SUB ADJ ] %" PRIu64 " ms - %" PRIu64 " ms:\n%s",
+							   adjusted_start, adjusted_end, sub.text.c_str());
+						eDebug("[DECODER ] decoder_ms = %" PRIu64, decoder_ms);
+
+						m_subtitle_pages.insert(subtitle_pages_map_pair_t(
+							adjusted_end,
+							subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
 					}
-					if (!parsed_subs.empty())
-						m_subtitle_sync_timer->start(1, true);
+					else
+					{
+						eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
+						m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
+					}
 				}
+				if (!parsed_subs.empty())
+					m_subtitle_sync_timer->start(250, true);
 			}
-			else if (subType == stDVB)
+		}
+		else if (subType == stDVB)
+		{
+			uint8_t *data = map.data;
+			int64_t buf_pos = GST_BUFFER_PTS(buffer);
+			m_dvb_subtitle_parser->processBuffer(data, map.size, buf_pos / 1000000ULL);
+		}
+		else if (subType < stVOB)
+		{
+			int delay_ms = eSubtitleSettings::pango_subtitles_delay / 90;
+			int subtitle_fps = eSubtitleSettings::pango_subtitles_fps;
+
+			[[maybe_unused]] double convert_fps = 1.0;
+			if (subtitle_fps > 1 && m_framerate > 0)
+				convert_fps = subtitle_fps / (double)m_framerate;
+
+			std::string line(reinterpret_cast<char *>(map.data), map.size);
+
+			uint32_t start_ms = GST_BUFFER_PTS(buffer) / 1000000ULL;
+			uint32_t duration = GST_BUFFER_DURATION(buffer) / 1000000ULL;
+			uint32_t end_ms = start_ms + duration;
+			// eDebug("[eServiceMP3] got new text subtitle @ start_ms=%d / dur=%d: '%s' ", start_ms, duration, line.c_str());
+
+			if (delay_ms > 0)
 			{
-				uint8_t *data = map.data;
-				m_dvb_subtitle_parser->processBuffer(data, len, buf_pos / 1000000ULL);
+				// eDebug("[eServiceMP3] sub title delay add is %d", delay_ms);
+				start_ms += delay_ms;
+				end_ms += delay_ms;
 			}
-			else if (subType < stVOB)
+			else if (delay_ms < 0)
 			{
-				int delay_ms = eSubtitleSettings::pango_subtitles_delay / 90;
-				int subtitle_fps = eSubtitleSettings::pango_subtitles_fps;
-
-				[[maybe_unused]] double convert_fps = 1.0;
-				if (subtitle_fps > 1 && m_framerate > 0)
-					convert_fps = subtitle_fps / (double)m_framerate;
-
-				std::string line((const char *)map.data, len);
-				// eDebug("[eServiceMP3] got new text subtitle @ buf_pos = %lld ns (in pts=%lld), dur=%lld: '%s' ", buf_pos, buf_pos/11111, duration_ns, line.c_str());
-
-				uint32_t start_ms = buf_pos / 1000000ULL;
-				uint32_t end_ms = start_ms + (duration_ns / 1000000ULL);
-				if (delay_ms > 0)
+				if (start_ms >= (uint32_t)(delay_ms * -1))
 				{
-					// eDebug("[eServiceMP3] sub title delay add is %d", delay_ms);
+					// eDebug("[eServiceMP3] sub title delay substract is %d", delay_ms);
 					start_ms += delay_ms;
 					end_ms += delay_ms;
 				}
-				else if (delay_ms < 0)
-				{
-					if (start_ms >= (uint32_t)(delay_ms * -1))
-					{
-						// eDebug("[eServiceMP3] sub title delay substract is %d", delay_ms);
-						start_ms += delay_ms;
-						end_ms += delay_ms;
-					}
-				}
-				m_subtitle_pages.insert(subtitle_pages_map_pair_t(end_ms, subtitle_page_t(start_ms, end_ms, line)));
-				m_subtitle_sync_timer->start(1, true);
 			}
-			else
-			{
-				// eDebug("[eServiceMP3] unsupported subpicture... ignoring");
-			}
+			m_subtitle_pages.insert(subtitle_pages_map_pair_t(end_ms, subtitle_page_t(start_ms, end_ms, line)));
+			m_subtitle_sync_timer->start(250, true);
 		}
 		gst_buffer_unmap(buffer, &map);
 	}
