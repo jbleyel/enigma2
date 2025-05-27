@@ -1346,7 +1346,7 @@ DEFINE_REF(GstMessageContainer);
 
 void eServiceMP3::setCacheEntry(bool isAudio, int pid)
 {
-	// eDebug("[eServiceMP3] setCacheEntry %d %d / %s", isAudio, pid, m_ref.toString().c_str());
+	eDebug("[eServiceMP3] setCacheEntry %d %d / %s", isAudio, pid, m_ref.toString().c_str());
 	std::string ref = replace_all(m_ref.toString(), ",", "_");
 	bool hasFoundItem = false;
 	std::vector<ePtr<eDVBService>> &iptv_services = eDVBDB::getInstance()->iptv_services;
