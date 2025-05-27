@@ -3782,27 +3782,39 @@ void eServiceMP3::pushSubtitles()
 	int32_t next_timer = 0, decoder_ms, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
 	double convert_fps = 1.0;
 	subtitle_pages_map_t::iterator current;
-	// wait until clock is stable.
-	if (getPlayPosition(running_pts) < 0)
-		m_decoder_time_valid_state = 0;
-	if (m_decoder_time_valid_state == 0)
-		m_decoder_time_valid_state = 2;
-	else
-		m_decoder_time_valid_state = 4;
 
-	if (m_decoder_time_valid_state < 4)
+	// For live streams, get decoder time directly from videosink
+	if (m_is_live && dvb_videosink)
 	{
-		m_decoder_time_valid_state++;
+		gint64 pos = 0;
+		g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
+		running_pts = pos;
+		m_decoder_time_valid_state = 4; // Consider clock stable for live streams
+	}
+	else
+	{
+		// Original VOD logic
+		if (getPlayPosition(running_pts) < 0)
+			m_decoder_time_valid_state = 0;
+		if (m_decoder_time_valid_state == 0)
+			m_decoder_time_valid_state = 2;
+		else
+			m_decoder_time_valid_state = 4;
 
 		if (m_decoder_time_valid_state < 4)
 		{
-			eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
-			m_prev_decoder_time = running_pts;
-			next_timer = 100;
-			goto exit;
-		}
+			m_decoder_time_valid_state++;
 
-		eDebug("[eServiceMP3] *** push subtitles, clock stable");
+			if (m_decoder_time_valid_state < 4)
+			{
+				eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
+				m_prev_decoder_time = running_pts;
+				next_timer = 100;
+				goto exit;
+			}
+
+			eDebug("[eServiceMP3] *** push subtitles, clock stable");
+		}
 	}
 
 	eDebug("[eServiceMP3] pushSubtitles running_pts=%lld", running_pts);
