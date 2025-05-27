@@ -3662,7 +3662,15 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 						if (decoder_pts >= 0)
 						{
 							// Both decoder_pts and vtt_mpegts_base are in 90kHz
-							delta = static_cast<int64_t>(sub.vtt_mpegts_base) - decoder_pts;
+							// Convert to signed values before subtraction to handle wraparound
+							int64_t mpegts_signed = static_cast<int64_t>(sub.vtt_mpegts_base);
+							delta = mpegts_signed - decoder_pts;
+							
+							// Handle wraparound - if delta is more than half the PTS range, adjust it
+							if (delta > (1LL << 32))
+								delta -= (1LL << 33);
+							else if (delta < -(1LL << 32))
+								delta += (1LL << 33);
 							
 							// Convert delta to milliseconds for subtitle timing
 							delta = delta / 90;
@@ -3697,13 +3705,6 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 		}
 		else if (subType < stVOB)
 		{
-			int delay_ms = eSubtitleSettings::pango_subtitles_delay / 90;
-			int subtitle_fps = eSubtitleSettings::pango_subtitles_fps;
-
-			[[maybe_unused]] double convert_fps = 1.0;
-			if (subtitle_fps > 1 && m_framerate > 0)
-				convert_fps = subtitle_fps / (double)m_framerate;
-
 			std::string line(reinterpret_cast<char *>(map.data), map.size);
 
 			uint32_t start_ms = GST_BUFFER_PTS(buffer) / 1000000ULL;
@@ -3711,21 +3712,6 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 			uint32_t end_ms = start_ms + duration;
 			// eDebug("[eServiceMP3] got new text subtitle @ start_ms=%d / dur=%d: '%s' ", start_ms, duration, line.c_str());
 
-			if (delay_ms > 0)
-			{
-				// eDebug("[eServiceMP3] sub title delay add is %d", delay_ms);
-				start_ms += delay_ms;
-				end_ms += delay_ms;
-			}
-			else if (delay_ms < 0)
-			{
-				if (start_ms >= (uint32_t)(delay_ms * -1))
-				{
-					// eDebug("[eServiceMP3] sub title delay substract is %d", delay_ms);
-					start_ms += delay_ms;
-					end_ms += delay_ms;
-				}
-			}
 			m_subtitle_pages.insert(subtitle_pages_map_pair_t(end_ms, subtitle_page_t(start_ms, end_ms, line)));
 			m_subtitle_sync_timer->start(250, true);
 		}
