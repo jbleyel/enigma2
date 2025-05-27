@@ -3673,14 +3673,22 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 								base_mpegts = mpegts;
 							
 							// Calculate delta relative to first fragment
-							delta = (mpegts - base_mpegts) - dec_pts;
-							if (delta > ((1LL << 32)))  // More than half the PTS range
-								delta -= (1LL << 33);    // Wrapped forward
-							else if (delta < -((1LL << 32)))
-								delta += (1LL << 33);    // Wrapped backward
+							int64_t mpegts_diff = mpegts - base_mpegts;
+							int64_t pts_diff = dec_pts - (base_mpegts & pts_mask);
 							
-							// Convert to milliseconds
-							delta = delta / 90;
+							// Handle PTS wrapping
+							if (mpegts_diff > (1LL << 32))  // More than half the PTS range
+								mpegts_diff -= (1LL << 33);    // Wrapped forward
+							else if (mpegts_diff < -(1LL << 32))
+								mpegts_diff += (1LL << 33);    // Wrapped backward
+								
+							if (pts_diff > (1LL << 32))
+								pts_diff -= (1LL << 33);
+							else if (pts_diff < -(1LL << 32))
+								pts_diff += (1LL << 33);
+								
+							// Final delta in milliseconds
+							delta = (mpegts_diff - pts_diff) / 90;
 							
 							eDebug("[SUB DEBUG] base_mpegts=%" PRIu64 " mpegts=%" PRIu64 " decoder=%" PRIu64 " masked_mpegts=%" PRIu64 " masked_decoder=%" PRIu64 " delta_ms=%" PRId64,
 								base_mpegts, mpegts, decoder_pts, mpegts & pts_mask, dec_pts & pts_mask, delta);
