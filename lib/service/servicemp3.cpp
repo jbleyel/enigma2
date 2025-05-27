@@ -3653,6 +3653,7 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 			if (parseWebVTT(vtt_string, parsed_subs))
 			{
 				static int64_t base_mpegts = -1;  // Store first MPEGTS as base
+				static int64_t base_decoder_pts = -1; // Store first decoder PTS
 				
 				for (const auto &sub : parsed_subs)
 				{
@@ -3668,34 +3669,38 @@ void eServiceMP3::pullSubtitle(GstBuffer *buffer)
 							uint64_t mpegts = sub.vtt_mpegts_base & pts_mask;
 							uint64_t dec_pts = decoder_pts & pts_mask;
 							
-							// Store first MPEGTS timestamp as base
+							// Initialize base values on first subtitle
 							if (base_mpegts == -1)
+							{
 								base_mpegts = mpegts;
+								base_decoder_pts = dec_pts;
+							}
 							
-							// Calculate delta relative to first fragment
-							int64_t mpegts_diff = mpegts - base_mpegts;
-							int64_t pts_diff = dec_pts - (base_mpegts & pts_mask);
+							// Calculate relative offsets from base values
+							int64_t mpegts_offset = mpegts - base_mpegts;
+							int64_t decoder_offset = dec_pts - base_decoder_pts;
 							
-							// Handle PTS wrapping
-							if (mpegts_diff > (1LL << 32))  // More than half the PTS range
-								mpegts_diff -= (1LL << 33);    // Wrapped forward
-							else if (mpegts_diff < -(1LL << 32))
-								mpegts_diff += (1LL << 33);    // Wrapped backward
+							// Handle PTS wrapping for both offsets
+							if (mpegts_offset > (1LL << 32))
+								mpegts_offset -= (1LL << 33);
+							else if (mpegts_offset < -(1LL << 32))
+								mpegts_offset += (1LL << 33);
 								
-							if (pts_diff > (1LL << 32))
-								pts_diff -= (1LL << 33);
-							else if (pts_diff < -(1LL << 32))
-								pts_diff += (1LL << 33);
-								
-							// Final delta in milliseconds
-							delta = (mpegts_diff - pts_diff) / 90;
+							if (decoder_offset > (1LL << 32))
+								decoder_offset -= (1LL << 33);
+							else if (decoder_offset < -(1LL << 32))
+								decoder_offset += (1LL << 33);
+							
+							// Calculate time difference in milliseconds
+							delta = (mpegts_offset - decoder_offset) / 90;
 							
 							eDebug("[SUB DEBUG] base_mpegts=%" PRIu64 " mpegts=%" PRIu64 " decoder=%" PRIu64 " masked_mpegts=%" PRIu64 " masked_decoder=%" PRIu64 " delta_ms=%" PRId64,
 								base_mpegts, mpegts, decoder_pts, mpegts & pts_mask, dec_pts & pts_mask, delta);
 						}
 
-						int64_t adjusted_start = sub.start_time_ms + delta;
-						int64_t adjusted_end = sub.end_time_ms + delta;
+						// Ensure we don't get negative timestamps
+						int64_t adjusted_start = std::max<int64_t>(0, sub.start_time_ms + delta);
+						int64_t adjusted_end = std::max<int64_t>(adjusted_start + 1, sub.end_time_ms + delta);
 
 						m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
 					}
