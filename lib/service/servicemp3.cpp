@@ -3504,7 +3504,6 @@ void eServiceMP3::pushSubtitles() {
                 diff_start_ms -= (1LL << 32);
             else if (diff_start_ms < -(1LL << 31))
                 diff_start_ms += (1LL << 32);
-            }
 
             // For WebVTT we've already handled wrapping in the timing calculations above
 
