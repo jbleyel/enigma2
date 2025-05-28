@@ -3515,8 +3515,8 @@ void eServiceMP3::pushSubtitles() {
         end_ms = current->second.end_ms;
 
         if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-            // For WebVTT, use MPEGTS-based timing when decoder time is 0
-            if (decoder_ms == 0 && current->second.vtt_mpegts_base > 0) {
+            // For WebVTT, always use MPEGTS-based timing
+            if (current->second.vtt_mpegts_base > 0) {
                 // Initialize base MPEGTS if not set
                 if (m_initial_vtt_mpegts == 0) {
                     m_initial_vtt_mpegts = current->second.vtt_mpegts_base;
@@ -3525,12 +3525,14 @@ void eServiceMP3::pushSubtitles() {
                 
                 // Convert MPEGTS difference to ms (90kHz clock)
                 int64_t mpegts_diff = (current->second.vtt_mpegts_base - m_initial_vtt_mpegts) / 90;
-                eDebug("[eServiceMP3] WebVTT MPEGTS timing: base=%lld initial=%lld diff_ms=%lld start_ms=%d end_ms=%d",
-                       current->second.vtt_mpegts_base, m_initial_vtt_mpegts, mpegts_diff, start_ms, end_ms);
                 
-                // Use raw timing from WebVTT when decoder hasn't started
-                diff_start_ms = start_ms;
-                diff_end_ms = end_ms;
+                // Apply MPEGTS offset to subtitle timing
+                diff_start_ms = start_ms + mpegts_diff;
+                diff_end_ms = end_ms + mpegts_diff;
+                
+                eDebug("[eServiceMP3] WebVTT MPEGTS timing: base=%lld initial=%lld diff_ms=%lld start=%d->%d end=%d->%d",
+                       current->second.vtt_mpegts_base, m_initial_vtt_mpegts, mpegts_diff, 
+                       start_ms, diff_start_ms, end_ms, diff_end_ms);
                 
                 eDebug("[eServiceMP3] WebVTT initial timing: start_ms=%d end_ms=%d mpegts=%lld",
                        start_ms, end_ms, current->second.vtt_mpegts_base);
