@@ -3236,22 +3236,55 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
                                    base_mpegts, sub.vtt_mpegts_base, decoder_pts, sub.vtt_mpegts_base & pts_mask,
                                    decoder_pts & pts_mask, delta);
 
-                            // Get first MPEGTS (PTC) as base - this establishes our timing reference
+                            // Get first MPEGTS as base and get PTS from video/audio
                             if (base_mpegts == -1) {
                                 base_mpegts = sub.vtt_mpegts_base;
-                                base_decoder_pts = decoder_pts;
+                                // Try to get PTS from video sink first
+                                if (dvb_videosink) {
+                                    GstStructure *stats = NULL;
+                                    g_object_get(G_OBJECT(dvb_videosink), "stats", &stats, NULL);
+                                    if (stats) {
+                                        gint64 pts = 0;
+                                        if (gst_structure_get_int64(stats, "current-pts", &pts)) {
+                                            base_decoder_pts = pts;
+                                            eDebug("[SUB DEBUG] Got video PTS: %lld", pts);
+                                        }
+                                        gst_structure_free(stats);
+                                    }
+                                }
+                                // If no video PTS, try audio
+                                if (base_decoder_pts == -1 && dvb_audiosink) {
+                                    GstStructure *stats = NULL;
+                                    g_object_get(G_OBJECT(dvb_audiosink), "stats", &stats, NULL);
+                                    if (stats) {
+                                        gint64 pts = 0;
+                                        if (gst_structure_get_int64(stats, "current-pts", &pts)) {
+                                            base_decoder_pts = pts;
+                                            eDebug("[SUB DEBUG] Got audio PTS: %lld", pts);
+                                        }
+                                        gst_structure_free(stats);
+                                    }
+                                }
                             }
 
-                            // Calculate timing based on PTC (MPEGTS) directly
-                            // We use the raw PTC values without masking since they are our absolute reference
+                            // Calculate timing based on PTS/PTC relationship
+                            int64_t pts_offset = 0;
+                            if (base_decoder_pts != -1) {
+                                pts_offset = decoder_pts - base_decoder_pts;
+                                if (pts_offset > (1LL << 32))
+                                    pts_offset -= (1LL << 33);
+                                else if (pts_offset < -(1LL << 32))
+                                    pts_offset += (1LL << 33);
+                            }
+
                             int64_t ptc_offset = sub.vtt_mpegts_base - base_mpegts;
                             
-                            // Convert PTC offset to milliseconds
-                            delta = ptc_offset / 90;
+                            // Calculate delta based on PTS/PTC difference
+                            delta = (ptc_offset - pts_offset) / 90;
 
-                            // Debug the PTC calculations
-                            eDebug("[SUB DEBUG] PTC calculations: base_ptc=%lld current_ptc=%lld ptc_offset=%lld delta_ms=%lld",
-                                   base_mpegts, sub.vtt_mpegts_base, ptc_offset, delta);
+                            // Debug the timing calculations
+                            eDebug("[SUB DEBUG] Timing: pts_offset=%lld ptc_offset=%lld delta_ms=%lld",
+                                   pts_offset, ptc_offset, delta);
                         }
 
                         int64_t adjusted_start = sub.start_time_ms + delta;
