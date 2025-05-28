@@ -3491,30 +3491,22 @@ void eServiceMP3::pushSubtitles() {
     */
     for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++) {
         if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-            // For WebVTT, timestamps are in PTC (90kHz clock)
+            // For WebVTT, handle timing relative to decoder
             start_ms = current->second.start_ms;
-            end_ms   = current->second.end_ms;
+            end_ms = current->second.end_ms;
 
-            if (have_decoder_ptc) {
-                // Calculate differences in PTC domain to avoid conversion errors
-                diff_start_ms = (start_ms - (decoder_ptc / 90));
-                diff_end_ms   = (end_ms - (decoder_ptc / 90));
-            } else {
-                // Fallback if we can't get decoder PTC
-                diff_start_ms = start_ms - decoder_ms;
-                diff_end_ms   = end_ms - decoder_ms;
+            // Calculate relative to current decoder time
+            diff_start_ms = start_ms - decoder_ms;
+            diff_end_ms = end_ms - decoder_ms;
+
+            // Handle PTS wrapping
+            if (diff_start_ms > (1LL << 31))
+                diff_start_ms -= (1LL << 32);
+            else if (diff_start_ms < -(1LL << 31))
+                diff_start_ms += (1LL << 32);
             }
 
-            // Handle PTS/PTC wrapping for WebVTT
-            if (diff_start_ms > (1 << 31))
-                diff_start_ms -= (1LL << 32);
-            else if (diff_start_ms < -(1 << 31))
-                diff_start_ms += (1LL << 32);
-
-            if (diff_end_ms > (1 << 31))
-                diff_end_ms -= (1LL << 32);
-            else if (diff_end_ms < -(1 << 31))
-                diff_end_ms += (1LL << 32);
+            // For WebVTT we've already handled wrapping in the timing calculations above
 
 #if 1
             eDebug("[eServiceMP3] *** next subtitle: decoder: %d start: %d, end: %d, duration_ms: %d, "
@@ -3523,12 +3515,12 @@ void eServiceMP3::pushSubtitles() {
                    current->second.text.c_str());
 #endif
 
-            if (diff_end_ms < -1000) {
+            if (diff_end_ms < -500) {  // More lenient for WebVTT
                 eDebug("[eServiceMP3] *** current sub has already ended, skip: %d\n", diff_end_ms);
                 continue;
             }
 
-            if (diff_start_ms > 20) {
+            if (diff_start_ms > 10) {  // Tighter timing for WebVTT
                 eDebug("[eServiceMP3] *** current sub in the future, start timer, %d\n", diff_start_ms);
                 next_timer = diff_start_ms;
                 goto exit;
