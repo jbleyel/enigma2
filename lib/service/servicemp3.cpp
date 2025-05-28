@@ -3254,64 +3254,6 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
                                    "masked_decoder=%lld delta_ms=%lld",
                                    base_mpegts, sub.vtt_mpegts_base, decoder_pts, sub.vtt_mpegts_base & pts_mask,
                                    decoder_pts & pts_mask, delta);
-
-                            // Get first MPEGTS as base and get PTS from video/audio
-                            if (base_mpegts == -1) {
-                                base_mpegts = sub.vtt_mpegts_base;
-                                // Try to get PTS from video sink
-                                if (dvb_videosink) {
-                                    gint64 pts = 0;
-                                    g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pts);
-                                    if (pts > 0) {
-                                        // Convert back to raw PTS in 90kHz
-                                        base_decoder_pts = (pts / 11111) + (pts ? 0 : m_prev_decoder_time / 90);
-                                        eDebug("[SUB DEBUG] Got video PTS: decoder_time=%lld pts_90k=%lld", 
-                                               pts, base_decoder_pts);
-                                    }
-                                }
-                                // If no video PTS, try audio
-                                if (base_decoder_pts == -1 && dvb_audiosink) {
-                                    gint64 pts = 0;
-                                    g_signal_emit_by_name(dvb_audiosink, "get-decoder-time", &pts);
-                                    if (pts > 0) {
-                                        // Convert back to raw PTS in 90kHz
-                                        base_decoder_pts = (pts / 11111) + (pts ? 0 : m_prev_decoder_time / 90);
-                                        eDebug("[SUB DEBUG] Got audio PTS: decoder_time=%lld pts_90k=%lld", 
-                                               pts, base_decoder_pts);
-                                    }
-                                }
-                            }
-
-                            // Calculate timing based on PTS/PTC relationship
-                            int64_t pts_offset = 0;
-                            if (base_decoder_pts != -1) {
-                                // Get current decoder time
-                                gint64 decoder_time = 0;
-                                g_signal_emit_by_name(dvb_videosink ? dvb_videosink : dvb_audiosink, 
-                                                    "get-decoder-time", &decoder_time);
-                                
-                                // Convert to 90kHz PTS
-                                gint64 current_pts = (decoder_time / 11111) + 
-                                                   (decoder_time ? 0 : m_prev_decoder_time / 90);
-
-                                pts_offset = current_pts - base_decoder_pts;
-                                if (pts_offset > (1LL << 32))
-                                    pts_offset -= (1LL << 33);
-                                else if (pts_offset < -(1LL << 32))
-                                    pts_offset += (1LL << 33);
-
-                                eDebug("[SUB DEBUG] PTS calc: decoder_time=%lld pts_90k=%lld base=%lld offset=%lld", 
-                                       decoder_time, current_pts, base_decoder_pts, pts_offset);
-                            }
-
-                            int64_t ptc_offset = sub.vtt_mpegts_base - base_mpegts;
-                            
-                            // Calculate delta based on PTS/PTC difference
-                            delta = (ptc_offset - pts_offset) / 90;
-
-                            // Debug the timing calculations
-                            eDebug("[SUB DEBUG] Final timing: pts_offset=%lld ptc_offset=%lld delta_ms=%lld",
-                                   pts_offset, ptc_offset, delta);
                         }
 
                         int64_t adjusted_start = sub.start_time_ms + delta;
