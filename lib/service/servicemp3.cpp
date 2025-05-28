@@ -3387,13 +3387,11 @@ void eServiceMP3::pushDVBSubtitles() {
 }
 
 void eServiceMP3::pushSubtitles() {
-    pts_t                          running_pts = 0;
-    int32_t                        next_timer  = 0, decoder_ms, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
-    double                         convert_fps = 1.0;
+    pts_t running_pts = 0;
+    int32_t next_timer = 0, decoder_ms = 0, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
+    double convert_fps = 1.0;
     subtitle_pages_map_t::iterator current;
-    const uint64_t                 pts_mask         = (1ULL << 33) - 1;
-    gint64                         decoder_ptc      = 0;
-    bool                           have_decoder_ptc = false;
+    const uint64_t pts_mask = (1ULL << 33) - 1;
 
     // For live streams, get decoder time directly from videosink
     if (m_is_live && dvb_videosink) {
@@ -3401,19 +3399,10 @@ void eServiceMP3::pushSubtitles() {
         gboolean success = FALSE;
         g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos, &success);
         if (success && GST_CLOCK_TIME_IS_VALID(pos)) {
-            running_pts = pos;
-            m_decoder_time_valid_state = 4; // Consider clock stable for live streams
-            
-            // For WebVTT subtitles, we'll use the same decoder time
-            // but we need to track it for PTS/PTC synchronization
-            if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-                decoder_ptc = pos;  // Use same time base
-                have_decoder_ptc = true;
-                
-                // Detailed debug timing information
-                eDebug("[eServiceMP3] WebVTT timing: raw_decoder_time=%lld pts=%lld pts_ms=%lld", 
-                       pos, running_pts, running_pts/90);
-            }
+            // Convert from nanoseconds (11111 multiplier) back to ms
+            decoder_ms = pos / 1000000; // Convert ns to ms
+            running_pts = pos / 11111;  // Convert ns to 90kHz for PTS
+            m_decoder_time_valid_state = 4;
         }
     } else {
         // Original VOD logic
@@ -3427,19 +3416,17 @@ void eServiceMP3::pushSubtitles() {
         if (m_decoder_time_valid_state < 4) {
             m_decoder_time_valid_state++;
             if (m_decoder_time_valid_state < 4) {
-                eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
                 m_prev_decoder_time = running_pts;
-                next_timer          = 100;
+                next_timer = 100;
                 goto exit;
             }
-            eDebug("[eServiceMP3] *** push subtitles, clock stable");
         }
+        decoder_ms = running_pts / 90;
     }
-
-    // eDebug("[eServiceMP3] pushSubtitles running_pts=%lld", running_pts);
-    // Handle PTS wrapping for decoder time
-    decoder_ms = (running_pts & pts_mask) / 90;
     delay_ms   = 0;
+
+    eDebug("[eServiceMP3] pushSubtitles running_pts=%" PRId64 " decoder_ms=%d delay=%d fps=%.2f", 
+           running_pts, decoder_ms, delay_ms, convert_fps);
 
 #if 0
     eDebug("\n*** all subs: ");
@@ -3465,9 +3452,6 @@ void eServiceMP3::pushSubtitles() {
         if (subtitle_fps > 1 && m_framerate > 0)
             convert_fps = subtitle_fps / (double)m_framerate;
     }
-
-    eDebug("[eServiceMP3] pushSubtitles running_pts=%" PRId64 " decoder_ms=%d delay=%d fps=%.2f", running_pts,
-           decoder_ms, delay_ms, convert_fps);
 
     // Clean up old subtitles for live streams to prevent memory growth
     /* This is for later !!!
