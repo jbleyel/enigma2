@@ -1644,8 +1644,8 @@ int64_t eServiceMP3::getLiveDecoderTime() {
     gint64 pos = 0;
     if (dvb_videosink) {
         g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
-        // pos will be in 90kHz clock rate
-        return pos;
+        // Convert from nanoseconds (GStreamer time) back to 90kHz PTS
+        return pos / 11111;
     }
     return -1;
 }
