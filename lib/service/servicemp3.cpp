@@ -621,6 +621,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
     m_download_buffer_path     = "";
     m_prev_decoder_time        = -1;
     m_decoder_time_valid_state = 0;
+    m_initial_vtt_mpegts      = 0;  // Initialize base MPEGTS for WebVTT sync
     m_errorInfo.missing_codec  = "";
     m_decoder                  = NULL;
     m_subs_to_pull_handler_id = m_notify_source_handler_id = m_notify_element_added_handler_id = 0;
@@ -3217,7 +3218,7 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
             eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
             if (parseWebVTT(vtt_string, parsed_subs)) {
-                static int64_t base_mpegts      = -1; // Store first MPEGTS as base
+                static int64_t base_mpegts      = 0; // Store first MPEGTS as base
                 static int64_t base_decoder_pts = -1; // Store first decoder PTS
 
                 for (const auto& sub : parsed_subs) {
@@ -3225,9 +3226,18 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
                         int64_t decoder_pts = getLiveDecoderTime();
                         int64_t delta       = 0;
 
+                        // Initialize base MPEGTS with first subtitle's MPEGTS
+                        if (base_mpegts == 0) {
+                            base_mpegts = sub.vtt_mpegts_base;
+                            eDebug("[SUB DEBUG] Initializing base_mpegts=%lld", base_mpegts);
+                        }
+
                         if (decoder_pts >= 0) {
                             // Both values are in 90kHz
                             const uint64_t pts_mask = (1ULL << 33) - 1; // 33-bit mask
+
+                            // Calculate delta based on MPEGTS difference
+                            delta = (sub.vtt_mpegts_base - base_mpegts) / 90; // Convert to ms
 
                             // Debug
                             eDebug("[SUB DEBUG] base_mpegts=%lld mpegts=%lld decoder=%lld "
@@ -3505,12 +3515,32 @@ void eServiceMP3::pushSubtitles() {
         end_ms = current->second.end_ms;
 
         if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-            // Calculate relative to current decoder time
-            diff_start_ms = start_ms - decoder_ms;
-            diff_end_ms = end_ms - decoder_ms;
-
-            eDebug("[eServiceMP3] WebVTT timing calc: start_ms=%d end_ms=%d decoder_ms=%d diff_start=%d diff_end=%d",
-                   start_ms, end_ms, decoder_ms, diff_start_ms, diff_end_ms);
+            // For WebVTT, use MPEGTS-based timing when decoder time is 0
+            if (decoder_ms == 0 && current->second.vtt_mpegts_base > 0) {
+                // Initialize base MPEGTS if not set
+                if (m_initial_vtt_mpegts == 0) {
+                    m_initial_vtt_mpegts = current->second.vtt_mpegts_base;
+                    eDebug("[eServiceMP3] WebVTT: Initializing base MPEGTS to %lld", m_initial_vtt_mpegts);
+                }
+                
+                // Use raw timing from WebVTT when decoder hasn't started
+                diff_start_ms = start_ms;
+                diff_end_ms = end_ms;
+                
+                eDebug("[eServiceMP3] WebVTT initial timing: start_ms=%d end_ms=%d mpegts=%lld",
+                       start_ms, end_ms, current->second.vtt_mpegts_base);
+                
+                eDebug("[eServiceMP3] WebVTT MPEGTS timing: base=%lld initial=%lld diff_ms=%lld start_ms=%d end_ms=%d adjusted_start=%d adjusted_end=%d",
+                       current->second.vtt_mpegts_base, m_initial_vtt_mpegts, mpegts_diff, 
+                       start_ms, end_ms, diff_start_ms, diff_end_ms);
+            } else {
+                // Normal decoder-time based calculation
+                diff_start_ms = start_ms - decoder_ms;
+                diff_end_ms = end_ms - decoder_ms;
+                
+                eDebug("[eServiceMP3] WebVTT decoder timing: start_ms=%d end_ms=%d decoder_ms=%d diff_start=%d diff_end=%d",
+                       start_ms, end_ms, decoder_ms, diff_start_ms, diff_end_ms);
+            }
 
             // Handle PTS wrapping
             if (diff_start_ms > (1LL << 31)) {
