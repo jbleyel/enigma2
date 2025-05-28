@@ -3239,30 +3239,24 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
                             // Get first MPEGTS as base and get PTS from video/audio
                             if (base_mpegts == -1) {
                                 base_mpegts = sub.vtt_mpegts_base;
-                                // Try to get PTS from video sink first
+                                // Try to get PTS from video sink - note: PTS is already offset-adjusted
                                 if (dvb_videosink) {
-                                    GstStructure *stats = NULL;
-                                    g_object_get(G_OBJECT(dvb_videosink), "stats", &stats, NULL);
-                                    if (stats) {
-                                        gint64 pts = 0;
-                                        if (gst_structure_get_int64(stats, "current-pts", &pts)) {
-                                            base_decoder_pts = pts;
-                                            eDebug("[SUB DEBUG] Got video PTS: %lld", pts);
-                                        }
-                                        gst_structure_free(stats);
+                                    gint64 pts = 0;
+                                    g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pts);
+                                    if (pts > 0) {
+                                        // Convert from nanoseconds back to 90kHz, keeping the offset adjustment
+                                        base_decoder_pts = pts / 11111;
+                                        eDebug("[SUB DEBUG] Got video PTS (offset-adjusted): raw=%lld converted=%lld", pts, base_decoder_pts);
                                     }
                                 }
                                 // If no video PTS, try audio
                                 if (base_decoder_pts == -1 && dvb_audiosink) {
-                                    GstStructure *stats = NULL;
-                                    g_object_get(G_OBJECT(dvb_audiosink), "stats", &stats, NULL);
-                                    if (stats) {
-                                        gint64 pts = 0;
-                                        if (gst_structure_get_int64(stats, "current-pts", &pts)) {
-                                            base_decoder_pts = pts;
-                                            eDebug("[SUB DEBUG] Got audio PTS: %lld", pts);
-                                        }
-                                        gst_structure_free(stats);
+                                    gint64 pts = 0;
+                                    g_signal_emit_by_name(dvb_audiosink, "get-decoder-time", &pts);
+                                    if (pts > 0) {
+                                        // Convert from nanoseconds back to 90kHz, keeping the offset adjustment
+                                        base_decoder_pts = pts / 11111;
+                                        eDebug("[SUB DEBUG] Got audio PTS (offset-adjusted): raw=%lld converted=%lld", pts, base_decoder_pts);
                                     }
                                 }
                             }
@@ -3270,20 +3264,30 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
                             // Calculate timing based on PTS/PTC relationship
                             int64_t pts_offset = 0;
                             if (base_decoder_pts != -1) {
-                                pts_offset = decoder_pts - base_decoder_pts;
+                                // Get current PTS in 90kHz - note: PTS is already offset-adjusted
+                                gint64 pts = 0;
+                                g_signal_emit_by_name(dvb_videosink ? dvb_videosink : dvb_audiosink, "get-decoder-time", &pts);
+                                gint64 current_pts = pts / 11111;
+
+                                pts_offset = current_pts - base_decoder_pts;
                                 if (pts_offset > (1LL << 32))
                                     pts_offset -= (1LL << 33);
                                 else if (pts_offset < -(1LL << 32))
                                     pts_offset += (1LL << 33);
+
+                                eDebug("[SUB DEBUG] PTS values (90kHz): base=%lld current=%lld offset=%lld", 
+                                       base_decoder_pts, current_pts, pts_offset);
                             }
 
+                            // Calculate PTC offset - these values are not offset-adjusted
                             int64_t ptc_offset = sub.vtt_mpegts_base - base_mpegts;
                             
                             // Calculate delta based on PTS/PTC difference
+                            // Both values are in 90kHz, but PTS is offset-adjusted while PTC is not
                             delta = (ptc_offset - pts_offset) / 90;
 
                             // Debug the timing calculations
-                            eDebug("[SUB DEBUG] Timing: pts_offset=%lld ptc_offset=%lld delta_ms=%lld",
+                            eDebug("[SUB DEBUG] Timing (90kHz): pts_offset=%lld ptc_offset=%lld delta_ms=%lld",
                                    pts_offset, ptc_offset, delta);
                         }
 
