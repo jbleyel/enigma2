@@ -3347,12 +3347,16 @@ void eServiceMP3::pushSubtitles() {
     // For live streams, get decoder time directly from videosink
     if (m_is_live && dvb_videosink) {
         gint64 pos = 0;
-        if (g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos) && GST_CLOCK_TIME_IS_VALID(pos)) {
-            running_pts                = pos;
+        gboolean success = FALSE;
+        g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos, &success);
+        if (success && GST_CLOCK_TIME_IS_VALID(pos)) {
+            running_pts = pos;
             m_decoder_time_valid_state = 4; // Consider clock stable for live streams
             // Get decoder PTC for WebVTT subtitles
             if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-                if (g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &decoder_ptc)) {
+                gboolean ptc_success = FALSE;
+                g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &decoder_ptc, &ptc_success);
+                if (ptc_success) {
                     have_decoder_ptc = true;
                 }
             }
