@@ -1644,8 +1644,10 @@ int64_t eServiceMP3::getLiveDecoderTime() {
     gint64 pos = 0;
     if (dvb_videosink) {
         g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
-        // Convert from nanoseconds (GStreamer time) back to 90kHz PTS
-        return pos / 11111;
+        if (GST_CLOCK_TIME_IS_VALID(pos) && pos > 0) {
+            // Convert from nanoseconds back to 90kHz
+            return pos / 11111;
+        }
     }
     return -1;
 }
@@ -3398,29 +3400,26 @@ void eServiceMP3::pushSubtitles() {
         gint64 pos = 0;
         gboolean success = FALSE;
         g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos, &success);
-        if (success && GST_CLOCK_TIME_IS_VALID(pos)) {
-            // Convert from nanoseconds (11111 multiplier) back to ms
-            decoder_ms = pos / 1000000; // Convert ns to ms
-            running_pts = pos / 11111;  // Convert ns to 90kHz for PTS
+        if (success && GST_CLOCK_TIME_IS_VALID(pos) && pos > 0) {
+            // Convert from nanoseconds back to ms
+            decoder_ms = pos / 1000000;
+            running_pts = pos / 11111;
             m_decoder_time_valid_state = 4;
+        } else {
+            // If we can't get valid decoder time, use MPEGTS timing for WebVTT
+            if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
+                m_decoder_time_valid_state = 4;  // Consider clock stable
+                // Let decoder_ms stay 0 to trigger MPEGTS-based timing
+            } else {
+                if (getPlayPosition(running_pts) < 0)
+                    m_decoder_time_valid_state = 0;
+                decoder_ms = running_pts / 90;
+            }
         }
     } else {
         // Original VOD logic
         if (getPlayPosition(running_pts) < 0)
             m_decoder_time_valid_state = 0;
-        if (m_decoder_time_valid_state == 0)
-            m_decoder_time_valid_state = 2;
-        else
-            m_decoder_time_valid_state = 4;
-
-        if (m_decoder_time_valid_state < 4) {
-            m_decoder_time_valid_state++;
-            if (m_decoder_time_valid_state < 4) {
-                m_prev_decoder_time = running_pts;
-                next_timer = 100;
-                goto exit;
-            }
-        }
         decoder_ms = running_pts / 90;
     }
     delay_ms   = 0;
