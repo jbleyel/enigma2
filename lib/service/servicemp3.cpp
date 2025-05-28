@@ -100,8 +100,7 @@ static void gst_sleepms(uint32_t msec) {
     errno = olderrno;
 }
 
-static int64_t getCurrentTimeMs()
-{
+static int64_t getCurrentTimeMs() {
     struct timeval tv;
     gettimeofday(&tv, 0);
     return (int64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
@@ -628,7 +627,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
     m_download_buffer_path     = "";
     m_prev_decoder_time        = -1;
     m_decoder_time_valid_state = 0;
-    m_initial_vtt_mpegts      = 0;  // Initialize base MPEGTS for WebVTT sync
+    m_initial_vtt_mpegts       = 0; // Initialize base MPEGTS for WebVTT sync
     m_errorInfo.missing_codec  = "";
     m_decoder                  = NULL;
     m_subs_to_pull_handler_id = m_notify_source_handler_id = m_notify_element_added_handler_id = 0;
@@ -3227,7 +3226,7 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
             eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
             if (parseWebVTT(vtt_string, parsed_subs)) {
-                static int64_t base_mpegts      = 0; // Store first MPEGTS as base
+                static int64_t base_mpegts      = 0;  // Store first MPEGTS as base
                 static int64_t base_decoder_pts = -1; // Store first decoder PTS
 
                 for (const auto& sub : parsed_subs) {
@@ -3264,7 +3263,7 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
                                "adjusted_end=%lld",
                                sub.start_time_ms, sub.end_time_ms, delta, adjusted_start, adjusted_end);
 
-					    std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
+                        std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
                         m_subtitle_pages.insert(subtitle_pages_map_pair_t(
                             adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
                     } else {
@@ -3339,26 +3338,26 @@ void eServiceMP3::pushDVBSubtitles() {
 }
 
 void eServiceMP3::pushSubtitles() {
-    pts_t running_pts = 0;
+    pts_t   running_pts = 0;
     int32_t next_timer = 0, decoder_ms = 0, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
-    double convert_fps = 1.0;
+    double  convert_fps = 1.0;
     subtitle_pages_map_t::iterator current;
-    const uint64_t pts_mask = (1ULL << 33) - 1;
+    const uint64_t                 pts_mask = (1ULL << 33) - 1;
 
     // For live streams, get decoder time directly from videosink
     if (m_is_live && dvb_videosink) {
-        gint64 pos = 0;
+        gint64   pos     = 0;
         gboolean success = FALSE;
         g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos, &success);
         if (success && GST_CLOCK_TIME_IS_VALID(pos) && pos > 0) {
             // Convert from nanoseconds back to ms
-            decoder_ms = pos / 1000000;
-            running_pts = pos / 11111;
+            decoder_ms                 = pos / 1000000;
+            running_pts                = pos / 11111;
             m_decoder_time_valid_state = 4;
         } else {
             // If we can't get valid decoder time, use fallback for WebVTT
             if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-                m_decoder_time_valid_state = 4;  // Consider clock stable
+                m_decoder_time_valid_state = 4; // Consider clock stable
                 // Let decoder_ms stay 0 to trigger fallback
             } else {
                 if (getPlayPosition(running_pts) < 0)
@@ -3372,10 +3371,10 @@ void eServiceMP3::pushSubtitles() {
             m_decoder_time_valid_state = 0;
         decoder_ms = running_pts / 90;
     }
-    delay_ms   = 0;
+    delay_ms = 0;
 
-    eDebug("[eServiceMP3] pushSubtitles running_pts=%" PRId64 " decoder_ms=%d delay=%d fps=%.2f", 
-           running_pts, decoder_ms, delay_ms, convert_fps);
+    eDebug("[eServiceMP3] pushSubtitles running_pts=%" PRId64 " decoder_ms=%d delay=%d fps=%.2f", running_pts,
+           decoder_ms, delay_ms, convert_fps);
 
 #if 0
     eDebug("\n*** all subs: ");
@@ -3402,9 +3401,9 @@ void eServiceMP3::pushSubtitles() {
     }
 
     // Clean up old subtitles for live streams to prevent memory growth
-	/*
+    /*
     if (m_is_live && !m_subtitle_pages.empty()) {
-		std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
+        std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
         subtitle_pages_map_t::iterator it = m_subtitle_pages.begin();
         while (it != m_subtitle_pages.end()) {
             bool erase = false;
@@ -3431,15 +3430,15 @@ void eServiceMP3::pushSubtitles() {
             }
         }
     }
-	*/
+    */
     for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); ++current) {
         start_ms = current->second.start_ms;
-        end_ms = current->second.end_ms;
+        end_ms   = current->second.end_ms;
 
         if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT && m_is_live) {
             // --- WebVTT LIVE WORKAROUND ---
             static int64_t vtt_live_base_time = -1;
-            int64_t now = getCurrentTimeMs();
+            int64_t        now                = getCurrentTimeMs();
 
             // Initialisiere Basiszeit beim ersten Subtitle
             if (vtt_live_base_time == -1)
@@ -3448,10 +3447,11 @@ void eServiceMP3::pushSubtitles() {
             int64_t live_playback_time = now - vtt_live_base_time;
 
             diff_start_ms = start_ms - live_playback_time;
-            diff_end_ms = end_ms - live_playback_time;
+            diff_end_ms   = end_ms - live_playback_time;
 
-            eDebug("[eServiceMP3] WebVTT LIVE: now=%lld base=%lld live_playback_time=%lld start=%d end=%d diff_start=%d diff_end=%d",
-                now, vtt_live_base_time, live_playback_time, start_ms, end_ms, diff_start_ms, diff_end_ms);
+            eDebug("[eServiceMP3] WebVTT LIVE: now=%lld base=%lld live_playback_time=%lld start=%d end=%d "
+                   "diff_start=%d diff_end=%d",
+                   now, vtt_live_base_time, live_playback_time, start_ms, end_ms, diff_start_ms, diff_end_ms);
 
             if (diff_end_ms < -500) {
                 eDebug("[eServiceMP3] *** current sub has already ended, skip: %d\n", diff_end_ms);
@@ -3466,10 +3466,10 @@ void eServiceMP3::pushSubtitles() {
             if (m_subtitle_widget && !m_paused) {
                 eDebug("[eServiceMP3] *** current sub actual, show!");
                 ePangoSubtitlePage pango_page;
-                gRGB rgbcol(0xff, 0xff, 0xff);  // White color for WebVTT
+                gRGB               rgbcol(0xff, 0xff, 0xff); // White color for WebVTT
                 pango_page.m_elements.push_back(ePangoSubtitlePageElement(rgbcol, current->second.text));
                 pango_page.m_show_pts = start_ms * 90;
-                pango_page.m_timeout = diff_end_ms > 0 ? diff_end_ms : end_ms - start_ms;
+                pango_page.m_timeout  = diff_end_ms > 0 ? diff_end_ms : end_ms - start_ms;
                 m_subtitle_widget->setPage(pango_page);
                 continue;
             }
@@ -3477,7 +3477,7 @@ void eServiceMP3::pushSubtitles() {
         } else if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
             // Für VOD/WebVTT: wie gehabt, decoder_ms verwenden
             diff_start_ms = start_ms - decoder_ms;
-            diff_end_ms = end_ms - decoder_ms;
+            diff_end_ms   = end_ms - decoder_ms;
 
             eDebug("[eServiceMP3] WebVTT decoder timing: start_ms=%d end_ms=%d decoder_ms=%d diff_start=%d diff_end=%d",
                    start_ms, end_ms, decoder_ms, diff_start_ms, diff_end_ms);
@@ -3494,10 +3494,10 @@ void eServiceMP3::pushSubtitles() {
             if (m_subtitle_widget && !m_paused) {
                 eDebug("[eServiceMP3] *** current sub actual, show!");
                 ePangoSubtitlePage pango_page;
-                gRGB rgbcol(0xff, 0xff, 0xff);
+                gRGB               rgbcol(0xff, 0xff, 0xff);
                 pango_page.m_elements.push_back(ePangoSubtitlePageElement(rgbcol, current->second.text));
                 pango_page.m_show_pts = start_ms * 90;
-                pango_page.m_timeout = diff_end_ms > 0 ? diff_end_ms : end_ms - start_ms;
+                pango_page.m_timeout  = diff_end_ms > 0 ? diff_end_ms : end_ms - start_ms;
                 m_subtitle_widget->setPage(pango_page);
                 continue;
             }
@@ -3509,7 +3509,7 @@ void eServiceMP3::pushSubtitles() {
             diff_end_ms   = end_ms - decoder_ms;
 
             const int64_t wrap_threshold = 1LL << 31;
-            const int64_t wrap_value = 1LL << 32;
+            const int64_t wrap_value     = 1LL << 32;
             if (diff_start_ms > wrap_threshold)
                 diff_start_ms -= wrap_value;
             else if (diff_start_ms < -wrap_threshold)
@@ -3538,7 +3538,7 @@ void eServiceMP3::pushSubtitles() {
             if (m_subtitle_widget && !m_paused) {
                 eDebug("[eServiceMP3] *** current sub actual, show!");
                 ePangoSubtitlePage pango_page;
-                gRGB rgbcol(0xD0, 0xD0, 0xD0);
+                gRGB               rgbcol(0xD0, 0xD0, 0xD0);
                 pango_page.m_elements.push_back(ePangoSubtitlePageElement(rgbcol, current->second.text.c_str()));
                 pango_page.m_show_pts = start_ms * 90;
                 if (!m_subtitles_paused)
