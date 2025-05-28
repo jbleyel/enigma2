@@ -1636,7 +1636,7 @@ RESULT eServiceMP3::getPlayPosition(pts_t& pts) {
     /* pos is in nanoseconds. we have 90 000 pts per second. */
     m_last_seek_pos = pos / 11111LL;
     pts             = m_last_seek_pos;
-    eDebug("[eServiceMP3] current play pts = %" G_GINT64_FORMAT, pts);
+    eDebug("[eServiceMP3] current play pts = %lld", pts);
     return 0;
 }
 
@@ -3523,6 +3523,11 @@ void eServiceMP3::pushSubtitles() {
                     eDebug("[eServiceMP3] WebVTT: Initializing base MPEGTS to %lld", m_initial_vtt_mpegts);
                 }
                 
+                // Convert MPEGTS difference to ms (90kHz clock)
+                int64_t mpegts_diff = (current->second.vtt_mpegts_base - m_initial_vtt_mpegts) / 90;
+                eDebug("[eServiceMP3] WebVTT MPEGTS timing: base=%lld initial=%lld diff_ms=%lld start_ms=%d end_ms=%d",
+                       current->second.vtt_mpegts_base, m_initial_vtt_mpegts, mpegts_diff, start_ms, end_ms);
+                
                 // Use raw timing from WebVTT when decoder hasn't started
                 diff_start_ms = start_ms;
                 diff_end_ms = end_ms;
@@ -3591,16 +3596,19 @@ void eServiceMP3::pushSubtitles() {
             diff_start_ms = start_ms - decoder_ms;
             diff_end_ms   = end_ms - decoder_ms;
 
-            // Handle PTS/PTC wrapping for non-WebVTT
-            if (diff_start_ms > (1 << 31))
-                diff_start_ms -= (1LL << 32);
-            else if (diff_start_ms < -(1 << 31))
-                diff_start_ms += (1LL << 32);
+            // Handle PTS/PTC wrapping for non-WebVTT using 64-bit arithmetic
+            const int64_t wrap_threshold = 1LL << 31;
+            const int64_t wrap_value = 1LL << 32;
+            
+            if (diff_start_ms > wrap_threshold)
+                diff_start_ms -= wrap_value;
+            else if (diff_start_ms < -wrap_threshold)
+                diff_start_ms += wrap_value;
 
-            if (diff_end_ms > (1 << 31))
-                diff_end_ms -= (1LL << 32);
-            else if (diff_end_ms < -(1 << 31))
-                diff_end_ms += (1LL << 32);
+            if (diff_end_ms > wrap_threshold)
+                diff_end_ms -= wrap_value;
+            else if (diff_end_ms < -wrap_threshold)
+                diff_end_ms += wrap_value;
 
 #if 1
             eDebug("[eServiceMP3] *** next subtitle: decoder: %d start: %d, end: %d, duration_ms: %d, "
