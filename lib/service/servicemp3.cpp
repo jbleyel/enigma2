@@ -3236,34 +3236,22 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
                                    base_mpegts, sub.vtt_mpegts_base, decoder_pts, sub.vtt_mpegts_base & pts_mask,
                                    decoder_pts & pts_mask, delta);
 
-                            // Get first MPEGTS as base
+                            // Get first MPEGTS (PTC) as base - this establishes our timing reference
                             if (base_mpegts == -1) {
-                                base_mpegts = sub.vtt_mpegts_base & pts_mask;
-                                base_decoder_pts = decoder_pts & pts_mask;
+                                base_mpegts = sub.vtt_mpegts_base;
+                                base_decoder_pts = decoder_pts;
                             }
 
-                            // Calculate relative offsets in 90kHz domain
-                            int64_t mpegts_offset = ((sub.vtt_mpegts_base & pts_mask) - base_mpegts);
-                            int64_t decoder_offset = ((decoder_pts & pts_mask) - base_decoder_pts);
+                            // Calculate timing based on PTC (MPEGTS) directly
+                            // We use the raw PTC values without masking since they are our absolute reference
+                            int64_t ptc_offset = sub.vtt_mpegts_base - base_mpegts;
+                            
+                            // Convert PTC offset to milliseconds
+                            delta = ptc_offset / 90;
 
-                            // Handle PTS wrapping for both offsets
-                            if (mpegts_offset > (1LL << 32))
-                                mpegts_offset -= (1LL << 33);
-                            else if (mpegts_offset < -(1LL << 32))
-                                mpegts_offset += (1LL << 33);
-
-                            if (decoder_offset > (1LL << 32))
-                                decoder_offset -= (1LL << 33);
-                            else if (decoder_offset < -(1LL << 32))
-                                decoder_offset += (1LL << 33);
-
-                            // Calculate time difference in milliseconds
-                            // The delta represents how far ahead/behind the subtitle timing is compared to decoder time
-                            delta = (decoder_offset - mpegts_offset) / 90;
-
-                            // Debug the offset calculations
-                            eDebug("[SUB DEBUG] Offset calculations: mpegts_offset=%lld decoder_offset=%lld delta=%lld",
-                                   mpegts_offset, decoder_offset, delta);
+                            // Debug the PTC calculations
+                            eDebug("[SUB DEBUG] PTC calculations: base_ptc=%lld current_ptc=%lld ptc_offset=%lld delta_ms=%lld",
+                                   base_mpegts, sub.vtt_mpegts_base, ptc_offset, delta);
                         }
 
                         int64_t adjusted_start = sub.start_time_ms + delta;
