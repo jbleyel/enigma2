@@ -10,6 +10,7 @@
 #include <lib/service/iservice.h>
 /* for subtitles */
 #include <lib/gui/esubtitle.h>
+#include <mutex>
 
 // #define NEWPILELINE 1
 
@@ -486,6 +487,7 @@ private:
 	RESULT trickSeek(gdouble ratio);
 	ePtr<iTSMPEGDecoder> m_decoder; // for showSinglePic when radio
 	int64_t getLiveDecoderTime();
+    std::mutex m_subtitle_pages_mutex;
 
 	std::string m_external_subtitle_path;
 	std::string m_external_subtitle_language;

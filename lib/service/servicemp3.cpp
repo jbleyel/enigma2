@@ -3264,6 +3264,7 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
                                "adjusted_end=%lld",
                                sub.start_time_ms, sub.end_time_ms, delta, adjusted_start, adjusted_end);
 
+					    std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
                         m_subtitle_pages.insert(subtitle_pages_map_pair_t(
                             adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
                     } else {
@@ -3401,43 +3402,33 @@ void eServiceMP3::pushSubtitles() {
     }
 
     // Clean up old subtitles for live streams to prevent memory growth
-    /* This is for later !!!
 	/*
-    if (m_is_live) {
+    if (m_is_live && !m_subtitle_pages.empty()) {
+		std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
         subtitle_pages_map_t::iterator it = m_subtitle_pages.begin();
         while (it != m_subtitle_pages.end()) {
-            int32_t end_ms;
-            if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-                end_ms = it->second.end_ms;
-                if (have_decoder_ptc) {
-                    // Compare in PTC domain for WebVTT
-                    int32_t ptc_ms = decoder_ptc / 90;  // Convert to ms
-                    if ((end_ms - ptc_ms) < -5000) {
-                        eDebug("[eServiceMP3] Cleaning up old WebVTT subtitle: end=%d ptc=%d diff=%d",
-                               end_ms, ptc_ms, end_ms - ptc_ms);
-                        it = m_subtitle_pages.erase(it);
-                        continue;
-                    }
-                } else {
-                    // Fallback to PTS domain if no PTC
-                    if ((end_ms - decoder_ms) < -5000) {
-                        eDebug("[eServiceMP3] Cleaning up old WebVTT subtitle (PTS): end=%d pts=%d diff=%d",
-                               end_ms, decoder_ms, end_ms - decoder_ms);
-                        it = m_subtitle_pages.erase(it);
-                        continue;
-                    }
-                }
+            bool erase = false;
+            int end_ms = it->second.end_ms;
+
+            if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT && m_is_live) {
+                static int64_t vtt_live_base_time = -1;
+                int64_t now = getCurrentTimeMs();
+                if (vtt_live_base_time == -1 && !m_subtitle_pages.empty())
+                    vtt_live_base_time = now - m_subtitle_pages.begin()->second.start_ms;
+                int64_t live_playback_time = now - vtt_live_base_time;
+                if ((end_ms - live_playback_time) < -5000) // 5 seconds
+                    erase = true;
             } else {
-                // For non-WebVTT subtitles
-                end_ms = (it->second.end_ms * convert_fps) + delay_ms;
-                if ((end_ms - decoder_ms) < -5000) {
-                    eDebug("[eServiceMP3] Cleaning up old subtitle: end=%d pts=%d diff=%d",
-                           end_ms, decoder_ms, end_ms - decoder_ms);
-                    it = m_subtitle_pages.erase(it);
-                    continue;
-                }
+                if ((end_ms - decoder_ms) < -5000)
+                    erase = true;
             }
-            ++it;  // Only increment if we didn't erase
+
+            if (erase) {
+                eDebug("[eServiceMP3] Cleaning up old subtitle: end=%d", end_ms);
+                it = m_subtitle_pages.erase(it);
+            } else {
+                ++it;
+            }
         }
     }
 	*/
