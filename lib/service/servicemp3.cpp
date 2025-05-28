@@ -3393,13 +3393,16 @@ void eServiceMP3::pushSubtitles() {
         if (success && GST_CLOCK_TIME_IS_VALID(pos)) {
             running_pts = pos;
             m_decoder_time_valid_state = 4; // Consider clock stable for live streams
-            // Get decoder PTC for WebVTT subtitles
+            
+            // For WebVTT subtitles, we'll use the same decoder time
+            // but we need to track it for PTS/PTC synchronization
             if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-                gboolean ptc_success = FALSE;
-                g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &decoder_ptc, &ptc_success);
-                if (ptc_success) {
-                    have_decoder_ptc = true;
-                }
+                decoder_ptc = pos;  // Use same time base
+                have_decoder_ptc = true;
+                
+                // Detailed debug timing information
+                eDebug("[eServiceMP3] WebVTT timing: raw_decoder_time=%lld pts=%lld pts_ms=%lld", 
+                       pos, running_pts, running_pts/90);
             }
         }
     } else {
@@ -3458,6 +3461,7 @@ void eServiceMP3::pushSubtitles() {
 
     // Clean up old subtitles for live streams to prevent memory growth
     /* This is for later !!!
+	/*
     if (m_is_live) {
         subtitle_pages_map_t::iterator it = m_subtitle_pages.begin();
         while (it != m_subtitle_pages.end()) {
@@ -3465,14 +3469,19 @@ void eServiceMP3::pushSubtitles() {
             if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
                 end_ms = it->second.end_ms;
                 if (have_decoder_ptc) {
-                    // Compare in PTC domain
-                    if ((end_ms - (decoder_ptc / 90)) < -5000) {
+                    // Compare in PTC domain for WebVTT
+                    int32_t ptc_ms = decoder_ptc / 90;  // Convert to ms
+                    if ((end_ms - ptc_ms) < -5000) {
+                        eDebug("[eServiceMP3] Cleaning up old WebVTT subtitle: end=%d ptc=%d diff=%d",
+                               end_ms, ptc_ms, end_ms - ptc_ms);
                         it = m_subtitle_pages.erase(it);
                         continue;
                     }
                 } else {
-                    // Fallback to PTS domain
+                    // Fallback to PTS domain if no PTC
                     if ((end_ms - decoder_ms) < -5000) {
+                        eDebug("[eServiceMP3] Cleaning up old WebVTT subtitle (PTS): end=%d pts=%d diff=%d",
+                               end_ms, decoder_ms, end_ms - decoder_ms);
                         it = m_subtitle_pages.erase(it);
                         continue;
                     }
@@ -3481,31 +3490,37 @@ void eServiceMP3::pushSubtitles() {
                 // For non-WebVTT subtitles
                 end_ms = (it->second.end_ms * convert_fps) + delay_ms;
                 if ((end_ms - decoder_ms) < -5000) {
+                    eDebug("[eServiceMP3] Cleaning up old subtitle: end=%d pts=%d diff=%d",
+                           end_ms, decoder_ms, end_ms - decoder_ms);
                     it = m_subtitle_pages.erase(it);
                     continue;
                 }
             }
-            ++it;
+            ++it;  // Only increment if we didn't erase
         }
     }
-    */
+	*/
     for (current = m_subtitle_pages.begin(); current != m_subtitle_pages.end(); current++) {
-        if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-            // For WebVTT, handle timing relative to decoder
-            start_ms = current->second.start_ms;
-            end_ms = current->second.end_ms;
+        start_ms = current->second.start_ms;
+        end_ms = current->second.end_ms;
 
+        if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
             // Calculate relative to current decoder time
             diff_start_ms = start_ms - decoder_ms;
             diff_end_ms = end_ms - decoder_ms;
 
-            // Handle PTS wrapping
-            if (diff_start_ms > (1LL << 31))
-                diff_start_ms -= (1LL << 32);
-            else if (diff_start_ms < -(1LL << 31))
-                diff_start_ms += (1LL << 32);
+            eDebug("[eServiceMP3] WebVTT timing calc: start_ms=%d end_ms=%d decoder_ms=%d diff_start=%d diff_end=%d",
+                   start_ms, end_ms, decoder_ms, diff_start_ms, diff_end_ms);
 
-            // For WebVTT we've already handled wrapping in the timing calculations above
+            // Handle PTS wrapping
+            if (diff_start_ms > (1LL << 31)) {
+                diff_start_ms -= (1LL << 32);
+                eDebug("[eServiceMP3] WebVTT PTS wrap (high): adjusted diff_start=%d", diff_start_ms);
+            }
+            else if (diff_start_ms < -(1LL << 31)) {
+                diff_start_ms += (1LL << 32);
+                eDebug("[eServiceMP3] WebVTT PTS wrap (low): adjusted diff_start=%d", diff_start_ms);
+            }
 
 #if 1
             eDebug("[eServiceMP3] *** next subtitle: decoder: %d start: %d, end: %d, duration_ms: %d, "
