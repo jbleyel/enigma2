@@ -99,18 +99,66 @@ static void gst_sleepms(uint32_t msec) {
 	errno = olderrno;
 }
 
+/**
+ * @brief Retrieves the current system time in milliseconds.
+ *
+ * This function obtains the current time using gettimeofday and returns
+ * the number of milliseconds elapsed since the Unix epoch (January 1, 1970).
+ *
+ * @return int64_t The current time in milliseconds.
+ */
 static int64_t getCurrentTimeMs() {
 	struct timeval tv;
 	gettimeofday(&tv, 0);
 	return (int64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
+/**
+ * @struct audioMeta
+ * @brief Represents metadata information for an audio stream.
+ *
+ * This structure holds information about an audio track, including its index,
+ * language code, and title. It is typically used to describe audio streams
+ * in multimedia applications.
+ *
+ * @var audioMeta::index
+ *   The index of the audio stream (e.g., track number).
+ * @var audioMeta::lang
+ *   The language code of the audio stream (e.g., "eng" for English).
+ * @var audioMeta::title
+ *   The title or description of the audio stream.
+ */
 struct audioMeta {
 	int index;
 	std::string lang;
 	std::string title;
 };
 
+/**
+ * @brief Parses HLS audio metadata from a file.
+ *
+ * This function reads a file containing audio track metadata in a simple key-value format,
+ * where each track is separated by a line containing "---". Each track's metadata may include
+ * fields such as "index", "lang", and "title". The function constructs a vector of audioMeta
+ * objects, each representing a parsed audio track.
+ *
+ * @param filename The path to the metadata file to parse.
+ * @return std::vector<audioMeta> A vector containing the parsed audioMeta objects.
+ *
+ * The expected file format is:
+ * @code
+ * index=0
+ * lang=eng
+ * title=English
+ * ---
+ * index=1
+ * lang=deu
+ * title=German
+ * ---
+ * @endcode
+ *
+ * @note If the file cannot be opened or is empty, an empty vector is returned.
+ */
 std::vector<audioMeta> parse_hls_audio_meta(const std::string& filename) {
 	std::ifstream file(filename);
 	std::vector<audioMeta> tracks;
@@ -145,6 +193,19 @@ std::vector<audioMeta> parse_hls_audio_meta(const std::string& filename) {
 	return tracks;
 }
 
+/**
+ * @struct SubtitleEntry
+ * @brief Represents a single subtitle entry with timing and text information.
+ *
+ * This structure holds the timing information (start and end times in milliseconds),
+ * a base timestamp for MPEG-TS to WebVTT conversion, and the subtitle text itself.
+ *
+ * Members:
+ * - start_time_ms:      Start time of the subtitle in milliseconds.
+ * - end_time_ms:        End time of the subtitle in milliseconds.
+ * - vtt_mpegts_base:    Base timestamp used for MPEG-TS to WebVTT conversion.
+ * - text:               The subtitle text to be displayed.
+ */
 struct SubtitleEntry {
 	uint64_t start_time_ms;
 	uint64_t end_time_ms;
@@ -152,6 +213,19 @@ struct SubtitleEntry {
 	std::string text;
 };
 
+/**
+ * @brief Parses a timecode string in the format "HH:MM:SS.mmm" into milliseconds.
+ *
+ * This function attempts to parse a timecode string (e.g., "01:23:45.678") and convert it
+ * into the total number of milliseconds. The expected format is hours, minutes, seconds,
+ * and milliseconds separated by colons and a dot.
+ *
+ * @param[in]  s      The input timecode string to parse.
+ * @param[out] ms_out The output variable that will contain the parsed time in milliseconds if parsing succeeds.
+ * @return     true if the string was successfully parsed and ms_out is set; false otherwise.
+ *
+ * @note The function expects the input string to strictly match the "HH:MM:SS.mmm" format.
+ */
 static bool parse_timecode(const std::string& s, uint64_t& ms_out) {
 	unsigned h = 0, m = 0, sec = 0, ms = 0;
 	if (sscanf(s.c_str(), "%u:%u:%u.%u", &h, &m, &sec, &ms) == 4) {
@@ -161,6 +235,32 @@ static bool parse_timecode(const std::string& s, uint64_t& ms_out) {
 	return false;
 }
 
+/**
+ * @brief Parses WebVTT subtitle data and extracts subtitle entries.
+ *
+ * This function processes a string containing WebVTT subtitle data, extracting
+ * individual subtitle entries with their timing and text. It supports parsing
+ * the X-TIMESTAMP-MAP header for MPEGTS to LOCAL time mapping, and handles
+ * multi-line subtitle text blocks. The parsed subtitle entries are appended to
+ * the provided output vector.
+ *
+ * @param vtt_data      The input string containing the WebVTT subtitle data.
+ * @param subs_out      Output vector to which parsed SubtitleEntry objects will be appended.
+ * @return true if at least one subtitle entry was successfully parsed, false otherwise.
+ *
+ * @note The function expects the existence of a parse_timecode helper function and
+ *       a SubtitleEntry struct/class with at least the following members:
+ *       - uint64_t start_time_ms
+ *       - uint64_t end_time_ms
+ *       - uint64_t vtt_mpegts_base
+ *       - std::string text
+ *
+ * @details
+ * - Ignores empty lines and lines containing only numbers (cue identifiers).
+ * - Handles carriage return at the end of lines.
+ * - Parses and applies X-TIMESTAMP-MAP if present, but the adjustment is currently commented out.
+ * - Supports multi-line subtitle text.
+ */
 bool parseWebVTT(const std::string& vtt_data, std::vector<SubtitleEntry>& subs_out) {
 	std::istringstream stream(vtt_data);
 	std::string line;
@@ -312,6 +412,25 @@ eServiceFactoryMP3::~eServiceFactoryMP3() {
 
 DEFINE_REF(eServiceFactoryMP3)
 
+/**
+ * @brief Initializes and creates GStreamer sink elements for audio, video, and subtitles.
+ *
+ * This static function attempts to create and initialize the following GStreamer sink elements:
+ * - Audio sink ("dvbaudiosink")
+ * - Video sink ("dvbvideosink")
+ * - Subtitle sink ("subsink")
+ *
+ * For each sink, it tries to create the element using gst_element_factory_make. If creation is successful,
+ * the element is referenced and a debug message is logged. If creation fails (e.g., the required plugin is missing),
+ * an error message is logged. The function also sets corresponding boolean flags to indicate the success or failure
+ * of each sink's creation.
+ *
+ * Global variables affected:
+ * - dvb_audiosink, dvb_videosink, dvb_subsink: Pointers to the created GStreamer elements.
+ * - dvb_audiosink_ok, dvb_videosink_ok, dvb_subsink_ok: Flags indicating successful creation of each sink.
+ *
+ * No parameters or return value.
+ */
 static void create_gstreamer_sinks() {
 	dvb_subsink = dvb_audiosink = dvb_videosink = NULL;
 	dvb_subsink_ok = dvb_audiosink_ok = dvb_videosink_ok = false;
@@ -338,7 +457,21 @@ static void create_gstreamer_sinks() {
 		eDebug("[eServiceFactoryMP3] **** dvb_subsink NOT created missing plugin subsink ****");
 }
 
-// iServiceHandler
+/**
+ * @brief Starts playback of a media service referenced by the given service reference.
+ *
+ * This method checks and manages resources required for playback. On the very first play,
+ * it initializes GStreamer sinks and sets up internal counters. For subsequent plays,
+ * it increments the service counter. It then creates a new MP3 service instance and assigns
+ * it to the provided pointer.
+ *
+ * @param ref The service reference identifying the media to play.
+ * @param ptr Reference to a smart pointer where the newly created playable service will be stored.
+ * @return RESULT Returns 0 on success, or an error code otherwise.
+ *
+ * @note This function manages the initialization of GStreamer sinks only on the first play.
+ * @note The total number of services played is tracked and logged for debugging purposes.
+ */
 RESULT eServiceFactoryMP3::play(const eServiceReference& ref, ePtr<iPlayableService>& ptr) {
 	// check resources...
 	// creating gstreamer sinks for the very fisrt media
@@ -354,6 +487,17 @@ RESULT eServiceFactoryMP3::play(const eServiceReference& ref, ePtr<iPlayableServ
 	return 0;
 }
 
+/**
+ * @brief Attempts to create a recordable MP3 service from the given service reference.
+ *
+ * This function checks if the provided service reference contains a path with a protocol (i.e., "://").
+ * If so, it creates a new eServiceMP3Record instance and assigns it to the output pointer.
+ * Otherwise, it sets the pointer to nullptr and returns an error code.
+ *
+ * @param ref The service reference to attempt to record from.
+ * @param ptr Output pointer that will be set to the created recordable service, or nullptr on failure.
+ * @return RESULT 0 on success, -1 on failure.
+ */
 RESULT eServiceFactoryMP3::record(const eServiceReference& ref, ePtr<iRecordableService>& ptr) {
 	if (ref.path.find("://") != std::string::npos) {
 		ptr = new eServiceMP3Record((eServiceReference&)ref);
@@ -363,16 +507,48 @@ RESULT eServiceFactoryMP3::record(const eServiceReference& ref, ePtr<iRecordable
 	return -1;
 }
 
+/**
+ * @brief Lists available MP3 services for a given service reference.
+ *
+ * This method attempts to populate the provided pointer with a list of
+ * MP3 services corresponding to the specified service reference.
+ *
+ * @param ref The service reference for which to list available MP3 services.
+ * @param ptr Reference to a pointer that will be set to the list of services if available,
+ *            or set to nullptr if no services are found.
+ * @return RESULT Returns 0 on success, or -1 if no services are available or an error occurs.
+ */
 RESULT eServiceFactoryMP3::list(const eServiceReference&, ePtr<iListableService>& ptr) {
 	ptr = nullptr;
 	return -1;
 }
 
+/**
+ * @brief Provides static service information for a given service reference.
+ *
+ * This method retrieves static service information for the specified service reference
+ * and assigns it to the provided pointer. The information is typically used to display
+ * metadata about the service without opening it.
+ *
+ * @param ref The service reference for which to retrieve information.
+ * @param ptr Reference to a pointer that will be set to the static service information.
+ * @return RESULT Returns 0 on success, or an error code if the operation fails.
+ */
 RESULT eServiceFactoryMP3::info(const eServiceReference& ref, ePtr<iStaticServiceInformation>& ptr) {
 	ptr = m_service_info;
 	return 0;
 }
 
+/**
+ * @brief Provides offline operations for a given service reference.
+ *
+ * This method creates an instance of eMP3ServiceOfflineOperations for the specified service reference
+ * and assigns it to the provided pointer. This allows for operations such as deleting files or reindexing.
+ *
+ * @param ref The service reference for which to perform offline operations.
+ * @param ptr Reference to a pointer that will be set to the offline operations instance.
+ * @return RESULT Returns 0 on success, or an error code if the operation fails.
+ */
 class eMP3ServiceOfflineOperations : public iServiceOfflineOperations {
 	DECLARE_REF(eMP3ServiceOfflineOperations);
 	eServiceReference m_ref;
@@ -390,6 +566,15 @@ DEFINE_REF(eMP3ServiceOfflineOperations);
 eMP3ServiceOfflineOperations::eMP3ServiceOfflineOperations(const eServiceReference& ref)
 	: m_ref((const eServiceReference&)ref) {}
 
+/**
+ * @brief Deletes the files associated with the service reference from disk.
+ *
+ * This method removes the main file, its metadata, and any associated cut files from disk.
+ * If the simulate parameter is set to 0, it performs the deletion; otherwise, it only simulates it.
+ *
+ * @param simulate If set to 0, actual deletion is performed; if non-zero, only simulation occurs.
+ * @return RESULT Returns 0 on success, or -1 if an error occurs.
+ */
 RESULT eMP3ServiceOfflineOperations::deleteFromDisk(int simulate) {
 	if (!simulate) {
 		std::list<std::string> res;
@@ -411,6 +596,16 @@ RESULT eMP3ServiceOfflineOperations::deleteFromDisk(int simulate) {
 	return 0;
 }
 
+/**
+ * @brief Retrieves a list of filenames associated with the service reference.
+ *
+ * This method populates the provided list with the main file, its metadata file,
+ * cut files, and EIT files (if applicable). The filenames are derived from the
+ * service reference's path.
+ *
+ * @param res Output list that will be filled with the filenames.
+ * @return RESULT Returns 0 on success, or an error code if the operation fails.
+ */
 RESULT eMP3ServiceOfflineOperations::getListOfFilenames(std::list<std::string>& res) {
 	res.clear();
 	res.push_back(m_ref.path);
@@ -447,6 +642,17 @@ DEFINE_REF(eStaticServiceMP3Info)
 
 eStaticServiceMP3Info::eStaticServiceMP3Info() {}
 
+/**
+ * @brief Retrieves the name of the service referenced by the given service reference.
+ *
+ * This method attempts to extract the name from the service reference. If the name is already set,
+ * it uses that; otherwise, it tries to parse metadata from a stream file or extracts the last part
+ * of the path as the name.
+ *
+ * @param ref The service reference for which to retrieve the name.
+ * @param name Output string that will be set to the service name.
+ * @return RESULT Returns 0 on success, or an error code if the operation fails.
+ */
 RESULT eStaticServiceMP3Info::getName(const eServiceReference& ref, std::string& name) {
 	if (ref.name.length())
 		name = ref.name;
@@ -468,6 +674,17 @@ int eStaticServiceMP3Info::getLength(const eServiceReference& ref) {
 	return -1;
 }
 
+/**
+ * @brief Retrieves specific information about the service referenced by the given service reference.
+ *
+ * This method checks the requested information type (w) and retrieves the corresponding data
+ * from the file system, such as creation time or file size. If the requested information is not
+ * available, it returns a predefined constant indicating that the information is not applicable.
+ *
+ * @param ref The service reference for which to retrieve information.
+ * @param w The type of information requested (e.g., creation time, file size).
+ * @return int Returns the requested information or iServiceInformation::resNA if not available.
+ */
 int eStaticServiceMP3Info::getInfo(const eServiceReference& ref, int w) {
 	switch (w) {
 		case iServiceInformation::sTimeCreate: {
@@ -486,6 +703,15 @@ int eStaticServiceMP3Info::getInfo(const eServiceReference& ref, int w) {
 	return iServiceInformation::resNA;
 }
 
+/**
+ * @brief Retrieves the file size of the service referenced by the given service reference.
+ *
+ * This method checks the file system for the size of the file associated with the service reference.
+ * If the file exists, it returns its size; otherwise, it returns 0.
+ *
+ * @param ref The service reference for which to retrieve the file size.
+ * @return long long Returns the file size in bytes, or 0 if the file does not exist.
+ */
 long long eStaticServiceMP3Info::getFileSize(const eServiceReference& ref) {
 	struct stat s = {};
 	if (stat(ref.path.c_str(), &s) == 0) {
@@ -494,6 +720,18 @@ long long eStaticServiceMP3Info::getFileSize(const eServiceReference& ref) {
 	return 0;
 }
 
+/**
+ * @brief Retrieves the event associated with the service reference at a specific start time.
+ *
+ * This method attempts to find an event for the given service reference at the specified start time.
+ * If the service reference contains a protocol (e.g., "://"), it looks up the event in the EPG cache.
+ * If not, it tries to read an EIT file corresponding to the service reference's path.
+ *
+ * @param ref The service reference for which to retrieve the event.
+ * @param evt Output pointer that will be set to the found event, or nullptr if not found.
+ * @param start_time The start time for which to look up the event.
+ * @return RESULT Returns 0 on success, or -1 if no event is found or an error occurs.
+ */
 RESULT eStaticServiceMP3Info::getEvent(const eServiceReference& ref, ePtr<eServiceEvent>& evt, time_t start_time) {
 	if (ref.path.find("://") != std::string::npos) {
 		eServiceReference equivalentref(ref);
@@ -572,6 +810,14 @@ void eServiceMP3InfoContainer::setDouble(double value) {
 	doubleValue = value;
 }
 
+/**
+ * @brief Sets the buffer for the container and maps it for reading.
+ *
+ * This method takes a GstBuffer pointer, references it, and maps it for reading.
+ * It stores the mapped data and size in the container for later access.
+ *
+ * @param buffer The GstBuffer to set in the container.
+ */
 void eServiceMP3InfoContainer::setBuffer(GstBuffer* buffer) {
 	bufferValue = buffer;
 	gst_buffer_ref(bufferValue);
@@ -583,6 +829,15 @@ void eServiceMP3InfoContainer::setBuffer(GstBuffer* buffer) {
 // eServiceMP3
 int eServiceMP3::ac3_delay = 0, eServiceMP3::pcm_delay = 0;
 
+/**
+ * @brief Constructs an eServiceMP3 object with the given service reference.
+ *
+ * This constructor initializes various timers, subtitle parsers, and other member variables
+ * required for handling MP3 services. It also sets up connections for handling subtitle synchronization,
+ * DVB subtitle parsing, and other service-related events.
+ *
+ * @param ref The service reference for the MP3 service to be created.
+ */
 eServiceMP3::eServiceMP3(eServiceReference ref)
 	: m_nownext_timer(eTimer::create(eApp)), m_cuesheet_changed(0), m_cutlist_enabled(1), m_ref(ref),
 	  m_pump(eApp, 1, "eServiceMP3") {
@@ -952,6 +1207,13 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 		g_free(suburi);
 }
 
+/**
+ * @brief Destructor for eServiceMP3.
+ *
+ * This destructor cleans up resources, disconnects signals, and stops the service.
+ * It ensures that all GStreamer elements are properly released and any active timers
+ * are stopped to prevent memory leaks or dangling pointers.
+ */
 eServiceMP3::~eServiceMP3() {
 	// disconnect subtitle callback
 
@@ -1013,6 +1275,17 @@ void eServiceMP3::forcePassthrough() {
 }
 #endif
 
+/**
+ * @brief Updates the EPG cache for the current and next events.
+ *
+ * This function updates the EPG cache for the current and next events, using
+ * information from the `eEPGCache` singleton instance. It checks if there are any
+ * changes to the event listings for this service, and if so, it updates the
+ * corresponding class fields (`m_event_now`, `m_event_next`) and notifies the
+ * observers of changes to the event information.
+ *
+ * @param[in] update Whether an update is required.
+ */
 void eServiceMP3::updateEpgCacheNowNext() {
 	bool update = false;
 	ePtr<eServiceEvent> next = 0;
@@ -1054,6 +1327,18 @@ DEFINE_REF(eServiceMP3);
 
 DEFINE_REF(GstMessageContainer);
 
+/**
+ * @brief Sets a cache entry for this service.
+ *
+ * This function sets a cache entry for this service, which can be used to store
+ * information about the service's streams and other relevant details. The cache
+ * entry is identified by the `ref` parameter, which should contain a string that
+ * uniquely identifies the service.
+ *
+ * @param[in] ref A reference string for this service.
+ * @param[in] isAudio Whether the stream is an audio stream or not.
+ * @param[in] pid The PID of the audio or subtitle stream.
+ */
 void eServiceMP3::setCacheEntry(bool isAudio, int pid) {
 	// eDebug("[eServiceMP3] setCacheEntry %d %d / %s", isAudio, pid, m_ref.toString().c_str());
 	std::string ref = replace_all(m_ref.toString(), ",", "_");
@@ -1074,11 +1359,30 @@ void eServiceMP3::setCacheEntry(bool isAudio, int pid) {
 	}
 }
 
+/**
+ * @brief Connects an event to the service.
+ *
+ * This function connects a signal slot to the service's event system, allowing
+ * external components to listen for specific events related to the service.
+ *
+ * @param[in] event The signal slot to connect.
+ * @param[out] connection An output pointer that will hold the connection reference.
+ * @return RESULT Returns 0 on success, or an error code if the connection fails.
+ */
 RESULT eServiceMP3::connectEvent(const sigc::slot<void(iPlayableService*, int)>& event, ePtr<eConnection>& connection) {
 	connection = new eConnection((iPlayableService*)this, m_event.connect(event));
 	return 0;
 }
 
+/**
+ * @brief Starts the MP3 service.
+ *
+ * This function initializes the GStreamer playbin element, sets its state to
+ * READY or PLAYING, and prepares the service for playback. It also attempts to
+ * read event information from an associated .eit file if available.
+ *
+ * @return RESULT Returns 0 on success, or an error code if the service fails to start.
+ */
 RESULT eServiceMP3::start() {
 	ASSERT(m_state == stIdle);
 
@@ -1124,6 +1428,16 @@ RESULT eServiceMP3::start() {
 	return 0;
 }
 
+/**
+ * @brief Stops the MP3 service.
+ *
+ * This function stops the GStreamer playbin element, sets its state to NULL,
+ * and cleans up any resources associated with the service. It also saves the
+ * cuesheet if it was loaded and resets various member variables related to
+ * playback state.
+ *
+ * @return RESULT Returns 0 on success, or an error code if the service fails to stop.
+ */
 RESULT eServiceMP3::stop() {
 	if (!m_gst_playbin || m_state == stStopped)
 		return -1;
@@ -1152,6 +1466,13 @@ RESULT eServiceMP3::stop() {
 	return 0;
 }
 
+/**
+ * @brief Handles the timing for playback position updates.
+ *
+ * This function is called periodically to update the playback position of the
+ * media being played. It increments the last seek count and triggers an event
+ * to update the service's information.
+ */
 void eServiceMP3::playPositionTiming() {
 	// eDebug("[eServiceMP3] ***** USE IOCTL POSITION ******");
 	if (m_last_seek_count >= 1) {
@@ -1162,12 +1483,32 @@ void eServiceMP3::playPositionTiming() {
 	}
 }
 
+/**
+ * @brief Pauses the MP3 service.
+ *
+ * This function pauses the playback of the media being played by the service.
+ * It sets the state to PAUSED and starts a timer to synchronize subtitles if
+ * applicable. If the service is already paused, it does nothing.
+ *
+ * @param[out] ptr A pointer to an iPauseableService interface that can be used to pause the service.
+ * @return RESULT Returns 0 on success, or an error code if the service fails to pause.
+ */
 RESULT eServiceMP3::pause(ePtr<iPauseableService>& ptr) {
 	ptr = this;
 	eDebug("[eServiceMP3] pause(ePtr<iPauseableService> &ptr)");
 	return 0;
 }
 
+/**
+ * @brief Sets the slow motion playback ratio.
+ *
+ * This function sets the playback speed to a slow motion ratio. If the ratio is
+ * zero, it returns immediately without changing the playback speed. Otherwise,
+ * it calls `trickSeek` with the inverse of the ratio to achieve slow motion.
+ *
+ * @param[in] ratio The slow motion ratio (1.0 for normal speed, >1.0 for slow motion).
+ * @return RESULT Returns 0 on success, or an error code if the service fails to set slow motion.
+ */
 RESULT eServiceMP3::setSlowMotion(int ratio) {
 	if (!ratio)
 		return 0;
@@ -1175,12 +1516,32 @@ RESULT eServiceMP3::setSlowMotion(int ratio) {
 	return trickSeek(1.0 / (gdouble)ratio);
 }
 
+/**
+ * @brief Sets the fast forward playback ratio.
+ *
+ * This function sets the playback speed to a fast forward ratio. If the ratio is
+ * zero, it returns immediately without changing the playback speed. Otherwise,
+ * it calls `trickSeek` with the specified ratio to achieve fast forward.
+ *
+ * @param[in] ratio The fast forward ratio (1.0 for normal speed, >1.0 for fast forward).
+ * @return RESULT Returns 0 on success, or an error code if the service fails to set fast forward.
+ */
 RESULT eServiceMP3::setFastForward(int ratio) {
 	eDebug("[eServiceMP3] setFastForward ratio=%.1f", (gdouble)ratio);
 	return trickSeek(ratio);
 }
 
 // iPausableService
+
+/**
+ * @brief Pauses the MP3 service.
+ *
+ * This function pauses the playback of the media being played by the service.
+ * It sets the state to PAUSED and starts a timer to synchronize subtitles if
+ * applicable. If the service is already paused, it does nothing.
+ *
+ * @return RESULT Returns 0 on success, or an error code if the service fails to pause.
+ */
 RESULT eServiceMP3::pause() {
 	if (!m_gst_playbin || m_state != stRunning)
 		return -1;
@@ -1196,6 +1557,15 @@ RESULT eServiceMP3::pause() {
 	return 0;
 }
 
+/**
+ * @brief Unpauses the MP3 service.
+ *
+ * This function resumes playback of the media being played by the service.
+ * It sets the state to RUNNING and starts a timer to synchronize subtitles if
+ * applicable. If the service is not paused, it does nothing.
+ *
+ * @return RESULT Returns 0 on success, or an error code if the service fails to unpause.
+ */
 RESULT eServiceMP3::unpause() {
 	if (!m_gst_playbin || m_state != stRunning)
 		return -1;
@@ -1215,12 +1585,33 @@ RESULT eServiceMP3::unpause() {
 	return 0;
 }
 
-/* iSeekableService */
+// iSeekableService
+
+/**
+ * @brief Seeks to a specific position in the media.
+ *
+ * This function seeks to a specific position in the media being played by the
+ * service. It updates the last seek position and calls `seekToImpl` to perform
+ * the actual seek operation.
+ *
+ * @param[out] ptr A pointer to an iSeekableService interface that can be used to seek in the service.
+ * @return RESULT Returns 0 on success, or an error code if the service fails to seek.
+ */
 RESULT eServiceMP3::seek(ePtr<iSeekableService>& ptr) {
 	ptr = this;
 	return 0;
 }
 
+/**
+ * @brief Gets the current playback position in the media.
+ *
+ * This function retrieves the current playback position in the media being played
+ * by the service. It queries the GStreamer playbin for the current position and
+ * returns it in PTS format.
+ *
+ * @param[out] pts The current playback position in PTS format.
+ * @return RESULT Returns 0 on success, or an error code if the service fails to get the position.
+ */
 RESULT eServiceMP3::getLength(pts_t& pts) {
 	if (!m_gst_playbin || m_state != stRunning)
 		return -1;
@@ -1236,6 +1627,17 @@ RESULT eServiceMP3::getLength(pts_t& pts) {
 	return 0;
 }
 
+/**
+ * @brief Seeks to a specific position in the media.
+ *
+ * This function seeks to a specific position in the media being played by the
+ * service. It converts the PTS to nanoseconds and calls `gst_element_seek` to
+ * perform the seek operation. If the seek is successful, it updates the last
+ * seek position and triggers an event to update the service's information.
+ *
+ * @param[in] to The position to seek to in PTS format.
+ * @return RESULT Returns 0 on success, or an error code if the service fails to seek.
+ */
 RESULT eServiceMP3::seekToImpl(pts_t to) {
 	// eDebug("[eServiceMP3] seekToImpl pts_t to %" G_GINT64_FORMAT, (gint64)to);
 	/* convert pts to nanoseconds */
@@ -1260,6 +1662,16 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
 	return 0;
 }
 
+/**
+ * @brief Seeks to a specific position in the media.
+ *
+ * This function seeks to a specific position in the media being played by the
+ * service. It updates the last seek position and calls `seekToImpl` to perform
+ * the actual seek operation. If the service is not running, it returns an error.
+ *
+ * @param[in] to The position to seek to in PTS format.
+ * @return RESULT Returns 0 on success, or an error code if the service fails to seek.
+ */
 RESULT eServiceMP3::seekTo(pts_t to) {
 	RESULT ret = -1;
 	// eDebug("[eServiceMP3] seekTo(pts_t to)");
@@ -1273,6 +1685,16 @@ RESULT eServiceMP3::seekTo(pts_t to) {
 	return ret;
 }
 
+/**
+ * @brief Performs a trick seek operation.
+ *
+ * This function performs a trick seek operation, which can be used to change
+ * the playback speed or pause the playback. It handles different cases based on
+ * the provided ratio and updates the playback state accordingly.
+ *
+ * @param[in] ratio The trick seek ratio (1.0 for normal speed, >1.0 for fast forward, <1.0 for slow motion).
+ * @return RESULT Returns 0 on success, or an error code if the service fails to perform the trick seek.
+ */
 RESULT eServiceMP3::trickSeek(gdouble ratio) {
 	if (!m_gst_playbin)
 		return -1;
@@ -1404,6 +1826,17 @@ RESULT eServiceMP3::trickSeek(gdouble ratio) {
 	return 0;
 }
 
+/**
+ * @brief Seeks relative to the current playback position.
+ *
+ * This function seeks relative to the current playback position in the media
+ * being played by the service. It updates the last seek position and calls
+ * `seekTo` to perform the actual seek operation.
+ *
+ * @param[in] direction The direction to seek (positive for forward, negative for backward).
+ * @param[in] to The amount to seek in PTS format.
+ * @return RESULT Returns 0 on success, or an error code if the service fails to seek.
+ */
 RESULT eServiceMP3::seekRelative(int direction, pts_t to) {
 	if (!m_gst_playbin)
 		return -1;
@@ -1428,11 +1861,33 @@ RESULT eServiceMP3::seekRelative(int direction, pts_t to) {
 	}
 }
 
+/**
+ * @brief Matches the sink type of a GStreamer element.
+ *
+ * This function checks if the type of a GStreamer element matches a specified
+ * type string. It is used to determine if the element is compatible with the
+ * expected sink type for audio or video playback.
+ *
+ * @param[in] velement A GValue containing the GStreamer element to check.
+ * @param[in] type The expected type string to match against.
+ * @return gint Returns 0 if the types match, or a non-zero value if they do not match.
+ */
 gint eServiceMP3::match_sinktype(const GValue* velement, const gchar* type) {
 	GstElement* element = GST_ELEMENT_CAST(g_value_get_object(velement));
 	return strcmp(g_type_name(G_OBJECT_TYPE(element)), type);
 }
 
+/**
+ * @brief Gets the current playback position in the media.
+ *
+ * This function retrieves the current playback position in the media being played
+ * by the service. It queries the GStreamer playbin for the current position and
+ * returns it in PTS format. It also handles special cases for live streams and
+ * paused states.
+ *
+ * @param[out] pts The current playback position in PTS format.
+ * @return RESULT Returns 0 on success, or an error code if the service fails to get the position.
+ */
 RESULT eServiceMP3::getPlayPosition(pts_t& pts) {
 	gint64 pos = 0;
 
@@ -1519,6 +1974,15 @@ RESULT eServiceMP3::getPlayPosition(pts_t& pts) {
 	return 0;
 }
 
+/**
+ * @brief Gets the current decoder time for live streams.
+ *
+ * This function retrieves the current decoder time for live streams. It emits
+ * a signal to the dvb_videosink to get the decoder time and converts it from
+ * nanoseconds to 90kHz PTS format.
+ *
+ * @return int64_t Returns the current decoder time in 90kHz PTS format, or -1 if not valid.
+ */
 int64_t eServiceMP3::getLiveDecoderTime() {
 	gint64 pos = 0;
 	if (dvb_videosink) {
@@ -1531,11 +1995,30 @@ int64_t eServiceMP3::getLiveDecoderTime() {
 	return -1;
 }
 
+/**
+ * @brief Sets the trick mode for the service.
+ *
+ * This function sets the trick mode for the service, which can be used to
+ * change the playback speed or pause the playback. It currently does not support
+ * trick modes and returns an error.
+ *
+ * @param[in] trick The trick mode to set (not supported).
+ * @return RESULT Returns -1 indicating that trick modes are not supported.
+ */
 RESULT eServiceMP3::setTrickmode(int trick) {
 	/* trickmode is not yet supported by our dvbmediasinks. */
 	return -1;
 }
 
+/**
+ * @brief Checks if the service is currently seekable.
+ *
+ * This function checks if the service is currently seekable. It returns 0 if
+ * the service is not seekable, or a positive value if it is seekable. If the
+ * service is live, it is assumed to be not seekable.
+ *
+ * @return RESULT Returns 0 if not seekable, or a positive value if seekable.
+ */
 RESULT eServiceMP3::isCurrentlySeekable() {
 	int ret = 3; /* just assume that seeking and fast/slow winding are possible */
 
@@ -1548,11 +2031,31 @@ RESULT eServiceMP3::isCurrentlySeekable() {
 	return ret;
 }
 
+/**
+ * @brief Provides information about the service.
+ *
+ * This function provides information about the service, including its type,
+ * name, and other metadata. It sets the provided pointer to the current service
+ * instance.
+ *
+ * @param[out] i A pointer to an iServiceInformation interface that will hold the service information.
+ * @return RESULT Returns 0 on success, or an error code if the service fails to provide information.
+ */
 RESULT eServiceMP3::info(ePtr<iServiceInformation>& i) {
 	i = this;
 	return 0;
 }
 
+/**
+ * @brief Gets the name of the service.
+ *
+ * This function retrieves the name of the service. If the service has a title
+ * tag, it uses that; otherwise, it extracts the name from the service reference
+ * path. It returns 0 on success.
+ *
+ * @param[out] name A reference to a string that will hold the service name.
+ * @return RESULT Returns 0 on success, or an error code if the service fails to get the name.
+ */
 RESULT eServiceMP3::getName(std::string& name) {
 	std::string title = m_ref.getName();
 	if (title.empty()) {
@@ -1565,6 +2068,17 @@ RESULT eServiceMP3::getName(std::string& name) {
 	return 0;
 }
 
+/**
+ * @brief Gets the current event associated with the service.
+ *
+ * This function retrieves the current event associated with the service. It
+ * checks if the event is available and returns it through the provided pointer.
+ * If no event is available, it returns an error code.
+ *
+ * @param[out] evt A pointer to an eServiceEvent that will hold the current event.
+ * @param[in] nownext If true, retrieves the next event; otherwise, retrieves the current event.
+ * @return RESULT Returns 0 on success, or -1 if no event is available.
+ */
 RESULT eServiceMP3::getEvent(ePtr<eServiceEvent>& evt, int nownext) {
 	evt = nownext ? m_event_next : m_event_now;
 	if (!evt)
@@ -1572,6 +2086,16 @@ RESULT eServiceMP3::getEvent(ePtr<eServiceEvent>& evt, int nownext) {
 	return 0;
 }
 
+/**
+ * @brief Gets information about the service.
+ *
+ * This function retrieves various pieces of information about the service,
+ * such as video height, width, frame rate, aspect ratio, and more. It returns
+ * the requested information based on the provided parameter.
+ *
+ * @param[in] w The type of information to retrieve.
+ * @return int Returns the requested information or a specific result code.
+ */
 int eServiceMP3::getInfo(int w) {
 	const gchar* tag = 0;
 
@@ -1688,6 +2212,16 @@ int eServiceMP3::getInfo(int w) {
 	return 0;
 }
 
+/**
+ * @brief Gets a string representation of the service information.
+ *
+ * This function retrieves a string representation of the service information
+ * based on the provided parameter. It handles various cases, including streaming
+ * services, video information, and metadata tags.
+ *
+ * @param[in] w The type of information to retrieve as a string.
+ * @return std::string Returns the requested information as a string.
+ */
 std::string eServiceMP3::getInfoString(int w) {
 	if (m_sourceinfo.is_streaming) {
 		switch (w) {
@@ -1834,6 +2368,16 @@ std::string eServiceMP3::getInfoString(int w) {
 	return "";
 }
 
+/**
+ * @brief Gets an information object for the specified tag.
+ *
+ * This function retrieves an information object for the specified tag. It creates
+ * an instance of eServiceMP3InfoContainer and populates it with the relevant data
+ * from the stream tags. The type of data retrieved depends on the specified tag.
+ *
+ * @param[in] w The tag for which to retrieve the information object.
+ * @return ePtr<iServiceInfoContainer> Returns a pointer to the information container.
+ */
 ePtr<iServiceInfoContainer> eServiceMP3::getInfoObject(int w) {
 	eServiceMP3InfoContainer* container = new eServiceMP3InfoContainer;
 	ePtr<iServiceInfoContainer> retval = container;
@@ -1916,16 +2460,43 @@ RESULT eServiceMP3::audioDelay(ePtr<iAudioDelay>& ptr) {
 	return 0;
 }
 
+/**
+ * @brief Gets the number of audio tracks available in the service.
+ *
+ * This function retrieves the number of audio tracks available in the service.
+ * It checks the size of the `m_audioStreams` vector, which holds information about
+ * the audio streams, and returns the count.
+ *
+ * @return int Returns the number of audio tracks available in the service.
+ */
 int eServiceMP3::getNumberOfTracks() {
 	return m_audioStreams.size();
 }
 
+/**
+ * @brief Gets the current audio track index.
+ *
+ * This function retrieves the current audio track index from the GStreamer playbin.
+ * If the current audio stream is not set, it queries the playbin for the current audio stream.
+ *
+ * @return int Returns the index of the current audio track, or -1 if no audio stream is set.
+ */
 int eServiceMP3::getCurrentTrack() {
 	if (m_currentAudioStream == -1)
 		g_object_get(m_gst_playbin, "current-audio", &m_currentAudioStream, NULL);
 	return m_currentAudioStream;
 }
 
+/**
+ * @brief Selects the specified audio track.
+ *
+ * This function selects the specified audio track by its index. It checks if the
+ * current audio stream is already set to the specified index and returns early if so.
+ * Otherwise, it clears the buffers and calls `selectAudioStream` to perform the selection.
+ *
+ * @param[in] i The index of the audio track to select.
+ * @return RESULT Returns 0 on success, or an error code if the selection fails.
+ */
 RESULT eServiceMP3::selectTrack(unsigned int i) {
 	m_currentAudioStream = getCurrentTrack();
 	if (m_currentAudioStream == (int)i)
@@ -1937,6 +2508,15 @@ RESULT eServiceMP3::selectTrack(unsigned int i) {
 	return result;
 }
 
+/**
+ * @brief Clears the audio and video buffers.
+ *
+ * This function clears the audio and video buffers by seeking to a position
+ * that is slightly before the current playback position. It is called when
+ * the service is started or when the buffers need to be cleared.
+ *
+ * @param[in] force If true, forces the clearing of buffers even if not initially started.
+ */
 void eServiceMP3::clearBuffers(bool force) {
 	if ((!m_initial_start || !m_clear_buffers) && !force)
 		return;
@@ -1962,6 +2542,17 @@ void eServiceMP3::clearBuffers(bool force) {
 	}
 }
 
+/**
+ * @brief Selects the specified audio stream.
+ *
+ * This function selects the specified audio stream by its index. It checks if the
+ * current audio stream is already set to the specified index and returns early if so.
+ * If the selection is successful, it clears the buffers and sets the cache entry.
+ *
+ * @param[in] i The index of the audio stream to select.
+ * @param[in] skipAudioFix If true, skips the audio fix logic.
+ * @return int Returns 0 on success, or -1 if the selection fails.
+ */
 int eServiceMP3::selectAudioStream(int i, bool skipAudioFix) {
 	int current_audio, current_audio_orig;
 	g_object_get(m_gst_playbin, "current-audio", &current_audio_orig, NULL);
@@ -2022,6 +2613,17 @@ RESULT eServiceMP3::selectChannel(int i) {
 	return 0;
 }
 
+/**
+ * @brief Gets information about the specified audio track.
+ *
+ * This function retrieves information about the specified audio track, including
+ * its description and language. It uses a map of replacements to format the
+ * codec description and sets the language code accordingly.
+ *
+ * @param[out] info A reference to an iAudioTrackInfo structure that will hold the track information.
+ * @param[in] i The index of the audio track to retrieve information for.
+ * @return RESULT Returns 0 on success, or -2 if the index is out of bounds.
+ */
 RESULT eServiceMP3::getTrackInfo(struct iAudioTrackInfo& info, unsigned int i) {
 	if (i >= m_audioStreams.size()) {
 		return -2;
@@ -2063,6 +2665,17 @@ RESULT eServiceMP3::getTrackInfo(struct iAudioTrackInfo& info, unsigned int i) {
 	return 0;
 }
 
+/**
+ * @brief Gets the subtitle type based on the pad and codec.
+ *
+ * This function determines the subtitle type based on the GStreamer pad and
+ * an optional codec string. It checks the current or allowed caps of the pad
+ * and matches them against known subtitle types.
+ *
+ * @param[in] pad The GStreamer pad to check for subtitle type.
+ * @param[in] g_codec An optional codec string to match against known subtitle types.
+ * @return subtype_t Returns the identified subtitle type, or stUnknown if not identified.
+ */
 subtype_t getSubtitleType(GstPad* pad, gchar* g_codec = NULL) {
 	subtype_t type = stUnknown;
 	GstCaps* caps = gst_pad_get_current_caps(pad);
@@ -2115,6 +2728,15 @@ subtype_t getSubtitleType(GstPad* pad, gchar* g_codec = NULL) {
 	return type;
 }
 
+/**
+ * @brief Handles GStreamer bus messages.
+ *
+ * This function processes GStreamer bus messages and handles various message types,
+ * such as end-of-stream (EOS), state changes, and errors. It also manages the state
+ * transitions of the playbin and emits events based on the received messages.
+ *
+ * @param[in] msg The GStreamer message to process.
+ */
 void eServiceMP3::gstBusCall(GstMessage* msg) {
 	if (!msg)
 		return;
@@ -2710,6 +3332,15 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 	g_free(sourceName);
 }
 
+/**
+ * @brief Handles GStreamer bus messages.
+ *
+ * This function processes GStreamer bus messages and handles various message types,
+ * such as state changes, end-of-stream (EOS), and errors. It sends the messages to
+ * a message pump for further processing.
+ *
+ * @param[in] msg The GStreamer message to process.
+ */
 void eServiceMP3::handleMessage(GstMessage* msg) {
 	if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_STATE_CHANGED && GST_MESSAGE_SRC(msg) != GST_OBJECT(m_gst_playbin)) {
 		/*
@@ -2722,13 +3353,33 @@ void eServiceMP3::handleMessage(GstMessage* msg) {
 	m_pump.send(new GstMessageContainer(1, msg, NULL, NULL));
 }
 
+/**
+ * @brief GStreamer bus sync handler.
+ *
+ * This function is called when a GStreamer bus message is received. It processes the
+ * message and calls the handleMessage function to handle it.
+ *
+ * @param[in] bus The GStreamer bus.
+ * @param[in] message The GStreamer message to process.
+ * @param[in] user_data User data passed to the handler.
+ * @return GST_BUS_DROP to drop the message after processing.
+ */
 GstBusSyncReply eServiceMP3::gstBusSyncHandler(GstBus* bus, GstMessage* message, gpointer user_data) {
 	eServiceMP3* _this = (eServiceMP3*)user_data;
 	if (_this)
 		_this->handleMessage(message);
 	return GST_BUS_DROP;
 }
-/*Processing TOC CVR */
+
+
+/**
+ * @brief Handles TOC entries from GStreamer messages.
+ *
+ * This function processes TOC entries from GStreamer messages, specifically for
+ * video media. It extracts chapter information and updates the cue entries.
+ *
+ * @param[in] msg The GStreamer message containing TOC entries.
+ */
 void eServiceMP3::HandleTocEntry(GstMessage* msg) {
 	/* limit TOC to dvbvideosink cue sheet only works for video media */
 	if (!strncmp(GST_MESSAGE_SRC_NAME(msg), "dvbvideosink", 12)) {
@@ -2794,6 +3445,17 @@ void eServiceMP3::HandleTocEntry(GstMessage* msg) {
 	}
 }
 
+/**
+ * @brief Callback function to notify when the source of the playbin changes.
+ *
+ * This function is called when the "source" property of the playbin changes.
+ * It sets various properties on the source element, such as timeout, retries,
+ * SSL strictness, user-agent, and extra headers.
+ *
+ * @param[in] object The GObject that emitted the signal.
+ * @param[in] unused Unused parameter (not used in this implementation).
+ * @param[in] user_data User data passed to the callback (eServiceMP3 instance).
+ */
 void eServiceMP3::playbinNotifySource(GObject* object, GParamSpec* unused, gpointer user_data) {
 	GstElement* source = NULL;
 	eServiceMP3* _this = (eServiceMP3*)user_data;
@@ -2859,6 +3521,18 @@ void eServiceMP3::playbinNotifySource(GObject* object, GParamSpec* unused, gpoin
 	}
 }
 
+/**
+ * @brief Callback function to handle the addition of elements to a GStreamer bin.
+ *
+ * This function is called when an element is added to a GStreamer bin. It checks if the
+ * element is a queue2 element and sets its "temp-template" property based on the
+ * download buffer path. It also connects to the "element-added" signal for uridecodebin
+ * or decodebin elements to handle queue2 elements added there.
+ *
+ * @param[in] bin The GStreamer bin where the element was added.
+ * @param[in] element The GStreamer element that was added.
+ * @param[in] user_data User data passed to the callback (eServiceMP3 instance).
+ */
 void eServiceMP3::handleElementAdded(GstBin* bin, GstElement* element, gpointer user_data) {
 	eServiceMP3* _this = (eServiceMP3*)user_data;
 	if (_this) {
@@ -2881,6 +3555,15 @@ void eServiceMP3::handleElementAdded(GstBin* bin, GstElement* element, gpointer 
 	}
 }
 
+/**
+ * @brief Checks the audio pad structure to determine the audio type.
+ *
+ * This function checks the given GstStructure to determine the audio type
+ * based on the codec information present in the structure.
+ *
+ * @param[in] structure The GstStructure to check.
+ * @return The detected audio type as an audiotype_t enum value.
+ */
 audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure) {
 	if (!structure)
 		return atUnknown;
@@ -2915,6 +3598,14 @@ audiotype_t eServiceMP3::gstCheckAudioPad(GstStructure* structure) {
 	return atPCM;
 }
 
+/**
+ * @brief Polls the message pump for GStreamer messages.
+ *
+ * This function processes messages from the message pump and handles different
+ * types of messages, such as GstMessageContainer, GstBuffer, and GstPad.
+ *
+ * @param[in] msg The GStreamer message to process.
+ */
 void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const& msg) {
 	switch (msg->getType()) {
 		case 1: {
@@ -2940,8 +3631,24 @@ void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const& msg) {
 	}
 }
 
+/**
+ * @brief Initializes the eServiceFactoryMP3 class.
+ *
+ * This function initializes the eServiceFactoryMP3 class, which is responsible for
+ * creating instances of eServiceMP3. It sets the service number and name for the factory.
+ */
 eAutoInitPtr<eServiceFactoryMP3> init_eServiceFactoryMP3(eAutoInitNumbers::service + 1, "eServiceFactoryMP3");
 
+/**
+ * @brief Callback function to handle subtitle availability.
+ *
+ * This function is called when subtitles are available in the GstElement subsink.
+ * It sends the subtitle buffer to the message pump for further processing.
+ *
+ * @param[in] subsink The GstElement that provides subtitles.
+ * @param[in] buffer The GstBuffer containing the subtitle data.
+ * @param[in] user_data User data passed to the callback (eServiceMP3 instance).
+ */
 void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpointer user_data) {
 	// eDebug("[eServiceMP3] gstCBsubtitleAvail");
 	eServiceMP3* _this = (eServiceMP3*)user_data;
@@ -2953,6 +3660,16 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpo
 	_this->m_pump.send(new GstMessageContainer(2, NULL, NULL, buffer));
 }
 
+/**
+ * @brief Callback function to handle CAPS availability on a GstPad.
+ *
+ * This function is called when CAPS are available on a GstPad. It sends the pad
+ * to the message pump for further processing.
+ *
+ * @param[in] pad The GstPad that has CAPS available.
+ * @param[in] unused Unused parameter (not used in this implementation).
+ * @param[in] user_data User data passed to the callback (eServiceMP3 instance).
+ */
 void eServiceMP3::gstTextpadHasCAPS(GstPad* pad, GParamSpec* unused, gpointer user_data) {
 	eDebug("[eServiceMP3] gstTextpadHasCAPS");
 	eServiceMP3* _this = (eServiceMP3*)user_data;
@@ -2962,6 +3679,14 @@ void eServiceMP3::gstTextpadHasCAPS(GstPad* pad, GParamSpec* unused, gpointer us
 	_this->m_pump.send(new GstMessageContainer(3, NULL, pad, NULL));
 }
 
+/**
+ * @brief Callback function to handle CAPS availability on a GstPad, synchronized.
+ *
+ * This function is called when CAPS are available on a GstPad. It retrieves the
+ * CAPS and processes them to update subtitle streams.
+ *
+ * @param[in] pad The GstPad that has CAPS available.
+ */
 void eServiceMP3::gstTextpadHasCAPS_synced(GstPad* pad) {
 	eDebug("[eServiceMP3] gstTextpadHasCAPS_synced");
 	GstCaps* caps = NULL;
@@ -3015,6 +3740,14 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad* pad) {
 	}
 }
 
+/**
+ * @brief Pulls subtitles from a GstBuffer and processes them.
+ *
+ * This function extracts subtitle data from the given GstBuffer and processes it
+ * based on the current subtitle stream type. It supports WebVTT, DVB, and text subtitles.
+ *
+ * @param[in] buffer The GstBuffer containing subtitle data.
+ */
 void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 	if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size()) {
 		GstMapInfo map;
@@ -3100,11 +3833,25 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 	}
 }
 
+/**
+ * @brief Adds a new DVB subtitle page to the list and pushes it to the subtitle widget.
+ *
+ * This function adds a new DVB subtitle page to the list of pages and triggers
+ * the subtitle widget to display it.
+ *
+ * @param[in] p The eDVBSubtitlePage to add.
+ */
 void eServiceMP3::newDVBSubtitlePage(const eDVBSubtitlePage& p) {
 	m_dvb_subtitle_pages.push_back(p);
 	pushDVBSubtitles();
 }
 
+/**
+ * @brief Pushes DVB subtitles to the subtitle widget.
+ *
+ * This function processes the DVB subtitle pages and displays them in the
+ * subtitle widget based on the current decoder time.
+ */
 void eServiceMP3::pushDVBSubtitles() {
 	pts_t running_pts = 0, decoder_ms;
 
@@ -3140,6 +3887,13 @@ void eServiceMP3::pushDVBSubtitles() {
 	}
 }
 
+/**
+ * @brief Pushes subtitles to the subtitle widget.
+ *
+ * This function processes the subtitle pages and displays them in the
+ * subtitle widget based on the current decoder time. It handles both live
+ * streams and VOD content, applying necessary delays and conversions.
+ */
 void eServiceMP3::pushSubtitles() {
 	pts_t running_pts = 0;
 	int32_t next_timer = 0, decoder_ms = 0, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
@@ -3378,6 +4132,17 @@ exit:
 	m_subtitle_sync_timer->start(next_timer, true);
 }
 
+/**
+ * @brief Enables subtitles for the current service.
+ *
+ * This function enables subtitles for the current service by setting the
+ * current text stream in the GStreamer playbin and updating the subtitle
+ * widget with the specified track.
+ *
+ * @param[in] user The subtitle user interface to update.
+ * @param[in] track The subtitle track to enable.
+ * @return RESULT indicating success or failure.
+ */
 RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& track) {
 	// eDebug ("[eServiceMP3][enableSubtitles] entered: subtitle stream %i track.pid %i", m_currentSubtitleStream,
 	// track.pid);
@@ -3422,6 +4187,14 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 	return 0;
 }
 
+/**
+ * @brief Disables subtitles for the current service.
+ *
+ * This function disables subtitles by setting the current text stream to -1
+ * in the GStreamer playbin and clearing the subtitle widget.
+ *
+ * @return RESULT indicating success or failure.
+ */
 RESULT eServiceMP3::disableSubtitles() {
 	eDebug("[eServiceMP3] disableSubtitles");
 	m_currentSubtitleStream = -1;
@@ -3440,6 +4213,16 @@ RESULT eServiceMP3::disableSubtitles() {
 	return 0;
 }
 
+/**
+ * @brief Retrieves the cached subtitle stream for the current service.
+ *
+ * This function checks if there is a cached subtitle stream available and
+ * returns the corresponding SubtitleTrack structure. If no suitable subtitle
+ * stream is found, it returns -1.
+ *
+ * @param[out] track The SubtitleTrack structure to fill with subtitle information.
+ * @return RESULT indicating success or failure.
+ */
 RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack& track) {
 	int m_subtitleStreams_size = (int)m_subtitleStreams.size();
 
@@ -3494,6 +4277,16 @@ RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack& track) {
 	return -1;
 }
 
+/**
+ * @brief Retrieves the list of available subtitle tracks for the current service.
+ *
+ * This function populates the provided vector with SubtitleTrack structures
+ * representing the available subtitle streams. It iterates through the
+ * m_subtitleStreams vector and fills in the details for each subtitle track.
+ *
+ * @param[out] subtitlelist The vector to fill with available subtitle tracks.
+ * @return RESULT indicating success or failure.
+ */
 RESULT eServiceMP3::getSubtitleList(std::vector<struct SubtitleTrack>& subtitlelist) {
 	// 	eDebug("[eServiceMP3] getSubtitleList");
 	int stream_idx = 0;
@@ -3523,16 +4316,43 @@ RESULT eServiceMP3::getSubtitleList(std::vector<struct SubtitleTrack>& subtitlel
 	return 0;
 }
 
+/**
+ * @brief Retrieves the current subtitle stream.
+ *
+ * This function returns the current subtitle stream as an integer. If no
+ * subtitle stream is set, it returns -1.
+ *
+ * @return The current subtitle stream ID or -1 if none is set.
+ */
 RESULT eServiceMP3::streamed(ePtr<iStreamedService>& ptr) {
 	ptr = this;
 	return 0;
 }
 
+/**
+ * @brief Retrieves the buffer charge information for the service.
+ *
+ * This function returns a pointer to an iStreamBufferInfo object containing
+ * the current buffer charge information, including buffer percentage, average
+ * input and output rates, buffering left time, and buffer size.
+ *
+ * @return A pointer to an iStreamBufferInfo object with buffer charge details.
+ */
 ePtr<iStreamBufferInfo> eServiceMP3::getBufferCharge() {
 	return new eStreamBufferInfo(m_bufferInfo.bufferPercent, m_bufferInfo.avgInRate, m_bufferInfo.avgOutRate,
 								 m_bufferInfo.bufferingLeft, m_buffer_size);
 }
+
+
 /* cuesheet CVR */
+/**
+ * @brief Retrieves the cut list as a Python list.
+ *
+ * This function creates a Python list containing tuples of cue entries,
+ * where each tuple consists of the position (pts) and type of the cue entry.
+ *
+ * @return A Python list containing the cut list.
+ */
 PyObject* eServiceMP3::getCutList() {
 	ePyObject list = PyList_New(0);
 
@@ -3546,7 +4366,16 @@ PyObject* eServiceMP3::getCutList() {
 
 	return list;
 }
-/* cuesheet CVR */
+
+/**
+ * @brief Sets the cut list from a Python list.
+ *
+ * This function takes a Python list of tuples, where each tuple contains
+ * a position (pts) and type of the cue entry, and updates the internal
+ * cut list accordingly. It clears the existing entries before adding new ones.
+ *
+ * @param[in] list A Python list containing tuples of cue entries.
+ */
 void eServiceMP3::setCutList(ePyObject list) {
 	if (!PyList_Check(list))
 		return;
@@ -3580,24 +4409,64 @@ void eServiceMP3::setCutList(ePyObject list) {
 	m_event((iPlayableService*)this, evCuesheetChanged);
 }
 
+/**
+ * @brief Sets whether the cut list is enabled.
+ *
+ * This function enables or disables the cut list functionality based on the
+ * provided integer value. If the value is non-zero, the cut list is enabled;
+ * otherwise, it is disabled.
+ *
+ * @param[in] enable An integer indicating whether to enable (non-zero) or disable (zero) the cut list.
+ */
 void eServiceMP3::setCutListEnable(int enable) {
 	m_cutlist_enabled = enable;
 }
 
+/**
+ * @brief Retrieves whether the cut list is enabled.
+ *
+ * This function returns the current state of the cut list, indicating whether
+ * it is enabled or not.
+ *
+ * @return An integer indicating whether the cut list is enabled (non-zero) or disabled (zero).
+ */
 int eServiceMP3::setBufferSize(int size) {
 	m_buffer_size = size;
 	g_object_set(m_gst_playbin, "buffer-size", m_buffer_size, NULL);
 	return 0;
 }
 
+/**
+ * @brief Retrieves the current buffer size.
+ *
+ * This function returns the current buffer size set for the service.
+ *
+ * @return The current buffer size in bytes.
+ */
 int eServiceMP3::getAC3Delay() {
 	return ac3_delay;
 }
 
+/**
+ * @brief Retrieves the current PCM delay.
+ *
+ * This function returns the current PCM delay set for the service.
+ *
+ * @return The current PCM delay in milliseconds.
+ */
 int eServiceMP3::getPCMDelay() {
 	return pcm_delay;
 }
 
+/**
+ * @brief Sets the AC3 delay for the service.
+ *
+ * This function sets the AC3 delay in milliseconds. If the playbin is running,
+ * it configures the hardware decoder with the specified delay, adjusted by
+ * the general AC3 delay setting if a video sink is present.
+ *
+ * @param[in] delay The AC3 delay in milliseconds to set.
+ */
 void eServiceMP3::setAC3Delay(int delay) {
 	ac3_delay = delay;
 	if (!m_gst_playbin || m_state != stRunning)
@@ -3623,6 +4492,15 @@ void eServiceMP3::setAC3Delay(int delay) {
 	}
 }
 
+/**
+ * @brief Sets the PCM delay for the service.
+ *
+ * This function sets the PCM delay in milliseconds. If the playbin is running,
+ * it configures the hardware decoder with the specified delay, adjusted by
+ * the general PCM delay setting if a video sink is present.
+ *
+ * @param[in] delay The PCM delay in milliseconds to set.
+ */
 void eServiceMP3::setPCMDelay(int delay) {
 	pcm_delay = delay;
 	if (!m_gst_playbin || m_state != stRunning)
@@ -3647,7 +4525,16 @@ void eServiceMP3::setPCMDelay(int delay) {
 		}
 	}
 }
+
+
 /* cuesheet CVR */
+/**
+ * @brief Loads the cuesheet from a file.
+ *
+ * This function loads the cuesheet entries from a file with the same name as
+ * the service path, appending ".cuts" to it. It reads the entries and stores
+ * them in the m_cue_entries multiset.
+ */
 void eServiceMP3::loadCuesheet() {
 	if (!m_cuesheet_loaded) {
 		eDebug("[eServiceMP3] loading cuesheet");
@@ -3691,6 +4578,14 @@ void eServiceMP3::loadCuesheet() {
 	m_event((iPlayableService*)this, evCuesheetChanged);
 }
 /* cuesheet */
+
+/**
+ * @brief Saves the cuesheet to a file.
+ *
+ * This function saves the current cuesheet entries to a file with the same
+ * name as the service path, appending ".cuts" to it. It writes the entries
+ * in a binary format, where each entry consists of a position (pts) and type.
+ */
 void eServiceMP3::saveCuesheet() {
 	std::string filename = m_ref.path;
 
