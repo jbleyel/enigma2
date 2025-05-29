@@ -438,7 +438,8 @@ private:
 
     pts_t   m_prev_decoder_time;
     int     m_decoder_time_valid_state;
-    int64_t m_initial_vtt_mpegts; // Base MPEGTS for WebVTT sync
+    int64_t m_initial_vtt_mpegts;
+    bool    m_vtt_live;
 
     void pushDVBSubtitles();
     void pushSubtitles();

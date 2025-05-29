@@ -628,6 +628,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
     m_prev_decoder_time        = -1;
     m_decoder_time_valid_state = 0;
     m_initial_vtt_mpegts       = 0; // Initialize base MPEGTS for WebVTT sync
+    m_vtt_live                 = false;
     m_errorInfo.missing_codec  = "";
     m_decoder                  = NULL;
     m_subs_to_pull_handler_id = m_notify_source_handler_id = m_notify_element_added_handler_id = 0;
@@ -2698,6 +2699,7 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
                     m_event((iPlayableService*)this, evUpdatedInfo);
                 }
 
+                // This is probably not save because some live hls streams have duration
                 if (m_sourceinfo.is_hls) {
                     gint64 duration = 0;
                     if (!gst_element_query_duration(m_gst_playbin, GST_FORMAT_TIME, &duration) || duration <= 0) {
@@ -3231,6 +3233,8 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 
                 for (const auto& sub : parsed_subs) {
                     if (sub.vtt_mpegts_base) {
+                        if (!m_vtt_live)
+                            m_vtt_live = true; // Set live flag if we have a base MPEGTS
                         int64_t decoder_pts = getLiveDecoderTime();
                         int64_t delta       = 0;
 
@@ -3345,7 +3349,7 @@ void eServiceMP3::pushSubtitles() {
     const uint64_t                 pts_mask = (1ULL << 33) - 1;
 
     // For live streams, get decoder time directly from videosink
-    if (m_is_live && dvb_videosink) {
+    if (m_vtt_live && dvb_videosink) {
         gint64   pos     = 0;
         gboolean success = FALSE;
         g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos, &success);
@@ -3369,6 +3373,24 @@ void eServiceMP3::pushSubtitles() {
         // Original VOD logic
         if (getPlayPosition(running_pts) < 0)
             m_decoder_time_valid_state = 0;
+        if (m_decoder_time_valid_state == 0)
+            m_decoder_time_valid_state = 2;
+        else
+            m_decoder_time_valid_state = 4;
+
+        if (m_decoder_time_valid_state < 4) {
+            m_decoder_time_valid_state++;
+
+            if (m_decoder_time_valid_state < 4) {
+                // eDebug("[eServiceMP3] *** push subtitles, waiting for clock to stabilise");
+                m_prev_decoder_time = running_pts;
+                next_timer          = 100;
+                goto exit;
+            }
+
+            // eDebug("[eServiceMP3] *** push subtitles, clock stable");
+        }
+
         decoder_ms = running_pts / 90;
     }
     delay_ms = 0;
@@ -3402,7 +3424,7 @@ void eServiceMP3::pushSubtitles() {
 
     // Clean up old subtitles for live streams to prevent memory growth
     /*
-    if (m_is_live && !m_subtitle_pages.empty()) {
+    if (m_vtt_live && !m_subtitle_pages.empty()) {
         std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
         subtitle_pages_map_t::iterator it = m_subtitle_pages.begin();
         while (it != m_subtitle_pages.end()) {
@@ -3435,7 +3457,7 @@ void eServiceMP3::pushSubtitles() {
         start_ms = current->second.start_ms;
         end_ms   = current->second.end_ms;
 
-        if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT && m_is_live) {
+        if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT && m_vtt_live) {
             // --- WebVTT LIVE WORKAROUND ---
             static int64_t vtt_live_base_time = -1;
             int64_t        now                = getCurrentTimeMs();
