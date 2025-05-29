@@ -433,6 +433,7 @@ private:
 	pts_t m_prev_decoder_time;
 	int m_decoder_time_valid_state;
 	int64_t m_initial_vtt_mpegts;
+	int64_t m_vtt_live_base_time;
 	bool m_vtt_live;
 
 	void pushDVBSubtitles();

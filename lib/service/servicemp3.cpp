@@ -625,6 +625,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	m_prev_decoder_time = -1;
 	m_decoder_time_valid_state = 0;
 	m_initial_vtt_mpegts = 0; // Initialize base MPEGTS for WebVTT sync
+	m_vtt_live_base_time = -1;
 	m_vtt_live = false;
 	m_errorInfo.missing_codec = "";
 	m_decoder = NULL;
@@ -3230,11 +3231,10 @@ void eServiceMP3::pushSubtitles() {
 			int end_ms = it->second.end_ms;
 
 			if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT && m_is_live) {
-				static int64_t vtt_live_base_time = -1;
 				int64_t now = getCurrentTimeMs();
-				if (vtt_live_base_time == -1 && !m_subtitle_pages.empty())
-					vtt_live_base_time = now - m_subtitle_pages.begin()->second.start_ms;
-				int64_t live_playback_time = now - vtt_live_base_time;
+				if (m_vtt_live_base_time == -1 && !m_subtitle_pages.empty())
+					m_vtt_live_base_time = now - m_subtitle_pages.begin()->second.start_ms;
+				int64_t live_playback_time = now - m_vtt_live_base_time;
 				if ((end_ms - live_playback_time) < -5000) // 5 seconds
 					erase = true;
 			} else {
@@ -3257,21 +3257,20 @@ void eServiceMP3::pushSubtitles() {
 
 		if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT && m_vtt_live) {
 			// --- WebVTT LIVE WORKAROUND ---
-			static int64_t vtt_live_base_time = -1;
 			int64_t now = getCurrentTimeMs();
 
 			// Initialisiere Basiszeit beim ersten Subtitle
-			if (vtt_live_base_time == -1)
-				vtt_live_base_time = now - start_ms;
+			if (m_vtt_live_base_time == -1)
+				m_vtt_live_base_time = now - start_ms;
 
-			int64_t live_playback_time = now - vtt_live_base_time;
+			int64_t live_playback_time = now - m_vtt_live_base_time;
 
 			diff_start_ms = start_ms - live_playback_time;
 			diff_end_ms = end_ms - live_playback_time;
 
 			eDebug("[eServiceMP3] WebVTT LIVE: now=%lld base=%lld live_playback_time=%lld start=%d end=%d "
 				   "diff_start=%d diff_end=%d",
-				   now, vtt_live_base_time, live_playback_time, start_ms, end_ms, diff_start_ms, diff_end_ms);
+				   now, m_vtt_live_base_time, live_playback_time, start_ms, end_ms, diff_start_ms, diff_end_ms);
 
 			if (diff_end_ms < -500) {
 				eDebug("[eServiceMP3] *** current sub has already ended, skip: %d\n", diff_end_ms);
