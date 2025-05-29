@@ -12,8 +12,6 @@
 #include <lib/gui/esubtitle.h>
 #include <mutex>
 
-// #define NEWPILELINE 1
-
 class eStaticServiceMP3Info;
 
 class eServiceFactoryMP3 : public iServiceHandler {
@@ -303,10 +301,9 @@ public:
         gboolean        is_video;
         gboolean        is_streaming;
         gboolean        is_hls;
-        gboolean        is_dash;
         sourceStream()
             : audiotype(atUnknown), containertype(ctNone), is_audio(FALSE), is_video(FALSE), is_streaming(FALSE),
-              is_hls(FALSE), is_dash(FALSE) {}
+              is_hls(FALSE) {}
     };
     struct bufferInfo {
         gint   bufferPercent;
@@ -377,8 +374,6 @@ private:
     gint         m_last_seek_count;
     bool         m_seeking_or_paused;
     bool         m_to_paused;
-    bool         m_useplaybin3;
-    bool         m_usepipeline;
     bufferInfo   m_bufferInfo;
     errorInfo    m_errorInfo;
     std::string  m_download_buffer_path;
@@ -391,7 +386,7 @@ private:
     };
     int                         m_state;
     bool                        m_gstdot;
-    GstElement*                 m_gst_playbin = nullptr;
+    GstElement*                 m_gst_playbin;
     GstTagList*                 m_stream_tags;
     bool                        m_coverart;
     std::list<eDVBSubtitlePage> m_dvb_subtitle_pages;
@@ -411,13 +406,12 @@ private:
     /* TOC processing CVR */
     void        HandleTocEntry(GstMessage* msg);
     static gint match_sinktype(const GValue* velement, const gchar* type);
-
     static void handleElementAdded(GstBin* bin, GstElement* element, gpointer user_data);
 
     struct subtitle_page_t {
         uint32_t    start_ms;
         uint32_t    end_ms;
-        int64_t     vtt_mpegts_base; // Base MPEGTS timestamp for WebVTT sync
+        int64_t     vtt_mpegts_base;
         std::string text;
 
         subtitle_page_t(uint32_t start_ms_in, uint32_t end_ms_in, const std::string& text_in)
@@ -465,11 +459,6 @@ private:
     std::string m_external_subtitle_path;
     std::string m_external_subtitle_language;
     std::string m_external_subtitle_extension;
-
-    static void onDemuxPadAdded(GstElement* demux, GstPad* pad, gpointer user_data);
-    static void onDecodePadAdded(GstElement* element, GstPad* pad, gpointer user_data);
-    GstElement* m_gst_pipeline = nullptr;
-    GstElement* m_gst_source   = nullptr;
 };
 
 #endif
