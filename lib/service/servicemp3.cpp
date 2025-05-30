@@ -3178,7 +3178,7 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 					m_event((iPlayableService*)this, evUpdatedInfo);
 				}
 
-				// This is probably not save because some live hls streams have duration
+				// This is probably not safe because some live hls streams have duration
 				if (m_sourceinfo.is_hls) {
 					gint64 duration = 0;
 					if (!gst_element_query_duration(m_gst_playbin, GST_FORMAT_TIME, &duration) || duration <= 0) {
@@ -4013,7 +4013,6 @@ void eServiceMP3::pushSubtitles() {
 			// --- WebVTT LIVE WORKAROUND ---
 			int64_t now = getCurrentTimeMs();
 
-			// Initialisiere Basiszeit beim ersten Subtitle
 			if (m_vtt_live_base_time == -1)
 				m_vtt_live_base_time = now - start_ms;
 
@@ -4048,7 +4047,6 @@ void eServiceMP3::pushSubtitles() {
 			}
 			// --- ENDE WORKAROUND ---
 		} else if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
-			// Für VOD/WebVTT: wie gehabt, decoder_ms verwenden
 			diff_start_ms = start_ms - decoder_ms;
 			diff_end_ms = end_ms - decoder_ms;
 
@@ -4075,7 +4073,6 @@ void eServiceMP3::pushSubtitles() {
 				continue;
 			}
 		} else {
-			// Für andere Subtitle-Typen wie gehabt
 			start_ms = (current->second.start_ms * convert_fps) + delay_ms;
 			end_ms = (current->second.end_ms * convert_fps) + delay_ms;
 			diff_start_ms = start_ms - decoder_ms;
