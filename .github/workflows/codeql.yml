@@ -1,0 +1,48 @@
+name: "CodeQL (Python + C++)"
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze with CodeQL
+    runs-on: ubuntu-24.04
+
+    container:
+      image: ghcr.io/openatv/enigma2-buildenv/enigma2-buildenv:latest
+      options: --user root
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: python, cpp
+
+    - name: Manual build (C++ & Python)
+      env:
+        CC: "gcc-14"
+        CXX: "g++-14"
+      run: |
+        echo "compiling enigma2"
+        autoreconf -i
+        export LIBS="-L/usr/lib/x86_64-linux-gnu -lpython3.13"
+        export CPPFLAGS="-I/usr/include/python3.13"
+        ./configure PYTHON=python3.13 --with-libsdl=no --with-boxtype=nobox --enable-dependency-tracking ac_cv_prog_c_openmp=-fopenmp --with-gstversion=1.0 --with-textlcd
+        make
+        python3.13 -m compileall .
+        echo "Build complete!"
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3

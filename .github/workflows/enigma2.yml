@@ -1,4 +1,4 @@
-name: enigma2 build
+name: enigma2 build old
 
 on:
   workflow_dispatch:
