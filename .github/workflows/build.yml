@@ -12,7 +12,7 @@ jobs:
     name: Build enigma2
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jbleyel/enigma2-buildenv/enigma2-buildenv:latest
+      image: ghcr.io/openatv/enigma2-buildenv/enigma2-buildenv:latest
       options: --user root
     steps:
       - uses: actions/checkout@v4
