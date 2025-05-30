@@ -1,3 +1,4 @@
+ARFLAGS = rc
 SUBDIRS = include lib main data po tools hotplug
 
 ACLOCAL_AMFLAGS = -I m4
