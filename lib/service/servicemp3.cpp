@@ -458,73 +458,6 @@ static void create_gstreamer_sinks() {
 		eDebug("[eServiceFactoryMP3] **** dvb_subsink NOT created missing plugin subsink ****");
 }
 
-// Callback for CC pad added
-static void gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_data) {
-	eDebug("[eServiceMP3] gstCCpadAdded: pad %s", GST_PAD_NAME(pad));
-	eServiceMP3* _this = (eServiceMP3*)user_data;
-	GstCaps* caps = gst_pad_get_current_caps(pad);
-	if (caps) {
-		GstStructure* str = gst_caps_get_structure(caps, 0);
-		const gchar* type = gst_structure_get_name(str);
-
-		// Add to subtitle streams
-		subtitleStream subs;
-		subs.type = g_str_has_prefix(type, "closedcaption/x-cea-608") ? stCC608 : stCC708;
-		subs.pid = _this->m_subtitleStreams.size();
-		subs.language_code = "und";
-
-		// Get language if available
-		const gchar* lang = gst_structure_get_string(str, "language-code");
-		if (lang)
-			subs.language_code = lang;
-
-		// Set default title if none present
-		if (subs.title.empty()) {
-			subs.title = (subs.type == stCC608) ? "CC 608" : "CC 708";
-		}
-
-		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream %d type %d language %s", subs.pid, subs.type,
-			   subs.language_code.c_str());
-
-		_this->m_subtitleStreams.push_back(subs);
-
-		// Link pad to get data
-		g_signal_connect(pad, "notify::caps", G_CALLBACK(gstCCdataAvailable), _this);
-
-		gst_caps_unref(caps);
-	}
-}
-
-// Callback CC data
-static void gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data) {
-	eServiceMP3* _this = (eServiceMP3*)user_data;
-
-	if (_this->m_currentSubtitleStream < 0)
-		return;
-
-	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
-
-	// Handle only CC streams
-	if (sub.type != stCC608 && sub.type != stCC708)
-		return;
-
-	GstBuffer* buffer;
-	GstMapInfo map;
-
-	buffer = gst_pad_pull(pad);
-	if (buffer && gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-		pts_t pts = GST_BUFFER_PTS(buffer);
-
-		if (sub.type == stCC608)
-			_this->processCC608(map.data, map.size, pts);
-		else
-			_this->processCC708(map.data, map.size, pts);
-
-		gst_buffer_unmap(buffer, &map);
-		gst_buffer_unref(buffer);
-	}
-}
-
 /**
  * @brief Starts playback of a media service referenced by the given service reference.
  *
@@ -4325,7 +4258,6 @@ RESULT eServiceMP3::disableSubtitles() {
 	m_subtitle_pages.clear();
 	m_prev_decoder_time = -1;
 	m_decoder_time_valid_state = 0;
-	m_currentCCStream = -1;
 	if (m_subtitle_widget)
 		m_subtitle_widget->destroy();
 	m_subtitle_widget = 0;
@@ -4964,5 +4896,72 @@ void eServiceMP3::decodeCC708ToText(const uint8_t* data, size_t size, std::strin
 			}
 		}
 		i += block_size + 2;
+	}
+}
+
+// Callback for CC pad added
+static void eServiceMP3::gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_data) {
+	eDebug("[eServiceMP3] gstCCpadAdded: pad %s", GST_PAD_NAME(pad));
+	eServiceMP3* _this = (eServiceMP3*)user_data;
+	GstCaps* caps = gst_pad_get_current_caps(pad);
+	if (caps) {
+		GstStructure* str = gst_caps_get_structure(caps, 0);
+		const gchar* type = gst_structure_get_name(str);
+
+		// Add to subtitle streams
+		subtitleStream subs;
+		subs.type = g_str_has_prefix(type, "closedcaption/x-cea-608") ? stCC608 : stCC708;
+		subs.pid = _this->m_subtitleStreams.size();
+		subs.language_code = "und";
+
+		// Get language if available
+		const gchar* lang = gst_structure_get_string(str, "language-code");
+		if (lang)
+			subs.language_code = lang;
+
+		// Set default title if none present
+		if (subs.title.empty()) {
+			subs.title = (subs.type == stCC608) ? "CC 608" : "CC 708";
+		}
+
+		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream %d type %d language %s", subs.pid, subs.type,
+			   subs.language_code.c_str());
+
+		_this->m_subtitleStreams.push_back(subs);
+
+		// Link pad to get data
+		g_signal_connect(pad, "notify::caps", G_CALLBACK(gstCCdataAvailable), _this);
+
+		gst_caps_unref(caps);
+	}
+}
+
+// Callback CC data
+static void eServiceMP3::gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data) {
+	eServiceMP3* _this = (eServiceMP3*)user_data;
+
+	if (_this->m_currentSubtitleStream < 0)
+		return;
+
+	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
+
+	// Handle only CC streams
+	if (sub.type != stCC608 && sub.type != stCC708)
+		return;
+
+	GstBuffer* buffer;
+	GstMapInfo map;
+
+	buffer = gst_pad_pull(pad);
+	if (buffer && gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+		pts_t pts = GST_BUFFER_PTS(buffer);
+
+		if (sub.type == stCC608)
+			_this->processCC608(map.data, map.size, pts);
+		else
+			_this->processCC708(map.data, map.size, pts);
+
+		gst_buffer_unmap(buffer, &map);
+		gst_buffer_unref(buffer);
 	}
 }

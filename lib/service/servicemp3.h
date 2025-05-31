@@ -128,7 +128,7 @@ public:
 typedef struct _GstElement GstElement;
 
 typedef enum { atUnknown, atMPEG, atMP3, atAC3, atDTS, atAAC, atPCM, atOGG, atFLAC, atWMA, atDRA, atEAC3 } audiotype_t;
-typedef enum { stUnknown, stPlainText, stSSA, stASS, stSRT, stVOB, stPGS, stWebVTT, stCC608, stCC708, stDVB} subtype_t;
+typedef enum { stUnknown, stPlainText, stSSA, stASS, stSRT, stVOB, stPGS, stWebVTT, stCC608, stCC708, stDVB } subtype_t;
 typedef enum {
 	ctNone,
 	ctMPEGTS,
@@ -475,6 +475,9 @@ private:
 
 	void decodeCC608ToText(const uint8_t* cc_data, std::string& text);
 	void decodeCC708ToText(const uint8_t* data, size_t size, std::string& text);
+
+	static void gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_data);
+	static void gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data);
 };
 
 #endif
