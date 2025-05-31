@@ -3670,33 +3670,45 @@ eAutoInitPtr<eServiceFactoryMP3> init_eServiceFactoryMP3(eAutoInitNumbers::servi
 void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpointer user_data) {
 	// eDebug("[eServiceMP3] gstCBsubtitleAvail");
 	eServiceMP3* _this = (eServiceMP3*)user_data;
-	if (_this->m_currentSubtitleStream < 0)
-		return;
 
-	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
-
-	// CC Handling
-	if (sub.type == stCC608 || sub.type == stCC708) {
-		GstMapInfo map;
-		if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-			pts_t pts = GST_BUFFER_PTS(buffer);
-
-			if (sub.type == stCC608)
-				_this->processCC608(map.data, map.size, pts);
-			else
-				_this->processCC708(map.data, map.size, pts);
-
-			gst_buffer_unmap(buffer, &map);
-		}
-		return;
-	}
-
-	if (_this->m_currentSubtitleStream < 0) {
+	if (!_this || !buffer || !_this->m_subtitle_widget || _this->m_currentSubtitleStream < 0) {
 		if (buffer)
 			gst_buffer_unref(buffer);
 		return;
 	}
-	_this->m_pump.send(new GstMessageContainer(2, NULL, NULL, buffer));
+
+    // Check array bounds
+    if (_this->m_currentSubtitleStream >= (int)_this->m_subtitleStreams.size()) {
+        eDebug("[eServiceMP3] gstCBsubtitleAvail: invalid subtitle stream index");
+        if (buffer)
+            gst_buffer_unref(buffer);
+        return;
+    }
+
+	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
+
+    // Handle Closed Captions
+    if (sub.type == stCC608 || sub.type == stCC708) {
+        GstMapInfo map;
+        if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+            pts_t pts = GST_BUFFER_PTS(buffer);
+            
+            if (sub.type == stCC608)
+                _this->processCC608(map.data, map.size, pts);
+            else
+                _this->processCC708(map.data, map.size, pts);
+                
+            gst_buffer_unmap(buffer, &map);
+        }
+        return;
+    }	
+
+    // Handle regular subtitles
+    if (_this->m_currentSubtitleStream >= 0) {
+        _this->m_pump.send(new GstMessageContainer(2, NULL, NULL, buffer));
+        // Increment buffer reference since we're passing it to another thread
+        // gst_buffer_ref(buffer);
+    }
 }
 
 /**
