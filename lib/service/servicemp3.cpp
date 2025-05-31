@@ -853,6 +853,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	m_currentAudioStream = -1;
 	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = -2; /* report the first subtitle stream to be 'cached'. TODO: use an actual cache. */
+	m_subtitle_type = stNone;
 	m_subtitle_widget = 0;
 	m_currentTrickRatio = 1.0;
 	m_buffer_size = 5LL * 1024LL * 1024LL;
@@ -1196,6 +1197,22 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 				}
 			}
 		}
+
+		// Add CC support
+		GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
+		if (ccdec) {
+			GstCaps* caps = gst_caps_from_string("closedcaption/x-cea-608,format=raw;"
+												 "closedcaption/x-cea-708,format=cc_data");
+			g_object_set(G_OBJECT(ccdec), "caps", caps, NULL);
+			gst_caps_unref(caps);
+
+			// Connect to CC pad added signal
+			g_signal_connect(ccdec, "pad-added", G_CALLBACK(gstCCpadAdded), this);
+
+			// Add to bin
+			gst_bin_add(GST_BIN(m_gst_playbin), ccdec);
+		}
+
 	} else {
 		m_event((iPlayableService*)this, evUser + 12);
 		m_gst_playbin = NULL;
@@ -3652,6 +3669,27 @@ eAutoInitPtr<eServiceFactoryMP3> init_eServiceFactoryMP3(eAutoInitNumbers::servi
 void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpointer user_data) {
 	// eDebug("[eServiceMP3] gstCBsubtitleAvail");
 	eServiceMP3* _this = (eServiceMP3*)user_data;
+	if (_this->m_currentSubtitleStream < 0)
+		return;
+
+	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
+
+	// CC Handling
+	if (sub.type == stCC608 || sub.type == stCC708) {
+		GstMapInfo map;
+		if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+			pts_t pts = GST_BUFFER_PTS(buffer);
+
+			if (sub.type == stCC608)
+				_this->processCC608(map.data, map.size, pts);
+			else
+				_this->processCC708(map.data, map.size, pts);
+
+			gst_buffer_unmap(buffer, &map);
+		}
+		return;
+	}
+
 	if (_this->m_currentSubtitleStream < 0) {
 		if (buffer)
 			gst_buffer_unref(buffer);
@@ -4141,32 +4179,41 @@ exit:
  * @return RESULT indicating success or failure.
  */
 RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& track) {
-	// eDebug ("[eServiceMP3][enableSubtitles] entered: subtitle stream %i track.pid %i", m_currentSubtitleStream,
-	// track.pid);
-	bool starting_subtitle = false;
 	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon) {
-		// if (m_currentSubtitleStream == -1)
-		//	starting_subtitle = true;
-		g_object_set(m_gst_playbin, "current-text", -1, NULL);
-		// m_cachedSubtitleStream = -1;
 		m_subtitle_sync_timer->stop();
 		m_dvb_subtitle_sync_timer->stop();
 		m_dvb_subtitle_pages.clear();
 		m_subtitle_pages.clear();
 		m_prev_decoder_time = -1;
 		m_decoder_time_valid_state = 0;
+
+		// Handle Closed Captions
+		if (track.type == stCC608 || track.type == stCC708) {
+			// Disable regular subtitles if active
+			if (m_subtitle_type == stRegular) {
+				g_object_set(m_gst_playbin, "current-text", -1, NULL);
+			}
+			m_subtitle_type = stCC;
+			m_subtitle_widget = user;
+			return selectClosedCaptionStream(track.pid);
+		}
+
+		// Handle regular subtitles
+		if (m_subtitle_type == stCC) {
+			m_currentSubtitleStream = -1;
+		}
+		m_subtitle_type = stRegular;
 		m_currentSubtitleStream = track.pid;
-		m_cachedSubtitleStream = m_currentSubtitleStream;
-		setCacheEntry(false, track.pid);
+		m_subtitle_widget = user;
+
 		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
 		if (track.type != stDVB) {
 			m_clear_buffers = true;
 			clearBuffers();
 		}
-		m_subtitle_widget = user;
 
-		eDebug("[eServiceMP3] eServiceMP3::switched to subtitle stream %i", m_currentSubtitleStream);
+		eDebug("[eServiceMP3] switched to subtitle stream %i", m_currentSubtitleStream);
 
 #ifdef GSTREAMER_SUBTITLE_SYNC_MODE_BUG
 		/*
@@ -4176,11 +4223,13 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		seekRelative(-1, 90000);
 #endif
 
-		if (m_last_seek_pos > 0 && !starting_subtitle) {
+		// Seek to last position for non-initial subtitle changes
+		if (m_last_seek_pos > 0) {
 			seekTo(m_last_seek_pos);
 			gst_sleepms(50);
 		}
 	}
+
 	return 0;
 }
 
@@ -4194,16 +4243,21 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
  */
 RESULT eServiceMP3::disableSubtitles() {
 	eDebug("[eServiceMP3] disableSubtitles");
-	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = m_currentSubtitleStream;
 	setCacheEntry(false, -1);
-	g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+	m_currentSubtitleStream = -1;
+	if (m_subtitle_type == stRegular) {
+		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+	}
+	m_subtitle_type = stNone;
+
 	m_subtitle_sync_timer->stop();
 	m_dvb_subtitle_sync_timer->stop();
 	m_dvb_subtitle_pages.clear();
 	m_subtitle_pages.clear();
 	m_prev_decoder_time = -1;
 	m_decoder_time_valid_state = 0;
+	m_currentCCStream = -1;
 	if (m_subtitle_widget)
 		m_subtitle_widget->destroy();
 	m_subtitle_widget = 0;
@@ -4221,18 +4275,20 @@ RESULT eServiceMP3::disableSubtitles() {
  * @return RESULT indicating success or failure.
  */
 RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack& track) {
-	int m_subtitleStreams_size = (int)m_subtitleStreams.size();
+	bool autosub = eSubtitleSettings::pango_autoturnon;
+	int autosub_level = 5;
+	std::string configvalue;
+	std::vector<std::string> autosub_languages;
 
-	if (!eSubtitleSettings::pango_autoturnon)
+	// If autostart not active, exit
+	if (!autosub)
 		return -1;
 
-	// eDebug("[eServiceMP3][getCachedSubtitle] autorun subtitles set");
-	if (m_cachedSubtitleStream == -2 && m_subtitleStreams_size) {
-		eDebug("[eServiceMP3][getCachedSubtitle] m_cachedSubtitleStream == -2 && m_subtitleStreams_size)");
+	// Initialize cache if needed
+	if (m_cachedSubtitleStream == -2 && !m_subtitleStreams.empty()) {
 		m_cachedSubtitleStream = 0;
-		int autosub_level = 5;
-		std::string configvalue;
-		std::vector<std::string> autosub_languages;
+
+		// Get configured languages
 		configvalue = eSubtitleSettings::subtitle_autoselect1;
 		if (configvalue != "")
 			autosub_languages.push_back(configvalue);
@@ -4245,12 +4301,14 @@ RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack& track) {
 		configvalue = eSubtitleSettings::subtitle_autoselect4;
 		if (configvalue != "")
 			autosub_languages.push_back(configvalue);
-		for (int i = 0; i < m_subtitleStreams_size; i++) {
+
+		// Find best matching subtitle
+		for (size_t i = 0; i < m_subtitleStreams.size(); i++) {
 			if (!m_subtitleStreams[i].language_code.empty()) {
 				int x = 1;
-				for (std::vector<std::string>::iterator it2 = autosub_languages.begin();
-					 x < autosub_level && it2 != autosub_languages.end(); x++, it2++) {
-					if ((*it2).find(m_subtitleStreams[i].language_code) != std::string::npos) {
+				for (std::vector<std::string>::iterator it = autosub_languages.begin();
+					 x < autosub_level && it != autosub_languages.end(); x++, it++) {
+					if ((*it).find(m_subtitleStreams[i].language_code) != std::string::npos) {
 						autosub_level = x;
 						m_cachedSubtitleStream = i;
 						break;
@@ -4261,9 +4319,7 @@ RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack& track) {
 	}
 
 	if (m_cachedSubtitleStream >= 0 && m_cachedSubtitleStream < (int)m_subtitleStreams.size()) {
-		// eDebug("[eServiceMP3][getCachedSubtitle] (m_cachedSubtitleStream >= 0 && m_cachedSubtitleStream <
-		// m_subtitleStreams_size)");
-		track.type = (m_subtitleStreams[m_cachedSubtitleStream].type == stDVB) ? 0 : 2;
+		track.type = m_subtitleStreams[m_cachedSubtitleStream].type == stDVB ? 0 : 2;
 		track.pid = m_cachedSubtitleStream;
 		track.page_number = int(m_subtitleStreams[m_cachedSubtitleStream].type);
 		track.magazine_number = 0;
@@ -4271,6 +4327,7 @@ RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack& track) {
 		track.title = m_subtitleStreams[m_cachedSubtitleStream].title;
 		return 0;
 	}
+
 	return -1;
 }
 
@@ -4285,31 +4342,33 @@ RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack& track) {
  * @return RESULT indicating success or failure.
  */
 RESULT eServiceMP3::getSubtitleList(std::vector<struct SubtitleTrack>& subtitlelist) {
-	// 	eDebug("[eServiceMP3] getSubtitleList");
-	int stream_idx = 0;
+	// Process all subtitle streams including CC streams in one loop
+	for (size_t i = 0; i < m_subtitleStreams.size(); i++) {
+		const subtitleStream& stream = m_subtitleStreams[i];
 
-	for (std::vector<subtitleStream>::iterator IterSubtitleStream(m_subtitleStreams.begin());
-		 IterSubtitleStream != m_subtitleStreams.end(); ++IterSubtitleStream) {
-		subtype_t type = IterSubtitleStream->type;
-		switch (type) {
-			case stUnknown:
-			case stVOB:
-			case stPGS:
-				break;
-			default: {
-				struct SubtitleTrack track = {};
-				track.type = (type == stDVB) ? 0 : 2;
-				track.pid = stream_idx;
-				track.page_number = int(type);
-				track.magazine_number = 0;
-				track.language_code = IterSubtitleStream->language_code;
-				track.title = IterSubtitleStream->title;
-				subtitlelist.push_back(track);
-			}
+		// Skip unsupported types
+		if (stream.type == stUnknown || stream.type == stVOB || stream.type == stPGS) {
+			continue;
 		}
-		stream_idx++;
+
+		struct SubtitleTrack track;
+		if (stream.type == stDVB)
+			track.type = 0; // DVB subtitles
+		else if (stream.type == stCC608 || stream.type == stCC708)
+			track.type = type; // Pass CC type directly
+		else
+			track.type = 2; // Other subtitles (text, SSA etc)
+
+		// Set track properties
+		track.pid = i;
+		track.page_number = int(stream.type);
+		track.magazine_number = 0;
+		track.language_code = stream.language_code;
+		track.title = stream.title;
+
+		subtitlelist.push_back(track);
 	}
-	// eDebug("[eServiceMP3] getSubtitleList finished");
+
 	return 0;
 }
 
@@ -4650,4 +4709,259 @@ void eServiceMP3::saveCuesheet() {
 		eDebug("[eServiceMP3] cuts file has been write");
 	}
 	m_cuesheet_changed = 0;
+}
+
+// Callback for CC pad added
+static void gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_data) {
+	eDebug("[eServiceMP3] gstCCpadAdded: pad %s", GST_PAD_NAME(pad));
+	eServiceMP3* _this = (eServiceMP3*)user_data;
+	GstCaps* caps = gst_pad_get_current_caps(pad);
+	if (caps) {
+		GstStructure* str = gst_caps_get_structure(caps, 0);
+		const gchar* type = gst_structure_get_name(str);
+
+		// Add to subtitle streams
+		subtitleStream subs;
+		subs.type = g_str_has_prefix(type, "closedcaption/x-cea-608") ? stCC608 : stCC708;
+		subs.pid = _this->m_subtitleStreams.size();
+		subs.language_code = "und";
+
+		// Get language if available
+		const gchar* lang = gst_structure_get_string(str, "language-code");
+		if (lang)
+			subs.language_code = lang;
+
+		// Set default title if none present
+		if (subs.title.empty()) {
+			subs.title = (subs.type == stCC608) ? "CC 608" : "CC 708";
+		}
+
+		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream %d type %d language %s", subs.pid, subs.type,
+			   subs.language_code.c_str());
+
+		_this->m_subtitleStreams.push_back(subs);
+
+		// Link pad to get data
+		g_signal_connect(pad, "notify::caps", G_CALLBACK(gstCCdataAvailable), _this);
+
+		gst_caps_unref(caps);
+	}
+}
+
+// Callback CC data
+static void gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data) {
+	eServiceMP3* _this = (eServiceMP3*)user_data;
+
+	if (_this->m_currentSubtitleStream < 0)
+		return;
+
+	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
+
+	// Handle only CC streams
+	if (sub.type != stCC608 && sub.type != stCC708)
+		return;
+
+	GstBuffer* buffer;
+	GstMapInfo map;
+
+	buffer = gst_pad_pull(pad);
+	if (buffer && gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+		pts_t pts = GST_BUFFER_PTS(buffer);
+
+		if (sub.type == stCC608)
+			_this->processCC608(map.data, map.size, pts);
+		else
+			_this->processCC708(map.data, map.size, pts);
+
+		gst_buffer_unmap(buffer, &map);
+		gst_buffer_unref(buffer);
+	}
+}
+
+void eServiceMP3::processCC608(const uint8_t* data, size_t size, pts_t pts) {
+	if (!m_subtitle_widget || m_currentSubtitleStream < 0)
+		return;
+
+	// CC608 data is 2 bytes per frame
+	for (size_t i = 0; i < size; i += 2) {
+		uint8_t cc_data[2];
+		cc_data[0] = data[i];
+		cc_data[1] = data[i + 1];
+
+		// CC608 data is 2 bytes per frame
+		if (!(cc_data[0] & 0x04)) // Skip if not valid
+			continue;
+
+		uint8_t type = (cc_data[0] & 0x03);
+		if (type != 0x00) // We only process CC1/CC2 (type 0)
+			continue;
+
+		// Convert CC data to text
+		std::string text;
+		decodeCC608ToText(cc_data, text);
+
+		if (!text.empty()) {
+			// Create subtitle page
+			ePangoSubtitlePage pango_page;
+			gRGB rgbcol(0xff, 0xff, 0xff);
+			pango_page.m_elements.push_back(ePangoSubtitlePageElement(rgbcol, text));
+			pango_page.m_show_pts = pts;
+			pango_page.m_timeout = 3000; // 3 seconds display duration
+			m_subtitle_widget->setPage(pango_page);
+		}
+	}
+}
+
+void eServiceMP3::processCC708(const uint8_t* data, size_t size, pts_t pts) {
+	if (!m_subtitle_widget || m_currentSubtitleStream < 0)
+		return;
+
+	// CC708 uses DTVCC packet format
+	for (size_t i = 0; i < size;) {
+		if (i + 3 > size) // Need at least 3 bytes for header
+			break;
+
+		uint8_t service_number = (data[i] & 0x3F);
+		uint8_t packet_size = data[i + 1] & 0x3F;
+
+		if (i + packet_size + 2 > size) // Check if enough data available
+			break;
+
+		// Process only the selected service
+		if (service_number == 1) { // Primary Caption Service
+			std::string text;
+			decodeCC708ToText(data + i + 2, packet_size, text);
+
+			if (!text.empty()) {
+				// Create subtitle page
+				ePangoSubtitlePage pango_page;
+				gRGB rgbcol(0xff, 0xff, 0xff);
+				pango_page.m_elements.push_back(ePangoSubtitlePageElement(rgbcol, text));
+				pango_page.m_show_pts = pts;
+				pango_page.m_timeout = 3000; // 3 seconds display duration
+				m_subtitle_widget->setPage(pango_page);
+			}
+		}
+
+		i += packet_size + 2;
+	}
+}
+
+RESULT eServiceMP3::selectClosedCaptionStream(int pid) {
+	eDebug("[eServiceMP3] selectClosedCaptionStream: pid=%d", pid);
+
+	if (pid >= 0 && pid < (int)m_subtitleStreams.size()) {
+		subtitleStream& sub = m_subtitleStreams[pid];
+
+		// Check if this is really a CC stream
+		if (sub.type != stCC608 && sub.type != stCC708) {
+			eDebug("[eServiceMP3] selectClosedCaptionStream: pid %d is not a CC stream", pid);
+			return -1;
+		}
+
+		if (m_subtitle_type == stRegular) {
+			// Disable regular subtitles first
+			g_object_set(m_gst_playbin, "current-text", -1, NULL);
+		}
+
+		m_currentSubtitleStream = pid;
+		m_subtitle_type = stCC;
+		eDebug("[eServiceMP3] Selected CC stream %d type %d language %s", pid, sub.type, sub.language_code.c_str());
+		return 0;
+	}
+
+	m_currentSubtitleStream = -1;
+	m_subtitle_type = stNone;
+	return -1;
+}
+
+
+void eServiceMP3::decodeCC608ToText(const uint8_t* cc_data, std::string& text) {
+	// CC1/CC2 control codes
+	static const char* specialChar[] = {"®", "°", "½", "¿", "™", "¢", "£", "♪", "à", "è", "é", "ì",
+										"í", "ò", "ó", "ù", "ú", "Á", "É", "Ó", "Ú", "ü", "¡", "¿"};
+
+	// Check Valid-Bit (bit 6)
+	if (!(cc_data[0] & 0x04))
+		return;
+
+	uint8_t char1 = cc_data[1] & 0x7F;
+
+	// Basic North American character set
+	if (char1 >= 0x20 && char1 <= 0x7F) {
+		text += static_cast<char>(char1);
+	}
+	// Special characters
+	else if (char1 >= 0x10 && char1 <= 0x1F) {
+		text += specialChar[char1 - 0x10];
+	}
+	// Control codes
+	else
+		switch (char1) {
+			case 0x0D: // Carriage return
+				text += "\n";
+				break;
+			case 0x0C: // Form feed - clear display
+				text.clear();
+				break;
+				// Additional Control-Codes here...
+		}
+}
+
+void eServiceMP3::decodeCC708ToText(const uint8_t* data, size_t size, std::string& text) {
+	// CEA-708 service blocks
+	for (size_t i = 0; i < size;) {
+		if (i + 2 > size)
+			break;
+
+		uint8_t service_number = data[i] & 0x3F;
+		uint8_t block_size = data[i + 1] & 0x3F;
+
+		if (i + block_size + 2 > size)
+			break;
+
+		// Process only Service 1 (Primary Caption Service)
+		if (service_number == 1) {
+			const uint8_t* block_data = data + i + 2;
+
+			for (uint8_t j = 0; j < block_size; j++) {
+				uint8_t code = block_data[j];
+
+				// Basic UTF-8 character set
+				if (code >= 0x20 && code <= 0x7F) {
+					text += static_cast<char>(code);
+				}
+				// Extended characters (UTF-16)
+				else if (code >= 0x80) {
+					if (j + 1 < block_size) {
+						uint16_t utf16 = (code << 8) | block_data[j + 1];
+						// Covert UTF-16 to UTF-8
+						if (utf16 < 0x80) {
+							text += static_cast<char>(utf16);
+						} else if (utf16 < 0x800) {
+							text += static_cast<char>((utf16 >> 6) | 0xC0);
+							text += static_cast<char>((utf16 & 0x3F) | 0x80);
+						} else {
+							text += static_cast<char>((utf16 >> 12) | 0xE0);
+							text += static_cast<char>(((utf16 >> 6) & 0x3F) | 0x80);
+							text += static_cast<char>((utf16 & 0x3F) | 0x80);
+						}
+						j++; // Skip next byte
+					}
+				}
+				// Control codes
+				else
+					switch (code) {
+						case 0x0D: // Carriage return
+							text += "\n";
+							break;
+						case 0x0C: // Form feed - clear display
+							text.clear();
+							break;
+							// Additional Control-Codes here...
+					}
+			}
+		}
+		i += block_size + 2;
+	}
 }
