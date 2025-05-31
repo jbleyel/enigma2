@@ -3937,7 +3937,7 @@ void eServiceMP3::pushSubtitles() {
 	int32_t next_timer = 0, decoder_ms = 0, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
 	double convert_fps = 1.0;
 	subtitle_pages_map_t::iterator current;
-	const uint64_t pts_mask = (1ULL << 33) - 1;
+	// const uint64_t pts_mask = (1ULL << 33) - 1;
 
 	// For live streams, get decoder time directly from videosink
 	if (m_vtt_live && dvb_videosink) {
@@ -3986,7 +3986,7 @@ void eServiceMP3::pushSubtitles() {
 	}
 	delay_ms = 0;
 
-	eDebug("[eServiceMP3] pushSubtitles running_pts=%" PRId64 " decoder_ms=%d delay=%d fps=%.2f", running_pts,
+	eDebug("[eServiceMP3] pushSubtitles running_pts=%lld decoder_ms=%d delay=%d fps=%.2f", running_pts,
 		   decoder_ms, delay_ms, convert_fps);
 
 #if 0
@@ -4355,7 +4355,7 @@ RESULT eServiceMP3::getSubtitleList(std::vector<struct SubtitleTrack>& subtitlel
 		if (stream.type == stDVB)
 			track.type = 0; // DVB subtitles
 		else if (stream.type == stCC608 || stream.type == stCC708)
-			track.type = type; // Pass CC type directly
+			track.type = stream.type; // Pass CC type directly
 		else
 			track.type = 2; // Other subtitles (text, SSA etc)
 
@@ -4711,9 +4711,21 @@ void eServiceMP3::saveCuesheet() {
 	m_cuesheet_changed = 0;
 }
 
+/**
+ * @brief Processes CC608 closed caption data.
+ *
+ * This function processes CC608 closed caption data received from the stream.
+ * It decodes the data and updates the subtitle widget with the decoded text.
+ *
+ * @param[in] data Pointer to the CC608 data buffer.
+ * @param[in] size Size of the CC608 data buffer.
+ * @param[in] pts Presentation timestamp for the CC608 data.
+ */
 void eServiceMP3::processCC608(const uint8_t* data, size_t size, pts_t pts) {
 	if (!m_subtitle_widget || m_currentSubtitleStream < 0)
 		return;
+
+	eDebug("[eServiceMP3] processCC608: size=%zu pts=%lld", size, pts);
 
 	// CC608 data is 2 bytes per frame
 	for (size_t i = 0; i < size; i += 2) {
@@ -4745,9 +4757,21 @@ void eServiceMP3::processCC608(const uint8_t* data, size_t size, pts_t pts) {
 	}
 }
 
+/**
+ * @brief Processes CC708 closed caption data.
+ *
+ * This function processes CC708 closed caption data received from the stream.
+ * It decodes the data and updates the subtitle widget with the decoded text.
+ *
+ * @param[in] data Pointer to the CC708 data buffer.
+ * @param[in] size Size of the CC708 data buffer.
+ * @param[in] pts Presentation timestamp for the CC708 data.
+ */
 void eServiceMP3::processCC708(const uint8_t* data, size_t size, pts_t pts) {
 	if (!m_subtitle_widget || m_currentSubtitleStream < 0)
 		return;
+
+	eDebug("[eServiceMP3] processCC708: size=%zu pts=%lld", size, pts);
 
 	// CC708 uses DTVCC packet format
 	for (size_t i = 0; i < size;) {
@@ -4780,6 +4804,16 @@ void eServiceMP3::processCC708(const uint8_t* data, size_t size, pts_t pts) {
 	}
 }
 
+/**
+ * @brief Selects a closed caption stream by PID.
+ *
+ * This function selects a closed caption stream based on the provided PID.
+ * It checks if the PID corresponds to a valid closed caption stream and
+ * updates the current subtitle stream accordingly.
+ *
+ * @param[in] pid The PID of the closed caption stream to select.
+ * @return RESULT indicating success or failure.
+ */
 RESULT eServiceMP3::selectClosedCaptionStream(int pid) {
 	eDebug("[eServiceMP3] selectClosedCaptionStream: pid=%d", pid);
 
@@ -4808,7 +4842,16 @@ RESULT eServiceMP3::selectClosedCaptionStream(int pid) {
 	return -1;
 }
 
-
+/**
+ * @brief Decodes CC608 data to text.
+ *
+ * This function decodes the CC608 closed caption data into a human-readable
+ * text format. It handles special characters and control codes as defined in
+ * the CC608 specification.
+ *
+ * @param[in] cc_data Pointer to the CC608 data buffer.
+ * @param[out] text Reference to a string where the decoded text will be stored.
+ */
 void eServiceMP3::decodeCC608ToText(const uint8_t* cc_data, std::string& text) {
 	// CC1/CC2 control codes
 	static const char* specialChar[] = {"®", "°", "½", "¿", "™", "¢", "£", "♪", "à", "è", "é", "ì",
@@ -4841,6 +4884,17 @@ void eServiceMP3::decodeCC608ToText(const uint8_t* cc_data, std::string& text) {
 		}
 }
 
+/**
+ * @brief Decodes CC708 data to text.
+ *
+ * This function decodes the CC708 closed caption data into a human-readable
+ * text format. It handles basic UTF-8 characters, extended characters, and
+ * control codes as defined in the CC708 specification.
+ *
+ * @param[in] data Pointer to the CC708 data buffer.
+ * @param[in] size Size of the CC708 data buffer.
+ * @param[out] text Reference to a string where the decoded text will be stored.
+ */
 void eServiceMP3::decodeCC708ToText(const uint8_t* data, size_t size, std::string& text) {
 	// CEA-708 service blocks
 	for (size_t i = 0; i < size;) {
@@ -4899,8 +4953,18 @@ void eServiceMP3::decodeCC708ToText(const uint8_t* data, size_t size, std::strin
 	}
 }
 
-// Callback for CC pad added
-static void eServiceMP3::gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_data) {
+/**
+ * @brief Callback for when a CC pad is added to the GStreamer pipeline.
+ *
+ * This function is called when a new CC pad is added to the GStreamer playbin.
+ * It retrieves the capabilities of the pad, checks if it is a closed caption
+ * stream, and adds it to the subtitle streams list.
+ *
+ * @param[in] element The GStreamer element that emitted the signal.
+ * @param[in] pad The GStreamer pad that was added.
+ * @param[in] user_data User data pointer (eServiceMP3 instance).
+ */
+void eServiceMP3::gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_data) {
 	eDebug("[eServiceMP3] gstCCpadAdded: pad %s", GST_PAD_NAME(pad));
 	eServiceMP3* _this = (eServiceMP3*)user_data;
 	GstCaps* caps = gst_pad_get_current_caps(pad);
@@ -4936,32 +5000,65 @@ static void eServiceMP3::gstCCpadAdded(GstElement* element, GstPad* pad, gpointe
 	}
 }
 
-// Callback CC data
-static void eServiceMP3::gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data) {
-	eServiceMP3* _this = (eServiceMP3*)user_data;
-
-	if (_this->m_currentSubtitleStream < 0)
-		return;
-
-	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
+/**
+ * @brief Callback for when CC data is available on a pad.
+ *
+ * This function is called when closed caption data is available on a pad.
+ * It retrieves the data, processes it based on the subtitle stream type,
+ * and updates the subtitle widget with the decoded text.
+ *
+ * @param[in] pad The GStreamer pad that emitted the signal.
+ * @param[in] unused Unused parameter (GParamSpec).
+ * @param[in] user_data User data pointer (eServiceMP3 instance).
+ */
+void eServiceMP3::gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data) {
+    eServiceMP3* _this = (eServiceMP3*)user_data;
+    
+	eDebug("[eServiceMP3] gstCCdataAvailable: m_currentSubtitleStream %d", _this->m_currentSubtitleStream);
+    if (_this->m_currentSubtitleStream < 0)
+        return;
+        
+    subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
+    
+	eDebug("[eServiceMP3] gstCCdataAvailable: sub.type %d", sub.type);
 
 	// Handle only CC streams
-	if (sub.type != stCC608 && sub.type != stCC708)
-		return;
-
-	GstBuffer* buffer;
-	GstMapInfo map;
-
-	buffer = gst_pad_pull(pad);
-	if (buffer && gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-		pts_t pts = GST_BUFFER_PTS(buffer);
-
-		if (sub.type == stCC608)
-			_this->processCC608(map.data, map.size, pts);
-		else
-			_this->processCC708(map.data, map.size, pts);
-
-		gst_buffer_unmap(buffer, &map);
-		gst_buffer_unref(buffer);
+    if (sub.type != stCC608 && sub.type != stCC708)
+        return;
+        
+    GstCaps* caps = gst_pad_get_current_caps(pad);
+    if (!caps)
+	{
+		eDebug("[eServiceMP3] gstCCdataAvailable: NO caps available for pad %s", GST_PAD_NAME(pad));
+		// No caps available, cannot process CC data
+        return;
 	}
+        
+    GstSample* sample = NULL;
+    g_signal_emit_by_name(pad, "pull-sample", &sample);
+    
+    if (sample) {
+        GstBuffer* buffer = gst_sample_get_buffer(sample);
+        if (buffer) {
+            GstMapInfo map;
+            if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+                pts_t pts = GST_BUFFER_PTS(buffer);
+                
+                if (sub.type == stCC608)
+                    _this->processCC608(map.data, map.size, pts);
+                else
+                    _this->processCC708(map.data, map.size, pts);
+                    
+                gst_buffer_unmap(buffer, &map);
+            }
+        }
+        gst_sample_unref(sample);
+    }
+	else
+	{
+		eDebug("[eServiceMP3] gstCCdataAvailable: NO sample available for pad %s", GST_PAD_NAME(pad));
+		// No sample available, cannot process CC data
+	}
+    
+    gst_caps_unref(caps);
 }
