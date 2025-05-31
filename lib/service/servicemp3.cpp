@@ -1114,6 +1114,25 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
 			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
 		}
+
+		// Add CC support
+		GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
+		if (ccdec) {
+			GstCaps* caps = gst_caps_from_string("closedcaption/x-cea-608,format=raw;"
+												 "closedcaption/x-cea-708,format=cc_data");
+			g_object_set(G_OBJECT(ccdec), "caps", caps, NULL);
+			gst_caps_unref(caps);
+
+			// Connect to CC pad added signal
+			g_signal_connect(ccdec, "pad-added", G_CALLBACK(gstCCpadAdded), this);
+
+			// Add to bin
+			gst_bin_add(GST_BIN(m_gst_playbin), ccdec);
+		}
+		else {
+			eDebug("[eServiceMP3] ccconverter element not found, closed captions will not be supported.");
+		}
+
 		/*
 		 * avoid video conversion, let the dvbmediasink handle that using native video flag
 		 * volume control is done by hardware, do not use soft volume flag
@@ -1197,21 +1216,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 					m_external_subtitle_extension = "";
 				}
 			}
-		}
-
-		// Add CC support
-		GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
-		if (ccdec) {
-			GstCaps* caps = gst_caps_from_string("closedcaption/x-cea-608,format=raw;"
-												 "closedcaption/x-cea-708,format=cc_data");
-			g_object_set(G_OBJECT(ccdec), "caps", caps, NULL);
-			gst_caps_unref(caps);
-
-			// Connect to CC pad added signal
-			g_signal_connect(ccdec, "pad-added", G_CALLBACK(gstCCpadAdded), this);
-
-			// Add to bin
-			gst_bin_add(GST_BIN(m_gst_playbin), ccdec);
 		}
 
 	} else {
