@@ -1,5 +1,6 @@
 /* note: this requires gstreamer 0.10.x and a big list of plugins. */
 /* it's currently hardcoded to use a big-endian alsasink as sink. */
+#include <inttypes.h>
 #include <lib/base/ebase.h>
 #include <lib/base/eerror.h>
 #include <lib/base/esettings.h>
@@ -455,6 +456,73 @@ static void create_gstreamer_sinks() {
 		dvb_subsink_ok = true;
 	} else
 		eDebug("[eServiceFactoryMP3] **** dvb_subsink NOT created missing plugin subsink ****");
+}
+
+// Callback for CC pad added
+static void gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_data) {
+	eDebug("[eServiceMP3] gstCCpadAdded: pad %s", GST_PAD_NAME(pad));
+	eServiceMP3* _this = (eServiceMP3*)user_data;
+	GstCaps* caps = gst_pad_get_current_caps(pad);
+	if (caps) {
+		GstStructure* str = gst_caps_get_structure(caps, 0);
+		const gchar* type = gst_structure_get_name(str);
+
+		// Add to subtitle streams
+		subtitleStream subs;
+		subs.type = g_str_has_prefix(type, "closedcaption/x-cea-608") ? stCC608 : stCC708;
+		subs.pid = _this->m_subtitleStreams.size();
+		subs.language_code = "und";
+
+		// Get language if available
+		const gchar* lang = gst_structure_get_string(str, "language-code");
+		if (lang)
+			subs.language_code = lang;
+
+		// Set default title if none present
+		if (subs.title.empty()) {
+			subs.title = (subs.type == stCC608) ? "CC 608" : "CC 708";
+		}
+
+		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream %d type %d language %s", subs.pid, subs.type,
+			   subs.language_code.c_str());
+
+		_this->m_subtitleStreams.push_back(subs);
+
+		// Link pad to get data
+		g_signal_connect(pad, "notify::caps", G_CALLBACK(gstCCdataAvailable), _this);
+
+		gst_caps_unref(caps);
+	}
+}
+
+// Callback CC data
+static void gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data) {
+	eServiceMP3* _this = (eServiceMP3*)user_data;
+
+	if (_this->m_currentSubtitleStream < 0)
+		return;
+
+	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
+
+	// Handle only CC streams
+	if (sub.type != stCC608 && sub.type != stCC708)
+		return;
+
+	GstBuffer* buffer;
+	GstMapInfo map;
+
+	buffer = gst_pad_pull(pad);
+	if (buffer && gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+		pts_t pts = GST_BUFFER_PTS(buffer);
+
+		if (sub.type == stCC608)
+			_this->processCC608(map.data, map.size, pts);
+		else
+			_this->processCC708(map.data, map.size, pts);
+
+		gst_buffer_unmap(buffer, &map);
+		gst_buffer_unref(buffer);
+	}
 }
 
 /**
@@ -3801,7 +3869,7 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 
 			if (parseWebVTT(vtt_string, parsed_subs)) {
 				static int64_t base_mpegts = 0; // Store first MPEGTS as base
-				static int64_t base_decoder_pts = -1; // Store first decoder PTS
+				// static int64_t base_decoder_pts = -1; // Store first decoder PTS
 
 				for (const auto& sub : parsed_subs) {
 					if (sub.vtt_mpegts_base) {
@@ -3813,7 +3881,7 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 						// Initialize base MPEGTS with first subtitle's MPEGTS
 						if (base_mpegts == 0) {
 							base_mpegts = sub.vtt_mpegts_base;
-							eDebug("[SUB DEBUG] Initializing base_mpegts=%lld", base_mpegts);
+							eDebug("[SUB DEBUG] Initializing base_mpegts=%" PRId64, base_mpegts);
 						}
 
 						if (decoder_pts >= 0) {
@@ -3824,9 +3892,8 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 							delta = (sub.vtt_mpegts_base - base_mpegts) / 90; // Convert to ms
 
 							// Debug
-							eDebug("[SUB DEBUG] base_mpegts=%lld mpegts=%lld decoder=%lld "
-								   "masked_mpegts=%lld "
-								   "masked_decoder=%lld delta_ms=%lld",
+							eDebug("[SUB DEBUG] base_mpegts=%" PRId64 " mpegts=%" PRId64 " decoder=%" PRId64
+								   " masked_mpegts=%" PRId64 " masked_decoder=%" PRId64 " delta_ms=%" PRId64,
 								   base_mpegts, sub.vtt_mpegts_base, decoder_pts, sub.vtt_mpegts_base & pts_mask,
 								   decoder_pts & pts_mask, delta);
 						}
@@ -3834,9 +3901,9 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 						int64_t adjusted_start = sub.start_time_ms + delta;
 						int64_t adjusted_end = sub.end_time_ms + delta;
 
-						eDebug("[SUB DEBUG] Timestamps: start=%lld end=%lld delta=%lld "
-							   "adjusted_start=%lld "
-							   "adjusted_end=%lld",
+						eDebug("[SUB DEBUG] Timestamps: start=%" PRId64 " end=%" PRId64 " delta=%" PRId64 " "
+							   "adjusted_start=%" PRId64 " "
+							   "adjusted_end=%" PRId64,
 							   sub.start_time_ms, sub.end_time_ms, delta, adjusted_start, adjusted_end);
 
 						std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
@@ -4059,7 +4126,8 @@ void eServiceMP3::pushSubtitles() {
 			diff_start_ms = start_ms - live_playback_time;
 			diff_end_ms = end_ms - live_playback_time;
 
-			eDebug("[eServiceMP3] WebVTT LIVE: now=%lld base=%lld live_playback_time=%lld start=%d end=%d "
+			eDebug("[eServiceMP3] WebVTT LIVE: now=%" PRId64 " base=%" PRId64 " live_playback_time=%" PRId64
+				   " start=%d end=%d "
 				   "diff_start=%d diff_end=%d",
 				   now, m_vtt_live_base_time, live_playback_time, start_ms, end_ms, diff_start_ms, diff_end_ms);
 
@@ -4709,73 +4777,6 @@ void eServiceMP3::saveCuesheet() {
 		eDebug("[eServiceMP3] cuts file has been write");
 	}
 	m_cuesheet_changed = 0;
-}
-
-// Callback for CC pad added
-static void gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_data) {
-	eDebug("[eServiceMP3] gstCCpadAdded: pad %s", GST_PAD_NAME(pad));
-	eServiceMP3* _this = (eServiceMP3*)user_data;
-	GstCaps* caps = gst_pad_get_current_caps(pad);
-	if (caps) {
-		GstStructure* str = gst_caps_get_structure(caps, 0);
-		const gchar* type = gst_structure_get_name(str);
-
-		// Add to subtitle streams
-		subtitleStream subs;
-		subs.type = g_str_has_prefix(type, "closedcaption/x-cea-608") ? stCC608 : stCC708;
-		subs.pid = _this->m_subtitleStreams.size();
-		subs.language_code = "und";
-
-		// Get language if available
-		const gchar* lang = gst_structure_get_string(str, "language-code");
-		if (lang)
-			subs.language_code = lang;
-
-		// Set default title if none present
-		if (subs.title.empty()) {
-			subs.title = (subs.type == stCC608) ? "CC 608" : "CC 708";
-		}
-
-		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream %d type %d language %s", subs.pid, subs.type,
-			   subs.language_code.c_str());
-
-		_this->m_subtitleStreams.push_back(subs);
-
-		// Link pad to get data
-		g_signal_connect(pad, "notify::caps", G_CALLBACK(gstCCdataAvailable), _this);
-
-		gst_caps_unref(caps);
-	}
-}
-
-// Callback CC data
-static void gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data) {
-	eServiceMP3* _this = (eServiceMP3*)user_data;
-
-	if (_this->m_currentSubtitleStream < 0)
-		return;
-
-	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
-
-	// Handle only CC streams
-	if (sub.type != stCC608 && sub.type != stCC708)
-		return;
-
-	GstBuffer* buffer;
-	GstMapInfo map;
-
-	buffer = gst_pad_pull(pad);
-	if (buffer && gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-		pts_t pts = GST_BUFFER_PTS(buffer);
-
-		if (sub.type == stCC608)
-			_this->processCC608(map.data, map.size, pts);
-		else
-			_this->processCC708(map.data, map.size, pts);
-
-		gst_buffer_unmap(buffer, &map);
-		gst_buffer_unref(buffer);
-	}
 }
 
 void eServiceMP3::processCC608(const uint8_t* data, size_t size, pts_t pts) {

@@ -471,9 +471,9 @@ private:
 
 	void processCC608(const uint8_t* data, size_t size, pts_t pts);
 	void processCC708(const uint8_t* data, size_t size, pts_t pts);
-	RESULT selectClosedCaptionStream(int pid)
+	RESULT selectClosedCaptionStream(int pid);
 
-		void decodeCC608ToText(const uint8_t* cc_data, std::string& text);
+	void decodeCC608ToText(const uint8_t* cc_data, std::string& text);
 	void decodeCC708ToText(const uint8_t* data, size_t size, std::string& text);
 };
 
