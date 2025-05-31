@@ -4975,7 +4975,7 @@ void eServiceMP3::gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_
 		// Add to subtitle streams
 		subtitleStream subs;
 		subs.type = g_str_has_prefix(type, "closedcaption/x-cea-608") ? stCC608 : stCC708;
-		subs.pid = _this->m_subtitleStreams.size();
+		subs.pad = pad; //_this->m_subtitleStreams.size();
 		subs.language_code = "und";
 
 		// Get language if available
@@ -4988,7 +4988,7 @@ void eServiceMP3::gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_
 			subs.title = (subs.type == stCC608) ? "CC 608" : "CC 708";
 		}
 
-		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream %d type %d language %s", subs.pid, subs.type,
+		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream type %d language %s", subs.type,
 			   subs.language_code.c_str());
 
 		_this->m_subtitleStreams.push_back(subs);
