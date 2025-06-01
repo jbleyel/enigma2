@@ -1146,6 +1146,14 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 		g_object_set(m_gst_playbin, "flags", flags, NULL);
 		g_object_set(m_gst_playbin, "uri", uri, NULL);
 		if (dvb_subsink) {
+
+			g_object_set(G_OBJECT(dvb_subsink), "emit-signals", TRUE, NULL);
+			g_object_set(G_OBJECT(dvb_subsink), "max-buffers", 1, NULL);
+			g_object_set(G_OBJECT(dvb_subsink), "drop", FALSE, NULL);
+			g_object_set(G_OBJECT(dvb_subsink), "sync", TRUE, NULL);
+			g_object_set(G_OBJECT(dvb_subsink), "async", TRUE, NULL);  // Add this
+			g_object_set(G_OBJECT(dvb_subsink), "enable-last-sample", FALSE, NULL);  // Add this
+
 			m_subs_to_pull_handler_id =
 				g_signal_connect(dvb_subsink, "new-buffer", G_CALLBACK(gstCBsubtitleAvail), this);
 			GstCaps* caps = gst_caps_from_string("text/plain; "
@@ -1217,12 +1225,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 				g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			}
 			*/
-
-			// Set subsink to emit signals
-			g_object_set(G_OBJECT(dvb_subsink), "emit-signals", TRUE, NULL);
-			g_object_set(G_OBJECT(dvb_subsink), "max-buffers", 1, NULL);
-			g_object_set(G_OBJECT(dvb_subsink), "drop", FALSE, NULL);
-			g_object_set(G_OBJECT(dvb_subsink), "sync", TRUE, NULL);
 
 			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
