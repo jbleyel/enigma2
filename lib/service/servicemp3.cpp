@@ -1118,9 +1118,17 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 		// Add CC support
 		GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
 		if (ccdec) {
-			// Set properties
-			g_object_set(G_OBJECT(ccdec), "mode", "CEA608+708", NULL);
-
+			// Debug available properties
+			guint num_properties = 0;
+			GParamSpec** properties = g_object_class_list_properties(G_OBJECT_GET_CLASS(ccdec), &num_properties);
+			
+			eDebug("[eServiceMP3] CCConverter has %d properties:", num_properties);
+			for (guint i = 0; i < num_properties; i++) {
+				eDebug("[eServiceMP3] CCConverter Property %d: '%s' (%s)", i,
+					g_param_spec_get_name(properties[i]),
+					g_param_spec_get_blurb(properties[i]));
+			}
+			g_free(properties);
 			// Connect to CC pad added signal
 			g_signal_connect(ccdec, "pad-added", G_CALLBACK(gstCCpadAdded), this);
 
