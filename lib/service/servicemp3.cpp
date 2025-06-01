@@ -1168,6 +1168,9 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 			g_object_set(dvb_subsink, "caps", caps, NULL);
 			gst_caps_unref(caps);
 
+
+			/*
+
 			// Create a bin for CC handling
 			GstElement* ccbin = gst_bin_new("ccbin");
 			if (ccbin) {
@@ -1210,7 +1213,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 				eDebug("[eServiceMP3] Failed to create ccbin for closed captions");
 				g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			}
-
+			*/
+			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
 		GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
@@ -3698,7 +3702,7 @@ eAutoInitPtr<eServiceFactoryMP3> init_eServiceFactoryMP3(eAutoInitNumbers::servi
  * @param[in] user_data User data passed to the callback (eServiceMP3 instance).
  */
 void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpointer user_data) {
-	// eDebug("[eServiceMP3] gstCBsubtitleAvail");
+	eDebug("[eServiceMP3] gstCBsubtitleAvail");
 	eServiceMP3* _this = (eServiceMP3*)user_data;
 
 	if (!_this || !buffer || !_this->m_subtitle_widget || _this->m_currentSubtitleStream < 0) {
