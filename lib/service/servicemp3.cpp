@@ -854,7 +854,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	m_currentAudioStream = -1;
 	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = -2; /* report the first subtitle stream to be 'cached'. TODO: use an actual cache. */
-	m_subtitle_type = stNone;
 	m_subtitle_widget = 0;
 	m_currentTrickRatio = 1.0;
 	m_buffer_size = 5LL * 1024LL * 1024LL;
@@ -3731,30 +3730,7 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpo
 		return;
 	}
 
-	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
-
-	// Handle Closed Captions
-	if (sub.type == stCC608 || sub.type == stCC708) {
-		GstMapInfo map;
-		if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-			pts_t pts = GST_BUFFER_PTS(buffer);
-
-			if (sub.type == stCC608)
-				_this->processCC608(map.data, map.size, pts);
-			else
-				_this->processCC708(map.data, map.size, pts);
-
-			gst_buffer_unmap(buffer, &map);
-		}
-		return;
-	}
-
-	// Handle regular subtitles
-	if (_this->m_currentSubtitleStream >= 0) {
-		_this->m_pump.send(new GstMessageContainer(2, NULL, NULL, buffer));
-		// Increment buffer reference since we're passing it to another thread
-		// gst_buffer_ref(buffer);
-	}
+	_this->m_pump.send(new GstMessageContainer(2, NULL, NULL, buffer));
 }
 
 /**
@@ -4245,23 +4221,7 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		m_subtitle_pages.clear();
 		m_prev_decoder_time = -1;
 		m_decoder_time_valid_state = 0;
-
-		// Handle Closed Captions
-		if (track.type == stCC608 || track.type == stCC708) {
-			// Disable regular subtitles if active
-			if (m_subtitle_type == stRegular) {
-				g_object_set(m_gst_playbin, "current-text", -1, NULL);
-			}
-			m_subtitle_type = stCC;
-			m_subtitle_widget = user;
-			return selectClosedCaptionStream(track.pid);
-		}
-
-		// Handle regular subtitles
-		if (m_subtitle_type == stCC) {
-			m_currentSubtitleStream = -1;
-		}
-		m_subtitle_type = stRegular;
+		m_currentSubtitleStream = -1;
 		m_currentSubtitleStream = track.pid;
 		m_subtitle_widget = user;
 
@@ -4305,11 +4265,7 @@ RESULT eServiceMP3::disableSubtitles() {
 	m_cachedSubtitleStream = m_currentSubtitleStream;
 	setCacheEntry(false, -1);
 	m_currentSubtitleStream = -1;
-	if (m_subtitle_type == stRegular) {
-		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
-	}
-	m_subtitle_type = stNone;
-
+	g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 	m_subtitle_sync_timer->stop();
 	m_dvb_subtitle_sync_timer->stop();
 	m_dvb_subtitle_pages.clear();
@@ -4412,8 +4368,6 @@ RESULT eServiceMP3::getSubtitleList(std::vector<struct SubtitleTrack>& subtitlel
 		struct SubtitleTrack track;
 		if (stream.type == stDVB)
 			track.type = 0; // DVB subtitles
-		else if (stream.type == stCC608 || stream.type == stCC708)
-			track.type = stream.type; // Pass CC type directly
 		else
 			track.type = 2; // Other subtitles (text, SSA etc)
 
@@ -4863,44 +4817,6 @@ void eServiceMP3::processCC708(const uint8_t* data, size_t size, pts_t pts) {
 }
 
 /**
- * @brief Selects a closed caption stream by PID.
- *
- * This function selects a closed caption stream based on the provided PID.
- * It checks if the PID corresponds to a valid closed caption stream and
- * updates the current subtitle stream accordingly.
- *
- * @param[in] pid The PID of the closed caption stream to select.
- * @return RESULT indicating success or failure.
- */
-RESULT eServiceMP3::selectClosedCaptionStream(int pid) {
-	eDebug("[eServiceMP3] selectClosedCaptionStream: pid=%d", pid);
-
-	if (pid >= 0 && pid < (int)m_subtitleStreams.size()) {
-		subtitleStream& sub = m_subtitleStreams[pid];
-
-		// Check if this is really a CC stream
-		if (sub.type != stCC608 && sub.type != stCC708) {
-			eDebug("[eServiceMP3] selectClosedCaptionStream: pid %d is not a CC stream", pid);
-			return -1;
-		}
-
-		if (m_subtitle_type == stRegular) {
-			// Disable regular subtitles first
-			g_object_set(m_gst_playbin, "current-text", -1, NULL);
-		}
-
-		m_currentSubtitleStream = pid;
-		m_subtitle_type = stCC;
-		eDebug("[eServiceMP3] Selected CC stream %d type %d language %s", pid, sub.type, sub.language_code.c_str());
-		return 0;
-	}
-
-	m_currentSubtitleStream = -1;
-	m_subtitle_type = stNone;
-	return -1;
-}
-
-/**
  * @brief Decodes CC608 data to text.
  *
  * This function decodes the CC608 closed caption data into a human-readable
@@ -5009,110 +4925,4 @@ void eServiceMP3::decodeCC708ToText(const uint8_t* data, size_t size, std::strin
 		}
 		i += block_size + 2;
 	}
-}
-
-/**
- * @brief Callback for when a CC pad is added to the GStreamer pipeline.
- *
- * This function is called when a new CC pad is added to the GStreamer playbin.
- * It retrieves the capabilities of the pad, checks if it is a closed caption
- * stream, and adds it to the subtitle streams list.
- *
- * @param[in] element The GStreamer element that emitted the signal.
- * @param[in] pad The GStreamer pad that was added.
- * @param[in] user_data User data pointer (eServiceMP3 instance).
- */
-void eServiceMP3::gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_data) {
-	eDebug("[eServiceMP3] gstCCpadAdded: pad %s", GST_PAD_NAME(pad));
-	eServiceMP3* _this = (eServiceMP3*)user_data;
-	GstCaps* caps = gst_pad_get_current_caps(pad);
-	if (caps) {
-		GstStructure* str = gst_caps_get_structure(caps, 0);
-		const gchar* type = gst_structure_get_name(str);
-
-		// Add to subtitle streams
-		subtitleStream subs;
-		subs.type = g_str_has_prefix(type, "closedcaption/x-cea-608") ? stCC608 : stCC708;
-		subs.pad = pad; //_this->m_subtitleStreams.size();
-		subs.language_code = "und";
-
-		// Get language if available
-		const gchar* lang = gst_structure_get_string(str, "language-code");
-		if (lang)
-			subs.language_code = lang;
-
-		// Set default title if none present
-		if (subs.title.empty()) {
-			subs.title = (subs.type == stCC608) ? "CC 608" : "CC 708";
-		}
-
-		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream type %d language %s", subs.type, subs.language_code.c_str());
-
-		_this->m_subtitleStreams.push_back(subs);
-
-		// Link pad to get data
-		g_signal_connect(pad, "notify::caps", G_CALLBACK(gstCCdataAvailable), _this);
-
-		gst_caps_unref(caps);
-	}
-}
-
-/**
- * @brief Callback for when CC data is available on a pad.
- *
- * This function is called when closed caption data is available on a pad.
- * It retrieves the data, processes it based on the subtitle stream type,
- * and updates the subtitle widget with the decoded text.
- *
- * @param[in] pad The GStreamer pad that emitted the signal.
- * @param[in] unused Unused parameter (GParamSpec).
- * @param[in] user_data User data pointer (eServiceMP3 instance).
- */
-void eServiceMP3::gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data) {
-	eServiceMP3* _this = (eServiceMP3*)user_data;
-
-	eDebug("[eServiceMP3] gstCCdataAvailable: m_currentSubtitleStream %d", _this->m_currentSubtitleStream);
-	if (_this->m_currentSubtitleStream < 0)
-		return;
-
-	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
-
-	eDebug("[eServiceMP3] gstCCdataAvailable: sub.type %d", sub.type);
-
-	// Handle only CC streams
-	if (sub.type != stCC608 && sub.type != stCC708)
-		return;
-
-	GstCaps* caps = gst_pad_get_current_caps(pad);
-	if (!caps) {
-		eDebug("[eServiceMP3] gstCCdataAvailable: NO caps available for pad %s", GST_PAD_NAME(pad));
-		// No caps available, cannot process CC data
-		return;
-	}
-
-	GstSample* sample = NULL;
-	g_signal_emit_by_name(pad, "pull-sample", &sample);
-
-	if (sample) {
-		GstBuffer* buffer = gst_sample_get_buffer(sample);
-		if (buffer) {
-			GstMapInfo map;
-			if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-				pts_t pts = GST_BUFFER_PTS(buffer);
-
-				if (sub.type == stCC608)
-					_this->processCC608(map.data, map.size, pts);
-				else
-					_this->processCC708(map.data, map.size, pts);
-
-				gst_buffer_unmap(buffer, &map);
-			}
-		}
-		gst_sample_unref(sample);
-	} else {
-		eDebug("[eServiceMP3] gstCCdataAvailable: NO sample available for pad %s", GST_PAD_NAME(pad));
-		// No sample available, cannot process CC data
-	}
-
-	gst_caps_unref(caps);
 }
