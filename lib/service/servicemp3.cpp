@@ -1115,32 +1115,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
 		}
 
-		// Add CC support
-		GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
-		if (ccdec) {
-			// Debug available properties
-			guint num_properties = 0;
-			GParamSpec** properties = g_object_class_list_properties(G_OBJECT_GET_CLASS(ccdec), &num_properties);
-			
-			eDebug("[eServiceMP3] CCConverter has %d properties:", num_properties);
-			for (guint i = 0; i < num_properties; i++) {
-				eDebug("[eServiceMP3] CCConverter Property %d: '%s' (%s)", i,
-					g_param_spec_get_name(properties[i]),
-					g_param_spec_get_blurb(properties[i]));
-			}
-			g_free(properties);
-			// Connect to CC pad added signal
-			g_signal_connect(ccdec, "pad-added", G_CALLBACK(gstCCpadAdded), this);
-
-			// Add to bin
-			gst_bin_add(GST_BIN(m_gst_playbin), ccdec);
-
-			// Set state to match parent
-			gst_element_sync_state_with_parent(ccdec);
-		} else {
-			eDebug("[eServiceMP3] ccconverter element not found, closed captions will not be supported.");
-		}
-
 		/*
 		 * avoid video conversion, let the dvbmediasink handle that using native video flag
 		 * volume control is done by hardware, do not use soft volume flag
@@ -1193,6 +1167,24 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 
 			g_object_set(dvb_subsink, "caps", caps, NULL);
 			gst_caps_unref(caps);
+
+			// Add CCConverter element
+			GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
+			if (ccdec) {
+				// Set CDP mode to store CC data
+				g_object_set(G_OBJECT(ccdec), "cdp-mode", 3, NULL); // Store both 608 and 708
+
+				// Add to bin
+				gst_bin_add(GST_BIN(m_gst_playbin), ccdec);
+				
+				// Link to subsink
+				if (!gst_element_link(ccdec, dvb_subsink)) {
+					eDebug("[eServiceMP3] Failed to link ccconverter to subsink");
+				}
+
+				// Set state to match parent
+				gst_element_sync_state_with_parent(ccdec);
+			}
 
 			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
