@@ -1162,8 +1162,11 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 												 "application/x-ass; " // Alternative ASS format
 												 "application/x-ssa; " // Alternative SSA format
 												 "application/x-subtitle-vtt; "
-												 "closedcaption/x-cea-608; " // Add CC608
-												 "closedcaption/x-cea-708;"); // Add CC708
+												 "closedcaption/x-cea-608,format=raw; " // Add CC608
+												 "closedcaption/x-cea-708,format=cc_data; " // Add CC708
+												 "video/x-dvd-subpicture; "
+												 "subpicture/x-xsub");
+
 
 			g_object_set(dvb_subsink, "caps", caps, NULL);
 			gst_caps_unref(caps);
@@ -1214,6 +1217,13 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 				g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			}
 			*/
+
+			// Set subsink to emit signals
+			g_object_set(G_OBJECT(dvb_subsink), "emit-signals", TRUE, NULL);
+			g_object_set(G_OBJECT(dvb_subsink), "max-buffers", 1, NULL);
+			g_object_set(G_OBJECT(dvb_subsink), "drop", FALSE, NULL);
+			g_object_set(G_OBJECT(dvb_subsink), "sync", TRUE, NULL);
+
 			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
