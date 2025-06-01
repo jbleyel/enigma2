@@ -1118,8 +1118,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 		// Add CC support
 		GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
 		if (ccdec) {
-			// Set the formats we want to handle
-			g_object_set(G_OBJECT(ccdec), "format", "raw;cc_data", NULL);
+			// Set the caption types we want to handle
+			g_object_set(G_OBJECT(ccdec), "caption-type", "cea608,cea708", NULL);
 
 			// Connect to CC pad added signal
 			g_signal_connect(ccdec, "pad-added", G_CALLBACK(gstCCpadAdded), this);
