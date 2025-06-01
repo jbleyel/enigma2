@@ -1118,16 +1118,18 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 		// Add CC support
 		GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
 		if (ccdec) {
-			// Set the caption types we want to handle
-			g_object_set(G_OBJECT(ccdec), "caption-type", "cea608,cea708", NULL);
+			// Set properties
+			g_object_set(G_OBJECT(ccdec), "mode", "CEA608+708", NULL);
 
 			// Connect to CC pad added signal
 			g_signal_connect(ccdec, "pad-added", G_CALLBACK(gstCCpadAdded), this);
 
 			// Add to bin
 			gst_bin_add(GST_BIN(m_gst_playbin), ccdec);
-		}
-		else {
+
+			// Set state to match parent
+			gst_element_sync_state_with_parent(ccdec);
+		} else {
 			eDebug("[eServiceMP3] ccconverter element not found, closed captions will not be supported.");
 		}
 
@@ -1177,7 +1179,9 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 												 "text/x-ass; " // Advanced SubStation Alpha
 												 "application/x-ass; " // Alternative ASS format
 												 "application/x-ssa; " // Alternative SSA format
-												 "application/x-subtitle-vtt");
+												 "application/x-subtitle-vtt; "
+												 "closedcaption/x-cea-608; " // Add CC608
+												 "closedcaption/x-cea-708;"); // Add CC708
 
 			g_object_set(dvb_subsink, "caps", caps, NULL);
 			gst_caps_unref(caps);
@@ -3679,38 +3683,38 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpo
 		return;
 	}
 
-    // Check array bounds
-    if (_this->m_currentSubtitleStream >= (int)_this->m_subtitleStreams.size()) {
-        eDebug("[eServiceMP3] gstCBsubtitleAvail: invalid subtitle stream index");
-        if (buffer)
-            gst_buffer_unref(buffer);
-        return;
-    }
+	// Check array bounds
+	if (_this->m_currentSubtitleStream >= (int)_this->m_subtitleStreams.size()) {
+		eDebug("[eServiceMP3] gstCBsubtitleAvail: invalid subtitle stream index");
+		if (buffer)
+			gst_buffer_unref(buffer);
+		return;
+	}
 
 	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
 
-    // Handle Closed Captions
-    if (sub.type == stCC608 || sub.type == stCC708) {
-        GstMapInfo map;
-        if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-            pts_t pts = GST_BUFFER_PTS(buffer);
-            
-            if (sub.type == stCC608)
-                _this->processCC608(map.data, map.size, pts);
-            else
-                _this->processCC708(map.data, map.size, pts);
-                
-            gst_buffer_unmap(buffer, &map);
-        }
-        return;
-    }	
+	// Handle Closed Captions
+	if (sub.type == stCC608 || sub.type == stCC708) {
+		GstMapInfo map;
+		if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+			pts_t pts = GST_BUFFER_PTS(buffer);
 
-    // Handle regular subtitles
-    if (_this->m_currentSubtitleStream >= 0) {
-        _this->m_pump.send(new GstMessageContainer(2, NULL, NULL, buffer));
-        // Increment buffer reference since we're passing it to another thread
-        // gst_buffer_ref(buffer);
-    }
+			if (sub.type == stCC608)
+				_this->processCC608(map.data, map.size, pts);
+			else
+				_this->processCC708(map.data, map.size, pts);
+
+			gst_buffer_unmap(buffer, &map);
+		}
+		return;
+	}
+
+	// Handle regular subtitles
+	if (_this->m_currentSubtitleStream >= 0) {
+		_this->m_pump.send(new GstMessageContainer(2, NULL, NULL, buffer));
+		// Increment buffer reference since we're passing it to another thread
+		// gst_buffer_ref(buffer);
+	}
 }
 
 /**
@@ -4000,8 +4004,8 @@ void eServiceMP3::pushSubtitles() {
 	}
 	delay_ms = 0;
 
-	eDebug("[eServiceMP3] pushSubtitles running_pts=%lld decoder_ms=%d delay=%d fps=%.2f", running_pts,
-		   decoder_ms, delay_ms, convert_fps);
+	eDebug("[eServiceMP3] pushSubtitles running_pts=%lld decoder_ms=%d delay=%d fps=%.2f", running_pts, decoder_ms,
+		   delay_ms, convert_fps);
 
 #if 0
     eDebug("\n*** all subs: ");
@@ -5002,8 +5006,7 @@ void eServiceMP3::gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_
 			subs.title = (subs.type == stCC608) ? "CC 608" : "CC 708";
 		}
 
-		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream type %d language %s", subs.type,
-			   subs.language_code.c_str());
+		eDebug("[eServiceMP3] gstCCpadAdded: CC Stream type %d language %s", subs.type, subs.language_code.c_str());
 
 		_this->m_subtitleStreams.push_back(subs);
 
@@ -5026,53 +5029,50 @@ void eServiceMP3::gstCCpadAdded(GstElement* element, GstPad* pad, gpointer user_
  * @param[in] user_data User data pointer (eServiceMP3 instance).
  */
 void eServiceMP3::gstCCdataAvailable(GstPad* pad, GParamSpec* unused, gpointer user_data) {
-    eServiceMP3* _this = (eServiceMP3*)user_data;
-    
+	eServiceMP3* _this = (eServiceMP3*)user_data;
+
 	eDebug("[eServiceMP3] gstCCdataAvailable: m_currentSubtitleStream %d", _this->m_currentSubtitleStream);
-    if (_this->m_currentSubtitleStream < 0)
-        return;
-        
-    subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
-    
+	if (_this->m_currentSubtitleStream < 0)
+		return;
+
+	subtitleStream& sub = _this->m_subtitleStreams[_this->m_currentSubtitleStream];
+
 	eDebug("[eServiceMP3] gstCCdataAvailable: sub.type %d", sub.type);
 
 	// Handle only CC streams
-    if (sub.type != stCC608 && sub.type != stCC708)
-        return;
-        
-    GstCaps* caps = gst_pad_get_current_caps(pad);
-    if (!caps)
-	{
+	if (sub.type != stCC608 && sub.type != stCC708)
+		return;
+
+	GstCaps* caps = gst_pad_get_current_caps(pad);
+	if (!caps) {
 		eDebug("[eServiceMP3] gstCCdataAvailable: NO caps available for pad %s", GST_PAD_NAME(pad));
 		// No caps available, cannot process CC data
-        return;
+		return;
 	}
-        
-    GstSample* sample = NULL;
-    g_signal_emit_by_name(pad, "pull-sample", &sample);
-    
-    if (sample) {
-        GstBuffer* buffer = gst_sample_get_buffer(sample);
-        if (buffer) {
-            GstMapInfo map;
-            if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-                pts_t pts = GST_BUFFER_PTS(buffer);
-                
-                if (sub.type == stCC608)
-                    _this->processCC608(map.data, map.size, pts);
-                else
-                    _this->processCC708(map.data, map.size, pts);
-                    
-                gst_buffer_unmap(buffer, &map);
-            }
-        }
-        gst_sample_unref(sample);
-    }
-	else
-	{
+
+	GstSample* sample = NULL;
+	g_signal_emit_by_name(pad, "pull-sample", &sample);
+
+	if (sample) {
+		GstBuffer* buffer = gst_sample_get_buffer(sample);
+		if (buffer) {
+			GstMapInfo map;
+			if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+				pts_t pts = GST_BUFFER_PTS(buffer);
+
+				if (sub.type == stCC608)
+					_this->processCC608(map.data, map.size, pts);
+				else
+					_this->processCC708(map.data, map.size, pts);
+
+				gst_buffer_unmap(buffer, &map);
+			}
+		}
+		gst_sample_unref(sample);
+	} else {
 		eDebug("[eServiceMP3] gstCCdataAvailable: NO sample available for pad %s", GST_PAD_NAME(pad));
 		// No sample available, cannot process CC data
 	}
-    
-    gst_caps_unref(caps);
+
+	gst_caps_unref(caps);
 }
