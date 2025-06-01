@@ -1168,25 +1168,49 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 			g_object_set(dvb_subsink, "caps", caps, NULL);
 			gst_caps_unref(caps);
 
-			// Add CCConverter element
-			GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
-			if (ccdec) {
-				// Set CDP mode to store CC data
-				g_object_set(G_OBJECT(ccdec), "cdp-mode", 3, NULL); // Store both 608 and 708
+			// Create a bin for CC handling
+			GstElement* ccbin = gst_bin_new("ccbin");
+			if (ccbin) {
+				// Create CC converter
+				GstElement* ccdec = gst_element_factory_make("ccconverter", "cc-decoder");
+				if (ccdec) {
+					// Set CDP mode to store CC data
+					g_object_set(G_OBJECT(ccdec), "cdp-mode", 3, NULL);
 
-				// Add to bin
-				gst_bin_add(GST_BIN(m_gst_playbin), ccdec);
-				
-				// Link to subsink
-				if (!gst_element_link(ccdec, dvb_subsink)) {
-					eDebug("[eServiceMP3] Failed to link ccconverter to subsink");
+					// Add elements to bin
+					gst_bin_add_many(GST_BIN(ccbin), ccdec, dvb_subsink, NULL);
+
+					// Link elements inside bin
+					if (!gst_element_link(ccdec, dvb_subsink)) {
+						eDebug("[eServiceMP3] Failed to link ccconverter to subsink");
+					}
+
+					// Add bin to playbin
+					gst_bin_add(GST_BIN(m_gst_playbin), ccbin);
+
+					// Add ghost pad to bin
+					GstPad* sinkpad = gst_element_get_static_pad(ccdec, "sink");
+					gst_element_add_pad(ccbin, gst_ghost_pad_new("sink", sinkpad));
+					gst_object_unref(sinkpad);
+
+					// Set bin as text-sink
+					g_object_set(G_OBJECT(m_gst_playbin), "text-sink", ccbin, NULL);
+
+					// Set state to match parent
+					gst_element_sync_state_with_parent(ccbin);
 				}
-
-				// Set state to match parent
-				gst_element_sync_state_with_parent(ccdec);
+				else
+				{
+					eDebug("[eServiceMP3] Failed to create ccconverter for closed captions");
+					g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+				}
+			}
+			else
+			{
+				eDebug("[eServiceMP3] Failed to create ccbin for closed captions");
+				g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			}
 
-			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
 		GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
