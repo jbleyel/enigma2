@@ -1146,9 +1146,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 		g_object_set(m_gst_playbin, "uri", uri, NULL);
 		if (dvb_subsink) {
 
-			g_object_set(G_OBJECT(dvb_subsink), "emit-signals", TRUE, NULL);
-			g_object_set(G_OBJECT(dvb_subsink), "max-buffers", 1, NULL);
-			g_object_set(G_OBJECT(dvb_subsink), "drop", FALSE, NULL);
 			g_object_set(G_OBJECT(dvb_subsink), "sync", TRUE, NULL);
 			g_object_set(G_OBJECT(dvb_subsink), "async", TRUE, NULL);  // Add this
 			g_object_set(G_OBJECT(dvb_subsink), "enable-last-sample", FALSE, NULL);  // Add this
