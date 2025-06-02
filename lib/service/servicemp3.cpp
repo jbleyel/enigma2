@@ -4059,7 +4059,7 @@ void eServiceMP3::pushSubtitles() {
 				m_subtitle_widget->setPage(pango_page);
 				continue;
 			}
-			// --- ENDE WORKAROUND ---
+			// --- END WORKAROUND ---
 		} else if (m_subtitleStreams[m_currentSubtitleStream].type == stWebVTT) {
 			diff_start_ms = start_ms - decoder_ms;
 			diff_end_ms = end_ms - decoder_ms;
@@ -4103,7 +4103,7 @@ void eServiceMP3::pushSubtitles() {
 			else if (diff_end_ms < -wrap_threshold)
 				diff_end_ms += wrap_value;
 
-#if 1
+#if 0
 			eDebug("[eServiceMP3] *** next subtitle: decoder: %d start: %d, end: %d, duration_ms: %d, "
 				   "diff_start: %d, diff_end: %d : %s",
 				   decoder_ms, start_ms, end_ms, end_ms - start_ms, diff_start_ms, diff_end_ms,
@@ -4124,11 +4124,13 @@ void eServiceMP3::pushSubtitles() {
 				ePangoSubtitlePage pango_page;
 				gRGB rgbcol(0xD0, 0xD0, 0xD0);
 				pango_page.m_elements.push_back(ePangoSubtitlePageElement(rgbcol, current->second.text.c_str()));
-				pango_page.m_show_pts = start_ms * 90;
+				pango_page.m_show_pts = start_ms * 90; // actually completely unused by widget!
 				if (!m_subtitles_paused)
-					pango_page.m_timeout = end_ms - decoder_ms;
+					pango_page.m_timeout = end_ms - decoder_ms; // take late start into account
 				else
 					pango_page.m_timeout = 60000;
+				// paused, subs must stay on (60s for now), avoid timeout in lib/gui/esubtitle.cpp:
+				// m_hide_subtitles_timer->start(m_pango_page.m_timeout, true);
 				m_subtitle_widget->setPage(pango_page);
 			}
 		}
@@ -4155,23 +4157,28 @@ exit:
  * @return RESULT indicating success or failure.
  */
 RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& track) {
+	bool starting_subtitle = false;
 	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon) {
+		// if (m_currentSubtitleStream == -1)
+		//	starting_subtitle = true;
+		g_object_set(m_gst_playbin, "current-text", -1, NULL);
+		// m_cachedSubtitleStream = -1;
 		m_subtitle_sync_timer->stop();
 		m_dvb_subtitle_sync_timer->stop();
 		m_dvb_subtitle_pages.clear();
 		m_subtitle_pages.clear();
 		m_prev_decoder_time = -1;
 		m_decoder_time_valid_state = 0;
-		m_currentSubtitleStream = -1;
 		m_currentSubtitleStream = track.pid;
-		m_subtitle_widget = user;
-
+		m_cachedSubtitleStream = m_currentSubtitleStream;
+		setCacheEntry(false, track.pid);
 		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
 		if (track.type != stDVB) {
 			m_clear_buffers = true;
 			clearBuffers();
 		}
+		m_subtitle_widget = user;
 
 		eDebug("[eServiceMP3] switched to subtitle stream %i", m_currentSubtitleStream);
 
@@ -4184,7 +4191,7 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 #endif
 
 		// Seek to last position for non-initial subtitle changes
-		if (m_last_seek_pos > 0) {
+		if (m_last_seek_pos > 0 && !starting_subtitle) {
 			seekTo(m_last_seek_pos);
 			gst_sleepms(50);
 		}
@@ -4203,9 +4210,9 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
  */
 RESULT eServiceMP3::disableSubtitles() {
 	eDebug("[eServiceMP3] disableSubtitles");
+	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = m_currentSubtitleStream;
 	setCacheEntry(false, -1);
-	m_currentSubtitleStream = -1;
 	g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 	m_subtitle_sync_timer->stop();
 	m_dvb_subtitle_sync_timer->stop();
@@ -4230,14 +4237,13 @@ RESULT eServiceMP3::disableSubtitles() {
  * @return RESULT indicating success or failure.
  */
 RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack& track) {
-	bool autosub = eSubtitleSettings::pango_autoturnon;
+	// If autostart not active, exit
+	if (!eSubtitleSettings::pango_autoturnon)
+		return -1;
 	int autosub_level = 5;
 	std::string configvalue;
 	std::vector<std::string> autosub_languages;
 
-	// If autostart not active, exit
-	if (!autosub)
-		return -1;
 
 	// Initialize cache if needed
 	if (m_cachedSubtitleStream == -2 && !m_subtitleStreams.empty()) {
@@ -4307,12 +4313,7 @@ RESULT eServiceMP3::getSubtitleList(std::vector<struct SubtitleTrack>& subtitlel
 		}
 
 		struct SubtitleTrack track;
-		if (stream.type == stDVB)
-			track.type = 0; // DVB subtitles
-		else
-			track.type = 2; // Other subtitles (text, SSA etc)
-
-		// Set track properties
+		track.type = (stream.type == stDVB) ? 0 : 2;
 		track.pid = i;
 		track.page_number = int(stream.type);
 		track.magazine_number = 0;

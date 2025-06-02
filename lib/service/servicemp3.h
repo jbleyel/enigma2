@@ -460,7 +460,6 @@ private:
 	std::string m_external_subtitle_path;
 	std::string m_external_subtitle_language;
 	std::string m_external_subtitle_extension;
-
 };
 
 #endif
