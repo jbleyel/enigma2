@@ -461,18 +461,6 @@ private:
 	std::string m_external_subtitle_language;
 	std::string m_external_subtitle_extension;
 
-	enum subtitle_type_t {
-		stNone = -1,
-		stRegular, // Regular Subtitles
-		stCC // Closed Captions
-	};
-
-	void processCC608(const uint8_t* data, size_t size, pts_t pts);
-	void processCC708(const uint8_t* data, size_t size, pts_t pts);
-
-	void decodeCC608ToText(const uint8_t* cc_data, std::string& text);
-	void decodeCC708ToText(const uint8_t* data, size_t size, std::string& text);
-
 };
 
 #endif
