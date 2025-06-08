@@ -2371,7 +2371,7 @@ def InitUsageConfig():
 	])
 	config.plugins.softwaremanager.epgcache = ConfigYesNo(default=False)
 
-	hddChoices = ("", _("Ask user"))
+	hddChoices = [("", _("Ask user"))]
 	for partition in harddiskmanager.getMountedPartitions():
 		if exists(partition.mountpoint):
 			path = normpath(partition.mountpoint)
