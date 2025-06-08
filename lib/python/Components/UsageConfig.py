@@ -2378,7 +2378,7 @@ def InitUsageConfig():
 			if partition.mountpoint != "/":
 				hddChoices.append((partition.mountpoint, path))
 
-	config.plugins.softwaremanager.backuptarget = ConfigSelectiom(default="", choices=hddChoices)
+	config.plugins.softwaremanager.backuptarget = ConfigSelection(default="", choices=hddChoices)
 
 	def partitionListChanged(action, device):
 		hddchoises = []
