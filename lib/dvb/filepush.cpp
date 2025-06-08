@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-//#include <poll.h>
+#include <poll.h>
 
 //#define SHOW_WRITE_TIME
 
@@ -38,15 +38,14 @@ static void signal_handler(int x)
 
 static void ignore_but_report_signals()
 {
-/*
 #ifndef HAVE_HISILICON
-	// we must set a signal mask for the thread otherwise signals don't have any effect
+	/* we must set a signal mask for the thread otherwise signals don't have any effect */
 	sigset_t sigmask;
 	sigemptyset(&sigmask);
 	sigaddset(&sigmask, SIGUSR1);
 	pthread_sigmask(SIG_UNBLOCK, &sigmask, NULL);
 #endif
-*/	
+	
 	/* we set the signal to not restart syscalls, so we can detect our signal. */
 	struct sigaction act = {};
 	act.sa_handler = signal_handler; // no, SIG_IGN doesn't do it. we want to receive the -EINTR
@@ -492,16 +491,14 @@ int eFilePushThreadRecorder::read_dmx(int fd, void *m_buffer, int size)
 
 void eFilePushThreadRecorder::thread()
 {
-/*
 #ifndef HAVE_HISILICON
 	ignore_but_report_signals();
-	hasStarted(); // "start()" blocks until we get here
+	hasStarted(); /* "start()" blocks until we get here */
 #endif
-*/
 	setIoPrio(IOPRIO_CLASS_RT, 7);
 	eDebug("[eFilePushThreadRecorder] THREAD START");
 
-//#ifdef HAVE_HISILICON
+#ifdef HAVE_HISILICON
 	/* we set the signal to not restart syscalls, so we can detect our signal. */
 	struct sigaction act = {};
 	memset(&act, 0, sizeof(act));
@@ -509,7 +506,7 @@ void eFilePushThreadRecorder::thread()
 	act.sa_flags = 0;
 	sigaction(SIGUSR1, &act, 0);
 	hasStarted();
-//#endif
+#endif
 
 	if (m_protocol == _PROTO_RTSP_TCP)
 	{
@@ -526,39 +523,36 @@ void eFilePushThreadRecorder::thread()
 		if (m_protocol == _PROTO_RTSP_TCP)
 			bytes = read_dmx(m_fd_source, m_buffer, m_buffersize);
 		else
-			bytes = ::read(m_fd_source, m_buffer, m_buffersize);
-/*		
 		{
 #ifndef HAVE_HISILICON
-		// this works around the buggy Broadcom encoder that always returns even if there is no data
-		// (works like O_NONBLOCK even when not opened as such), prevent idle waiting for the data
-		// this won't ever hurt, because it will return immediately when there is data or an error condition
+		/* this works around the buggy Broadcom encoder that always returns even if there is no data */
+		/* (works like O_NONBLOCK even when not opened as such), prevent idle waiting for the data */
+		/* this won't ever hurt, because it will return immediately when there is data or an error condition */
 
 		struct pollfd pfd = { m_fd_source, POLLIN, 0 };
 		poll(&pfd, 1, 100);
-		// Reminder: m_stop *must* be evaluated after each syscall.
+		/* Reminder: m_stop *must* be evaluated after each syscall. */
 		if (m_stop)
 			break;
 
 		bytes = ::read(m_fd_source, m_buffer, m_buffersize);
-		// And again: Check m_stop regardless of read success.
+		/* And again: Check m_stop regardless of read success. */
 		if (m_stop)
 			break;
 #else
 		bytes = ::read(m_fd_source, m_buffer, m_buffersize);
 #endif
 		}
-*/
 		if (bytes < 0)
 		{
 			bytes = 0;
-//#if HAVE_HISILICON
+#if HAVE_HISILICON
 			/* Check m_stop after interrupted syscall. */
 			if (m_stop)
 			{
 				break;
 			}
-//#endif
+#endif
 			if (errno == EINTR || errno == EBUSY || errno == EAGAIN)
 			{
 #if HAVE_HISILICON
