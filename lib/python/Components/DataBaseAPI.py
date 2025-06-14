@@ -4,12 +4,12 @@ from struct import pack
 from bisect import bisect_left, insort
 from ctypes import py_object, pythonapi, c_long
 from difflib import SequenceMatcher
-from os import remove, stat, walk, mknod
+from os import remove, stat, walk
 from os.path import exists, dirname, realpath, isdir, join, basename, split
 from sqlite3 import connect, ProgrammingError, OperationalError, DatabaseError
 from struct import unpack
 from threading import Thread, Lock, current_thread
-from time import sleep, time
+from time import sleep
 from enigma import eServiceCenter, eServiceReference, iServiceInformation, eTimer
 from Components.Task import Task, Job, job_manager
 from Components.config import config, ConfigDirectory, ConfigYesNo, ConfigSelection
@@ -521,8 +521,6 @@ class CommonDataBase():
 				tmp_row = []
 				for field in row:
 					tmp_field = field
-#					if field and isinstance(field.encode("utf-8"), str):
-#						tmp_field = field
 					tmp_row.append(tmp_field)
 				content.append(tmp_row)
 				debugPrint(f"Found row ({str(i)}):{str(tmp_row)}", LOGLEVEL.ALL)
@@ -555,25 +553,21 @@ class CommonDataBase():
 			elif isinstance(fields, str):
 				if fields in struc:
 					return_fields = fields
-		if return_fields == "":
-			return_fields = "*"
 		if return_fields.endswith(", "):
 			return_fields = return_fields[:-2]
 		if self.table and self.connectDataBase():
-			sqlcmd = f"SELECT {return_fields} FROM {self.table} WHERE "
+			sqlcmd = f"SELECT {return_fields or "*"} FROM {self.table} WHERE "
 			args = []
 			for key in data:
 				sqlcmd += f"{key} {compare}? {query_type} "
 				args.append(wildcard + data[key] + wildcard)
 			if sqlcmd.endswith(f" {query_type} "):
 				sqlcmd = sqlcmd[:-(len(query_type) + 2)] + ";"
+			if not sqlcmd.endswith(";"):
+				sqlcmd += ";"
 			if not exactmatch:
-				sqlpragmacmd = "PRAGMA case_sensitive_like=OFF;"
-				self.executeSQL(sqlpragmacmd, readonly=True)
-			sqlret = self.executeSQL(sqlcmd, args, readonly=True)
-			if not exactmatch:
-				sqlpragmacmd = "PRAGMA case_sensitive_like=ON;"
-				self.executeSQL(sqlpragmacmd, readonly=True)
+				sqlcmd = f"PRAGMA case_sensitive_like=OFF;{sqlcmd}PRAGMA case_sensitive_like=ON;"
+			sqlret = self.executeSQL(sqlcmd, readonly=True)
 			if sqlret and sqlret[0]:
 				rows = sqlret[1]
 			else:
@@ -584,8 +578,6 @@ class CommonDataBase():
 				tmp_row = []
 				for field in row:
 					tmp_field = field
-#					if field and isinstance(str(field).encode("utf-8"), str):
-#						tmp_field = str(field).encode("utf-8")
 					tmp_row.append(tmp_field)
 				content.append(tmp_row)
 				debugPrint(f"Found row ({str(i)}):{str(tmp_row)}", LOGLEVEL.ALL)
@@ -797,7 +789,6 @@ class MovieDataBase(CommonDataBase):
 			"extDesc": "TEXT",
 			"genre": "TEXT",
 			"tags": "TEXT",
-			"autotags": "TEXT",
 			"duration": "REAL",
 			"begin": "REAL",
 			"lastpos": "REAL",
@@ -815,9 +806,6 @@ class MovieDataBase(CommonDataBase):
 			"CollectionID": "INTEGER",
 			"ListID": "INTEGER",
 			"IsRecording": "INTEGER DEFAULT 0",
-			"IsTrash": "INTEGER DEFAULT 0",
-			"TrashTime": "REAL",
-			"IsDir": "INTEGER",
 			"Season": "INTEGER",
 			"Episode": "INTEGER",
 		}
@@ -1024,7 +1012,7 @@ class MovieDataBase(CommonDataBase):
 			globalthreads.registerThread(t)
 
 	def getTitleList(self):
-		sqlcmd = f"SELECT ref,title,shortDesc, extDesc FROM {self.table} WHERE IsTrash != 1"
+		sqlcmd = f"SELECT ref,title,shortDesc, extDesc FROM {self.table}"
 		sqlret = self.executeSQL(sqlcmd, args=[], readonly=True)
 		if sqlret and sqlret[0]:
 			content = []
@@ -1034,8 +1022,6 @@ class MovieDataBase(CommonDataBase):
 				tmp_row = []
 				for field in row:
 					tmp_field = field
-#					if field and isinstance(str(field).encode("utf-8"), str):
-#						tmp_field = str(field).encode("utf-8")
 					tmp_row.append(tmp_field)
 				content.append(tmp_row)
 			for x in content:
@@ -1108,8 +1094,6 @@ class MovieDataBase(CommonDataBase):
 						p = y + movie[1]
 						p = join(p, "")
 						p += movie[2]
-#						p = str(p.encode("utf-8"))
-#						pp = str(pp.encode("utf-8"))
 						if exists(p):
 							do_update = True
 						elif exists(pp):
@@ -1126,43 +1110,6 @@ class MovieDataBase(CommonDataBase):
 								checked_res.append(ret)
 							break
 		return checked_res
-
-	def getTrashEntries(self, as_ref=False):
-		fields = ["ref", "fsize"] if as_ref else [self.boxPath, "fsize"]
-		entries = self.searchContent({"IsTrash": "1"}, fields=fields)
-		ret = []
-		fsize = 0.0
-		for entry in entries:
-			if entry[1]:
-				fsize += float(entry[1])
-			ret.append(eServiceReference(entry[0]) if as_ref else entry[0])
-		return (ret, fsize)
-
-	def getDeprecatedTrashEntries(self, as_ref=False):
-		now = time()
-		diff_rec = config.usage.movielist_use_autodel_trash.value * 60.0 * 60.0 * 24.0
-		diff_trash = config.usage.movielist_use_autodel_in_trash.value * 60.0 * 60.0 * 24.0
-		fields = ["ref", "begin", "TrashTime"] if as_ref else [self.boxPath, "begin", "TrashTime"]
-		entries = self.searchContent({"IsTrash": "1"}, fields=fields)
-		ret = []
-		rec_t = 0.0
-		trash_t = 0.0
-		link = config.usage.movielist_link_autodel_config.value == "and" and True or False
-		for entry in entries:
-			rec_t = float(entry[1] or 0.0)
-			trash_t = float(entry[2] or 0.0)
-			append = False
-			if link and diff_rec > 0 and diff_trash > 0 and rec_t > 0 and trash_t > 0:
-				if now - rec_t >= diff_rec and now - trash_t >= diff_trash:
-					append = True
-			else:
-				if now - rec_t >= diff_rec and diff_rec > 0 and rec_t > 0:
-					append = True
-				elif now - trash_t >= diff_trash and diff_trash > 0 and trash_t > 0:
-					append = True
-			if append:
-				ret.append(eServiceReference(entry[0]) if as_ref else entry[0])
-		return ret
 
 	def updateMovieDB(self):
 		self.dbthreadId = current_thread().ident
@@ -1199,10 +1146,6 @@ class MovieDataBase(CommonDataBase):
 				self.updateMovieDBPath(path, isThread=True)
 		self.stopBackgroundAction()
 
-	def updateMovieDBSinglePath(self, path, isThread=False):
-		self.updateMovieDBPath(path, isThread)
-		self.stopBackgroundAction()
-
 	def updateMovieDBPath(self, path, isThread=False):
 		m_list = []
 		root = eServiceReference(eServiceReference.idFile, eServiceReference.flagDirectory, join(path, ""))
@@ -1221,7 +1164,7 @@ class MovieDataBase(CommonDataBase):
 				break
 			self.updateSingleEntry(serviceref, isThread, videoDirs)
 
-	def updateSingleEntry(self, serviceref, isThread=False, video_dirs=[], withBoxPath=False, isTrash=(False, 0)):
+	def updateSingleEntry(self, serviceref, isThread=False, video_dirs=[], withBoxPath=False):
 		if not config.misc.db_enabled.value:
 			return
 		if not video_dirs:
@@ -1236,18 +1179,6 @@ class MovieDataBase(CommonDataBase):
 		trashfile = f"{filepath}.del"
 		if filepath.endswith("_pvrdesc.ts"):
 			return
-		if isTrash[0]:
-			if isTrash[1] == 1 and not exists(trashfile):
-				try:
-					mknod(trashfile)
-				except OSError:
-					pass
-			else:
-				if exists(trashfile):
-					try:
-						remove(trashfile)
-					except OSError:
-						pass
 		is_dvd = None
 		if serviceref.flags & eServiceReference.mustDescent:
 			possible_path = ("VIDEO_TS", "video_ts", "VIDEO_TS.IFO", "video_ts.ifo")
@@ -1256,27 +1187,6 @@ class MovieDataBase(CommonDataBase):
 					is_dvd = True
 					serviceref = eServiceReference(4097, 0, filepath)
 					break
-		if is_dvd is None and serviceref.flags & eServiceReference.mustDescent:
-			fields = {self.boxPath: filepath, "IsDir": "1", "fname": filepath, "fsize": "0", "ref": "2:47:1:0:0:0:0:0:0:0:", }
-			if isTrash[0]:
-				fields["IsTrash"] = str(isTrash[1])
-				fields["TrashTime"] = str(0) if isTrash[1] == 0 else str(time())
-			else:
-				if exists(trashfile):
-					fields["IsTrash"] = str(1)
-					try:
-						fields["TrashTime"] = str(stat(trashfile).st_mtime)
-					except OSError:
-						fields["TrashTime"] = str(time())
-				else:
-					return
-			if withBoxPath:
-				self.updateUniqueData(fields, (self.boxPath,))
-			else:
-				self.updateUniqueData(fields, ("fname", "fsize"))
-			if not isThread:
-				self.disconnectDataBase()
-			return
 		file_path = serviceref.getPath()
 		file_extension = file_path.split(".")[-1].lower()
 		if file_extension == "iso":
@@ -1323,12 +1233,6 @@ class MovieDataBase(CommonDataBase):
 				if m_db_path.startswith(x) or m_db_path == x[:-1]:
 					m_db_path = m_db_path.lstrip(x)
 					break
-		m_db_autotags = ""
-		autotags = []  # config.movielist.autotags.value.split(";") # TODO
-		desc = f"{m_db_shortDesc.lower()}{m_db_extDesc.lower()}"
-		for tag in autotags:
-			if desc[:80].find(tag.lower()) != -1 or desc[80:].find(tag.lower()) != -1:
-				m_db_autotags += f"{tag};"
 		if m_db_duration < 0:
 			m_db_duration = self.calcMovieLen(f"{m_db_fullpath}.cuts")
 		if m_db_duration >= 0:
@@ -1347,32 +1251,16 @@ class MovieDataBase(CommonDataBase):
 				"progress": str(m_db_progress),
 				"fsize": str(m_db_f_size),
 				"begin": str(m_db_begin),
-				"autotags": str(m_db_autotags),
 				"IsRecording": str(is_rec),
 			}
 
 		search_fields = {self.boxPath: m_db_fullpath, "fname": m_db_fname, "title": m_db_title, }
 		is_in_db = self.searchContent(search_fields, fields=("fname",), query_type="AND", exactmatch=False, skipCheckExists=True)
-		if isTrash[0]:
-			fields["IsTrash"] = str(isTrash[1])
-			if isTrash[1] == 0:
-				fields["TrashTime"] = str(0)
-				self.addToTitleList(m_db_title, m_db_shortDesc, m_db_extDesc)
-			else:
-				fields["TrashTime"] = str(time())
-				if len(is_in_db):
-					self.removeFromTitleList(m_db_title, m_db_shortDesc, m_db_extDesc)
+		if exists(trashfile):
+			if len(is_in_db):
+				self.removeFromTitleList(m_db_title, m_db_shortDesc, m_db_extDesc)
 		else:
-			if exists(trashfile):
-				fields["IsTrash"] = str(1)
-				if len(is_in_db):
-					self.removeFromTitleList(m_db_title, m_db_shortDesc, m_db_extDesc)
-				try:
-					fields["TrashTime"] = str(stat(trashfile).st_mtime)
-				except OSError:
-					fields["TrashTime"] = str(time())
-			else:
-				self.addToTitleList(m_db_title, m_db_shortDesc, m_db_extDesc)
+			self.addToTitleList(m_db_title, m_db_shortDesc, m_db_extDesc)
 		if withBoxPath:
 			self.updateUniqueData(fields, (self.boxPath,))
 		else:
@@ -1439,9 +1327,6 @@ def isMovieinDatabase(title_name, shortdesc, extdesc, short_ratio=0.95, ext_rati
 	movie = None
 	movie_found = False
 	s = {"title": str(title_name)}
-	trash_movies = []
-#	if config.usage.movielist_use_moviedb_trash.value:
-#		trash_movies = moviedb.getTrashEntries()[0]
 	print(f"[MovieDB] search for existing media file with title: {str(title_name)}")
 	for x in moviedb.searchContent(s, ("title", "shortDesc", "extDesc"), query_type="OR", exactmatch=False):
 		movie_found = False
@@ -1482,34 +1367,14 @@ def isMovieinDatabase(title_name, shortdesc, extdesc, short_ratio=0.95, ext_rati
 				break
 	if movie_found:
 		real_path = realpath(eServiceReference(movie[0]).getPath()) if movie else ""
-		movie_found = True if real_path not in trash_movies or exists(f"{real_path}.del") else False
+		movie_found = True if real_path or exists(f"{real_path}.del") else False
 	return movie_found
 
 
-class MovieDBUpdateBase:
+class MovieDBUpdate():
+
 	def __init__(self):
 		self.navigation = None
-
-	def getNavigation(self):
-		if not self.navigation:
-			import NavigationInstance
-			if NavigationInstance:
-				self.navigation = NavigationInstance.instance
-		return self.navigation
-
-	def getRecordings(self):
-		nav = self.getNavigation()
-		return nav.getRecordings() if nav else []
-
-	def getInstandby(self):
-		from Screens.Standby import inStandby
-		return inStandby
-
-
-class MovieDBUpdate(MovieDBUpdateBase):
-
-	def __init__(self):
-		MovieDBUpdateBase.__init__(self)
 		self.updateTimer = eTimer()
 		self.updateTimer.callback.append(self.startUpdate)
 		self.timerintervall = 30
@@ -1538,15 +1403,32 @@ class MovieDBUpdate(MovieDBUpdateBase):
 		else:
 			debugPrint("update cancelled - not in Standby", LOGLEVEL.INFO)
 
+	def getNavigation(self):
+		if not self.navigation:
+			import NavigationInstance
+			if NavigationInstance:
+				self.navigation = NavigationInstance.instance
+		return self.navigation
+
+	def getRecordings(self):
+		nav = self.getNavigation()
+		return nav.getRecordings() if nav else []
+
+	def getInstandby(self):
+		from Screens.Standby import inStandby
+		return inStandby
+
 
 moviedbupdate = MovieDBUpdate()
 
 
-def backgroundDBUpdate(timerEntry):
-	moviedb.backgroundDBUpdate(moviedb.updateMovieDB, timerEntry=timerEntry)
+def backgroundDBUpdate(**kwargs):
+	moviedb.backgroundDBUpdate(moviedb.updateMovieDB, timerEntry=kwargs["timerEntry"])
 
 
-functionTimer.add(("moviedbupdate", {"name": _("Update movie database (full)"), "fnc": backgroundDBUpdate}))
+def backgroundDBUpdateCancel():
+	print("backgroundDBUpdateCancel")
+	pass
 
-# TODO
-#functionTimer.add(("movietrashclean", {"name": _("clear movie trash"), "imports": "Components.MovieTrash", "fnc": "movietrash.cleanAll"}))
+
+functionTimer.add(("moviedbupdate", {"name": _("Update movie database (full)"), "entryFunction": backgroundDBUpdate, "cancelFunction": backgroundDBUpdateCancel, "isThreaded": True}))
