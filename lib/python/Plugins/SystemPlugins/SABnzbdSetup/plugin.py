@@ -11,16 +11,6 @@ from Tools.Directories import fileExists
 from Components.SystemInfo import getBoxDisplayName
 
 
-def ensure_str(s, encoding='utf-8', errors='strict'):
-    if type(s) is str:
-        return s
-    if isinstance(s, bytes):
-        return s.decode(encoding, errors)
-    elif not isinstance(s, (str, bytes)):
-        raise TypeError("not expecting type '%s'" % type(s))
-    return s
-
-
 class SABnzbdSetupScreen(Screen):
 	skin = """
 		<screen position="center,center" size="560,310" title="Samba Setup">

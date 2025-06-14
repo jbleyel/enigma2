@@ -265,25 +265,20 @@ RESULT eNavigation::pause(int dop)
 
 void eNavigation::addStreamService(const std::string ref)
 {
-	eDebug("[eNavigation] add stream service: %s", ref.c_str());
 	std::vector<std::string>::iterator it = std::find(m_streamservices.begin(), m_streamservices.end(), ref);
 	if (it == m_streamservices.end())
 		m_streamservices.push_back(ref);
-	eDebug("[eNavigation] add stream service count: %d", m_streamservices.size());
 }
 
 void eNavigation::removeStreamService(const std::string ref)
 {
-	eDebug("[eNavigation] remove stream service: %s", ref.c_str());
 	std::vector<std::string>::iterator it = std::find(m_streamservices.begin(), m_streamservices.end(), ref);
 	if (it != m_streamservices.end())
 		m_streamservices.erase(it);
-	eDebug("[eNavigation] remove stream service count: %d", m_streamservices.size());
 }
 
 std::vector<std::string> eNavigation::getStreamServiceList()
 {
-	eDebug("[eNavigation] getStreamServiceList count: %d", m_streamservices.size());
 	return m_streamservices;
 }
 

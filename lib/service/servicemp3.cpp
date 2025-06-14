@@ -3777,7 +3777,6 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 
 			if (parseWebVTT(vtt_string, parsed_subs)) {
 				static int64_t base_mpegts = 0; // Store first MPEGTS as base
-				// static int64_t base_decoder_pts = -1; // Store first decoder PTS
 
 				for (const auto& sub : parsed_subs) {
 					if (sub.vtt_mpegts_base) {
@@ -3912,7 +3911,6 @@ void eServiceMP3::pushSubtitles() {
 	int32_t next_timer = 0, decoder_ms = 0, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
 	double convert_fps = 1.0;
 	subtitle_pages_map_t::iterator current;
-	// const uint64_t pts_mask = (1ULL << 33) - 1;
 
 	// For live streams, get decoder time directly from videosink
 	if (m_vtt_live && dvb_videosink) {
