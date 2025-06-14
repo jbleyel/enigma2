@@ -1942,18 +1942,12 @@ RESULT eServiceMP3::getPlayPosition(pts_t& pts) {
 			/* avoid taking the audio play position if audio sink is in state NULL */
 			if (!m_audiosink_not_running) {
 				g_signal_emit_by_name(dvb_audiosink, "get-decoder-time", &pos);
-				eDebug("[eServiceMP3] getPlayPosition get-decoder-time audio pos = %" G_GINT64_FORMAT, pos);
-				if (!GST_CLOCK_TIME_IS_VALID(pos) || 0) {
+				if (!GST_CLOCK_TIME_IS_VALID(pos) || 0)
 					g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
-					eDebug("[eServiceMP3] getPlayPosition get-decoder-time video pos = "
-						   "%" G_GINT64_FORMAT,
-						   pos);
-				}
 				if (!GST_CLOCK_TIME_IS_VALID(pos))
 					return -1;
 			} else {
 				g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
-				eDebug("[eServiceMP3] getPlayPosition get-decoder-time video pos = %" G_GINT64_FORMAT, pos);
 				if (!GST_CLOCK_TIME_IS_VALID(pos))
 					return -1;
 			}
@@ -1961,7 +1955,7 @@ RESULT eServiceMP3::getPlayPosition(pts_t& pts) {
 	} else {
 		GstFormat fmt = GST_FORMAT_TIME;
 		if (!gst_element_query_position(m_gst_playbin, fmt, &pos)) {
-			eDebug("[eServiceMP3] gst_element_query_position failed in getPlayPosition");
+			// eDebug("[eServiceMP3] gst_element_query_position failed in getPlayPosition");
 			if (m_last_seek_pos > 0) {
 				pts = m_last_seek_pos;
 				m_last_seek_count = 0;
@@ -1974,7 +1968,7 @@ RESULT eServiceMP3::getPlayPosition(pts_t& pts) {
 	/* pos is in nanoseconds. we have 90 000 pts per second. */
 	m_last_seek_pos = pos / 11111LL;
 	pts = m_last_seek_pos;
-	eDebug("[eServiceMP3] current play pts = %lld", pts);
+	// eDebug("[eServiceMP3] current play pts = %" G_GINT64_FORMAT, pts);
 	return 0;
 }
 
@@ -3627,7 +3621,6 @@ void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const& msg) {
 			break;
 		}
 		case 3: {
-			eDebug("[eServiceMP3] gstPoll 3");
 			GstPad* pad = *((GstMessageContainer*)msg);
 			gstTextpadHasCAPS_synced(pad);
 			break;
@@ -3654,9 +3647,7 @@ eAutoInitPtr<eServiceFactoryMP3> init_eServiceFactoryMP3(eAutoInitNumbers::servi
  * @param[in] user_data User data passed to the callback (eServiceMP3 instance).
  */
 void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpointer user_data) {
-	eDebug("[eServiceMP3] gstCBsubtitleAvail");
 	eServiceMP3* _this = (eServiceMP3*)user_data;
-
 	if (!_this || !buffer || !_this->m_subtitle_widget || _this->m_currentSubtitleStream < 0) {
 		if (buffer)
 			gst_buffer_unref(buffer);
@@ -3665,7 +3656,6 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpo
 
 	// Check array bounds
 	if (_this->m_currentSubtitleStream >= (int)_this->m_subtitleStreams.size()) {
-		eDebug("[eServiceMP3] gstCBsubtitleAvail: invalid subtitle stream index");
 		if (buffer)
 			gst_buffer_unref(buffer);
 		return;
@@ -3685,7 +3675,6 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpo
  * @param[in] user_data User data passed to the callback (eServiceMP3 instance).
  */
 void eServiceMP3::gstTextpadHasCAPS(GstPad* pad, GParamSpec* unused, gpointer user_data) {
-	eDebug("[eServiceMP3] gstTextpadHasCAPS");
 	eServiceMP3* _this = (eServiceMP3*)user_data;
 
 	gst_object_ref(pad);
@@ -3702,7 +3691,6 @@ void eServiceMP3::gstTextpadHasCAPS(GstPad* pad, GParamSpec* unused, gpointer us
  * @param[in] pad The GstPad that has CAPS available.
  */
 void eServiceMP3::gstTextpadHasCAPS_synced(GstPad* pad) {
-	eDebug("[eServiceMP3] gstTextpadHasCAPS_synced");
 	GstCaps* caps = NULL;
 
 	g_object_get(G_OBJECT(pad), "caps", &caps, NULL);
@@ -3710,8 +3698,8 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad* pad) {
 	if (caps) {
 		subtitleStream subs;
 
-		eDebug("[eServiceMP3] gstTextpadHasCAPS:: signal::caps = %s", gst_caps_to_string(caps));
-		// eDebug("[eServiceMP3] gstGhostpadHasCAPS_synced %p %d", pad, m_subtitleStreams.size());
+		//		eDebug("[eServiceMP3] gstTextpadHasCAPS:: signal::caps = %s", gst_caps_to_string(caps));
+		//		eDebug("[eServiceMP3] gstGhostpadHasCAPS_synced %p %d", pad, m_subtitleStreams.size());
 
 		if (m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size())
 			subs = m_subtitleStreams[m_currentSubtitleStream];
@@ -3721,8 +3709,6 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad* pad) {
 		}
 
 		if (subs.type == stUnknown) {
-			eDebug("[eServiceMP3] gstTextpadHasCAPS_synced:: stUnknown m_currentSubtitleStream %d",
-				   m_currentSubtitleStream);
 			GstTagList* tags = NULL;
 			gchar *g_lang = NULL, *g_lang_title = NULL;
 			g_signal_emit_by_name(m_gst_playbin, "get-text-tags", m_currentSubtitleStream, &tags);
