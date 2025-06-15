@@ -694,7 +694,7 @@ eMediaDB::init(std::string path) {
 		}
 
 	} catch (const std::exception& e) {
-		eDebug("[eMediaDB] Error Init: %s", e.what().c_str());
+		eDebug("[eMediaDB] Error Init: %s", e.what());
 	}
 
     m_instance = this;
