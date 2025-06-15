@@ -33,15 +33,105 @@ https://creativecommons.org/licenses/by-nc-sa/4.0/
 #ifndef __edb_h
 #define __edb_h
 
+#include <filesystem>
+#include <map>
+#include <mutex>
+#include <sqlite3.h>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <filesystem>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <sqlite3.h>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
+
+
 #include <lib/base/object.h>
 #include <lib/python/connections.h>
-
+/*
 
 class eSocketNotifier;
 
-class eMediaDB : public sigc::trackable
-{
 
+// Forward declaration of DatabaseState
+class DatabaseState;
+
+class CommonDataBase {
+public:
+	// Constructor and Destructor
+	CommonDataBase(const std::string& dbFile = "");
+	virtual ~CommonDataBase();
+
+	// Database Connection Management
+	bool connectDataBase(bool readonly = false);
+	bool commitDB();
+	void closeDB();
+	void disconnectDataBase(bool readonly = false);
+
+	// SQL Execution
+	bool executeSQL(const std::string& sqlcmd, const std::vector<std::string>& args = {}, bool readonly = false);
+
+	// Table Operations
+	void doVacuum();
+	void createTable(const std::map<std::string, std::string>& fields);
+	void checkTableColumns(const std::map<std::string, std::string>& fields, bool force_remove = false);
+	void createTableIndex(const std::string& idx_name, const std::vector<std::string>& fields, bool unique = true);
+	void dropTable();
+
+	// Data Retrieval
+	std::vector<std::string> getTables();
+	std::map<std::string, std::string> getTableStructure();
+	std::vector<std::vector<std::string>> getTableContent();
+	std::vector<std::vector<std::string>> searchDBContent(const std::map<std::string, std::string>& data,
+														  const std::string& fields = "*",
+														  const std::string& query_type = "AND",
+														  bool exactmatch = false,
+														  const std::string& compareoperator = "");
+
+	// Data Manipulation
+	void addColumn(const std::string& column, const std::string& c_type = "TEXT");
+	void insertRow(const std::map<std::string, std::string>& data, const std::string& uniqueFields = "");
+	void insertUniqueRow(const std::map<std::string, std::string>& data, bool replace = false);
+	void updateUniqueData(const std::map<std::string, std::string>& data, const std::vector<std::string>& idxFields);
+	void updateData(const std::map<std::string, std::string>& data, const std::string& uniqueFields);
+	void deleteDataSet(const std::map<std::string, std::string>& fields, bool exactmatch = true);
+
+protected:
+	virtual void doInit() {}
+	void debugPrint(const std::string& message, int level) const;
+
+private:
+	std::string dbFile;
+	sqlite3* db;
+	sqlite3_stmt* cursor;
+	std::string table;
+	bool locked;
+	std::map<std::string, std::string> tableStructure;
+	bool dbthreadKill;
+	bool dbthreadRunning;
+	std::string dbthreadName;
+	std::thread::id dbthreadId;
+	bool isInitiated;
+	bool ignoreThreadCheck;
+	std::mutex dbMutex;
+	std::unique_ptr<DatabaseState> dbstate;
+	std::string boxid;
+
+	bool checkThread() const;
+	bool isValidField(const std::string& field) const;
+	int changes();
+};
+
+*/
+
+class eMediaDB : public sigc::trackable {
 #ifdef SWIG
 	eMediaDB();
 	~eMediaDB();
@@ -53,13 +143,12 @@ public:
 	~eMediaDB();
 #endif
 
-	static eMediaDB *getInstance()
-	{
+	static eMediaDB* getInstance() {
 		return m_instance;
 	}
 
 private:
-	static eMediaDB *m_instance;
+	static eMediaDB* m_instance;
 };
 
 #endif
