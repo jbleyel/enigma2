@@ -378,7 +378,7 @@ MasterGuideTable::MasterGuideTable(const uint8_t * const buffer)
 	numberBytes = UINT32(&buffer[5]);
 	descriptorsLoopLength = UINT16(&buffer[9]) & 0xfff;
 
-	for (uint16_t i = 11; i < descriptorsLoopLength + 11; i += buffer[i + 1] + 2)
+	for (int i = 11; i < descriptorsLoopLength + 11; i += buffer[i + 1] + 2)
 	{
 		descriptor(&buffer[i], SCOPE_SI);
 	}
