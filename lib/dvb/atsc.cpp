@@ -435,7 +435,7 @@ const MasterGuideTableList *MasterGuideTableSection::getTables(void) const
 
 ATSCEvent::ATSCEvent(const uint8_t * const buffer)
 {
-	uint16_t i;
+	uint32_t i;
 	eventId = UINT16(&buffer[0]) & 0x3fff;
 	startTime = UINT32(&buffer[2]);
 	ETMLocation = (buffer[6] >> 4) & 0x3;
