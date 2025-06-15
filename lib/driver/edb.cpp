@@ -678,7 +678,7 @@ eMediaDB::~eMediaDB() {
 	m_instance = nullptr;
 }
 
-eMediaDB::Init(std::string path) {
+eMediaDB::init(std::string path) {
 
 	try {
 		SQLite::SQLiteWrapper db(path);

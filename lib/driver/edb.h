@@ -143,7 +143,8 @@ public:
 	~eMediaDB();
 #endif
 
-	static eMediaDB* getInstance() {
+    init(std::string path);
+    static eMediaDB* getInstance() {
 		return m_instance;
 	}
 
