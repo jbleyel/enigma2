@@ -95,19 +95,17 @@ void eBackgroundFileEraser::gotMessage(const Message &msg )
 		if ((((erase_flags & ERASE_FLAG_HDD) != 0) && (strncmp(c_filename, "/media/hdd/", 11) == 0)) ||
 		    ((erase_flags & ERASE_FLAG_OTHER) != 0))
 		{
-			struct stat st = {};
-			int i = ::stat(c_filename, &st);
-			// truncate only if the file exists and does not have any hard links
-			if ((i == 0) && (st.st_nlink == 1))
+			int fd = ::open(c_filename, O_WRONLY|O_SYNC); //NOSONAR
+			if (fd == -1)
 			{
-				if (st.st_size > erase_speed)
+				eDebug("[eBackgroundFileEraser] Cannot open %s for writing: %m", c_filename);
+			}
+			else
+			{
+				struct stat st = {};
+				if (::fstat(fd, &st) == 0 && st.st_nlink == 1) // Check file properties after opening
 				{
-					int fd = ::open(c_filename, O_WRONLY|O_SYNC); //NOSONAR
-					if (fd == -1)
-					{
-						eDebug("[eBackgroundFileEraser] Cannot open %s for writing: %m", c_filename);
-					}
-					else
+					if (st.st_size > erase_speed)
 					{
 						// Remove directory entry (file still open, so not erased yet)
 						if (::unlink(c_filename) == 0)
@@ -128,9 +126,9 @@ void eBackgroundFileEraser::gotMessage(const Message &msg )
 							}
 							usleep(500000); // wait half a second
 						}
-						::close(fd);
 					}
 				}
+				::close(fd);
 			}
 		}
 		if (!unlinked)
