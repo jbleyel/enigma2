@@ -296,6 +296,7 @@ static void nsvg__parseElement(char* s,
 		char quote;
 
 		// Skip white space before the attrib name
+		if (!s || !*s) break; // Check for null or end of string early
 		while (*s && nsvg__isspace(*s)) s++;
 		if (!*s) break;
 		if (*s == '/') {
@@ -317,7 +318,7 @@ static void nsvg__parseElement(char* s,
 		if (*s) { *s++ = '\0'; }
 
 		// Store only well formed attributes
-		if (nameAttrib && value) {
+		if (value) { // `nameAttrib` is guaranteed to be non-null here
 			attr[nattr++] = nameAttrib;
 			attr[nattr++] = value;
 		}
