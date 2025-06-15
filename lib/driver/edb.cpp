@@ -678,7 +678,7 @@ eMediaDB::~eMediaDB() {
 	m_instance = nullptr;
 }
 
-eMediaDB::init(std::string path) {
+int eMediaDB::init(std::string path) {
 
 	try {
 		SQLite::SQLiteWrapper db(path);
@@ -693,11 +693,12 @@ eMediaDB::init(std::string path) {
 			eDebug("[eMediaDB] DEBUG ID: %s, Name: %s, Age: %s\n", row[0].c_str(), row[1].c_str(), row[2].c_str());
 		}
 
+		return 0;
+
 	} catch (const std::exception& e) {
 		eDebug("[eMediaDB] Error Init: %s", e.what());
+		return 1;
 	}
-
-    m_instance = this;
 }
 
 

@@ -96,8 +96,8 @@ namespace SQLite {
 			}
 
 			// Bind parameters
-			for (int i = 0; i < params.size(); ++i) {
-				if (sqlite3_bind_text(stmt, i + 1, params[i].c_str(), -1, SQLITE_STATIC) != SQLITE_OK) {
+			for (std::size_t i = 0; i < params.size(); ++i) {
+				if (sqlite3_bind_text(stmt, static_cast<int>(i + 1), params[i].c_str(), -1, SQLITE_STATIC) != SQLITE_OK) {
 					sqlite3_finalize(stmt);
 					throw std::runtime_error("Error binding parameters: " + std::string(sqlite3_errmsg(db)));
 				}
@@ -121,8 +121,8 @@ namespace SQLite {
 			}
 
 			// Bind parameters
-			for (int i = 0; i < params.size(); ++i) {
-				if (sqlite3_bind_text(stmt, i + 1, params[i].c_str(), -1, SQLITE_STATIC) != SQLITE_OK) {
+			for (std::size_t i = 0; i < params.size(); ++i) {
+				if (sqlite3_bind_text(stmt, static_cast<int>(i + 1), params[i].c_str(), -1, SQLITE_STATIC) != SQLITE_OK) {
 					sqlite3_finalize(stmt);
 					throw std::runtime_error("Error binding parameters: " + std::string(sqlite3_errmsg(db)));
 				}
