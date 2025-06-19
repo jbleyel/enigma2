@@ -1,24 +1,16 @@
-from fcntl import ioctl
-from socket import socket, AF_INET, SOCK_DGRAM
-from struct import pack
-from bisect import bisect_left, insort
-from ctypes import py_object, pythonapi, c_long
 from difflib import SequenceMatcher
 from os import remove, stat, walk
 from os.path import exists, dirname, realpath, isdir, join, basename, split
 from sqlite3 import connect, ProgrammingError, OperationalError, DatabaseError
 from struct import unpack
 from threading import Thread, Lock, current_thread
-from time import sleep
 from enigma import eServiceCenter, eServiceReference, iServiceInformation, eTimer
 from Components.Task import Task, Job, job_manager
 from Components.config import config, ConfigDirectory, ConfigYesNo, ConfigSelection
 from Scheduler import functionTimer
 from Screens.MessageBox import MessageBox
-from Tools.Directories import fileWriteLine
 from Tools.Notifications import AddPopup
 from Tools.MovieInfoParser import getExtendedMovieDescription
-from Components.SystemInfo import BoxInfo
 
 BASEINIT = None
 lock = Lock()
@@ -26,25 +18,12 @@ lock = Lock()
 
 config.misc.movielist_use_moviedb_autoupdate = ConfigYesNo(default=False)
 config.misc.db_path = ConfigDirectory(default="/media/hdd/")
-config.misc.db_enabled = ConfigYesNo(default=False)
+config.misc.db_enabled = ConfigYesNo(default=True)
 config.misc.timer_show_movie_available = ConfigSelection(choices=[
 	(0, _("Off")),
 	(1, _("Title")),
 	(2, _("Title / Description")),
 	], default=2)
-
-
-def getUniqueID(device="eth0"):
-	model = BoxInfo.getItem("model")
-	sock = socket(AF_INET, SOCK_DGRAM)
-	info = ioctl(sock.fileno(), 0x8927, pack("256s", bytes(device[:15], "UTF-8")))
-	key = "".join([f"{char:02x}" for char in info[18:24]])
-	keyid = ""
-	j = len(key) - 1
-	for i in range(0, len(key)):
-		keyid += f"{key[j]}{model[i]}{key[i]}" if i < len(model) else f"{key[j]}{key[i]}"
-		j -= 1
-	return keyid[:12]
 
 
 class LOGLEVEL:
@@ -58,55 +37,18 @@ class LOGLEVEL:
 
 
 logLevel = LOGLEVEL()
+curLevel = logLevel.ALL
 
 
 def debugPrint(str, level=0):
-	curLevel = logLevel.INFO
 	if level >= curLevel:
 		print(f"[DataBase] {str}")
 
 
-class globalThreads():
-
-	def __init__(self):
-		self.registeredThreads = []
-
-	def terminateThread(self, myThread):
-		if not myThread.isAlive():
-			return
-		exc = py_object(SystemExit)
-		res = pythonapi.PyThreadState_SetAsyncExc(c_long(myThread.ident), exc)
-		if res == 0:
-			print("[DataBaseAPI] can not kill list update")
-		elif res > 1:
-			pythonapi.PyThreadState_SetAsyncExc(myThread.ident, None)
-			print("[DataBaseAPI] can not terminate list update")
-		elif res == 1:
-			print("[DataBaseAPI] successfully terminate thread")
-		del exc
-		del res
-		return 0
-
-	def registerThread(self, myThread):
-		if myThread not in self.registeredThreads:
-			self.registeredThreads.append(myThread)
-
-	def unregisterThread(self, myThread):
-		if myThread in self.registeredThreads:
-			self.registeredThreads.remove(myThread)
-
-	def shutDown(self):
-		for t in self.registeredThreads:
-			self.terminateThread(t)
-
-
-globalthreads = globalThreads()
-
-
-class databaseJob(Job):
+class DatabaseJob(Job):
 	def __init__(self, fnc, args, title):
 		Job.__init__(self, title)
-		self.databaseJob = databaseTask(self, fnc, args, title)
+		self.databaseJob = DatabaseTask(self, fnc, args, title)
 
 	def abort(self):
 		self.databaseJob.abort()
@@ -115,7 +57,7 @@ class databaseJob(Job):
 		self.databaseJob.stop()
 
 
-class databaseTask(Task):
+class DatabaseTask(Task):
 	def __init__(self, job, fnc, args, title=""):
 		Task.__init__(self, job, "")
 		self.dbthread = Thread(target=fnc, args=args[1])
@@ -146,90 +88,12 @@ class databaseTask(Task):
 		self.stop()
 
 
-class DatabaseState(object):
-	def __init__(self, dbfile, boxid):
-		self.lockfile = f"{dbfile}.lock"
-		self.boxid = boxid
-		self.lockFileCleanUp()
-		self.checkRemoteLock = False
-		self.availableStbs = []
-		global BASEINIT
-		if BASEINIT is None:
-			BASEINIT = True
-			self.unlockDB()
-
-	def lockFileCleanUp(self):
-		content = ""
-		if exists(self.lockfile):
-			try:
-				with open(self.lockfile, "r") as f:
-					content = f.readlines()
-			except OSError as e:
-				pass
-			if content and len(content) >= 1:
-				lockid = content[0]
-				if lockid.startswith(self.boxid):
-					self.removeLockFile()
-
-	def isRemoteLocked(self):
-		ret = False
-		if not self.checkRemoteLock:
-			return ret
-		max_recursion = 5
-		for i in range(0, max_recursion):
-			lockid = ""
-			ret = False
-			if exists(self.lockfile):
-				try:
-					with open(self.lockfile, "r") as f:
-						content = f.readlines()
-				except OSError as e:
-					break
-				if content and len(content) >= 1:
-					lockid = content[0]
-					if not lockid.startswith(self.boxid):
-						if lockid in self.availableStbs or len(self.availableStbs) <= 0:
-							if i >= max_recursion - 1:
-								#txt = _("The database is currently used by another Vu+ STB, please try again later")
-								#AddPopup(text = txt, type = MessageBox.TYPE_INFO, timeout = 20, id = "db_locked")
-								ret = True
-							else:
-								sleep(0.1)
-						else:
-							self.removeLockFile()
-							break
-					else:
-						break
-				else:
-					self.removeLockFile()
-					break
-			else:
-				break
-		return ret
-
-	def lockDB(self):
-		if self.checkRemoteLock:
-			fileWriteLine(self.lockfile, self.boxid)
-
-	def removeLockFile(self):
-		try:
-			remove(self.lockfile)
-		except OSError as e:
-			pass
-
-	def unlockDB(self):
-		if self.checkRemoteLock and not self.isRemoteLocked():
-			self.removeLockFile()
-
-
 class CommonDataBase():
 	def __init__(self, dbFile=None):
 		dbPath = join(config.misc.db_path.value, "")
 		if not exists(dbPath):
 			dbPath = "/media/hdd/"
-		self.dbFile = join(dbPath, dbFile or "moviedb.db")
-		self.boxid = getUniqueID()
-		self.dbstate = DatabaseState(self.dbFile, self.boxid)
+		self.dbFile = join(dbPath, dbFile or "media.db")
 		debugPrint(f"init database: {self.dbFile}", LOGLEVEL.INFO)
 		self.cursor = None
 		self.table = None
@@ -260,11 +124,7 @@ class CommonDataBase():
 			debugPrint("connecting failed --> database locked !", LOGLEVEL.ERROR)
 			return False
 		if not self.cursor:
-			if self.dbstate.isRemoteLocked():
-				if len(self.dbstate.availableStbs):
-					return False
-			else:
-				self.dbstate.lockDB()
+			# TODO LockDB
 			debugPrint(f"connect table {self.table} of database: {self.dbFile}", LOGLEVEL.ALL)
 			db_dir = dirname(self.dbFile)
 			if not exists(db_dir):
@@ -399,7 +259,7 @@ class CommonDataBase():
 				self.commitDB()
 			self.closeDB()
 			self.cursor = None
-			self.dbstate.unlockDB()
+			# TODO unlockDB
 
 	def doVacuum(self):
 		if self.connectDataBase():
@@ -414,35 +274,6 @@ class CommonDataBase():
 				field_str = field_str[:-1] + ")"
 			self.executeSQL(f"CREATE TABLE if not exists {self.table} {field_str}")
 			self.commitDB()
-
-	def checkTableColumns(self, fields, force_remove=False):
-		if self.table and self.connectDataBase():
-			struc = self.getTableStructure()
-			for column in fields:
-				if column not in struc:
-					sqlcmd = f"ALTER TABLE {self.table} ADD COLUMN {column} {fields[column]};"
-					self.executeSQL(sqlcmd)
-			if force_remove:
-				columns_str = ""
-				for column in fields:
-					columns_str += f"{column} {fields[column]},"
-				if columns_str.endswith(","):
-					columns_str = columns_str[:-1]
-				b_table = f"{self.table}_backup"
-				sqlcmd = f"CREATE TEMPORARY TABLE {b_table}({columns_str});"
-				self.executeSQL(sqlcmd)
-				sqlcmd = f"INSERT INTO {b_table} SELECT {columns_str} FROM {self.table};"
-				self.executeSQL(sqlcmd)
-				sqlcmd = f"DROP TABLE {self.table};"
-				self.executeSQL(sqlcmd)
-				self.createTable(fields)
-				sqlcmd = f"INSERT INTO {self.table} SELECT {columns_str} FROM {b_table};"
-				self.executeSQL(sqlcmd)
-				sqlcmd = f"DROP TABLE {b_table};"
-				self.executeSQL(sqlcmd)
-				self.tableStructure = None
-			self.commitDB()
-		self.tableStructure = None
 
 	def createTableIndex(self, idx_name, fields, unique=True):
 		if self.table and self.connectDataBase():
@@ -460,24 +291,6 @@ class CommonDataBase():
 			sqlcmd = f"CREATE {unique_txt} INDEX IF NOT EXISTS {idx_name} ON {self.table} ({idxFields});"
 			self.executeSQL(sqlcmd)
 
-	def dropTable(self):
-		if self.table and self.connectDataBase():
-			self.tableStructure = None
-			self.executeSQL(f"DROP TABLE IF EXISTS {self.table};")
-
-	def getTables(self):
-		tables = []
-		if self.connectDataBase():
-			sqlret = self.executeSQL("SELECT name FROM sqlite_master WHERE type='table';")
-			if sqlret and sqlret[0]:
-				res = sqlret[1]
-			else:
-				return tables
-			for t in res:
-				debugPrint(f"found table: {t[0]}", LOGLEVEL.ALL)
-				tables.append(t[0])
-		return tables
-
 	def getTableStructure(self):
 		if self.tableStructure is None or not len(self.tableStructure):
 			structure = {}
@@ -491,41 +304,7 @@ class CommonDataBase():
 					structure[str(row[1])] = str(row[2])
 				debugPrint(f"Data structure of table: {self.table}\n{str(structure)}", LOGLEVEL.ALL)
 			self.tableStructure = structure
-			if self.dbstate.checkRemoteLock:
-				for x in structure:
-					if x.startswith("fp_"):
-						r_stb = str(x.lstrip("fp_"))
-						if r_stb not in self.dbstate.availableStbs:
-							self.dbstate.availableStbs.append(r_stb)
 		return self.tableStructure
-
-	def addColumn(self, column, c_type="TEXT"):
-		if self.connectDataBase():
-			struc = self.getTableStructure()
-			if self.table and column not in struc:
-				sqlcmd = f"ALTER TABLE {self.table} ADD COLUMN {column} {c_type};"
-				self.executeSQL(sqlcmd)
-				self.tableStructure = None
-
-	def getTableContent(self):
-		rows = []
-		content = []
-		if self.table and self.connectDataBase():
-			sqlret = self.executeSQL(f"SELECT * FROM {self.table};")
-			if sqlret and sqlret[0]:
-				rows = sqlret[1]
-			else:
-				return content
-			i = 1
-			for row in rows:
-				tmp_row = []
-				for field in row:
-					tmp_field = field
-					tmp_row.append(tmp_field)
-				content.append(tmp_row)
-				debugPrint(f"Found row ({str(i)}):{str(tmp_row)}", LOGLEVEL.ALL)
-				i += 1
-		return content
 
 	def searchDBContent(self, data, fields="*", query_type="AND", exactmatch=False, compareoperator=""):
 		rows = []
@@ -681,53 +460,6 @@ class CommonDataBase():
 			sqlcmd += ";"
 			self.executeSQL(sqlcmd, args)
 
-	def updateData(self, data, uniqueFields):
-		if self.table and self.connectDataBase():
-			self.insertRow(data, uniqueFields)
-			if not self.cursor:
-				return
-			if self.cursor.rowcount > 0:
-				return
-			struc = self.getTableStructure()
-			for field in data:
-				if field not in struc:
-					return
-			if isinstance(uniqueFields, tuple) or isinstance(uniqueFields, list):
-				for field in uniqueFields:
-					if field not in struc:
-						return
-			else:
-				if uniqueFields not in struc:
-						return
-			args = []
-			sqlcmd = f"UPDATE {self.table} SET "
-			for key in data:
-				sqlcmd += f"{key}=?, "
-				args.append(data[key])
-			if sqlcmd.endswith(", "):
-				sqlcmd = sqlcmd[:-2]
-			if uniqueFields is None or uniqueFields == "":
-				return
-			if isinstance(uniqueFields, str):
-				sqlcmd += f" WHERE {uniqueFields} =?"
-				args.append(data[uniqueFields])
-			elif isinstance(uniqueFields, tuple) or isinstance(uniqueFields, list):
-				if len(uniqueFields) == 1:
-					if uniqueFields[0] in data:
-						sqlcmd += f" WHERE {uniqueFields[0]} =?"
-						args.append(data[uniqueFields[0]])
-				elif len(uniqueFields) > 1:
-					sql_limit = ""
-					for uniqueField in uniqueFields:
-						if uniqueField in data:
-							sql_limit += f"{uniqueField} =? AND "
-							args.append(data[uniqueField])
-					if sql_limit.endswith(" AND "):
-						sql_limit = sql_limit[:-5]
-					if sql_limit != "":
-						sqlcmd += f" WHERE {sql_limit}"
-			self.executeSQL(sqlcmd, args)
-
 	def deleteDataSet(self, fields, exactmatch=True):
 		if self.connectDataBase():
 			args = []
@@ -752,7 +484,7 @@ class CommonDataBase():
 		if not self.dbthreadRunning:
 			self.dbthreadRunning = True
 			self.dbthreadKill = False
-			job_manager.AddJob(databaseJob(fnc, [self.stopBackgroundAction, args], self.dbthreadName))
+			job_manager.AddJob(DatabaseJob(fnc, [self.stopBackgroundAction, args], self.dbthreadName))
 
 	def stopBackgroundAction(self):
 		self.dbthreadKill = True
@@ -774,53 +506,25 @@ class MovieDataBase(CommonDataBase):
 
 	def __init__(self):
 		CommonDataBase.__init__(self)
-		self.boxPath = f"fp_{self.boxid}"
-		self.boxLpos = f"lpos_{self.boxid}"
-		dbVersion = "_v0001"
-		self.dbstate.checkRemoteLock = True
 		self.ignoreThreadCheck = True
-		self.table = f"moviedb{dbVersion}"
+		self.table = "media"
 		self.fields = {"path": "TEXT",
-			self.boxPath: "TEXT",
 			"fname": "TEXT",
 			"ref": "TEXT",
 			"title": "TEXT",
 			"shortDesc": "TEXT",
 			"extDesc": "TEXT",
-			"genre": "TEXT",
 			"tags": "TEXT",
 			"duration": "REAL",
 			"begin": "REAL",
-			"lastpos": "REAL",
-			self.boxLpos: "REAL",
-			"fsize": "INTEGER",
-			"progress": "REAL",
-			"AudioChannels": "INTEGER",
-			"ContentType": "INTEGER",
-			"AudioFormat": "TEXT",
-			"VideoFormat": "TEXT",
-			"VideoResoltuion": "TEXT",
-			"AspectRatio": "TEXT",
-			"TmdbID": "INTEGER",
-			"TvdbID": "INTEGER",
-			"CollectionID": "INTEGER",
-			"ListID": "INTEGER",
-			"IsRecording": "INTEGER DEFAULT 0",
-			"Season": "INTEGER",
-			"Episode": "INTEGER",
+			"fsize": "INTEGER"
 		}
-		self.titlelist = {}
-		self.titlelist_list = []
 
 	def doInit(self):
-		if not self.dbstate.isRemoteLocked():
-			self.isInitiated = True
-			self.createTable(self.fields)
-			self.checkTableColumns(self.fields, force_remove=False)
-			self.createTableIndex("idx_fname_fsize", ("fname", "fsize"))
-			idx_name = f"idx_fname_fsize_{self.boxid}"
-			self.createTableIndex(idx_name, ("fname", "fsize", self.boxPath))
-			self.disconnectDataBase()
+		self.isInitiated = True
+		self.createTable(self.fields)
+		self.createTableIndex("idx_fname_fsize", ("fname", "fsize"))
+		self.disconnectDataBase()
 
 	def reInitializeDB(self):
 		if exists(self.dbFile):
@@ -829,8 +533,6 @@ class MovieDataBase(CommonDataBase):
 			except OSError:
 				pass
 		self.isInitiated = False
-		self.titlelist = {}
-		self.titlelist_list = []
 		self.__init__()
 
 	def backgroundDBUpdate(self, fnc, fnc_args=[], timerEntry=None):
@@ -854,7 +556,7 @@ class MovieDataBase(CommonDataBase):
 
 	def removeDeprecated(self):
 		self.dbthreadId = current_thread().ident
-		items = self.searchDBContent({self.boxPath: ""}, (self.boxPath, "fsize"))
+		items = self.searchDBContent({"path": ""}, ("path", "fsize"))
 		thisJob = None
 		joblist = job_manager.getPendingJobs()
 		for job in joblist:
@@ -879,7 +581,7 @@ class MovieDataBase(CommonDataBase):
 				if item[1] is not None and float(item[1]) != self.getFileSize(item[0]):
 					deleteData = True
 			if deleteData:
-				self.deleteDataSet({self.boxPath: item[0]})
+				self.deleteDataSet({"path": item[0]})
 			if j >= 100:
 				self.commitDB()
 				j = 0
@@ -888,14 +590,9 @@ class MovieDataBase(CommonDataBase):
 		self.stopBackgroundAction()
 
 	def removeSingleEntry(self, service_path):
-		items = self.searchDBContent({self.boxPath: service_path}, (self.boxPath, "title", "shortDesc", "extDesc"))
+		items = self.searchDBContent({"path": service_path}, ("path", "title", "shortDesc", "extDesc"))
 		for item in items:
-			if len(item) >= 4:
-				search_fields = {self.boxPath: service_path}
-				isInDB = self.searchContent(search_fields, fields=("fname",), query_type="AND", exactmatch=False, skipCheckExists=True)
-				if len(isInDB):
-					self.removeFromTitleList(item[1], item[2], item[3])
-			self.deleteDataSet({self.boxPath: item[0]})
+			self.deleteDataSet({"path": item[0]})
 		self.doVacuum()
 		self.disconnectDataBase()
 
@@ -906,116 +603,65 @@ class MovieDataBase(CommonDataBase):
 			fsize = -1
 		return fsize
 
-	def inTitleList(self, mytitle, shortDesc="", extDesc="", ratio_short_desc=0.95, ratio_ext_desc=0.85):
-		if config.misc.timer_show_movie_available.value > 1:
-			if shortDesc is None:
-				shortDesc = ""
-			if extDesc is None:
-				extDesc = ""
-			if shortDesc == "" and extDesc == "":
-				return 1 if mytitle in self.titlelist else None
-			else:
-				if mytitle in self.titlelist:
-					short_descs = self.titlelist[mytitle][0]
-					short_compared = False
-					movie_found = False
-					if shortDesc != "":
-						short_compared = True
-						for short_desc in short_descs:
-							sequenceMatcher = SequenceMatcher(" ".__eq__, shortDesc, short_desc)
-							if sequenceMatcher.ratio() > ratio_short_desc:
-								movie_found = True
+	def isTitleInDatabase(self, title, shortDesc="", extDesc="", ratioShortDesc=0.95, ratioExtDesc=0.85):
+		"""
+		Checks whether a given movie title (with optional short and extended descriptions)
+		already exists in the database, based on string similarity.
+
+		Parameters:
+			title (str): The title of the movie to check.
+			shortDesc (str): Optional short description of the movie.
+			extDesc (str): Optional extended description of the movie.
+			ratioShortDesc (float): Similarity threshold for the short description comparison.
+			ratioExtDesc (float): Similarity threshold for the extended description comparison.
+
+		Returns:
+			int or None:
+				- Returns 1 if a sufficiently similar entry is found in the database.
+				- Returns None if no matching entry is found or config disables checking.
+		"""
+		configValue = config.misc.timer_show_movie_available.value
+		result = None
+
+		if configValue:
+			content = self.getTitles(title)
+			if content:
+				# If configValue > 1, use full comparison logic
+				if configValue > 1:
+					for row in content:  # row = [ref, title, shortDesc, extDesc]
+						if shortDesc:
+							if row[2] == shortDesc:
+								result = 1
+							else:
+								# Compare shortDesc similarity using SequenceMatcher
+								sequenceMatcher = SequenceMatcher(" ".__eq__, shortDesc, row[2])
+								if sequenceMatcher.ratio() > ratioShortDesc:
+									result = 1
+
+						if result:
+							# If extended description is not provided, match is confirmed
+							if extDesc == "":
 								break
-							if short_desc == shortDesc:
-								movie_found = True
-								break
-					if extDesc == "" and movie_found:
-						return 1
-					if not movie_found and short_compared:
-						return None
-					ext_descs = self.titlelist[mytitle][1]
-					for ext_desc in ext_descs:
-						sequenceMatcher = SequenceMatcher(" ".__eq__, extDesc, ext_desc)
-						if sequenceMatcher.ratio() > ratio_ext_desc:
-							return 1
-						if ext_desc == extDesc:
-							return 1
-				return None
-		elif config.misc.timer_show_movie_available.value == 1:
-			pos = bisect_left(self.titlelist_list, mytitle)
-			try:
-				return pos if self.titlelist_list[pos] == mytitle else None
-			except IndexError:
-				return None
-		else:
-			return None
-
-	def removeFromTitleList(self, mytitle, shortDesc="", extDesc=""):
-		if config.misc.timer_show_movie_available.value > 1:
-			is_in_short_desc_list = False
-			is_in_ext_desc_list = False
-			if mytitle in self.titlelist:
-				x = self.titlelist[mytitle][0]
-				if len(x):
-					for short_desc in x:
-						if short_desc == shortDesc:
-							is_in_short_desc_list = True
-							break
-					if is_in_short_desc_list:
-						x.remove(short_desc)
-				y = self.titlelist[mytitle][1]
-				if len(y):
-					for ext_desc in y:
-						if ext_desc == extDesc:
-							is_in_ext_desc_list = True
-							break
-					if is_in_ext_desc_list:
-						y.remove(ext_desc)
-				if len(x):
-					self.titlelist[mytitle][0] = x
-				if len(y):
-					self.titlelist[mytitle][1] = y
-				if not len(x) and not len(y):
-					del self.titlelist[mytitle]
-		elif config.misc.timer_show_movie_available.value == 1:
-			idx = self.inTitleList(mytitle)
-			if idx is not None:
-				try:
-					self.titlelist_list.pop(idx)
-				except Exception:
-					pass
-
-	def addToTitleList(self, mytitle, shortDesc="", extDesc=""):
-		if config.misc.timer_show_movie_available.value > 1:
-			if mytitle in self.titlelist:
-				if isinstance(self.titlelist[mytitle][0], list) and shortDesc not in self.titlelist[mytitle][0]:
-					x = self.titlelist[mytitle][0]
-					x.append(shortDesc)
-					self.titlelist[mytitle][0] = x
+							else:
+								if row[3] == extDesc:
+									break
+								else:
+									# Compare extDesc similarity
+									sequenceMatcher = SequenceMatcher(" ".__eq__, extDesc, row[3])
+									if sequenceMatcher.ratio() > ratioExtDesc:
+										break
+							result = None  # Reset if extDesc check fails
 				else:
-					self.titlelist[mytitle][0] = [shortDesc]
-				if isinstance(self.titlelist[mytitle][1], list) and extDesc not in self.titlelist[mytitle][1]:
-					x = self.titlelist[mytitle][1]
-					x.append(extDesc)
-					self.titlelist[mytitle][1] = x
-				else:
-					self.titlelist[mytitle][1] = [extDesc]
-			else:
-				self.titlelist[mytitle] = [[shortDesc], [extDesc]]
-		elif config.misc.timer_show_movie_available.value == 1:
-			insort(self.titlelist_list, mytitle)
+					# If configValue <= 1, skip detailed checks and return match
+					result = 1
 
-	def BackgroundTitleListUpdate(self):
-		if config.misc.timer_show_movie_available.value > 0:
-			t = Thread(target=self.getTitleList, args=[])
-			t.start()
-			globalthreads.registerThread(t)
+		return result
 
-	def getTitleList(self):
-		sqlcmd = f"SELECT ref,title,shortDesc, extDesc FROM {self.table}"
-		sqlret = self.executeSQL(sqlcmd, args=[], readonly=True)
+	def getTitles(self, title):
+		sqlcmd = f"SELECT ref,title,shortDesc, extDesc FROM {self.table} WHERE title =?"
+		sqlret = self.executeSQL(sqlcmd, args=[title], readonly=True)
+		content = []
 		if sqlret and sqlret[0]:
-			content = []
 			rows = sqlret[1]
 			self.disconnectDataBase(True)
 			for row in rows:
@@ -1024,15 +670,10 @@ class MovieDataBase(CommonDataBase):
 					tmp_field = field
 					tmp_row.append(tmp_field)
 				content.append(tmp_row)
-			for x in content:
-				if x[0]:
-					orig_path = eServiceReference(x[0]).getPath()
-					real_path = realpath(orig_path)
-					if real_path[-3:] not in ("mp3", "ogg", "wav"):
-						self.addToTitleList(x[1], x[2], x[3])
+		return content
 
 	def searchContent(self, data, fields="*", query_type="AND", exactmatch=False, compareoperator="", skipCheckExists=False):
-		s_fields = [self.boxPath, "path", "fname", "ref"]
+		s_fields = ["path", "fname", "ref"]
 		if (isinstance(fields, tuple) or isinstance(fields, list)) and len(fields):
 			for field in fields:
 				s_fields.append(field)
@@ -1041,7 +682,6 @@ class MovieDataBase(CommonDataBase):
 				s_fields.append(key)
 		elif isinstance(fields, str):
 			s_fields.append(fields)
-		s_fields.append(self.boxPath)
 		searchstr = None
 		if "title" in data:
 			searchstr = data["title"]
@@ -1050,7 +690,7 @@ class MovieDataBase(CommonDataBase):
 		elif "extDesc" in data:
 			searchstr = data["extDesc"]
 		if searchstr is not None:
-			data[self.boxPath] = searchstr
+			data["path"] = searchstr
 		res = self.searchDBContent(data, fields=s_fields, query_type=query_type, exactmatch=exactmatch, compareoperator=compareoperator)
 		checked_res = []
 		fields_count = len(s_fields)
@@ -1113,6 +753,7 @@ class MovieDataBase(CommonDataBase):
 
 	def updateMovieDB(self):
 		self.dbthreadId = current_thread().ident
+		debugPrint(f"updateMovieDB self.dbthreadId : {self.dbthreadId}", LOGLEVEL.ALL)
 		pathes = []
 		is_killed = False
 		thisJob = None
@@ -1121,6 +762,7 @@ class MovieDataBase(CommonDataBase):
 			if job.name == self.dbthreadName and hasattr(job, "databaseJob"):
 				thisJob = job
 				break
+		debugPrint(f"updateMovieDB config.movielist.videodirs.value : {config.movielist.videodirs.value}", LOGLEVEL.ALL)
 		for folder in config.movielist.videodirs.value:
 			debugPrint(f"Check folder : {folder}", LOGLEVEL.ALL)
 			if self.dbthreadKill:
@@ -1162,9 +804,12 @@ class MovieDataBase(CommonDataBase):
 			serviceref = m_list.getNext()
 			if not serviceref.valid():
 				break
+			if serviceref.flags & eServiceReference.mustDescent:
+				continue
 			self.updateSingleEntry(serviceref, isThread, videoDirs)
 
-	def updateSingleEntry(self, serviceref, isThread=False, video_dirs=[], withBoxPath=False):
+	def updateSingleEntry(self, serviceref, isThread=False, video_dirs=[]):
+		debugPrint("updateSingleEntry for %s" % serviceref.getPath(), LOGLEVEL.ALL)
 		if not config.misc.db_enabled.value:
 			return
 		if not video_dirs:
@@ -1176,32 +821,25 @@ class MovieDataBase(CommonDataBase):
 			serviceref = eServiceReference(1, 0, filepath) if filepath.endswith(".ts") else eServiceReference(4097, 0, filepath)
 		serviceHandler = eServiceCenter.getInstance()
 		filepath = realpath(serviceref.getPath())
-		trashfile = f"{filepath}.del"
+		debugPrint("updateSingleEntry filepath %s" % filepath, LOGLEVEL.ALL)
+		# trashfile = f"{filepath}.del"
 		if filepath.endswith("_pvrdesc.ts"):
 			return
-		is_dvd = None
-		if serviceref.flags & eServiceReference.mustDescent:
-			possible_path = ("VIDEO_TS", "video_ts", "VIDEO_TS.IFO", "video_ts.ifo")
-			for mypath in possible_path:
-				if exists(join(filepath, mypath)):
-					is_dvd = True
-					serviceref = eServiceReference(4097, 0, filepath)
-					break
 		file_path = serviceref.getPath()
 		file_extension = file_path.split(".")[-1].lower()
 		if file_extension == "iso":
 			serviceref = eServiceReference(4097, 0, file_path)
 		if file_extension in ("dat",):
 			return
-		is_rec = 0
-		if exists(f"{file_path}.rec"):
-			is_rec = 1
 		cur_item = basename(filepath)
 		if cur_item.lower().startswith("timeshift_"):
 			return
 		info = serviceHandler.info(serviceref)
 		if info is None:
 			return
+
+		debugPrint("updateSingleEntry get info for filepath %s" % filepath, LOGLEVEL.ALL)
+
 		m_db_begin = info.getInfo(serviceref, iServiceInformation.sTimeCreate)
 		m_db_tags = info.getInfoString(serviceref, iServiceInformation.sTags)
 		m_db_fullpath = filepath
@@ -1216,29 +854,11 @@ class MovieDataBase(CommonDataBase):
 			m_db_title, m_db_extDesc = getExtendedMovieDescription(serviceref)
 		m_db_ref = serviceref.toString().replace(serviceref.getPath(), "")
 		m_db_begin = info.getInfo(serviceref, iServiceInformation.sTimeCreate)
-		if is_rec:
-			rec_file_c = []
-			with open(f"{file_path}.rec") as f:
-				rec_file_c = f.readlines()
-			ret = str(rec_file_c[0]) if len(rec_file_c) >= 1 else ""
-			ret = ret.strip()
-			m_db_f_size = int(ret)
-		else:
-			m_db_f_size = self.getFileSize(m_db_fullpath)
-		m_db_lastpos = -1
-		m_db_progress = -1
+		m_db_f_size = self.getFileSize(m_db_fullpath)
 		m_db_duration = info.getLength(serviceref)
-		if video_dirs:
-			for x in video_dirs:
-				if m_db_path.startswith(x) or m_db_path == x[:-1]:
-					m_db_path = m_db_path.lstrip(x)
-					break
 		if m_db_duration < 0:
 			m_db_duration = self.calcMovieLen(f"{m_db_fullpath}.cuts")
-		if m_db_duration >= 0:
-			m_db_lastpos, m_db_progress = self.getPlayProgress(f"{m_db_fullpath}.cuts", m_db_duration)
-		fields = {"path": m_db_path,
-				self.boxPath: m_db_fullpath,
+		fields = {"path": m_db_fullpath,
 				"fname": m_db_fname,
 				"title": m_db_title,
 				"extDesc": m_db_extDesc,
@@ -1246,25 +866,11 @@ class MovieDataBase(CommonDataBase):
 				"tags": m_db_tags,
 				"ref": m_db_ref,
 				"duration": str(m_db_duration),
-				"lastpos": str(m_db_lastpos),
-				self.boxLpos: str(m_db_lastpos),
-				"progress": str(m_db_progress),
 				"fsize": str(m_db_f_size),
-				"begin": str(m_db_begin),
-				"IsRecording": str(is_rec),
+				"begin": str(m_db_begin)
 			}
 
-		search_fields = {self.boxPath: m_db_fullpath, "fname": m_db_fname, "title": m_db_title, }
-		is_in_db = self.searchContent(search_fields, fields=("fname",), query_type="AND", exactmatch=False, skipCheckExists=True)
-		if exists(trashfile):
-			if len(is_in_db):
-				self.removeFromTitleList(m_db_title, m_db_shortDesc, m_db_extDesc)
-		else:
-			self.addToTitleList(m_db_title, m_db_shortDesc, m_db_extDesc)
-		if withBoxPath:
-			self.updateUniqueData(fields, (self.boxPath,))
-		else:
-			self.updateUniqueData(fields, ("fname", "fsize"))
+		self.updateUniqueData(fields, ("fname", "fsize"))
 		if not isThread:
 			self.disconnectDataBase()
 
@@ -1284,43 +890,8 @@ class MovieDataBase(CommonDataBase):
 				debugPrint("failure at getting movie length from cut list", LOGLEVEL.ERROR)
 		return -1
 
-	def getPlayProgress(self, moviename, movie_len):
-		cut_list = []
-		if exists(moviename):
-			try:
-				f = open(moviename, "rb")
-				packed = f.read()
-				f.close()
-
-				while len(packed) > 0:
-					packedCue = packed[:12]
-					packed = packed[12:]
-					cue = unpack(">QI", packedCue)
-					cut_list.append(cue)
-			except Exception as ex:
-				debugPrint("failure at downloading cut list", LOGLEVEL.ERROR)
-		last_end_point = None
-		if len(cut_list):
-			for (pts, what) in cut_list:
-				if what == 3:
-					last_end_point = pts / 90000
-		try:
-			movie_len = int(movie_len)
-		except ValueError:
-			play_progress = 0
-			movie_len = -1
-		if movie_len > 0 and last_end_point is not None:
-			play_progress = (last_end_point * 100) / movie_len
-		else:
-			play_progress = 0
-			last_end_point = 0
-		if play_progress > 100:
-			play_progress = 100
-		return (last_end_point, play_progress)
-
 
 moviedb = MovieDataBase()
-moviedb.BackgroundTitleListUpdate()
 
 
 def isMovieinDatabase(title_name, shortdesc, extdesc, short_ratio=0.95, ext_ratio=0.85):
@@ -1378,7 +949,7 @@ class MovieDBUpdate():
 		self.updateTimer = eTimer()
 		self.updateTimer.callback.append(self.startUpdate)
 		self.timerintervall = 30
-		self.longtimerintervall = 180
+		self.longtimerintervall = 30
 		config.misc.movielist_use_moviedb_autoupdate.addNotifier(self.updateMovieDBAuto)
 
 	def updateMovieDBAuto(self, configElement):
@@ -1397,7 +968,7 @@ class MovieDBUpdate():
 				if job.name.lower().find("database") != -1:
 					debugPrint("update cancelled - there is still a running  database job", LOGLEVEL.INFO)
 					return
-		if self.getInstandby():
+		if True:  # self.getInstandby():
 			debugPrint("start auto update of moviedb", LOGLEVEL.INFO)
 			moviedb.backgroundDBUpdate(moviedb.updateMovieDB)
 		else:
