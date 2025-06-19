@@ -108,7 +108,7 @@ void eBackgroundFileEraser::gotMessage(const Message &msg )
 					if (st.st_size > erase_speed)
 					{
 						// Remove directory entry (file still open, so not erased yet)
-						if (::unlink(c_filename) == 0)
+						if (::unlinkat(fd, "", AT_EMPTY_PATH) == 0)
 							unlinked = true;
 						st.st_size -= st.st_size % erase_speed; // align on erase_speed
 						if (::ftruncate(fd, st.st_size) != 0)
