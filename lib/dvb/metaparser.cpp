@@ -4,6 +4,9 @@
 #include <lib/service/iservice.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <iostream>
+#include <sstream>
+#include <fstream>
 
 eDVBMetaParser::eDVBMetaParser()
 {
@@ -235,7 +238,7 @@ int eDVBMetaParser::updateMeta(const std::string &tsname)
 	return 0;
 }
 
-static bool isStartOfMetadata(const string& line) {
+static bool isStartOfMetadata(const std::string& line) {
     return line.size() > 2 && isupper(line[0]) && line[1] == ' ' && isdigit(line[2]);
 }
 
@@ -244,12 +247,12 @@ std::string eDVBMetaParser::parseTxtFile(const std::string &basename)
 	std::string filename = basename;
 	filename.erase(filename.length()-2, 2);
 	filename+="txt";
-	ifstream file(filename);
+	std::ifstream file(filename);
 	result="";
 	if (file.is_open()) {
 
-		string line;
-		ostringstream content;
+		std::string line;
+		std::ostringstream content;
 
 		while (getline(file, line)) {
 			if (isStartOfMetadata(line)) break;
