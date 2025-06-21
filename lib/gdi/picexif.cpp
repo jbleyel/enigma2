@@ -228,7 +228,7 @@ bool Cexif::DecodeExifPNG(const char *filename)
 		return false;
 	}
 
-	eDebug("[EXIF] getting exif from PNG");
+	eTrace("[EXIF] getting exif from PNG");
 	strcpy(m_szLastError, "Cannot get PNG EXIF data");
 	png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (png_ptr == NULL)

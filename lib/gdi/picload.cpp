@@ -897,6 +897,82 @@ ERROR_R:
 #endif
 }
 
+#define HAVE_WEBP 1 // Define this if you have WebP support, otherwise the code will not compile
+
+#ifdef HAVE_WEBP
+#include <webp/decode.h>
+#endif
+
+static void webp_load(Cfilepara* filepara, bool forceRGB = false)
+{
+#ifdef HAVE_WEBP
+	FILE* f = fopen(filepara->file, "rb");
+	if (!f)
+		return;
+
+	fseek(f, 0, SEEK_END);
+	long size = ftell(f);
+	rewind(f);
+
+	if (size <= 0) {
+		fclose(f);
+		return;
+	}
+
+	unsigned char* buffer = (unsigned char*)malloc(size);
+	if (!buffer) {
+		fclose(f);
+		return;
+	}
+
+	if (fread(buffer, 1, size, f) != (size_t)size) {
+		free(buffer);
+		fclose(f);
+		return;
+	}
+	fclose(f);
+
+	int width = 0, height = 0;
+	uint8_t* decoded = WebPDecodeRGBA(buffer, size, &width, &height);
+	free(buffer);
+
+	if (!decoded)
+		return;
+
+	filepara->ox = width;
+	filepara->oy = height;
+
+	if (forceRGB) {
+		// Convert RGBA to RGB
+		unsigned char* rgb_buffer = new unsigned char[width * height * 3];
+		if (!rgb_buffer) {
+			WebPFree(decoded);
+			return;
+		}
+		for (int i = 0; i < width * height; ++i) {
+			rgb_buffer[i * 3 + 0] = decoded[i * 4 + 0];
+			rgb_buffer[i * 3 + 1] = decoded[i * 4 + 1];
+			rgb_buffer[i * 3 + 2] = decoded[i * 4 + 2];
+		}
+		filepara->pic_buffer = rgb_buffer;
+		filepara->bits = 24;
+	} else {
+		// Keep RGBA
+		unsigned char* rgba_buffer = new unsigned char[width * height * 4];
+		if (!rgba_buffer) {
+			WebPFree(decoded);
+			return;
+		}
+		memcpy(rgba_buffer, decoded, width * height * 4);
+		filepara->pic_buffer = rgba_buffer;
+		filepara->bits = 32;
+	}
+
+	WebPFree(decoded);
+#endif
+}
+
+
 //---------------------------------------------------------------------------------------------
 
 ePicLoad::ePicLoad():
@@ -972,6 +1048,8 @@ void ePicLoad::decodePic()
 		case F_GIF:	gif_load(m_filepara);
 				break;
 		case F_SVG:	svg_load(m_filepara);
+				break;
+		case F_WEBP: webp_load(m_filepara);
 				break;
 	}
 
@@ -1685,6 +1763,8 @@ int ePicLoad::getFileType(const char * file)
 	else if (id[0] == 0xff && id[1] == 0xd8 && id[2] == 0xff)			return F_JPEG;
 	else if (id[0] == 'B'  && id[1] == 'M' )					return F_BMP;
 	else if (id[0] == 'G'  && id[1] == 'I'  && id[2] == 'F')			return F_GIF;
+	else if (id[0] == 'R' && id[1] == 'I' && id[2] == 'F' && id[3] == 'F' &&
+			id[8] == 'W' && id[9] == 'E' && id[10] == 'B' && id[11] == 'P') return F_WEBP;
 	else if (id[0] == '<'  && id[1] == 's'  && id[2] == 'v' && id[3] == 'g')	return F_SVG;
 	else if (endsWith(file, ".svg"))						return F_SVG;
 	return -1;
