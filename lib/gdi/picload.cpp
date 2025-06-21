@@ -19,6 +19,10 @@ extern "C" {
 #define NANOSVGRAST_IMPLEMENTATION
 #include <nanosvgrast.h>
 
+#ifdef HAVE_WEBP
+#include <webp/decode.h>
+#endif
+
 extern const uint32_t crc32_table[256];
 
 DEFINE_REF(ePicLoad);
@@ -897,15 +901,10 @@ ERROR_R:
 #endif
 }
 
-#define HAVE_WEBP 1 // Define this if you have WebP support, otherwise the code will not compile
-
 #ifdef HAVE_WEBP
-#include <webp/decode.h>
-#endif
 
 static void webp_load(Cfilepara* filepara, bool forceRGB = false)
 {
-#ifdef HAVE_WEBP
 	FILE* f = fopen(filepara->file, "rb");
 	if (!f)
 		return;
@@ -969,9 +968,9 @@ static void webp_load(Cfilepara* filepara, bool forceRGB = false)
 	}
 
 	WebPFree(decoded);
-#endif
 }
 
+#endif
 
 //---------------------------------------------------------------------------------------------
 
@@ -1049,8 +1048,10 @@ void ePicLoad::decodePic()
 				break;
 		case F_SVG:	svg_load(m_filepara);
 				break;
+#ifdef HAVE_WEBP
 		case F_WEBP: webp_load(m_filepara);
 				break;
+#endif
 	}
 
 	if(m_filepara->pic_buffer != NULL)
@@ -1746,11 +1747,11 @@ RESULT ePicLoad::setPara(int width, int height, double aspectRatio, int as, bool
 
 int ePicLoad::getFileType(const char * file)
 {
-	unsigned char id[10];
+	unsigned char id[12];
 	int fd = ::open(file, O_RDONLY);
 	if (fd == -1)
 		return -1;
-	if (::read(fd, id, 10) != 10)
+	if (::read(fd, id, 12) != 12)
 	{
 		eDebug("[ePicLoad] getFileType failed to read magic num");
 		close(fd);
@@ -1763,8 +1764,10 @@ int ePicLoad::getFileType(const char * file)
 	else if (id[0] == 0xff && id[1] == 0xd8 && id[2] == 0xff)			return F_JPEG;
 	else if (id[0] == 'B'  && id[1] == 'M' )					return F_BMP;
 	else if (id[0] == 'G'  && id[1] == 'I'  && id[2] == 'F')			return F_GIF;
+#ifdef HAVE_WEBP
 	else if (id[0] == 'R' && id[1] == 'I' && id[2] == 'F' && id[3] == 'F' &&
 			id[8] == 'W' && id[9] == 'E' && id[10] == 'B' && id[11] == 'P') return F_WEBP;
+#endif
 	else if (id[0] == '<'  && id[1] == 's'  && id[2] == 'v' && id[3] == 'g')	return F_SVG;
 	else if (endsWith(file, ".svg"))						return F_SVG;
 	return -1;
