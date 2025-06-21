@@ -40,7 +40,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <regex>
 
 using namespace std;
 
@@ -348,13 +347,8 @@ public:
 
 DEFINE_REF(eStaticServiceDVBPVRInformation);
 
-std::string extractDesc(const string& content) {
-    smatch match;
-    regex pattern(R"((.*?)(?=\n[A-Z] \d+))", regex::dotall);
-    if (regex_search(content, match, pattern)) {
-        return match[1];
-    }
-    return "";
+bool isStartOfMetadata(const string& line) {
+    return line.size() > 2 && isupper(line[0]) && line[1] == ' ' && isdigit(line[2]);
 }
 
 eStaticServiceDVBPVRInformation::eStaticServiceDVBPVRInformation(const eServiceReference &ref)
@@ -368,8 +362,16 @@ eStaticServiceDVBPVRInformation::eStaticServiceDVBPVRInformation(const eServiceR
 		filename+="txt";
 		ifstream file(filename);
 		if (file.is_open()) {
-			string content((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
-			m_txtdescription = extractDesc(content);
+
+			string line;
+			ostringstream content;
+
+			while (getline(file, line)) {
+				if (isStartOfMetadata(line)) break;
+				content << line << '\n';
+			}
+
+			m_txtdescription content.str();
 		}
 	}
 }
