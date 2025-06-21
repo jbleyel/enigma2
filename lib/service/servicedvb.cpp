@@ -371,7 +371,7 @@ eStaticServiceDVBPVRInformation::eStaticServiceDVBPVRInformation(const eServiceR
 				content << line << '\n';
 			}
 
-			m_txtdescription content.str();
+			m_txtdescription = content.str();
 		}
 	}
 }
