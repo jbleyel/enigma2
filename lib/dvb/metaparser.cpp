@@ -248,7 +248,7 @@ std::string eDVBMetaParser::parseTxtFile(const std::string &basename)
 	filename.erase(filename.length()-2, 2);
 	filename+="txt";
 	std::ifstream file(filename);
-	result="";
+	std::string result="";
 	if (file.is_open()) {
 
 		std::string line;
