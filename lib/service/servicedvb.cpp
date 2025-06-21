@@ -40,6 +40,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <regex>
+
 using namespace std;
 
 #ifndef BYTE_ORDER
@@ -331,6 +333,7 @@ class eStaticServiceDVBPVRInformation: public iStaticServiceInformation
 	DECLARE_REF(eStaticServiceDVBPVRInformation);
 	eServiceReference m_ref;
 	eDVBMetaParser m_parser;
+	std::string m_txtdescription;
 public:
 	eStaticServiceDVBPVRInformation(const eServiceReference &ref);
 	RESULT getName(const eServiceReference &ref, std::string &name);
@@ -345,10 +348,30 @@ public:
 
 DEFINE_REF(eStaticServiceDVBPVRInformation);
 
+std::string extractDesc(const string& content) {
+    smatch match;
+    regex pattern(R"((.*?)(?=\n[A-Z] \d+))", regex::dotall);
+    if (regex_search(content, match, pattern)) {
+        return match[1];
+    }
+    return "";
+}
+
 eStaticServiceDVBPVRInformation::eStaticServiceDVBPVRInformation(const eServiceReference &ref)
 {
 	m_ref = ref;
 	m_parser.parseFile(ref.path);
+	if (m_parser.m_description.empty())
+	{
+		std::string filename = ref.path;
+		filename.erase(filename.length()-2, 2);
+		filename+="txt";
+		ifstream file(filename);
+		if (file.is_open()) {
+			string content((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
+			m_txtdescription = extractDesc(content);
+		}
+	}
 }
 
 static bool looksLikeRecording(const std::string& n)
@@ -464,6 +487,8 @@ std::string eStaticServiceDVBPVRInformation::getInfoString(const eServiceReferen
 	switch (w)
 	{
 	case iServiceInformation::sDescription:
+		if (m_parser.m_description.empty() && !m_txtdescription.empty())
+			return m_txtdescription;
 		return m_parser.m_description;
 	case iServiceInformation::sServiceref:
 		return m_parser.m_ref.toString();
@@ -588,6 +613,7 @@ RESULT eDVBPVRServiceOfflineOperations::getListOfFilenames(std::list<std::string
 	std::string tmp = m_ref.path;
 	tmp.erase(m_ref.path.length()-3);
 	res.push_back(tmp + ".eit");
+	res.push_back(tmp + ".txt");
 	return 0;
 }
 
