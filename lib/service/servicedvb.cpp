@@ -40,7 +40,6 @@
 
 #include <iostream>
 #include <fstream>
-
 using namespace std;
 
 #ifndef BYTE_ORDER
@@ -347,33 +346,12 @@ public:
 
 DEFINE_REF(eStaticServiceDVBPVRInformation);
 
-bool isStartOfMetadata(const string& line) {
-    return line.size() > 2 && isupper(line[0]) && line[1] == ' ' && isdigit(line[2]);
-}
-
 eStaticServiceDVBPVRInformation::eStaticServiceDVBPVRInformation(const eServiceReference &ref)
 {
 	m_ref = ref;
 	m_parser.parseFile(ref.path);
 	if (m_parser.m_description.empty())
-	{
-		std::string filename = ref.path;
-		filename.erase(filename.length()-2, 2);
-		filename+="txt";
-		ifstream file(filename);
-		if (file.is_open()) {
-
-			string line;
-			ostringstream content;
-
-			while (getline(file, line)) {
-				if (isStartOfMetadata(line)) break;
-				content << line << '\n';
-			}
-
-			m_txtdescription = content.str();
-		}
-	}
+		m_txtdescription = m_parser.parseTxtFile(ref.path);
 }
 
 static bool looksLikeRecording(const std::string& n)
