@@ -1394,7 +1394,8 @@ bool ePicLoad::getExif(const char *filename, int fileType, int Thumb)
 		m_exif = new Cexif;
 		if (fileType < 0)
 			fileType = getFileType(filename);
-		return m_exif->DecodeExif(filename, Thumb, fileType);
+		if (fileType == F_PNG || fileType == F_JPEG)
+			return m_exif->DecodeExif(filename, Thumb, fileType);
 	}
 	return true;
 }
