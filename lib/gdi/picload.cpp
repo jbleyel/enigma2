@@ -903,11 +903,14 @@ ERROR_R:
 
 #ifdef HAVE_WEBP
 
-static void webp_load(Cfilepara* filepara, bool forceRGB = false)
+static void webp_load(Cfilepara* filepara)
 {
 	FILE* f = fopen(filepara->file, "rb");
 	if (!f)
+	{
+		eDebug("[ePicLoad] webp_load Error open file %s", filepara->file);
 		return;
+	}
 
 	fseek(f, 0, SEEK_END);
 	long size = ftell(f);
@@ -915,59 +918,42 @@ static void webp_load(Cfilepara* filepara, bool forceRGB = false)
 
 	if (size <= 0) {
 		fclose(f);
+		eDebug("[ePicLoad] webp_load Error in file %s", filepara->file);
 		return;
 	}
+
 
 	unsigned char* buffer = (unsigned char*)malloc(size);
 	if (!buffer) {
 		fclose(f);
+		eDebug("[ePicLoad] webp_load Error in file %s", filepara->file);
 		return;
 	}
 
 	if (fread(buffer, 1, size, f) != (size_t)size) {
 		free(buffer);
 		fclose(f);
+		eDebug("[ePicLoad] webp_load Error in file %s", filepara->file);
 		return;
 	}
 	fclose(f);
 
 	int width = 0, height = 0;
-	uint8_t* decoded = WebPDecodeRGBA(buffer, size, &width, &height);
+
+	uint8_t* decoded = WebPDecodeRGB(buffer, size, &width, &height);
 	free(buffer);
 
 	if (!decoded)
+	{
+		eDebug("[ePicLoad] webp_load Error decode file %s", filepara->file);
 		return;
+	}
 
 	filepara->ox = width;
 	filepara->oy = height;
 
-	if (forceRGB) {
-		// Convert RGBA to RGB
-		unsigned char* rgb_buffer = new unsigned char[width * height * 3];
-		if (!rgb_buffer) {
-			WebPFree(decoded);
-			return;
-		}
-		for (int i = 0; i < width * height; ++i) {
-			rgb_buffer[i * 3 + 0] = decoded[i * 4 + 0];
-			rgb_buffer[i * 3 + 1] = decoded[i * 4 + 1];
-			rgb_buffer[i * 3 + 2] = decoded[i * 4 + 2];
-		}
-		filepara->pic_buffer = rgb_buffer;
-		filepara->bits = 24;
-	} else {
-		// Keep RGBA
-		unsigned char* rgba_buffer = new unsigned char[width * height * 4];
-		if (!rgba_buffer) {
-			WebPFree(decoded);
-			return;
-		}
-		memcpy(rgba_buffer, decoded, width * height * 4);
-		filepara->pic_buffer = rgba_buffer;
-		filepara->bits = 32;
-	}
-
-	WebPFree(decoded);
+	filepara->pic_buffer = decoded;
+	filepara->bits = 24;
 }
 
 #endif
