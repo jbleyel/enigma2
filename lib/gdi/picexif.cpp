@@ -98,7 +98,7 @@ bool Cexif::DecodeExif(const char* filename, int Thumb, int fileType) {
 	else if (fileType == F_PNG)
 		rc = DecodeExifPNG(filename);
 	else {
-		eDebug("[DecodeEXIF]: unsupported filetype %d", fileType);
+		eTrace("[DecodeEXIF]: unsupported filetype %d", fileType);
 		return false;
 	}
 	// eDebug("[DecodeEXIF]: file parser rc=%d, %s", rc, m_szLastError);
@@ -106,7 +106,7 @@ bool Cexif::DecodeExif(const char* filename, int Thumb, int fileType) {
 }
 
 bool Cexif::DecodeExifJpeg(const char* filename) {
-	eDebug("[EXIF] getting exif from JPEG");
+	eTrace("[EXIF] getting exif from JPEG");
 	int HaveCom = 0;
 	CFile hFile(filename, "rb");
 	if (!hFile) {

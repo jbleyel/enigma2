@@ -939,8 +939,8 @@ void ePicLoad::decodePic() {
 #endif
 	}
 
-	if (m_filepara->pic_buffer != NULL)
-		resizePic();
+//	if (m_filepara->pic_buffer != NULL)
+//		resizePic();
 }
 
 void ePicLoad::decodeThumb() {
