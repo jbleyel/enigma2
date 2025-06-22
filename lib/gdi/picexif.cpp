@@ -72,26 +72,21 @@
 #define TAG_THUMBNAIL_OFFSET 0x0201
 #define TAG_THUMBNAIL_LENGTH 0x0202
 
-Cexif::Cexif()
-{
+Cexif::Cexif() {
 	m_exifinfo = NULL;
 	Data = NULL;
 }
 
-Cexif::~Cexif()
-{
-}
+Cexif::~Cexif() {}
 
-void Cexif::ClearExif()
-{
+void Cexif::ClearExif() {
 	if (Data)
 		free(Data);
 	if (m_exifinfo)
 		delete m_exifinfo;
 }
 
-bool Cexif::DecodeExif(const char *filename, int Thumb, int fileType)
-{
+bool Cexif::DecodeExif(const char* filename, int Thumb, int fileType) {
 	m_exifinfo = new EXIFINFO;
 	memset(m_exifinfo, 0, sizeof(EXIFINFO));
 	m_exifinfo->Thumnailstate = Thumb;
@@ -102,8 +97,7 @@ bool Cexif::DecodeExif(const char *filename, int Thumb, int fileType)
 		rc = DecodeExifJpeg(filename);
 	else if (fileType == F_PNG)
 		rc = DecodeExifPNG(filename);
-	else
-	{
+	else {
 		eDebug("[DecodeEXIF]: unsupported filetype %d", fileType);
 		return false;
 	}
@@ -111,38 +105,32 @@ bool Cexif::DecodeExif(const char *filename, int Thumb, int fileType)
 	return rc;
 }
 
-bool Cexif::DecodeExifJpeg(const char *filename)
-{
+bool Cexif::DecodeExifJpeg(const char* filename) {
 	eDebug("[EXIF] getting exif from JPEG");
 	int HaveCom = 0;
 	CFile hFile(filename, "rb");
-	if (!hFile)
-	{
+	if (!hFile) {
 		strcpy(m_szLastError, "Cannot open image file: %m");
 		return false;
 	}
 	int a = fgetc(hFile);
 
-	if (a != 0xff || fgetc(hFile) != M_SOI)
-	{
+	if (a != 0xff || fgetc(hFile) != M_SOI) {
 		strcpy(m_szLastError, "Not a JPEG file");
 		return false;
 	}
 
-	for (;;)
-	{
+	for (;;) {
 		int marker = 0;
 		unsigned int ll, lh, itemlen;
 
-		for (a = 0; a < 7; a++)
-		{
+		for (a = 0; a < 7; a++) {
 			marker = fgetc(hFile);
 			if (marker != 0xff)
 				break;
 		}
 
-		if (marker == 0xff)
-		{
+		if (marker == 0xff) {
 			strcpy(m_szLastError, "Too many padding unsigned chars!");
 			return false;
 		}
@@ -151,8 +139,7 @@ bool Cexif::DecodeExifJpeg(const char *filename)
 		ll = fgetc(hFile);
 
 		itemlen = (lh << 8) | ll;
-		if (itemlen < 2)
-		{
+		if (itemlen < 2) {
 			strcpy(m_szLastError, "Marker too short");
 			return false;
 		}
@@ -160,29 +147,27 @@ bool Cexif::DecodeExifJpeg(const char *filename)
 		if (Data)
 			free(Data);
 		itemlen -= 2;
-		Data = (unsigned char *)malloc(itemlen);
-		if (Data == NULL)
-		{
+		Data = (unsigned char*)malloc(itemlen);
+		if (Data == NULL) {
 			strcpy(m_szLastError, "Could not allocate memory");
 			return false;
 		}
 
-		if (fread(Data, 1, itemlen, hFile) != itemlen)
-		{
+		if (fread(Data, 1, itemlen, hFile) != itemlen) {
+			free(Data);
+			Data = NULL;
 			strcpy(m_szLastError, "Premature end of file?");
 			return false;
 		}
 
-		switch (marker)
-		{
+		switch (marker) {
 			case M_SOS:
 				return true;
 			case M_EOI:
 				eDebug("[Cexif] No image in jpeg!\n");
 				return false;
 			case M_COM:
-				if (!HaveCom)
-				{
+				if (!HaveCom) {
 					process_COM(Data, itemlen);
 					HaveCom = 1;
 				}
@@ -216,14 +201,12 @@ bool Cexif::DecodeExifJpeg(const char *filename)
 	return true;
 }
 
-bool Cexif::DecodeExifPNG(const char *filename)
-{
+bool Cexif::DecodeExifPNG(const char* filename) {
 	png_uint_32 width, height;
 	int bit_depth, color_type, channels;
 	CFile hFile(filename, "rb");
 
-	if (!hFile)
-	{
+	if (!hFile) {
 		strcpy(m_szLastError, "Cannot open image file: %m");
 		return false;
 	}
@@ -234,14 +217,12 @@ bool Cexif::DecodeExifPNG(const char *filename)
 	if (png_ptr == NULL)
 		return false;
 	png_infop info_ptr = png_create_info_struct(png_ptr);
-	if (info_ptr == NULL)
-	{
+	if (info_ptr == NULL) {
 		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
 		return false;
 	}
 
-	if (setjmp(png_jmpbuf(png_ptr)))
-	{
+	if (setjmp(png_jmpbuf(png_ptr))) {
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 		return false;
 	}
@@ -251,35 +232,30 @@ bool Cexif::DecodeExifPNG(const char *filename)
 	png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, NULL, NULL, NULL);
 	channels = png_get_channels(png_ptr, info_ptr);
 
-	png_byte *row = (unsigned char *)malloc(width * channels * bit_depth / 8);
+	png_byte* row = (unsigned char*)malloc(width * channels * bit_depth / 8);
 	for (png_uint_32 i = 0; i < height; i++)
 		png_read_row(png_ptr, row, NULL);
 	png_read_end(png_ptr, info_ptr);
 
 	png_textp text_ptr;
 	int num_text;
-	if (png_get_text(png_ptr, info_ptr, &text_ptr, &num_text))
-	{
+	if (png_get_text(png_ptr, info_ptr, &text_ptr, &num_text)) {
 		// eDebug("[PNGtext] %d text chunks", num_text);
-		for (int i = 0; i < num_text; i++)
-		{
-			char *s = text_ptr[i].text;
-			if (!strcmp(text_ptr[i].key, "Raw profile type exif"))
-			{
+		for (int i = 0; i < num_text; i++) {
+			char* s = text_ptr[i].text;
+			if (!strcmp(text_ptr[i].key, "Raw profile type exif")) {
 				int size;
 				// eDebug("Found exif key");
-				if (sscanf(s, "\nexif\n%d\n", &size) == 1)
-				{
+				if (sscanf(s, "\nexif\n%d\n", &size) == 1) {
 					s = strchr(s, '\n');
 					s++;
 					s = strchr(s, '\n');
 					s++;
 					s = strchr(s, '\n');
 					s++;
-					unsigned char *Data = (unsigned char *)malloc(size);
-					unsigned char *d = Data;
-					while (*s && *(s + 1))
-					{
+					unsigned char* Data = (unsigned char*)malloc(size);
+					unsigned char* d = Data;
+					while (*s && *(s + 1)) {
 						int x = *s++;
 						int y = *s++;
 						if (x > 0x39)
@@ -293,8 +269,7 @@ bool Cexif::DecodeExifPNG(const char *filename)
 					m_szLastError[0] = '\0';
 					m_exifinfo->IsExif = process_EXIF(Data, size);
 				}
-			}
-			else if (!strcmp(text_ptr[i].key, "exif:ImageWidth"))
+			} else if (!strcmp(text_ptr[i].key, "exif:ImageWidth"))
 				m_exifinfo->Width = atoi(s);
 			else if (!strcmp(text_ptr[i].key, "exif:ImageLength"))
 				m_exifinfo->Height = atoi(s);
@@ -312,14 +287,12 @@ bool Cexif::DecodeExifPNG(const char *filename)
 	return true;
 }
 
-bool Cexif::process_EXIF(unsigned char *CharBuf, unsigned int length)
-{
+bool Cexif::process_EXIF(unsigned char* CharBuf, unsigned int length) {
 	m_exifinfo->Comments[0] = '\0';
 	ExifImageWidth = 0;
 
 	static const unsigned char ExifHeader[] = "Exif\0\0";
-	if (memcmp(CharBuf + 0, ExifHeader, 6))
-	{
+	if (memcmp(CharBuf + 0, ExifHeader, 6)) {
 		strcpy(m_szLastError, "Incorrect Exif header");
 		return false;
 	}
@@ -328,24 +301,21 @@ bool Cexif::process_EXIF(unsigned char *CharBuf, unsigned int length)
 		MotorolaOrder = 0;
 	else if (memcmp(CharBuf + 6, "MM", 2) == 0)
 		MotorolaOrder = 1;
-	else
-	{
+	else {
 		strcpy(m_szLastError, "Invalid Exif alignment marker");
 		return false;
 	}
 
-	if (Get16u(CharBuf + 8) != 0x2a)
-	{
+	if (Get16u(CharBuf + 8) != 0x2a) {
 		strcpy(m_szLastError, "Invalid Exif start (1)");
 		return false;
 	}
 	int FirstOffset = Get32u(CharBuf + 10);
-	if (FirstOffset < 8 || FirstOffset > 16)
-	{
+	if (FirstOffset < 8 || FirstOffset > 16) {
 		strcpy(m_szLastError, "Suspicious offset of first IFD value");
 		return false;
 	}
-	unsigned char *LastExifRefd = CharBuf;
+	unsigned char* LastExifRefd = CharBuf;
 
 	if (!ProcessExifDir(CharBuf + 14, CharBuf + 6, length - 6, &LastExifRefd))
 		return false;
@@ -356,123 +326,109 @@ bool Cexif::process_EXIF(unsigned char *CharBuf, unsigned int length)
 	return true;
 }
 
-int Cexif::Get16m(void *Short)
-{
-	return (((unsigned char *)Short)[0] << 8) | ((unsigned char *)Short)[1];
+int Cexif::Get16m(void* Short) {
+	return (((unsigned char*)Short)[0] << 8) | ((unsigned char*)Short)[1];
 }
 
-int Cexif::Get16u(void *Short)
-{
+int Cexif::Get16u(void* Short) {
 	if (MotorolaOrder)
-		return (((unsigned char *)Short)[0] << 8) | ((unsigned char *)Short)[1];
+		return (((unsigned char*)Short)[0] << 8) | ((unsigned char*)Short)[1];
 	else
-		return (((unsigned char *)Short)[1] << 8) | ((unsigned char *)Short)[0];
+		return (((unsigned char*)Short)[1] << 8) | ((unsigned char*)Short)[0];
 }
 
-long Cexif::Get32s(void *Long)
-{
+long Cexif::Get32s(void* Long) {
 	if (MotorolaOrder)
-		return (((char *)Long)[0] << 24) | (((unsigned char *)Long)[1] << 16) | (((unsigned char *)Long)[2] << 8) | (((unsigned char *)Long)[3] << 0);
+		return (((char*)Long)[0] << 24) | (((unsigned char*)Long)[1] << 16) | (((unsigned char*)Long)[2] << 8) |
+			   (((unsigned char*)Long)[3] << 0);
 	else
-		return (((char *)Long)[3] << 24) | (((unsigned char *)Long)[2] << 16) | (((unsigned char *)Long)[1] << 8) | (((unsigned char *)Long)[0] << 0);
+		return (((char*)Long)[3] << 24) | (((unsigned char*)Long)[2] << 16) | (((unsigned char*)Long)[1] << 8) |
+			   (((unsigned char*)Long)[0] << 0);
 }
 
-unsigned long Cexif::Get32u(void *Long)
-{
+unsigned long Cexif::Get32u(void* Long) {
 	return (unsigned long)Get32s(Long) & 0xffffffff;
 }
 
-bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, unsigned ExifLength, unsigned char **const LastExifRefdP)
-{
+bool Cexif::ProcessExifDir(unsigned char* DirStart, unsigned char* OffsetBase, unsigned ExifLength,
+						   unsigned char** const LastExifRefdP) {
 	int de, a, NumDirEntries;
 	unsigned ThumbnailOffset = 0;
 	unsigned ThumbnailSize = 0;
 
 	NumDirEntries = Get16u(DirStart);
 
-	if ((DirStart + 2 + NumDirEntries * 12) > (OffsetBase + ExifLength))
-	{
+	if ((DirStart + 2 + NumDirEntries * 12) > (OffsetBase + ExifLength)) {
 		strcpy(m_szLastError, "Illegally sized directory");
 		return false;
 	}
 
-	for (de = 0; de < NumDirEntries; de++)
-	{
+	for (de = 0; de < NumDirEntries; de++) {
 		int Tag, Format, Components;
-		unsigned char *ValuePtr;
+		unsigned char* ValuePtr;
 		int BytesCount;
-		unsigned char *DirEntry;
+		unsigned char* DirEntry;
 
 		DirEntry = DirStart + 2 + 12 * de;
 		Tag = Get16u(DirEntry);
 		Format = Get16u(DirEntry + 2);
 		Components = Get32u(DirEntry + 4);
 
-		if ((Format - 1) >= NUM_FORMATS)
-		{
+		if ((Format - 1) >= NUM_FORMATS) {
 			strcpy(m_szLastError, "Illegal format code in EXIF dir");
 			return false;
 		}
 
 		BytesCount = Components * BytesPerFormat[Format];
 
-		if (BytesCount > 4)
-		{
+		if (BytesCount > 4) {
 			unsigned OffsetVal;
 			OffsetVal = Get32u(DirEntry + 8);
-			if (OffsetVal + BytesCount > ExifLength)
-			{
+			if (OffsetVal + BytesCount > ExifLength) {
 				strcpy(m_szLastError, "Illegal pointer offset value in EXIF");
 				return false;
 			}
 			ValuePtr = OffsetBase + OffsetVal;
-		}
-		else
+		} else
 			ValuePtr = DirEntry + 8;
 
 		if (*LastExifRefdP < ValuePtr + BytesCount)
 			*LastExifRefdP = ValuePtr + BytesCount;
 
-		switch (Tag)
-		{
+		switch (Tag) {
 			case TAG_MAKE:
-				strncpy(m_exifinfo->CameraMake, (char *)ValuePtr, 31);
+				strncpy(m_exifinfo->CameraMake, (char*)ValuePtr, 31);
 				break;
 			case TAG_MODEL:
-				strncpy(m_exifinfo->CameraModel, (char *)ValuePtr, 39);
+				strncpy(m_exifinfo->CameraModel, (char*)ValuePtr, 39);
 				break;
 			case TAG_EXIF_VERSION:
-				strncpy(m_exifinfo->Version, (char *)ValuePtr, 4);
+				strncpy(m_exifinfo->Version, (char*)ValuePtr, 4);
 				break;
 			case TAG_DATETIME_ORIGINAL:
-				strncpy(m_exifinfo->DateTime, (char *)ValuePtr, 19);
+				strncpy(m_exifinfo->DateTime, (char*)ValuePtr, 19);
 				break;
 			case TAG_USERCOMMENT:
 				a = BytesCount - 1;
 				while (a >= 0 && ValuePtr[a] == ' ')
 					ValuePtr[a--] = '\0';
-				if (memcmp(ValuePtr, "ASCII", 5) == 0)
-				{
-					for (a = 5; a < 10; a++)
-					{
+				if (memcmp(ValuePtr, "ASCII", 5) == 0) {
+					for (a = 5; a < 10; a++) {
 						char c = (char)ValuePtr[a];
-						if (c != '\0' && c != ' ')
-						{
-							strncpy(m_exifinfo->Comments, (char *)ValuePtr + a, 199);
+						if (c != '\0' && c != ' ') {
+							strncpy(m_exifinfo->Comments, (char*)ValuePtr + a, 199);
 							break;
 						}
 					}
-				}
-				else
-					strncpy(m_exifinfo->Comments, (char *)ValuePtr, 199);
+				} else
+					strncpy(m_exifinfo->Comments, (char*)ValuePtr, 199);
 				break;
 			case TAG_FNUMBER:
 				m_exifinfo->ApertureFNumber = (float)ConvertAnyFormat(ValuePtr, Format);
 				break;
 			case TAG_APERTURE:
 			case TAG_MAXAPERTURE:
-				if ((m_exifinfo->ApertureFNumber > -0.1) && (m_exifinfo->ApertureFNumber < 0.1))
-				{
+				if ((m_exifinfo->ApertureFNumber > -0.1) && (m_exifinfo->ApertureFNumber < 0.1)) {
 					// m_exifinfo->ApertureFNumber = (float)exp(ConvertAnyFormat(ValuePtr, Format)*log(2)*0.5);
 				}
 				break;
@@ -489,8 +445,7 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 				m_exifinfo->ExposureTime = (float)ConvertAnyFormat(ValuePtr, Format);
 				break;
 			case TAG_SHUTTERSPEED:
-				if ((m_exifinfo->ExposureTime > -0.1) && (m_exifinfo->ExposureTime < 0.1))
-				{
+				if ((m_exifinfo->ExposureTime > -0.1) && (m_exifinfo->ExposureTime < 0.1)) {
 					// m_exifinfo->ExposureTime = (float) (1/exp(ConvertAnyFormat(ValuePtr, Format)*log(2)));
 				}
 				break;
@@ -499,8 +454,7 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 				break;
 			case TAG_ORIENTATION:
 				m_exifinfo->Orient = (int)ConvertAnyFormat(ValuePtr, Format);
-				switch ((int)ConvertAnyFormat(ValuePtr, Format))
-				{
+				switch ((int)ConvertAnyFormat(ValuePtr, Format)) {
 					case 1:
 						strcpy(m_exifinfo->Orientation, "Top-Left");
 						break;
@@ -543,8 +497,7 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 				m_exifinfo->FocalplaneYRes = (float)ConvertAnyFormat(ValuePtr, Format);
 				break;
 			case TAG_RESOLUTIONUNIT:
-				switch ((int)ConvertAnyFormat(ValuePtr, Format))
-				{
+				switch ((int)ConvertAnyFormat(ValuePtr, Format)) {
 					case 2:
 						strcpy(m_exifinfo->ResolutionUnit, "inches");
 						break;
@@ -556,8 +509,7 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 				}
 				break;
 			case TAG_FOCALPLANEUNITS:
-				switch ((int)ConvertAnyFormat(ValuePtr, Format))
-				{
+				switch ((int)ConvertAnyFormat(ValuePtr, Format)) {
 					case 1:
 						m_exifinfo->FocalplaneUnits = 1.0f;
 						break;
@@ -578,8 +530,7 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 				m_exifinfo->ExposureBias = (float)ConvertAnyFormat(ValuePtr, Format);
 				break;
 			case TAG_WHITEBALANCE:
-				switch ((int)ConvertAnyFormat(ValuePtr, Format))
-				{
+				switch ((int)ConvertAnyFormat(ValuePtr, Format)) {
 					case 0:
 						strcpy(m_exifinfo->LightSource, "unknown");
 						break;
@@ -616,8 +567,7 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 				}
 				break;
 			case TAG_METERING_MODE:
-				switch ((int)ConvertAnyFormat(ValuePtr, Format))
-				{
+				switch ((int)ConvertAnyFormat(ValuePtr, Format)) {
 					case 0:
 						strcpy(m_exifinfo->MeteringMode, "unknown");
 						break;
@@ -645,8 +595,7 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 				}
 				break;
 			case TAG_EXPOSURE_PROGRAM:
-				switch ((int)ConvertAnyFormat(ValuePtr, Format))
-				{
+				switch ((int)ConvertAnyFormat(ValuePtr, Format)) {
 					case 0:
 						strcpy(m_exifinfo->ExposureProgram, "not defined");
 						break;
@@ -700,15 +649,14 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 				ThumbnailSize = (unsigned)ConvertAnyFormat(ValuePtr, Format);
 				break;
 				// default:
-				//	eDebug("[picexif] unsupported tag %d format %d: %d components %d bytes)", Tag, Format, Components, BytesCount);
+				//	eDebug("[picexif] unsupported tag %d format %d: %d components %d bytes)", Tag, Format, Components,
+				//BytesCount);
 		}
 
-		if (Tag == TAG_EXIF_OFFSET || Tag == TAG_INTEROP_OFFSET)
-		{
-			unsigned char *SubdirStart;
+		if (Tag == TAG_EXIF_OFFSET || Tag == TAG_INTEROP_OFFSET) {
+			unsigned char* SubdirStart;
 			SubdirStart = OffsetBase + Get32u(ValuePtr);
-			if (SubdirStart < OffsetBase || SubdirStart > OffsetBase + ExifLength)
-			{
+			if (SubdirStart < OffsetBase || SubdirStart > OffsetBase + ExifLength) {
 				strcpy(m_szLastError, "Illegal subdirectory link");
 				return false;
 			}
@@ -717,26 +665,21 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 		}
 	}
 
-	unsigned char *SubdirStart;
+	unsigned char* SubdirStart;
 	unsigned Offset;
 	Offset = Get16u(DirStart + 2 + 12 * NumDirEntries);
-	if (Offset)
-	{
+	if (Offset) {
 		SubdirStart = OffsetBase + Offset;
-		if (SubdirStart < OffsetBase || SubdirStart > OffsetBase + ExifLength)
-		{
+		if (SubdirStart < OffsetBase || SubdirStart > OffsetBase + ExifLength) {
 			strcpy(m_szLastError, "Illegal subdirectory link");
 			return false;
 		}
 		ProcessExifDir(SubdirStart, OffsetBase, ExifLength, LastExifRefdP);
 	}
 
-	if (ThumbnailSize && ThumbnailOffset && m_exifinfo->Thumnailstate)
-	{
-		if (ThumbnailSize + ThumbnailOffset <= ExifLength)
-		{
-			if (FILE *tf = fopen(THUMBNAILTMPFILE, "w"))
-			{
+	if (ThumbnailSize && ThumbnailOffset && m_exifinfo->Thumnailstate) {
+		if (ThumbnailSize + ThumbnailOffset <= ExifLength) {
+			if (FILE* tf = fopen(THUMBNAILTMPFILE, "w")) {
 				fwrite(OffsetBase + ThumbnailOffset, ThumbnailSize, 1, tf);
 				fclose(tf);
 				m_exifinfo->Thumnailstate = 2;
@@ -747,17 +690,15 @@ bool Cexif::ProcessExifDir(unsigned char *DirStart, unsigned char *OffsetBase, u
 	return true;
 }
 
-double Cexif::ConvertAnyFormat(void *ValuePtr, int Format)
-{
+double Cexif::ConvertAnyFormat(void* ValuePtr, int Format) {
 	double Value = 0;
 
-	switch (Format)
-	{
+	switch (Format) {
 		case FMT_SBYTE:
-			Value = *(signed char *)ValuePtr;
+			Value = *(signed char*)ValuePtr;
 			break;
 		case FMT_BYTE:
-			Value = *(unsigned char *)ValuePtr;
+			Value = *(unsigned char*)ValuePtr;
 			break;
 		case FMT_USHORT:
 			Value = Get16u(ValuePtr);
@@ -766,10 +707,9 @@ double Cexif::ConvertAnyFormat(void *ValuePtr, int Format)
 			Value = Get32u(ValuePtr);
 			break;
 		case FMT_URATIONAL:
-		case FMT_SRATIONAL:
-		{
+		case FMT_SRATIONAL: {
 			int Num = Get32s(ValuePtr);
-			int Den = Get32s(4 + (char *)ValuePtr);
+			int Den = Get32s(4 + (char*)ValuePtr);
 			Value = (Den == 0) ? 0 : (double)Num / Den;
 			break;
 		}
@@ -780,24 +720,22 @@ double Cexif::ConvertAnyFormat(void *ValuePtr, int Format)
 			Value = Get32s(ValuePtr);
 			break;
 		case FMT_SINGLE:
-			Value = (double)*(float *)ValuePtr;
+			Value = (double)*(float*)ValuePtr;
 			break;
 		case FMT_DOUBLE:
-			Value = *(double *)ValuePtr;
+			Value = *(double*)ValuePtr;
 			break;
 	}
 	return Value;
 }
 
-void Cexif::process_COM(const unsigned char *Data, int length)
-{
-	char *Comment = m_exifinfo->Comments;
+void Cexif::process_COM(const unsigned char* Data, int length) {
+	char* Comment = m_exifinfo->Comments;
 
 	if (length > MAX_COMMENT)
 		length = MAX_COMMENT;
 
-	for (int a = 0; a < length; a++)
-	{
+	for (int a = 0; a < length; a++) {
 		char ch = (char)Data[a];
 		if (ch == '\r' && Data[a + 1] == '\n')
 			continue;
@@ -808,11 +746,10 @@ void Cexif::process_COM(const unsigned char *Data, int length)
 	*Comment = '\0';
 }
 
-void Cexif::process_SOFn(const unsigned char *Data, int marker)
-{
+void Cexif::process_SOFn(const unsigned char* Data, int marker) {
 	m_exifinfo->BitsPerColor = Data[0];
-	m_exifinfo->Height = Get16m((void *)(Data + 1));
-	m_exifinfo->Width = Get16m((void *)(Data + 3));
+	m_exifinfo->Height = Get16m((void*)(Data + 1));
+	m_exifinfo->Width = Get16m((void*)(Data + 3));
 	strcpy(m_exifinfo->IsColor, Data[5] == 3 ? "yes" : "no"); // color components
 	m_exifinfo->Process = marker;
 }
