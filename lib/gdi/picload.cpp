@@ -941,8 +941,8 @@ void ePicLoad::decodePic() {
 #endif
 	}
 
-	//	if (m_filepara->pic_buffer != NULL)
-	//		resizePic();
+	if (m_filepara->pic_buffer != NULL)
+		resizePic();
 }
 
 void ePicLoad::decodeThumb() {
@@ -1261,128 +1261,115 @@ bool ePicLoad::getExif(const char* filename, int fileType, int Thumb) {
 }
 
 int ePicLoad::getData(ePtr<gPixmap>& result) {
-	if (m_filepara == NULL) {
+	if (!m_filepara) {
 		eDebug("[ePicLoad] Weird situation, was not decoding anything!");
 		result = 0;
 		return 1;
 	}
-	if (m_filepara->pic_buffer == NULL) {
+
+	if (!m_filepara->pic_buffer) {
 		delete m_filepara;
-		m_filepara = NULL;
+		m_filepara = nullptr;
 		result = 0;
-		if (m_exif != NULL) {
+
+		if (m_exif) {
 			m_exif->ClearExif();
 			delete m_exif;
-			m_exif = NULL;
+			m_exif = nullptr;
 		}
 		return 0;
 	}
 
-	result = new gPixmap(m_filepara->max_x, m_filepara->max_y, m_filepara->bits == 8 ? 8 : 32, NULL,
-						 m_filepara->bits == 8 ? gPixmap::accelAlways : gPixmap::accelAuto);
-	gUnmanagedSurface* surface = result->surface;
 
 	// original image    : ox, oy
 	// surface size      : max_x, max_y
 	// after aspect calc : scrx, scry
 	// center image      : xoff, yoff
-	int scrx, scry; // Aspect ratio calculation
-	int orientation =
-		m_conf.auto_orientation ? (m_exif && m_exif->m_exifinfo->Orient ? m_exif->m_exifinfo->Orient : 1) : 1;
-	if ((m_conf.aspect_ratio > -0.1) &&
-		(m_conf.aspect_ratio < 0.1)) // do not keep aspect ratio but just fill the destination area
-	{
-		scrx = m_filepara->max_x;
-		scry = m_filepara->max_y;
-	} else if (orientation < 5) {
-		if ((m_conf.aspect_ratio * m_filepara->oy * m_filepara->max_x / m_filepara->ox) <= m_filepara->max_y) {
-			scrx = m_filepara->max_x;
-			scry = (int)(m_conf.aspect_ratio * m_filepara->oy * m_filepara->max_x / m_filepara->ox);
-		} else {
-			scrx = (int)((1.0 / m_conf.aspect_ratio) * m_filepara->ox * m_filepara->max_y / m_filepara->oy);
-			scry = m_filepara->max_y;
-		}
+
+	const int bits = m_filepara->bits;
+	const int ox = m_filepara->ox, oy = m_filepara->oy;
+	const int max_x = m_filepara->max_x, max_y = m_filepara->max_y;
+
+	result =
+		new gPixmap(max_x, max_y, bits == 8 ? 8 : 32, nullptr, bits == 8 ? gPixmap::accelAlways : gPixmap::accelAuto);
+	gUnmanagedSurface* surface = result->surface;
+	unsigned char* tmp_buffer = static_cast<unsigned char*>(surface->data);
+
+	// Determine orientation
+	int orientation = m_conf.auto_orientation && m_exif && m_exif->m_exifinfo->Orient ? m_exif->m_exifinfo->Orient : 1;
+
+	// Calculate output size (scrx, scry) based on aspect ratio and orientation
+	int scrx, scry;
+	const float aspect = m_conf.aspect_ratio;
+	if (fabs(aspect) < 0.1f) {
+		scrx = max_x;
+		scry = max_y;
 	} else {
-		if ((m_conf.aspect_ratio * m_filepara->ox * m_filepara->max_x / m_filepara->oy) <= m_filepara->max_y) {
-			scrx = m_filepara->max_x;
-			scry = (int)(m_conf.aspect_ratio * m_filepara->ox * m_filepara->max_x / m_filepara->oy);
+		if (orientation < 5) {
+			float temp = aspect * oy * max_x / ox;
+			if (temp <= max_y) {
+				scrx = max_x;
+				scry = static_cast<int>(temp);
+			} else {
+				scrx = static_cast<int>((1.0 / aspect) * ox * max_y / oy);
+				scry = max_y;
+			}
 		} else {
-			scrx = (int)((1.0 / m_conf.aspect_ratio) * m_filepara->oy * m_filepara->max_y / m_filepara->ox);
-			scry = m_filepara->max_y;
+			float temp = aspect * ox * max_x / oy;
+			if (temp <= max_y) {
+				scrx = max_x;
+				scry = static_cast<int>(temp);
+			} else {
+				scrx = static_cast<int>((1.0 / aspect) * oy * max_y / ox);
+				scry = max_y;
+			}
 		}
 	}
-	float xscale = (float)(orientation < 5 ? m_filepara->ox : m_filepara->oy) /
-				   (float)scrx; // scale factor as result of screen and image size
-	float yscale = (float)(orientation < 5 ? m_filepara->oy : m_filepara->ox) / (float)scry;
-	int xoff = (m_filepara->max_x - scrx) / 2; // borders as result of screen and image aspect
-	int yoff = (m_filepara->max_y - scry) / 2;
-	// eDebug("[getData] ox=%d oy=%d max_x=%d max_y=%d scrx=%d scry=%d xoff=%d yoff=%d xscale=%f yscale=%f aspect=%f
-	// bits=%d orientation=%d", m_filepara->ox, m_filepara->oy, m_filepara->max_x, m_filepara->max_y, scrx, scry, xoff,
-	// yoff, xscale, yscale, m_conf.aspect_ratio, m_filepara->bits, orientation);
 
-	unsigned char* tmp_buffer = ((unsigned char*)(surface->data));
+	const float xscale = static_cast<float>((orientation < 5) ? ox : oy) / scrx;
+	const float yscale = static_cast<float>((orientation < 5) ? oy : ox) / scry;
+	const int xoff = (max_x - scrx) / 2;
+	const int yoff = (max_y - scry) / 2;
+
 	unsigned char* origin = m_filepara->pic_buffer;
-	if (m_filepara->bits == 8) {
+
+	if (bits == 8) {
 		surface->clut.data = m_filepara->palette;
 		surface->clut.colors = m_filepara->palette_size;
-		m_filepara->palette = NULL; // transfer ownership
+		m_filepara->palette = nullptr; // transfer ownership
 	}
 
-	// fill borders with background color
-	if (xoff != 0 || yoff != 0) {
-		unsigned int background;
-		if (m_filepara->bits == 8) {
-			gRGB bg(m_conf.background);
-			background = surface->clut.findColor(bg);
-		} else {
-			background = m_conf.background;
+	// Fill background if image is not filling the entire surface
+	if (xoff || yoff) {
+		const unsigned int background =
+			(bits == 8) ? static_cast<unsigned int>(surface->clut.findColor(gRGB(m_conf.background)))
+						: m_conf.background;
+
+
+		// Fill top and bottom borders
+		if (yoff > 0) {
+			auto fill_line = [&](int y) {
+				void* line = tmp_buffer + y * surface->stride;
+				std::fill_n(static_cast<uint32_t*>(line), max_x, background);
+			};
+#pragma omp parallel for
+			for (int y = 0; y < yoff; ++y)
+				fill_line(y);
+#pragma omp parallel for
+			for (int y = yoff + scry; y < max_y; ++y)
+				fill_line(y);
 		}
-		if (yoff != 0) {
-			if (m_filepara->bits == 8) {
-				unsigned char* row_buffer;
-				row_buffer = (unsigned char*)tmp_buffer;
-				for (int x = 0; x < m_filepara->max_x; ++x) // fill first line
-					*row_buffer++ = background;
-			} else {
-				unsigned int* row_buffer;
-				row_buffer = (unsigned int*)tmp_buffer;
-				for (int x = 0; x < m_filepara->max_x; ++x) // fill first line
-					*row_buffer++ = background;
-			}
-			int y;
+
+		// Fill left and right borders
+		if (xoff > 0) {
 #pragma omp parallel for
-			for (y = 1; y < yoff; ++y) // copy from first line
-				memcpy(tmp_buffer + y * surface->stride, tmp_buffer, m_filepara->max_x * surface->bypp);
-#pragma omp parallel for
-			for (y = yoff + scry; y < m_filepara->max_y; ++y)
-				memcpy(tmp_buffer + y * surface->stride, tmp_buffer, m_filepara->max_x * surface->bypp);
-		}
-		if (xoff != 0) {
-			if (m_filepara->bits == 8) {
-				unsigned char* row_buffer = (unsigned char*)(tmp_buffer + yoff * surface->stride);
-				int x;
-				for (x = 0; x < xoff; ++x) // fill left side of first line
-					*row_buffer++ = background;
-				row_buffer += scrx;
-				for (x = xoff + scrx; x < m_filepara->max_x; ++x) // fill right side of first line
-					*row_buffer++ = background;
-			} else {
-				unsigned int* row_buffer = (unsigned int*)(tmp_buffer + yoff * surface->stride);
-				int x;
-				for (x = 0; x < xoff; ++x) // fill left side of first line
-					*row_buffer++ = background;
-				row_buffer += scrx;
-				for (x = xoff + scrx; x < m_filepara->max_x; ++x) // fill right side of first line
-					*row_buffer++ = background;
-			}
-#pragma omp parallel for
-			for (int y = yoff + 1; y < scry; ++y) { // copy from first line
-				memcpy(tmp_buffer + y * surface->stride, tmp_buffer + yoff * surface->stride, xoff * surface->bypp);
-				memcpy(tmp_buffer + y * surface->stride + (xoff + scrx) * surface->bypp,
-					   tmp_buffer + yoff * surface->stride + (xoff + scrx) * surface->bypp,
-					   (m_filepara->max_x - scrx - xoff) * surface->bypp);
+			for (int y = yoff; y < yoff + scry; ++y) {
+				uint32_t* row = reinterpret_cast<uint32_t*>(tmp_buffer + y * surface->stride);
+				std::fill_n(row, xoff, background);
+				std::fill_n(row + xoff + scrx, max_x - scrx - xoff, background);
 			}
 		}
+
 		tmp_buffer += yoff * surface->stride + xoff * surface->bypp;
 	}
 
@@ -1404,184 +1391,100 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 	// 0110 101      b      -b * x                              b * (y - 1) * x
 	// 0111 110     -b      -b * x  b * yscale * (sy - 1)   +   b * (y - 1) * x
 	// 1000 111     -b       b * x  b * yscale * (sy - 1)
-	int bpp = m_filepara->bits / 8;
-#if 0
-	int iyfac = ((orientation-1) & 0x2) ? -bpp : bpp;
-	int ixfac = (orientation & 0x2) ? -bpp : bpp;
-	if (orientation < 5)
-		iyfac *= m_filepara->ox;
-	else
-		ixfac *= m_filepara->ox;
-	if (((orientation-1) & 0x6) == 2)
-		origin += bpp * (int)(yscale * (scry - 1)) * m_filepara->ox;
-	if (((orientation-1) & 0x6) == 6)
-		origin += bpp * (int)(yscale * (scry - 1));
-	if (((orientation) & 0x6) == 2)
-		origin += bpp * (m_filepara->ox - 1);
-	if (((orientation) & 0x6) == 6)
-		origin += bpp * (m_filepara->oy - 1) * m_filepara->ox;
-#else
-	int ixfac;
-	int iyfac;
+	const int bpp = bits / 8;
+	int ixfac, iyfac;
+
 	if (orientation < 5) {
-		if (orientation == 1 || orientation == 2)
-			iyfac = bpp * m_filepara->ox; // run y across rows
-		else {
-			origin += bpp * (int)(yscale * (scry - 1)) * m_filepara->ox;
-			iyfac = -bpp * m_filepara->ox;
-		}
-		if (orientation == 2 || orientation == 3) {
-			origin += bpp * (m_filepara->ox - 1);
-			ixfac = -bpp;
-		} else
-			ixfac = bpp;
+		iyfac = (orientation == 3 || orientation == 4) ? -bpp * ox : bpp * ox;
+		ixfac = (orientation == 2 || orientation == 3) ? -bpp : bpp;
+		if (orientation == 3 || orientation == 4)
+			origin += bpp * static_cast<int>(yscale * (scry - 1)) * ox;
+		if (orientation == 2 || orientation == 3)
+			origin += bpp * (ox - 1);
 	} else {
-		if (orientation == 5 || orientation == 6)
-			iyfac = bpp;
-		else {
-			origin += bpp * (int)(yscale * (scry - 1));
-			iyfac = -bpp;
-		}
-		if (orientation == 6 || orientation == 7) {
-			origin += bpp * (m_filepara->oy - 1) * m_filepara->ox;
-			ixfac = -bpp * m_filepara->ox;
-		} else
-			ixfac = bpp * m_filepara->ox;
+		iyfac = (orientation == 7 || orientation == 8) ? -bpp : bpp;
+		ixfac = (orientation == 6 || orientation == 7) ? -bpp * ox : bpp * ox;
+		if (orientation == 7 || orientation == 8)
+			origin += bpp * static_cast<int>(yscale * (scry - 1));
+		if (orientation == 6 || orientation == 7)
+			origin += bpp * (oy - 1) * ox;
 	}
-#endif
-	// Build output according to screen y by x loops
-	// Fill surface with image data, resize and correct for orientation on the fly
-	if (m_filepara->bits == 8) {
+
+	// Copy and resize image data to surface buffer
+	auto do_resize = [&](auto pixel_func) {
 #pragma omp parallel for
 		for (int y = 0; y < scry; ++y) {
-			const unsigned char *irow, *irowy = origin + iyfac * (int)(y * yscale);
+			const unsigned char* irowy = origin + iyfac * static_cast<int>(yscale * y);
 			unsigned char* srow = tmp_buffer + surface->stride * y;
-			float xind = 0.0;
+			float xind = 0.0f;
+
 			for (int x = 0; x < scrx; ++x) {
-				irow = irowy + ixfac * (int)xind;
-				*srow++ = *irow;
+				const unsigned char* irow = irowy + ixfac * static_cast<int>(xind);
+				pixel_func(srow, irow);
+				srow += 4;
 				xind += xscale;
 			}
 		}
-	} else if (m_filepara->bits == 32) {
-#pragma omp parallel for
-		for (int y = 0; y < scry; ++y) {
-			const unsigned char *irow, *irowy = origin + iyfac * (int)(yscale * y);
-			unsigned char* srow = tmp_buffer + surface->stride * y;
-			float xind = 0.0;
+	};
 
-			if (m_conf.resizetype != 1) {
-				// simple resizing
-				for (int x = 0; x < scrx; ++x) {
-					irow = irowy + ixfac * (int)xind;
-					srow[2] = irow[0];
-					srow[1] = irow[1];
-					srow[0] = irow[2];
-					srow[3] = irow[3]; // alpha
-					srow += 4;
-					xind += xscale;
-				}
-			} else {
-				// color average resizing
-				// determine block range for resize
-				int yr = (int)((y + 1) * yscale) - (int)(y * yscale);
-				if (y + yr >= scry)
-					yr = scry - y - 1;
-				for (int x = 0; x < scrx; x++) {
-					// determine x range for resize
-					int xr = (int)(xind + xscale) - (int)xind;
-					if (x + xr >= scrx)
-						xr = scrx - x - 1;
-					int r = 0;
-					int g = 0;
-					int b = 0;
-					int sq = 0;
-					irow = irowy + ixfac * (int)xind;
-					// average over all pixels in x by y block
-					for (int l = 0; l <= yr; l++) {
-						for (int k = 0; k <= xr; k++) {
-							r += irow[0];
-							g += irow[1];
-							b += irow[2];
-							sq++;
-							irow += ixfac;
-						}
-						irow -= (xr + 1) * ixfac; // go back to starting point of this subrow
-						irow += iyfac;
-					}
-					srow[2] = r / sq;
-					srow[1] = g / sq;
-					srow[0] = b / sq;
-					srow[3] = irow[3]; // alpha
-					srow += 4;
-					xind += xscale;
-				}
-			}
-		}
+	if (bits == 8) {
+		do_resize([](unsigned char* dst, const unsigned char* src) {
+			*dst = *src; // grayscale
+		});
+	} else if (m_conf.resizetype != 1) {
+		do_resize([](unsigned char* dst, const unsigned char* src) {
+			dst[0] = src[2]; // B
+			dst[1] = src[1]; // G
+			dst[2] = src[0]; // R
+			dst[3] = src[3]; // A
+		});
 	} else {
 #pragma omp parallel for
 		for (int y = 0; y < scry; ++y) {
-		    const unsigned char* irowy = origin + iyfac * static_cast<int>(yscale * y);
+			const unsigned char* irowy = origin + iyfac * static_cast<int>(yscale * y);
 			unsigned char* srow = tmp_buffer + surface->stride * y;
-			float xind = 0.0;
+			float xind = 0.0f;
 
-			if (m_conf.resizetype != 1) {
+			for (int x = 0; x < scrx; ++x) {
+				int xr = static_cast<int>(xind + xscale) - static_cast<int>(xind);
+				int yr = static_cast<int>((y + 1) * yscale) - static_cast<int>(y * yscale);
 
-				// simple resizing
-				for (int x = 0; x < scrx; ++x) {
-					irow = irowy + ixfac * (int)xind;
-					srow[2] = irow[0];
-					srow[1] = irow[1];
-					srow[0] = irow[2];
-					srow[3] = 0xFF; // alpha opaque
-					srow += 4;
-					xind += xscale;
-				}
-			} else {
-				// color average resizing
-				// determine block range for resize
-				int yr = (int)((y + 1) * yscale) - (int)(y * yscale);
-				if (y + yr >= scry)
-					yr = scry - y - 1;
-				for (int x = 0; x < scrx; x++) {
-					// determine x range for resize
-					int xr = (int)(xind + xscale) - (int)xind;
-					if (x + xr >= scrx)
-						xr = scrx - x - 1;
-					int r = 0;
-					int g = 0;
-					int b = 0;
-					int sq = 0;
-					irow = irowy + ixfac * (int)xind;
-					// average over all pixels in x by y block
-					for (int l = 0; l <= yr; l++) {
-						for (int k = 0; k <= xr; k++) {
-							r += irow[0];
-							g += irow[1];
-							b += irow[2];
-							sq++;
-							irow += ixfac;
-						}
-						irow -= (xr + 1) * ixfac; // go back to starting point of this subrow
-						irow += iyfac;
+				xr = std::min(xr, scrx - x - 1);
+				yr = std::min(yr, scry - y - 1);
+
+				int r = 0, g = 0, b = 0, sq = 0;
+				const unsigned char* irow = irowy + ixfac * static_cast<int>(xind);
+
+				for (int l = 0; l <= yr; ++l) {
+					const unsigned char* pix = irow;
+					for (int k = 0; k <= xr; ++k) {
+						r += pix[0];
+						g += pix[1];
+						b += pix[2];
+						sq++;
+						pix += ixfac;
 					}
-					srow[2] = r / sq;
-					srow[1] = g / sq;
-					srow[0] = b / sq;
-					srow[3] = 0xFF; // alpha opaque
-					srow += 4;
-					xind += xscale;
+					irow += iyfac;
 				}
+
+				srow[2] = r / sq;
+				srow[1] = g / sq;
+				srow[0] = b / sq;
+				srow[3] = 0xFF;
+				srow += 4;
+				xind += xscale;
 			}
 		}
 	}
 
-	delete m_filepara; // so caller can start a new decode in background
-	m_filepara = NULL;
+	// Cleanup
+	delete m_filepara;
+	m_filepara = nullptr;
+
 	if (m_exif) {
 		m_exif->ClearExif();
 		delete m_exif;
-		m_exif = NULL;
+		m_exif = nullptr;
 	}
 
 	return 0;
