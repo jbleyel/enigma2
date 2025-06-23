@@ -324,7 +324,7 @@ static unsigned char* bmp_load(const char* file, int* x, int* y) {
  * @param background
  * @return void
  */
-static void png_load(Cfilepara* filepara, unsigned int background, bool forceRGB = false) {
+static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = false) {
 	png_uint_32 width, height;
 	int bit_depth, color_type, interlace_type;
 	png_byte* fbptr;
@@ -367,7 +367,6 @@ static void png_load(Cfilepara* filepara, unsigned int background, bool forceRGB
 		forceRGBA = true;
 		color_type = PNG_COLOR_TYPE_RGBA;
 	}
-
 
 	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA) {
 		filepara->transparent = true;
@@ -485,7 +484,10 @@ static void png_load(Cfilepara* filepara, unsigned int background, bool forceRGB
 		png_read_end(png_ptr, info_ptr);
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 
-		if (bpp == 4) {
+		if (bpp == 4 && filepara->transparent) {
+			filepara->bits = 32;
+			filepara->pic_buffer = pic_buffer;
+		} else if (bpp == 4) {
 			unsigned char* pic_buffer24 = new unsigned char[pixel_cnt * 3];
 			if (!pic_buffer24) {
 				eDebug("[ePicLoad] Error malloc");
@@ -911,7 +913,7 @@ void ePicLoad::thread() {
 void ePicLoad::decodePic() {
 	eTrace("[ePicLoad] decode picture... %s", m_filepara->file);
 
-	if(m_conf.auto_orientation)
+	if (m_conf.auto_orientation)
 		getExif(m_filepara->file, m_filepara->id);
 	switch (m_filepara->id) {
 		case F_PNG:
@@ -939,8 +941,8 @@ void ePicLoad::decodePic() {
 #endif
 	}
 
-//	if (m_filepara->pic_buffer != NULL)
-//		resizePic();
+	//	if (m_filepara->pic_buffer != NULL)
+	//		resizePic();
 }
 
 void ePicLoad::decodeThumb() {
@@ -1461,8 +1463,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				xind += xscale;
 			}
 		}
-	} else // 24-bit images
-	{
+	} else if (m_filepara->bits == 32) {
 #pragma omp parallel for
 		for (int y = 0; y < scry; ++y) {
 			const unsigned char *irow, *irowy = origin + iyfac * (int)(yscale * y);
@@ -1476,7 +1477,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 					srow[2] = irow[0];
 					srow[1] = irow[1];
 					srow[0] = irow[2];
-					srow[3] = 0xFF; // alpha
+					srow[3] = irow[3]; // alpha
 					srow += 4;
 					xind += xscale;
 				}
@@ -1511,7 +1512,63 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 					srow[2] = r / sq;
 					srow[1] = g / sq;
 					srow[0] = b / sq;
-					srow[3] = 0xFF; // alpha
+					srow[3] = irow[3]; // alpha
+					srow += 4;
+					xind += xscale;
+				}
+			}
+		}
+	} else {
+#pragma omp parallel for
+		for (int y = 0; y < scry; ++y) {
+		    const unsigned char* irowy = origin + iyfac * static_cast<int>(yscale * y);
+			unsigned char* srow = tmp_buffer + surface->stride * y;
+			float xind = 0.0;
+
+			if (m_conf.resizetype != 1) {
+
+				// simple resizing
+				for (int x = 0; x < scrx; ++x) {
+					irow = irowy + ixfac * (int)xind;
+					srow[2] = irow[0];
+					srow[1] = irow[1];
+					srow[0] = irow[2];
+					srow[3] = 0xFF; // alpha opaque
+					srow += 4;
+					xind += xscale;
+				}
+			} else {
+				// color average resizing
+				// determine block range for resize
+				int yr = (int)((y + 1) * yscale) - (int)(y * yscale);
+				if (y + yr >= scry)
+					yr = scry - y - 1;
+				for (int x = 0; x < scrx; x++) {
+					// determine x range for resize
+					int xr = (int)(xind + xscale) - (int)xind;
+					if (x + xr >= scrx)
+						xr = scrx - x - 1;
+					int r = 0;
+					int g = 0;
+					int b = 0;
+					int sq = 0;
+					irow = irowy + ixfac * (int)xind;
+					// average over all pixels in x by y block
+					for (int l = 0; l <= yr; l++) {
+						for (int k = 0; k <= xr; k++) {
+							r += irow[0];
+							g += irow[1];
+							b += irow[2];
+							sq++;
+							irow += ixfac;
+						}
+						irow -= (xr + 1) * ixfac; // go back to starting point of this subrow
+						irow += iyfac;
+					}
+					srow[2] = r / sq;
+					srow[1] = g / sq;
+					srow[0] = b / sq;
+					srow[3] = 0xFF; // alpha opaque
 					srow += 4;
 					xind += xscale;
 				}
@@ -1560,7 +1617,7 @@ RESULT ePicLoad::setPara(int width, int height, double aspectRatio, int as, bool
 	m_conf.resizetype = resizeType;
 
 	if (bg_str[0] == '#' && strlen(bg_str) == 9)
-		m_conf.background = strtoul(bg_str + 1, NULL, 16) | 0xFF000000;
+		m_conf.background = static_cast<uint32_t>(strtoul(bg_str + 1, NULL, 16));
 	eTrace("[ePicLoad] setPara max-X=%d max-Y=%d aspect_ratio=%lf cache=%d resize=%d bg=#%08X auto_orient=%d",
 		   m_conf.max_x, m_conf.max_y, m_conf.aspect_ratio, (int)m_conf.usecache, (int)m_conf.resizetype,
 		   m_conf.background, m_conf.auto_orientation);
