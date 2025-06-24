@@ -37,7 +37,6 @@ enigma2_LDADD = \
 	@BASE_LIBS@ \
 	@LIBGIF_LIBS@ \
 	@LIBWEBP_LIBS@ \
-	@LIBSWSCALE_LIBS@ \
 	@LIBJPEG_LIBS@ \
 	@LIBVUGLES2_LIBS@ \
 	@LIBSDL_LIBS@ \
@@ -48,6 +47,7 @@ enigma2_LDADD = \
 	@ALSA_LIBS@ \
 	@AVAHI_LIBS@ \
 	@LIBHIACCEL_LIBS@ \
+	@LIBSWSCALE_LIBS@ \
 	-ltuxtxt32bpp -lcrypt -lrt -ldl
 
 enigma2_LDFLAGS = -Wl,--export-dynamic

@@ -62,7 +62,7 @@ class ePicLoad : public eMainloop, public eThread, public sigc::trackable, publi
 		int max_y;
 		double aspect_ratio;
 		uint32_t background;
-		bool resizetype;
+		int resizetype;
 		bool usecache;
 		bool auto_orientation;
 		int thumbnailsize;

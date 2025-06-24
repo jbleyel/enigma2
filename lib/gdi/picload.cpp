@@ -23,9 +23,12 @@ extern "C" {
 #include <webp/decode.h>
 #endif
 
+
 #ifdef HAVE_SWSCALE
+extern "C" {
 #include <libswscale/swscale.h>
 #include <libavutil/pixfmt.h>
+}
 #endif
 
 #include "../base/benchmark.h"
@@ -861,7 +864,24 @@ static void webp_load(Cfilepara* filepara) {
 
 	int width = 0, height = 0;
 
-	uint8_t* decoded = WebPDecodeRGB(buffer, size, &width, &height);
+	uint8_t* decoded;
+
+	WebPBitstreamFeatures features;
+	VP8StatusCode status = WebPGetFeatures(buffer, size, &features);
+	if (status == VP8_STATUS_OK) {
+		if (features.has_alpha) {
+			decoded = WebPDecodeRGBA(buffer, size, &width, &height);
+			filepara->bits = 32;
+		} else {
+			decoded = WebPDecodeRGB(buffer, size, &width, &height);
+			filepara->bits = 24;
+		}
+	} else {
+		eDebug("[ePicLoad] webp_load Error in file %s", filepara->file);
+		free(buffer);
+		return;
+	}
+
 	free(buffer);
 
 	if (!decoded) {
@@ -873,7 +893,6 @@ static void webp_load(Cfilepara* filepara) {
 	filepara->oy = height;
 
 	filepara->pic_buffer = decoded;
-	filepara->bits = 24;
 }
 
 #endif
@@ -1289,11 +1308,62 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 						 m_filepara->bits == 8 ? gPixmap::accelAlways : gPixmap::accelAuto);
 	gUnmanagedSurface* surface = result->surface;
 
+	int scrx = m_filepara->max_x;
+	int scry = m_filepara->max_y;
+
+	eDebug("[getData] ox=%d oy=%d max_x=%d max_y=%d bits=%d", m_filepara->ox, m_filepara->oy, scrx, scry,m_filepara->bits );
+
+	if (m_filepara->ox == scrx && m_filepara->oy == scry) {
+		unsigned char* origin = m_filepara->pic_buffer;
+		unsigned char* tmp_buffer = ((unsigned char*)(surface->data));
+		if (m_filepara->bits == 8) {
+			memcpy(tmp_buffer, origin, scrx * scry);
+		} else if (m_filepara->bits == 24) {
+			for (int y = 0; y < scry; ++y) {
+				const unsigned char* src = origin + y * scrx * 3;
+				unsigned char* dst = tmp_buffer + y * surface->stride;
+				for (int x = 0; x < scrx; ++x) {
+					dst[0] = src[2]; // B
+					dst[1] = src[1]; // G
+					dst[2] = src[0]; // R
+					dst[3] = 0xFF;   // Alpha
+					src += 3;
+					dst += 4;
+				}
+			}
+		} else if (m_filepara->bits == 32) {
+			for (int y = 0; y < scry; ++y) {
+				const unsigned char* src = origin + y * scrx * 4;
+				unsigned char* dst = tmp_buffer + y * surface->stride;
+				for (int x = 0; x < scrx; ++x) {
+					dst[0] = src[2]; // B
+					dst[1] = src[1]; // G
+					dst[2] = src[0]; // R
+					dst[3] = src[3]; // A
+					src += 4;
+					dst += 4;
+				}
+			}
+		}
+		s.stop();
+		eDebug("[ePicLoad] no resize took %u us", s.elapsed_us());
+
+		delete m_filepara; // so caller can start a new decode in background
+		m_filepara = nullptr;
+		if (m_exif) {
+			m_exif->ClearExif();
+			delete m_exif;
+			m_exif = nullptr;
+		}
+  
+		return 0;
+	}
+
 	// original image    : ox, oy
 	// surface size      : max_x, max_y
 	// after aspect calc : scrx, scry
 	// center image      : xoff, yoff
-	int scrx, scry; // Aspect ratio calculation
+	// Aspect ratio calculation
 	int orientation =
 		m_conf.auto_orientation ? (m_exif && m_exif->m_exifinfo->Orient ? m_exif->m_exifinfo->Orient : 1) : 1;
 	if ((m_conf.aspect_ratio > -0.1) &&
@@ -1476,9 +1546,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				xind += xscale;
 			}
 		}
-	} else {
-
-//#define HAVE_SWSCALE
+	} else { // 24/32-bit images
 
 		eDebug("[ePicLoad] resizetype %d", m_conf.resizetype);
 
@@ -1499,8 +1567,10 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				default: sws_algo = SWS_BILINEAR; break;
 			}
 
+			eDebug("[ePicLoad] m_filepara->bits %d", m_filepara->bits);
+
 			enum AVPixelFormat src_fmt = (m_filepara->bits == 32) ? AV_PIX_FMT_RGBA : AV_PIX_FMT_RGB24;
-			enum AVPixelFormat dst_fmt = AV_PIX_FMT_RGBA;
+			enum AVPixelFormat dst_fmt = AV_PIX_FMT_BGRA;
 
 			SwsContext* sws_ctx = sws_getContext(
 				m_filepara->ox, m_filepara->oy, src_fmt,
@@ -1537,7 +1607,6 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 
 #endif
 
-		// 24/32-bit images
 #pragma omp parallel for
 		for (int y = 0; y < scry; ++y) {
 			const unsigned char *irow, *irowy = origin + iyfac * (int)(yscale * y);
