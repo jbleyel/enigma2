@@ -26,8 +26,8 @@ extern "C" {
 
 #ifdef HAVE_SWSCALE
 extern "C" {
-#include <libswscale/swscale.h>
 #include <libavutil/pixfmt.h>
+#include <libswscale/swscale.h>
 }
 #endif
 
@@ -829,7 +829,7 @@ ERROR_R:
 
 #ifdef HAVE_WEBP
 
-static void webp_load(Cfilepara* filepara) {
+static void webp_load(Cfilepara* filepara, bool forceRGB = false) {
 	FILE* f = fopen(filepara->file, "rb");
 	if (!f) {
 		eDebug("[ePicLoad] webp_load Error open file %s", filepara->file);
@@ -869,7 +869,7 @@ static void webp_load(Cfilepara* filepara) {
 	WebPBitstreamFeatures features;
 	VP8StatusCode status = WebPGetFeatures(buffer, size, &features);
 	if (status == VP8_STATUS_OK) {
-		if (features.has_alpha) {
+		if (features.has_alpha && !forceRGB) {
 			decoded = WebPDecodeRGBA(buffer, size, &width, &height);
 			filepara->bits = 32;
 		} else {
@@ -1048,6 +1048,11 @@ void ePicLoad::decodeThumb() {
 		case F_SVG:
 			svg_load(m_filepara, true);
 			break;
+#ifdef HAVE_WEBP
+		case F_WEBP:
+			webp_load(m_filepara, true);
+			break;
+#endif
 	}
 	// eDebug("[ePicLoad] getThumb picture loaded %s", m_filepara->file);
 
@@ -1311,7 +1316,8 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 	int scrx = m_filepara->max_x;
 	int scry = m_filepara->max_y;
 
-	eDebug("[getData] ox=%d oy=%d max_x=%d max_y=%d bits=%d", m_filepara->ox, m_filepara->oy, scrx, scry,m_filepara->bits );
+	eDebug("[getData] ox=%d oy=%d max_x=%d max_y=%d bits=%d", m_filepara->ox, m_filepara->oy, scrx, scry,
+		   m_filepara->bits);
 
 	if (m_filepara->ox == scrx && m_filepara->oy == scry) {
 		unsigned char* origin = m_filepara->pic_buffer;
@@ -1326,7 +1332,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 					dst[0] = src[2]; // B
 					dst[1] = src[1]; // G
 					dst[2] = src[0]; // R
-					dst[3] = 0xFF;   // Alpha
+					dst[3] = 0xFF; // Alpha
 					src += 3;
 					dst += 4;
 				}
@@ -1355,7 +1361,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 			delete m_exif;
 			m_exif = nullptr;
 		}
-  
+
 		return 0;
 	}
 
@@ -1548,40 +1554,41 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 		}
 	} else { // 24/32-bit images
 
-		eDebug("[ePicLoad] resizetype %d", m_conf.resizetype);
 
 #ifdef HAVE_SWSCALE
 
-		eDebug("[ePicLoad] HAVE_SWSCALE");
-
-		if (m_conf.resizetype > 1)
-		{
-
+		if (m_conf.resizetype > 1) {
 			int sws_algo = SWS_BILINEAR; // Default
 
 			switch (m_conf.resizetype) {
-				case 2: sws_algo = SWS_FAST_BILINEAR; break;
-				case 3: sws_algo = SWS_BILINEAR; break;
-				case 4: sws_algo = SWS_BICUBIC; break;
-				case 5: sws_algo = SWS_LANCZOS; break;
-				default: sws_algo = SWS_BILINEAR; break;
+				case 2:
+					sws_algo = SWS_FAST_BILINEAR;
+					break;
+				case 3:
+					sws_algo = SWS_BILINEAR;
+					break;
+				case 4:
+					sws_algo = SWS_BICUBIC;
+					break;
+				case 5:
+					sws_algo = SWS_LANCZOS;
+					break;
+				default:
+					sws_algo = SWS_BILINEAR;
+					break;
 			}
-
-			eDebug("[ePicLoad] m_filepara->bits %d", m_filepara->bits);
 
 			enum AVPixelFormat src_fmt = (m_filepara->bits == 32) ? AV_PIX_FMT_RGBA : AV_PIX_FMT_RGB24;
 			enum AVPixelFormat dst_fmt = AV_PIX_FMT_BGRA;
 
-			SwsContext* sws_ctx = sws_getContext(
-				m_filepara->ox, m_filepara->oy, src_fmt,
-				scrx, scry, dst_fmt,
-				sws_algo, NULL, NULL, NULL);
+			SwsContext* sws_ctx = sws_getContext(m_filepara->ox, m_filepara->oy, src_fmt, scrx, scry, dst_fmt, sws_algo,
+												 NULL, NULL, NULL);
 
 			if (sws_ctx) {
-				uint8_t* src_slices[4] = { origin, NULL, NULL, NULL };
-				int src_stride[4] = { m_filepara->ox * (m_filepara->bits / 8), 0, 0, 0 };
-				uint8_t* dst_slices[4] = { tmp_buffer, NULL, NULL, NULL };
-				int dst_stride[4] = { surface->stride, 0, 0, 0 };
+				uint8_t* src_slices[4] = {origin, NULL, NULL, NULL};
+				int src_stride[4] = {m_filepara->ox * (m_filepara->bits / 8), 0, 0, 0};
+				uint8_t* dst_slices[4] = {tmp_buffer, NULL, NULL, NULL};
+				int dst_stride[4] = {surface->stride, 0, 0, 0};
 
 				sws_scale(sws_ctx, src_slices, src_stride, 0, m_filepara->oy, dst_slices, dst_stride);
 				sws_freeContext(sws_ctx);
@@ -1595,14 +1602,13 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				}
 
 				s.stop();
-				eDebug("[ePicLoad] sws_getContext took %u us", s.elapsed_us());
+				eDebug("[ePicLoad] swscale with type %d took %u us", m_conf.resizetype, s.elapsed_us());
 
 				return 0;
 
 			} else {
-				eDebug("[ePicLoad] sws_getContext failed, fallback to slow resize");
+				eDebug("[ePicLoad] swscale failed, fallback to legacy resize");
 			}
-
 		}
 
 #endif
