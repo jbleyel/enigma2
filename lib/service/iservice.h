@@ -424,6 +424,7 @@ public:
 
 		sGamma,
 		sVideoInfo,
+		sExtendedDescription,
 		sSubServices,
 
 		sUser = 0x100
