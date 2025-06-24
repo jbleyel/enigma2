@@ -1457,6 +1457,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 	}
 #endif
 
+	s.stop();
 	eDebug("[ePicLoad] prepare took %u us", s.elapsed_us());
 	s.start();
 
@@ -1479,7 +1480,11 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 
 //#define HAVE_SWSCALE
 
+		eDebug("[ePicLoad] resizetype %d", m_conf.resizetype);
+
 #ifdef HAVE_SWSCALE
+
+		eDebug("[ePicLoad] HAVE_SWSCALE");
 
 		if (m_conf.resizetype > 1)
 		{
@@ -1539,7 +1544,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 			unsigned char* srow = tmp_buffer + surface->stride * y;
 			float xind = 0.0;
 
-			if (m_conf.resizetype != 1) {
+			if (m_conf.resizetype == 0) {
 				// simple resizing
 				for (int x = 0; x < scrx; ++x) {
 					irow = irowy + ixfac * (int)xind;
