@@ -1,3 +1,36 @@
+/*
+
+WebP support and libswscale scaling additions Copyright (c) 2025 by jbleyel
+
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+1. Non-Commercial Use: You may not use the Software or any derivative works
+   for commercial purposes without obtaining explicit permission from the
+   copyright holder.
+2. Share Alike: If you distribute or publicly perform the Software or any
+   derivative works, you must do so under the same license terms, and you
+   must make the source code of any derivative works available to the
+   public.
+3. Attribution: You must give appropriate credit to the original author(s)
+   of the Software by including a prominent notice in your derivative works.
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+For more details about the CC BY-NC-SA 4.0 License, please visit:
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+*/
+
 #define PNG_SKIP_SETJMP_CHECK
 #include <fcntl.h>
 #include <png.h>
@@ -31,7 +64,11 @@ extern "C" {
 }
 #endif
 
+#define DEBUG_PICLOAD
+
+#ifdef DEBUG_PICLOAD
 #include "../base/benchmark.h"
+#endif
 
 
 extern const uint32_t crc32_table[256];
@@ -92,7 +129,7 @@ static unsigned char* simple_resize_8(unsigned char* orgin, int ox, int oy, int 
 	unsigned char* cr = new unsigned char[dx * dy];
 	if (cr == NULL) {
 		eDebug("[ePicLoad] Error malloc");
-		return (orgin);
+		return orgin;
 	}
 	const int stride = dx;
 #pragma omp parallel for
@@ -1031,6 +1068,7 @@ void ePicLoad::decodeThumb() {
 		}
 	}
 
+	// Note. The pic_buffer can be only 8 or 24 bit for thumbnails.
 	switch (m_filepara->id) {
 		case F_PNG:
 			png_load(m_filepara, m_conf.background, true);
@@ -1307,8 +1345,9 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 		return 0;
 	}
 
+#ifdef DEBUG_PICLOAD
 	Stopwatch s;
-
+#endif
 	result = new gPixmap(m_filepara->max_x, m_filepara->max_y, m_filepara->bits == 8 ? 8 : 32, NULL,
 						 m_filepara->bits == 8 ? gPixmap::accelAlways : gPixmap::accelAuto);
 	gUnmanagedSurface* surface = result->surface;
@@ -1351,9 +1390,10 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				}
 			}
 		}
+#ifdef DEBUG_PICLOAD
 		s.stop();
 		eDebug("[ePicLoad] no resize took %u us", s.elapsed_us());
-
+#endif
 		delete m_filepara; // so caller can start a new decode in background
 		m_filepara = nullptr;
 		if (m_exif) {
@@ -1533,9 +1573,11 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 	}
 #endif
 
+#ifdef DEBUG_PICLOAD
 	s.stop();
 	eDebug("[ePicLoad] prepare took %u us", s.elapsed_us());
 	s.start();
+#endif
 
 
 	// Build output according to screen y by x loops
@@ -1601,9 +1643,10 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 					m_exif = NULL;
 				}
 
+#ifdef DEBUG_PICLOAD
 				s.stop();
 				eDebug("[ePicLoad] swscale with type %d took %u us", m_conf.resizetype, s.elapsed_us());
-
+#endif
 				return 0;
 
 			} else {
@@ -1685,9 +1728,10 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 		m_exif = nullptr;
 	}
 
+#ifdef DEBUG_PICLOAD
 	s.stop();
 	eDebug("[ePicLoad] non swscale took %u us", s.elapsed_us());
-
+#endif
 	return 0;
 }
 
