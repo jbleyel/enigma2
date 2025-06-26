@@ -1597,7 +1597,6 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 	} else { // 24/32-bit images
 
 
-
 #ifdef HAVE_SWSCALE
 
 		if (m_conf.resizetype > 1) {
