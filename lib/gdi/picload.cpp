@@ -998,13 +998,11 @@ void ePicLoad::decodePic() {
 		case F_SVG:
 			svg_load(m_filepara);
 			break;
-		case F_WEBP:
 #ifdef HAVE_WEBP
+		case F_WEBP:
 			webp_load(m_filepara);
-#else
-			eDebug("[ePicLoad] webp support not compiled in");
-#endif
 			break;
+#endif
 	}
 }
 
