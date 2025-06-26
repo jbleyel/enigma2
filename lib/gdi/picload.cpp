@@ -998,11 +998,13 @@ void ePicLoad::decodePic() {
 		case F_SVG:
 			svg_load(m_filepara);
 			break;
-#ifdef HAVE_WEBP
 		case F_WEBP:
+#ifdef HAVE_WEBP
 			webp_load(m_filepara);
-			break;
+#else
+			eDebug("[ePicLoad] webp support not compiled in");
 #endif
+			break;
 	}
 }
 
@@ -1597,6 +1599,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 	} else { // 24/32-bit images
 
 
+
 #ifdef HAVE_SWSCALE
 
 		if (m_conf.resizetype > 1) {
@@ -1654,6 +1657,8 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 			}
 		}
 
+#else
+		eDebug("[ePicLoad] swscale not available, using legacy resize");
 #endif
 
 #pragma omp parallel for
