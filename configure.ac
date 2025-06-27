@@ -55,8 +55,14 @@ AC_CHECK_LIB([ungif], [DGifOpen], [LIBGIF_LIBS="-lungif"], [AC_CHECK_LIB([gif], 
 AC_SUBST(LIBGIF_LIBS)
 AC_CHECK_LIB([webp], [WebPDecodeRGB],[LIBWEBP_LIBS="-lwebp" AC_DEFINE([HAVE_WEBP], [1], [Define if libwebp is available])], [AC_MSG_WARN([Could not find libwebp, WebP support will be disabled.])])
 AC_SUBST(LIBWEBP_LIBS)
-AC_CHECK_LIB([swscale], [sws_scale], [LIBSWSCALE_LIBS="-lswscale -lavutil" AC_DEFINE([HAVE_SWSCALE], [1], [Define if libswscale is available])], [AC_MSG_WARN([Could not find libswscale, scaling support will be disabled.])])
-AC_SUBST(LIBSWSCALE_LIBS)
+# AC_CHECK_LIB([swscale], [sws_scale], [LIBSWSCALE_LIBS="-lswscale -lavutil" AC_DEFINE([HAVE_SWSCALE], [1], [Define if libswscale is available])], [AC_MSG_WARN([Could not find libswscale, scaling support will be disabled.])])
+# AC_SUBST(LIBSWSCALE_LIBS)
+
+PKG_CHECK_MODULES([SWSCALE], [libswscale], [
+    AC_DEFINE([HAVE_SWSCALE], [1], [Define if libswscale is available])
+], [
+    AC_MSG_WARN([Could not find libswscale, scaling support will be disabled.])
+])
 
 AC_ARG_WITH(e2rev,
 	AS_HELP_STRING([--with-e2rev],[value of E2REV, $withval]),
