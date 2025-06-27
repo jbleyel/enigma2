@@ -56,6 +56,7 @@ extern "C" {
 #include <webp/decode.h>
 #endif
 
+#define HAVE_SWSCALE
 
 #ifdef HAVE_SWSCALE
 extern "C" {
