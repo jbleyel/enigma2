@@ -40,6 +40,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <lib/dvb/cahandler.h>
 using namespace std;
 
 #ifndef BYTE_ORDER
@@ -1090,7 +1091,8 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_cutlist_enabled(1),
 	m_subtitle_widget(0),
 	m_subtitle_sync_timer(eTimer::create(eApp)),
-	m_nownext_timer(eTimer::create(eApp))
+	m_nownext_timer(eTimer::create(eApp)),
+	m_decryptionWatchdog_timer(eTimer::create(eApp))
 {
 #ifdef PASSTHROUGH_FIX
 	m_passthrough_fix_timer = eTimer::create(eApp);
@@ -1101,6 +1103,11 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	CONNECT(m_event_handler.m_eit_changed, eDVBServicePlay::gotNewEvent);
 	CONNECT(m_subtitle_sync_timer->timeout, eDVBServicePlay::checkSubtitleTiming);
 	CONNECT(m_nownext_timer->timeout, eDVBServicePlay::updateEpgCacheNowNext);
+	
+	/* [MODIFICATION START] Connect the new watchdog timer's timeout signal */
+	CONNECT(m_decryptionWatchdog_timer->timeout, eDVBServicePlay::onWatchdogTimeout);
+	/* [MODIFICATION END] */
+
 #ifdef PASSTHROUGH_FIX
 	CONNECT(m_passthrough_fix_timer->timeout, eDVBServicePlay::forcePassthrough);
 #endif
@@ -1109,6 +1116,11 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 
 eDVBServicePlay::~eDVBServicePlay()
 {
+	/* [MODIFICATION START] Disconnect signals and stop the timer to prevent memory leaks */
+	disconnectFromCryptoSignals();
+	m_decryptionWatchdog_timer->stop();
+	/* [MODIFICATION END] */
+	
 	if (m_is_pvr)
 	{
 		eDVBMetaParser meta;
@@ -1468,8 +1480,11 @@ RESULT eDVBServicePlay::start()
 
 RESULT eDVBServicePlay::stop()
 {
-		/* add bookmark for last play position */
-		/* m_cutlist_enabled bit 2 is the "don't remember bit" */
+	/* [MODIFICATION START] Stop the decryption watchdog on service stop */
+	m_decryptionWatchdog_timer->stop();
+	disconnectFromCryptoSignals();
+	/* [MODIFICATION END] */
+
 	if (m_is_pvr && ((m_cutlist_enabled & 2) == 0))
 	{
 		pts_t play_position, length;
@@ -2751,6 +2766,24 @@ RESULT eDVBServicePlay::startTimeshift()
 	updateTimeshiftPids();
 	m_record->start();
 
+	/* [MODIFICATION START] Initialize and start the decryption watchdog on service start */
+	if (eConfigManager::getConfigBoolValue("config.timeshift.scrambledRecovery", false))
+	{
+		if (getInfo(iServiceInformation::sIsCrypted))
+		{
+			eDebug("[eDVBServicePlay] starting timeshift decryption watchdog");
+			m_isDescramblingOk = true;
+			m_isInTimeshiftFailureMode = false;
+			connectToCryptoSignals();
+			m_decryptionWatchdog_timer->start(15000, true); // 15-second one-shot timer
+		}
+		else
+			eDebug("[eDVBServicePlay] not crypted service, not starting decryption watchdog");
+	}
+	else
+		eDebug("[eDVBServicePlay] scrambledRecovery disabled, not starting decryption watchdog");
+	/* [MODIFICATION END] */
+
 	return 0;
 }
 
@@ -3888,4 +3921,124 @@ ePtr<iDVBTransponderData> eDVBService::getTransponderData(const eServiceReferenc
 	return eStaticServiceDVBInformation().getTransponderData(ref);
 }
 
+/* [MODIFICATION START] New Methods for Smart Timeshift with Dynamic Fallback */
+void eDVBServicePlay::connectToCryptoSignals()
+{
+	if (m_connVerboseInfo) return; // Already connected
+	ePtr<iCryptoInfo> crypto_info;
+	if (!eDVBCAHandler::getCryptoInfo(crypto_info) && crypto_info)
+	{
+
+		//m_connVerboseInfo = crypto_info->verboseinfo.connect(sigc::mem_fun(this, &eDVBServicePlay::handleVerboseInfo));
+		//m_connDecodeTime = crypto_info->decodetime.connect(sigc::mem_fun(this, &eDVBServicePlay::handleDecodeTime));
+
+		m_connVerboseInfo = new eConnection((iPlayableService*)this, crypto_info->verboseinfo.connect(sigc::mem_fun(*this, &eDVBServicePlay::handleVerboseInfo)));
+		m_connDecodeTime = new eConnection((iPlayableService*)this, crypto_info->decodetime.connect(sigc::mem_fun(*this, &eDVBServicePlay::handleDecodeTime)));
+	}
+}
+
+void eDVBServicePlay::disconnectFromCryptoSignals()
+{
+	m_connVerboseInfo = nullptr;
+	m_connDecodeTime = nullptr;
+}
+
+void eDVBServicePlay::handleVerboseInfo(const char* info)
+{
+	if (strstr(info, "found")) onCryptoSuccess();
+}
+
+void eDVBServicePlay::handleDecodeTime(int time)
+{
+	// A positive and reasonable decode time indicates success
+	if (time > 0 && time < 8000) onCryptoSuccess();
+}
+
+void eDVBServicePlay::onCryptoSuccess()
+{
+	// Reset the watchdog timer upon receiving any proof of successful descrambling
+	m_decryptionWatchdog_timer->start(15000, true);
+
+	// Periodically update the last known valid delay while everything is fine
+	if (isTimeshiftActive())
+	{
+		pts_t live_pts = 0, playback_pts = 0;
+		if (m_record && !m_record->getCurrentPCR(live_pts) && !getPlayPosition(playback_pts))
+		{
+			m_lastValidDelay = live_pts - playback_pts;
+		}
+	}
+
+	if (!m_isDescramblingOk)
+	{
+		// We have just recovered from a failure state
+		m_isDescramblingOk = true;
+		eDebug("[ServicePlay] Decryption has RECOVERED.");
+		exitTimeshiftFailureMode();
+	}
+}
+
+void eDVBServicePlay::onWatchdogTimeout()
+{
+	if (m_isDescramblingOk)
+	{
+		// The timer fired, meaning no success signals were received.
+		m_isDescramblingOk = false;
+		eDebug("[ServicePlay] Decryption FAILED (watchdog timeout).");
+		enterTimeshiftFailureMode();
+	}
+}
+
+void eDVBServicePlay::enterTimeshiftFailureMode()
+{
+	// This logic only applies if we are actively timeshifting
+	if (!isTimeshiftActive()) return;
+
+	m_isInTimeshiftFailureMode = true;
+
+	// 1. Save the current timeshift delay
+	pts_t live_pts = 0, playback_pts = 0;
+	if (m_record && !m_record->getCurrentPCR(live_pts) && !getPlayPosition(playback_pts))
+	{
+		m_savedTimeshiftDelay = live_pts - playback_pts;
+		eDebug("[ServicePlay] Failure Mode: Saved delay is %lld PTS.", m_savedTimeshiftDelay);
+	}
+	else
+	{
+		// If getting current PTS fails, use the last known valid delay as a fallback
+		m_savedTimeshiftDelay = m_lastValidDelay;
+		eWarning("[ServicePlay] Failure Mode: Could not get current PTS, using last known valid delay of %lld PTS.", m_savedTimeshiftDelay);
+	}
+
+	// 2. Freeze the player
+	if (m_decoder) m_decoder->pause();
+}
+
+void eDVBServicePlay::exitTimeshiftFailureMode()
+{
+	if (!m_isInTimeshiftFailureMode) return;
+    
+	m_isInTimeshiftFailureMode = false;
+    
+	// 1. Calculate the new playback target to restore the delay
+	pts_t new_live_pts = 0;
+	if (m_record && !m_record->getCurrentPCR(new_live_pts))
+	{
+		pts_t new_target = new_live_pts - m_savedTimeshiftDelay;
+
+		// 2. Validate the target against buffer boundaries
+		pts_t buffer_len = 0;
+		getLength(buffer_len);
+		if (new_target < 0) new_target = 0;
+		if (new_target >= buffer_len) new_target = buffer_len - (2 * 90000); // Leave 2s margin
+		if (new_target < 0) new_target = 0;
+
+		eDebug("[ServicePlay] Exiting Failure Mode: Seeking to new target %lld", new_target);
+		seekTo(new_target);
+	}
+
+	// 4. Resume playback
+	if (m_decoder) m_decoder->play();
+}
+/* [MODIFICATION END] */
 eAutoInitPtr<eServiceFactoryDVB> init_eServiceFactoryDVB(eAutoInitNumbers::service+1, "eServiceFactoryDVB");

@@ -328,6 +328,28 @@ protected:
 	void video_event(struct iTSMPEGDecoder::videoEvent);
 
 	virtual ePtr<iTsSource> createTsSource(eServiceReferenceDVB &ref, int packetsize = 188);
+
+	/* [MODIFICATION START] New Members for Decryption Monitoring and Dynamic Fallback */
+	ePtr<eTimer> m_decryptionWatchdog_timer;
+	bool m_isDescramblingOk;
+	bool m_isInTimeshiftFailureMode;
+	pts_t m_savedTimeshiftDelay;
+	pts_t m_lastValidDelay; // Stores the last successfully calculated delay
+
+	ePtr<eConnection> m_connVerboseInfo;
+	ePtr<eConnection> m_connDecodeTime;
+
+	/* New Helper Methods */
+	void connectToCryptoSignals();
+	void disconnectFromCryptoSignals();
+	void onCryptoSuccess();
+	void handleVerboseInfo(const char* info);
+	void handleDecodeTime(int time);
+	void onWatchdogTimeout();
+	void enterTimeshiftFailureMode();
+	void exitTimeshiftFailureMode();
+	/* [MODIFICATION END] */
+
 };
 
 class eStaticServiceDVBBouquetInformation: public iStaticServiceInformation
