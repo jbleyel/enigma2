@@ -410,10 +410,13 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 
 	// This is a hack to support 8bit pngs with transparency since the detection is not really correct for some
 	// reason....
+
+	/*
 	if (color_type == PNG_COLOR_TYPE_PALETTE && bit_depth == 8) {
 		forceRGBA = true;
 		color_type = PNG_COLOR_TYPE_RGBA;
 	}
+	*/
 
 	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA) {
 		filepara->transparent = true;
@@ -428,6 +431,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		filepara->transparent = (trans_alpha != NULL);
 	}
 
+	//if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE || forceRGBA)) {
 	if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE || forceRGBA)) {
 		if (bit_depth < 8)
 			png_set_packing(png_ptr);
