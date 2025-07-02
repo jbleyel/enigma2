@@ -410,13 +410,10 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 
 	// This is a hack to support 8bit pngs with transparency since the detection is not really correct for some
 	// reason....
-
-	/*
 	if (color_type == PNG_COLOR_TYPE_PALETTE && bit_depth == 8) {
 		forceRGBA = true;
 		color_type = PNG_COLOR_TYPE_RGBA;
 	}
-	*/
 
 	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA) {
 		filepara->transparent = true;
@@ -431,8 +428,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		filepara->transparent = (trans_alpha != NULL);
 	}
 
-	//if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE || forceRGBA)) {
-	if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE)) {
+	if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE || forceRGBA)) {
 		if (bit_depth < 8)
 			png_set_packing(png_ptr);
 
@@ -1365,6 +1361,9 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 		unsigned char* origin = m_filepara->pic_buffer;
 		unsigned char* tmp_buffer = ((unsigned char*)(surface->data));
 		if (m_filepara->bits == 8) {
+			surface->clut.data = m_filepara->palette;
+			surface->clut.colors = m_filepara->palette_size;
+			m_filepara->palette = NULL; // transfer ownership
 			memcpy(tmp_buffer, origin, scrx * scry);
 		} else if (m_filepara->bits == 24) {
 			for (int y = 0; y < scry; ++y) {
