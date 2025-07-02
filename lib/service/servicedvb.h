@@ -330,16 +330,27 @@ protected:
 	virtual ePtr<iTsSource> createTsSource(eServiceReferenceDVB &ref, int packetsize = 188);
 
 	/* [MODIFICATION START] New Members for Decryption Monitoring and Dynamic Fallback */
+	// Timer to act as a watchdog for decryption signals.
 	ePtr<eTimer> m_decryptionWatchdog_timer;
+	
+	// Flag to track the current descrambling status.
 	bool m_isDescramblingOk;
+	
+	// Flag to prevent re-entering failure mode while already in it.
 	bool m_isInTimeshiftFailureMode;
+	
+	// Stores the timeshift delay (live PTS - playback PTS) at the moment of failure.
 	pts_t m_savedTimeshiftDelay;
-	pts_t m_lastValidDelay; // Stores the last successfully calculated delay
+	
+	// Stores the last successfully calculated delay as a fallback.
+	pts_t m_lastValidDelay; 
 
+	// Connections to the crypto info signals.
 	ePtr<eConnection> m_connVerboseInfo;
 	ePtr<eConnection> m_connDecodeTime;
 
 	/* New Helper Methods */
+	// Methods to manage the new functionality.
 	void connectToCryptoSignals();
 	void disconnectFromCryptoSignals();
 	void onCryptoSuccess();

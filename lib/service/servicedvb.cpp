@@ -1104,7 +1104,8 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	CONNECT(m_subtitle_sync_timer->timeout, eDVBServicePlay::checkSubtitleTiming);
 	CONNECT(m_nownext_timer->timeout, eDVBServicePlay::updateEpgCacheNowNext);
 
-	/* [MODIFICATION START] Connect the new watchdog timer's timeout signal */
+	/* [MODIFICATION START] Connect the timeout signal for the new decryption watchdog timer. */
+	// This timer is used to detect when descrambling has failed.
 	CONNECT(m_decryptionWatchdog_timer->timeout, eDVBServicePlay::onWatchdogTimeout);
 	/* [MODIFICATION END] */
 
@@ -1116,7 +1117,8 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 
 eDVBServicePlay::~eDVBServicePlay()
 {
-	/* [MODIFICATION START] Disconnect signals and stop the timer to prevent memory leaks */
+	/* [MODIFICATION START] Stop the timer and disconnect signals to prevent memory leaks and dangling pointers. */
+	// It's crucial to clean up resources to avoid crashes or undefined behavior on service stop.
 	disconnectFromCryptoSignals();
 	m_decryptionWatchdog_timer->stop();
 	/* [MODIFICATION END] */
@@ -2766,7 +2768,9 @@ RESULT eDVBServicePlay::startTimeshift()
 	updateTimeshiftPids();
 	m_record->start();
 
-	/* [MODIFICATION START] Initialize and start the decryption watchdog on service start */
+	/* [MODIFICATION START] Initialize and start the decryption watchdog when timeshift starts for a scrambled service. */
+	// This mechanism preserves the timeshift delay across descrambling interruptions.
+	// It is enabled via a user setting.
 	if (eConfigManager::getConfigBoolValue("config.timeshift.scrambledRecovery", false))
 	{
 		if (getInfo(iServiceInformation::sIsCrypted))
@@ -2790,7 +2794,7 @@ RESULT eDVBServicePlay::startTimeshift()
 
 RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 {
-	/* [MODIFICATION START] */
+	/* [MODIFICATION START] Stop the watchdog and disconnect signals when timeshift is stopped. */
 	eDebug("[MOHAMED_TS_DEBUG] Watchdog stopped due to timeshift stop.");
 	m_decryptionWatchdog_timer->stop();
 	disconnectFromCryptoSignals();
@@ -3929,6 +3933,14 @@ ePtr<iDVBTransponderData> eDVBService::getTransponderData(const eServiceReferenc
 }
 
 /* [MODIFICATION START] New Methods for Smart Timeshift with Dynamic Fallback */
+
+/**
+ * @brief Connects to iCryptoInfo signals to monitor decryption status.
+ *
+ * This method establishes connections to the 'verboseinfo' and 'decodetime' signals
+ * from the CA handler. These signals are used to determine if descrambling is
+ * successful.
+ */
 void eDVBServicePlay::connectToCryptoSignals()
 {
 	if (m_connVerboseInfo)
@@ -3950,6 +3962,12 @@ void eDVBServicePlay::connectToCryptoSignals()
 	}
 }
 
+/**
+ * @brief Disconnects from iCryptoInfo signals.
+ *
+ * Clears the signal connections to prevent dangling pointers and stop monitoring
+ * when it's no longer needed (e.g., on service stop).
+ */
 void eDVBServicePlay::disconnectFromCryptoSignals()
 {
 	if (m_connVerboseInfo)
@@ -3960,6 +3978,12 @@ void eDVBServicePlay::disconnectFromCryptoSignals()
 	}
 }
 
+/**
+ * @brief Handles the 'verboseinfo' signal from the CA handler.
+ * @param info A string containing crypto status information.
+ *
+ * A message containing "found" is considered a sign of successful descrambling.
+ */
 void eDVBServicePlay::handleVerboseInfo(const char* info)
 {
 	// eDebug("[MOHAMED_TS_DEBUG] handleVerboseInfo received: %s", info); // Can be very spammy, enable if needed
@@ -3969,9 +3993,14 @@ void eDVBServicePlay::handleVerboseInfo(const char* info)
 	}
 }
 
+/**
+ * @brief Handles the 'decodetime' signal from the CA handler.
+ * @param time The ECM decode time in milliseconds.
+ *
+ * A positive and reasonable decode time is considered a sign of successful descrambling.
+ */
 void eDVBServicePlay::handleDecodeTime(int time)
 {
-	// A positive and reasonable decode time indicates success
 	// eDebug("[MOHAMED_TS_DEBUG] handleDecodeTime received: %d ms", time); // Can be very spammy, enable if needed
 	if (time > 0 && time < 8000)
 	{
@@ -3979,6 +4008,12 @@ void eDVBServicePlay::handleDecodeTime(int time)
 	}
 }
 
+/**
+ * @brief Called when a successful descrambling event is detected.
+ *
+ * This function resets the watchdog timer, updates the last known good timeshift delay,
+ * and, if the system was in a failure state, triggers the recovery process.
+ */
 void eDVBServicePlay::onCryptoSuccess()
 {
 	eDebug("[MOHAMED_TS_DEBUG] onCryptoSuccess: Received valid crypto signal. Resetting watchdog timer.");
@@ -4006,6 +4041,12 @@ void eDVBServicePlay::onCryptoSuccess()
 	}
 }
 
+/**
+ * @brief Called when the decryption watchdog timer fires.
+ *
+ * This indicates that no successful descrambling signal has been received for the
+ * timeout period (15s). It marks the state as failed and triggers the failure mode.
+ */
 void eDVBServicePlay::onWatchdogTimeout()
 {
 	eDebug("[MOHAMED_TS_DEBUG] onWatchdogTimeout: Timer fired. No crypto signal received for 15s.");
@@ -4021,15 +4062,17 @@ void eDVBServicePlay::onWatchdogTimeout()
 	}
 }
 
+/**
+ * @brief Enters the timeshift failure mode upon detecting a descrambling issue.
+ *
+ * This function saves the current timeshift delay and robustly stops the decoder
+ * by disconnecting its data source (PIDs) to prevent buffer consumption and
+ * freeze the playback.
+ */
 void eDVBServicePlay::enterTimeshiftFailureMode()
 {
-	if (!isTimeshiftActive()) {
-		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Aborted, timeshift is not active.");
-		return;
-	}
-
-	if (m_isInTimeshiftFailureMode) {
-		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Aborted, already in failure mode.");
+	if (!isTimeshiftActive() || m_isInTimeshiftFailureMode) {
+		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Aborted, timeshift not active or already in failure mode.");
 		return;
 	}
 
@@ -4069,13 +4112,25 @@ void eDVBServicePlay::enterTimeshiftFailureMode()
 		}
 	}
 
+	// Robustly stop the decoder by disconnecting its data source (PIDs).
+	// This is more effective than just pausing and prevents buffer consumption.
 	if (m_decoder)
 	{
-		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Pausing decoder.");
-		m_decoder->pause();
+		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Disconnecting PIDs to freeze playback.");
+		m_decoder->setVideoPID(-1, -1);
+		m_decoder->setAudioPID(-1, -1);
+		m_decoder->set(); // Apply changes
 	}
 }
 
+/**
+ * @brief Exits the timeshift failure mode and restores playback.
+ *
+ * This function is called upon descrambling recovery. It calculates the correct
+ * playback position based on the saved delay, seeks to that position (effectively
+ * skipping over the undecryptable data chunk in the buffer), reconnects the
+ * decoder to its data source, and resumes playback.
+ */
 void eDVBServicePlay::exitTimeshiftFailureMode()
 {
 	if (!m_isInTimeshiftFailureMode) {
@@ -4117,10 +4172,46 @@ void eDVBServicePlay::exitTimeshiftFailureMode()
 		eWarning("[MOHAMED_TS_DEBUG] exitTimeshiftFailureMode: Could not get new live PCR. Cannot perform seek to restore position.");
 	}
 
+	// Reconnect the PIDs to the decoder and resume playback.
 	if (m_decoder)
 	{
-		eDebug("[MOHAMED_TS_DEBUG] exitTimeshiftFailureMode: Resuming decoder playback.");
-		m_decoder->play();
+		eDebug("[MOHAMED_TS_DEBUG] exitTimeshiftFailureMode: Reconnecting PIDs and resuming playback.");
+		
+		// We need to get the current PIDs for the service to restore them.
+		int vpid = -1, vpidtype = -1;
+		int apid = -1, apidtype = -1;
+		
+		eDVBServicePMTHandler &h = m_timeshift_active ? m_service_handler_timeshift : m_service_handler;
+		eDVBServicePMTHandler::program program;
+		if (!h.getProgramInfo(program))
+		{
+			if (!program.videoStreams.empty())
+			{
+				vpid = program.videoStreams[0].pid;
+				vpidtype = program.videoStreams[0].type;
+			}
+			
+			// Find the currently selected audio stream to restore it.
+			for (unsigned int i = 0; i < program.audioStreams.size(); ++i)
+			{
+				if (program.audioStreams[i].pid == m_current_audio_pid)
+				{
+					apid = program.audioStreams[i].pid;
+					apidtype = program.audioStreams[i].type;
+					break;
+				}
+			}
+			// Fallback to the default audio stream if the current one is not found.
+			if (apid == -1 && !program.audioStreams.empty())
+			{
+				apid = program.audioStreams[program.defaultAudioStream].pid;
+				apidtype = program.audioStreams[program.defaultAudioStream].type;
+			}
+		}
+
+		m_decoder->setVideoPID(vpid, vpidtype);
+		m_decoder->setAudioPID(apid, apidtype);
+		m_decoder->play(); // This will apply the new PIDs and start playback.
 	}
 }
 /* [MODIFICATION END] */
