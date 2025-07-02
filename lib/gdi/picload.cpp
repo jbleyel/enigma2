@@ -432,7 +432,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	}
 
 	//if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE || forceRGBA)) {
-	if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE || forceRGBA)) {
+	if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE)) {
 		if (bit_depth < 8)
 			png_set_packing(png_ptr);
 
