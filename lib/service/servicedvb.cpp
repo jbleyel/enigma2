@@ -2769,18 +2769,20 @@ RESULT eDVBServicePlay::startTimeshift()
 	m_record->start();
 
 	/* [MODIFICATION START] Initialize and start the decryption watchdog when timeshift starts for a scrambled service. */
-	// This mechanism preserves the timeshift delay across descrambling interruptions.
-	// It is enabled via a user setting.
 	if (eConfigManager::getConfigBoolValue("config.timeshift.scrambledRecovery", false))
 	{
 		if (getInfo(iServiceInformation::sIsCrypted))
 		{
+			if (eConfigManager::getConfigBoolValue("config.timeshift.autodelete", false))
+			{
+				eDebug("[MOHAMED_TS_DEBUG] Warning: 'Timeshift delete after zap' is enabled. This may interfere with scrambled recovery.");
+			}
 			eDebug("[MOHAMED_TS_DEBUG] Starting watchdog for a crypted service.");
-			//eDebug("[eDVBServicePlay] starting timeshift decryption watchdog");
 			m_isDescramblingOk = true;
 			m_isInTimeshiftFailureMode = false;
 			connectToCryptoSignals();
-			m_decryptionWatchdog_timer->start(15000, true); // 15-second one-shot timer
+			// Start a 3-second one-shot timer. This value is a balance between responsiveness and avoiding false positives.
+			m_decryptionWatchdog_timer->start(3000, true); 
 		}
 		else
 			eDebug("[eDVBServicePlay] not crypted service, not starting decryption watchdog");
@@ -3934,13 +3936,6 @@ ePtr<iDVBTransponderData> eDVBService::getTransponderData(const eServiceReferenc
 
 /* [MODIFICATION START] New Methods for Smart Timeshift with Dynamic Fallback */
 
-/**
- * @brief Connects to iCryptoInfo signals to monitor decryption status.
- *
- * This method establishes connections to the 'verboseinfo' and 'decodetime' signals
- * from the CA handler. These signals are used to determine if descrambling is
- * successful.
- */
 void eDVBServicePlay::connectToCryptoSignals()
 {
 	if (m_connVerboseInfo)
@@ -3962,12 +3957,6 @@ void eDVBServicePlay::connectToCryptoSignals()
 	}
 }
 
-/**
- * @brief Disconnects from iCryptoInfo signals.
- *
- * Clears the signal connections to prevent dangling pointers and stop monitoring
- * when it's no longer needed (e.g., on service stop).
- */
 void eDVBServicePlay::disconnectFromCryptoSignals()
 {
 	if (m_connVerboseInfo)
@@ -3978,46 +3967,26 @@ void eDVBServicePlay::disconnectFromCryptoSignals()
 	}
 }
 
-/**
- * @brief Handles the 'verboseinfo' signal from the CA handler.
- * @param info A string containing crypto status information.
- *
- * A message containing "found" is considered a sign of successful descrambling.
- */
 void eDVBServicePlay::handleVerboseInfo(const char* info)
 {
-	// eDebug("[MOHAMED_TS_DEBUG] handleVerboseInfo received: %s", info); // Can be very spammy, enable if needed
 	if (strstr(info, "found"))
 	{
 		onCryptoSuccess();
 	}
 }
 
-/**
- * @brief Handles the 'decodetime' signal from the CA handler.
- * @param time The ECM decode time in milliseconds.
- *
- * A positive and reasonable decode time is considered a sign of successful descrambling.
- */
 void eDVBServicePlay::handleDecodeTime(int time)
 {
-	// eDebug("[MOHAMED_TS_DEBUG] handleDecodeTime received: %d ms", time); // Can be very spammy, enable if needed
 	if (time > 0 && time < 8000)
 	{
 		onCryptoSuccess();
 	}
 }
 
-/**
- * @brief Called when a successful descrambling event is detected.
- *
- * This function resets the watchdog timer, updates the last known good timeshift delay,
- * and, if the system was in a failure state, triggers the recovery process.
- */
 void eDVBServicePlay::onCryptoSuccess()
 {
 	eDebug("[MOHAMED_TS_DEBUG] onCryptoSuccess: Received valid crypto signal. Resetting watchdog timer.");
-	m_decryptionWatchdog_timer->start(15000, true);
+	m_decryptionWatchdog_timer->start(3000, true); // Reset the timer to 3 seconds.
 
 	if (isTimeshiftActive())
 	{
@@ -4025,14 +3994,11 @@ void eDVBServicePlay::onCryptoSuccess()
 		if (m_record && !m_record->getCurrentPCR(live_pts) && !getPlayPosition(playback_pts))
 		{
 			m_lastValidDelay = live_pts - playback_pts;
-			eDebug("[MOHAMED_TS_DEBUG] onCryptoSuccess: Updated m_lastValidDelay = %lld (live_pts=%lld - playback_pts=%lld)", m_lastValidDelay, live_pts, playback_pts);
-		}
-		else
-		{
-			eDebug("[MOHAMED_TS_DEBUG] onCryptoSuccess: Could not get PTS to update m_lastValidDelay.");
+			eDebug("[MOHAMED_TS_DEBUG] onCryptoSuccess: Updated m_lastValidDelay = %lld", m_lastValidDelay);
 		}
 	}
 
+	// If we were in a failure state, it's time to recover.
 	if (!m_isDescramblingOk)
 	{
 		m_isDescramblingOk = true;
@@ -4041,15 +4007,9 @@ void eDVBServicePlay::onCryptoSuccess()
 	}
 }
 
-/**
- * @brief Called when the decryption watchdog timer fires.
- *
- * This indicates that no successful descrambling signal has been received for the
- * timeout period (15s). It marks the state as failed and triggers the failure mode.
- */
 void eDVBServicePlay::onWatchdogTimeout()
 {
-	eDebug("[MOHAMED_TS_DEBUG] onWatchdogTimeout: Timer fired. No crypto signal received for 15s.");
+	eDebug("[MOHAMED_TS_DEBUG] onWatchdogTimeout: Timer fired. No crypto signal received for 3s.");
 	if (m_isDescramblingOk)
 	{
 		m_isDescramblingOk = false;
@@ -4062,17 +4022,10 @@ void eDVBServicePlay::onWatchdogTimeout()
 	}
 }
 
-/**
- * @brief Enters the timeshift failure mode upon detecting a descrambling issue.
- *
- * This function saves the current timeshift delay and robustly stops the decoder
- * by disconnecting its data source (PIDs) to prevent buffer consumption and
- * freeze the playback.
- */
 void eDVBServicePlay::enterTimeshiftFailureMode()
 {
 	if (!isTimeshiftActive() || m_isInTimeshiftFailureMode) {
-		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Aborted, timeshift not active or already in failure mode.");
+		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Aborted, not in failure mode or timeshift is not active.");
 		return;
 	}
 
@@ -4099,38 +4052,31 @@ void eDVBServicePlay::enterTimeshiftFailureMode()
 		else
 		{
 			eWarning("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Last valid delay (%lld) is invalid or larger than buffer (%lld).", m_lastValidDelay, buffer_len);
-			if (buffer_len > (10 * 90000))
-			{
+			if (buffer_len > (10 * 90000)) {
 				m_savedTimeshiftDelay = buffer_len / 2;
 				eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Fallback to 50%% of current buffer = %lld", m_savedTimeshiftDelay);
-			}
-			else
-			{
+			} else {
 				m_savedTimeshiftDelay = buffer_len > 0 ? buffer_len : 0;
 				eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Fallback, buffer too short. Using minimal delay = %lld", m_savedTimeshiftDelay);
 			}
 		}
 	}
 
-	// Robustly stop the decoder by disconnecting its data source (PIDs).
-	// This is more effective than just pausing and prevents buffer consumption.
+	// This is a robust two-step stop:
+	// 1. Pause the playback engine to stop the seekbar/time from advancing.
+	// 2. Disconnect PIDs to ensure the decoder stops processing data from the buffer.
 	if (m_decoder)
 	{
-		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Disconnecting PIDs to freeze playback.");
+		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: 1. Pausing decoder to stop playback engine.");
+		m_decoder->pause(); // Send a pause signal to the playback engine first.
+
+		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: 2. Disconnecting PIDs to cut data source.");
 		m_decoder->setVideoPID(-1, -1);
 		m_decoder->setAudioPID(-1, -1);
-		m_decoder->set(); // Apply changes
+		m_decoder->set(); // Apply PID changes to ensure data flow stops.
 	}
 }
 
-/**
- * @brief Exits the timeshift failure mode and restores playback.
- *
- * This function is called upon descrambling recovery. It calculates the correct
- * playback position based on the saved delay, seeks to that position (effectively
- * skipping over the undecryptable data chunk in the buffer), reconnects the
- * decoder to its data source, and resumes playback.
- */
 void eDVBServicePlay::exitTimeshiftFailureMode()
 {
 	if (!m_isInTimeshiftFailureMode) {
