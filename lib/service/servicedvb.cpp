@@ -2807,13 +2807,13 @@ RESULT eDVBServicePlay::startTimeshift()
 	m_record->setTargetFilename(m_timeshift_file);
 	m_record->enableAccessPoints(false); // no need for AP information during shift
 	m_timeshift_enabled = 1;
+	updateTimeshiftPids();
+	m_record->start();
 
+	// [MODIFICATION] Initialize and start the decryption watchdog for scrambled services.
 	m_isInTimeshiftFailureMode = false;
 	m_lastKnownGoodDelay = 0;
 	m_savedTimeshiftDelay = 0;
-
-	updateTimeshiftPids();
-	m_record->start();
 
 	if (eConfigManager::getConfigBoolValue("config.timeshift.scrambledRecoveryEnabled", false))
 	{
@@ -2822,15 +2822,20 @@ RESULT eDVBServicePlay::startTimeshift()
 			eDebug("[MOHAMED_TS_DEBUG] Starting watchdog for a crypted service.");
 			m_isDescramblingOk = true;
 			connectToCryptoSignals();
-			int timeout = eConfigManager::getConfigIntValue("config.timeshift.scrambledRecoveryTimeout", 5000);
+			int timeout = eConfigManager::getConfigIntValue("config.timeshift.scrambledRecoveryTimeout", 5) * 1000;
 			eDebug("[MOHAMED_TS_DEBUG] Watchdog timer will start with a %d ms timeout.", timeout);
 			m_decryptionWatchdog_timer->start(timeout, true); 
 		}
 		else
-			eDebug("[eDVBServicePlay] not crypted service, not starting decryption watchdog");
+		{
+			eDebug("[MOHAMED_TS_DEBUG] Not a crypted service, not starting decryption watchdog.");
+		}
 	}
 	else
-		eDebug("[eDVBServicePlay] scrambledRecovery disabled, not starting decryption watchdog");
+	{
+		eDebug("[MOHAMED_TS_DEBUG] Scrambled recovery is disabled in settings.");
+	}
+	
 	return 0;
 }
 
@@ -3981,6 +3986,15 @@ ePtr<iDVBTransponderData> eDVBService::getTransponderData(const eServiceReferenc
 	return eStaticServiceDVBInformation().getTransponderData(ref);
 }
 
+/* 
+   ====================================================================
+   [MODIFICATION] NEW AND UPDATED RECOVERY FUNCTIONS
+   The following functions should be added to the end of the file, 
+   replacing any previous versions of them. This version is designed
+   to preserve the original timeshift delay.
+   ====================================================================
+*/
+
 void eDVBServicePlay::connectToCryptoSignals()
 {
 	if (m_connVerboseInfo)
@@ -4029,6 +4043,10 @@ void eDVBServicePlay::handleDecodeTime(int time)
 
 void eDVBServicePlay::onCryptoSuccess()
 {
+	int timeout = eConfigManager::getConfigIntValue("config.timeshift.scrambledRecoveryTimeout", 5) * 1000;
+	m_decryptionWatchdog_timer->start(timeout, true);
+	// [IMPROVEMENT] Continuously update the last known good delay while descrambling is OK.
+	// This value is our reliable reference for the user's desired delay before any problems start.
 	if (isTimeshiftActive())
 	{
 		pts_t live_pts = 0, playback_pts = 0;
@@ -4037,8 +4055,7 @@ void eDVBServicePlay::onCryptoSuccess()
 			m_lastKnownGoodDelay = live_pts - playback_pts;
 		}
 	}
-	int timeout = eConfigManager::getConfigIntValue("config.timeshift.scrambledRecoveryTimeout", 5000);
-	m_decryptionWatchdog_timer->start(timeout, true);
+
 	if (!m_isDescramblingOk)
 	{
 		m_isDescramblingOk = true;
@@ -4073,42 +4090,16 @@ void eDVBServicePlay::enterTimeshiftFailureMode()
 	eDebug("[MOHAMED_TS_DEBUG] ENTERING timeshift failure mode.");
 	m_isInTimeshiftFailureMode = true;
 
+	// [FINAL LOGIC] To preserve the *original* delay, we MUST use m_lastKnownGoodDelay.
+	// This was the stable delay value *before* the watchdog timer expired and before
+	// the user experienced any issues. We do NOT calculate a new delay here.
+	m_savedTimeshiftDelay = m_lastKnownGoodDelay;
+	eDebug("[MOHAMED_TS_DEBUG] Failure Mode: Saving last known good delay: %lld PTS.", m_savedTimeshiftDelay);
+
 	if (m_decoder)
 	{
 		eDebug("[MOHAMED_TS_DEBUG] Pausing decoder to freeze playback.");
 		m_decoder->pause();
-	}
-
-	if (m_lastKnownGoodDelay > 0)
-	{
-		m_savedTimeshiftDelay = m_lastKnownGoodDelay;
-		eDebug("[MOHAMED_TS_DEBUG] Using last known good delay = %lld", m_savedTimeshiftDelay);
-	}
-	else
-	{
-		eWarning("[MOHAMED_TS_DEBUG] No valid pre-saved delay, calculating fallback.");
-		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record && !m_record->getCurrentPCR(live_pts) && !getPlayPosition(playback_pts))
-		{
-			m_savedTimeshiftDelay = live_pts - playback_pts;
-			eDebug("[MOHAMED_TS_DEBUG] Fallback delay calculated as %lld", m_savedTimeshiftDelay);
-		}
-		else
-		{
-			eWarning("[MOHAMED_TS_DEBUG] Could not calculate fallback delay, will use 0.");
-			m_savedTimeshiftDelay = 0;
-		}
-	}
-
-	// This is a robust two-step stop:
-	// 1. Pause the playback engine to stop the seekbar/time from advancing.
-	// 2. Disconnect PIDs to ensure the decoder stops processing data from the buffer.
-	if (m_decoder)
-	{
-		eDebug("[MOHAMED_TS_DEBUG] Disconnecting PIDs to halt data processing.");
-		m_decoder->setVideoPID(-1, -1);
-		m_decoder->setAudioPID(-1, -1);
-		m_decoder->set(); // Apply PID changes to ensure data flow stops.
 	}
 }
 
@@ -4120,25 +4111,19 @@ void eDVBServicePlay::exitTimeshiftFailureMode()
 		return;
 	}
     
-	eDebug("[MOHAMED_TS_DEBUG] EXITING timeshift failure mode, attempting to restore.");
+	eDebug("[MOHAMED_TS_DEBUG] EXITING timeshift failure mode, restoring original delay.");
 	
-	/*
-	if (m_decoder)
-	{
-		eDebug("[MOHAMED_TS_DEBUG] Flushing decoder buffers.");
-		m_decoder->flush();
-		usleep(50000); // 50ms sleep to allow flush to complete
-	}
-	*/
+	// First, check if the buffer is long enough to support the saved delay.
+	// This prevents seeking to a position that doesn't exist yet.
 	pts_t buffer_len = 0;
-	if (getLength(buffer_len) == 0) // Check for success (result == 0)
+	if (getLength(buffer_len) == 0)
 	{
-		if (buffer_len < m_savedTimeshiftDelay)
+		if (buffer_len > 0 && buffer_len < m_savedTimeshiftDelay)
 		{
-			eDebug("[MOHAMED_TS_DEBUG] Buffer too short (%lld) for desired delay (%lld). Pausing to wait for buffer.", buffer_len, m_savedTimeshiftDelay);
-			pause(); // Pause user input and playback state
-			m_waitForBuffer_timer->start(100, true); // Start polling for buffer growth
-			return; // Exit function and wait for the timer to fire
+			eDebug("[MOHAMED_TS_DEBUG] Buffer too short (%lld) for desired delay (%lld). Waiting for buffer.", buffer_len, m_savedTimeshiftDelay);
+			if (m_decoder) m_decoder->pause();
+			m_waitForBuffer_timer->start(100, true);
+			return; 
 		}
 	}
 	else
@@ -4146,28 +4131,23 @@ void eDVBServicePlay::exitTimeshiftFailureMode()
 		eWarning("[MOHAMED_TS_DEBUG] exitTimeshiftFailureMode: Failed to get buffer length. Proceeding without buffer check.");
 	}
 
-	// This code runs if the buffer is already long enough OR if getLength failed.
 	eDebug("[MOHAMED_TS_DEBUG] Buffer is sufficient or check failed. Proceeding with immediate seek.");
 	
+	// This is the core logic to restore the exact same delay as before the failure.
 	pts_t new_live_pts = 0;
 	if (m_record && !m_record->getCurrentPCR(new_live_pts))
 	{
+		// New Target Position = Current Live Time - The Original Delay we want to restore.
 		pts_t new_target = new_live_pts - m_savedTimeshiftDelay;
 		
 		if (new_target < 0) new_target = 0;
-		// Ensure we don't seek beyond the current buffer
-		if (buffer_len > 0 && new_target >= buffer_len) 
-		{
-			eDebug("[MOHAMED_TS_DEBUG] Target (%lld) is beyond buffer length (%lld). Adjusting.", new_target, buffer_len);
-			new_target = buffer_len - 90000; // Seek to 1 second before the end
-		}
-		if (new_target < 0) new_target = 0;
 		
+		eDebug("[MOHAMED_TS_DEBUG] Restoring delay: Live PTS=%lld, Saved Delay=%lld, New Target=%lld", new_live_pts, m_savedTimeshiftDelay, new_target);
 		seekTo(new_target);
 	}
 	else
 	{
-		eWarning("[MOHAMED_TS_DEBUG] Could not get new live PCR. Cannot seek. Will just resume.");
+		eWarning("[MOHAMED_TS_DEBUG] Could not get new live PCR. Cannot restore delay accurately. Resuming playback.");
 	}
 
 	m_isInTimeshiftFailureMode = false;
@@ -4185,45 +4165,26 @@ void eDVBServicePlay::onWaitForBufferTimeout()
 			m_waitForBuffer_timer->stop();
 			eDebug("[MOHAMED_TS_DEBUG] Sufficient buffer accumulated (%lld). Resuming playback.", current_buffer_len);
 			
-			pts_t current_live_pts = 0;
-			if (m_record && !m_record->getCurrentPCR(current_live_pts))
-			{
-				pts_t new_target = current_live_pts - m_savedTimeshiftDelay;
-
-				if (new_target < 0) new_target = 0;
-				if (new_target >= current_buffer_len)
-				{
-					eDebug("[MOHAMED_TS_DEBUG] Waited target (%lld) is beyond buffer length (%lld). Adjusting.", new_target, current_buffer_len);
-					new_target = current_buffer_len - 90000; // Seek 1 second before end
-				}
-				if (new_target < 0) new_target = 0;
-				
-				eDebug("[MOHAMED_TS_DEBUG] Final target is %lld. Seeking and unpausing.", new_target);
-				seekTo(new_target);
-			}
-			else
-			{
-				eWarning("[MOHAMED_TS_DEBUG] Could not get current PCR after waiting. Will just resume.");
-			}
-			
-			m_isInTimeshiftFailureMode = false;
-			updateDecoder();
-			unpause();
+			// It's safe to call the main exit function now.
+			// It will pass the buffer check this time and proceed.
+			exitTimeshiftFailureMode();
 		}
 		else
 		{
-			// Buffer still not long enough, check again
+			// Buffer still not long enough, check again.
 			m_waitForBuffer_timer->start(100, true); 
 		}
 	}
 	else
 	{
-		eWarning("[MOHAMED_TS_DEBUG] Could not get buffer length during wait. Aborting wait.");
+		eWarning("[MOHAMED_TS_DEBUG] Could not get buffer length during wait. Aborting wait and resuming.");
 		m_waitForBuffer_timer->stop();
 		m_isInTimeshiftFailureMode = false;
 		updateDecoder();
 		unpause();
 	}
 }
+
+/* [MODIFICATION END] */
 
 eAutoInitPtr<eServiceFactoryDVB> init_eServiceFactoryDVB(eAutoInitNumbers::service+1, "eServiceFactoryDVB");
