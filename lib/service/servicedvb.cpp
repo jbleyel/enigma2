@@ -1092,12 +1092,13 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_subtitle_widget(0),
 	m_subtitle_sync_timer(eTimer::create(eApp)),
 	m_nownext_timer(eTimer::create(eApp)),
-	m_decryptionWatchdog_timer(eTimer::create(eApp)),
 	m_isInTimeshiftFailureMode(false),
 	m_isDescramblingOk(true),
 	m_savedTimeshiftDelay(0),
 	m_lastKnownGoodDelay(0),
-	m_waitForBuffer_timer(eTimer::create(eApp))
+	m_decryptionWatchdog_timer(eTimer::create(eApp)),
+	m_waitForBuffer_timer(eTimer::create(eApp)),
+	m_permanentFailure_timer(eTimer::create(eApp))
 {
 #ifdef PASSTHROUGH_FIX
 	m_passthrough_fix_timer = eTimer::create(eApp);
@@ -1111,11 +1112,18 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 
 	CONNECT(m_decryptionWatchdog_timer->timeout, eDVBServicePlay::onWatchdogTimeout);
 	CONNECT(m_waitForBuffer_timer->timeout, eDVBServicePlay::onWaitForBufferTimeout);
+	CONNECT(m_permanentFailure_timer->timeout, eDVBServicePlay::handlePermanentFailure);
 
 #ifdef PASSTHROUGH_FIX
 	CONNECT(m_passthrough_fix_timer->timeout, eDVBServicePlay::forcePassthrough);
 #endif
 	//	eDebug("[eDVBServicePlay] init toString: %s alternative: %s path: %s", ref.toString().c_str(), ref.alternativeurl.c_str(), ref.path.c_str());
+
+	if (eConfigManager::getConfigBoolValue("config.timeshift.scrambledRecoveryEnabled", false))
+		m_scrambledRecoveryTimeout = eConfigManager::getConfigIntValue("config.timeshift.scrambledRecoveryTimeout", 5) * 1000;
+	else
+		m_scrambledRecoveryTimeout = 0;
+
 }
 
 eDVBServicePlay::~eDVBServicePlay()
@@ -1387,7 +1395,7 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 		{
 			if (m_timeshift_file_next.empty())
 			{
-				if (!eConfigManager::getConfigBoolValue("config.timeshift.skipReturnToLive", false))
+				if (!eSimpleConfig::getBool("config.timeshift.skipReturnToLive", false))
 				{
 					eDebug("[eDVBServicePlay] time shift EOF, so let's go live");
 					switchToLive();
@@ -1734,6 +1742,13 @@ RESULT eDVBServicePlay::pause()
 	}
 	eDebug("[eDVBServicePlay] pause");
 	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
+	// --> [MODIFICATION] Pause the PVR data source to stop data flow
+	ePtr<iDVBPVRChannel> pvr_channel;
+	if ((m_timeshift_enabled ? m_service_handler_timeshift : m_service_handler).getPVRChannel(pvr_channel) == 0)
+	{
+		eDebug("[eDVBServicePlay] Pausing PVR channel data flow.");
+		pvr_channel->pause(true); // true = pause data flow
+	}
 	if (m_decoder)
 	{
 		m_slowmotion = 0;
@@ -1742,6 +1757,7 @@ RESULT eDVBServicePlay::pause()
 	} else
 		return -1;
 }
+
 
 RESULT eDVBServicePlay::unpause()
 {
@@ -1752,6 +1768,15 @@ RESULT eDVBServicePlay::unpause()
 	}
 	eDebug("[eDVBServicePlay] unpause");
 	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
+
+	// --> [MODIFICATION] Resume the PVR data source before the decoder
+	ePtr<iDVBPVRChannel> pvr_channel;
+	if ((m_timeshift_enabled ? m_service_handler_timeshift : m_service_handler).getPVRChannel(pvr_channel) == 0)
+	{
+		eDebug("[eDVBServicePlay] Resuming PVR channel data flow.");
+		pvr_channel->pause(false); // false = resume data flow
+	}
+
 	if (m_decoder)
 	{
 		m_slowmotion = 0;
@@ -2815,16 +2840,15 @@ RESULT eDVBServicePlay::startTimeshift()
 	m_lastKnownGoodDelay = 0;
 	m_savedTimeshiftDelay = 0;
 
-	if (eConfigManager::getConfigBoolValue("config.timeshift.scrambledRecoveryEnabled", false))
+	if (m_scrambledRecoveryTimeout > 0)
 	{
 		if (getInfo(iServiceInformation::sIsCrypted))
 		{
 			eDebug("[MOHAMED_TS_DEBUG] Starting watchdog for a crypted service.");
 			m_isDescramblingOk = true;
 			connectToCryptoSignals();
-			int timeout = eConfigManager::getConfigIntValue("config.timeshift.scrambledRecoveryTimeout", 5) * 1000;
-			eDebug("[MOHAMED_TS_DEBUG] Watchdog timer will start with a %d ms timeout.", timeout);
-			m_decryptionWatchdog_timer->start(timeout, true); 
+			eDebug("[MOHAMED_TS_DEBUG] Watchdog timer will start with a %d ms timeout.", m_scrambledRecoveryTimeout);
+			m_decryptionWatchdog_timer->start(m_scrambledRecoveryTimeout, true); 
 		}
 		else
 		{
@@ -4017,6 +4041,7 @@ void eDVBServicePlay::connectToCryptoSignals()
 
 void eDVBServicePlay::disconnectFromCryptoSignals()
 {
+	m_permanentFailure_timer->stop(); // Ensure this timer is stopped
 	if (m_connVerboseInfo)
 	{
 		eDebug("[MOHAMED_TS_DEBUG] disconnectFromCryptoSignals: Disconnecting from CryptoInfo signals.");
@@ -4043,10 +4068,9 @@ void eDVBServicePlay::handleDecodeTime(int time)
 
 void eDVBServicePlay::onCryptoSuccess()
 {
-	int timeout = eConfigManager::getConfigIntValue("config.timeshift.scrambledRecoveryTimeout", 5) * 1000;
-	m_decryptionWatchdog_timer->start(timeout, true);
-	// [IMPROVEMENT] Continuously update the last known good delay while descrambling is OK.
-	// This value is our reliable reference for the user's desired delay before any problems start.
+	m_decryptionWatchdog_timer->start(m_scrambledRecoveryTimeout, true);
+	m_permanentFailure_timer->stop(); // Recovery is happening, cancel the permanent failure timeout.
+
 	if (isTimeshiftActive())
 	{
 		pts_t live_pts = 0, playback_pts = 0;
@@ -4081,10 +4105,9 @@ void eDVBServicePlay::onWatchdogTimeout()
 
 void eDVBServicePlay::enterTimeshiftFailureMode()
 {
-	if (!isTimeshiftActive() || m_isInTimeshiftFailureMode)
+	if (m_isInTimeshiftFailureMode)
 	{
-		if (m_isInTimeshiftFailureMode) eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Already in failure mode.");
-		else eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Aborted, timeshift is not active.");
+		eDebug("[MOHAMED_TS_DEBUG] enterTimeshiftFailureMode: Already in failure mode.");
 		return;
 	}
 	eDebug("[MOHAMED_TS_DEBUG] ENTERING timeshift failure mode.");
@@ -4094,17 +4117,38 @@ void eDVBServicePlay::enterTimeshiftFailureMode()
 	// This was the stable delay value *before* the watchdog timer expired and before
 	// the user experienced any issues. We do NOT calculate a new delay here.
 	m_savedTimeshiftDelay = m_lastKnownGoodDelay;
-	eDebug("[MOHAMED_TS_DEBUG] Failure Mode: Saving last known good delay: %lld PTS.", m_savedTimeshiftDelay);
+	if (m_savedTimeshiftDelay <= 0) 
+	{
+		eDebug("[MOHAMED_TS_DEBUG] lastKnownGoodDelay is invalid, attempting fallback calculation.");
+		pts_t live_pts = 0, playback_pts = 0;
+		if (m_record && !m_record->getCurrentPCR(live_pts) && !getPlayPosition(playback_pts))
+		{
+			m_savedTimeshiftDelay = live_pts - playback_pts;
+		}
+	}
+	eDebug("[MOHAMED_TS_DEBUG] Failure Mode: Saving delay: %lld PTS.", m_savedTimeshiftDelay);
+
+	ePtr<iDVBPVRChannel> pvr_channel;
+	if (!m_service_handler_timeshift.getPVRChannel(pvr_channel))
+	{
+		eDebug("[MOHAMED_TS_DEBUG] Pausing PVR channel data flow during failure.");
+		pvr_channel->pause(true);
+	}
 
 	if (m_decoder)
 	{
 		eDebug("[MOHAMED_TS_DEBUG] Pausing decoder to freeze playback.");
 		m_decoder->pause();
 	}
+
+	int permanent_failure_timeout_ms = 15 * 1000; // 15 seconds, could be made configurable later
+	m_permanentFailure_timer->start(permanent_failure_timeout_ms, true);
+	eDebug("[MOHAMED_TS_DEBUG] Started permanent failure timer (%d ms).", permanent_failure_timeout_ms);
 }
 
 void eDVBServicePlay::exitTimeshiftFailureMode()
 {
+    m_permanentFailure_timer->stop();
 	if (!m_isInTimeshiftFailureMode)
 	{
 		eDebug("[MOHAMED_TS_DEBUG] exitTimeshiftFailureMode: Aborted, not in failure mode.");
@@ -4131,7 +4175,7 @@ void eDVBServicePlay::exitTimeshiftFailureMode()
 		eWarning("[MOHAMED_TS_DEBUG] exitTimeshiftFailureMode: Failed to get buffer length. Proceeding without buffer check.");
 	}
 
-	eDebug("[MOHAMED_TS_DEBUG] Buffer is sufficient or check failed. Proceeding with immediate seek.");
+	// eDebug("[MOHAMED_TS_DEBUG] Buffer is sufficient or check failed. Proceeding with immediate seek.");
 	
 	// This is the core logic to restore the exact same delay as before the failure.
 	pts_t new_live_pts = 0;
@@ -4149,6 +4193,13 @@ void eDVBServicePlay::exitTimeshiftFailureMode()
 	{
 		eWarning("[MOHAMED_TS_DEBUG] Could not get new live PCR. Cannot restore delay accurately. Resuming playback.");
 	}
+	ePtr<iDVBPVRChannel> pvr_channel;
+	if (!m_service_handler_timeshift.getPVRChannel(pvr_channel))
+	{
+		eDebug("[MOHAMED_TS_DEBUG] Resuming PVR channel data flow after recovery.");
+		pvr_channel->pause(false);
+	}
+	
 
 	m_isInTimeshiftFailureMode = false;
 	updateDecoder(); // Reconnect PIDs
@@ -4180,10 +4231,31 @@ void eDVBServicePlay::onWaitForBufferTimeout()
 		eWarning("[MOHAMED_TS_DEBUG] Could not get buffer length during wait. Aborting wait and resuming.");
 		m_waitForBuffer_timer->stop();
 		m_isInTimeshiftFailureMode = false;
+		ePtr<iDVBPVRChannel> pvr_channel;
+		if (!m_service_handler_timeshift.getPVRChannel(pvr_channel))
+		{
+			pvr_channel->pause(false);
+		}
 		updateDecoder();
 		unpause();
 	}
 }
+
+void eDVBServicePlay::handlePermanentFailure()
+{
+	eDebug("[MOHAMED_TS_DEBUG] Permanent failure timer expired. Descrambling did not recover.");
+	m_permanentFailure_timer->stop();
+	
+	if (m_isInTimeshiftFailureMode)
+	{
+		// Force switch back to live TV
+		switchToLive();
+		// Send a specific event to the UI so it can display a message
+		m_event((iPlayableService*)this, evUser+2);
+		//m_event((iPlayableService*)this, evTimeshiftFailed);
+	}
+}
+
 
 /* [MODIFICATION END] */
 

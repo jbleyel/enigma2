@@ -2558,6 +2558,27 @@ void eDVBChannel::stop()
 	m_tstools.setSource(m_source);
 }
 
+void eDVBChannel::pause(bool p)
+{
+    if (m_pvr_thread)
+    {
+        if (p)
+        {
+            eDebug("[eDVBChannel] Pausing FilePushThread");
+            m_pvr_thread->pause();
+        }
+        else
+        {
+            eDebug("[eDVBChannel] Resuming FilePushThread");
+            m_pvr_thread->resume();
+        }
+    }
+    else
+    {
+        eWarning("[eDVBChannel] pause called but no file push thread exists!");
+    }
+}
+
 void eDVBChannel::setCueSheet(eCueSheet *cuesheet)
 {
 	m_conn_cueSheetEvent = 0;
