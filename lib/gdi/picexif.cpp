@@ -346,6 +346,8 @@ int Cexif::Get16m(void* Short) {
 }
 
 int Cexif::Get16u(void* Short) {
+	if (!Short)
+		return 0;
 	if (MotorolaOrder)
 		return (((unsigned char*)Short)[0] << 8) | ((unsigned char*)Short)[1];
 	else

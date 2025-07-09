@@ -314,7 +314,6 @@ protected:
 	ePtr<eTimer> m_nownext_timer;
 	void updateEpgCacheNowNext();
 
-
 #ifdef PASSTHROUGH_FIX
 	ePtr<eTimer> m_passthrough_fix_timer;
 	void forcePassthrough();
@@ -331,32 +330,7 @@ protected:
 	virtual ePtr<iTsSource> createTsSource(eServiceReferenceDVB &ref, int packetsize = 188);
 
 private:
-	/* [MODIFICATION START] Added all new members for Scrambled Timeshift Recovery */
-	bool m_isInTimeshiftFailureMode;
-	bool m_isDescramblingOk;
-	pts_t m_savedTimeshiftDelay;
-	pts_t m_lastKnownGoodDelay;
-	int m_scrambledRecoveryTimeout;
-	
-	ePtr<eTimer> m_decryptionWatchdog_timer;
-	ePtr<eTimer> m_waitForBuffer_timer;
-	ePtr<eTimer> m_permanentFailure_timer;
-
-	ePtr<eConnection> m_connVerboseInfo;
-	ePtr<eConnection> m_connDecodeTime;
-	
-	// Member function declarations
-	void connectToCryptoSignals();
-	void disconnectFromCryptoSignals();
-	void handleVerboseInfo(const char* info);
-	void handleDecodeTime(int time);
-	void onCryptoSuccess();
-	void onWatchdogTimeout();
-	void enterTimeshiftFailureMode();
-	void exitTimeshiftFailureMode();
-	void onWaitForBufferTimeout();
-	void handlePermanentFailure();
-	/* [MODIFICATION END] */
+	bool m_last_crypted_state_for_decoder;
 };
 
 class eStaticServiceDVBBouquetInformation: public iStaticServiceInformation

@@ -2474,7 +2474,6 @@ def InitUsageConfig():
 			config.timeshift.recordingPath.value = savedValue
 	config.timeshift.recordingPath.save()
 	config.timeshift.scrambledRecoveryEnabled = ConfigYesNo(default=False)
-	config.timeshift.scrambledRecoveryTimeout = ConfigSelection(default=5, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(1, 16)])
 
 
 def calcFrontendPriorityIntval(config_priority, config_priority_multiselect, config_priority_strictly):

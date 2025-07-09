@@ -301,7 +301,6 @@ public:
 	RESULT playFile(const char *file);
 	RESULT playSource(ePtr<iTsSource>& source, const char *priv=NULL);
 	void stop();
-	void pause(bool pause);
 
 	void setCueSheet(eCueSheet *cuesheet);
 	void setOfflineDecodeMode(int parityswitchdelay);
