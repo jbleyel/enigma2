@@ -1287,7 +1287,7 @@ void eDVBServicePlay::serviceEvent(int event)
 
 			// Check if the scrambling state is the primary reason for the event
 			scrambling_state_has_changed = (is_crypted_now != m_last_crypted_state_for_decoder);
-			m_last_crypted_state_for_decoder = is_crypted_now
+			m_last_crypted_state_for_decoder = is_crypted_now;
 		}
 
 		// Always update the timeshift recorder's PIDs if timeshift is enabled
