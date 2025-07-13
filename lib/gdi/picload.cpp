@@ -407,16 +407,14 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	filepara->oy = height;
 
 	// When we have indexed (8bit) PNG convert it to standard 32bit png so to preserve transparency and to allow proper alphablending
-	/*
 	if (color_type == PNG_COLOR_TYPE_PALETTE && bit_depth == 8) {
 		color_type = PNG_COLOR_TYPE_RGBA;
 		png_set_expand(png_ptr);
 		png_set_palette_to_rgb(png_ptr);
 		png_set_tRNS_to_alpha(png_ptr);
 		bit_depth = 32;
-		eTrace("[ePicLoad] Interlaced PNG 8bit -> 32bit");
+		eDebug("[ePicLoad] Interlaced PNG 8bit -> 32bit");
 	}
-	*/
 
 	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA) {
 		filepara->transparent = true;
@@ -512,7 +510,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		png_read_update_info(png_ptr, info_ptr);
 
 		int bpp = png_get_rowbytes(png_ptr, info_ptr) / width;
-		eTrace("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
+		eDebug("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
 		if ((bpp != 4) && (bpp != 3)) {
 			eDebug("[ePicLoad] Error processing (did not get RGB data from PNG file)");
 			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
@@ -564,6 +562,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 			filepara->pic_buffer = pic_buffer24;
 		} else
 			filepara->pic_buffer = pic_buffer;
+		eDebug("[ePicLoad] set 24bit");
 		filepara->bits = 24;
 	}
 }
