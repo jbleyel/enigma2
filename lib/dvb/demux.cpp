@@ -550,7 +550,26 @@ int eDVBRecordFileThread::asyncWrite(int len)
 	gettimeofday(&starttime, NULL);
 #endif
 	if(!getProtocol())
-		m_ts_parser.parseData(m_current_offset, m_buffer, len);
+	{
+		// START OF CHANGE - Timeshift Stability Fix
+		// Check the return value of parseData. The parser was modified in pvrparse.cpp
+		// to return -2 when a "broken startcode" is found.
+		int parse_result = m_ts_parser.parseData(m_current_offset, m_buffer, len);
+		if (parse_result == -2)
+		{
+			// A "broken startcode" indicates stream corruption. Instead of writing
+			// this corrupt buffer, we send a specific event to the owner (eDVBTSRecorder)
+			// to let it know about the problem.
+			m_event(eFilePushThreadRecorder::evtStreamCorrupt);
+
+			// We must not queue this buffer for writing. However, we return 'len'
+			// to the caller (eFilePushThreadRecorder::thread) to make it think the
+			// write was successful. This prevents the recording from stopping and
+			// keeps file offsets correct, effectively skipping the corrupt data chunk.
+			return len;
+		}
+		// END OF CHANGE - Timeshift Stability Fix
+	}
 
 #ifdef SHOW_WRITE_TIME
 	gettimeofday(&now, NULL);
@@ -1023,5 +1042,16 @@ void eDVBTSRecorder::filepushEvent(int event)
 	case eFilePushThread::evtWriteError:
 		m_event(eventWriteError);
 		break;
+	// START OF CHANGE - Timeshift Stability Fix
+	// This is the final link in the chain within the demux layer.
+	// The thread has detected a corruption and sent us the evtStreamCorrupt event.
+	// We now catch this event and emit our public `timeshiftStreamCorrupt` signal.
+	// This signal can be connected to by higher-level classes (like servicedvb)
+	// to trigger the actual recovery logic (pausing playback, etc.).
+	case eFilePushThreadRecorder::evtStreamCorrupt:
+		eDebug("[eDVBTSRecorder] Stream corruption detected, emitting signal!");
+		timeshiftStreamCorrupt();
+		break;
+	// END OF CHANGE
 	}
 }

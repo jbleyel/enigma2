@@ -331,13 +331,14 @@ protected:
 
 private:
 	bool m_last_crypted_state_for_decoder;
-	
-    // [MODIFICATION START FOR EOF-FIX]
-    ePtr<eTimer> m_eof_recovery_timer;
-    pts_t m_saved_timeshift_delay;
-    void handleEofRecovery();
-    void onEofRecoveryTimeout();
-    // [MODIFICATION END]
+
+	// START OF CHANGE - Timeshift Stability Fix
+	ePtr<eConnection> m_stream_corrupt_connection; // Declaration for the stream corruption signal connection
+	ePtr<eTimer> m_eof_recovery_timer;
+	pts_t m_saved_timeshift_delay;
+	void handleEofRecovery();
+	void onEofRecoveryTimeout();
+	// END OF CHANGE
 };
 
 class eStaticServiceDVBBouquetInformation: public iStaticServiceInformation
