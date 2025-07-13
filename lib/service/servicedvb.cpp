@@ -1485,14 +1485,6 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 			// END OF CHANGE
 		}
 		break;
-	// START OF CHANGE - Timeshift Stability Fix
-	// NOTE: Because we now connect the signal directly to handleEofRecovery, this case is not strictly needed.
-	// However, it can be left for debugging or future expansion.
-	case eDVBServicePMTHandler::eventStreamCorrupt:
-		eDebug("[Timeshift-Fix] Stream corrupt event received. Initiating safe recovery.");
-		handleEofRecovery();
-		break;
-	// END OF CHANGE
 	}
 }
 
@@ -2844,12 +2836,29 @@ RESULT eDVBServicePlay::startTimeshift()
 	m_record->setTargetFD(m_timeshift_fd);
 	m_record->setTargetFilename(m_timeshift_file);
 	m_record->enableAccessPoints(false); // no need for AP information during shift
+	m_record->connectEvent(sigc::mem_fun(*this, &eDVBServicePlay::recordEvent), m_con_record_event);
 	m_timeshift_enabled = 1;
 
 	updateTimeshiftPids();
 	m_record->start();
 
 	return 0;
+}
+
+void eDVBServicePlay::recordEvent(int event)
+{
+	switch (event)
+	{
+	case iDVBTSRecorder::eventWriteError:
+		eWarning("[eDVBServicePlay] recordEvent write error");
+		return;
+	case iDVBTSRecorder::eventStreamCorrupt:
+		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt");
+		handleEofRecovery();
+		return;
+	default:
+		eDebug("[eDVBServicePlay] recordEvent unhandled record event %d", event);
+	}
 }
 
 RESULT eDVBServicePlay::stopTimeshift(bool swToLive)

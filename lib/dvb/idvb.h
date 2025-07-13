@@ -678,7 +678,7 @@ public:
 	virtual RESULT getCurrentFrontendParameters(ePtr<iDVBFrontendParameters> &)=0;
 	enum
 	{
-		evtPreStart, evtEOF, evtSOF, evtFailed, evtStopped, evtStreamCorrupt
+		evtPreStart, evtEOF, evtSOF, evtFailed, evtStopped
 	};
 	virtual RESULT connectStateChange(const sigc::slot<void(iDVBChannel*)> &stateChange, ePtr<eConnection> &connection)=0;
 	virtual RESULT connectEvent(const sigc::slot<void(iDVBChannel*,int)> &eventChange, ePtr<eConnection> &connection)=0;
