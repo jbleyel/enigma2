@@ -1357,8 +1357,10 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 
 	eDebug("[getData] ox=%d oy=%d max_x=%d max_y=%d bits=%d", m_filepara->ox, m_filepara->oy, scrx, scry,
 		   m_filepara->bits);
+	
+	bool noresize = false; // this needs to be tested because 8 bit and 24 bit seams to be not correct
 
-	if (m_filepara->ox == scrx && m_filepara->oy == scry && m_filepara->bits != 8) {
+	if (m_filepara->ox == scrx && m_filepara->oy == scry && noresize) {
 		unsigned char* origin = m_filepara->pic_buffer;
 		unsigned char* tmp_buffer = ((unsigned char*)(surface->data));
 		if (m_filepara->bits == 8) {
