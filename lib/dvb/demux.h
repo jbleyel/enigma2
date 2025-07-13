@@ -173,7 +173,7 @@ public:
 	// is detected by the underlying parser. Higher-level classes (like servicedvb)
 	// can connect to this signal to trigger recovery actions without being directly
 	// coupled to the demux layer.
-	sigc::signal<void()> timeshiftStreamCorrupt;
+	//sigc::signal<void()> timeshiftStreamCorrupt;
 	// END OF CHANGE - Timeshift Stability Fix
 
 private:
