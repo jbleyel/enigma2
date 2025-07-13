@@ -407,6 +407,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	filepara->oy = height;
 
 	// When we have indexed (8bit) PNG convert it to standard 32bit png so to preserve transparency and to allow proper alphablending
+	/*
 	if (color_type == PNG_COLOR_TYPE_PALETTE && bit_depth == 8) {
 		color_type = PNG_COLOR_TYPE_RGBA;
 		png_set_expand(png_ptr);
@@ -415,6 +416,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		bit_depth = 32;
 		eTrace("[ePicLoad] Interlaced PNG 8bit -> 32bit");
 	}
+	*/
 
 	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA) {
 		filepara->transparent = true;
@@ -1358,9 +1360,9 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 	eDebug("[getData] ox=%d oy=%d max_x=%d max_y=%d bits=%d", m_filepara->ox, m_filepara->oy, scrx, scry,
 		   m_filepara->bits);
 	
-	bool noresize = false; // this needs to be tested because 8 bit and 24 bit seams to be not correct
+//	bool noresize = false; // this needs to be tested because 8 bit and 24 bit seams to be not correct
 
-	if (m_filepara->ox == scrx && m_filepara->oy == scry && noresize) {
+	if (m_filepara->ox == scrx && m_filepara->oy == scry) {
 		unsigned char* origin = m_filepara->pic_buffer;
 		unsigned char* tmp_buffer = ((unsigned char*)(surface->data));
 		if (m_filepara->bits == 8) {
