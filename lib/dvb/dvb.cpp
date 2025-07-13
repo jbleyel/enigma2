@@ -1958,6 +1958,10 @@ void eDVBChannel::pvrEvent(int event)
 		eDebug("[eDVBChannel] pvrEvent evtStopped");
 		m_event(this, evtStopped);
 		break;
+	case eFilePushThreadRecorder::evtStreamCorrupt:
+		eDebug("[eDVBChannel] pvrEvent evtStreamCorrupt");
+		m_event(this, evtStreamCorrupt);
+		break;
 	}
 }
 
