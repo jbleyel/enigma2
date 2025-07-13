@@ -74,11 +74,10 @@ public:
 
 	// START OF CHANGE - Timeshift Stability Fix
 	// Added 'evtStreamCorrupt' to the event enum. This allows the recording thread
-	// (specifically eDVBRecordFileThread in demux.cpp) to send a new, specific
-	// signal to its owner (eDVBTSRecorder) when it detects a "broken startcode"
-	// from the TS parser, without being tightly coupled.
+	// to send a new, specific signal to its owner when it detects corruption.
 	enum { evtEOF, evtReadError, evtWriteError, evtUser, evtStopped, evtStreamCorrupt };
-	// END OF CHANGE - Timeshift Stability Fix
+	// END OF CHANGE
+	
 	sigc::signal<void(int)> m_event;
 
 	int getProtocol() { return m_protocol;}

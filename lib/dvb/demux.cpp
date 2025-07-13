@@ -1050,7 +1050,9 @@ void eDVBTSRecorder::filepushEvent(int event)
 	// to trigger the actual recovery logic (pausing playback, etc.).
 	case eFilePushThreadRecorder::evtStreamCorrupt:
 		eDebug("[eDVBTSRecorder] Stream corruption detected, emitting signal!");
-		m_event(evtStreamCorrupt);
+		// TODO : call something to trigger
+		// void eDVBServicePMTHandler::channelEvent(iDVBChannel *channel, int event)
+		// with iDVBChannel::evtStreamCorrupt
 		break;
 	// END OF CHANGE
 	}
