@@ -1657,8 +1657,6 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 			}
 		}
 
-#else
-		eDebug("[ePicLoad] swscale not available, using legacy resize");
 #endif
 
 #pragma omp parallel for
