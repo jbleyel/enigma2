@@ -126,12 +126,12 @@ class InformationBase(Screen):
 			"close": (self.closeRecursive, _("Close the screen and exit all menus")),
 			"save": (self.refreshInformation, _("Refresh the screen")),
 			"ok": (self.refreshInformation, _("Refresh the screen")),
-			"top": (self["information"].moveTop, _("Move to first line / screen")),
-			"pageUp": (self["information"].pageUp, _("Move up a screen")),
-			"up": (self["information"].moveUp, _("Move up a line")),
-			"down": (self["information"].moveDown, _("Move down a line")),
-			"pageDown": (self["information"].pageDown, _("Move down a screen")),
-			"bottom": (self["information"].moveBottom, _("Move to last line / screen"))
+			"top": (self["information"].goTop, _("Move to first line / screen")),
+			"pageUp": (self["information"].goPageUp, _("Move up a screen")),
+			"up": (self["information"].goLineUp, _("Move up a line")),
+			"down": (self["information"].goLineDown, _("Move down a line")),
+			"pageDown": (self["information"].goPageDown, _("Move down a screen")),
+			"bottom": (self["information"].goBottom, _("Move to last line / screen"))
 		}, prio=0, description=_("Common Information Actions"))
 		colors = parameters.get("InformationColors", (0x00ffffff, 0x00ffffff, 0x00ffffff, 0x00cccccc, 0x00cccccc, 0x00ffff00, 0x0000ffff))
 		if len(colors) == len(INFO_COLORS):
@@ -629,7 +629,7 @@ class DistributionInformation(InformationBase):
 		slotCode, bootCode = MultiBoot.getCurrentSlotAndBootCodes()
 		if MultiBoot.canMultiBoot():
 			device = MultiBoot.getBootDevice()
-			if BoxInfo.getItem("HasHiSi") and "sda" in device:
+			if BoxInfo.getItem("HasHiSi") and "sda" in device and slotCode != "F":
 				slotCode = int(slotCode)
 				image = slotCode - 4 if slotCode > 4 else slotCode - 1
 				device = _("SDcard slot %s%s") % (image, f"  -  {device}" if device else "")
@@ -642,6 +642,8 @@ class DistributionInformation(InformationBase):
 					device = _("eMMC slot %s%s") % (slotCode, f"  -  {device}" if device else "")
 				elif "mtd" in device:
 					device = _("MTD slot %s%s") % (slotCode, f"  -  {device}" if device else "")
+				elif "ubi" in device:
+					device = _("UBI slot %s%s") % (slotCode, f"  -  {device}" if device else "")
 				else:
 					device = _("USB slot %s%s") % (slotCode, f"  -  {device}" if device else "")
 			info.append(formatLine("P1", _("Hardware MultiBoot device"), device))
@@ -700,6 +702,7 @@ class DistributionInformation(InformationBase):
 		info.append(formatLine("P1", _("Glibc version"), about.getGlibcVersion()))
 		info.append(formatLine("P1", _("OpenSSL version"), about.getVersionFromOpkg("openssl")))
 		info.append(formatLine("P1", _("Python version"), about.getPythonVersionString()))
+		info.append(formatLine("P1", _("Rust version"), about.getRustVersion()))
 		info.append(formatLine("P1", _("Samba version"), about.getVersionFromOpkg("samba")))
 		info.append(formatLine("P1", _("GStreamer version"), about.getGStreamerVersionString().replace("GStreamer ", "")))
 		info.append(formatLine("P1", _("FFmpeg version"), about.getVersionFromOpkg("ffmpeg")))
@@ -859,6 +862,13 @@ class MemoryInformation(InformationBase):
 		info.append(formatLine("P1", _("Total flash"), f"{scaleNumber(diskSize)}  ({scaleNumber(diskSize, 'Iec')})"))
 		info.append(formatLine("P1", _("Used flash"), f"{scaleNumber(diskUsed)}  ({scaleNumber(diskUsed, 'Iec')})"))
 		info.append(formatLine("P1", _("Free flash"), f"{scaleNumber(diskFree)}  ({scaleNumber(diskFree, 'Iec')})"))
+		for line in fileReadLines("/proc/mtd", [], source=MODULE_NAME):
+			if "\"kernel" in line:
+				data = line.split()
+				name = data[3].strip("\"")
+				size = int(data[1], 16)
+				label = _("Kernel partition") if name == "kernel" else _("Kernel%s partition") % name.replace("kernel", "")
+				info.append(formatLine("P1", label, f"{scaleNumber(size)} ({scaleNumber(size, "Iec")})"))
 		info.append("")
 		info.append(formatLine("S", _("RAM (Details)")))
 		if self.extraSpacing:
@@ -923,7 +933,7 @@ class MultiBootInformation(InformationBase):
 					if current:
 						indent = indent.replace("P", "F").replace("V", "F")
 					device = self.slotImages[slot]["device"]
-					slotType = "eMMC" if "mmcblk" in device else "MTD" if "mtd" in device else "USB"
+					slotType = "eMMC" if "mmcblk" in device else "MTD" if "mtd" in device else "UBI" if "ubi" in device else "USB"
 					imageLists[boot].append(formatLine(indent, _("Slot '%s' %s") % (slot, slotType), f"{self.slotImages[slot]['imagename']}{current}"))
 			count = 0
 			for bootCode in sorted(imageLists.keys()):
