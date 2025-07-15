@@ -2,6 +2,7 @@
 #define __lib_gui_epixmap_h
 
 #include <lib/gui/ewidget.h>
+#include <vector>
 
 class ePixmap : public eWidget
 {
@@ -10,6 +11,7 @@ class ePixmap : public eWidget
 
 public:
 	ePixmap(eWidget *parent);
+	~ePixmap();
 
 	void setPixmap(gPixmap *pixmap);
 	void setPixmap(ePtr<gPixmap> &pixmap);
@@ -19,12 +21,22 @@ public:
 	void setPixmapScale(int flags);
 	void setPixmapScaleFlags(int flags) { setPixmapScale(flags); } // DEPRECATED
 
+	void setAniPixmapFromFile(const char *filename, bool autostart=false);
+	void startAnimation(bool once=false);
+	void stopAnimation() { m_animTimer->stop();}
+
 protected:
 	ePtr<gPixmap> m_pixmap;
 	int event(int event, void *data = 0, void *data2 = 0);
 	void checkSize();
 
 private:
+    std::vector<ePtr<gPixmap>> m_frames;
+    std::vector<int> m_delays;
+    int m_currentFrame = 0;
+	ePtr<eTimer> m_animTimer;
+	void nextFrame();
+
 	enum eLabelEvent
 	{
 		evtChangedPixmap = evtUserWidget,

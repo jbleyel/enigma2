@@ -512,7 +512,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		png_read_update_info(png_ptr, info_ptr);
 
 		int bpp = png_get_rowbytes(png_ptr, info_ptr) / width;
-		eDebug("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
+		eTrace("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
 		if ((bpp != 4) && (bpp != 3)) {
 			eDebug("[ePicLoad] Error processing (did not get RGB data from PNG file)");
 			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
@@ -564,7 +564,6 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 			filepara->pic_buffer = pic_buffer24;
 		} else
 			filepara->pic_buffer = pic_buffer;
-		eDebug("[ePicLoad] set 24bit");
 		filepara->bits = 24;
 	}
 }
@@ -1358,7 +1357,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 	int scrx = m_filepara->max_x;
 	int scry = m_filepara->max_y;
 
-	eDebug("[getData] ox=%d oy=%d max_x=%d max_y=%d bits=%d", m_filepara->ox, m_filepara->oy, scrx, scry,
+	eTrace("[getData] ox=%d oy=%d max_x=%d max_y=%d bits=%d", m_filepara->ox, m_filepara->oy, scrx, scry,
 		   m_filepara->bits);
 	
 	if (m_filepara->ox == scrx && m_filepara->oy == scry && (m_filepara->bits == 24 || m_filepara->bits == 32)) {
@@ -1653,7 +1652,7 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				return 0;
 
 			} else {
-				eDebug("[ePicLoad] swscale failed, fallback to legacy resize");
+				eTrace("[ePicLoad] swscale failed, fallback to legacy resize");
 			}
 		}
 

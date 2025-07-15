@@ -157,8 +157,6 @@ def getCPUInfoString():
 				# break  # Without this break the code returns the last line containing the string!
 	cpuSpeedStr = _("%s GHz") % format_string("%.1f", cpuSpeedMhz / 1000) if cpuSpeedMhz and cpuSpeedMhz >= 1000 else _("%d MHz") % int(cpuSpeedMhz)
 	if temperature:
-		if not isinstance(temperature, str):
-			temperature = temperature.encode("UTF-8", errors="ignore")
 		if isinstance(temperature, float):
 			temperature = format_string("%.1f", temperature)
 		else:
@@ -297,31 +295,6 @@ def getPythonVersionString():
 		result = pyversion.split(" ")[0]
 	except Exception:
 		result = _("Unknown")
-	return result
-
-
-def getRustVersion():
-	try:
-		from bcrypt import _rustVersion_ as result
-	except ImportError:
-		result = _("Unknown")
-	return result
-
-
-def getFileCompressionInfo():
-	try:
-		with open("/bin/bash", "rb") as fd:
-			fd.seek(399000)
-			content = fd.read(1000)
-		# Search for something like "Id: UPX 4.24 Copyright (C) 1996-2024 the UPX Team. All Rights Reserved." in the binary content
-		match = search(rb"Id: UPX.*Copyright", content)
-		if match:
-			parts = match.group(0).decode("UTF-8").strip().split()
-			result = f"{_("Enabled")} ({parts[1].lower()} {parts[2]})" if len(parts) >= 3 else _("Disabled")
-		else:
-			result = _("Disabled")
-	except Exception:
-		result = _("Disabled")
 	return result
 
 
