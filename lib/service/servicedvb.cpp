@@ -1339,115 +1339,139 @@ void eDVBServicePlay::serviceEvent(int event)
 // It was part of the original C++ patch and is now essential for handling
 // both stream corruption and EOF events gracefully.
 
+/**
+ * @brief This function is the entry point for the recovery process.
+ * It's called when a recoverable error like EOF or Stream Corruption occurs.
+ * Its job is to save the current state and start the recovery timer.
+ */
 void eDVBServicePlay::handleEofRecovery()
 {
-	// Save the current delay before pausing to restore it accurately.
+	eDebug("[Timeshift-Fix] Starting recovery process...");
+	
+	// Save the current delay for reference/logging purposes. It will be used to decide if we can seek.
 	pts_t live_pts = 0, playback_pts = 0;
 	if (m_record && !m_record->getCurrentPCR(live_pts) && !getPlayPosition(playback_pts))
 	{
 		m_saved_timeshift_delay = live_pts - playback_pts;
-        eDebug("[Timeshift-Fix] Recovery Start: Saving current delay: %lld PTS (~%lld seconds)", m_saved_timeshift_delay, m_saved_timeshift_delay / 90000);
+		eDebug("[Timeshift-Fix] Current delay before recovery: %lld PTS (~%lld seconds)", 
+		       m_saved_timeshift_delay, m_saved_timeshift_delay / 90000);
 	}
 	else
 	{
-        eWarning("[Timeshift-Fix] Recovery Start: Could not get live/playback PTS, switching to live.");
-        switchToLive();
+		m_saved_timeshift_delay = -1; // Mark as invalid if we can't get it.
+		eWarning("[Timeshift-Fix] Could not get current delay. Seeking will be disabled for this recovery attempt.");
 	}
 
+	// Pause the decoder to stabilize the system.
 	if (m_decoder)
 	{
-		eDebug("[Timeshift-Fix] Recovery Start: Pausing decoder.");
+		eDebug("[Timeshift-Fix] Pausing decoder.");
 		m_decoder->pause();
 	}
-	
-	// Clear the problematic 'next file' variable if it was set by mistake
+
+	// Clear any pending next-file operations to prevent conflicts.
 	m_timeshift_file_next.clear();
-	
-	// Start the recovery timer to check for buffer refill.
-	m_eof_recovery_timer->start(500, true); // Check every 500ms, one-shot
+
+	// Start the recovery timer. The main logic is in onEofRecoveryTimeout.
+	m_eof_recovery_timer->start(500, true);
 }
 
-
-// Modify onEofRecoveryTimeout with a smart check before seekTo.
+/**
+ * @brief This is the core of the recovery logic, executed by the timer.
+ * It patiently waits for the buffer to be sufficiently filled, then decides whether
+ * it's safe to seek or if it should just unpause to avoid a driver deadlock.
+ */
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
     pts_t length = 0, position = 0;
-    const pts_t safety_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 5 * 90000); // 5 seconds
+    // Use a configurable safety margin. Default to 5 seconds.
+    const pts_t safety_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 5 * 90000); 
     static int recovery_attempts = 0;
-    const int max_recovery_attempts = 10; // Maximum number of attempts
+    const int max_recovery_attempts = 20; // Wait up to 10 seconds (20 * 500ms)
 
-    // Check if length and position can be retrieved.
+    // First, check if we can get valid information from the driver.
     if (getLength(length) != 0 || getPlayPosition(position) != 0)
     {
-        eWarning("[Timeshift-Fix] Recovery: Could not get length/position. Switching to live.");
+        eWarning("[Timeshift-Fix] Recovery Error: Could not get length/position from driver. Switching to live to prevent a permanent freeze.");
         switchToLive();
         m_eof_recovery_timer->stop();
         recovery_attempts = 0;
         return;
     }
 
-    // Calculate buffered data.
+    // Calculate how much new data has been buffered since the player paused.
     pts_t new_data_buffered = length - position;
-    eDebug("[Timeshift-Fix] Buffer status: new_data_buffered=%lld, safety_margin=%lld, target_delay=%lld, length=%lld, position=%lld", 
-           new_data_buffered, safety_margin, m_saved_timeshift_delay, length, position);
+    eDebug("[Timeshift-Fix] Buffer status: new_data_buffered=%lld, safety_margin=%lld", new_data_buffered, safety_margin);
 
-    // Check if the buffer is sufficient.
-    if (new_data_buffered >= m_saved_timeshift_delay + safety_margin)
+	// Determine the required buffer size. Use a simple safety_margin if delay is unknown.
+	pts_t required_buffer = (m_saved_timeshift_delay > 0 ? m_saved_timeshift_delay : 0) + safety_margin;
+
+    // Check if we have buffered enough new data.
+    if (new_data_buffered >= required_buffer)
     {
-        // Reset attempt counter.
-        recovery_attempts = 0;
         m_eof_recovery_timer->stop();
-
-        // Check stream integrity and target position bounds.
+        recovery_attempts = 0;
+        
+        // --- Start of Conditional Seek Logic ---
         pts_t new_live_pts = 0;
-        bool can_seek = !m_stream_corruption_detected && m_record && !m_record->getCurrentPCR(new_live_pts);
-        pts_t new_target_pos = can_seek ? new_live_pts - m_saved_timeshift_delay : 0;
-
-        if (can_seek && new_target_pos >= 0 && new_target_pos <= length - safety_margin)
+        // We can only attempt to seek if:
+        // 1. The stream was not marked as corrupted.
+        // 2. We have a valid saved delay.
+        // 3. We can get the current live PTS.
+        bool can_try_seek = !m_stream_corruption_detected && m_saved_timeshift_delay > 0 && m_record && !m_record->getCurrentPCR(new_live_pts);
+        
+        if (can_try_seek)
         {
-            // Stream is stable and position is within bounds, use seekTo.
-            eDebug("[Timeshift-Fix] Stream is stable, seeking to position %lld to restore delay %lld.", new_target_pos, m_saved_timeshift_delay);
-            seekTo(new_target_pos);
-            unpause();
-            m_stream_corruption_detected = false; // Reset the corruption flag.
+            pts_t new_target_pos = new_live_pts - m_saved_timeshift_delay;
+            
+            // 4. The calculated target position is within safe bounds of the buffer.
+            if (new_target_pos >= 0 && new_target_pos <= length - safety_margin)
+            {
+                // All conditions are met, it is considered safe to seek.
+                eDebug("[Timeshift-Fix] Stream appears stable. Seeking to position %lld to restore delay.", new_target_pos);
+                seekTo(new_target_pos);
+            }
+            else
+            {
+                // Seek is not safe because the target position is out of bounds.
+                eWarning("[Timeshift-Fix] Seek target out of bounds (%lld). Unpausing without seek to prevent freeze.", new_target_pos);
+            }
         }
         else
         {
-            // Stream is unstable or position is out of bounds, use unpause only.
-            eDebug("[Timeshift-Fix] Stream unstable or target position invalid (new_target_pos=%lld, length=%lld), unpausing without seeking.", new_target_pos, length);
-            unpause();
-            // Notify the user if the actual delay differs from the target.
-            pts_t current_delay = length - position;
-            if (abs(current_delay - m_saved_timeshift_delay) > 2 * 90000) // If difference is more than 2 seconds
-            {
-                eDebug("[Timeshift-Fix] Current delay: %lld PTS (~%lld seconds), differs from target %lld PTS.", current_delay, current_delay / 90000, m_saved_timeshift_delay);
-                // m_event(this, evUserMessage, "Timeshift delay has shifted slightly due to stream recovery.");
-            }
+            // Seek is not safe because stream was corrupted or we couldn't get necessary PTS values.
+            eDebug("[Timeshift-Fix] Stream unstable or delay unknown. Unpausing without seeking.");
         }
+        // --- End of Conditional Seek Logic ---
 
-        // Update the seekbar with the actual delay.
-        pts_t current_delay = length - position;
-        eDebug("[Timeshift-Fix] Updating seekbar with current delay: %lld PTS (~%lld seconds)", current_delay, current_delay / 90000);
-        // m_event(this, evUpdatedTimeshiftDelay, current_delay); // TODO 
-		m_event((iPlayableService*)this, evSeekableStatusChanged); // Notify UI
+        unpause();
+        m_stream_corruption_detected = false; // Reset the flag for the next event.
+        
+        // This is the correct event to notify the UI to refresh the seekbar.
+        m_event(this, evSeekableStatusChanged);
+
+        // Log the final delay for debugging purposes.
+        pts_t final_delay = length - position;
+        eDebug("[Timeshift-Fix] Playback resumed. Final timeshift delay is now ~%lld seconds.", final_delay / 90000);
     }
     else
     {
-        // Buffer is not full enough, retry.
+        // Not enough data yet. Increment attempt counter and check if we have exceeded the max.
         recovery_attempts++;
         if (recovery_attempts >= max_recovery_attempts)
         {
-            eWarning("[Timeshift-Fix] Recovery: Max attempts reached, switching to live.");
+            eWarning("[Timeshift-Fix] Recovery Timeout: Waited too long for buffer to refill. Switching to live.");
             switchToLive();
             m_eof_recovery_timer->stop();
             recovery_attempts = 0;
             return;
         }
-        eDebug("[Timeshift-Fix] Recovery: Waiting for buffer to refill (%lld / %lld PTS)... Attempt %d/%d", 
-               new_data_buffered, m_saved_timeshift_delay + safety_margin, recovery_attempts, max_recovery_attempts);
-        m_eof_recovery_timer->start(500, true);
+        
+        eDebug("[Timeshift-Fix] Waiting for buffer to refill (%lld / %lld)... Attempt %d/%d", new_data_buffered, required_buffer, recovery_attempts, max_recovery_attempts);
+        m_eof_recovery_timer->start(500, true); // Wait another 500ms.
     }
 }
+
 // END OF CHANGE
 
 void eDVBServicePlay::serviceEventTimeshift(int event)
@@ -2907,6 +2931,7 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 		switchToLive();
 
 	m_timeshift_enabled = 0;
+	m_stream_corruption_detected = false;
 
 	m_record->stop();
 	m_record = 0;
