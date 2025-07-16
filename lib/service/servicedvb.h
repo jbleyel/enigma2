@@ -339,6 +339,7 @@ private:
 	ePtr<eConnection> m_stream_corrupt_connection; // Declaration for the stream corruption signal connection
 	ePtr<eTimer> m_eof_recovery_timer;
 	pts_t m_saved_timeshift_delay;
+	bool m_stream_corruption_detected;
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
 	// END OF CHANGE
