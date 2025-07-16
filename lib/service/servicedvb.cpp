@@ -1379,7 +1379,7 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 	}
 
 	// We need a safety margin of new data buffered before we can safely resume.
-	const pts_t safety_margin = 1.5 * 90000; // 1.5 seconds
+	const pts_t safety_margin = 5 * 90000; // 5 seconds
 	pts_t new_data_buffered = length - position;
 
 	if (new_data_buffered >= safety_margin)
