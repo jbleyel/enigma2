@@ -1092,11 +1092,14 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_subtitle_sync_timer(eTimer::create(eApp)),
 	m_nownext_timer(eTimer::create(eApp)),
 	m_last_crypted_state_for_decoder(false)
-	// START OF CHANGE - Timeshift Stability Fix
-	, m_eof_recovery_timer(eTimer::create(eApp))
-	, m_saved_timeshift_delay(-1)
-	, m_stream_corruption_detected(false)
-	// END OF CHANGE
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// This block contains all the new variables for the robust timeshift recovery mechanism.
+	, m_eof_recovery_timer(eTimer::create(eApp)) // Timer to manage the recovery process itself.
+	, m_timeshift_delay_updater_timer(eTimer::create(eApp)) // New timer to proactively save the timeshift delay.
+	, m_saved_timeshift_delay(-1) // Stores the last known-good timeshift delay.
+	, m_stream_corruption_detected(false) // Flag for stream corruption events.
+	, m_recovery_attempts(0) // Safety counter to prevent infinite recovery loops.
+	// END OF MODIFICATION
 {
 #ifdef PASSTHROUGH_FIX
 	m_passthrough_fix_timer = eTimer::create(eApp);
@@ -1110,10 +1113,11 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 #ifdef PASSTHROUGH_FIX
 	CONNECT(m_passthrough_fix_timer->timeout, eDVBServicePlay::forcePassthrough);
 #endif
-	// START OF CHANGE - Timeshift Stability Fix
-	// Connect the recovery timer's timeout signal to its handler function.
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// Connect the new timers to their handler functions.
 	CONNECT(m_eof_recovery_timer->timeout, eDVBServicePlay::onEofRecoveryTimeout);
-	// END OF CHANGE
+	CONNECT(m_timeshift_delay_updater_timer->timeout, eDVBServicePlay::updateTimeshiftDelay);
+	// END OF MODIFICATION
 }
 
 eDVBServicePlay::~eDVBServicePlay()
@@ -1334,33 +1338,58 @@ void eDVBServicePlay::serviceEvent(int event)
 	}
 }
 
-// START OF CHANGE - Timeshift Stability Fix
-// This is the implementation of the recovery logic.
-// It was part of the original C++ patch and is now essential for handling
-// both stream corruption and EOF events gracefully.
+// START OF MODIFICATION - Proactive Timeshift Stability
+// This block contains the full implementation of the new, robust recovery mechanism.
+
+/**
+ * @brief This new function is called periodically by a timer.
+ * Its purpose is to proactively and safely update the timeshift delay
+ * while the system is in a stable, running state.
+ */
+void eDVBServicePlay::updateTimeshiftDelay()
+{
+	// This function only runs if timeshift is active.
+	if (!isTimeshiftActive())
+	{
+		m_timeshift_delay_updater_timer->stop(); // Stop the timer if timeshift is no longer active.
+		return;
+	}
+
+	pts_t live_pts = 0, playback_pts = 0;
+	// Define a maximum reasonable delay, e.g., 3 hours in PTS units (3 * 3600 * 90000)
+	const pts_t MAX_REASONABLE_DELAY = 10800LL * 90000;
+
+	// Try to get the current PTS values.
+	if (m_record && !m_record->getCurrentPCR(live_pts) && !getPlayPosition(playback_pts) && live_pts > playback_pts)
+	{
+		pts_t calculated_delay = live_pts - playback_pts;
+		
+		// Perform a sanity check to ensure the value is not garbage.
+		if (calculated_delay > 0 && calculated_delay < MAX_REASONABLE_DELAY)
+		{
+			// If the value is sane, store it.
+			m_saved_timeshift_delay = calculated_delay;
+		}
+		// If the value is insane, do nothing. We keep the last known-good value.
+	}
+	// No 'else' needed; we simply keep the last good value if we can't get a new one.
+}
 
 /**
  * @brief This function is the entry point for the recovery process.
- * It's called when a recoverable error like EOF or Stream Corruption occurs.
- * Its job is to save the current state and start the recovery timer.
+ * It's now much simpler: it just uses the pre-calculated delay and starts the recovery timer.
  */
 void eDVBServicePlay::handleEofRecovery()
 {
 	eDebug("[Timeshift-Fix] Starting recovery process...");
+
+	// Initialize the retry counter for the recovery loop.
+	m_recovery_attempts = 0;
 	
-	// Save the current delay for reference/logging purposes. It will be used to decide if we can seek.
-	pts_t live_pts = 0, playback_pts = 0;
-	if (m_record && !m_record->getCurrentPCR(live_pts) && !getPlayPosition(playback_pts))
-	{
-		m_saved_timeshift_delay = live_pts - playback_pts;
-		eDebug("[Timeshift-Fix] Current delay before recovery: %lld PTS (~%lld seconds)", 
-		       m_saved_timeshift_delay, m_saved_timeshift_delay / 90000);
-	}
-	else
-	{
-		m_saved_timeshift_delay = -1; // Mark as invalid if we can't get it.
-		eWarning("[Timeshift-Fix] Could not get current delay. Seeking will be disabled for this recovery attempt.");
-	}
+	// We no longer calculate the delay here. We trust the value in m_saved_timeshift_delay
+	// which was updated proactively by the m_timeshift_delay_updater_timer.
+	eDebug("[Timeshift-Fix] Using pre-calculated delay: %lld PTS (~%lld seconds)", 
+		   m_saved_timeshift_delay, m_saved_timeshift_delay / 90000);
 
 	// Pause the decoder to stabilize the system.
 	if (m_decoder)
@@ -1377,14 +1406,22 @@ void eDVBServicePlay::handleEofRecovery()
 }
 
 /**
- * @brief This is the final and most robust recovery logic.
- * It will ALWAYS attempt to seek to preserve the user's delay,
- * and then immediately apply the "pause/unpause" trick to prevent
- * the driver from freezing. It will wait indefinitely for the buffer
- * to fill and will not switch to live TV automatically.
+ * @brief This is the core recovery logic. It waits for the buffer to fill
+ * and then safely seeks to restore the user's timeshift delay.
  */
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
+	// Safety net: Check if we are stuck for too long (e.g., 40 attempts * 500ms = 20 seconds)
+	if (m_recovery_attempts++ > 40)
+	{
+		eWarning("[Timeshift-Fix] Recovery timed out after 20 seconds. Aborting and unpausing.");
+		m_eof_recovery_timer->stop();
+		m_recovery_attempts = 0; // Reset counter
+		unpause(); // Last resort: just unpause to prevent a permanent freeze.
+		m_event(this, evSeekableStatusChanged);
+		return;
+	}
+
     pts_t length = 0, position = 0;
     // Use a configurable safety margin. Default to 5 seconds.
     const pts_t safety_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 5 * 90000); 
@@ -1392,17 +1429,17 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     // 1. If we can't get info, just wait and retry. Don't switch to live.
     if (getLength(length) != 0 || getPlayPosition(position) != 0)
     {
-        eWarning("[Timeshift-Fix] Could not get length/position from driver. Retrying in 500ms.");
+        eWarning("[Timeshift-Fix] Could not get length/position. Retrying in 500ms (Attempt %d)", m_recovery_attempts);
         m_eof_recovery_timer->start(500, true);
         return;
     }
 
     // 2. Patiently wait for a sufficient buffer to be recorded.
-	// We wait indefinitely until this condition is met.
+	// We wait indefinitely (up to the timeout limit) until this condition is met.
 	pts_t required_buffer = (m_saved_timeshift_delay > 0 ? m_saved_timeshift_delay : 0) + safety_margin;
     if ((length - position) < required_buffer)
     {
-        eDebug("[Timeshift-Fix] Waiting for buffer to fill (%lld / %lld)... Retrying in 500ms.", (length - position), required_buffer);
+        eDebug("[Timeshift-Fix] Waiting for buffer (%llu / %llu)... Retrying in 500ms (Attempt %d)", (length - position), required_buffer, m_recovery_attempts);
         m_eof_recovery_timer->start(500, true); // Retry in 500ms
         return;
     }
@@ -1410,6 +1447,7 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     // --- If we have enough buffer, proceed with the recovery ---
 
     m_eof_recovery_timer->stop(); // Stop the timer, we are proceeding.
+    m_recovery_attempts = 0; // Reset counter on success.
     
     pts_t new_live_pts = 0;
     if (m_saved_timeshift_delay > 0 && m_record && !m_record->getCurrentPCR(new_live_pts))
@@ -1451,7 +1489,7 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     eDebug("[Timeshift-Fix] Recovery complete. Playback should be restored.");
 }
 
-// END OF CHANGE
+// END OF MODIFICATION
 
 void eDVBServicePlay::serviceEventTimeshift(int event)
 {
@@ -1516,12 +1554,12 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 	case eDVBServicePMTHandler::eventEOF:
 		if ((!m_is_paused) && (m_skipmode >= 0))
 		{
-			// START OF CHANGE - Timeshift Stability Fix
-			// The original, destructive logic is now replaced by a unified recovery handler.
+			// START OF MODIFICATION - Proactive Timeshift Stability
+			// The old, destructive logic is now replaced by a unified recovery handler.
 			// This prevents the jump to live TV.
 			eDebug("[Timeshift-Fix] EOF event triggered. Initiating safe recovery.");
 			handleEofRecovery();
-			// END OF CHANGE
+			// END OF MODIFICATION
 		}
 		break;
 	}
@@ -2892,9 +2930,12 @@ void eDVBServicePlay::recordEvent(int event)
 		eWarning("[eDVBServicePlay] recordEvent write error");
 		return;
 	case iDVBTSRecorder::eventStreamCorrupt:
+		// START OF MODIFICATION - Proactive Timeshift Stability
+		// Trigger the safe recovery handler on stream corruption events.
 		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt");
 		m_stream_corruption_detected = true; // Mark that stream corruption has occurred
 		handleEofRecovery();
+		// END OF MODIFICATION
 		return;
 	default:
 		eDebug("[eDVBServicePlay] recordEvent unhandled record event %d", event);
@@ -2907,7 +2948,16 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 		return -1;
 
 	if (swToLive)
+	{
 		switchToLive();
+	}
+	else
+	{
+		// START OF MODIFICATION - Proactive Timeshift Stability
+		// If not switching to live, we must manually stop the delay updater timer.
+		m_timeshift_delay_updater_timer->stop();
+		// END OF MODIFICATION
+	}
 
 	m_timeshift_enabled = 0;
 	m_stream_corruption_detected = false;
@@ -3180,6 +3230,11 @@ void eDVBServicePlay::switchToLive()
 	if (!m_timeshift_active)
 		return;
 
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// Stop the proactive delay updater timer when switching back to live TV.
+	m_timeshift_delay_updater_timer->stop();
+	// END OF MODIFICATION
+
 	eDebug("[eDVBServicePlay] SwitchToLive");
 
 	resetTimeshift(0);
@@ -3264,6 +3319,12 @@ void eDVBServicePlay::switchToTimeshift()
 	eDebug("[eDVBServicePlay] switchToTimeshift, in pause mode now.");
 	pause();
 	updateDecoder(true); /* mainly to switch off PCR, and to set pause */
+
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// Start the proactive delay updater timer. It will run every 2 seconds.
+	// The 'false' parameter means it's a recurring timer.
+	m_timeshift_delay_updater_timer->start(2000, false);
+	// END OF MODIFICATION
 }
 
 void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
