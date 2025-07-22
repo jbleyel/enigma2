@@ -335,19 +335,17 @@ protected:
 private:
 	bool m_last_crypted_state_for_decoder;
 
-	// START OF MODIFICATION - Proactive and Tolerant Timeshift Stability
-	ePtr<eTimer> m_eof_recovery_timer;              // Timer to manage the main recovery process.
-	ePtr<eTimer> m_timeshift_delay_updater_timer;   // Timer to proactively save the timeshift delay.
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// This block declares all the new private members for the robust timeshift recovery mechanism.
+	ePtr<eTimer> m_eof_recovery_timer;              // Timer to manage the recovery process itself.
+	ePtr<eTimer> m_timeshift_delay_updater_timer;   // New timer to proactively save the timeshift delay.
 	pts_t m_saved_timeshift_delay;                  // Stores the last known-good timeshift delay.
-	bool m_stream_corruption_detected;              // Flag to indicate a stream error is being handled.
-	int m_recovery_attempts;                        // Safety counter for the recovery loop.
-    ePtr<eTimer> m_corruption_grace_timer;          // Timer for the 500ms grace period (debounce).
-    bool m_in_corruption_grace_period;              // Flag to track if we are within the grace period.
+	bool m_stream_corruption_detected;              // Flag for stream corruption events.
+	int m_recovery_attempts;                        // Safety counter to prevent infinite recovery loops.
 
 	void handleEofRecovery();                       // Entry point for the recovery process.
 	void onEofRecoveryTimeout();                    // Core logic for the recovery loop.
-	void updateTimeshiftDelay();                    // Proactively updates the timeshift delay.
-    void onCorruptionGraceTimeout();                // Handler for when the grace period expires.
+	void updateTimeshiftDelay();                    // New function to be called periodically to update the delay.
 	// END OF MODIFICATION
 };
 
