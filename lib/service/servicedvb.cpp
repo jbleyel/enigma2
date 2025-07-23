@@ -2852,8 +2852,7 @@ RESULT eDVBServicePlay::getSubservice(eServiceReference &sub, unsigned int n)
 	return -1;
 }
 
-RESULT eDVBServicePlay::startTimeshift()
-{
+RESULT eDVBServicePlay::startTimeshift() {
 	ePtr<iDVBDemux> demux;
 
 	eDebug("[eDVBServicePlay] Start timeshift!");
@@ -2861,7 +2860,7 @@ RESULT eDVBServicePlay::startTimeshift()
 	if (m_timeshift_enabled)
 		return -1;
 
-		/* start recording with the data demux. */
+	/* start recording with the data demux. */
 	if (m_service_handler.getDataDemux(demux))
 		return -2;
 
@@ -2870,17 +2869,12 @@ RESULT eDVBServicePlay::startTimeshift()
 		return -3;
 
 	std::string tspath = eSettings::timeshift_path;
-	if (tspath == "")
-	{
-		eDebug("[eDVBServicePlay] could not query time shift path");
-		return -5;
-	}
-	if (tspath.empty())
-	{
+	if (tspath.empty()) {
 		eDebug("[eDVBServicePlay] time shift path is empty");
+		m_record = 0;
 		return -5;
 	}
-	if (tspath[tspath.length()-1] != '/')
+	if (tspath[tspath.length() - 1] != '/')
 		tspath.append("/");
 	tspath.append("timeshift.XXXXXX");
 	char* templ = new char[tspath.length() + 1];
@@ -2888,26 +2882,23 @@ RESULT eDVBServicePlay::startTimeshift()
 	m_timeshift_fd = mkstemp(templ);
 	m_timeshift_file = std::string(templ);
 	eDebug("[eDVBServicePlay] time shift recording to %s", templ);
+	delete[] templ;
+
+	if (m_timeshift_fd < 0) {
+		m_record = 0;
+		eDebug("[eDVBServicePlay] mkstemp FAILED for timeshift file. Path is likely invalid or storage is removed.");
+		return -4;
+	}
 
 	ofstream fileout;
 	fileout.open("/proc/stb/lcd/symbol_timeshift");
-	if(fileout.is_open())
-	{
+	if (fileout.is_open()) {
 		fileout << "1";
 	}
 
 	fileout.open("/proc/stb/lcd/symbol_record");
-	if(fileout.is_open())
-	{
+	if (fileout.is_open()) {
 		fileout << "1";
-	}
-
-	delete [] templ;
-
-	if (m_timeshift_fd < 0)
-	{
-		m_record = 0;
-		return -4;
 	}
 
 	m_record->setTargetFD(m_timeshift_fd);
