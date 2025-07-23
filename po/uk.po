@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
-"PO-Revision-Date: 2025-05-08 05:07+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
+"PO-Revision-Date: 2025-07-20 15:03+0000\n"
 "Last-Translator: kvinto <badsystem@ukr.net>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/uk/>\n"
 "Language: uk\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 msgid ""
@@ -1071,6 +1071,10 @@ msgstr[1] "%d канали знайдено."
 msgstr[2] "%d каналів знайдено."
 
 #, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr "На пристрої створено %d слотів.\n"
+
+#, python-format
 msgid "%d times"
 msgstr "%d рази"
 
@@ -1247,6 +1251,10 @@ msgstr "%s довго"
 #, python-format
 msgid "%s not available."
 msgstr "%s недоступний."
+
+#, python-format
+msgid "%s version"
+msgstr "Версія %s"
 
 #, python-format
 msgid "%s%d min"
@@ -5183,6 +5191,9 @@ msgstr "Створення кореневої файлової системи в
 msgid "Create separate radio user bouquet"
 msgstr "Створити окремий фаворитний радіо-список"
 
+msgid "Create slots for the selected device"
+msgstr "Створити слоти для вибраного пристрою"
+
 msgid "Create swap"
 msgstr "Створити swap"
 
@@ -5459,9 +5470,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "ДВОШАРОВИЙ DVD"
-
-msgid "DVB API version"
-msgstr "Версія DVB API"
 
 msgid "DVB CI Delay"
 msgstr "Затримка DVB CI"
@@ -5814,6 +5822,9 @@ msgstr "Визначити DNS-суфікс."
 
 msgid "Define the custom mountpoint for the device."
 msgstr "Визначте настроювану точку підключення для пристрою."
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
+msgstr "Визначте цільове розташування для резервного копіювання налаштувань за замовчуванням. Виберіть 'Запитувати користувача', щоб запитувати цільове розташування під час запуску резервного копіювання."
 
 msgid "Define the file system mount options."
 msgstr "Визначте параметри монтування файлової системи."
@@ -7365,9 +7376,6 @@ msgstr "Інформація про Enigma2"
 msgid "Enigma2 revision"
 msgstr "Ревізія Enigma2"
 
-msgid "Enigma2 version"
-msgstr "Версія Enigma2"
-
 msgid "Enigmalight"
 msgstr "Енігма-light"
 
@@ -8086,9 +8094,6 @@ msgstr "FFmpeg Проба"
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr "FFmpeg не встановлено, тому дії з файлами '.mvi' недоступні!"
 
-msgid "FFmpeg version"
-msgstr "Версія FFmpeg"
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -8687,9 +8692,6 @@ msgstr "Тест FullHD"
 msgid "G"
 msgstr "G"
 
-msgid "GCC version"
-msgstr "Версія GCC"
-
 msgid "GREEN button"
 msgstr "Зелена кнопка"
 
@@ -8701,9 +8703,6 @@ msgstr "Категорія журналу налагодження GStreamer *"
 
 msgid "GStreamer debug log level *"
 msgstr "Рівень журналу налагодження GStreamer *"
-
-msgid "GStreamer version"
-msgstr "Версія GStreamer"
 
 msgid "GUI Skin *"
 msgstr "Скін Графічного інтерфейсу *"
@@ -8801,9 +8800,6 @@ msgstr "Гібралтар"
 
 msgid "Given device id"
 msgstr "ID пристрою"
-
-msgid "Glibc version"
-msgstr "Версія Glibc"
 
 msgid "Go back to the previous step"
 msgstr "Повернутися до попереднього кроку"
@@ -10243,8 +10239,15 @@ msgstr "Пакети ядра"
 msgid "Kernel file"
 msgstr "Файл ядра"
 
+msgid "Kernel partition"
+msgstr "Розділ ядра"
+
 msgid "Kernel version"
 msgstr "Версія ядра"
+
+#, python-format
+msgid "Kernel%s partition"
+msgstr "Розділ ядра%s"
 
 msgid "Kexec MultiBoot Actions"
 msgstr "Kexec MultiBoot Дії"
@@ -12695,9 +12698,6 @@ msgstr "Відкрити параметри аудіо"
 msgid "Open AutoTimer"
 msgstr "Відкрити автотаймер"
 
-msgid "Open AutoTimer OverView"
-msgstr "Відкрити огляд автотаймера"
-
 msgid "Open AutoTimer Overview"
 msgstr "Відкрити список автотаймера"
 
@@ -12706,9 +12706,6 @@ msgstr "Відкрити фаворитний список"
 
 msgid "Open Box Portal"
 msgstr "Показати портали тюнера"
-
-msgid "Open DreamPlex"
-msgstr "Відкрити DreamPlex"
 
 msgid "Open EPG"
 msgstr "Відкрити EPG"
@@ -12874,9 +12871,6 @@ msgstr "Домашня сторінка OpenDNS"
 
 msgid "OpenPLi Packages"
 msgstr "Пакети OpenPLi"
-
-msgid "OpenSSL version"
-msgstr "Версія OpenSSL"
 
 msgid "OpenVPN"
 msgstr "OpenVPN"
@@ -14272,9 +14266,6 @@ msgstr "Пакети розробки Python"
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python інтерфейс для /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr "Версія Python"
-
 msgid "Qatar"
 msgstr "Катар"
 
@@ -14325,9 +14316,6 @@ msgstr "Режим швидкого ЕПГ"
 
 msgid "QuickMenu"
 msgstr "Швидке меню"
-
-msgid "QuickMenu Actions"
-msgstr "Дії для QuickMenu"
 
 msgid "QuickMenu/Extensions"
 msgstr "Швидке меню/Розширення"
@@ -15466,9 +15454,6 @@ msgstr "Samba Сервер"
 msgid "Samba Settings"
 msgstr "Налаштування Samba"
 
-msgid "Samba version"
-msgstr "Версія Самби"
-
 msgid "Same as in active"
 msgstr "Те ж, що при активності"
 
@@ -15772,12 +15757,6 @@ msgstr "Швидкість прокрутки (програмний рендер
 msgid "Search"
 msgstr "Пошук"
 
-msgid "Search EPG for current event"
-msgstr "Пошук EPG для поточної передачі"
-
-msgid "Search IMDb for information about current event"
-msgstr "Пошук інформації про поточну передачу на IMDb"
-
 msgid "Search Sats"
 msgstr "Пошук супутників"
 
@@ -15853,10 +15832,10 @@ msgstr "Пошук вперед довго"
 msgid "SeekBar activation"
 msgstr "Активація Seekbar"
 
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Панель пошуку"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Крок Seekbar"
 
 msgid "Seeking connected events"
@@ -15928,7 +15907,7 @@ msgstr "Якщо вибрано 'так', інформаційна панель 
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr "Виберіть 'Так', щоб кожен виявлений пристрій зберігання даних автоматично експортувався як спільний доступ до samba."
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Якщо вибрано 'так', зможете використовувати SeekBar, щоб перейти до точки з подією."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16216,6 +16195,9 @@ msgstr "Вибрати фаворит"
 msgid "Select a debug log file to view:"
 msgstr "Виберіть файл журналу налагодження для перегляду:"
 
+msgid "Select a device to create multiboot slots"
+msgstr "Виберіть пристрій для створення слотів для multiboot"
+
 msgid "Select a device to use as the flash expander"
 msgstr "Виберіть пристрій, який буду використовувати, як розширювач флеш-пам’яті"
 
@@ -16442,6 +16424,9 @@ msgstr "Виберіть метод сортування:"
 
 msgid "Select system information to view:"
 msgstr "Виберіть системну інформацію для перегляду:"
+
+msgid "Select target device for slot creation"
+msgstr "Виберіть цільовий пристрій для створення слота"
 
 msgid "Select temporary directory sort order for the current column"
 msgstr "Виберіть тимчасовий порядок сортування каталогу для поточного стовпця"
@@ -17260,7 +17245,7 @@ msgstr "Встановіть метод сортування за умовчан
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Встановіть час затримки між повтореннями, використовується програмний рендеринг в деяких скінах."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Встановити крок переходу для Seekbar."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -17399,6 +17384,9 @@ msgstr "Настійно рекомендується встановити па�
 
 msgid "Settings"
 msgstr "Налаштування"
+
+msgid "Settings Backup Target"
+msgstr "Налаштування резервного копіювання"
 
 msgid "Settings mode"
 msgstr "Режим Налаштування"
@@ -18596,6 +18584,9 @@ msgstr "Слот '%s' %s"
 msgid "Slot '%s' %s: %s%s"
 msgstr "Слот '%s' %s: %s%s"
 
+msgid "Slot F: Flash Slot Image Backup (Current image)"
+msgstr "Слот F: Резервне копіювання флеш-пам'яті (поточний імідж)"
+
 msgid "Slot Manager"
 msgstr "Менеджер слотів"
 
@@ -19566,7 +19557,7 @@ msgid "TMDB Search"
 msgstr "TMDB Пошук"
 
 msgid "TRANSLATOR_INFO"
-msgstr "Переклад: kvinto - 08.05.2025"
+msgstr "Переклад: kvinto - 19.07.2025"
 
 msgid "TS file is too large for ISO9660 level 1!"
 msgstr "TS файл занадто великий для ISO9660 рівень 1!"
@@ -19846,13 +19837,6 @@ msgstr ""
 
 msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "Стандарт DVD не підтримує відеопотоки H.264 (HDTV)."
-
-msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-"DreamPlex плагін не встановлено!\n"
-"Будь ласка, спочатку встановіть його."
 
 msgid ""
 "The EPGSearch plugin is not installed!\n"
@@ -20737,9 +20721,6 @@ msgstr "Часова історія"
 msgid "Timeline scale"
 msgstr "Шкала часу"
 
-msgid "Timer Actions"
-msgstr "Дія для Таймера"
-
 msgid "Timer Log Actions"
 msgstr "Дії логу таймера"
 
@@ -21231,6 +21212,10 @@ msgstr "Тип пристрою"
 
 msgid "Type of scan"
 msgstr "Тип сканування"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr "Слот UBI %s%s"
 
 msgid "UBINIZE"
 msgstr "UBINIZE"
@@ -24193,6 +24178,58 @@ msgstr "так (зберігати фіди)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "DVB API version"
+#~ msgstr "Версія DVB API"
+
+#~ msgid "Enigma2 version"
+#~ msgstr "Версія Enigma2"
+
+#~ msgid "FFmpeg version"
+#~ msgstr "Версія FFmpeg"
+
+#~ msgid "GCC version"
+#~ msgstr "Версія GCC"
+
+#~ msgid "GStreamer version"
+#~ msgstr "Версія GStreamer"
+
+#~ msgid "Glibc version"
+#~ msgstr "Версія Glibc"
+
+#~ msgid "OpenSSL version"
+#~ msgstr "Версія OpenSSL"
+
+#~ msgid "Python version"
+#~ msgstr "Версія Python"
+
+#~ msgid "Samba version"
+#~ msgstr "Версія Самби"
+
+#~ msgid "Open AutoTimer OverView"
+#~ msgstr "Відкрити огляд автотаймера"
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "Відкрити DreamPlex"
+
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Дії для QuickMenu"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Пошук EPG для поточної передачі"
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "Пошук інформації про поточну передачу на IMDb"
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr ""
+#~ "DreamPlex плагін не встановлено!\n"
+#~ "Будь ласка, спочатку встановіть його."
+
+#~ msgid "Timer Actions"
+#~ msgstr "Дія для Таймера"
 
 #~ msgid "InfoBar EPG Actions"
 #~ msgstr "Дії для інфобару EPG"

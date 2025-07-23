@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV Italian translation\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
-"PO-Revision-Date: 2025-05-09 04:42+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
+"PO-Revision-Date: 2025-07-18 21:03+0000\n"
 "Last-Translator: Massimo Pissarello <mapi68@gmail.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/it/>\n"
 "Language: it\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 "X-Poedit-SourceCharset: iso-8859-1\n"
 
 msgid ""
@@ -1034,6 +1034,10 @@ msgstr[0] "%d servizio trovato."
 msgstr[1] "%d servizi trovati."
 
 #, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr "Sono stati creati %d slot sul dispositivo.\n"
+
+#, python-format
 msgid "%d times"
 msgstr "%d volte"
 
@@ -1209,6 +1213,10 @@ msgstr "%s lunga"
 #, python-format
 msgid "%s not available."
 msgstr "%s non disponibile."
+
+#, python-format
+msgid "%s version"
+msgstr "Versione %s"
 
 #, python-format
 msgid "%s%d min"
@@ -5143,6 +5151,9 @@ msgstr "Crea file system flash di root con journaling."
 msgid "Create separate radio user bouquet"
 msgstr "Crea bouquet separato per le radio"
 
+msgid "Create slots for the selected device"
+msgstr "Crea slot per il dispositivo selezionato"
+
 msgid "Create swap"
 msgstr "Crea swap"
 
@@ -5419,9 +5430,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "DVD A DOPPIO STRATO"
-
-msgid "DVB API version"
-msgstr "Versione API DVB"
 
 msgid "DVB CI Delay"
 msgstr "Ritardo DVB CI"
@@ -5774,6 +5782,9 @@ msgstr "Definisci suffisso DNS."
 
 msgid "Define the custom mountpoint for the device."
 msgstr "Definisci punto di montaggio personalizzato per il dispositivo."
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
+msgstr "Definisci la posizione di destinazione predefinita per il backup. Seleziona 'Chiedi all'utente' per richiedere all'utente la posizione di destinazione quando viene eseguito il backup."
 
 msgid "Define the file system mount options."
 msgstr "Definisci opzioni di montaggio del file system."
@@ -7322,9 +7333,6 @@ msgstr "Informazioni su Enigma2"
 msgid "Enigma2 revision"
 msgstr "Revisione Enigma2"
 
-msgid "Enigma2 version"
-msgstr "Versione Enigma2"
-
 msgid "Enigmalight"
 msgstr "Enigmalight"
 
@@ -8043,9 +8051,6 @@ msgstr "FFmpeg probe"
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr "FFmpeg non è installato quindi le azioni sul file '.mvi' non sono disponibili!"
 
-msgid "FFmpeg version"
-msgstr "Versione FFmpeg"
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -8644,9 +8649,6 @@ msgstr "Test FullHD"
 msgid "G"
 msgstr "G"
 
-msgid "GCC version"
-msgstr "Versione GCC"
-
 msgid "GREEN button"
 msgstr "Tasto VERDE"
 
@@ -8658,9 +8660,6 @@ msgstr "Categoria del registro di debug di GStreamer *"
 
 msgid "GStreamer debug log level *"
 msgstr "Livello del registro di debug di GStreamer *"
-
-msgid "GStreamer version"
-msgstr "Versione GStreamer"
 
 msgid "GUI Skin *"
 msgstr "Skin GUI *"
@@ -8758,9 +8757,6 @@ msgstr "Gibilterra"
 
 msgid "Given device id"
 msgstr "ID dispositivo fornito"
-
-msgid "Glibc version"
-msgstr "Versione Glibc"
 
 msgid "Go back to the previous step"
 msgstr "Torna al passaggio precedente"
@@ -10199,8 +10195,15 @@ msgstr "Pacchetti kernel"
 msgid "Kernel file"
 msgstr "File del kernel"
 
+msgid "Kernel partition"
+msgstr "Partizione del kernel"
+
 msgid "Kernel version"
 msgstr "Versione del kernel"
+
+#, python-format
+msgid "Kernel%s partition"
+msgstr "Partizione Kernel%s"
 
 msgid "Kexec MultiBoot Actions"
 msgstr "Azioni MultiBoot Kexec"
@@ -12650,9 +12653,6 @@ msgstr "Apri opzioni audio"
 msgid "Open AutoTimer"
 msgstr "Apri timer automatico"
 
-msgid "Open AutoTimer OverView"
-msgstr "Apri panoramica AutoTimer"
-
 msgid "Open AutoTimer Overview"
 msgstr "Apri panoramica AutoTimer"
 
@@ -12661,9 +12661,6 @@ msgstr "Apri elenco dei bouquet"
 
 msgid "Open Box Portal"
 msgstr "Apri Box Portal"
-
-msgid "Open DreamPlex"
-msgstr "Apri DreamPlex"
 
 msgid "Open EPG"
 msgstr "Apri EPG"
@@ -12829,9 +12826,6 @@ msgstr "Home di OpenDNS"
 
 msgid "OpenPLi Packages"
 msgstr "Pacchetti OpenPLi"
-
-msgid "OpenSSL version"
-msgstr "Versione OpenSSL"
 
 msgid "OpenVPN"
 msgstr "OpenVPN"
@@ -14225,9 +14219,6 @@ msgstr "Pacchetti sviluppo Python"
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Frontend python per /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr "Versione Python"
-
 msgid "Qatar"
 msgstr "Qatar"
 
@@ -14278,9 +14269,6 @@ msgstr "Modalità QuickEPG"
 
 msgid "QuickMenu"
 msgstr "Menu rapido"
-
-msgid "QuickMenu Actions"
-msgstr "Azioni del menu rapido"
 
 msgid "QuickMenu/Extensions"
 msgstr "Menu rapido / Estensioni"
@@ -15419,9 +15407,6 @@ msgstr "Server Samba"
 msgid "Samba Settings"
 msgstr "Impostazioni Samba"
 
-msgid "Samba version"
-msgstr "Versione Samba"
-
 msgid "Same as in active"
 msgstr "Come da attivo"
 
@@ -15722,12 +15707,6 @@ msgstr "Velocità di scorrimento (software di rendering)"
 msgid "Search"
 msgstr "Ricerca"
 
-msgid "Search EPG for current event"
-msgstr "Cerca EPG per l'evento attuale"
-
-msgid "Search IMDb for information about current event"
-msgstr "Cerca su IMDb informazioni sull'evento attuale"
-
 msgid "Search Sats"
 msgstr "Ricerca transponder"
 
@@ -15803,10 +15782,10 @@ msgstr "Cerca in avanti a lungo"
 msgid "SeekBar activation"
 msgstr "Attivazione della barra di ricerca"
 
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Barra di ricerca"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Sensibilità della barra di ricerca"
 
 msgid "Seeking connected events"
@@ -15878,7 +15857,7 @@ msgstr "Seleziona 'Sì' per mantenere la barra informazioni visualizzata, senza 
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr "Seleziona 'Sì' per consentire a ciascun dispositivo di archiviazione rilevato di essere automaticamente esportato come condivisione samba."
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Seleziona 'Sì' per consentire l'uso della barra di ricerca per passare a un punto selezionato all'interno dell'evento."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16166,6 +16145,9 @@ msgstr "Seleziona un bouquet"
 msgid "Select a debug log file to view:"
 msgstr "Seleziona un file di registro di debug da visualizzare:"
 
+msgid "Select a device to create multiboot slots"
+msgstr "Seleziona un dispositivo per creare slot multiboot"
+
 msgid "Select a device to use as the flash expander"
 msgstr "Seleziona un dispositivo da usare come espansore flash"
 
@@ -16392,6 +16374,9 @@ msgstr "Seleziona metodo di ordinamento:"
 
 msgid "Select system information to view:"
 msgstr "Seleziona informazioni di sistema da visualizzare:"
+
+msgid "Select target device for slot creation"
+msgstr "Seleziona dispositivo di destinazione per la creazione dello slot"
 
 msgid "Select temporary directory sort order for the current column"
 msgstr "Seleziona ordinamento della cartella per la colonna attuale"
@@ -17210,7 +17195,7 @@ msgstr "Imposta metodo di ordinamento predefinito."
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Imposta tempo di ritardo tra cicli ripetuti; questa funzione è uata dal software di rendering in alcune skin."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Imposta dimensione del salto della barra di ricerca."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -17349,6 +17334,9 @@ msgstr "L'impostazione di una password è fortemente consigliata soprattutto se 
 
 msgid "Settings"
 msgstr "Impostazioni"
+
+msgid "Settings Backup Target"
+msgstr "Impostazioni destinazione backup"
 
 msgid "Settings mode"
 msgstr "Modalità impostazioni"
@@ -18543,6 +18531,9 @@ msgstr "Slot '%s' %s"
 #, python-format
 msgid "Slot '%s' %s: %s%s"
 msgstr "Slot '%s' %s: %s%s"
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
+msgstr "Slot F: backup immagine slot flash (immagine attuale)"
 
 msgid "Slot Manager"
 msgstr "Gestore slot"
@@ -19796,13 +19787,6 @@ msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "Lo standard DVD non supporta gli stream video H.264 (HDTV)."
 
 msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-"Il plugin DreamPlex Center non è installato!\n"
-"Per favore, installalo."
-
-msgid ""
 "The EPGSearch plugin is not installed!\n"
 "Please install it."
 msgstr ""
@@ -20684,9 +20668,6 @@ msgstr "Cronistoria"
 msgid "Timeline scale"
 msgstr "Scala oraria"
 
-msgid "Timer Actions"
-msgstr "Azioni timer"
-
 msgid "Timer Log Actions"
 msgstr "Azioni registro timer"
 
@@ -21178,6 +21159,10 @@ msgstr "Tipo di dispositivo"
 
 msgid "Type of scan"
 msgstr "Tipo ricerca"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr "Slot UBI %s%s"
 
 msgid "UBINIZE"
 msgstr "UBINIZE"
@@ -24139,6 +24124,61 @@ msgstr "sì (mantieni feed)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "DVB API version"
+#~ msgstr "Versione API DVB"
+
+#~ msgid "Enigma2 version"
+#~ msgstr "Versione Enigma2"
+
+#~ msgid "FFmpeg version"
+#~ msgstr "Versione FFmpeg"
+
+#~ msgid "GCC version"
+#~ msgstr "Versione GCC"
+
+#~ msgid "GStreamer version"
+#~ msgstr "Versione GStreamer"
+
+#~ msgid "Glibc version"
+#~ msgstr "Versione Glibc"
+
+#~ msgid "OpenSSL version"
+#~ msgstr "Versione OpenSSL"
+
+#~ msgid "Python version"
+#~ msgstr "Versione Python"
+
+#~ msgid "Rust version"
+#~ msgstr "Versione di Rust"
+
+#~ msgid "Samba version"
+#~ msgstr "Versione Samba"
+
+#~ msgid "Open AutoTimer OverView"
+#~ msgstr "Apri panoramica AutoTimer"
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "Apri DreamPlex"
+
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Azioni del menu rapido"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Cerca EPG per l'evento attuale"
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "Cerca su IMDb informazioni sull'evento attuale"
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr ""
+#~ "Il plugin DreamPlex Center non è installato!\n"
+#~ "Per favore, installalo."
+
+#~ msgid "Timer Actions"
+#~ msgstr "Azioni timer"
 
 #~ msgid "InfoBar EPG Actions"
 #~ msgstr "Azioni barra info EPG"

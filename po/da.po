@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
 "PO-Revision-Date: 2021-11-04 23:53+0000\n"
 "Last-Translator: T. Rylle <dk-translation@pm.me>\n"
 "Language-Team: Danish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/da/>\n"
@@ -1030,6 +1030,10 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr ""
+
+#, python-format
 msgid "%d times"
 msgstr "%d gange"
 
@@ -1205,6 +1209,10 @@ msgstr ""
 #, python-format
 msgid "%s not available."
 msgstr "%s ikke tilgængelig."
+
+#, python-format
+msgid "%s version"
+msgstr ""
 
 #, python-format
 msgid "%s%d min"
@@ -5146,6 +5154,9 @@ msgstr ""
 msgid "Create separate radio user bouquet"
 msgstr "Opret separat radio brugerbuket"
 
+msgid "Create slots for the selected device"
+msgstr ""
+
 msgid "Create swap"
 msgstr ""
 
@@ -5420,9 +5431,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "Dobbeltlags DVD"
-
-msgid "DVB API version"
-msgstr ""
 
 msgid "DVB CI Delay"
 msgstr "DVB CI forsinkelse"
@@ -5774,6 +5782,9 @@ msgid "Define the DNS suffix."
 msgstr ""
 
 msgid "Define the custom mountpoint for the device."
+msgstr ""
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
 msgstr ""
 
 msgid "Define the file system mount options."
@@ -7311,9 +7322,6 @@ msgstr ""
 msgid "Enigma2 revision"
 msgstr ""
 
-msgid "Enigma2 version"
-msgstr ""
-
 msgid "Enigmalight"
 msgstr "Enigmalight"
 
@@ -8031,9 +8039,6 @@ msgstr ""
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr ""
 
-msgid "FFmpeg version"
-msgstr ""
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -8638,9 +8643,6 @@ msgstr "Fuld HD Test"
 msgid "G"
 msgstr "G"
 
-msgid "GCC version"
-msgstr ""
-
 msgid "GREEN button"
 msgstr "Grøn knap"
 
@@ -8651,9 +8653,6 @@ msgid "GStreamer debug log category *"
 msgstr ""
 
 msgid "GStreamer debug log level *"
-msgstr ""
-
-msgid "GStreamer version"
 msgstr ""
 
 msgid "GUI Skin *"
@@ -8751,9 +8750,6 @@ msgid "Gibraltar"
 msgstr "Gibraltar"
 
 msgid "Given device id"
-msgstr ""
-
-msgid "Glibc version"
 msgstr ""
 
 msgid "Go back to the previous step"
@@ -10209,7 +10205,14 @@ msgstr ""
 msgid "Kernel file"
 msgstr ""
 
+msgid "Kernel partition"
+msgstr ""
+
 msgid "Kernel version"
+msgstr ""
+
+#, python-format
+msgid "Kernel%s partition"
 msgstr ""
 
 msgid "Kexec MultiBoot Actions"
@@ -12702,9 +12705,6 @@ msgstr "Lydmuligheder..."
 msgid "Open AutoTimer"
 msgstr "Åben AutoTimer"
 
-msgid "Open AutoTimer OverView"
-msgstr ""
-
 #, fuzzy
 msgid "Open AutoTimer Overview"
 msgstr "Åben AutoTimer-liste..."
@@ -12716,9 +12716,6 @@ msgstr "Åben Buketliste..."
 #, fuzzy
 msgid "Open Box Portal"
 msgstr "Vis boksportal..."
-
-msgid "Open DreamPlex"
-msgstr "Vis DreamPlex afspilleren..."
 
 msgid "Open EPG"
 msgstr "Vis EPG..."
@@ -12898,9 +12895,6 @@ msgid "OpenDNS Home"
 msgstr "Åben AutoTimer"
 
 msgid "OpenPLi Packages"
-msgstr ""
-
-msgid "OpenSSL version"
 msgstr ""
 
 msgid "OpenVPN"
@@ -14302,9 +14296,6 @@ msgstr ""
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python frontend til /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr ""
-
 msgid "Qatar"
 msgstr "Qatar"
 
@@ -14356,10 +14347,6 @@ msgstr "Kvik EPG tilstand"
 
 msgid "QuickMenu"
 msgstr "KvikMenu"
-
-#, fuzzy
-msgid "QuickMenu Actions"
-msgstr "Kvik handlinger"
 
 msgid "QuickMenu/Extensions"
 msgstr "KvikMenu/Udvidelser"
@@ -15501,9 +15488,6 @@ msgstr ""
 msgid "Samba Settings"
 msgstr ""
 
-msgid "Samba version"
-msgstr ""
-
 msgid "Same as in active"
 msgstr "Samme som i aktiv"
 
@@ -15808,12 +15792,6 @@ msgstr "Rullehastighed (software gengiver)"
 msgid "Search"
 msgstr "Søg"
 
-msgid "Search EPG for current event"
-msgstr "Søg i EPG efter nuværende begivenhed."
-
-msgid "Search IMDb for information about current event"
-msgstr "Søg i IMDb efter information om nuværende begivenhed."
-
 msgid "Search Sats"
 msgstr "Søg Satelitter"
 
@@ -15893,10 +15871,10 @@ msgstr "Søg fremad"
 msgid "SeekBar activation"
 msgstr "Søgebjælke aktivering"
 
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Søgebjælke"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Søgebjælke følsomhed"
 
 msgid "Seeking connected events"
@@ -15968,7 +15946,7 @@ msgstr "Hvis sat til 'Ja' bliver Infobjælken vist vedvarende i 'pauset' tilstan
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr ""
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Hvis sat til'Ja' kan du bruge Søgebjælken til at hoppe til et sted indenfor begivenheden."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16256,6 +16234,9 @@ msgstr "Vælg en Buket"
 msgid "Select a debug log file to view:"
 msgstr ""
 
+msgid "Select a device to create multiboot slots"
+msgstr ""
+
 msgid "Select a device to use as the flash expander"
 msgstr ""
 
@@ -16481,6 +16462,9 @@ msgid "Select sort method:"
 msgstr "Vælg sorteringsmetode:"
 
 msgid "Select system information to view:"
+msgstr ""
+
+msgid "Select target device for slot creation"
 msgstr ""
 
 msgid "Select temporary directory sort order for the current column"
@@ -17299,7 +17283,7 @@ msgstr "Sæt standard sorteringsmetode."
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Sæt forsinkelsen mellem gentagne løkker, hvilket bruges af software gengiver i nogle Temaer."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Sæt hop-størrelse af søgebjælken."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -17432,6 +17416,9 @@ msgstr ""
 
 msgid "Settings"
 msgstr "Indstillinger"
+
+msgid "Settings Backup Target"
+msgstr ""
 
 msgid "Settings mode"
 msgstr "Opsætningstilstand"
@@ -18632,6 +18619,9 @@ msgstr ""
 
 #, python-format
 msgid "Slot '%s' %s: %s%s"
+msgstr ""
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
 msgstr ""
 
 msgid "Slot Manager"
@@ -19897,13 +19887,6 @@ msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "DVD standarden understøtter ikke H.264 (HDTV) video streams."
 
 msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-"DreamPlex Pluginet er ikke installeret!\n"
-"Installer den venligst."
-
-msgid ""
 "The EPGSearch plugin is not installed!\n"
 "Please install it."
 msgstr ""
@@ -20759,9 +20742,6 @@ msgstr "Tidshistorik"
 msgid "Timeline scale"
 msgstr "Tidsskala"
 
-msgid "Timer Actions"
-msgstr "Timer handlinger"
-
 msgid "Timer Log Actions"
 msgstr ""
 
@@ -21257,6 +21237,10 @@ msgstr ""
 
 msgid "Type of scan"
 msgstr "Søgetype"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr ""
 
 msgid "UBINIZE"
 msgstr ""
@@ -24194,6 +24178,29 @@ msgstr "ja (behold feeds)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "Vis DreamPlex afspilleren..."
+
+#, fuzzy
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Kvik handlinger"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Søg i EPG efter nuværende begivenhed."
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "Søg i IMDb efter information om nuværende begivenhed."
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr ""
+#~ "DreamPlex Pluginet er ikke installeret!\n"
+#~ "Installer den venligst."
+
+#~ msgid "Timer Actions"
+#~ msgstr "Timer handlinger"
 
 #~ msgid "InfoBar EPG Actions"
 #~ msgstr "Infobjælke EPG handlinger"

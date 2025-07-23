@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: hu_po v3.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
 "PO-Revision-Date: 2025-05-05 05:50+0000\n"
 "Last-Translator: Balázs Sólyom <balazs@solyom.online>\n"
 "Language-Team: Hungarian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/hu/>\n"
@@ -1061,6 +1061,10 @@ msgstr[0] "%d szolgáltatás található."
 msgstr[1] "%d szolgáltatás található."
 
 #, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr ""
+
+#, python-format
 msgid "%d times"
 msgstr "%d alkalommal"
 
@@ -1241,6 +1245,10 @@ msgstr ""
 #, python-format
 msgid "%s not available."
 msgstr "%s nem elérhető."
+
+#, python-format
+msgid "%s version"
+msgstr ""
 
 #, python-format
 msgid "%s%d min"
@@ -5187,6 +5195,9 @@ msgstr ""
 msgid "Create separate radio user bouquet"
 msgstr "Különálló rádió csatornacsomag létrehozása"
 
+msgid "Create slots for the selected device"
+msgstr ""
+
 msgid "Create swap"
 msgstr ""
 
@@ -5463,9 +5474,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "Kétréteges DVD"
-
-msgid "DVB API version"
-msgstr ""
 
 msgid "DVB CI Delay"
 msgstr "DVB CI késleltetés"
@@ -5824,6 +5832,9 @@ msgid "Define the DNS suffix."
 msgstr ""
 
 msgid "Define the custom mountpoint for the device."
+msgstr ""
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
 msgstr ""
 
 msgid "Define the file system mount options."
@@ -7367,9 +7378,6 @@ msgstr ""
 msgid "Enigma2 revision"
 msgstr ""
 
-msgid "Enigma2 version"
-msgstr ""
-
 msgid "Enigmalight"
 msgstr ""
 
@@ -8084,9 +8092,6 @@ msgstr ""
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr ""
 
-msgid "FFmpeg version"
-msgstr ""
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -8693,9 +8698,6 @@ msgstr "FullHD teszt"
 msgid "G"
 msgstr "GB"
 
-msgid "GCC version"
-msgstr ""
-
 msgid "GREEN button"
 msgstr "Zöld gomb"
 
@@ -8706,9 +8708,6 @@ msgid "GStreamer debug log category *"
 msgstr ""
 
 msgid "GStreamer debug log level *"
-msgstr ""
-
-msgid "GStreamer version"
 msgstr ""
 
 msgid "GUI Skin *"
@@ -8808,9 +8807,6 @@ msgid "Gibraltar"
 msgstr "Gibraltár"
 
 msgid "Given device id"
-msgstr ""
-
-msgid "Glibc version"
 msgstr ""
 
 msgid "Go back to the previous step"
@@ -10264,7 +10260,14 @@ msgstr ""
 msgid "Kernel file"
 msgstr ""
 
+msgid "Kernel partition"
+msgstr ""
+
 msgid "Kernel version"
+msgstr ""
+
+#, python-format
+msgid "Kernel%s partition"
 msgstr ""
 
 msgid "Kexec MultiBoot Actions"
@@ -12762,9 +12765,6 @@ msgstr "Hang beállítások..."
 msgid "Open AutoTimer"
 msgstr "AutoTimer megnyitása"
 
-msgid "Open AutoTimer OverView"
-msgstr ""
-
 #, fuzzy
 msgid "Open AutoTimer Overview"
 msgstr "Automatikus Időzítő lista megnyitása..."
@@ -12776,9 +12776,6 @@ msgstr "Csatornacsomag lista megnyitása..."
 #, fuzzy
 msgid "Open Box Portal"
 msgstr "Box Portal megnyitása..."
-
-msgid "Open DreamPlex"
-msgstr "DreamPlex Player mutatása..."
 
 msgid "Open EPG"
 msgstr "az EPG megjelenítése..."
@@ -12957,9 +12954,6 @@ msgid "OpenDNS Home"
 msgstr "AutoTimer megnyitása"
 
 msgid "OpenPLi Packages"
-msgstr ""
-
-msgid "OpenSSL version"
 msgstr ""
 
 msgid "OpenVPN"
@@ -14358,9 +14352,6 @@ msgstr ""
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python felület a /tmp/mmi.socket-hez"
 
-msgid "Python version"
-msgstr ""
-
 msgid "Qatar"
 msgstr "Katar"
 
@@ -14412,10 +14403,6 @@ msgstr "Gyors EPG mód"
 
 msgid "QuickMenu"
 msgstr "Gyors Menü"
-
-#, fuzzy
-msgid "QuickMenu Actions"
-msgstr "Gyors műveletek"
 
 msgid "QuickMenu/Extensions"
 msgstr "Gyors Menü/Bővítmények"
@@ -15557,9 +15544,6 @@ msgstr ""
 msgid "Samba Settings"
 msgstr ""
 
-msgid "Samba version"
-msgstr ""
-
 msgid "Same as in active"
 msgstr "Ugyanaz, mint az aktív"
 
@@ -15863,12 +15847,6 @@ msgstr "Görgetési sebesség (szoftveres leképezés)"
 msgid "Search"
 msgstr "Keresés"
 
-msgid "Search EPG for current event"
-msgstr "Az aktuális esemény keresése az EPG-ben."
-
-msgid "Search IMDb for information about current event"
-msgstr "Az aktuális eseményről IMDb információ keresés."
-
 msgid "Search Sats"
 msgstr "Műholdak keresése"
 
@@ -15948,10 +15926,10 @@ msgstr "Előre kihagyása"
 msgid "SeekBar activation"
 msgstr "Keresősáv aktiválása"
 
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Keresősáv"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Keresősáv érzékenysége"
 
 msgid "Seeking connected events"
@@ -16023,7 +16001,7 @@ msgstr "Ha az 'igen'-t választja, az Információs sáv folyamatosan 'szünetel
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr ""
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Ha az 'igen'-t választja, akkor a keresősáv segítségével átugorhat egy adott pontra az eseményen belül."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16311,6 +16289,9 @@ msgstr "Csatornacsomag kiválasztása"
 msgid "Select a debug log file to view:"
 msgstr ""
 
+msgid "Select a device to create multiboot slots"
+msgstr ""
+
 msgid "Select a device to use as the flash expander"
 msgstr ""
 
@@ -16536,6 +16517,9 @@ msgid "Select sort method:"
 msgstr "Rendezési módszer választása:"
 
 msgid "Select system information to view:"
+msgstr ""
+
+msgid "Select target device for slot creation"
 msgstr ""
 
 msgid "Select temporary directory sort order for the current column"
@@ -17353,7 +17337,7 @@ msgstr "Alapértelmezett rendezési mód beállítása."
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Állítsa be a késleltetési időt a megismételt görgetés között, ezt a szoftver renderer használja bizonyos kinézeteknél."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Állítsa be a keresősáv ugrási méretét."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -17486,6 +17470,9 @@ msgstr ""
 
 msgid "Settings"
 msgstr "Beállítások"
+
+msgid "Settings Backup Target"
+msgstr ""
 
 msgid "Settings mode"
 msgstr "Beállítás módja"
@@ -18683,6 +18670,9 @@ msgstr ""
 
 #, python-format
 msgid "Slot '%s' %s: %s%s"
+msgstr ""
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
 msgstr ""
 
 msgid "Slot Manager"
@@ -19952,13 +19942,6 @@ msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "A DVD szabvány nem támogatja a H.264 (HDTV) videofolyamokat."
 
 msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-"A DreamPlex bővítmény nincs telepítve!\n"
-"Kérem, telepítse."
-
-msgid ""
 "The EPGSearch plugin is not installed!\n"
 "Please install it."
 msgstr ""
@@ -20813,10 +20796,6 @@ msgstr "Időelőzmények"
 msgid "Timeline scale"
 msgstr "Időskála"
 
-#, fuzzy
-msgid "Timer Actions"
-msgstr "Időzítő művelete"
-
 msgid "Timer Log Actions"
 msgstr ""
 
@@ -21315,6 +21294,10 @@ msgstr ""
 
 msgid "Type of scan"
 msgstr "Keresés típusa"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr ""
 
 msgid "UBINIZE"
 msgstr ""
@@ -24250,6 +24233,30 @@ msgstr "igen (állapotok megtartása)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "DreamPlex Player mutatása..."
+
+#, fuzzy
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Gyors műveletek"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Az aktuális esemény keresése az EPG-ben."
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "Az aktuális eseményről IMDb információ keresés."
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr ""
+#~ "A DreamPlex bővítmény nincs telepítve!\n"
+#~ "Kérem, telepítse."
+
+#, fuzzy
+#~ msgid "Timer Actions"
+#~ msgstr "Időzítő művelete"
 
 #, fuzzy
 #~ msgid "InfoBar EPG Actions"

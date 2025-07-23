@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
 "PO-Revision-Date: 2024-10-02 07:35+0000\n"
 "Last-Translator: gallegonovato <fran-carro@hotmail.es>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/es/>\n"
@@ -1048,6 +1048,10 @@ msgid_plural "%d services found."
 msgstr[0] "%d servicio encontrado."
 msgstr[1] "%d servicios encontrados."
 
+#, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr ""
+
 #
 #, python-format
 msgid "%d times"
@@ -1230,6 +1234,10 @@ msgstr "%s duración"
 #, python-format
 msgid "%s not available."
 msgstr "%s no disponible."
+
+#, python-format
+msgid "%s version"
+msgstr ""
 
 #, python-format
 msgid "%s%d min"
@@ -5372,6 +5380,9 @@ msgstr ""
 msgid "Create separate radio user bouquet"
 msgstr "Crear un userbouquet de radio independiente"
 
+msgid "Create slots for the selected device"
+msgstr ""
+
 msgid "Create swap"
 msgstr ""
 
@@ -5658,9 +5669,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "DVD DOBLE CAPA"
-
-msgid "DVB API version"
-msgstr "Versión de la API DVB"
 
 msgid "DVB CI Delay"
 msgstr "Retraso DVB-CI"
@@ -6027,6 +6035,9 @@ msgid "Define the DNS suffix."
 msgstr ""
 
 msgid "Define the custom mountpoint for the device."
+msgstr ""
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
 msgstr ""
 
 msgid "Define the file system mount options."
@@ -7662,9 +7673,6 @@ msgstr "Información sobre Enigma2"
 msgid "Enigma2 revision"
 msgstr "Revisión de Enigma2"
 
-msgid "Enigma2 version"
-msgstr "Versión de Enigma2"
-
 msgid "Enigmalight"
 msgstr "Iluminación enigma"
 
@@ -8415,9 +8423,6 @@ msgstr ""
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr ""
 
-msgid "FFmpeg version"
-msgstr "Versión FFmpeg"
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -9054,9 +9059,6 @@ msgstr "Prueba FullHD"
 msgid "G"
 msgstr "G"
 
-msgid "GCC version"
-msgstr "Versión de GCC"
-
 msgid "GREEN button"
 msgstr "Botón VERDE"
 
@@ -9069,9 +9071,6 @@ msgstr "Categoría de registro de depuración de GStreamer *"
 
 msgid "GStreamer debug log level *"
 msgstr "Nivel de registro de depuración de GStreamer *"
-
-msgid "GStreamer version"
-msgstr "Versión de GStreamer"
 
 msgid "GUI Skin *"
 msgstr ""
@@ -9176,9 +9175,6 @@ msgstr "Gibraltar"
 
 msgid "Given device id"
 msgstr "Identificación del dispositivo"
-
-msgid "Glibc version"
-msgstr "Versión de Glibc"
 
 msgid "Go back to the previous step"
 msgstr ""
@@ -10694,8 +10690,15 @@ msgstr ""
 msgid "Kernel file"
 msgstr "Fichero del núcleo"
 
+msgid "Kernel partition"
+msgstr ""
+
 msgid "Kernel version"
 msgstr "Versión del núcleo"
+
+#, python-format
+msgid "Kernel%s partition"
+msgstr ""
 
 msgid "Kexec MultiBoot Actions"
 msgstr ""
@@ -13328,9 +13331,6 @@ msgstr "Opciones de audio..."
 msgid "Open AutoTimer"
 msgstr "Abrir autotemporizadores"
 
-msgid "Open AutoTimer OverView"
-msgstr ""
-
 msgid "Open AutoTimer Overview"
 msgstr "Abrir lista de temporizadores automáticos "
 
@@ -13340,9 +13340,6 @@ msgstr "Abrir lista de bouquet"
 
 msgid "Open Box Portal"
 msgstr "Mostrar portal Box"
-
-msgid "Open DreamPlex"
-msgstr "Mostrar reproductor DreamPlex..."
 
 msgid "Open EPG"
 msgstr "Mostrar EPG..."
@@ -13518,9 +13515,6 @@ msgstr "Inicio de OpenDNS"
 
 msgid "OpenPLi Packages"
 msgstr ""
-
-msgid "OpenSSL version"
-msgstr "Versión de OpenSSL"
 
 msgid "OpenVPN"
 msgstr "OpenVPN"
@@ -15023,9 +15017,6 @@ msgstr ""
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python frontend para /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr "Versión de Python"
-
 msgid "Qatar"
 msgstr "Qatar"
 
@@ -15078,9 +15069,6 @@ msgstr "Modo de EPG rápido"
 
 msgid "QuickMenu"
 msgstr "Menú rápido"
-
-msgid "QuickMenu Actions"
-msgstr "Acciones del menú rápido"
 
 msgid "QuickMenu/Extensions"
 msgstr "Menú Rápido / Extensiones"
@@ -16310,9 +16298,6 @@ msgstr ""
 msgid "Samba Settings"
 msgstr ""
 
-msgid "Samba version"
-msgstr ""
-
 msgid "Same as in active"
 msgstr "Igual que en activo"
 
@@ -16635,12 +16620,6 @@ msgstr "Velocidad de scroll (renderizado por software)"
 msgid "Search"
 msgstr "Búsqueda"
 
-msgid "Search EPG for current event"
-msgstr "Buscar en el epg para el evento actual."
-
-msgid "Search IMDb for information about current event"
-msgstr "Buscar IMDb para información sobre el evento actual."
-
 msgid "Search Sats"
 msgstr "Buscar satélites"
 
@@ -16731,10 +16710,10 @@ msgid "SeekBar activation"
 msgstr "Activación de la barra de búsqueda"
 
 #
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Barra de busqueda"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Sensibilidad de la barra de búsqueda"
 
 msgid "Seeking connected events"
@@ -16807,7 +16786,7 @@ msgstr "Seleccione \"Sí\" para mantener la barra de información en pantalla, s
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr ""
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Si se ajusta a 'sí', te permitirá usar la barra de búsqueda para avanzar a cualquier momento del programa."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -17099,6 +17078,9 @@ msgstr "Seleccionar un grupo"
 msgid "Select a debug log file to view:"
 msgstr "Seleccione un archivo de registro de depuración para verlo:"
 
+msgid "Select a device to create multiboot slots"
+msgstr ""
+
 msgid "Select a device to use as the flash expander"
 msgstr ""
 
@@ -17337,6 +17319,9 @@ msgstr "Seleccione el método de ordenación:"
 
 msgid "Select system information to view:"
 msgstr "Seleccione la información del sistema que desea ver:"
+
+msgid "Select target device for slot creation"
+msgstr ""
 
 msgid "Select temporary directory sort order for the current column"
 msgstr ""
@@ -18186,7 +18171,7 @@ msgstr "Configura el método de clasificación por defecto."
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Configura el retraso entre la repetición en bucle, usa renderizado por software en algunos skins."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Configura el tamaño del salto de la barra de búsqueda."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -18321,6 +18306,9 @@ msgstr ""
 
 msgid "Settings"
 msgstr "Ajustes"
+
+msgid "Settings Backup Target"
+msgstr ""
 
 #
 msgid "Settings mode"
@@ -19613,6 +19601,9 @@ msgstr ""
 
 #, python-format
 msgid "Slot '%s' %s: %s%s"
+msgstr ""
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
 msgstr ""
 
 msgid "Slot Manager"
@@ -20982,13 +20973,6 @@ msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "El estándar DVD no admite flujos de vídeo H.264 (HDTV)."
 
 msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-"El complemento DreamPlex no está instalado.\n"
-"Por favor, instálalo."
-
-msgid ""
 "The EPGSearch plugin is not installed!\n"
 "Please install it."
 msgstr ""
@@ -21890,10 +21874,6 @@ msgstr "Editor de temporizador"
 msgid "Timeline scale"
 msgstr "Escala de tiempo"
 
-#, fuzzy
-msgid "Timer Actions"
-msgstr "Temporizador de acción"
-
 msgid "Timer Log Actions"
 msgstr ""
 
@@ -22449,6 +22429,10 @@ msgstr ""
 #
 msgid "Type of scan"
 msgstr "Tipo de búsqueda"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr ""
 
 msgid "UBINIZE"
 msgstr ""
@@ -25658,6 +25642,53 @@ msgstr "Sí (conservar fuentes)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "DVB API version"
+#~ msgstr "Versión de la API DVB"
+
+#~ msgid "Enigma2 version"
+#~ msgstr "Versión de Enigma2"
+
+#~ msgid "FFmpeg version"
+#~ msgstr "Versión FFmpeg"
+
+#~ msgid "GCC version"
+#~ msgstr "Versión de GCC"
+
+#~ msgid "GStreamer version"
+#~ msgstr "Versión de GStreamer"
+
+#~ msgid "Glibc version"
+#~ msgstr "Versión de Glibc"
+
+#~ msgid "OpenSSL version"
+#~ msgstr "Versión de OpenSSL"
+
+#~ msgid "Python version"
+#~ msgstr "Versión de Python"
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "Mostrar reproductor DreamPlex..."
+
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Acciones del menú rápido"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Buscar en el epg para el evento actual."
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "Buscar IMDb para información sobre el evento actual."
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr ""
+#~ "El complemento DreamPlex no está instalado.\n"
+#~ "Por favor, instálalo."
+
+#, fuzzy
+#~ msgid "Timer Actions"
+#~ msgstr "Temporizador de acción"
 
 #~ msgid "InfoBar EPG Actions"
 #~ msgstr "Acciones de la barra de información EPG"

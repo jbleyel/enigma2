@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
-"PO-Revision-Date: 2025-05-22 14:08+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
+"PO-Revision-Date: 2025-07-23 13:56+0000\n"
 "Last-Translator: pololoko111 <peciek83@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/pl/>\n"
 "Language: pl\n"
@@ -22,7 +22,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 msgid ""
@@ -1075,6 +1075,10 @@ msgstr[1] "Znaleziono %d kanały."
 msgstr[2] "Znaleziono %d kanałów."
 
 #, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr "Na urządzeniu utworzono %d slotów.\n"
+
+#, python-format
 msgid "%d times"
 msgstr "%d razy"
 
@@ -1252,6 +1256,10 @@ msgstr "%s długo"
 #, python-format
 msgid "%s not available."
 msgstr "%s nie dostępne."
+
+#, python-format
+msgid "%s version"
+msgstr "Wersja %s"
 
 #, python-format
 msgid "%s%d min"
@@ -4398,10 +4406,10 @@ msgid "Commit Information Actions"
 msgstr "Akcje informacji o commicie"
 
 msgid "Commit Log"
-msgstr "Dziennik Commitów"
+msgstr "Logi Commitów"
 
 msgid "Commit Log Information"
-msgstr "Informacje z dziennika commitów"
+msgstr "Informacje z commitów"
 
 msgid "Commit Logs"
 msgstr "Logi commitów"
@@ -5190,6 +5198,9 @@ msgstr "Utwórz główny system plików flash dziennika."
 msgid "Create separate radio user bouquet"
 msgstr "Utwórz osobną listę kanałów dla radia"
 
+msgid "Create slots for the selected device"
+msgstr "Utwórz sloty dla wybranego urządzenia"
+
 msgid "Create swap"
 msgstr "Utwórz plik wymiany"
 
@@ -5371,7 +5382,7 @@ msgid "Customize System Settings"
 msgstr "Ustawienia zaawansowane"
 
 msgid "Customize enigma2 personal settings"
-msgstr "Dostosuj ustawienia osobiste Enigmy2"
+msgstr "Dostosuj ustawienia osobiste Enigma2"
 
 msgid "Cut"
 msgstr "Wytnij"
@@ -5466,9 +5477,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "Dwuwarstwowe DVD"
-
-msgid "DVB API version"
-msgstr "Wersja DVB API"
 
 msgid "DVB CI Delay"
 msgstr "Opóźnienie DVB CI"
@@ -5821,6 +5829,9 @@ msgstr "Zdefiniuj DNS suffix."
 
 msgid "Define the custom mountpoint for the device."
 msgstr "Zdefiniuj niestandardowy punkt montowania dla urządzenia."
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
+msgstr "Zdefiniuj domyślne ustawienia docelowej lokalizacji kopii zapasowej. Wybierz 'Zapytaj użytkownika', aby wyświetlić monit o podanie docelowej lokalizacji podczas wykonywania kopii zapasowej."
 
 msgid "Define the file system mount options."
 msgstr "Zdefiniuj opcje montowania systemu plików."
@@ -7370,10 +7381,7 @@ msgid "Enigma2 information"
 msgstr "Informacje o Enigma2"
 
 msgid "Enigma2 revision"
-msgstr "Rewizja Enigmy2"
-
-msgid "Enigma2 version"
-msgstr "Wersja Enigmy2"
+msgstr "Rewizja Enigma2"
 
 msgid "Enigmalight"
 msgstr "Enigmalight"
@@ -8093,9 +8101,6 @@ msgstr "Sonda FFmpeg"
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr "FFmpeg nie jest zainstalowany, więc akcje dla plików '.mvi' nie są dostępne!"
 
-msgid "FFmpeg version"
-msgstr "Wersja FFmpeg"
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -8694,9 +8699,6 @@ msgstr "Test FullHD"
 msgid "G"
 msgstr "G"
 
-msgid "GCC version"
-msgstr "Wersja GCC"
-
 msgid "GREEN button"
 msgstr "Zielony przycisk"
 
@@ -8708,9 +8710,6 @@ msgstr "Kategoria dziennika debugowania GStreamer *"
 
 msgid "GStreamer debug log level *"
 msgstr "Poziom logów debugowania GStreamer *"
-
-msgid "GStreamer version"
-msgstr "Wersja GStreamer"
 
 msgid "GUI Skin *"
 msgstr "Skórka GUI *"
@@ -8808,9 +8807,6 @@ msgstr "Gibraltar"
 
 msgid "Given device id"
 msgstr "Podany identyfikator urządzenia"
-
-msgid "Glibc version"
-msgstr "Wersja Glibc"
 
 msgid "Go back to the previous step"
 msgstr "Wróć do poprzedniego kroku"
@@ -10245,13 +10241,20 @@ msgid "Kenya"
 msgstr "Kenia"
 
 msgid "Kernel Packages"
-msgstr "Pakiety Kernel"
+msgstr "Pakiety kernel"
 
 msgid "Kernel file"
 msgstr "Plik kernel"
 
+msgid "Kernel partition"
+msgstr "Partycja kernel"
+
 msgid "Kernel version"
 msgstr "Wersja kernel"
+
+#, python-format
+msgid "Kernel%s partition"
+msgstr "Partycja kernel%s"
 
 msgid "Kexec MultiBoot Actions"
 msgstr "Akcje Kexec MultiBoot"
@@ -12703,9 +12706,6 @@ msgstr "Otwórz opcje audio"
 msgid "Open AutoTimer"
 msgstr "Otwórz auto timer"
 
-msgid "Open AutoTimer OverView"
-msgstr "Otwórz AutoTimer Overview"
-
 msgid "Open AutoTimer Overview"
 msgstr "Otwórz listę auto timera"
 
@@ -12714,9 +12714,6 @@ msgstr "Otwórz listę kanałów"
 
 msgid "Open Box Portal"
 msgstr "Otwórz Box Portal"
-
-msgid "Open DreamPlex"
-msgstr "Otwórz DreamPlex"
 
 msgid "Open EPG"
 msgstr "Otwórz EPG"
@@ -12882,9 +12879,6 @@ msgstr "OpenDNS Home"
 
 msgid "OpenPLi Packages"
 msgstr "Pakiety OpenPLi"
-
-msgid "OpenSSL version"
-msgstr "Wersja OpenSSL"
 
 msgid "OpenVPN"
 msgstr "OpenVPN"
@@ -13316,7 +13310,7 @@ msgid "Picon"
 msgstr "Pikony"
 
 msgid "Picon Packages"
-msgstr "Pakiety picon"
+msgstr "Pakiety pikon"
 
 msgid "Picon and Service Name"
 msgstr "Pikony i nazwa kanału"
@@ -14280,9 +14274,6 @@ msgstr "Pakiety programistyczne Pythona"
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python nakładka na /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr "Wersja Python"
-
 msgid "Qatar"
 msgstr "Katar"
 
@@ -14333,9 +14324,6 @@ msgstr "Tryb szybkiego graficznego EPG"
 
 msgid "QuickMenu"
 msgstr "Szybkie menu"
-
-msgid "QuickMenu Actions"
-msgstr "Akcje QuickMenu"
 
 msgid "QuickMenu/Extensions"
 msgstr "Szybkie Menu/Rozszerzenia"
@@ -15474,9 +15462,6 @@ msgstr "Serwer Samba"
 msgid "Samba Settings"
 msgstr "Ustawienia samby"
 
-msgid "Samba version"
-msgstr "Wersja Samby"
-
 msgid "Same as in active"
 msgstr "Taki sam jak w aktywnym"
 
@@ -15780,12 +15765,6 @@ msgstr "Prędkość przewijania(oprogramowanie renderujące)"
 msgid "Search"
 msgstr "Szukaj"
 
-msgid "Search EPG for current event"
-msgstr "Wyszukaj bieżące wydarzenie w EPG"
-
-msgid "Search IMDb for information about current event"
-msgstr "Wyszukaj w bazie IMDb informacje o bieżących wydarzeniach"
-
 msgid "Search Sats"
 msgstr "Miernik poziomu sygnału sat"
 
@@ -15861,10 +15840,10 @@ msgstr "Szukaj do przodu długo"
 msgid "SeekBar activation"
 msgstr "Aktywacja paska stanu"
 
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Pasek stanu"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Czułość paska stanu"
 
 msgid "Seeking connected events"
@@ -15936,7 +15915,7 @@ msgstr "Jeśli jest ustawione na 'tak' pasek informacyjny pozostanie wyświetlan
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr "Wybierz „Tak”, aby zezwolić na automatyczny eksport każdego wykrytego urządzenia pamięci masowej jako udziału Samba."
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Jeśli ustawione na 'tak', pozwala wykorzystać pasek wyszukiwania do przewijania timeshift'u."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16009,7 +15988,7 @@ msgid "Select 'Yes' to only send the DiSEqC command when changing from one satel
 msgstr "Wybierz 'tak' aby wysyłać komendę DiSEqC tylko przy zmianie satelity na innego, lub wybierz 'nie' aby komenda DiSEqC była wysyłana ponownie przy każdym zapie."
 
 msgid "Select 'Yes' to remove all main settings configuration data. Selecting this option will set all Enigma2 settings back to their default values. This will also cause Enigma2 to run the Welcome Wizard on restart."
-msgstr "Wybierz „Tak”, aby usunąć wszystkie dane konfiguracyjne ustawień głównych. Wybranie tej opcji spowoduje przywrócenie wszystkich ustawień Enigmy2 do ich wartości domyślnych. Spowoduje to również, że Enigma2 uruchomi Kreatora Powitalnego przy ponownym uruchomieniu."
+msgstr "Wybierz „Tak”, aby usunąć wszystkie główne dane konfiguracyjne ustawień. Wybranie tej opcji spowoduje przywrócenie wszystkich ustawień Enigma2 do wartości domyślnych. Spowoduje to również uruchomienie Kreatora powitalnego po ponownym uruchomieniu Enigma2."
 
 msgid "Select 'Yes' to remove all media player resume data. Selecting this option will remove the data used to allow playback of media files to resume from the position where playback was last stopped. Playback position of recordings is not affected."
 msgstr "Wybierz \"Tak\", aby usunąć wszystkie dane wznowienia odtwarzacza multimedialnego. Wybranie tej opcji spowoduje usunięcie danych używanych do wznowienia odtwarzania plików multimedialnych z pozycji, w której odtwarzanie zostało ostatnio zatrzymane. Nie ma to wpływu na pozycję odtwarzania nagrań."
@@ -16075,7 +16054,7 @@ msgid "Select 'Yes' to show m2k packages in the Download Plugins screen."
 msgstr "Wybierz \"Tak\", aby wyświetlić pakiety m2k na ekranie pobierania wtyczek."
 
 msgid "Select 'Yes' to show picon packages in the Download Plugins screen."
-msgstr "Wybierz \"Tak\", aby wyświetlić pakiety picon na ekranie pobierania wtyczek."
+msgstr "Wybierz \"Tak\", aby wyświetlić pakiety pikon na ekranie pobierania wtyczek."
 
 msgid "Select 'Yes' to show plugin skin packages in the Download Plugins screen."
 msgstr "Wybierz \"Tak\", aby wyświetlić pakiety skórek wtyczek na ekranie pobierania wtyczek."
@@ -16223,6 +16202,9 @@ msgstr "Wybierz listę kanałów"
 
 msgid "Select a debug log file to view:"
 msgstr "Wybierz plik loga debugowania do wyświetlenia:"
+
+msgid "Select a device to create multiboot slots"
+msgstr "Wybierz urządzenie, aby utworzyć sloty multiboot"
 
 msgid "Select a device to use as the flash expander"
 msgstr "Wybierz urządzenie, aby skorzystać z rozszerzacza flash"
@@ -16450,6 +16432,9 @@ msgstr "Wybierz metodę sortowania:"
 
 msgid "Select system information to view:"
 msgstr "Wybierz informacje o systemie do wyświetlenia:"
+
+msgid "Select target device for slot creation"
+msgstr "Wybierz urządzenie docelowe do utworzenia slotu"
 
 msgid "Select temporary directory sort order for the current column"
 msgstr "Wybierz kolejność sortowania katalogu tymczasowego dla bieżącej kolumny"
@@ -17099,10 +17084,10 @@ msgid "Service off-air"
 msgstr "Sewis off-air"
 
 msgid "Service picons aspect ratio"
-msgstr "Współczynnik kształtu pikonów"
+msgstr "Proporcje pikon"
 
 msgid "Service picons downsize"
-msgstr "Zmniejszanie pikonów"
+msgstr "Zmniejszanie pikon"
 
 msgid "Service reference"
 msgstr "Referencje"
@@ -17268,7 +17253,7 @@ msgstr "Ustaw domyślną metodę sortowania."
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Ustaw czas opóźnienia między przejściami przewijania. Jest używany przez renderer oprogramowania w niektórych skórkach."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Ustaw skok-rozmiar paska wyszukiwania."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -17408,6 +17393,9 @@ msgstr "Ustawienie hasła jest zdecydowanie zalecane, jeśli Twój STB jest otwa
 msgid "Settings"
 msgstr "Ustawienia"
 
+msgid "Settings Backup Target"
+msgstr "Lokalizacja docelowej kopii zapasowej"
+
 msgid "Settings mode"
 msgstr "Tryb konfiguracji"
 
@@ -17428,7 +17416,7 @@ msgid "Setup Audiomode"
 msgstr "Ustawienia trybu dźwięku"
 
 msgid "Setup Enigma2"
-msgstr "Ustawienia Enigmy2"
+msgstr "Konfiguracja Enigma2"
 
 msgid "Setup Inadyn"
 msgstr "Ustawienia Inadyn"
@@ -17777,7 +17765,7 @@ msgid "Show PiP in the Front Display"
 msgstr "Pokaż PIP na przednim wyświetlaczu"
 
 msgid "Show Picon packages"
-msgstr "Pokaż pakiety picon"
+msgstr "Pokaż pakiety pikon"
 
 msgid "Show Plugin Skin packages"
 msgstr "Pokaż pakiety skórek wtyczek"
@@ -18603,6 +18591,9 @@ msgstr "Slot '%s' %s"
 #, python-format
 msgid "Slot '%s' %s: %s%s"
 msgstr "Slot '%s' %s: %s%s"
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
+msgstr "Slot F: Kopia zapasowa systemu slotu Flash (bieżący system)"
 
 msgid "Slot Manager"
 msgstr "Menadżer slotów"
@@ -19575,7 +19566,7 @@ msgid "TMDB Search"
 msgstr "Wyszukiwanie TMDB"
 
 msgid "TRANSLATOR_INFO"
-msgstr "@pololoko111, @djpimpek, @blzr, @marinner"
+msgstr "@pololoko111"
 
 msgid "TS file is too large for ISO9660 level 1!"
 msgstr "Plik TS jest za duży dla ISO9660 level 1!"
@@ -19855,13 +19846,6 @@ msgstr ""
 
 msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "Standard DVD nie obsługuje strumieni wideo H.264 (HDTV)."
-
-msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-"Wtyczka DreamPlex nie jest zainstalowana!\n"
-"Proszę zainstalować."
 
 msgid ""
 "The EPGSearch plugin is not installed!\n"
@@ -20660,7 +20644,7 @@ msgid "Time jump multiplier for fast forward"
 msgstr "Czas skoku mnożnika do przodu"
 
 msgid "Time jump repeat interval for fast forward/backward"
-msgstr "Czas skoku Interwału do przewijania do przodu / tyłu"
+msgstr "Czas skoku interwału dla przewijania do przodu / tyłu"
 
 msgid "Time jump: Use normal fast forward for speeds"
 msgstr "Czas skoku: używać normalnie dla prędkości do przodu"
@@ -20672,7 +20656,7 @@ msgid "Time shift buffer limit"
 msgstr "Limit bufora w godzinach"
 
 msgid "Time shift buffer location"
-msgstr "Ścieżka zapisu"
+msgstr "Lokalizacja timeshiftu"
 
 msgid "Time shift checking for free space"
 msgstr "Timeshift sprawdzanie wolnego miejsca"
@@ -20699,7 +20683,7 @@ msgid "Time shift save failed!"
 msgstr "Timeshift błąd zapisu!"
 
 msgid "Time shift save location"
-msgstr "Timeshift zapisz lokalizację"
+msgstr "Lokalizacja zapisu timeshift"
 
 msgid "Time shift save recording (Select event)"
 msgstr "Timeshift zapisz nagranie (wybierz wydarzenie)"
@@ -20745,9 +20729,6 @@ msgstr "Historia czasu"
 
 msgid "Timeline scale"
 msgstr "Skala czasu"
-
-msgid "Timer Actions"
-msgstr "Akcje timera"
 
 msgid "Timer Log Actions"
 msgstr "Działania logów timera"
@@ -21241,6 +21222,10 @@ msgstr "Typ urządzenia"
 msgid "Type of scan"
 msgstr "Typ skanowania"
 
+#, python-format
+msgid "UBI slot %s%s"
+msgstr "UBI slot %s%s"
+
 msgid "UBINIZE"
 msgstr "UBINIZE"
 
@@ -21486,7 +21471,7 @@ msgid "Update/Backup your firmware, Backup/Restore settings"
 msgstr "Aktualizuj/Utwórz kopię zapasową oprogramowania, Utwórz kopię zapasową/Przywróć ustawienia"
 
 msgid "Update/Backup/Restore your box"
-msgstr "Aktualizuj - Utwórz kopię zapasową - Przywróć ustawienia"
+msgstr "Aktualizuj / Utwórz kopię zapasową / Przywróć ustawienia"
 
 msgid "Updated"
 msgstr "Zaktualizowano"
@@ -24202,6 +24187,61 @@ msgstr "tak (zachować feed'y)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "DVB API version"
+#~ msgstr "Wersja DVB API"
+
+#~ msgid "Enigma2 version"
+#~ msgstr "Wersja Enigmy2"
+
+#~ msgid "FFmpeg version"
+#~ msgstr "Wersja FFmpeg"
+
+#~ msgid "GCC version"
+#~ msgstr "Wersja GCC"
+
+#~ msgid "GStreamer version"
+#~ msgstr "Wersja GStreamer"
+
+#~ msgid "Glibc version"
+#~ msgstr "Wersja Glibc"
+
+#~ msgid "OpenSSL version"
+#~ msgstr "Wersja OpenSSL"
+
+#~ msgid "Python version"
+#~ msgstr "Wersja Python"
+
+#~ msgid "Rust version"
+#~ msgstr "Wersja Rust"
+
+#~ msgid "Samba version"
+#~ msgstr "Wersja Samby"
+
+#~ msgid "Open AutoTimer OverView"
+#~ msgstr "Otwórz AutoTimer Overview"
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "Otwórz DreamPlex"
+
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Akcje QuickMenu"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Wyszukaj bieżące wydarzenie w EPG"
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "Wyszukaj w bazie IMDb informacje o bieżących wydarzeniach"
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr ""
+#~ "Wtyczka DreamPlex nie jest zainstalowana!\n"
+#~ "Proszę zainstalować."
+
+#~ msgid "Timer Actions"
+#~ msgstr "Akcje timera"
 
 #~ msgid "InfoBar EPG Actions"
 #~ msgstr "Akcje EPG na pasku informacyjnym"

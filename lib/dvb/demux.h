@@ -167,15 +167,6 @@ public:
 	RESULT getFirstPTS(pts_t &pts);
 
 	RESULT connectEvent(const sigc::slot<void(int)> &event, ePtr<eConnection> &conn);
-
-	// START OF CHANGE - Timeshift Stability Fix
-	// This new signal will be emitted when a stream corruption ("broken startcode")
-	// is detected by the underlying parser. Higher-level classes (like servicedvb)
-	// can connect to this signal to trigger recovery actions without being directly
-	// coupled to the demux layer.
-	//sigc::signal<void()> timeshiftStreamCorrupt;
-	// END OF CHANGE - Timeshift Stability Fix
-
 private:
 	RESULT startPID(int pid);
 	void stopPID(int pid);

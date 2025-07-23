@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
 "PO-Revision-Date: 2021-08-15 18:50+0000\n"
 "Last-Translator: openATV <openatv@gmail.com>\n"
 "Language-Team: Icelandic <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/is/>\n"
@@ -1116,6 +1116,10 @@ msgid_plural "%d services found."
 msgstr[0] ""
 msgstr[1] ""
 
+#, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr ""
+
 #
 #, fuzzy, python-format
 msgid "%d times"
@@ -1309,6 +1313,10 @@ msgstr ""
 #, fuzzy, python-format
 msgid "%s not available."
 msgstr "Uppfærslur á fæðirásum ekki tiltækar."
+
+#, python-format
+msgid "%s version"
+msgstr ""
 
 #
 #, fuzzy, python-format
@@ -5425,6 +5433,9 @@ msgstr ""
 msgid "Create separate radio user bouquet"
 msgstr ""
 
+msgid "Create slots for the selected device"
+msgstr ""
+
 msgid "Create swap"
 msgstr ""
 
@@ -5708,9 +5719,6 @@ msgstr ""
 
 msgid "DUAL LAYER DVD"
 msgstr "Tveggja laga DVD"
-
-msgid "DVB API version"
-msgstr ""
 
 msgid "DVB CI Delay"
 msgstr ""
@@ -6088,6 +6096,9 @@ msgid "Define the DNS suffix."
 msgstr ""
 
 msgid "Define the custom mountpoint for the device."
+msgstr ""
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
 msgstr ""
 
 msgid "Define the file system mount options."
@@ -7722,9 +7733,6 @@ msgstr ""
 msgid "Enigma2 revision"
 msgstr ""
 
-msgid "Enigma2 version"
-msgstr ""
-
 msgid "Enigmalight"
 msgstr ""
 
@@ -8463,9 +8471,6 @@ msgstr ""
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr ""
 
-msgid "FFmpeg version"
-msgstr ""
-
 msgid "FIFO"
 msgstr ""
 
@@ -9114,9 +9119,6 @@ msgstr ""
 msgid "G"
 msgstr ""
 
-msgid "GCC version"
-msgstr ""
-
 msgid "GREEN button"
 msgstr ""
 
@@ -9127,9 +9129,6 @@ msgid "GStreamer debug log category *"
 msgstr ""
 
 msgid "GStreamer debug log level *"
-msgstr ""
-
-msgid "GStreamer version"
 msgstr ""
 
 msgid "GUI Skin *"
@@ -9236,9 +9235,6 @@ msgid "Gibraltar"
 msgstr ""
 
 msgid "Given device id"
-msgstr ""
-
-msgid "Glibc version"
 msgstr ""
 
 msgid "Go back to the previous step"
@@ -10793,7 +10789,14 @@ msgstr ""
 msgid "Kernel file"
 msgstr ""
 
+msgid "Kernel partition"
+msgstr ""
+
 msgid "Kernel version"
+msgstr ""
+
+#, python-format
+msgid "Kernel%s partition"
 msgstr ""
 
 msgid "Kexec MultiBoot Actions"
@@ -13519,9 +13522,6 @@ msgstr ""
 msgid "Open AutoTimer"
 msgstr ""
 
-msgid "Open AutoTimer OverView"
-msgstr ""
-
 #, fuzzy
 msgid "Open AutoTimer Overview"
 msgstr "Sjálfvirkt skinn"
@@ -13532,9 +13532,6 @@ msgid "Open Bouquet selection"
 msgstr "hætta að breyta fléttu"
 
 msgid "Open Box Portal"
-msgstr ""
-
-msgid "Open DreamPlex"
 msgstr ""
 
 msgid "Open EPG"
@@ -13721,9 +13718,6 @@ msgid "OpenDNS Home"
 msgstr ""
 
 msgid "OpenPLi Packages"
-msgstr ""
-
-msgid "OpenSSL version"
 msgstr ""
 
 msgid "OpenVPN"
@@ -15247,9 +15241,6 @@ msgstr ""
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python framendi fyrir /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr ""
-
 msgid "Qatar"
 msgstr ""
 
@@ -15306,9 +15297,6 @@ msgid "QuickEPG mode"
 msgstr ""
 
 msgid "QuickMenu"
-msgstr ""
-
-msgid "QuickMenu Actions"
 msgstr ""
 
 msgid "QuickMenu/Extensions"
@@ -16564,9 +16552,6 @@ msgstr ""
 msgid "Samba Settings"
 msgstr ""
 
-msgid "Samba version"
-msgstr ""
-
 msgid "Same as in active"
 msgstr ""
 
@@ -16897,12 +16882,6 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
-msgid "Search EPG for current event"
-msgstr ""
-
-msgid "Search IMDb for information about current event"
-msgstr ""
-
 msgid "Search Sats"
 msgstr ""
 
@@ -16996,10 +16975,10 @@ msgstr ""
 
 #
 #, fuzzy
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Leita"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr ""
 
 msgid "Seeking connected events"
@@ -17072,7 +17051,7 @@ msgstr ""
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr ""
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr ""
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -17365,6 +17344,9 @@ msgstr ""
 msgid "Select a debug log file to view:"
 msgstr ""
 
+msgid "Select a device to create multiboot slots"
+msgstr ""
+
 msgid "Select a device to use as the flash expander"
 msgstr ""
 
@@ -17603,6 +17585,9 @@ msgid "Select sort method:"
 msgstr ""
 
 msgid "Select system information to view:"
+msgstr ""
+
+msgid "Select target device for slot creation"
 msgstr ""
 
 msgid "Select temporary directory sort order for the current column"
@@ -18440,7 +18425,7 @@ msgstr ""
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr ""
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr ""
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -18577,6 +18562,9 @@ msgstr ""
 #
 msgid "Settings"
 msgstr "Stillingar"
+
+msgid "Settings Backup Target"
+msgstr ""
 
 msgid "Settings mode"
 msgstr ""
@@ -19874,6 +19862,9 @@ msgstr ""
 
 #, python-format
 msgid "Slot '%s' %s: %s%s"
+msgstr ""
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
 msgstr ""
 
 msgid "Slot Manager"
@@ -21233,11 +21224,6 @@ msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr ""
 
 msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-
-msgid ""
 "The EPGSearch plugin is not installed!\n"
 "Please install it."
 msgstr ""
@@ -22101,11 +22087,6 @@ msgstr "Innsláttur tímastilltra atriða"
 msgid "Timeline scale"
 msgstr "Tímastillinga val"
 
-#
-#, fuzzy
-msgid "Timer Actions"
-msgstr "Tímastillinga val"
-
 msgid "Timer Log Actions"
 msgstr ""
 
@@ -22665,6 +22646,10 @@ msgstr ""
 #
 msgid "Type of scan"
 msgstr "Gerð leitunar"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr ""
 
 msgid "UBINIZE"
 msgstr ""
@@ -25774,6 +25759,11 @@ msgstr "já (halda fæðirásum)"
 
 msgid "®"
 msgstr ""
+
+#
+#, fuzzy
+#~ msgid "Timer Actions"
+#~ msgstr "Tímastillinga val"
 
 #
 #, fuzzy

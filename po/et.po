@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV-Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
 "PO-Revision-Date: 2022-12-04 20:43+0000\n"
 "Last-Translator: rimasx <riks_12@hot.ee>\n"
 "Language-Team: Estonian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/et/>\n"
@@ -1030,6 +1030,10 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr ""
+
+#, python-format
 msgid "%d times"
 msgstr "%d korda"
 
@@ -1205,6 +1209,10 @@ msgstr ""
 #, python-format
 msgid "%s not available."
 msgstr "%s pole saadaval."
+
+#, python-format
+msgid "%s version"
+msgstr ""
 
 #, python-format
 msgid "%s%d min"
@@ -5214,6 +5222,9 @@ msgstr ""
 msgid "Create separate radio user bouquet"
 msgstr "Loo eraldi lemmiknimekiri raadiokanalitele"
 
+msgid "Create slots for the selected device"
+msgstr ""
+
 msgid "Create swap"
 msgstr ""
 
@@ -5494,9 +5505,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "Kahekihiline DVD"
-
-msgid "DVB API version"
-msgstr ""
 
 msgid "DVB CI Delay"
 msgstr "DVB CI viiteaeg"
@@ -5858,6 +5866,9 @@ msgid "Define the DNS suffix."
 msgstr ""
 
 msgid "Define the custom mountpoint for the device."
+msgstr ""
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
 msgstr ""
 
 msgid "Define the file system mount options."
@@ -7432,9 +7443,6 @@ msgstr ""
 msgid "Enigma2 revision"
 msgstr ""
 
-msgid "Enigma2 version"
-msgstr ""
-
 msgid "Enigmalight"
 msgstr ""
 
@@ -8159,9 +8167,6 @@ msgstr ""
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr ""
 
-msgid "FFmpeg version"
-msgstr ""
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -8776,9 +8781,6 @@ msgstr "FullHD test"
 msgid "G"
 msgstr "GB"
 
-msgid "GCC version"
-msgstr ""
-
 msgid "GREEN button"
 msgstr "Roheline nupp"
 
@@ -8789,9 +8791,6 @@ msgid "GStreamer debug log category *"
 msgstr ""
 
 msgid "GStreamer debug log level *"
-msgstr ""
-
-msgid "GStreamer version"
 msgstr ""
 
 msgid "GUI Skin *"
@@ -8894,9 +8893,6 @@ msgid "Gibraltar"
 msgstr "Gibraltar"
 
 msgid "Given device id"
-msgstr ""
-
-msgid "Glibc version"
 msgstr ""
 
 msgid "Go back to the previous step"
@@ -10376,7 +10372,14 @@ msgstr ""
 msgid "Kernel file"
 msgstr ""
 
+msgid "Kernel partition"
+msgstr ""
+
 msgid "Kernel version"
+msgstr ""
+
+#, python-format
+msgid "Kernel%s partition"
 msgstr ""
 
 msgid "Kexec MultiBoot Actions"
@@ -12942,9 +12945,6 @@ msgstr "Heli valikud"
 msgid "Open AutoTimer"
 msgstr "Autotaimerid"
 
-msgid "Open AutoTimer OverView"
-msgstr ""
-
 #, fuzzy
 msgid "Open AutoTimer Overview"
 msgstr "Autotaimerid."
@@ -12957,9 +12957,6 @@ msgstr "Kuva lemmiknimekirjad."
 #, fuzzy
 msgid "Open Box Portal"
 msgstr "Box Portal"
-
-msgid "Open DreamPlex"
-msgstr "DreamPlex mängija"
 
 msgid "Open EPG"
 msgstr "Saatekava"
@@ -13139,9 +13136,6 @@ msgid "OpenDNS Home"
 msgstr "Autotaimerid"
 
 msgid "OpenPLi Packages"
-msgstr ""
-
-msgid "OpenSSL version"
 msgstr ""
 
 msgid "OpenVPN"
@@ -14582,9 +14576,6 @@ msgstr ""
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python programm /tmp/mmi.socket jaoks"
 
-msgid "Python version"
-msgstr ""
-
 msgid "Qatar"
 msgstr "Katar"
 
@@ -14637,11 +14628,6 @@ msgstr "Inforiba EPG kuvamine"
 
 msgid "QuickMenu"
 msgstr "Kiirmenüü"
-
-# UsageConfig.py:295
-#, fuzzy
-msgid "QuickMenu Actions"
-msgstr "Kiirtegevused"
 
 msgid "QuickMenu/Extensions"
 msgstr "Kiirmenüü/laiendused"
@@ -15814,9 +15800,6 @@ msgstr ""
 msgid "Samba Settings"
 msgstr ""
 
-msgid "Samba version"
-msgstr ""
-
 msgid "Same as in active"
 msgstr "Võrdne seiskamisajaga"
 
@@ -16124,12 +16107,6 @@ msgstr "Kerimise kiirus (tarkvaraline renderdamine)"
 msgid "Search"
 msgstr "Otsing"
 
-msgid "Search EPG for current event"
-msgstr "Otsi käesoleva saate kava."
-
-msgid "Search IMDb for information about current event"
-msgstr "IMDb otsing käesoleva saate kohta."
-
 msgid "Search Sats"
 msgstr "Otsi satelliite"
 
@@ -16210,10 +16187,10 @@ msgstr "Keri edasi"
 msgid "SeekBar activation"
 msgstr "Otsiriba käivitamine"
 
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Otsiriba"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Otsiriba tundlikkus"
 
 msgid "Seeking connected events"
@@ -16285,7 +16262,7 @@ msgstr "Kui lubatud, kuvatakse pausil olles inforiba pidevalt."
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr ""
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Määrates 'jah', saad kasutada saates soovitud kohani liikumiseks otsiriba."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16577,6 +16554,9 @@ msgstr "Vali lemmiknimekiri"
 msgid "Select a debug log file to view:"
 msgstr ""
 
+msgid "Select a device to create multiboot slots"
+msgstr ""
+
 msgid "Select a device to use as the flash expander"
 msgstr ""
 
@@ -16805,6 +16785,9 @@ msgid "Select sort method:"
 msgstr "Vali järjestusviis:"
 
 msgid "Select system information to view:"
+msgstr ""
+
+msgid "Select target device for slot creation"
 msgstr ""
 
 msgid "Select temporary directory sort order for the current column"
@@ -17630,7 +17613,7 @@ msgstr "Määra järjestusviis."
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Määra kordustele viiteaeg. Mõni kujundus kasutab selleks tarkvaralist renderdamist."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Määra otsiriba hüppe pikkus."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -17764,6 +17747,9 @@ msgstr ""
 
 msgid "Settings"
 msgstr "Seaded"
+
+msgid "Settings Backup Target"
+msgstr ""
 
 msgid "Settings mode"
 msgstr "Seadistuste tase"
@@ -18987,6 +18973,9 @@ msgstr ""
 
 #, python-format
 msgid "Slot '%s' %s: %s%s"
+msgstr ""
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
 msgstr ""
 
 msgid "Slot Manager"
@@ -20275,13 +20264,6 @@ msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "DVD standard ei toeta H.264 (HDTV) videovooge."
 
 msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-"DreamPlex ei ole paigaldatud!\n"
-"Paigalda see."
-
-msgid ""
 "The EPGSearch plugin is not installed!\n"
 "Please install it."
 msgstr ""
@@ -21165,10 +21147,6 @@ msgstr ""
 msgid "Timeline scale"
 msgstr "Ajavahemik"
 
-#, fuzzy
-msgid "Timer Actions"
-msgstr "Taimeri tegevus"
-
 msgid "Timer Log Actions"
 msgstr ""
 
@@ -21675,6 +21653,10 @@ msgstr ""
 
 msgid "Type of scan"
 msgstr "Otsingu tüüp"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr ""
 
 msgid "UBINIZE"
 msgstr ""
@@ -24682,6 +24664,31 @@ msgstr "Jah (säilita fiidid)"
 
 msgid "®"
 msgstr ""
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "DreamPlex mängija"
+
+# UsageConfig.py:295
+#, fuzzy
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Kiirtegevused"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Otsi käesoleva saate kava."
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "IMDb otsing käesoleva saate kohta."
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr ""
+#~ "DreamPlex ei ole paigaldatud!\n"
+#~ "Paigalda see."
+
+#, fuzzy
+#~ msgid "Timer Actions"
+#~ msgstr "Taimeri tegevus"
 
 #, fuzzy
 #~ msgid "InfoBar EPG Actions"

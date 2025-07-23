@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: enigma2 Kurdish translation\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
 "PO-Revision-Date: 2021-08-15 18:50+0000\n"
 "Last-Translator: openATV <openatv@gmail.com>\n"
 "Language-Team: Kurdish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/ku/>\n"
@@ -1142,6 +1142,10 @@ msgid_plural "%d services found."
 msgstr[0] ""
 msgstr[1] ""
 
+#, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr ""
+
 #, fuzzy, python-format
 msgid "%d times"
 msgstr "Vext derbas bu"
@@ -1324,6 +1328,10 @@ msgstr ""
 #, fuzzy, python-format
 msgid "%s not available."
 msgstr "Update feed not available."
+
+#, python-format
+msgid "%s version"
+msgstr ""
 
 #, fuzzy, python-format
 msgid "%s%d min"
@@ -5426,6 +5434,9 @@ msgstr ""
 msgid "Create separate radio user bouquet"
 msgstr ""
 
+msgid "Create slots for the selected device"
+msgstr ""
+
 msgid "Create swap"
 msgstr ""
 
@@ -5713,9 +5724,6 @@ msgstr ""
 
 msgid "DUAL LAYER DVD"
 msgstr "DUAL LAYER DVD"
-
-msgid "DVB API version"
-msgstr ""
 
 msgid "DVB CI Delay"
 msgstr ""
@@ -6080,6 +6088,9 @@ msgid "Define the DNS suffix."
 msgstr ""
 
 msgid "Define the custom mountpoint for the device."
+msgstr ""
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
 msgstr ""
 
 msgid "Define the file system mount options."
@@ -7643,9 +7654,6 @@ msgstr ""
 msgid "Enigma2 revision"
 msgstr ""
 
-msgid "Enigma2 version"
-msgstr ""
-
 msgid "Enigmalight"
 msgstr ""
 
@@ -8363,9 +8371,6 @@ msgstr ""
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr ""
 
-msgid "FFmpeg version"
-msgstr ""
-
 msgid "FIFO"
 msgstr ""
 
@@ -8990,9 +8995,6 @@ msgstr ""
 msgid "G"
 msgstr "RGB"
 
-msgid "GCC version"
-msgstr ""
-
 #, fuzzy
 msgid "GREEN button"
 msgstr "RED button / HbbTV"
@@ -9004,9 +9006,6 @@ msgid "GStreamer debug log category *"
 msgstr ""
 
 msgid "GStreamer debug log level *"
-msgstr ""
-
-msgid "GStreamer version"
 msgstr ""
 
 msgid "GUI Skin *"
@@ -9110,9 +9109,6 @@ msgid "Gibraltar"
 msgstr ""
 
 msgid "Given device id"
-msgstr ""
-
-msgid "Glibc version"
 msgstr ""
 
 msgid "Go back to the previous step"
@@ -10615,7 +10611,14 @@ msgstr ""
 msgid "Kernel file"
 msgstr ""
 
+msgid "Kernel partition"
+msgstr ""
+
 msgid "Kernel version"
+msgstr ""
+
+#, python-format
+msgid "Kernel%s partition"
 msgstr ""
 
 msgid "Kexec MultiBoot Actions"
@@ -13163,9 +13166,6 @@ msgstr "Eyaré deng..."
 msgid "Open AutoTimer"
 msgstr ""
 
-msgid "Open AutoTimer OverView"
-msgstr ""
-
 #, fuzzy
 msgid "Open AutoTimer Overview"
 msgstr "Open the movie list"
@@ -13175,9 +13175,6 @@ msgid "Open Bouquet selection"
 msgstr "End Bouquet Edit"
 
 msgid "Open Box Portal"
-msgstr ""
-
-msgid "Open DreamPlex"
 msgstr ""
 
 #, fuzzy
@@ -13359,9 +13356,6 @@ msgid "OpenDNS Home"
 msgstr ""
 
 msgid "OpenPLi Packages"
-msgstr ""
-
-msgid "OpenSSL version"
 msgstr ""
 
 msgid "OpenVPN"
@@ -14808,9 +14802,6 @@ msgstr ""
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python frontend for /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr ""
-
 msgid "Qatar"
 msgstr ""
 
@@ -14864,9 +14855,6 @@ msgid "QuickEPG mode"
 msgstr ""
 
 msgid "QuickMenu"
-msgstr ""
-
-msgid "QuickMenu Actions"
 msgstr ""
 
 msgid "QuickMenu/Extensions"
@@ -16054,9 +16042,6 @@ msgstr ""
 msgid "Samba Settings"
 msgstr ""
 
-msgid "Samba version"
-msgstr ""
-
 msgid "Same as in active"
 msgstr ""
 
@@ -16366,13 +16351,6 @@ msgstr ""
 msgid "Search"
 msgstr "Searching"
 
-#, fuzzy
-msgid "Search EPG for current event"
-msgstr "Add/remove timer for current event"
-
-msgid "Search IMDb for information about current event"
-msgstr ""
-
 msgid "Search Sats"
 msgstr ""
 
@@ -16455,10 +16433,10 @@ msgid "SeekBar activation"
 msgstr "Select location"
 
 #, fuzzy
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Seek"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr ""
 
 msgid "Seeking connected events"
@@ -16531,7 +16509,7 @@ msgstr "When enabled, the infobar will be displayed when a new event starts."
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr ""
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr ""
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16822,6 +16800,9 @@ msgstr "Select a bouquet"
 msgid "Select a debug log file to view:"
 msgstr ""
 
+msgid "Select a device to create multiboot slots"
+msgstr ""
+
 msgid "Select a device to use as the flash expander"
 msgstr ""
 
@@ -17049,6 +17030,9 @@ msgid "Select sort method:"
 msgstr ""
 
 msgid "Select system information to view:"
+msgstr ""
+
+msgid "Select target device for slot creation"
 msgstr ""
 
 msgid "Select temporary directory sort order for the current column"
@@ -17875,7 +17859,7 @@ msgstr ""
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr ""
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr ""
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -18011,6 +17995,9 @@ msgstr ""
 
 msgid "Settings"
 msgstr "Settings"
+
+msgid "Settings Backup Target"
+msgstr ""
 
 msgid "Settings mode"
 msgstr "Settings mode"
@@ -19262,6 +19249,9 @@ msgstr ""
 
 #, python-format
 msgid "Slot '%s' %s: %s%s"
+msgstr ""
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
 msgstr ""
 
 msgid "Slot Manager"
@@ -20558,11 +20548,6 @@ msgstr ""
 msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr ""
 
-msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-
 #, fuzzy
 msgid ""
 "The EPGSearch plugin is not installed!\n"
@@ -21425,10 +21410,6 @@ msgstr "Timer edit"
 msgid "Timeline scale"
 msgstr ""
 
-#, fuzzy
-msgid "Timer Actions"
-msgstr "Timer selection"
-
 msgid "Timer Log Actions"
 msgstr ""
 
@@ -21944,6 +21925,10 @@ msgstr ""
 
 msgid "Type of scan"
 msgstr "Type of scan"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr ""
 
 msgid "UBINIZE"
 msgstr ""
@@ -24935,6 +24920,14 @@ msgstr "yes (keep feeds)"
 
 msgid "®"
 msgstr ""
+
+#, fuzzy
+#~ msgid "Search EPG for current event"
+#~ msgstr "Add/remove timer for current event"
+
+#, fuzzy
+#~ msgid "Timer Actions"
+#~ msgstr "Timer selection"
 
 #, fuzzy
 #~ msgid "InfoBar EPG Actions"

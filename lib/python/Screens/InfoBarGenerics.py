@@ -33,6 +33,7 @@ from Components.Timeshift import InfoBarTimeshift
 from Components.UsageConfig import defaultMoviePath, preferredInstantRecordPath, preferredTimerPath
 from Components.VolumeControl import VolumeControl
 from Components.Renderer.PositionGauge import PositionGauge
+from Components.Renderer.Progress import Progress
 from Components.Sources.Boolean import Boolean
 from Components.Sources.ServiceEvent import ServiceEvent
 from Components.Sources.StaticText import StaticText
@@ -858,12 +859,15 @@ class InfoBarNumberZap:
 class SeekBar(Screen):
 	skin = """
 	<screen name="SeekBar" position="center,10" size="800,50" flags="wfNoBorder" resolution="1280,720">
-		<widget name="target" position="10,15" size="100,20" font="Regular;20" horizontalAlignment="right" transparent="1" verticalAlignment="center" />
-		<widget source="session.CurrentService" render="PositionGauge" position="120,15" size="560,20" foregroundColor="#000000CF" pointer="sliders/position_pointer.png:545,0" transparent="1">
+		<widget name="target" position="10,10" size="100,20" font="Regular;20" horizontalAlignment="right" transparent="1" verticalAlignment="center" />
+		<widget source="session.CurrentService" render="PositionGauge" position="120,10" size="e-240,20" foregroundColor="#000000CF" transparent="1">
 			<convert type="ServicePosition">Gauge</convert>
 		</widget>
-		<widget name="cursor" position="0,0" size="7,30" pixmap="sliders/position_arrow.png" alphatest="blend" transparent="1" zPosition="+1" />
-		<widget name="length" position="690,15" size="100,20" font="Regular;20" transparent="1" verticalAlignment="center" />
+		<widget source="session.CurrentService" render="Progress" position="120,18" size="e-240,4" backgroundColor="#000000CF" borderWidth="0" foregroundColor="#0000CF00" zPosition="+1">
+			<convert type="ServicePosition">Position</convert>
+		</widget>
+		<widget name="cursor" position="0,0" size="8,18" pixmap="sliders/position_arrow.png" alphatest="blend" zPosition="+2" />
+		<widget name="length" position="e-110,10" size="100,20" font="Regular;20" transparent="1" verticalAlignment="center" />
 	</screen>"""
 
 	ARROW_SYMMETRICAL = "s"
@@ -922,7 +926,7 @@ class SeekBar(Screen):
 		self["length"] = Label()
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions"], {
 			"ok": (self.keyOK, "Close the SeekBar at the current location"),
-			"cancel": (self.keyCancel, _("Close the Seekbar after returning to the starting point"))
+			"cancel": (self.keyCancel, _("Close the SeekBar after returning to the starting point"))
 		}, prio=0, description=_("SeekBar Actions"))
 		match config.seek.arrowSkipMode.value:
 			case self.ARROW_SYMMETRICAL:
@@ -1024,7 +1028,7 @@ class SeekBar(Screen):
 
 	def screenShown(self):
 		for component in self.activeComponents:
-			if isinstance(component, PositionGauge):
+			if isinstance(component, (PositionGauge, Progress)):  # Progress is used for composite widgets like in Metrix.
 				for attribute, value in component.skinAttributes:
 					match attribute:
 						case "position":
@@ -2929,19 +2933,29 @@ class InfoBarSimpleEventView:
 		if self.servicelist is None:
 			return
 		ref = self.session.nav.getCurrentlyPlayingServiceOrGroup()
-		self.getNowNext()
-		epglist = self.epglist
-		if not epglist:
-			self.is_now_next = False
-			epg = eEPGCache.getInstance()
-			ptr = ref and ref.valid() and epg.lookupEventTime(ref, -1)
-			if ptr:
-				epglist.append(ptr)
-				ptr = epg.lookupEventTime(ref, ptr.getBeginTime(), +1)
+		if isMoviePlayerInfoBar(self):
+			try:
+				serviceHandler = eServiceCenter.getInstance()
+				info = serviceHandler.info(ref)
+				event = info.getEvent(ref)
+				epglist = [event]
+			except Exception:
+				epglist = []
+			simple = True
+		else:
+			self.getNowNext()
+			epglist = self.epglist
+			if not epglist:
+				self.is_now_next = False
+				epg = eEPGCache.getInstance()
+				ptr = ref and ref.valid() and epg.lookupEventTime(ref, -1)
 				if ptr:
 					epglist.append(ptr)
-		else:
-			self.is_now_next = True
+					ptr = epg.lookupEventTime(ref, ptr.getBeginTime(), +1)
+					if ptr:
+						epglist.append(ptr)
+			else:
+				self.is_now_next = True
 		if epglist:
 			if not simple:
 				self.eventView = self.session.openWithCallback(self.closed, EventViewEPGSelect, epglist[0], ServiceReference(ref), self.eventViewCallback, self.openSingleServiceEPG, self.openMultiServiceEPG, self.openSimilarList)
@@ -3328,19 +3342,29 @@ class InfoBarEPG:
 		if self.servicelist is None:
 			return
 		ref = self.session.nav.getCurrentlyPlayingServiceOrGroup()
-		self.getNowNext()
-		epglist = self.epglist
-		if not epglist:
-			self.is_now_next = False
-			epg = eEPGCache.getInstance()
-			ptr = ref and ref.valid() and epg.lookupEventTime(ref, -1)
-			if ptr:
-				epglist.append(ptr)
-				ptr = epg.lookupEventTime(ref, ptr.getBeginTime(), +1)
+		if isMoviePlayerInfoBar(self):
+			try:
+				serviceHandler = eServiceCenter.getInstance()
+				info = serviceHandler.info(ref)
+				event = info.getEvent(ref)
+				epglist = [event]
+			except Exception:
+				epglist = []
+			simple = True
+		else:
+			self.getNowNext()
+			epglist = self.epglist
+			if not epglist:
+				self.is_now_next = False
+				epg = eEPGCache.getInstance()
+				ptr = ref and ref.valid() and epg.lookupEventTime(ref, -1)
 				if ptr:
 					epglist.append(ptr)
-		else:
-			self.is_now_next = True
+					ptr = epg.lookupEventTime(ref, ptr.getBeginTime(), +1)
+					if ptr:
+						epglist.append(ptr)
+			else:
+				self.is_now_next = True
 		if epglist:
 			if not simple:
 				self.eventView = self.session.openWithCallback(self.closed, EventViewEPGSelect, epglist[0], ServiceReference(ref), self.eventViewCallback, self.openSingleServiceEPG, self.openMultiServiceEPG, self.openSimilarList)

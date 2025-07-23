@@ -1,22 +1,22 @@
 # Copyright (C) 2005 THE tuxbox-enigma'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the tuxbox-enigma package.
 # Automatically generated, 2005.
-# Adga56 <adga45@gmail.com>, 2021, 2022, 2023.
+# Adga56 <adga45@gmail.com>, 2021, 2022, 2023, 2025.
 # Gediminas Murauskas <muziejusinfo@gmail.com>, 2021.
 msgid ""
 msgstr ""
 "Project-Id-Version: tuxbox-enigma 0.0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
-"PO-Revision-Date: 2023-06-04 19:16+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
+"PO-Revision-Date: 2025-06-11 19:04+0000\n"
 "Last-Translator: Adga56 <adga45@gmail.com>\n"
 "Language-Team: Lithuanian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/lt/>\n"
 "Language: lt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 1 && (n % 100 < 11 || n % 100 > 19)) ? 0 : ((n % 10 >= 2 && n % 10 <= 9 && (n % 100 < 11 || n % 100 > 19)) ? 1 : 2);\n"
-"X-Generator: Weblate 4.18-dev\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Weblate 5.12-dev\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 msgid ""
@@ -1068,6 +1068,10 @@ msgstr[1] ""
 msgstr[2] ""
 
 #, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr ""
+
+#, python-format
 msgid "%d times"
 msgstr "%d kartų"
 
@@ -1244,6 +1248,10 @@ msgstr "%s ilgas"
 #, python-format
 msgid "%s not available."
 msgstr "%s: nėra."
+
+#, python-format
+msgid "%s version"
+msgstr ""
 
 #, python-format
 msgid "%s%d min"
@@ -5193,6 +5201,9 @@ msgstr ""
 msgid "Create separate radio user bouquet"
 msgstr "Sukurti atskirą vartotojo radijo paketą"
 
+msgid "Create slots for the selected device"
+msgstr ""
+
 msgid "Create swap"
 msgstr ""
 
@@ -5469,9 +5480,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "DVISLUOKSNIS DVD"
-
-msgid "DVB API version"
-msgstr "DVB API versija"
 
 msgid "DVB CI Delay"
 msgstr "DVB CI delsa"
@@ -5823,6 +5831,9 @@ msgid "Define the DNS suffix."
 msgstr ""
 
 msgid "Define the custom mountpoint for the device."
+msgstr ""
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
 msgstr ""
 
 msgid "Define the file system mount options."
@@ -7367,9 +7378,6 @@ msgstr "Enigma2 informacija"
 msgid "Enigma2 revision"
 msgstr "Enigma2 laida"
 
-msgid "Enigma2 version"
-msgstr "Enigma2 versija"
-
 msgid "Enigmalight"
 msgstr "Paprasta Enigma"
 
@@ -8090,9 +8098,6 @@ msgstr "FFmpeg zondas"
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr "FFmpeg neįdiegtas, todėl \".mvi\" failo veiksmai nepasiekiami!"
 
-msgid "FFmpeg version"
-msgstr "FFmpeg versija"
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -8691,9 +8696,6 @@ msgstr "Pilno HD testas"
 msgid "G"
 msgstr "G"
 
-msgid "GCC version"
-msgstr "GCC versija"
-
 msgid "GREEN button"
 msgstr "ŽALIAS mygtukas"
 
@@ -8705,9 +8707,6 @@ msgstr "GStreamer derinimo žurnalo kategorija *"
 
 msgid "GStreamer debug log level *"
 msgstr "GStreamer derinimo žurnalo lygis *"
-
-msgid "GStreamer version"
-msgstr "GStreamer versija"
 
 msgid "GUI Skin *"
 msgstr ""
@@ -8805,9 +8804,6 @@ msgstr "Gibraltaras"
 
 msgid "Given device id"
 msgstr "Pateiktas įrenginio ID"
-
-msgid "Glibc version"
-msgstr "Glibc versija"
 
 msgid "Go back to the previous step"
 msgstr ""
@@ -10247,8 +10243,15 @@ msgstr ""
 msgid "Kernel file"
 msgstr "Branduolio failas"
 
+msgid "Kernel partition"
+msgstr ""
+
 msgid "Kernel version"
 msgstr "Branduolio versija"
+
+#, python-format
+msgid "Kernel%s partition"
+msgstr ""
 
 msgid "Kexec MultiBoot Actions"
 msgstr ""
@@ -12696,9 +12699,6 @@ msgstr "Garso parinktys..."
 msgid "Open AutoTimer"
 msgstr "Atverti auto laikmatį"
 
-msgid "Open AutoTimer OverView"
-msgstr ""
-
 msgid "Open AutoTimer Overview"
 msgstr "Atidaryti automatinį sąrašą"
 
@@ -12707,9 +12707,6 @@ msgstr "Atverti paketų sąrašą"
 
 msgid "Open Box Portal"
 msgstr "Rodyti lauko portalą"
-
-msgid "Open DreamPlex"
-msgstr "Rodyti DreamPlex grotuvą..."
 
 msgid "Open EPG"
 msgstr "rodyti EPG..."
@@ -12875,9 +12872,6 @@ msgstr "OpenDNS pagrindinis puslapis"
 
 msgid "OpenPLi Packages"
 msgstr ""
-
-msgid "OpenSSL version"
-msgstr "OpenSSL versija"
 
 msgid "OpenVPN"
 msgstr "OpenVPN"
@@ -14273,9 +14267,6 @@ msgstr ""
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python išorinės sąsajos dėl /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr "Python versija"
-
 msgid "Qatar"
 msgstr "Kataras"
 
@@ -14326,9 +14317,6 @@ msgstr "Greitas EPG režimas"
 
 msgid "QuickMenu"
 msgstr "Greitasis meniu"
-
-msgid "QuickMenu Actions"
-msgstr "Greito menlu veiksmai"
 
 msgid "QuickMenu/Extensions"
 msgstr "Greitasis meniu/plėtiniai"
@@ -15467,9 +15455,6 @@ msgstr ""
 msgid "Samba Settings"
 msgstr ""
 
-msgid "Samba version"
-msgstr ""
-
 msgid "Same as in active"
 msgstr "Kaip ir aktyvus"
 
@@ -15773,12 +15758,6 @@ msgstr "Teksto slinkties greitis (programinis)"
 msgid "Search"
 msgstr "Ieškoti"
 
-msgid "Search EPG for current event"
-msgstr "Ieškoti EPG apie šį įvykį."
-
-msgid "Search IMDb for information about current event"
-msgstr "Ieškoti informacijos apie šį įvykį IMDb."
-
 msgid "Search Sats"
 msgstr "Ieškoti palydovų"
 
@@ -15854,10 +15833,10 @@ msgstr "Ilgai spausti pirmyn"
 msgid "SeekBar activation"
 msgstr "Paieškos juostos aktyvavimas"
 
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Paieškos juostos jautrumas"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Paieškos juostos jautrumas"
 
 msgid "Seeking connected events"
@@ -15929,7 +15908,7 @@ msgstr "Jeigu nustatyta 'taip; info juosta bus rodoma visą laiką \"pauzės\" b
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr ""
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Jei nustatyta 'taip', leidžia jums paieškos lange naudotis paieška ir dabartinio įvykio viduje."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16217,6 +16196,9 @@ msgstr "Pasirinkite paketą"
 msgid "Select a debug log file to view:"
 msgstr "Pasirinkite derinimo žurnalo failą, kurį norite peržiūrėti:"
 
+msgid "Select a device to create multiboot slots"
+msgstr ""
+
 msgid "Select a device to use as the flash expander"
 msgstr ""
 
@@ -16443,6 +16425,9 @@ msgstr "Pasirinkite rūšiavimo būdą:"
 
 msgid "Select system information to view:"
 msgstr "Pasirinkite sistemos informaciją, kurią norite peržiūrėti:"
+
+msgid "Select target device for slot creation"
+msgstr ""
 
 msgid "Select temporary directory sort order for the current column"
 msgstr "Pasirinkite dabartinio stulpelio laikiną katalogų rūšiavimo tvarką"
@@ -17014,10 +16999,10 @@ msgid "Service '%s' is already defined."
 msgstr "Paslauga '%s' jau apibrėžta."
 
 msgid "Service ID (SID)"
-msgstr ""
+msgstr "Kanalo ID (SID)"
 
 msgid "Service Information"
-msgstr ""
+msgstr "Kanalo informacija"
 
 msgid "Service Information Actions"
 msgstr ""
@@ -17032,7 +17017,7 @@ msgid "Service Number, Picon and Service Name"
 msgstr "Kanalo numeris, logotipas ir kanalo pavadinimas"
 
 msgid "Service Scan"
-msgstr ""
+msgstr "Kanalų paieška"
 
 msgid "Service Scan Actions"
 msgstr ""
@@ -17174,7 +17159,7 @@ msgid "Set Scaling governor"
 msgstr ""
 
 msgid "Set Time"
-msgstr ""
+msgstr "Nustatykite laiką"
 
 msgid "Set action for 'Info' key"
 msgstr "Pasirinkite veiksmą 'info' mygtukui"
@@ -17255,7 +17240,7 @@ msgstr "Nustatykite numatytąjį rūšiavimo būdą."
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Nustatykite delsą tarp pakartotinių teksto slinkties ciklų. Tai naudojama kai kuriose vartotojo aplinkos temose programiniam vaizdo formavimui."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Nustatykite šuolio dydį paieškos juostoje."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -17388,6 +17373,9 @@ msgstr "Slaptažodžio nustatymas primygtinai rekomenduojamas, jei jūsų STB yr
 
 msgid "Settings"
 msgstr "Nustatymai"
+
+msgid "Settings Backup Target"
+msgstr ""
 
 msgid "Settings mode"
 msgstr "Parametrų režimas"
@@ -18583,6 +18571,9 @@ msgstr ""
 
 #, python-format
 msgid "Slot '%s' %s: %s%s"
+msgstr ""
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
 msgstr ""
 
 msgid "Slot Manager"
@@ -19831,11 +19822,6 @@ msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "DVD standartas nepalaiko H.264 (HDTV) vaizdo srautų."
 
 msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr "DreamPlex priedas neįdiegtas! Prašome jį įdiegti."
-
-msgid ""
 "The EPGSearch plugin is not installed!\n"
 "Please install it."
 msgstr ""
@@ -20703,9 +20689,6 @@ msgstr "Laiko istorija"
 msgid "Timeline scale"
 msgstr "Laiko skalė"
 
-msgid "Timer Actions"
-msgstr "Laikmačio veiksmai"
-
 msgid "Timer Log Actions"
 msgstr ""
 
@@ -21195,6 +21178,10 @@ msgstr "Įrenginio tipas"
 
 msgid "Type of scan"
 msgstr "Paieškos būdas"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr ""
 
 msgid "UBINIZE"
 msgstr "UBINIZE"
@@ -23810,10 +23797,10 @@ msgid "please wait, loading picture..."
 msgstr "palaukite, įkeliamas paveikslėlis..."
 
 msgid "plugin"
-msgstr ""
+msgstr "priedas"
 
 msgid "plugins"
-msgstr ""
+msgstr "priedai"
 
 msgid "pm"
 msgstr "popiet"
@@ -23959,7 +23946,7 @@ msgid "softcam"
 msgstr "Emuliatorius"
 
 msgid "softcams"
-msgstr ""
+msgstr "emuliatoriai"
 
 msgid "special (general)"
 msgstr "specialusis (bendrai)"
@@ -24097,7 +24084,7 @@ msgid "violet"
 msgstr "violetinė"
 
 msgid "wait for ci..."
-msgstr ""
+msgstr "laukite CI atsako..."
 
 msgid "wait for mmi..."
 msgstr "laukite atsakymo iš mmi..."
@@ -24141,6 +24128,50 @@ msgstr "taip (išsaugoti šaltinius)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "DVB API version"
+#~ msgstr "DVB API versija"
+
+#~ msgid "Enigma2 version"
+#~ msgstr "Enigma2 versija"
+
+#~ msgid "FFmpeg version"
+#~ msgstr "FFmpeg versija"
+
+#~ msgid "GCC version"
+#~ msgstr "GCC versija"
+
+#~ msgid "GStreamer version"
+#~ msgstr "GStreamer versija"
+
+#~ msgid "Glibc version"
+#~ msgstr "Glibc versija"
+
+#~ msgid "OpenSSL version"
+#~ msgstr "OpenSSL versija"
+
+#~ msgid "Python version"
+#~ msgstr "Python versija"
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "Rodyti DreamPlex grotuvą..."
+
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Greito menlu veiksmai"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Ieškoti EPG apie šį įvykį."
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "Ieškoti informacijos apie šį įvykį IMDb."
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr "DreamPlex priedas neįdiegtas! Prašome jį įdiegti."
+
+#~ msgid "Timer Actions"
+#~ msgstr "Laikmačio veiksmai"
 
 #~ msgid "InfoBar EPG Actions"
 #~ msgstr "Info juostos EPG veiksmai"

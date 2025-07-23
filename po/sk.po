@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
-"PO-Revision-Date: 2025-05-07 18:25+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
+"PO-Revision-Date: 2025-07-18 21:03+0000\n"
 "Last-Translator: Marián Hikaník <podnety@mojepreklady.net>\n"
 "Language-Team: Slovak <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/sk/>\n"
 "Language: sk\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 msgid ""
 "\n"
@@ -1071,6 +1071,10 @@ msgstr[1] "%d nájdené stanice alebo služby."
 msgstr[2] "%d nájdených staníc alebo služieb."
 
 #, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr "Na zariadení bolo vytvorených %d slotov.\n"
+
+#, python-format
 msgid "%d times"
 msgstr "%d krát"
 
@@ -1247,6 +1251,10 @@ msgstr "%s dlhé"
 #, python-format
 msgid "%s not available."
 msgstr "%s nie je dostupné."
+
+#, python-format
+msgid "%s version"
+msgstr "Verzia %s"
 
 #, python-format
 msgid "%s%d min"
@@ -5183,6 +5191,9 @@ msgstr "Vytvoriť koreňový žurnálovací flash systém súborov."
 msgid "Create separate radio user bouquet"
 msgstr "Vytvoriť oddelený používateľský prehľad rádií"
 
+msgid "Create slots for the selected device"
+msgstr "Vytvoriť sloty pre vybrané zariadenie"
+
 msgid "Create swap"
 msgstr "Vytvoriť swap"
 
@@ -5459,9 +5470,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "DVOJVRSTVOVÉ DVD"
-
-msgid "DVB API version"
-msgstr "Verzia DVB API"
 
 msgid "DVB CI Delay"
 msgstr "Oneskorenie DVB CI"
@@ -5814,6 +5822,9 @@ msgstr "Definujte príponu DNS."
 
 msgid "Define the custom mountpoint for the device."
 msgstr "Definovať používateľský bod pripojenia pre toto zariadenie."
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
+msgstr "Definujte predvolené cieľové umiestnenie pre zálohu nastavení. Po výbere možnosti 'Opýtať sa používateľa' sa takáto otázka zobrazí až počas zálohovania."
 
 msgid "Define the file system mount options."
 msgstr "Definovať možnosti pripojenia systému súborov."
@@ -7365,9 +7376,6 @@ msgstr "Informácie o systéme Enigma2"
 msgid "Enigma2 revision"
 msgstr "Revízia Enigma2"
 
-msgid "Enigma2 version"
-msgstr "Verzia Enigma2"
-
 msgid "Enigmalight"
 msgstr "Enigmalight"
 
@@ -8086,9 +8094,6 @@ msgstr "Sonda FFmpeg"
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr "FFmpeg nie je nainštalované, takže nie sú dostupné akcie pre súbor '.mvi'!"
 
-msgid "FFmpeg version"
-msgstr "Verzia FFmpeg"
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -8687,9 +8692,6 @@ msgstr "Test FullHD"
 msgid "G"
 msgstr "G"
 
-msgid "GCC version"
-msgstr "Verzia GCC"
-
 msgid "GREEN button"
 msgstr "Zelené tlačidlo"
 
@@ -8701,9 +8703,6 @@ msgstr "Kategória denníka pre ladenie GStreamer *"
 
 msgid "GStreamer debug log level *"
 msgstr "Úroveň denníka pre ladenie GStreamer *"
-
-msgid "GStreamer version"
-msgstr "Verzia GStreamera"
 
 msgid "GUI Skin *"
 msgstr "Vzhľad GUI *"
@@ -8801,9 +8800,6 @@ msgstr "Gibraltár"
 
 msgid "Given device id"
 msgstr "Zadané ID zariadenia"
-
-msgid "Glibc version"
-msgstr "Verzia Glibc"
 
 msgid "Go back to the previous step"
 msgstr "Späť na predchádzajúci krok"
@@ -10243,8 +10239,15 @@ msgstr "Balíčky kernelu"
 msgid "Kernel file"
 msgstr "Súbor kernelu"
 
+msgid "Kernel partition"
+msgstr "Partícia Kernel"
+
 msgid "Kernel version"
 msgstr "Verzia kernelu"
+
+#, python-format
+msgid "Kernel%s partition"
+msgstr "Partícia Kernel%s"
 
 msgid "Kexec MultiBoot Actions"
 msgstr "Akcie pre Kexec MultiBoot"
@@ -11827,7 +11830,7 @@ msgid "Namibia"
 msgstr "Namíbia"
 
 msgid "Narration"
-msgstr "Príbeh"
+msgstr "Rozprávanie/hlasový komentár"
 
 msgid "Native"
 msgstr "Natívne"
@@ -12695,9 +12698,6 @@ msgstr "Otvoriť možnosti zvuku"
 msgid "Open AutoTimer"
 msgstr "Otvoriť automatický časovač"
 
-msgid "Open AutoTimer OverView"
-msgstr "Otvoriť prehľad automatického časovača"
-
 msgid "Open AutoTimer Overview"
 msgstr "Otvoriť zoznam automatických časovačov"
 
@@ -12706,9 +12706,6 @@ msgstr "Otvoriť zoznam prehľadov"
 
 msgid "Open Box Portal"
 msgstr "Zobraziť Box Portal"
-
-msgid "Open DreamPlex"
-msgstr "Otvoriť DreamPlex"
 
 msgid "Open EPG"
 msgstr "Otvoriť EPG"
@@ -12874,9 +12871,6 @@ msgstr "OpenDNS – domovská stránka"
 
 msgid "OpenPLi Packages"
 msgstr "OpenPLI balíčky"
-
-msgid "OpenSSL version"
-msgstr "Verzia OpenSSL"
 
 msgid "OpenVPN"
 msgstr "OpenVPN"
@@ -14272,9 +14266,6 @@ msgstr "Vývojové balíčky jazyka Python"
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python frontend pre /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr "Verzia Python"
-
 msgid "Qatar"
 msgstr "Katar"
 
@@ -14325,9 +14316,6 @@ msgstr "RýchlyEPG režim"
 
 msgid "QuickMenu"
 msgstr "Rýchle menu"
-
-msgid "QuickMenu Actions"
-msgstr "Akcie rýchleho menu"
 
 msgid "QuickMenu/Extensions"
 msgstr "Rýchle menu/rozšírenia"
@@ -15466,9 +15454,6 @@ msgstr "Server Samba"
 msgid "Samba Settings"
 msgstr "Nastavenia Samba"
 
-msgid "Samba version"
-msgstr "Verzia Samby"
-
 msgid "Same as in active"
 msgstr "Rovnako ako pri zapnutí"
 
@@ -15772,12 +15757,6 @@ msgstr "Rýchlosť rolovania (softvérový vykresľovač)"
 msgid "Search"
 msgstr "Hľadať"
 
-msgid "Search EPG for current event"
-msgstr "Vyhľadať EPG pre aktuálnu udalosť"
-
-msgid "Search IMDb for information about current event"
-msgstr "Vyhľadať v IMDb informáciu o aktuálnej udalosti"
-
 msgid "Search Sats"
 msgstr "Vyhľadávanie družíc"
 
@@ -15853,10 +15832,10 @@ msgstr "Dlhý posun dopredu"
 msgid "SeekBar activation"
 msgstr "Aktivácia vyhľadávacieho panela"
 
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Vyhľadávací panel"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Citlivosť vyhľadávacieho panela"
 
 msgid "Seeking connected events"
@@ -15928,7 +15907,7 @@ msgstr "Ak je nastavené na 'Áno', pri pozastavení prehrávania médií zostan
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr "Vyberte 'Áno', ak chcete povoliť automatické exportovanie každého zisteného úložného zariadenia ako zdieľania Samba."
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Ak je nastavené 'Áno', bude možné použitie vyhľadávacieho panela na skok na vybraný bod v rámci udalosti."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16216,6 +16195,9 @@ msgstr "Vyberte prehľad"
 msgid "Select a debug log file to view:"
 msgstr "Vyberte súbor denníka ladenia, ktorý sa má zobraziť:"
 
+msgid "Select a device to create multiboot slots"
+msgstr "Vyberte zariadenie pre vytvorenie slotov na multiboot"
+
 msgid "Select a device to use as the flash expander"
 msgstr "Vyberte zariadenie, ktoré sa má použiť ako flash expandér"
 
@@ -16442,6 +16424,9 @@ msgstr "Vyberte spôsob zoraďovania:"
 
 msgid "Select system information to view:"
 msgstr "Vyberte systémovú informáciu, ktorá sa má zobraziť:"
+
+msgid "Select target device for slot creation"
+msgstr "Vyberte cieľové zariadenie pre vytvorenie slotu"
 
 msgid "Select temporary directory sort order for the current column"
 msgstr "Vyberte poradie dočasného zoraďovania priečinkov pre aktuálny stĺpec"
@@ -17260,7 +17245,7 @@ msgstr "Nastavenie predvolenej metódy zoradenia."
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Nastavenie času oneskorenia medzi opakovanými slučkami, ktoré v niektorých vzhľadoch používa softvérový renderer."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Nastavenie veľkosti skoku v paneli posunu."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -17399,6 +17384,9 @@ msgstr "Ak je váš prijímač pripojený na internet, dôrazne odporúčame nas
 
 msgid "Settings"
 msgstr "Nastavenia"
+
+msgid "Settings Backup Target"
+msgstr "Cieľ pre zálohu nastavení"
 
 msgid "Settings mode"
 msgstr "Režim nastavovania"
@@ -18595,6 +18583,9 @@ msgstr "Slot '%s' %s"
 #, python-format
 msgid "Slot '%s' %s: %s%s"
 msgstr "Slot '%s' %s: %s%s"
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
+msgstr "Slot F: flash-slot pre zálohu Image (aktuálneho image)"
 
 msgid "Slot Manager"
 msgstr "Správca slotov"
@@ -19848,13 +19839,6 @@ msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "DVD štandard nepodporuje videostreamy v kodeku H.264 (HDTV)."
 
 msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-"Plugin DreamPlex nie je nainštalovaný!\n"
-"Prosím, nainštalujte ho."
-
-msgid ""
 "The EPGSearch plugin is not installed!\n"
 "Please install it."
 msgstr ""
@@ -20737,9 +20721,6 @@ msgstr "Časová história"
 msgid "Timeline scale"
 msgstr "Časová mierka"
 
-msgid "Timer Actions"
-msgstr "Akcie časovača"
-
 msgid "Timer Log Actions"
 msgstr "Akcie denníka časovača"
 
@@ -21231,6 +21212,10 @@ msgstr "Typ zariadenia"
 
 msgid "Type of scan"
 msgstr "Typ vyhľadávania"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr "Slot pre UBI %s%s"
 
 msgid "UBINIZE"
 msgstr "UBINIZE"
@@ -24193,6 +24178,61 @@ msgstr "áno (zachovať zdroje)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "DVB API version"
+#~ msgstr "Verzia DVB API"
+
+#~ msgid "Enigma2 version"
+#~ msgstr "Verzia Enigma2"
+
+#~ msgid "FFmpeg version"
+#~ msgstr "Verzia FFmpeg"
+
+#~ msgid "GCC version"
+#~ msgstr "Verzia GCC"
+
+#~ msgid "GStreamer version"
+#~ msgstr "Verzia GStreamera"
+
+#~ msgid "Glibc version"
+#~ msgstr "Verzia Glibc"
+
+#~ msgid "OpenSSL version"
+#~ msgstr "Verzia OpenSSL"
+
+#~ msgid "Python version"
+#~ msgstr "Verzia Python"
+
+#~ msgid "Rust version"
+#~ msgstr "Verzia Rust"
+
+#~ msgid "Samba version"
+#~ msgstr "Verzia Samby"
+
+#~ msgid "Open AutoTimer OverView"
+#~ msgstr "Otvoriť prehľad automatického časovača"
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "Otvoriť DreamPlex"
+
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Akcie rýchleho menu"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Vyhľadať EPG pre aktuálnu udalosť"
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "Vyhľadať v IMDb informáciu o aktuálnej udalosti"
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr ""
+#~ "Plugin DreamPlex nie je nainštalovaný!\n"
+#~ "Prosím, nainštalujte ho."
+
+#~ msgid "Timer Actions"
+#~ msgstr "Akcie časovača"
 
 #~ msgid "InfoBar EPG Actions"
 #~ msgstr "Akcie EPG v infolište"

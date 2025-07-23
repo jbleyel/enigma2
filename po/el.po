@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV Enigma2 Official Greek Translation\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-07 16:24+0000\n"
+"POT-Creation-Date: 2025-07-17 17:20+0000\n"
 "PO-Revision-Date: 2025-05-12 13:02+0000\n"
 "Last-Translator: MCelliotG <mcelliotg@gmail.com>\n"
 "Language-Team: Greek <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/el/>\n"
@@ -1035,6 +1035,10 @@ msgstr[0] "Βρέθηκε %d υπηρεσία."
 msgstr[1] "Βρέθηκαν %d υπηρεσίες."
 
 #, python-format
+msgid "%d slots have been created on the device.\n"
+msgstr ""
+
+#, python-format
 msgid "%d times"
 msgstr "%d φορές"
 
@@ -1210,6 +1214,10 @@ msgstr "%s παρατεταμένο"
 #, python-format
 msgid "%s not available."
 msgstr "Το %s δεν είναι διαθέσιμο."
+
+#, python-format
+msgid "%s version"
+msgstr ""
 
 #, python-format
 msgid "%s%d min"
@@ -5144,6 +5152,9 @@ msgstr "Δημιουργία ημερολογίου συστήματος αρχ�
 msgid "Create separate radio user bouquet"
 msgstr "Δημιουργία ξεχωριστού ραδιοφωνικού μπουκέτου χρήστη"
 
+msgid "Create slots for the selected device"
+msgstr ""
+
 msgid "Create swap"
 msgstr "Δημιουργία swap"
 
@@ -5420,9 +5431,6 @@ msgstr "DTS/DTS-HD HR/DTS-HD MA/DTS:X"
 
 msgid "DUAL LAYER DVD"
 msgstr "DVD ΔΙΠΛΗΣ ΣΤΡΩΣΗΣ"
-
-msgid "DVB API version"
-msgstr "Έκδοση DVB API"
 
 msgid "DVB CI Delay"
 msgstr "Καθυστέρηση DVB CI"
@@ -5775,6 +5783,9 @@ msgstr "Ορισμός επιθήματος DNS."
 
 msgid "Define the custom mountpoint for the device."
 msgstr "Ορισμός προσαρμοσμένου σημείου πρόσβασης για αυτή τη συσκευή."
+
+msgid "Define the default settings backup target location. Select 'Ask user' to prompt the user for the target location when the backup is run."
+msgstr ""
 
 msgid "Define the file system mount options."
 msgstr "Ορισμός επιλογών προσάρτησης συστήματος αρχείων."
@@ -7323,9 +7334,6 @@ msgstr "Πληροφορίες enigma2"
 msgid "Enigma2 revision"
 msgstr "Αναθεώρηση enigma2"
 
-msgid "Enigma2 version"
-msgstr "Έκδοση enigma2"
-
 msgid "Enigmalight"
 msgstr "Enigmalight"
 
@@ -8044,9 +8052,6 @@ msgstr "Ανιχνευτής FFmpeg"
 msgid "FFmpeg is not installed so '.mvi' file actions are not available!"
 msgstr "Το FFmpeg δεν είναι εγκατεστημένο, οπότε οι ενέργειες αρχείων '.mvi' δεν είναι διαθέσιμες!"
 
-msgid "FFmpeg version"
-msgstr "Έκδοση FFmpeg"
-
 msgid "FIFO"
 msgstr "FIFO"
 
@@ -8645,9 +8650,6 @@ msgstr "FullHD Τεστ"
 msgid "G"
 msgstr "G"
 
-msgid "GCC version"
-msgstr "Έκδοση GCC"
-
 msgid "GREEN button"
 msgstr "Πράσινο πλήκτρο"
 
@@ -8659,9 +8661,6 @@ msgstr "Κατηγορία καταγραφής αποσφαλμάτωσης GSt
 
 msgid "GStreamer debug log level *"
 msgstr "Επίπεδο καταγραφής αποσφαλμάτωσης GStreamer *"
-
-msgid "GStreamer version"
-msgstr "Έκδοση GStreamer"
 
 msgid "GUI Skin *"
 msgstr "Θέμα GUI *"
@@ -8759,9 +8758,6 @@ msgstr "Γιβραλτάρ"
 
 msgid "Given device id"
 msgstr "Αναγνωριστικό συσκευής που δόθηκε"
-
-msgid "Glibc version"
-msgstr "Έκδοση Glibc"
 
 msgid "Go back to the previous step"
 msgstr "Επιστροφή στο προηγούμενο βήμα"
@@ -10200,8 +10196,15 @@ msgstr "Πακέτα πυρήνα Kernel"
 msgid "Kernel file"
 msgstr "Αρχείο kernel"
 
+msgid "Kernel partition"
+msgstr ""
+
 msgid "Kernel version"
 msgstr "Έκδοση kernel"
+
+#, python-format
+msgid "Kernel%s partition"
+msgstr ""
 
 msgid "Kexec MultiBoot Actions"
 msgstr "Ενέργειες πολλαπλής εκκίνησης Kexec"
@@ -12651,9 +12654,6 @@ msgstr "Άνοιγμα επιλογών ήχου"
 msgid "Open AutoTimer"
 msgstr "Άνοιγμα αυτόματου χρονοδιακόπτη"
 
-msgid "Open AutoTimer OverView"
-msgstr "Άνοιγμα προεπισκόπησης αυτόματων χρονοδιακοπτών"
-
 msgid "Open AutoTimer Overview"
 msgstr "Άνοιγμα λίστας αυτόματων χρονοδιακοπτών"
 
@@ -12662,9 +12662,6 @@ msgstr "Άνοιγμα λίστας μπουκέτων"
 
 msgid "Open Box Portal"
 msgstr "Εμφάνιση portal δέκτη"
-
-msgid "Open DreamPlex"
-msgstr "Άνοιγμα του DreamPlex"
 
 msgid "Open EPG"
 msgstr "Άνοιγμα EPG"
@@ -12830,9 +12827,6 @@ msgstr "Αρχική σελίδα OpenDNS"
 
 msgid "OpenPLi Packages"
 msgstr "Πακέτα OpenPLi"
-
-msgid "OpenSSL version"
-msgstr "Έκδοση OpenSSL"
 
 msgid "OpenVPN"
 msgstr "OpenVPN"
@@ -14226,9 +14220,6 @@ msgstr "Πακέτα ανάπτυξης python"
 msgid "Python frontend for /tmp/mmi.socket"
 msgstr "Python του tuner για το /tmp/mmi.socket"
 
-msgid "Python version"
-msgstr "Έκδοση python"
-
 msgid "Qatar"
 msgstr "Κατάρ"
 
@@ -14279,9 +14270,6 @@ msgstr "Λειτουργία γρήγορου EPG"
 
 msgid "QuickMenu"
 msgstr "Γρήγορο μενού"
-
-msgid "QuickMenu Actions"
-msgstr "Ενέργειες γρήγορου μενού"
 
 msgid "QuickMenu/Extensions"
 msgstr "Γρήγορο μενού/Επεκτάσεις"
@@ -15420,9 +15408,6 @@ msgstr "Διακομιστής samba"
 msgid "Samba Settings"
 msgstr "Ρυθμίσεις Samba"
 
-msgid "Samba version"
-msgstr "Έκδοση samba"
-
 msgid "Same as in active"
 msgstr "Όπως στο ενεργό"
 
@@ -15723,12 +15708,6 @@ msgstr "Ταχύτητα κύλισης (μέσω λογισμικού)"
 msgid "Search"
 msgstr "Αναζήτηση"
 
-msgid "Search EPG for current event"
-msgstr "Ανίχνευση στο EPG για το τρέχον πρόγραμμα"
-
-msgid "Search IMDb for information about current event"
-msgstr "Αναζήτηση στο IMDb για πληροφορίες σχετικά με το τρέχον πρόγραμμα"
-
 msgid "Search Sats"
 msgstr "Ανίχνευση δορυφόρων"
 
@@ -15804,10 +15783,10 @@ msgstr "Αναζήτηση εμπρός παρατεταμένο"
 msgid "SeekBar activation"
 msgstr "Ενεργοποίηση μπάρας αναζήτησης"
 
-msgid "Seekbar"
+msgid "SeekBar"
 msgstr "Μπάρα αναζήτησης"
 
-msgid "Seekbar sensibility"
+msgid "SeekBar sensibility"
 msgstr "Ακρίβεια μπάρας αναζήτησης"
 
 msgid "Seeking connected events"
@@ -15879,7 +15858,7 @@ msgstr "Επιλέξτε 'ναι' για να διατηρηθεί η εμφάν
 msgid "Select 'Yes' to allow each storage device detected to be automatically exported as samba share."
 msgstr "Επιλέξτε 'ναι' για να επιτρέψετε την αυτόματη εξαγωγή κάθε εντοπισμένης συσκευής αποθήκευσης ως κοινόχρηστο στοιχείο samba."
 
-msgid "Select 'Yes' to allow use of the seek bar to jump to a selected point within the event."
+msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
 msgstr "Επιλέξτε 'ναι' για να επιτραπεί η χρήση της μπάρας αναζήτησης για μεταπήδηση σε επιλεγμένο σημείο εντός του προγράμματος."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
@@ -16167,6 +16146,9 @@ msgstr "Επιλογή μπουκέτου"
 msgid "Select a debug log file to view:"
 msgstr "Επιλογή ενός αρχείου καταγραφής αποσφαλμάτωσης για προβολή:"
 
+msgid "Select a device to create multiboot slots"
+msgstr ""
+
 msgid "Select a device to use as the flash expander"
 msgstr "Επιλέξτε μια συσκευή για χρήση ως επέκταση flash"
 
@@ -16393,6 +16375,9 @@ msgstr "Επιλογή τρόπου ταξινόμησης:"
 
 msgid "Select system information to view:"
 msgstr "Επιλογή πληροφοριών συστήματος για προβολή:"
+
+msgid "Select target device for slot creation"
+msgstr ""
 
 msgid "Select temporary directory sort order for the current column"
 msgstr "Επιλογή προσωρινής σειράς ταξινόμησης φακέλων για την τρέχουσα στήλη"
@@ -17211,7 +17196,7 @@ msgstr "Ορισμός προεπιλεγμένης μεθόδου ταξινό�
 msgid "Set the delay time between repeated loops, this is used by software renderer in some skins."
 msgstr "Ορισμός της καθυστέρησης μεταξύ των επαναλήψεων, αυτό γίνεται μέσω λογισμικού σε μερικά θέματα."
 
-msgid "Set the jump-size of the seekbar."
+msgid "Set the jump-size of the SeekBar."
 msgstr "Ορισμός του μεγέθους υπερπήδησης της μπάρας αναζήτησης."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
@@ -17350,6 +17335,9 @@ msgstr "Συνίσταται ανεπιφύλακτα να ορίσετε ένα
 
 msgid "Settings"
 msgstr "Ρυθμίσεις"
+
+msgid "Settings Backup Target"
+msgstr ""
 
 msgid "Settings mode"
 msgstr "Λειτουργία ρυθμίσεων"
@@ -18544,6 +18532,9 @@ msgstr "Θέση '%s' %s"
 #, python-format
 msgid "Slot '%s' %s: %s%s"
 msgstr "Θέση '%s' %s: %s%s"
+
+msgid "Slot F: Flash Slot Image Backup (Current image)"
+msgstr ""
 
 msgid "Slot Manager"
 msgstr "Διαχείριση θέσεων"
@@ -19797,13 +19788,6 @@ msgid "The DVD standard doesn't support H.264 (HDTV) video streams."
 msgstr "Το στάνταρ DVD δεν υποστηρίζει ροές βίντεο H.264 (HDTV)."
 
 msgid ""
-"The DreamPlex plugin is not installed!\n"
-"Please install it."
-msgstr ""
-"Το πρόσθετο DreamPlex δεν είναι εγκατεστημένο!\n"
-"Παρακαλώ εγκαταστήστε το."
-
-msgid ""
 "The EPGSearch plugin is not installed!\n"
 "Please install it."
 msgstr ""
@@ -20685,9 +20669,6 @@ msgstr "Σημειωτής γραμμής χρόνου"
 msgid "Timeline scale"
 msgstr "Κλίμακα γραμμής χρόνου"
 
-msgid "Timer Actions"
-msgstr "Ενέργειες χρονοδιακόπτη"
-
 msgid "Timer Log Actions"
 msgstr "Ενέργειες καταγραφής χρονοδιακόπτη"
 
@@ -21179,6 +21160,10 @@ msgstr "Τύπος συσκευής"
 
 msgid "Type of scan"
 msgstr "Τύπος ανίχνευσης"
+
+#, python-format
+msgid "UBI slot %s%s"
+msgstr ""
 
 msgid "UBINIZE"
 msgstr "UBINIZE"
@@ -24140,6 +24125,58 @@ msgstr "ναι (διατήρηση των feeds)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "DVB API version"
+#~ msgstr "Έκδοση DVB API"
+
+#~ msgid "Enigma2 version"
+#~ msgstr "Έκδοση enigma2"
+
+#~ msgid "FFmpeg version"
+#~ msgstr "Έκδοση FFmpeg"
+
+#~ msgid "GCC version"
+#~ msgstr "Έκδοση GCC"
+
+#~ msgid "GStreamer version"
+#~ msgstr "Έκδοση GStreamer"
+
+#~ msgid "Glibc version"
+#~ msgstr "Έκδοση Glibc"
+
+#~ msgid "OpenSSL version"
+#~ msgstr "Έκδοση OpenSSL"
+
+#~ msgid "Python version"
+#~ msgstr "Έκδοση python"
+
+#~ msgid "Samba version"
+#~ msgstr "Έκδοση samba"
+
+#~ msgid "Open AutoTimer OverView"
+#~ msgstr "Άνοιγμα προεπισκόπησης αυτόματων χρονοδιακοπτών"
+
+#~ msgid "Open DreamPlex"
+#~ msgstr "Άνοιγμα του DreamPlex"
+
+#~ msgid "QuickMenu Actions"
+#~ msgstr "Ενέργειες γρήγορου μενού"
+
+#~ msgid "Search EPG for current event"
+#~ msgstr "Ανίχνευση στο EPG για το τρέχον πρόγραμμα"
+
+#~ msgid "Search IMDb for information about current event"
+#~ msgstr "Αναζήτηση στο IMDb για πληροφορίες σχετικά με το τρέχον πρόγραμμα"
+
+#~ msgid ""
+#~ "The DreamPlex plugin is not installed!\n"
+#~ "Please install it."
+#~ msgstr ""
+#~ "Το πρόσθετο DreamPlex δεν είναι εγκατεστημένο!\n"
+#~ "Παρακαλώ εγκαταστήστε το."
+
+#~ msgid "Timer Actions"
+#~ msgstr "Ενέργειες χρονοδιακόπτη"
 
 #~ msgid "InfoBar EPG Actions"
 #~ msgstr "Ενέργειες μπάρας πληροφοριών EPG"
