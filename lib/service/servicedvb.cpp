@@ -1422,12 +1422,15 @@ void eDVBServicePlay::onEofRecoveryTimeout() {
 	seekTo(target_playback_pos);
 
 	// 5. Apply the stabilizer trick to prevent artifacts after seeking.
+	/*
 	if (m_decoder) {
 		m_decoder->pause();
 		m_decoder->play();
 	} else {
 		unpause();
 	}
+	*/
+	unpause();
 
 	// 6. Reset state flags. The system is now re-armed.
 	m_stream_interrupted = false;
