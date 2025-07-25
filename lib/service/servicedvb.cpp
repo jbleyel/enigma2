@@ -1287,40 +1287,17 @@ void eDVBServicePlay::serviceEvent(int event)
 	case eDVBServicePMTHandler::eventNewProgramInfo:
 	{
 		eDebug("[eDVBServicePlay] eventNewProgramInfo timeshift_enabled=%d timeshift_active=%d", m_timeshift_enabled, m_timeshift_active);
-		bool scrambling_state_has_changed = false;
-
 		if (m_timeshift_enabled)
 			updateTimeshiftPids();
-
-		// Get current program info and scrambling state from the live service handler
-		if(eSimpleConfig::getBool("config.timeshift.scrambledRecoveryEnabled", false))
-		{
-			eDVBServicePMTHandler::program program;
-			bool program_info_ok = !m_service_handler.getProgramInfo(program);
-			bool is_crypted_now = program_info_ok ? program.isCrypted() : m_last_crypted_state_for_decoder;
-
-			// Check if the scrambling state is the primary reason for the event
-			scrambling_state_has_changed = (is_crypted_now != m_last_crypted_state_for_decoder);
-			m_last_crypted_state_for_decoder = is_crypted_now;
-		}
-
-		// Always update the timeshift recorder's PIDs if timeshift is enabled
-		// Main logic: Decide whether to call updateDecoder()
-		if (m_timeshift_active && scrambling_state_has_changed)
-			eDebug("[Timeshift-Fix] Suppressing decoder update.");
-		else
-		{
-			if(!m_timeshift_active) {
-				updateDecoder();
-				m_event((iPlayableService*)this, evUpdatedInfo);
-			}
-		}
-		// Original remaining logic
+		if (!m_timeshift_active)
+			updateDecoder();
 		if (m_first_program_info & 1 && m_is_pvr)
 		{
 			m_first_program_info &= ~1;
 			seekTo(0);
 		}
+		if (!m_timeshift_active)
+			m_event((iPlayableService*)this, evUpdatedInfo);
 
 		m_event((iPlayableService*)this, evNewProgramInfo);
 		break;
