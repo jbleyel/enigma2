@@ -1120,7 +1120,7 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	CONNECT(m_resume_play_timer->timeout, eDVBServicePlay::resumePlay);
 	// END OF MODIFICATION
 
-	int m_max_attempts = eSimpleConfig::getInt("config.timeshift.recoveryAttempts", 8);	
+	m_max_attempts = eSimpleConfig::getInt("config.timeshift.recoveryAttempts", 8);	
 }
 
 eDVBServicePlay::~eDVBServicePlay()
