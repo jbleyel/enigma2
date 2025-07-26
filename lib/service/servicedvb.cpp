@@ -1404,7 +1404,7 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 
 	if (m_recovery_attempts >= m_max_attempts)
 	{
-		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Unpausing.", max_attempts);
+		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Unpausing.", m_max_attempts);
 		m_eof_recovery_timer->stop();
 		m_recovery_attempts = 0;
 		unpause(); 
