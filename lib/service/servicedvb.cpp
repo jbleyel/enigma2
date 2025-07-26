@@ -1091,7 +1091,6 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_subtitle_widget(0),
 	m_subtitle_sync_timer(eTimer::create(eApp)),
 	m_nownext_timer(eTimer::create(eApp)),
-	m_last_crypted_state_for_decoder(false)
 	// START OF MODIFICATION - Proactive Timeshift Stability
 	// This block contains all the new variables for the robust timeshift recovery mechanism.
 	, m_eof_recovery_timer(eTimer::create(eApp))
@@ -1120,6 +1119,8 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	CONNECT(m_timeshift_delay_updater_timer->timeout, eDVBServicePlay::updateTimeshiftDelay);
 	CONNECT(m_resume_play_timer->timeout, eDVBServicePlay::resumePlay);
 	// END OF MODIFICATION
+
+	int m_max_attempts = eSimpleConfig::getInt("config.timeshift.recoveryAttempts", 8);	
 }
 
 eDVBServicePlay::~eDVBServicePlay()
@@ -1400,15 +1401,17 @@ void eDVBServicePlay::resumePlay()
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
 	// Safety net: Check if we are stuck for too long (e.g., 40 attempts * 500ms = 20 seconds)
-	if (m_recovery_attempts++ > 40)
+
+	if (m_recovery_attempts >= m_max_attempts)
 	{
-		eWarning("[Timeshift-Fix] Recovery timed out after 20 seconds. Aborting and unpausing.");
+		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Unpausing.", max_attempts);
 		m_eof_recovery_timer->stop();
-		m_recovery_attempts = 0; // Reset counter
-		unpause(); // Last resort: just unpause to prevent a permanent freeze.
+		m_recovery_attempts = 0;
+		unpause(); 
 		m_event(this, evSeekableStatusChanged);
 		return;
 	}
+	m_recovery_attempts++;
 
     pts_t length = 0, position = 0;
     // Use a configurable safety margin. Default to 5 seconds.

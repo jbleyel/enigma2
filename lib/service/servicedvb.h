@@ -340,7 +340,6 @@ protected:
 	void recordEvent(int event);
 
 private:
-	bool m_last_crypted_state_for_decoder;
 
 	// START OF MODIFICATION - Proactive Timeshift Stability
 	// This block declares all the new private members for the robust timeshift recovery mechanism.
@@ -350,7 +349,7 @@ private:
 	pts_t m_saved_timeshift_delay;                  // Stores the last known-good timeshift delay.
 	bool m_stream_corruption_detected;              // Flag for stream corruption events.
 	int m_recovery_attempts;                        // Safety counter to prevent infinite recovery loops.
-
+	int m_max_attempts;                             // Maximum number of recovery attempts before giving up.	
 	void handleEofRecovery();                       // Entry point for the recovery process.
 	void onEofRecoveryTimeout();                    // Core logic for the recovery loop.
 	void updateTimeshiftDelay();                    // New function to be called periodically to update the delay.
