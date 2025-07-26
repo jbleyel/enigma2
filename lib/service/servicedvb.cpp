@@ -1093,12 +1093,12 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_nownext_timer(eTimer::create(eApp)),
 	// START OF MODIFICATION - Proactive Timeshift Stability
 	// This block contains all the new variables for the robust timeshift recovery mechanism.
-	, m_eof_recovery_timer(eTimer::create(eApp))
-	, m_timeshift_delay_updater_timer(eTimer::create(eApp))
-	, m_saved_timeshift_delay(-1)
-	, m_stream_corruption_detected(false)
-	, m_recovery_attempts(0)
-	, m_resume_play_timer(eTimer::create(eApp))
+	m_eof_recovery_timer(eTimer::create(eApp)),
+	m_timeshift_delay_updater_timer(eTimer::create(eApp)),
+	m_saved_timeshift_delay(-1),
+	m_stream_corruption_detected(false),
+	m_recovery_attempts(0),
+	m_resume_play_timer(eTimer::create(eApp))
 	// END OF MODIFICATION
 {
 #ifdef PASSTHROUGH_FIX
