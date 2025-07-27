@@ -2612,10 +2612,10 @@ msgstr "Yükselen"
 msgid "Ask user"
 msgstr "Sor"
 
-msgid "Ask user (with default as 'No')"
+msgid "Ask user (with default of 'No')"
 msgstr "Kullanıcıya sor (varsayılan olarak 'hayır' ile)"
 
-msgid "Ask user (with default as 'Yes')"
+msgid "Ask user (with default of 'Yes')"
 msgstr "Kullanıcıya sor (varsayılan olarak 'evet' ile)"
 
 msgid "Aspect"
@@ -2733,7 +2733,7 @@ msgid "Auto"
 msgstr "Otomatik"
 
 #
-msgid "Auto Detect"
+msgid "Auto detect"
 msgstr "Otomatik algılama"
 
 msgid "Auto Language"
@@ -3173,7 +3173,7 @@ msgstr "Karaliste"
 msgid "Blinking REC"
 msgstr "Yanıp sönen REC"
 
-msgid "Blinking REC Symbol"
+msgid "Blinking REC symbol"
 msgstr "Yanıp sönen REC sembolü"
 
 #
@@ -3948,7 +3948,7 @@ msgstr "Kanal / Hizmet"
 msgid "Channel 1"
 msgstr "Kanal 1"
 
-msgid "Channel 1 with Prime time"
+msgid "Channel 1 with prime time"
 msgstr "Primetime ile Kanal 1"
 
 msgid "Channel Info"
@@ -3957,7 +3957,7 @@ msgstr "Kanal Bilgisi"
 msgid "Channel List"
 msgstr "Kanal Listesi"
 
-msgid "Channel Number"
+msgid "Channel number"
 msgstr "Kanal Numarası"
 
 #
@@ -4469,7 +4469,7 @@ msgstr "Renk biçimi"
 msgid "Color space"
 msgstr "Renk Boşluğu"
 
-msgid "Colored Text"
+msgid "Colored text"
 msgstr "Renkli Yazı"
 
 msgid "Combined"
@@ -10387,7 +10387,7 @@ msgstr "Dahili flaş:  %s%s "
 msgid "Internal flash: %s %s as USB Recovery"
 msgstr "Dahili flaş: %s %s USB Kurtarma olarak"
 
-msgid "Internal hdd only"
+msgid "Internal disk only"
 msgstr "Sadece dahili hdd"
 
 msgid "Internet"
@@ -10894,7 +10894,7 @@ msgstr "Sol sütun dizin sıralaması"
 msgid "Left column file sort"
 msgstr "Sol sütun dosya sıralaması"
 
-msgid "Left from service name"
+msgid "Left of service name"
 msgstr "Kanal adından önce"
 
 msgid "Left, back USB"
@@ -11199,10 +11199,10 @@ msgstr "Günlükler Konumu"
 msgid "Logs older then the set no of days will be deleted."
 msgstr "Daha eski olan günlükler, ayarlanan gün sayısı silinir."
 
-msgid "Long << / >>"
+msgid "Long <</>>"
 msgstr "Uzun << / >>"
 
-msgid "Long Left/Right"
+msgid "Long LEFT/RIGHT"
 msgstr "Uzun sağ/sol"
 
 msgid "Long filenames"
@@ -12860,10 +12860,10 @@ msgstr "Hayır, hiçbir zaman"
 msgid "No, scan later manually"
 msgstr "Hayır, taramayı daha sonra el ile yapacağım"
 
-msgid "No, show the Plugin Browser"
+msgid "No, show Plugin Browser"
 msgstr "Hayır, her zaman eklenti tarayıcısını göster"
 
-msgid "No, show the RecordTimer Overview"
+msgid "No, show RecordTimer Overview"
 msgstr "Hayır, daima zamanlayıcı listesini göster"
 
 msgid "NodeID"
@@ -12938,7 +12938,7 @@ msgstr "Sınıflandırılmamış"
 msgid "Not Defined"
 msgstr "Tanımlanmamış"
 
-msgid "Not Flashing"
+msgid "Non-flashing"
 msgstr "Flaşlanmıyor"
 
 #
@@ -13857,7 +13857,7 @@ msgstr "Simge"
 msgid "Picon Packages"
 msgstr "Picon Paketleri"
 
-msgid "Picon and Service Name"
+msgid "Picon and service name"
 msgstr "Simge ve kanal ismi"
 
 msgid "Picon install location"
@@ -14992,7 +14992,7 @@ msgstr "REC"
 msgid "REC "
 msgstr "REC "
 
-msgid "REC Symbol"
+msgid "REC symbol"
 msgstr "REC Sembolü"
 
 msgid "REC Symbol in Standby"
@@ -15166,7 +15166,7 @@ msgstr "Kayıt - kayıt düğmesiyle aynı"
 msgid "Record Actions"
 msgstr "Eylemleri Kaydet"
 
-msgid "Record Icon"
+msgid "Record icon"
 msgstr ""
 
 #
@@ -15938,7 +15938,7 @@ msgstr "Sağ sütun dizin sıralaması"
 msgid "Right column file sort"
 msgstr "Sağ sütun dosya sıralaması"
 
-msgid "Right from service name"
+msgid "Right of service name"
 msgstr "Kanal adının sağında"
 
 msgid "Right, back USB"
@@ -16430,8 +16430,8 @@ msgstr "Zamanlayıcı genel bakış"
 msgid "Scheduler Settings"
 msgstr ""
 
-msgid "Scheduler Standby"
-msgstr "Scheduler Standby"
+msgid "Scheduler standby"
+msgstr "Scheduler standby"
 
 msgid "Scheduler deep standby"
 msgstr "Scheduler deep standby"
@@ -17765,10 +17765,10 @@ msgstr "Hizmet Bilgi İşlemleri"
 msgid "Service Name"
 msgstr "Kanal Adı"
 
-msgid "Service Number and Service Name"
+msgid "Service number and service name"
 msgstr "Servis Numarası ve Servis Adı"
 
-msgid "Service Number, Picon and Service Name"
+msgid "Service number, picon and service name"
 msgstr "Servis Numarası, Picon ve Servis Adı"
 
 msgid "Service Scan"
@@ -19226,7 +19226,7 @@ msgstr "Cilt Bileşen Paketleri"
 msgid "Skin Packages"
 msgstr "Cilt Paketleri"
 
-msgid "Skin Setting"
+msgid "Skin setting"
 msgstr "Görsel-arayüz Ayarı"
 
 msgid "Skin Settings"
@@ -23687,7 +23687,7 @@ msgstr "T2MI RAW modu devre dışıyken (varsayılan) tek T2MI PLP kapsülleme �
 msgid "With errors:"
 msgstr "Hata ile:"
 
-msgid "With long OK press"
+msgid "With long OK button"
 msgstr "Uzun OK tuşu ile"
 
 msgid "With pop up"
@@ -24266,7 +24266,7 @@ msgstr "macera/kovboy/savaş filmi"
 msgid "advertisement/shopping"
 msgstr "reklam/alışveriş"
 
-msgid "all up/down"
+msgid "All up/down"
 msgstr "hepsi yukarı / aşağı"
 
 msgid "alpha then oldest"
@@ -24545,9 +24545,6 @@ msgstr "başarısız"
 
 msgid "fashion"
 msgstr "moda"
-
-msgid "fast"
-msgstr "hızlı"
 
 msgid "file can not displayed - file not found"
 msgstr "dosya görüntülenemiyor - dosya bulunamadı"
@@ -25175,8 +25172,8 @@ msgstr "geleneksel (hızlı), yeniden ayar"
 msgid "tree delete"
 msgstr "ağaç silme"
 
-msgid "turbo"
-msgstr "turbo"
+msgid "Turbo"
+msgstr "Turbo"
 
 msgid "uShare"
 msgstr "uShare"

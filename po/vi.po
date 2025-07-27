@@ -2553,10 +2553,10 @@ msgstr ""
 msgid "Ask user"
 msgstr "Hỏi người dùng"
 
-msgid "Ask user (with default as 'No')"
+msgid "Ask user (with default of 'No')"
 msgstr "Người dùng sk (với mặc định là 'không')"
 
-msgid "Ask user (with default as 'Yes')"
+msgid "Ask user (with default of 'Yes')"
 msgstr "Hỏi người dùng (với mặc định là 'có')"
 
 msgid "Aspect"
@@ -2671,7 +2671,7 @@ msgid "Auto"
 msgstr "Tự động"
 
 #, fuzzy
-msgid "Auto Detect"
+msgid "Auto detect"
 msgstr "Tự động chờ"
 
 msgid "Auto Language"
@@ -3090,7 +3090,7 @@ msgstr ""
 msgid "Blinking REC"
 msgstr "Nhấp nháy khi ghi"
 
-msgid "Blinking REC Symbol"
+msgid "Blinking REC symbol"
 msgstr "Nhấp nháy khi ghi"
 
 msgid "Block device"
@@ -3840,7 +3840,7 @@ msgstr ""
 msgid "Channel 1"
 msgstr "Kênh 1"
 
-msgid "Channel 1 with Prime time"
+msgid "Channel 1 with prime time"
 msgstr "Kênh 1 với Primetime"
 
 msgid "Channel Info"
@@ -3849,7 +3849,7 @@ msgstr "Thông tin kênh"
 msgid "Channel List"
 msgstr "Danh sách kênh"
 
-msgid "Channel Number"
+msgid "Channel number"
 msgstr ""
 
 msgid "Channel Selection"
@@ -4343,7 +4343,7 @@ msgstr "Định dạng màu"
 msgid "Color space"
 msgstr "Không gian màu"
 
-msgid "Colored Text"
+msgid "Colored text"
 msgstr ""
 
 msgid "Combined"
@@ -10059,7 +10059,7 @@ msgstr ""
 msgid "Internal flash: %s %s as USB Recovery"
 msgstr ""
 
-msgid "Internal hdd only"
+msgid "Internal disk only"
 msgstr "Chỉ hdd nội bộ"
 
 msgid "Internet"
@@ -10551,7 +10551,7 @@ msgstr ""
 msgid "Left column file sort"
 msgstr ""
 
-msgid "Left from service name"
+msgid "Left of service name"
 msgstr "Còn lại từ tên dịch vụ"
 
 msgid "Left, back USB"
@@ -10843,10 +10843,10 @@ msgstr "Nhật ký vị trí"
 msgid "Logs older then the set no of days will be deleted."
 msgstr "Nhật ký cũ hơn sau đó bộ không có ngày sẽ bị xóa."
 
-msgid "Long << / >>"
+msgid "Long <</>>"
 msgstr "Dài << / >>"
 
-msgid "Long Left/Right"
+msgid "Long LEFT/RIGHT"
 msgstr "Dài trái / phải"
 
 msgid "Long filenames"
@@ -12449,10 +12449,10 @@ msgstr "Không bao giờ"
 msgid "No, scan later manually"
 msgstr "Không, quét sau"
 
-msgid "No, show the Plugin Browser"
+msgid "No, show Plugin Browser"
 msgstr "Không, hiển thị luôn trình duyệt plugin"
 
-msgid "No, show the RecordTimer Overview"
+msgid "No, show RecordTimer Overview"
 msgstr "Không, hiển thị luôn danh sách hẹn giờ"
 
 msgid "NodeID"
@@ -12525,7 +12525,7 @@ msgstr "Không liên quan"
 msgid "Not Defined"
 msgstr "Không xác định"
 
-msgid "Not Flashing"
+msgid "Non-flashing"
 msgstr "Không nhấp nháy"
 
 #, fuzzy
@@ -13440,7 +13440,7 @@ msgstr "Picon"
 msgid "Picon Packages"
 msgstr ""
 
-msgid "Picon and Service Name"
+msgid "Picon and service name"
 msgstr "Tên dịch vụ và Picon"
 
 msgid "Picon install location"
@@ -14505,7 +14505,7 @@ msgstr "GHI"
 msgid "REC "
 msgstr ""
 
-msgid "REC Symbol"
+msgid "REC symbol"
 msgstr "Biểu tượng REC"
 
 msgid "REC Symbol in Standby"
@@ -14668,7 +14668,7 @@ msgstr "Ghi - giống như nút ghi"
 msgid "Record Actions"
 msgstr ""
 
-msgid "Record Icon"
+msgid "Record icon"
 msgstr ""
 
 msgid "Record next"
@@ -15394,7 +15394,7 @@ msgstr ""
 msgid "Right column file sort"
 msgstr ""
 
-msgid "Right from service name"
+msgid "Right of service name"
 msgstr "Ngay từ tên dịch vụ"
 
 msgid "Right, back USB"
@@ -15868,7 +15868,7 @@ msgstr "Tổng quan về PowerTimer"
 msgid "Scheduler Settings"
 msgstr ""
 
-msgid "Scheduler Standby"
+msgid "Scheduler standby"
 msgstr "Chế độ chờ PowerTimer"
 
 msgid "Scheduler deep standby"
@@ -17171,10 +17171,10 @@ msgstr ""
 msgid "Service Name"
 msgstr "Tên dịch vụ"
 
-msgid "Service Number and Service Name"
+msgid "Service number and service name"
 msgstr "Số dịch vụ và tên dịch vụ"
 
-msgid "Service Number, Picon and Service Name"
+msgid "Service number, picon and service name"
 msgstr "Số dịch vụ, Picon và Tên dịch vụ"
 
 msgid "Service Scan"
@@ -18586,7 +18586,7 @@ msgstr ""
 msgid "Skin Packages"
 msgstr ""
 
-msgid "Skin Setting"
+msgid "Skin setting"
 msgstr "Thiết lập da"
 
 msgid "Skin Settings"
@@ -22839,7 +22839,7 @@ msgstr "Với chế độ RAW T2MI bị tắt (mặc định), chúng ta có th�
 msgid "With errors:"
 msgstr "Có lỗi:"
 
-msgid "With long OK press"
+msgid "With long OK button"
 msgstr "nhấn OK lâu"
 
 msgid "With pop up"
@@ -23394,7 +23394,7 @@ msgstr "phiêu lưu / tây / chiến tranh"
 msgid "advertisement/shopping"
 msgstr "quảng cáo / mua sắm"
 
-msgid "all up/down"
+msgid "All up/down"
 msgstr "tất cả lên / xuống"
 
 msgid "alpha then oldest"
@@ -23662,9 +23662,6 @@ msgstr "thất bại"
 
 msgid "fashion"
 msgstr "thời trang"
-
-msgid "fast"
-msgstr "nhanh"
 
 msgid "file can not displayed - file not found"
 msgstr "tập tin không thể hiển thị - không tìm thấy tập tin"
@@ -24247,8 +24244,8 @@ msgstr "truyền thống (nhanh), nghỉ hưu"
 msgid "tree delete"
 msgstr ""
 
-msgid "turbo"
-msgstr "turbo"
+msgid "Turbo"
+msgstr "Turbo"
 
 msgid "uShare"
 msgstr "uShare"
