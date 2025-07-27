@@ -1400,83 +1400,83 @@ void eDVBServicePlay::resumePlay()
  */
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
-	// Safety net: Check if we are stuck for too long (e.g., 40 attempts * 500ms = 20 seconds)
+	bool ready_to_recover = false;
 
+	// --- 1. Check for timeout ---
 	if (m_recovery_attempts >= m_max_attempts)
 	{
-		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Unpausing.", m_max_attempts);
-		m_eof_recovery_timer->stop();
-		m_recovery_attempts = 0;
-		unpause(); 
-		m_event(this, evSeekableStatusChanged);
-		return;
+		eWarning("[Timeshift-Fix] Recovery timed out after %d configured attempts. Forcing recovery now.", m_max_attempts);
+		ready_to_recover = true;
 	}
 	m_recovery_attempts++;
 
-    pts_t length = 0, position = 0;
-    // Use a configurable safety margin. Default to 5 seconds.
-    const pts_t safety_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 5 * 90000); 
+	// --- 2. If not timed out, check for success condition (sufficient buffer) ---
+	if (!ready_to_recover)
+	{
+		pts_t length = 0, position = 0;
+		if (getLength(length) != 0 || getPlayPosition(position) != 0)
+		{
+			eWarning("[Timeshift-Fix] Could not get length/position. Retrying in 500ms.");
+			m_eof_recovery_timer->start(500, true);
+			return;
+		}
 
-    // 1. If we can't get info, just wait and retry. Don't switch to live.
-    if (getLength(length) != 0 || getPlayPosition(position) != 0)
-    {
-        eWarning("[Timeshift-Fix] Could not get length/position. Retrying in 500ms (Attempt %d)", m_recovery_attempts);
-        m_eof_recovery_timer->start(500, true);
-        return;
-    }
+		const pts_t safety_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 0);
+		pts_t required_buffer = (m_saved_timeshift_delay > 0 ? m_saved_timeshift_delay : 0) + safety_margin;
 
-    // 2. Patiently wait for a sufficient buffer to be recorded.
-	// We wait indefinitely (up to the timeout limit) until this condition is met.
-	pts_t required_buffer = (m_saved_timeshift_delay > 0 ? m_saved_timeshift_delay : 0) + safety_margin;
-    if ((length - position) < required_buffer)
-    {
-        eDebug("[Timeshift-Fix] Waiting for buffer (%llu / %llu)... Retrying in 500ms (Attempt %d)", (length - position), required_buffer, m_recovery_attempts);
-        m_eof_recovery_timer->start(500, true); // Retry in 500ms
-        return;
-    }
+		if ((length - position) >= required_buffer)
+		{
+			eDebug("[Timeshift-Fix] Buffer is now sufficient. Proceeding with recovery.");
+			ready_to_recover = true;
+		}
+	}
 
-    // --- If we have enough buffer, proceed with the recovery ---
+	// --- 3. If not ready to recover by any condition, wait and retry ---
+	if (!ready_to_recover)
+	{
+		eDebug("[Timeshift-Fix] Waiting for buffer or timeout... Retrying in 500ms.");
+		m_eof_recovery_timer->start(500, true);
+		return;
+	}
 
-    m_eof_recovery_timer->stop(); // Stop the timer, we are proceeding.
-    m_recovery_attempts = 0; // Reset counter on success.
+	// --- 4. If we are here, it's time to recover using the safe method ---
+	m_eof_recovery_timer->stop();
+	m_recovery_attempts = 0;
+
+	pts_t new_live_pts = 0;
+	if (m_saved_timeshift_delay > 0 && m_record && !m_record->getCurrentPCR(new_live_pts))
+	{
+		// A. SMART RECOVERY (with seek)
+		pts_t new_target_pos = new_live_pts - m_saved_timeshift_delay;
+		if (new_target_pos < 0)
+		{
+			eWarning("[Timeshift-Fix] Calculated target position is negative (%lld). Seeking to beginning.", new_target_pos);
+			new_target_pos = 0;
+		}
+		eDebug("[Timeshift-Fix] Attempting to seek to %lld to restore delay.", new_target_pos);
+		seekTo(new_target_pos);
+	}
+	else
+	{
+		// B. FALLBACK RECOVERY (seekless)
+		eWarning("[Timeshift-Fix] Could not get data for smart seek. Falling back to seekless recovery.");
+	}
     
-    pts_t new_live_pts = 0;
-    if (m_saved_timeshift_delay > 0 && m_record && !m_record->getCurrentPCR(new_live_pts))
-    {
-        pts_t new_target_pos = new_live_pts - m_saved_timeshift_delay;
-
-        // Safety check on the calculated position
-        if (new_target_pos < 0) 
-        {
-            eWarning("[Timeshift-Fix] Calculated target position is negative (%lld). Seeking to beginning.", new_target_pos);
-            new_target_pos = 0;
-        }
-
-        eDebug("[Timeshift-Fix] Step 1: Attempting to seek to %lld to restore delay.", new_target_pos);
-        seekTo(new_target_pos);
-
-        // Step 2: Use a timer to apply the pause/play trick, avoiding a race condition.
-        if (m_decoder)
-        {
-            eDebug("[Timeshift-Fix] Step 2: Applying PAUSE, and scheduling PLAY via timer.");
-            m_decoder->pause();
-            m_resume_play_timer->start(100, true); 
-        }
-        else
-        {
-            eWarning("[Timeshift-Fix] No decoder available to apply stabilization trick.");
-        }
-    }
-    else
-    {
-        // Fallback if we cannot calculate the target position. This will result in a changed delay.
-        eWarning("[Timeshift-Fix] Could not get valid delay or live PTS. Falling back to seekless recovery.");
-        unpause();
-    }
+	// --- 5. THE UNIFIED SAFE EXIT: Apply the PAUSE/PLAY trick for ALL recovery scenarios ---
+	if (m_decoder)
+	{
+		eDebug("[Timeshift-Fix] Applying unified PAUSE/PLAY trick.");
+		m_decoder->pause();
+		m_resume_play_timer->start(100, true); 
+	}
+	else
+	{
+		 unpause(); // Absolute last resort
+	}
     
-    m_stream_corruption_detected = false; // Reset for the next event.
-    m_event(this, evSeekableStatusChanged);
-    eDebug("[Timeshift-Fix] Recovery sequence initiated. Play will resume shortly.");
+	m_stream_corruption_detected = false;
+	m_event(this, evSeekableStatusChanged);
+	eDebug("[Timeshift-Fix] Recovery sequence initiated. Play will resume shortly.");
 }
 
 // END OF MODIFICATION
