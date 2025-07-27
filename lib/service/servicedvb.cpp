@@ -1390,7 +1390,7 @@ void eDVBServicePlay::resumePlay()
 	if (m_decoder)
 	{
 		eDebug("[Timeshift-Fix] Timer triggered: Resuming play.");
-		m_decoder->play();
+		unpause();
 	}
 }
 
