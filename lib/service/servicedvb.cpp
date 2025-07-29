@@ -1363,84 +1363,25 @@ void eDVBServicePlay::handleEofRecovery()
 {
 	eDebug("[Timeshift-Fix] Starting recovery process...");
 
-	// Check user configuration first
-	int recovery_attempts = eSimpleConfig::getInt("config.timeshift.recoveryAttempts", 8);
-	int buffer_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 5 * 90000);
-
-	// If recovery attempts is set to 0, resume immediately without waiting
-	if (recovery_attempts == 0)
-	{
-		eDebug("[Timeshift-Fix] Recovery attempts set to 0, resuming immediately");
-		unpause();
-		m_event(this, evSeekableStatusChanged);
-		return;
-	}
-
-	// If buffer margin is set to 0, perform immediate recovery
-	if (buffer_margin == 0)
-	{
-		eDebug("[Timeshift-Fix] Buffer margin set to 0, attempting immediate recovery");
-		
-		// Calculate current delay
-		pts_t live_pts = 0, playback_pts = 0;
-		if (m_saved_timeshift_delay > 0 && m_record && !m_record->getCurrentPCR(live_pts) && !getPlayPosition(playback_pts))
-		{
-			pts_t new_target_pos = live_pts - m_saved_timeshift_delay;
-			
-			// Safety check on calculated position
-			if (new_target_pos < 0) 
-			{
-				eWarning("[Timeshift-Fix] Calculated target position is negative, seeking to beginning");
-				new_target_pos = 0;
-			}
-
-			eDebug("[Timeshift-Fix] Seeking to %lld to restore delay", new_target_pos);
-			seekTo(new_target_pos);
-
-			// Apply pause/play trick for stabilization
-			if (m_decoder)
-			{
-				eDebug("[Timeshift-Fix] Applying stabilization pause/play");
-				m_decoder->pause();
-				m_resume_play_timer->start(100, true);
-			}
-			else
-			{
-				unpause();
-			}
-		}
-		else
-		{
-			// Fallback if we cannot calculate target position
-			eWarning("[Timeshift-Fix] Could not calculate proper delay, resuming");
-			unpause();
-		}
-		
-		m_stream_corruption_detected = false;
-		m_event(this, evSeekableStatusChanged);
-		return;
-	}
-
-	// For normal cases with recovery attempts and buffer margin
-	// Initialize the retry counter for the recovery loop
+	// Initialize the retry counter for the recovery loop.
 	m_recovery_attempts = 0;
 	
 	// We no longer calculate the delay here. We trust the value in m_saved_timeshift_delay
-	// which was updated proactively by the m_timeshift_delay_updater_timer
+	// which was updated proactively by the m_timeshift_delay_updater_timer.
 	eDebug("[Timeshift-Fix] Using pre-calculated delay: %lld PTS (~%lld seconds)", 
 		   m_saved_timeshift_delay, m_saved_timeshift_delay / 90000);
 
-	// Pause the decoder to stabilize the system
+	// Pause the decoder to stabilize the system.
 	if (m_decoder)
 	{
 		eDebug("[Timeshift-Fix] Pausing decoder.");
 		m_decoder->pause();
 	}
 
-	// Clear any pending next-file operations to prevent conflicts
+	// Clear any pending next-file operations to prevent conflicts.
 	m_timeshift_file_next.clear();
 
-	// Start the recovery timer. The main logic is in onEofRecoveryTimeout
+	// Start the recovery timer. The main logic is in onEofRecoveryTimeout.
 	m_eof_recovery_timer->start(500, true);
 }
 
@@ -1459,7 +1400,8 @@ void eDVBServicePlay::resumePlay()
  */
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
-	// Safety net: Check if we are stuck for too long
+	// Safety net: Check if we are stuck for too long (e.g., 40 attempts * 500ms = 20 seconds)
+
 	if (m_recovery_attempts >= m_max_attempts)
 	{
 		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Unpausing.", m_max_attempts);
