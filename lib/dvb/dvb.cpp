@@ -2527,8 +2527,11 @@ RESULT eDVBChannel::playSource(ePtr<iTsSource> &source, const char *streaminfo_f
 	}
 
 	int flags = 0;
-
-	eDebug("[eDVBChannel] DEBUG playsource : streaminfo_file = %s, streammode = %d", streaminfo_file, source->isStream());
+	if (streaminfo_file && strstr(streaminfo_file, "timeshift"))
+	{
+		eDebug("[eDVBChannel] playsource timeshift mode");
+		flags = 1;
+	}
 
 	m_pvr_thread = new eDVBChannelFilePush(m_source->getPacketSize(), flags);
 	m_pvr_thread->enablePVRCommit(1);
