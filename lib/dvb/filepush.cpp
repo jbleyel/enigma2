@@ -175,22 +175,10 @@ void eFilePushThread::thread()
 					sleep(1);
 					continue;
 				}
-				else // EOF without stream_mode
-				{
-					if (m_flags == 0) {
-						if (++eofcount < 10) {
-							eDebug("[eFilePushThread] EOF Policy: Retrying with 1s delay.");
-							sleep(1);
-							continue;
-						}
-					}
-					else {
-						// For SIGNAL_IMMEDIATELY, we just fall through and break.
-						eDebug("[eFilePushThread] EOF Policy: Signaling and breaking loop.");
-					}
-					break;
+				else if (m_flags == 0) { // timeshift
+					usleep(200000);
+					continue;
 				}
-				/*
 				else if (++eofcount < 10)
 				{
 					eDebug("[eFilePushThread] reached EOF, but the file may grow. delaying 1 second.");
@@ -198,7 +186,6 @@ void eFilePushThread::thread()
 					continue;
 				}
 				break;
-				*/
 			}	
 			else
 			{
