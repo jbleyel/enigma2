@@ -175,7 +175,7 @@ void eFilePushThread::thread()
 					sleep(1);
 					continue;
 				}
-				else if (m_flags == 0) { // timeshift
+				else if (m_flags == 1) { // timeshift
 					usleep(200000);
 					continue;
 				}
