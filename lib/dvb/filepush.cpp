@@ -8,13 +8,14 @@
 //#define SHOW_WRITE_TIME
 
 DEFINE_REF(eFilePushThread);
-eFilePushThread::eFilePushThread(int io_prio_class, int io_prio_level, int blocksize, size_t buffersize)
+eFilePushThread::eFilePushThread(int io_prio_class, int io_prio_level, int blocksize, size_t buffersize, int flags)
 	: prio_class(io_prio_class),
 	  prio(io_prio_level),
 	  m_sg(NULL),
 	  m_stop(1),
 	  m_send_pvr_commit(0),
 	  m_stream_mode(0),
+	  m_flags(flags),
 	  m_blocksize(blocksize),
 	  m_buffersize(buffersize),
 	  m_buffer((unsigned char *)malloc(buffersize)),
@@ -169,12 +170,27 @@ void eFilePushThread::thread()
 				else
 					sendEvent(evtUser); // start of file event
 
-				if (m_stream_mode)
-				{
+				if (m_stream_mode) {
 					eDebug("[eFilePushThread] reached EOF, but we are in stream mode. delaying 1 second.");
 					sleep(1);
 					continue;
 				}
+				else // EOF without stream_mode
+				{
+					if (m_flags == 0) {
+						if (++eofcount < 10) {
+							eDebug("[eFilePushThread] EOF Policy: Retrying with 1s delay.");
+							sleep(1);
+							continue;
+						}
+					}
+					else {
+						// For SIGNAL_IMMEDIATELY, we just fall through and break.
+						eDebug("[eFilePushThread] EOF Policy: Signaling and breaking loop.");
+					}
+					break;
+				}
+				/*
 				else if (++eofcount < 10)
 				{
 					eDebug("[eFilePushThread] reached EOF, but the file may grow. delaying 1 second.");
@@ -182,7 +198,8 @@ void eFilePushThread::thread()
 					continue;
 				}
 				break;
-			}
+				*/
+			}	
 			else
 			{
 				/* Write data to mux */

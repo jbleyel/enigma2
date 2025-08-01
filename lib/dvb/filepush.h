@@ -19,7 +19,12 @@ class eFilePushThread: public eThread, public sigc::trackable, public iObject
 {
 	DECLARE_REF(eFilePushThread);
 public:
-	eFilePushThread(int prio_class=IOPRIO_CLASS_BE, int prio_level=0, int blocksize=188, size_t buffersize=188*1024);
+	eFilePushThread(int prio_class=IOPRIO_CLASS_BE, int prio_level=0, int blocksize=188, size_t buffersize=188*1024, int flags=0);
+		/* prio_class: IOPRIO_CLASS_BE, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE */
+		/* prio_level: 0-7, 0 is lowest, 7 is highest */
+		/* blocksize: size of a single TS packet */
+		/* buffersize: size of the internal buffer */
+		/* flags: reserved for future use */
 	~eFilePushThread();
 	void thread();
 	void stop();
@@ -48,6 +53,7 @@ private:
 	int m_fd_dest;
 	int m_send_pvr_commit;
 	int m_stream_mode;
+	int m_flags;
 	int m_sof;
 	int m_blocksize;
 	size_t m_buffersize;
