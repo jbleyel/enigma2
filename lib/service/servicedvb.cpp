@@ -1544,12 +1544,32 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 	case eDVBServicePMTHandler::eventEOF:
 		if ((!m_is_paused) && (m_skipmode >= 0))
 		{
-			// START OF MODIFICATION - Proactive Timeshift Stability
-			// The old, destructive logic is now replaced by a unified recovery handler.
-			// This prevents the jump to live TV.
-			eDebug("[Timeshift-Fix] EOF event triggered. Initiating safe recovery.");
-			handleEofRecovery();
-			// END OF MODIFICATION
+			if (m_timeshift_file_next.empty())
+			{
+				if (!eConfigManager::getConfigBoolValue("config.timeshift.skipReturnToLive", false))
+				{
+					eDebug("[eDVBServicePlay] time shift EOF, so let's go live");
+					switchToLive();
+				}
+			}
+			else
+			{
+				eDebug("[eDVBServicePlay] time shift EOF, switch to next file");
+
+				m_first_program_info |= 2;
+
+				eServiceReferenceDVB r = (eServiceReferenceDVB&)m_reference;
+				r.path = m_timeshift_file_next;
+
+				/* free the time shift service handler, we need the resources */
+				m_service_handler_timeshift.free();
+				resetTimeshift(1);
+
+				ePtr<iTsSource> source = createTsSource(r);
+				m_service_handler_timeshift.tuneExt(r, source, m_timeshift_file_next.c_str(), m_cue, 0, m_dvb_service, eDVBServicePMTHandler::timeshift_playback, false); /* use the decoder demux for everything */
+
+				m_event((iPlayableService*)this, evUser+1);
+			}
 		}
 		break;
 	}
