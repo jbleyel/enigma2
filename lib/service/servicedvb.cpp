@@ -1076,6 +1076,7 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_noaudio(false),
 	m_is_stream(ref.path.find("://") != std::string::npos),
 	m_is_pvr(!ref.path.empty() && !m_is_stream),
+	m_pause_position(-1),
 	m_is_paused(0),
 	m_timeshift_enabled(0),
 	m_timeshift_active(0),
@@ -1868,6 +1869,18 @@ RESULT eDVBServicePlay::pause()
 	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
 	if (m_decoder)
 	{
+		// MODIFICATION START: Store current playback position before pausing
+		if (getPlayPosition(m_pause_position) == 0)
+		{
+			eDebug("[eDVBServicePlay] Stored pause position at %lld", m_pause_position);
+		}
+		else
+		{
+			eWarning("[eDVBServicePlay] Failed to get pause position!");
+			m_pause_position = -1; // Ensure it's invalid if getting the position failed
+		}
+		// MODIFICATION END
+
 		m_slowmotion = 0;
 		m_is_paused = 1;
 		return m_decoder->pause();
@@ -1881,6 +1894,19 @@ RESULT eDVBServicePlay::unpause()
 	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
 	if (m_decoder)
 	{
+		// MODIFICATION START: Seek to the stored position before unpausing
+		if (m_pause_position != -1)
+		{
+			eDebug("[eDVBServicePlay] Seeking to stored position %lld before unpausing", m_pause_position);
+			seekTo(m_pause_position);
+			m_pause_position = -1; // Reset position immediately after use
+		}
+		else
+		{
+			eWarning("[eDVBServicePlay] No valid pause position to restore!");
+		}
+		// MODIFICATION END
+
 		m_slowmotion = 0;
 		m_is_paused = 0;
 		return m_decoder->play();
