@@ -1870,14 +1870,17 @@ RESULT eDVBServicePlay::pause()
 	if (m_decoder)
 	{
 		// MODIFICATION START: Store current playback position before pausing
-		if (getPlayPosition(m_pause_position) == 0)
+		if (isTimeshiftActive())
 		{
-			eDebug("[eDVBServicePlay] Stored pause position at %lld", m_pause_position);
-		}
-		else
-		{
-			eWarning("[eDVBServicePlay] Failed to get pause position!");
-			m_pause_position = -1; // Ensure it's invalid if getting the position failed
+			if (getPlayPosition(m_pause_position) == 0)
+			{
+				eDebug("[eDVBServicePlay] Stored pause position at %lld", m_pause_position);
+			}
+			else
+			{
+				eWarning("[eDVBServicePlay] Failed to get pause position!");
+				m_pause_position = -1; // Ensure it's invalid if getting the position failed
+			}
 		}
 		// MODIFICATION END
 
@@ -1895,15 +1898,18 @@ RESULT eDVBServicePlay::unpause()
 	if (m_decoder)
 	{
 		// MODIFICATION START: Seek to the stored position before unpausing
-		if (m_pause_position != -1)
+		if (isTimeshiftActive())
 		{
-			eDebug("[eDVBServicePlay] Seeking to stored position %lld before unpausing", m_pause_position);
-			seekTo(m_pause_position);
-			m_pause_position = -1; // Reset position immediately after use
-		}
-		else
-		{
-			eWarning("[eDVBServicePlay] No valid pause position to restore!");
+			if (m_pause_position != -1)
+			{
+				eDebug("[eDVBServicePlay] Seeking to stored position %lld before unpausing", m_pause_position);
+				seekTo(m_pause_position);
+				m_pause_position = -1; // Reset position immediately after use
+			}
+			else
+			{
+				eWarning("[eDVBServicePlay] No valid pause position to restore!");
+			}
 		}
 		// MODIFICATION END
 
