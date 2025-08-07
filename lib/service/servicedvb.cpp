@@ -1864,31 +1864,42 @@ RESULT eDVBServicePlay::getLength(pts_t &len)
 
 RESULT eDVBServicePlay::pause()
 {
-	eDebug("[eDVBServicePlay] pause");
+	eDebug("[eDVBServicePlay] PAUSE - Applying new logic (pause first, then get position)");
 	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
 	if (m_decoder)
 	{
-		// MODIFICATION START: Store current playback position before pausing
-		m_is_user_paused = true;
-		if (isTimeshiftActive())
-		{
-			if (getPlayPosition(m_pause_position) == 0)
-			{
-				eDebug("[eDVBServicePlay] Stored pause position at %lld", m_pause_position);
-			}
-			else
-			{
-				eWarning("[eDVBServicePlay] Failed to get pause position!");
-				m_pause_position = -1; // Ensure it's invalid if getting the position failed
-			}
-		}
-		// MODIFICATION END
-
+		m_is_user_paused = true; // Flag that the user initiated this pause.
 		m_slowmotion = 0;
 		m_is_paused = 1;
-		return m_decoder->pause();
-	} else
+
+		// --- START OF STABILITY FIX ---
+		// To prevent a potential deadlock on some drivers, we issue the pause command first,
+		// ensuring the decoder is in a stable, stopped state before we query it for timing information.
+
+		// Step 1: Send the pause command to the decoder first.
+		RESULT res = m_decoder->pause();
+		if (res != 0) {
+			eWarning("[eDVBServicePlay] Decoder failed to pause!");
+			return res; // Exit immediately if pause fails.
+		}
+
+		// Step 2: Now that the decoder is safely paused, get the current playback position.
+		// This avoids race conditions that could lead to a system freeze.
+		if (isTimeshiftActive()) {
+			if (getPlayPosition(m_pause_position) == 0) {
+				eDebug("[eDVBServicePlay] Stored pause position at %lld AFTER pausing.", m_pause_position);
+			} else {
+				eWarning("[eDVBServicePlay] Failed to get pause position after pausing!");
+				m_pause_position = -1;
+			}
+		}
+		// --- END OF STABILITY FIX ---
+
+		return res; // Return the result of the original pause operation.
+	} else {
+		eWarning("[eDVBServicePlay] No decoder available to pause.");
 		return -1;
+	}
 }
 
 RESULT eDVBServicePlay::unpause()
