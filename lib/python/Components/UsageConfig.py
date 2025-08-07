@@ -51,7 +51,7 @@ def InitUsageConfig():
 
 	config.misc.spinnerPosition = ConfigSequence(default=[50, 50], limits=[(0, 1260), (0, 700)], seperator=",")
 
-	config.misc.disableServicehisilicon = ConfigYesNo(default=False)
+	config.misc.disableServiceHiSilicon = ConfigYesNo(default=False)
 
 	config.workaround = ConfigSubsection()
 	config.workaround.blueswitch = ConfigSelection(default=0, choices=[

@@ -8,7 +8,7 @@ import NavigationInstance
 class CIHelper:
 
 	CI_ASSIGNMENT_LIST = None
-	CI_ASSIGNMENT_SERVICES_LIST = None
+	CI_ASSIGNMENT_SERVICES_LIST = []
 	CI_MULTIDESCRAMBLE = None
 	CI_MULTIDESCRAMBLE_MODULES = ("AlphaCrypt", )
 
@@ -16,6 +16,7 @@ class CIHelper:
 		NUM_CI = eDVBCIInterfaces.getInstance().getNumOfSlots()
 		if NUM_CI > 0:
 			self.CI_ASSIGNMENT_LIST = []
+			self.CI_ASSIGNMENT_SERVICES_LIST = []
 
 			def getValue(definitions, default):
 				Len = len(definitions)
@@ -52,9 +53,9 @@ class CIHelper:
 				except Exception:
 					print(f"[CI_ASSIGNMENT {ci}] error parsing xml...")
 
-			services = []
-			providers = []
 			for item in self.CI_ASSIGNMENT_LIST:
+				services = []
+				providers = []
 				print(f"[CI_Activate] activate CI{item[0]} with following settings:")
 				print(item[1])
 				try:
@@ -65,14 +66,14 @@ class CIHelper:
 					services.append(x)
 				for x in item[1][1]:
 					providers.append(x[0])
-			service_refs = []
-			if services:
-				for x in services:
-					service_refs.append(eServiceReference(x))
-			provider_services_refs = []
-			if providers:
-				provider_services_refs = self.getProivderServices(providers)
-			self.CI_ASSIGNMENT_SERVICES_LIST = [service_refs, provider_services_refs]
+				service_refs = []
+				if services:
+					for x in services:
+						service_refs.append(eServiceReference(x))
+				provider_services_refs = []
+				if providers:
+					provider_services_refs = self.getProivderServices(providers)
+				self.CI_ASSIGNMENT_SERVICES_LIST.append(service_refs + provider_services_refs)
 
 	def load_ci_assignment(self, force=False):
 		if self.CI_ASSIGNMENT_LIST is None or force:
@@ -94,11 +95,20 @@ class CIHelper:
 						provider_services_refs.append(service)
 		return provider_services_refs
 
+	def ServiceIsAssignedSlot(self, ref):
+		self.load_ci_assignment()
+
+		for slot, service_refs in enumerate(self.CI_ASSIGNMENT_SERVICES_LIST):
+			for x in service_refs:
+				if x and ref in x:
+					return slot
+		return -1
+
 	def ServiceIsAssigned(self, ref):
 		self.load_ci_assignment()
 
-		if self.CI_ASSIGNMENT_SERVICES_LIST:
-			for x in self.CI_ASSIGNMENT_SERVICES_LIST:
+		for service_refs in self.CI_ASSIGNMENT_SERVICES_LIST:
+			for x in service_refs:
 				if x and ref in x:
 					return True
 		return False
