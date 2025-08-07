@@ -351,6 +351,7 @@ private:
 	bool m_stream_corruption_detected;              // Flag for stream corruption events.
 	int m_recovery_attempts;                        // Safety counter to prevent infinite recovery loops.
 	int m_max_attempts;                             // Maximum number of recovery attempts before giving up.	
+	bool m_is_user_paused; // Flag to track if the user initiated the pause state.
 	void handleEofRecovery();                       // Entry point for the recovery process.
 	void onEofRecoveryTimeout();                    // Core logic for the recovery loop.
 	void updateTimeshiftDelay();                    // New function to be called periodically to update the delay.

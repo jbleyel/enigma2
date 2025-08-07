@@ -99,18 +99,16 @@ class CIHelper:
 		self.load_ci_assignment()
 
 		for slot, service_refs in enumerate(self.CI_ASSIGNMENT_SERVICES_LIST):
-			for x in service_refs:
-				if x and ref in x:
-					return slot
+			if service_refs and ref in service_refs:
+				return slot
 		return -1
 
 	def ServiceIsAssigned(self, ref):
 		self.load_ci_assignment()
 
 		for service_refs in self.CI_ASSIGNMENT_SERVICES_LIST:
-			for x in service_refs:
-				if x and ref in x:
-					return True
+			if service_refs and ref in service_refs:
+				return True
 		return False
 
 	def canMultiDescramble(self, ref):
@@ -147,7 +145,8 @@ class CIHelper:
 	def isPlayable(self, service):
 		service = eServiceReference(service)
 		if NavigationInstance.instance.getAnyRecordingsCount():
-			if self.ServiceIsAssigned(service):
+			slot = self.getAssignedSlot(service)
+			if slot != -1:
 				for timer in NavigationInstance.instance.RecordTimer.timer_list:
 					if timer.state == TimerEntry.StateRunning and timer.descramble:
 						if timer.justplay:
@@ -155,7 +154,7 @@ class CIHelper:
 						else:
 							timerservice = timer.service_ref.ref
 							if timerservice != service:
-								if self.ServiceIsAssigned(timerservice):
+								if slot == self.getAssignedSlot(timerservice):
 									if self.canMultiDescramble(service):
 										for x in (4, 2, 3):
 											if timerservice.getUnsignedData(x) != service.getUnsignedData(x):

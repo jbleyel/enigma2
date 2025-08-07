@@ -1092,15 +1092,15 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_subtitle_widget(0),
 	m_subtitle_sync_timer(eTimer::create(eApp)),
 	m_nownext_timer(eTimer::create(eApp)),
-	// START OF MODIFICATION - Proactive Timeshift Stability
-	// This block contains all the new variables for the robust timeshift recovery mechanism.
+	// --- START OF MODIFICATION ---
 	m_eof_recovery_timer(eTimer::create(eApp)),
 	m_timeshift_delay_updater_timer(eTimer::create(eApp)),
 	m_saved_timeshift_delay(-1),
 	m_stream_corruption_detected(false),
 	m_recovery_attempts(0),
-	m_resume_play_timer(eTimer::create(eApp))
-	// END OF MODIFICATION
+	m_resume_play_timer(eTimer::create(eApp)),
+	m_is_user_paused(false) // This is the new flag
+	// --- END OF MODIFICATION ---
 {
 #ifdef PASSTHROUGH_FIX
 	m_passthrough_fix_timer = eTimer::create(eApp);
@@ -1114,12 +1114,11 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 #ifdef PASSTHROUGH_FIX
 	CONNECT(m_passthrough_fix_timer->timeout, eDVBServicePlay::forcePassthrough);
 #endif
-	// START OF MODIFICATION - Proactive Timeshift Stability
-	// Connect the new timers to their handler functions.
+	// --- START OF MODIFICATION ---
 	CONNECT(m_eof_recovery_timer->timeout, eDVBServicePlay::onEofRecoveryTimeout);
 	CONNECT(m_timeshift_delay_updater_timer->timeout, eDVBServicePlay::updateTimeshiftDelay);
 	CONNECT(m_resume_play_timer->timeout, eDVBServicePlay::resumePlay);
-	// END OF MODIFICATION
+	// --- END OF MODIFICATION ---
 
 	m_max_attempts = eSimpleConfig::getInt("config.timeshift.recoveryAttempts", 8);	
 }
@@ -1870,6 +1869,7 @@ RESULT eDVBServicePlay::pause()
 	if (m_decoder)
 	{
 		// MODIFICATION START: Store current playback position before pausing
+		m_is_user_paused = true;
 		if (isTimeshiftActive())
 		{
 			if (getPlayPosition(m_pause_position) == 0)
@@ -1898,6 +1898,7 @@ RESULT eDVBServicePlay::unpause()
 	if (m_decoder)
 	{
 		// MODIFICATION START: Seek to the stored position before unpausing
+		m_is_user_paused = false;
 		if (isTimeshiftActive())
 		{
 			if (m_pause_position != -1)
@@ -2973,6 +2974,11 @@ void eDVBServicePlay::recordEvent(int event)
 		return;
 	case iDVBTSRecorder::eventStreamCorrupt:
 		// START OF MODIFICATION - Proactive Timeshift Stability
+		if (m_is_user_paused)
+		{
+			eDebug("[Timeshift-Fix] Stream corruption ignored because user is in PAUSE state.");
+			return; // Exit and do nothing
+		}
 		// Trigger the safe recovery handler on stream corruption events.
 		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt");
 		m_stream_corruption_detected = true; // Mark that stream corruption has occurred
