@@ -95,7 +95,7 @@ class CIHelper:
 						provider_services_refs.append(service)
 		return provider_services_refs
 
-	def ServiceIsAssignedSlot(self, ref):
+	def getAssignedSlot(self, ref):
 		self.load_ci_assignment()
 
 		for slot, service_refs in enumerate(self.CI_ASSIGNMENT_SERVICES_LIST):
