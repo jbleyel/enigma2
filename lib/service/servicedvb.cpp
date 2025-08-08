@@ -1387,15 +1387,31 @@ void eDVBServicePlay::handleEofRecovery()
 
 void eDVBServicePlay::resumePlay()
 {
-	// This function's role is now dual:
-	// 1. It's the final step for the unpause->seek->updateDecoder sequence.
-	// 2. It's used by the EOF recovery mechanism.
-	// The logic is simple: just play. The state has already been prepared by the caller.
+	eDebug("[Timeshift-Fix] resumePlay timer triggered. Resuming data source AND decoder.");
 
-	eDebug("[Timeshift-Fix] resumePlay timer triggered. Starting playback.");
-	
+	// --- START OF FINAL FIX ---
+	// This is the missing piece. We must resume the data source (e.g., eFilePushThread)
+	// BEFORE we tell the decoder to play, otherwise the decoder will starve.
+
+	ePtr<iDVBPVRChannel> pvr_channel;
+	// Get the correct PVR channel handler (either from timeshift or normal playback)
+	if ((m_timeshift_active ? m_service_handler_timeshift : m_service_handler).getPVRChannel(pvr_channel) == 0)
+	{
+		if (pvr_channel)
+		{
+			eDebug("[Timeshift-Fix] Resuming PVR channel data source.");
+			pvr_channel->pause(false); // Tell the file reader thread to start pushing data again.
+		}
+	}
+	else
+	{
+		eWarning("[Timeshift-Fix] Could not get PVR Channel to resume data source!");
+	}
+	// --- END OF FINAL FIX ---
+
 	if (m_decoder)
 	{
+		eDebug("[Timeshift-Fix] Starting decoder playback.");
 		m_decoder->play();
 	}
 	else
@@ -1932,16 +1948,14 @@ RESULT eDVBServicePlay::unpause()
 		{
 			eDebug("[eDVBServicePlay] Unpause with seek: Seeking to %lld and forcing full decoder re-initialization.", m_pause_position);
 			
-			// Step 1: Perform the seek to the stored position.
+			// Step 1: Perform the seek to the stored position. This will pause the data source thread.
 			seekTo(m_pause_position);
 			m_pause_position = -1; // Clear immediately after use.
 			
-			// Step 2: Force a full re-initialization of the decoder.
-			// This is the most robust way to ensure everything is synchronized after a seek.
-			updateDecoder(true); // The 'true' ensures evSeekableStatusChanged is fired.
+			// Step 2: Force a full re-initialization of the decoder to sync with the new position.
+			updateDecoder(true);
 			
-			// Step 3: Use a short, one-shot timer to start playback.
-			// This gives the system a moment to apply the new decoder settings.
+			// Step 3: Use a short, one-shot timer to resume the ENTIRE playback chain.
 			m_resume_play_timer->stop();
 			m_resume_play_timer->start(150, true); // 150ms delay, one-shot timer.
 			
