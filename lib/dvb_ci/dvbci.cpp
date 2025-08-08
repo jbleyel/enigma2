@@ -489,7 +489,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 		if (caids.empty())
 			continue; // unscrambled service
 
-		int used_ci_count = 0;
+		bool is_assigned = false;
 
 		for (eSmartPtrList<eDVBCISlot>::iterator ci_it(m_slots.begin()); ci_it != m_slots.end(); ++ci_it)
 		{
@@ -652,14 +652,6 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 					}
 				}
 
-				if (!useThis && used_ci_count != 0)
-				{
-					eTrace("[CI] DEBUG TEST");
-					useThis = true;
-				}
-
-				used_ci_count++;
-
 				if (useThis)
 				{
 					if (ci_it->user_mapped) // we dont like to link user mapped CIs
@@ -740,6 +732,7 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 					it->cislot->setCamMgrRoutingActive(true);
 					eTrace("[CI] assigned!");
 					gotPMT(pmthandler);
+					is_assigned = true; // we have assigned a CI to this pmthandler
 				}
 
 				if (it->cislot && user_mapped) // CI assigned to this pmthandler in this run.. and user mapped? then we break here.. we dont like to link other CIs to user mapped CIs
@@ -747,6 +740,12 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 					eTrace("[CI] user mapped CI assigned... dont link CIs!");
 					break;
 				}
+			}
+
+			if(is_assigned)
+			{
+				eTrace("[CI] break, we have assigned a CI to this pmthandler");
+				break; // we have assigned a CI to this pmthandler
 			}
 		}
 	}
