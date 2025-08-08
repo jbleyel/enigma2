@@ -489,6 +489,8 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 		if (caids.empty())
 			continue; // unscrambled service
 
+		int used_ci_count = 0;
+
 		for (eSmartPtrList<eDVBCISlot>::iterator ci_it(m_slots.begin()); ci_it != m_slots.end(); ++ci_it)
 		{
 			eTrace("[CI] check Slot %d", ci_it->getSlotID());
@@ -649,6 +651,14 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 						++tmp;
 					}
 				}
+
+				if (!useThis && used_ci_count != 0)
+				{
+					eTrace("[CI] DEBUG TEST");
+					useThis = true;
+				}
+
+				used_ci_count++;
 
 				if (useThis)
 				{
