@@ -493,6 +493,11 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 
 		for (eSmartPtrList<eDVBCISlot>::iterator ci_it(m_slots.begin()); ci_it != m_slots.end(); ++ci_it)
 		{
+			if (it->cislot)
+			{
+				eTrace("[CI] CI already assigned to this pmthandler, skip other slots");
+				break;
+			}
 			eTrace("[CI] check Slot %d", ci_it->getSlotID());
 			bool useThis = false;
 			bool user_mapped = true;
@@ -588,6 +593,36 @@ void eDVBCIInterfaces::recheckPMTHandlers()
 							user_mapped = false;
 							break;
 						}
+					}
+				}
+				if (useThis)
+				{
+					bool caid_match = false;
+					const std::vector<uint16_t> &ci_caids = ca_manager->getCAIDs();
+					for (CAID_LIST::iterator ca(caids.begin()); ca != caids.end(); ++ca)
+					{
+						if (std::binary_search(ci_caids.begin(), ci_caids.end(), *ca))
+						{
+							eTrace("[CI] Slot %d CAID match found: %04x", ci_it->getSlotID(), *ca);
+							caid_match = true;
+							break;
+						}
+					}
+					if (!caid_match)
+					{
+						eTrace("[CI] Slot %d skipped due to missing CAID match", ci_it->getSlotID());
+						useThis = false;
+					}
+				}
+				if (!useThis)
+				{
+					if (ci_it->use_count > 0 && !canDescrambleMultipleServices(ci_it))
+					{
+						eTrace("[CI] Slot %d already in use (use_count=%d) - cannot multi-decode, skipping",ci_it->getSlotID(), ci_it->use_count);
+					}
+					else
+					{
+						eTrace("[CI] Slot %d does not match service or CAID – skipping", ci_it->getSlotID());
 					}
 				}
 			}
