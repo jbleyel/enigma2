@@ -73,6 +73,7 @@ void eFilePushThread::thread()
 
 		while (!m_stop)
 		{
+			eDebug("[FilePushThread][DATA] Pumping data at pos=%lld", (long long)m_current_position);
 			if (m_sg && !current_span_remaining)
 			{
 				m_sg->getNextSourceSpan(m_current_position, bytes_read, current_span_offset, current_span_remaining, m_blocksize, m_sof);
@@ -293,6 +294,9 @@ void eFilePushThread::pause()
 
 void eFilePushThread::resume()
 {
+
+	eDebug("[FilePushThread][RESUME] Called. m_stop=%d, m_run_state=%d", m_stop, m_run_state);
+
 	if (m_stop != 2)
 	{
 		eWarning("[eFilePushThread] resume called while not paused");
@@ -303,6 +307,7 @@ void eFilePushThread::resume()
 	eSingleLocker lock(m_run_mutex);
 	m_stop = 0;
 	m_run_cond.signal(); /* Tell we're ready to resume */
+	eDebug("[FilePushThread][RESUME] Resume signal sent. Thread should continue pumping data...");
 }
 
 void eFilePushThread::enablePVRCommit(int s)
