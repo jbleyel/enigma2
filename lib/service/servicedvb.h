@@ -344,20 +344,21 @@ private:
 
 	// START OF MODIFICATION - Proactive Timeshift Stability
 	// This block declares all the new private members for the robust timeshift recovery mechanism.
-	ePtr<eTimer> m_eof_recovery_timer;              // Timer to manage the recovery process itself.
-	ePtr<eTimer> m_timeshift_delay_updater_timer;   // New timer to proactively save the timeshift delay.
-	ePtr<eTimer> m_resume_play_timer;               // New: Timer to safely resume play after a seek
-	pts_t m_saved_timeshift_delay;                  // Stores the last known-good timeshift delay.
-	bool m_stream_corruption_detected;              // Flag for stream corruption events.
-	int m_recovery_attempts;                        // Safety counter to prevent infinite recovery loops.
-	int m_max_attempts;                             // Maximum number of recovery attempts before giving up.	
-	bool m_is_user_paused; // Flag to track if the user initiated the pause state.
-	bool m_in_eof_recovery;
+	ePtr<eTimer> m_eof_recovery_timer;
+	ePtr<eTimer> m_timeshift_delay_updater_timer;
+	ePtr<eTimer> m_resume_play_timer;
+	pts_t m_saved_timeshift_delay;
 	pts_t m_recovery_saved_delay;
-	void handleEofRecovery();                       // Entry point for the recovery process.
-	void onEofRecoveryTimeout();                    // Core logic for the recovery loop.
-	void updateTimeshiftDelay();                    // New function to be called periodically to update the delay.
-	void resumePlay();                              // New: The function called by m_resume_play_timer
+	bool m_stream_corruption_detected;
+	bool m_is_user_paused;
+	bool m_in_eof_recovery;
+	bool m_corruption_occured_during_pause;
+	int m_recovery_attempts;
+	int m_max_attempts;
+	void handleEofRecovery();
+	void onEofRecoveryTimeout();
+	void updateTimeshiftDelay();
+	void resumePlay();
 	// END OF MODIFICATION
 };
 
