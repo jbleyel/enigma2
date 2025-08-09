@@ -1610,6 +1610,50 @@ RESULT eDVBServicePlay::pause()
 	}
 }
 
+
+RESULT eDVBServicePlay::unpause()
+{
+    eDebug("[eDVBServicePlay][TEST 2] Applying BRUTE-FORCE reset logic.");
+
+    if ((isTimeshiftActive() || m_is_pvr) && m_pause_position != -1)
+    {
+        eDebug("[eDVBServicePlay][TEST 2] Storing position %lld and restarting service.", m_pause_position);
+
+        // 1. Store the target position in a temporary variable
+        pts_t target_pts = m_pause_position;
+
+        // 2. Stop the ENTIRE timeshift playback service
+        m_service_handler_timeshift.free();
+
+        // 3. Restart it immediately, telling it to seek to our target
+        // This is a simplified version of what happens in switchToTimeshift
+        eServiceReferenceDVB r = (eServiceReferenceDVB&)m_reference;
+        r.path = m_timeshift_file;
+        m_cue->seekTo(0, target_pts); // Seek before tuning
+        ePtr<iTsSource> source = createTsSource(r);
+        m_service_handler_timeshift.tuneExt(r, source, m_timeshift_file.c_str(), m_cue, 0, m_dvb_service, eDVBServicePMTHandler::timeshift_playback, false);
+
+        // We don't need to call play, tuneExt will trigger the necessary events.
+        m_is_user_paused = false;
+        m_is_paused = 0;
+        m_pause_position = -1;
+        return 0;
+    }
+
+    // old code
+	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
+	if (m_decoder)
+	{
+		m_slowmotion = 0;
+		m_is_paused = 0;
+		return m_decoder->play();
+	} else
+		return -1;
+}
+
+/*
+
+
 RESULT eDVBServicePlay::unpause()
 {
 	eDebug("[eDVBServicePlay] unpause");
@@ -1672,7 +1716,7 @@ RESULT eDVBServicePlay::unpause()
 		return -1;
 	}
 }
-
+*/
 void eDVBServicePlay::recordEvent(int event)
 {
 	switch (event)
