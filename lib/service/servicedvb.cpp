@@ -1092,15 +1092,18 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_subtitle_widget(0),
 	m_subtitle_sync_timer(eTimer::create(eApp)),
 	m_nownext_timer(eTimer::create(eApp)),
-	// --- START OF MODIFICATION ---
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// This block contains all the new variables for the robust timeshift recovery mechanism.
 	m_eof_recovery_timer(eTimer::create(eApp)),
 	m_timeshift_delay_updater_timer(eTimer::create(eApp)),
 	m_saved_timeshift_delay(-1),
 	m_stream_corruption_detected(false),
 	m_recovery_attempts(0),
 	m_resume_play_timer(eTimer::create(eApp)),
-	m_is_user_paused(false) // This is the new flag
-	// --- END OF MODIFICATION ---
+	m_is_user_paused(false),
+	m_in_eof_recovery(false),
+	m_recovery_saved_delay(-1)
+	// END OF MODIFICATION
 {
 #ifdef PASSTHROUGH_FIX
 	m_passthrough_fix_timer = eTimer::create(eApp);
@@ -1114,11 +1117,12 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 #ifdef PASSTHROUGH_FIX
 	CONNECT(m_passthrough_fix_timer->timeout, eDVBServicePlay::forcePassthrough);
 #endif
-	// --- START OF MODIFICATION ---
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// Connect the new timers to their handler functions.
 	CONNECT(m_eof_recovery_timer->timeout, eDVBServicePlay::onEofRecoveryTimeout);
 	CONNECT(m_timeshift_delay_updater_timer->timeout, eDVBServicePlay::updateTimeshiftDelay);
 	CONNECT(m_resume_play_timer->timeout, eDVBServicePlay::resumePlay);
-	// --- END OF MODIFICATION ---
+	// END OF MODIFICATION
 
 	m_max_attempts = eSimpleConfig::getInt("config.timeshift.recoveryAttempts", 8);	
 }
@@ -1393,6 +1397,12 @@ void eDVBServicePlay::resumePlay()
 	// The logic is simple: just play. The state has already been prepared by the caller.
 
 	eDebug("[Timeshift-Fix] resumePlay timer triggered. Starting playback.");
+	
+	m_is_paused = 0;
+	m_is_user_paused = false;
+
+	if (isTimeshiftActive())
+		m_timeshift_delay_updater_timer->start(2000, false);
 	
 	if (m_decoder)
 	{
