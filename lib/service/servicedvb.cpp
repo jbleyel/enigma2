@@ -1332,6 +1332,12 @@ void eDVBServicePlay::serviceEvent(int event)
  */
 void eDVBServicePlay::updateTimeshiftDelay()
 {
+	// FIX: Do not update delay value while paused or during recovery to prevent incorrect values.
+	if (!isTimeshiftActive() || m_is_user_paused || m_in_eof_recovery)
+	{
+		return;
+	}
+
 	// This function only runs if timeshift is active.
 	if (!isTimeshiftActive())
 	{
@@ -1366,14 +1372,16 @@ void eDVBServicePlay::updateTimeshiftDelay()
 void eDVBServicePlay::handleEofRecovery()
 {
 	eDebug("[Timeshift-Fix] Starting recovery process...");
+	if (!isTimeshiftActive()) return;
 
 	// Initialize the retry counter for the recovery loop.
+	m_in_eof_recovery = true; // Set protection flag
 	m_recovery_attempts = 0;
 	
-	// We no longer calculate the delay here. We trust the value in m_saved_timeshift_delay
-	// which was updated proactively by the m_timeshift_delay_updater_timer.
-	eDebug("[Timeshift-Fix] Using pre-calculated delay: %lld PTS (~%lld seconds)", 
-		   m_saved_timeshift_delay, m_saved_timeshift_delay / 90000);
+	// FIX: Take a snapshot of the current delay value.
+	m_recovery_saved_delay = m_saved_timeshift_delay; 
+	eDebug("[Timeshift-Fix] Using snapshot delay: %lld PTS (~%lld seconds)", 
+		   m_recovery_saved_delay, m_recovery_saved_delay / 90000);
 
 	// Pause the decoder to stabilize the system.
 	if (m_decoder)
@@ -1427,6 +1435,7 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Unpausing.", m_max_attempts);
 		m_eof_recovery_timer->stop();
 		m_recovery_attempts = 0;
+		m_in_eof_recovery = false; // Clear protection flag
 		unpause(); 
 		m_event(this, evSeekableStatusChanged);
 		return;
@@ -1445,13 +1454,12 @@ void eDVBServicePlay::onEofRecoveryTimeout()
         return;
     }
 
-    // 2. Patiently wait for a sufficient buffer to be recorded.
-	// We wait indefinitely (up to the timeout limit) until this condition is met.
-	pts_t required_buffer = (m_saved_timeshift_delay > 0 ? m_saved_timeshift_delay : 0) + safety_margin;
+	// FIX: Use the static snapshot value for the calculation.
+	pts_t required_buffer = (m_recovery_saved_delay > 0 ? m_recovery_saved_delay : 0) + safety_margin;
     if ((length - position) < required_buffer)
     {
-        eDebug("[Timeshift-Fix] Waiting for buffer (%llu / %llu)... Retrying in 500ms (Attempt %d)", (length - position), required_buffer, m_recovery_attempts);
-        m_eof_recovery_timer->start(500, true); // Retry in 500ms
+        eDebug("[Timeshift-Fix] Waiting for buffer (%llu / %llu)... Retrying in 500ms (Attempt %d)", (unsigned long long)(length - position), (unsigned long long)required_buffer, m_recovery_attempts);
+        m_eof_recovery_timer->start(500, true);
         return;
     }
 
@@ -1461,9 +1469,10 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     m_recovery_attempts = 0; // Reset counter on success.
     
     pts_t new_live_pts = 0;
-    if (m_saved_timeshift_delay > 0 && m_record && !m_record->getCurrentPCR(new_live_pts))
+    // FIX: Use the static snapshot value for the calculation.
+    if (m_recovery_saved_delay > 0 && m_record && !m_record->getCurrentPCR(new_live_pts))
     {
-        pts_t new_target_pos = new_live_pts - m_saved_timeshift_delay;
+        pts_t new_target_pos = new_live_pts - m_recovery_saved_delay;
 
         // Safety check on the calculated position
         if (new_target_pos < 0) 
@@ -1495,8 +1504,8 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     }
     
     m_stream_corruption_detected = false; // Reset for the next event.
+    m_in_eof_recovery = false; // Clear protection flag
     m_event(this, evSeekableStatusChanged);
-    eDebug("[Timeshift-Fix] Recovery sequence initiated. Play will resume shortly.");
 }
 
 // END OF MODIFICATION
@@ -3027,7 +3036,7 @@ void eDVBServicePlay::recordEvent(int event)
 		return;
 	case iDVBTSRecorder::eventStreamCorrupt:
 		// START OF MODIFICATION - Proactive Timeshift Stability
-		if (m_is_user_paused)
+		if (m_is_user_paused || m_in_eof_recovery)
 		{
 			eDebug("[Timeshift-Fix] Stream corruption ignored because user is in PAUSE state.");
 			return; // Exit and do nothing
