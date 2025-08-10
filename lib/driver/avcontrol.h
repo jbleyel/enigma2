@@ -349,7 +349,34 @@ private:
 	std::string readAvailableModes(int flags = 0) const;
 	bool checkScartSwitch(int flags = 0) const;
 
-	static PyObject* measure_bitrate(int adapter, int demux, int videoPid, int audioPid) {
+    /**
+     * @brief Measures the bitrate for video and audio streams.
+     *
+     * This function measures bitrates for the specified video and audio PIDs
+     * and returns the results as a Python list containing two tuples.
+     *
+     * @param adapter The adapter index to use (e.g. 0 for /dev/dvb/adapter0)
+     * @param demux The demultiplexer index to use
+     * @param videoPid The PID of the video stream
+     * @param audioPid The PID of the audio stream
+     * 
+     * @return PyObject* A Python list with 2 elements:
+     *         - Element 0: Video bitrate tuple (min, max, avg, current) in kb/s
+     *         - Element 1: Audio bitrate tuple (min, max, avg, current) in kb/s
+     *         Each tuple contains 4 unsigned long values in this order:
+     *         - [0]: Minimum bitrate measured
+     *         - [1]: Maximum bitrate measured  
+     *         - [2]: Average bitrate measured
+     *         - [3]: Current bitrate measured
+     *
+     * Example:
+     * @code
+     * result = measure_bitrate(0, 0, 0x44, 0x45)
+     * video_min, video_max, video_avg, video_curr = result[0]
+     * audio_min, audio_max, audio_avg, audio_curr = result[1]
+     * @endcode
+     */
+    static PyObject* measure_bitrate(int adapter, int demux, int videoPid, int audioPid) {
 		BitrateCalculator calc;
 		return calc.measureBitrate(adapter, demux, videoPid, audioPid);
 	}
