@@ -1471,31 +1471,133 @@ void eDVBServicePlay::handleEofRecovery()
 	m_eof_recovery_timer->start(500, true);
 }
 
+// =================================================================================
+// START OF MODIFICATION (APPLYING DEVELOPER PATCH)
+// =================================================================================
+
 void eDVBServicePlay::resumePlay()
 {
-	eDebug("[Timeshift-Fix] resumePlay timer triggered. Finalizing unpause sequence.");
+	eDebug("[Timeshift-Fix] resumePlay timer triggered.");
 
+	// FIX: Handle corruption that occurred during the delay window between unpause and play
+	if (m_corruption_occured_during_pause) {
+		eDebug("[Timeshift-Fix] Corruption flagged during the resume window -> triggering recovery.");
+		m_corruption_occured_during_pause = false; // Consume the flag
+		handleEofRecovery();
+		return; // Exit without trying to play on a corrupt stream
+	}
+
+	if (!m_decoder) { 
+		eWarning("[Timeshift-Fix] resumePlay called but no decoder is available."); 
+		return; 
+	}
+
+	m_decoder->play();
+	m_is_paused = 0;
+	m_is_user_paused = false; // Set flags to false *after* successful play call
+
+	if (isTimeshiftActive()) {
+		updateTimeshiftDelay();
+		m_timeshift_delay_updater_timer->start(2000, false);
+	}
+}
+
+RESULT eDVBServicePlay::pause()
+{
+	eDebug("[eDVBServicePlay] PAUSE");
+	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
 	if (m_decoder)
 	{
-		m_decoder->play();
+		m_is_user_paused = true;
+		m_slowmotion = 0;
+		m_is_paused = 1;
+		
+		// NEW: Stop timers to prevent incorrect delay updates and race conditions.
+		m_timeshift_delay_updater_timer->stop();
+		m_resume_play_timer->stop();
 
+		RESULT res = m_decoder->pause();
+		if (res != 0)
+		{
+			eWarning("[eDVBServicePlay] Decoder failed to pause!");
+			// NEW: Reset state on failure
+			m_is_user_paused = false;
+			m_is_paused = 0;
+			return res;
+		}
+
+		if (isTimeshiftActive() || m_is_pvr)
+		{
+			if (getPlayPosition(m_pause_position) == 0)
+			{
+				eDebug("[eDVBServicePlay] Stored pause position at %lld AFTER pausing.", m_pause_position);
+			}
+			else
+			{
+				eWarning("[eDVBServicePlay] Failed to get pause position after pausing!");
+				m_pause_position = -1;
+			}
+		}
+		
+		return res;
+	} 
+	else
+	{
+		eWarning("[eDVBServicePlay] No decoder available to pause.");
+		return -1;
+	}
+}
+
+RESULT eDVBServicePlay::unpause()
+{
+	eDebug("[eDVBServicePlay] unpause - Using timer-based resume logic");
+
+	if (m_corruption_occured_during_pause)
+	{
+		eDebug("[Timeshift-Fix] Corruption was flagged during pause. Triggering recovery now.");
+		m_corruption_occured_during_pause = false;
+		m_is_user_paused = false; // Clear user pause flag before recovery
+		handleEofRecovery();
+		return 0;
+	}
+	
+	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
+	
+	if (m_decoder)
+	{
+		// NEW: Unified logic for timeshift and PVR to use the safe resume timer
+		if ((isTimeshiftActive() || m_is_pvr) && m_pause_position != -1)
+		{
+			eDebug("[eDVBServicePlay] Unpause with seek: Using timer to resume.");
+			
+			seekTo(m_pause_position);
+			m_pause_position = -1;
+
+			m_resume_play_timer->stop();
+			int delay = eSimpleConfig::getInt("config.timeshift.resume_delay_ms", 150);
+			m_resume_play_timer->start(delay, true); // Use timer to create safe window
+			
+			m_slowmotion = 0;
+			return 0;
+		}
+		
+		// Fallback for scenarios without seek (e.g. live TV unpause)
+		eDebug("[eDVBServicePlay] Standard unpause, calling play() directly.");
+		m_slowmotion = 0;
 		m_is_paused = 0;
 		m_is_user_paused = false;
-
-		if (isTimeshiftActive())
-		{
-			// Perform one manual, immediate update of the delay value.
-			updateTimeshiftDelay(); 
-			
-			// Now, restart the periodic timer for future updates.
-			m_timeshift_delay_updater_timer->start(2000, false);
-		}
+		return m_decoder->play();
 	}
 	else
 	{
-		eWarning("[Timeshift-Fix] resumePlay called but no decoder is available.");
+		eWarning("[eDVBServicePlay] No decoder available to unpause.");
+		return -1;
 	}
 }
+
+// =================================================================================
+// END OF MODIFICATION (APPLYING DEVELOPER PATCH)
+// =================================================================================
 
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
@@ -1566,157 +1668,6 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     m_event(this, evSeekableStatusChanged);
 }
 
-RESULT eDVBServicePlay::pause()
-{
-	eDebug("[eDVBServicePlay] PAUSE");
-	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
-	if (m_decoder)
-	{
-		m_is_user_paused = true;
-		m_slowmotion = 0;
-		m_is_paused = 1;
-		
-		// FIX: Stop timers to prevent incorrect delay updates and race conditions.
-		m_timeshift_delay_updater_timer->stop();
-		m_resume_play_timer->stop();
-
-		// FIX: Pause decoder BEFORE getting position to prevent driver deadlocks.
-		RESULT res = m_decoder->pause();
-		if (res != 0)
-		{
-			eWarning("[eDVBServicePlay] Decoder failed to pause!");
-			return res;
-		}
-
-		if (isTimeshiftActive() || m_is_pvr)
-		{
-			if (getPlayPosition(m_pause_position) == 0)
-			{
-				eDebug("[eDVBServicePlay] Stored pause position at %lld AFTER pausing.", m_pause_position);
-			}
-			else
-			{
-				eWarning("[eDVBServicePlay] Failed to get pause position after pausing!");
-				m_pause_position = -1;
-			}
-		}
-		
-		return res;
-	} 
-	else
-	{
-		eWarning("[eDVBServicePlay] No decoder available to pause.");
-		return -1;
-	}
-}
-
-
-RESULT eDVBServicePlay::unpause()
-{
-    eDebug("[eDVBServicePlay][TEST 2] Applying BRUTE-FORCE reset logic.");
-
-    if ((isTimeshiftActive() || m_is_pvr) && m_pause_position != -1)
-    {
-        eDebug("[eDVBServicePlay][TEST 2] Storing position %lld and restarting service.", m_pause_position);
-
-        // 1. Store the target position in a temporary variable
-        pts_t target_pts = m_pause_position;
-
-        // 2. Stop the ENTIRE timeshift playback service
-        m_service_handler_timeshift.free();
-
-        // 3. Restart it immediately, telling it to seek to our target
-        // This is a simplified version of what happens in switchToTimeshift
-        eServiceReferenceDVB r = (eServiceReferenceDVB&)m_reference;
-        r.path = m_timeshift_file;
-        m_cue->seekTo(0, target_pts); // Seek before tuning
-        ePtr<iTsSource> source = createTsSource(r);
-        m_service_handler_timeshift.tuneExt(r, source, m_timeshift_file.c_str(), m_cue, 0, m_dvb_service, eDVBServicePMTHandler::timeshift_playback, false);
-
-        // We don't need to call play, tuneExt will trigger the necessary events.
-        m_is_user_paused = false;
-        m_is_paused = 0;
-        m_pause_position = -1;
-        return 0;
-    }
-
-    // old code
-	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
-	if (m_decoder)
-	{
-		m_slowmotion = 0;
-		m_is_paused = 0;
-		return m_decoder->play();
-	} else
-		return -1;
-}
-
-/*
-
-
-RESULT eDVBServicePlay::unpause()
-{
-	eDebug("[eDVBServicePlay] unpause");
-
-	// FIX: Check for corruption flagged during pause and trigger recovery if needed.
-	if (m_corruption_occured_during_pause)
-	{
-		eDebug("[Timeshift-Fix] Corruption was flagged during pause. Triggering recovery now.");
-		m_corruption_occured_during_pause = false; // Reset the flag.
-		m_is_user_paused = false;
-		handleEofRecovery();
-		return 0;
-	}
-	
-	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
-	
-	if (m_decoder)
-	{
-		// This advanced logic is for timeshift where a seek is needed after unpausing.
-		if (isTimeshiftActive() && m_pause_position != -1)
-		{
-			eDebug("[eDVBServicePlay] Unpause with seek (TIMESHIFT): Applying full safe logic.");
-			
-			seekTo(m_pause_position);
-			m_pause_position = -1;
-			updateDecoder(true);
-			m_resume_play_timer->stop();
-			int delay = eSimpleConfig::getInt("config.timeshift.resume_delay_ms", 150);
-			m_resume_play_timer->start(delay, true);
-			
-			m_slowmotion = 0;
-			// Note: m_is_paused and m_is_user_paused are now set in resumePlay()
-			
-			return 0;
-		}
-		
-		// This simpler logic is for PVR playback.
-		if (m_is_pvr && m_pause_position != -1)
-		{
-			eDebug("[eDVBServicePlay] Unpause with seek (PVR): Applying simple seek and play.");
-			seekTo(m_pause_position);
-			m_pause_position = -1;
-			
-			m_slowmotion = 0;
-			m_is_paused = 0;
-			m_is_user_paused = false;
-			return m_decoder->play();
-		}
-
-		// Fallback for all other scenarios (e.g., Live TV).
-		eDebug("[eDVBServicePlay] Standard unpause, calling play() directly.");
-		m_slowmotion = 0;
-		m_is_paused = 0;
-		m_is_user_paused = false;
-		return m_decoder->play();
-	}
-	else
-	{
-		eWarning("[eDVBServicePlay] No decoder available to unpause.");
-		return -1;
-	}
-}
-*/
 void eDVBServicePlay::recordEvent(int event)
 {
 	switch (event)
