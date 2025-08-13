@@ -341,19 +341,27 @@ protected:
 
 private:
 
-	// START OF MODIFICATION - Proactive Timeshift Stability
-	// This block declares all the new private members for the robust timeshift recovery mechanism.
+	// START OF MODIFICATION - Proactive Timeshift Stability & Pause Locking
+	// This block declares all new private members for the robust timeshift recovery and pause/unpause precision.
 	ePtr<eTimer> m_eof_recovery_timer;              // Timer to manage the recovery process itself.
 	ePtr<eTimer> m_timeshift_delay_updater_timer;   // New timer to proactively save the timeshift delay.
-	ePtr<eTimer> m_resume_play_timer;               // New: Timer to safely resume play after a seek
+	ePtr<eTimer> m_resume_play_timer;               // New: Timer to safely resume play after a seek.
 	pts_t m_saved_timeshift_delay;                  // Stores the last known-good timeshift delay.
 	bool m_stream_corruption_detected;              // Flag for stream corruption events.
 	int m_recovery_attempts;                        // Safety counter to prevent infinite recovery loops.
-	int m_max_attempts;                             // Maximum number of recovery attempts before giving up.	
+	int m_max_attempts;                             // Maximum number of recovery attempts before giving up.
 	void handleEofRecovery();                       // Entry point for the recovery process.
 	void onEofRecoveryTimeout();                    // Core logic for the recovery loop.
 	void updateTimeshiftDelay();                    // New function to be called periodically to update the delay.
-	void resumePlay();                              // New: The function called by m_resume_play_timer
+	void resumePlay();                              // New: The function called by m_resume_play_timer.
+	
+	ePtr<eTimer> m_glitch_tolerance_timer;          // New: Timer for the glitch tolerance period.
+	bool m_recovery_pending;                        // New: Lock to prevent race conditions during recovery.
+	void initiateRecoverySequence();                // New: Single entry point to start recovery.
+	void onGlitchToleranceTimeout();                // New: Called when tolerance period ends.
+
+	pts_t m_pause_position;                         // New: Stores precise PTS on pause for accurate resume.
+	pts_t m_recovery_delay_snapshot;                // New: Snapshot of the delay used during a recovery cycle.
 	// END OF MODIFICATION
 };
 
