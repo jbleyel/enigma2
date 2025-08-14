@@ -1614,11 +1614,20 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 			m_event((iPlayableService*)this, evSOF);
 		break;
 	case eDVBServicePMTHandler::eventEOF:
-		if ((!m_is_paused) && (m_skipmode >= 0))
-		{
-			eDebug("[Timeshift-Fix] EOF event triggered. Initiating safe recovery.");
-			initiateRecoverySequence();
-		}
+		eDebug("[eDVBServicePlay] Timeshift eventEOF.");
+		// MOD: Treat EOF like a potential stream corruption/glitch.
+		// This prevents the complex EOF recovery logic from triggering on spurious EOFs
+		// which can occur during temporary stream issues (e.g., descrambling pauses).
+		// Instead, rely on the faster and more resilient stream corruption handling.
+		// Forward this event to the recordEvent handler to be treated as a corruption event.
+		// This simplifies the logic and prevents unnecessary freezing.
+		// If it's a real EOF, the stream corruption logic will eventually timeout and
+		// trigger the full recovery if needed.
+		// Trigger the corruption handling logic.
+		// This is a key fix based on user observation.
+		recordEvent(iDVBTSRecorder::eventStreamCorrupt); // Handle it as a corruption event
+		// Do NOT call initiateRecoverySequence() or handleEofRecovery() directly here.
+		// Let the glitch tolerance mechanism in recordEvent handle it.
 		break;
 	}
 }
