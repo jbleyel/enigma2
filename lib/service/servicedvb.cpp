@@ -1417,10 +1417,6 @@ void eDVBServicePlay::onGlitchToleranceTimeout()
  */
 void eDVBServicePlay::handleEofRecovery()
 {
-	// MOD: Stop the delay updater timer during recovery to reduce timer noise.
-	// Although updateTimeshiftDelay has guards, stopping the timer is cleaner.
-	m_timeshift_delay_updater_timer->stop();
-
 	eDebug("[Timeshift-Fix] Starting recovery process...");
 
 	// Initialize the retry counter for the recovery loop.
@@ -1471,17 +1467,16 @@ void eDVBServicePlay::resumePlay()
  */
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
-	// Safety net: Check if we are stuck for too long
+	// Safety net: Check if we are stuck for too long (e.g., 40 attempts * 500ms = 20 seconds)
+
 	if (m_recovery_attempts >= m_max_attempts)
 	{
-		eWarning("[Timeshift-Fix] Maximum recovery attempts (%d) reached. Giving up and resuming.", m_max_attempts);
+		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Unpausing.", m_max_attempts);
 		m_eof_recovery_timer->stop();
 		m_recovery_attempts = 0;
-		// MOD: Reset corruption flag to prevent recovery loop on timeout.
-		m_stream_corruption_detected = false;
-		unpause(); // Give up and resume.
-		m_recovery_pending = false; // Unlock.
+		unpause(); 
 		m_event(this, evSeekableStatusChanged);
+		m_recovery_pending = false; // MOD: Release lock on failure/timeout.
 		return;
 	}
 	m_recovery_attempts++;
@@ -1619,11 +1614,20 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 			m_event((iPlayableService*)this, evSOF);
 		break;
 	case eDVBServicePMTHandler::eventEOF:
-		if ((!m_is_paused) && (m_skipmode >= 0))
-		{
-			eDebug("[Timeshift-Fix] EOF event triggered. Initiating safe recovery.");
-			initiateRecoverySequence();
-		}
+		eDebug("[eDVBServicePlay] Timeshift eventEOF.");
+		// MOD: Treat EOF like a potential stream corruption/glitch.
+		// This prevents the complex EOF recovery logic from triggering on spurious EOFs
+		// which can occur during temporary stream issues (e.g., descrambling pauses).
+		// Instead, rely on the faster and more resilient stream corruption handling.
+		// Forward this event to the recordEvent handler to be treated as a corruption event.
+		// This simplifies the logic and prevents unnecessary freezing.
+		// If it's a real EOF, the stream corruption logic will eventually timeout and
+		// trigger the full recovery if needed.
+		// Trigger the corruption handling logic.
+		// This is a key fix based on user observation.
+		recordEvent(iDVBTSRecorder::eventStreamCorrupt); // Handle it as a corruption event
+		// Do NOT call initiateRecoverySequence() or handleEofRecovery() directly here.
+		// Let the glitch tolerance mechanism in recordEvent handle it.
 		break;
 	}
 }
@@ -1923,9 +1927,6 @@ RESULT eDVBServicePlay::pause()
 	{
 		// MOD: New pause logic for stability and precision.
 		m_timeshift_delay_updater_timer->stop(); // Stop delay updater on pause.
-		// MOD: Stop the resume play timer if the user manually pauses.
-		// This prevents a delayed 'resumePlay' from being triggered unexpectedly.
-		m_resume_play_timer->stop();
 		
 		m_slowmotion = 0;
 		m_is_paused = 1;
