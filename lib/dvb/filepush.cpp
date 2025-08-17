@@ -73,7 +73,7 @@ void eFilePushThread::thread()
 
 		while (!m_stop)
 		{
-			eDebug("[FilePushThread][DATA] Pumping data at pos=%lld", (long long)m_current_position);
+			eTrace("[FilePushThread][DATA] Pumping data at pos=%lld", (long long)m_current_position);
 			if (m_sg && !current_span_remaining)
 			{
 				m_sg->getNextSourceSpan(m_current_position, bytes_read, current_span_offset, current_span_remaining, m_blocksize, m_sof);
@@ -177,7 +177,7 @@ void eFilePushThread::thread()
 					continue;
 				}
 				else if (m_flags == 1) { // timeshift
-					usleep(200000);
+					usleep(200000);  // 200 milliseconds
 					continue;
 				}
 				else if (++eofcount < 10)
@@ -213,7 +213,7 @@ void eFilePushThread::thread()
 							sleep(2);
 #endif
 #if HAVE_HISILICON
-							usleep(100000);
+							usleep(100000); // 100 milliseconds
 #endif
 							continue;
 						}
