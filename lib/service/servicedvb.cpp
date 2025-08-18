@@ -1966,36 +1966,22 @@ RESULT eDVBServicePlay::unpause()
 
 	if (!m_decoder) return -1;
 
-	// MOD: Final safety guard. If corruption was detected while paused,
-	// or a recovery is already pending, we must recover instead of resuming.
-	// This only applies to timeshift.
+	// This logic remains to handle recovery if an error was detected *while* paused.
 	if (isTimeshiftActive() && (m_recovery_pending || m_stream_corruption_detected))
 	{
 		eDebug("[Timeshift-Fix] Unpause triggered; initiating recovery due to pending/detected issues.");
 		initiateRecoverySequence();
-		return 0; // Recovery will handle the rest.
+		return 0;
 	}
 
-	// MOD: Use a timer to unpause from timeshift to prevent freezes.
-	if (isTimeshiftActive() && m_pause_position != -1)
-	{
-		eDebug("[eDVBServicePlay] Seeking to stored position %lld before unpausing via timer", m_pause_position);
-		seekTo(m_pause_position);
-		m_pause_position = -1; // Reset position immediately after use
-		
-		// Use the resume timer to give the decoder time to buffer after seeking.
-		// The actual unpause is handled in resumePlay().
-		m_resume_play_timer->start(150, true); // 150ms delay, can be made configurable
-		return 0; // The operation will complete via the timer.
-	}
-	else
-	{
-		// Fallback to original behavior for non-timeshift or when no position is stored.
-		eDebug("[eDVBServicePlay] Unpausing directly (not a timeshift seek).");
-		m_slowmotion = 0;
-		m_is_paused = 0;
-		return m_decoder->play();
-	}
+    // --- NEW SIMPLIFIED UNPAUSE LOGIC ---
+    // Revert to the old, direct play method for unpausing.
+    // The complex seekTo logic is only needed for the recovery mechanism.
+	eDebug("[eDVBServicePlay] Using direct unpause logic without seek.");
+	m_is_paused = 0;
+	m_slowmotion = 0;
+    // We no longer need the resume timer. Just play directly.
+	return m_decoder->play();
 }
 
 RESULT eDVBServicePlay::seekTo(pts_t to)

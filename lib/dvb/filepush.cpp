@@ -73,7 +73,7 @@ void eFilePushThread::thread()
 
 		while (!m_stop)
 		{
-			eTrace("[FilePushThread][DATA] Pumping data at pos=%lld", (long long)m_current_position);
+			// eTrace("[FilePushThread][DATA] Pumping data at pos=%lld", (long long)m_current_position);
 			if (m_sg && !current_span_remaining)
 			{
 				m_sg->getNextSourceSpan(m_current_position, bytes_read, current_span_offset, current_span_remaining, m_blocksize, m_sof);
