@@ -1619,18 +1619,34 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 			m_event((iPlayableService*)this, evSOF);
 		break;
 	case eDVBServicePMTHandler::eventEOF:
-		// MOD: Add a check for the recovery lock to prevent starting a new recovery
-		// while another one is already pending (e.g., in its glitch tolerance window).
-		if (!m_recovery_pending && !m_is_paused && (m_skipmode >= 0))
+		if ((!m_is_paused) && (m_skipmode >= 0))
 		{
-			eDebug("[Timeshift-Fix] EOF event triggered. Initiating safe recovery.");
-			// Forward this event to the recordEvent handler to be treated as a corruption event
-			// to benefit from the same robust glitch tolerance mechanism.
-			recordEvent(iDVBTSRecorder::eventStreamCorrupt);
-		}
-		else
-		{
-			eDebug("[Timeshift-Fix] EOF event ignored because recovery is already pending or service is paused.");
+			if (m_timeshift_file_next.empty())
+			{
+				if (!eConfigManager::getConfigBoolValue("config.timeshift.skipReturnToLive", false))
+				{
+					eDebug("[eDVBServicePlay] time shift EOF, so let's go live");
+					switchToLive();
+				}
+			}
+			else
+			{
+				eDebug("[eDVBServicePlay] time shift EOF, switch to next file");
+
+				m_first_program_info |= 2;
+
+				eServiceReferenceDVB r = (eServiceReferenceDVB&)m_reference;
+				r.path = m_timeshift_file_next;
+
+				/* free the time shift service handler, we need the resources */
+				m_service_handler_timeshift.free();
+				resetTimeshift(1);
+
+				ePtr<iTsSource> source = createTsSource(r);
+				m_service_handler_timeshift.tuneExt(r, source, m_timeshift_file_next.c_str(), m_cue, 0, m_dvb_service, eDVBServicePMTHandler::timeshift_playback, false); /* use the decoder demux for everything */
+
+				m_event((iPlayableService*)this, evUser+1);
+			}
 		}
 		break;
 	}
@@ -1974,13 +1990,13 @@ RESULT eDVBServicePlay::unpause()
 		return 0;
 	}
 
-    // --- NEW SIMPLIFIED UNPAUSE LOGIC ---
-    // Revert to the old, direct play method for unpausing.
-    // The complex seekTo logic is only needed for the recovery mechanism.
+	// --- NEW SIMPLIFIED UNPAUSE LOGIC ---
+	// Revert to the old, direct play method for unpausing.
+	// The complex seekTo logic is only needed for the recovery mechanism.
 	eDebug("[eDVBServicePlay] Using direct unpause logic without seek.");
-	m_is_paused = 0;
 	m_slowmotion = 0;
-    // We no longer need the resume timer. Just play directly.
+	m_is_paused = 0;
+	// We no longer need the resume timer. Just play directly.
 	return m_decoder->play();
 }
 
