@@ -2510,6 +2510,7 @@ def InitUsageConfig():
 	config.timeshift.recordingPath.save()
 	config.timeshift.recoveryAttempts = ConfigSelection(default=8, choices=[(x, x) for x in range(0, 11)])
 	config.timeshift.recoveryBufferMargin = ConfigSelection(default=5, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(0, 11)])
+	config.timeshift.glitchTolerance = ConfigSelection(default=300, choices=[(x, _("%d ms") % x) for x in (0, 10, 50, 100, 300)])
 
 
 def calcFrontendPriorityIntval(config_priority, config_priority_multiselect, config_priority_strictly):

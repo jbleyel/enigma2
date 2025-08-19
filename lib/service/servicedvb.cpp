@@ -1387,7 +1387,9 @@ void eDVBServicePlay::initiateRecoverySequence()
 	// This allows us to check if new corruption events occurred *during* the tolerance period.
 	m_stream_corruption_detected = false;
 
-	m_glitch_tolerance_timer->start(300, true); // 300ms one-shot timer
+	// MOD: Make the glitch tolerance period configurable from settings.
+	int tolerance_ms = eSimpleConfig::getInt("config.timeshift.glitchTolerance", 300);
+	m_glitch_tolerance_timer->start(tolerance_ms, true);
 }
 
 /**
