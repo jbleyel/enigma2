@@ -1379,17 +1379,19 @@ void eDVBServicePlay::initiateRecoverySequence()
 		return;
 	}
 
-	// Lock the recovery process and start the tolerance timer
-	eDebug("[Timeshift-Fix] Recovery sequence initiated, starting glitch tolerance timer.");
+	// Lock the recovery process
 	m_recovery_pending = true;
 
-	// Reset the corruption flag right before starting the timer.
-	// This allows us to check if new corruption events occurred *during* the tolerance period.
-	m_stream_corruption_detected = false;
-
-	// MOD: Make the glitch tolerance period configurable from settings.
 	int tolerance_ms = eSimpleConfig::getInt("config.timeshift.glitchTolerance", 300);
-	m_glitch_tolerance_timer->start(tolerance_ms, true);
+	
+	if (tolerance_ms <= 0) {
+		// If tolerance is 0, start recovery immediately
+		eDebug("[Timeshift-Fix] Immediate recovery (tolerance=0)");
+		handleEofRecovery();
+	} else {
+		eDebug("[Timeshift-Fix] Starting glitch tolerance timer: %d ms", tolerance_ms);
+		m_glitch_tolerance_timer->start(tolerance_ms, true);
+	}
 }
 
 /**
@@ -1398,18 +1400,14 @@ void eDVBServicePlay::initiateRecoverySequence()
  */
 void eDVBServicePlay::onGlitchToleranceTimeout()
 {
-	// Check if any *new* stream corruption events happened during our grace period.
-	if (!m_stream_corruption_detected)
-	{
-		// No new corruption detected. The glitch was temporary.
-		eDebug("[Timeshift-Fix] Glitch was transient. Cancelling recovery sequence.");
-		m_recovery_pending = false; // Release the lock and do nothing else.
-		return;
+	// Check if any stream corruption events happened during our grace period.
+	if (m_stream_corruption_detected) {
+		eDebug("[Timeshift-Fix] Persistent glitch detected. Starting recovery.");
+		handleEofRecovery();
+	} else {
+		eDebug("[Timeshift-Fix] No glitches during tolerance period. Cancelling recovery.");
+		m_recovery_pending = false;
 	}
-	
-	eDebug("[Timeshift-Fix] Glitch seems persistent. Starting full recovery.");
-	// The glitch is real, so proceed with the actual recovery logic
-	handleEofRecovery();
 }
 // END OF MODIFICATION
 
@@ -1420,7 +1418,6 @@ void eDVBServicePlay::onGlitchToleranceTimeout()
 void eDVBServicePlay::handleEofRecovery()
 {
 	// MOD: Stop the delay updater timer during recovery to reduce timer noise.
-	// Although updateTimeshiftDelay has guards, stopping the timer is cleaner.
 	m_timeshift_delay_updater_timer->stop();
 
 	eDebug("[Timeshift-Fix] Starting recovery process...");
@@ -1481,8 +1478,8 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 		m_recovery_attempts = 0;
 		// MOD: Reset corruption flag to prevent recovery loop on timeout.
 		m_stream_corruption_detected = false;
+		m_recovery_pending = false; // <-- Release lock here
 		unpause(); // Give up and resume.
-		m_recovery_pending = false; // Unlock.
 		m_event(this, evSeekableStatusChanged);
 		return;
 	}
@@ -3057,13 +3054,17 @@ void eDVBServicePlay::recordEvent(int event)
 		// Set the flag that will be checked after the tolerance period
 		m_stream_corruption_detected = true;
 		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt detected.");
-		// MOD: Final safety guard. Defer recovery if paused.
-		if (m_is_paused)
+		
+		// Only initiate recovery if not already pending and not paused
+		if (!m_recovery_pending && !m_is_paused)
+		{
+			eDebug("[Timeshift-Fix] Corruption detected, initiating recovery sequence.");
+			initiateRecoverySequence();
+		}
+		else if (m_is_paused)
 		{
 			eDebug("[Timeshift-Fix] Corruption detected during pause, deferring recovery.");
-			return;
 		}
-		initiateRecoverySequence();
 		return;
 	default:
 		eDebug("[eDVBServicePlay] recordEvent unhandled record event %d", event);
