@@ -1447,21 +1447,26 @@ void eDVBServicePlay::handleEofRecovery()
 
 void eDVBServicePlay::resumePlay()
 {
-	if (m_decoder)
-	{
-		eDebug("[Timeshift-Fix] Timer triggered: Resuming play.");
-		m_decoder->play();
-		
-		// MOD: Centralize resume logic here.
-		m_is_paused = 0; // Officially unpaused now.
-		m_recovery_pending = false; // Release lock *after* actual play command.
+    if (m_decoder)
+    {
+        eDebug("[Timeshift-Fix] Timer triggered: Resuming play.");
+        m_decoder->play();
+    }
+    else
+    {
+        eWarning("[Timeshift-Fix] resumePlay called but no decoder is available.");
+    }
 
-		// Restart the proactive delay updater now that we are playing again.
-		if (isTimeshiftActive())
-		{
-			m_timeshift_delay_updater_timer->start(2000, false);
-		}
-	}
+    // Always reset the full state machine, regardless of decoder presence.
+    m_is_paused = 0;
+    m_recovery_pending = false;
+    m_stream_corruption_detected = false;
+
+    // Restart the proactive delay updater now that we are playing again.
+    if (isTimeshiftActive())
+    {
+        m_timeshift_delay_updater_timer->start(2000, false);
+    }
 }
 
 /**
@@ -1545,6 +1550,11 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     {
         // Fallback if we cannot calculate the target position. This will result in a changed delay.
         eWarning("[Timeshift-Fix] Could not get valid delay or live PTS. Falling back to seekless recovery.");
+
+        //Free the lock to prevent the loop
+        m_recovery_pending = false;
+        m_stream_corruption_detected = false;
+
         unpause();
     }
     
