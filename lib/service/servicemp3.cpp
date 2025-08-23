@@ -269,139 +269,6 @@ static bool parse_timecode(const std::string& s, uint64_t& ms_out) {
 	return false;
 }
 
-// START WebVTT subtitle sync
-typedef struct _SubtitleSyncCtx {
-    GstSegment sub_seg;
-    GstSegment vid_seg;
-    GstClockTime last_sub_rt;
-    GstClockTime last_vid_rt;
-    GstPad *sub_pad;
-    GstPad *vid_pad;
-    guint gap_source_id;
-} SubtitleSyncCtx;
-
-static GQuark quark_subsync_ctx(void) {
-    static GQuark q = 0;
-    if (G_UNLIKELY(q == 0)) q = g_quark_from_static_string("e2-sub-sync-ctx");
-    return q;
-}
-
-/* Map a buffer timestamp to running-time using a segment */
-static inline GstClockTime seg_to_rt(const GstSegment *seg, GstClockTime ts) {
-    if (!seg) return GST_CLOCK_TIME_NONE;
-    if (!GST_CLOCK_TIME_IS_VALID(ts)) return GST_CLOCK_TIME_NONE;
-    return gst_segment_to_running_time(seg, GST_FORMAT_TIME, ts);
-}
-
-/* Probes */
-static GstPadProbeReturn sub_event_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
-    SubtitleSyncCtx *ctx = (SubtitleSyncCtx*)user_data;
-    if ((info->type & GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM) == 0) return GST_PAD_PROBE_OK;
-    GstEvent *ev = GST_PAD_PROBE_INFO_EVENT(info);
-    if (GST_EVENT_TYPE(ev) == GST_EVENT_SEGMENT) {
-        const GstSegment *seg = NULL;
-        gst_event_parse_segment(ev, &seg);
-        if (seg) ctx->sub_seg = *seg;
-    }
-    return GST_PAD_PROBE_OK;
-}
-
-static GstPadProbeReturn vid_event_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
-    SubtitleSyncCtx *ctx = (SubtitleSyncCtx*)user_data;
-    if ((info->type & GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM) == 0) return GST_PAD_PROBE_OK;
-    GstEvent *ev = GST_PAD_PROBE_INFO_EVENT(info);
-    if (GST_EVENT_TYPE(ev) == GST_EVENT_SEGMENT) {
-        const GstSegment *seg = NULL;
-        gst_event_parse_segment(ev, &seg);
-        if (seg) ctx->vid_seg = *seg;
-    }
-    return GST_PAD_PROBE_OK;
-}
-
-static GstPadProbeReturn vtt_pts_normalize(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
-    SubtitleSyncCtx *ctx = (SubtitleSyncCtx*)user_data;
-    if ((info->type & GST_PAD_PROBE_TYPE_BUFFER) == 0) return GST_PAD_PROBE_OK;
-    GstBuffer *buf = GST_PAD_PROBE_INFO_BUFFER(info);
-    if (!buf) return GST_PAD_PROBE_OK;
-
-    GstClockTime ts = GST_BUFFER_DTS_OR_PTS(buf);
-    GstClockTime sub_rt = seg_to_rt(&ctx->sub_seg, ts);
-    GstClockTime vid_rt = ctx->last_vid_rt; /* last sampled video running-time */
-
-    const GstClockTime MAX_DRIFT = 2 * GST_SECOND;
-    if (GST_CLOCK_TIME_IS_VALID(sub_rt) && GST_CLOCK_TIME_IS_VALID(vid_rt)) {
-        if (sub_rt + MAX_DRIFT < vid_rt || sub_rt > vid_rt + MAX_DRIFT) {
-            GST_BUFFER_PTS(buf) = vid_rt;
-            GST_BUFFER_DTS(buf) = vid_rt;
-            sub_rt = vid_rt;
-        }
-    }
-    ctx->last_sub_rt = sub_rt;
-    return GST_PAD_PROBE_OK;
-}
-
-static GstPadProbeReturn vid_time_sample(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
-    SubtitleSyncCtx *ctx = (SubtitleSyncCtx*)user_data;
-    if ((info->type & GST_PAD_PROBE_TYPE_BUFFER) == 0) return GST_PAD_PROBE_OK;
-    GstBuffer *buf = GST_PAD_PROBE_INFO_BUFFER(info);
-    if (!buf) return GST_PAD_PROBE_OK;
-    GstClockTime ts = GST_BUFFER_DTS_OR_PTS(buf);
-    ctx->last_vid_rt = seg_to_rt(&ctx->vid_seg, ts);
-    return GST_PAD_PROBE_OK;
-}
-
-static gboolean gap_timer_cb(gpointer data) {
-    SubtitleSyncCtx *ctx = (SubtitleSyncCtx*)data;
-    if (!ctx || !ctx->sub_pad) return G_SOURCE_CONTINUE;
-    if (!GST_CLOCK_TIME_IS_VALID(ctx->last_vid_rt) || !GST_CLOCK_TIME_IS_VALID(ctx->last_sub_rt))
-        return G_SOURCE_CONTINUE;
-    if (ctx->last_vid_rt > ctx->last_sub_rt + 3 * GST_SECOND) {
-        GstClockTime gap_from = ctx->last_sub_rt;
-        GstClockTime gap_dur  = ctx->last_vid_rt - ctx->last_sub_rt;
-        GstEvent *gap = gst_event_new_gap(gap_from, gap_dur);
-        gst_pad_push_event(ctx->sub_pad, gap);
-        /* advance last_sub_rt to avoid flooding */
-        ctx->last_sub_rt = ctx->last_vid_rt;
-    }
-    return G_SOURCE_CONTINUE;
-}
-
-static void install_subtitle_sync(GstElement *playbin) {
-    if (!playbin || !dvb_subsink || !dvb_videosink) return;
-    if (g_object_get_qdata(G_OBJECT(playbin), quark_subsync_ctx())) return; /* already installed */
-
-    SubtitleSyncCtx *ctx = (SubtitleSyncCtx*)g_malloc0(sizeof(SubtitleSyncCtx));
-    gst_segment_init(&ctx->sub_seg, GST_FORMAT_TIME);
-    gst_segment_init(&ctx->vid_seg, GST_FORMAT_TIME);
-    ctx->last_sub_rt = GST_CLOCK_TIME_NONE;
-    ctx->last_vid_rt = GST_CLOCK_TIME_NONE;
-
-    /* Attach to sink pads we control */
-    ctx->sub_pad = gst_element_get_static_pad(dvb_subsink, "sink");
-    ctx->vid_pad = gst_element_get_static_pad(dvb_videosink, "sink");
-    if (ctx->sub_pad) {
-        gst_pad_add_probe(ctx->sub_pad, GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM, sub_event_probe, ctx, NULL);
-        gst_pad_add_probe(ctx->sub_pad, GST_PAD_PROBE_TYPE_BUFFER, vtt_pts_normalize, ctx, NULL);
-    }
-    if (ctx->vid_pad) {
-        gst_pad_add_probe(ctx->vid_pad, GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM, vid_event_probe, ctx, NULL);
-        gst_pad_add_probe(ctx->vid_pad, GST_PAD_PROBE_TYPE_BUFFER, vid_time_sample, ctx, NULL);
-    }
-    ctx->gap_source_id = g_timeout_add(500, gap_timer_cb, ctx);
-    g_object_set_qdata_full(G_OBJECT(playbin), quark_subsync_ctx(), ctx, (GDestroyNotify)g_free);
-}
-
-static void uninstall_subtitle_sync(GstElement *playbin) {
-    if (!playbin) return;
-    SubtitleSyncCtx *ctx = (SubtitleSyncCtx*)g_object_get_qdata(G_OBJECT(playbin), quark_subsync_ctx());
-    if (!ctx) return;
-    if (ctx->gap_source_id) g_source_remove(ctx->gap_source_id);
-    if (ctx->sub_pad) gst_object_unref(ctx->sub_pad);
-    if (ctx->vid_pad) gst_object_unref(ctx->vid_pad);
-    g_object_set_qdata(G_OBJECT(playbin), quark_subsync_ctx(), NULL);
-}
-// END WebVTT subtitle sync
-
 /**
  * @brief Parses WebVTT subtitle data and extracts subtitle entries.
  *
@@ -918,16 +785,6 @@ RESULT eStaticServiceMP3Info::getEvent(const eServiceReference& ref, ePtr<eServi
 				evt = event;
 				return 0;
 			}
-			/*
-			// try to read the .txt file
-			std::string desc = m_parser.parseTxtFile(filename);
-			if(!desc.empty())
-			{
-				event->setExtendedDescription(desc);
-				evt = event;
-				return 0;
-			}
-			*/
 		}
 	}
 	evt = 0;
@@ -4335,11 +4192,6 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		setCacheEntry(false, track.pid);
 		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
-        /* Install subtitle <-> video running-time sync for WebVTT */
-		if (track.type != stWebVTT) {
-	        install_subtitle_sync(m_gst_playbin);
-		}
-
 		if (track.type != stDVB) {
 			m_clear_buffers = true;
 			clearBuffers();
@@ -4386,8 +4238,6 @@ RESULT eServiceMP3::disableSubtitles() {
 	m_subtitle_pages.clear();
 	m_prev_decoder_time = -1;
 	m_decoder_time_valid_state = 0;
-    /* Remove subtitle sync/GAP logic */
-    uninstall_subtitle_sync(m_gst_playbin);
 	if (m_subtitle_widget)
 		m_subtitle_widget->destroy();
 	m_subtitle_widget = 0;
