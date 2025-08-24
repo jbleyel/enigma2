@@ -1339,7 +1339,7 @@ void eDVBServicePlay::updateTimeshiftDelay()
 	}
 
 	// MOD: Do not update delay while paused or during recovery to prevent incorrect values.
-	if (m_is_paused || m_recovery_pending)
+	if (m_recovery_pending)
 	{
 		return;
 	}
