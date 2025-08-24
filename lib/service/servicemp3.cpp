@@ -1192,8 +1192,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	eDebug("[eServiceMP3] playbin uri=%s", uri);
 	if (suburi != NULL)
 		eDebug("[eServiceMP3] playbin suburi=%s", suburi);
-	bool useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
-	if (useplaybin3)
+	m_useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
+	if (m_useplaybin3)
 		m_gst_playbin = gst_element_factory_make("playbin3", "playbin3");
 	else
 		m_gst_playbin = gst_element_factory_make("playbin", "playbin");
@@ -1207,7 +1207,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 				g_object_set(dvb_audiosink, "e2-async", FALSE, NULL);
 			}
 			// Use wrapper if configured to use playbin3
-			if (useplaybin3) {
+			if (m_useplaybin3) {
 				GstElement *abin = create_audio_sink_bin(dvb_audiosink);
 				if (abin)
 					g_object_set(m_gst_playbin, "audio-sink", abin, NULL);
@@ -1221,7 +1221,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 		if (dvb_videosink && !m_sourceinfo.is_audio) {
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-			if (useplaybin3) {
+			if (m_useplaybin3) {
 				GstElement *vbin = create_video_sink_bin(dvb_videosink);
 				if (vbin)
 					g_object_set(m_gst_playbin, "video-sink", vbin, NULL);
@@ -1284,17 +1284,20 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 			g_object_set(dvb_subsink, "caps", caps, NULL);
 			gst_caps_unref(caps);
 
-			if (useplaybin3) {
+			if (m_useplaybin3) {
 				GstElement *tsbin = create_subtitle_sink_bin(dvb_subsink);
 				if (tsbin)
 					g_object_set(m_gst_playbin, "text-sink", tsbin, NULL);
 				else
 					g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+
+				g_object_set(m_gst_playbin, "current-subtitle", m_currentSubtitleStream, NULL);
+
 			} else {
 				g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+				g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 			}
 
-			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
 		GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
 		gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
@@ -4272,7 +4275,10 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon) {
 		// if (m_currentSubtitleStream == -1)
 		//	starting_subtitle = true;
-		g_object_set(m_gst_playbin, "current-text", -1, NULL);
+		if(m_useplaybin3)
+			g_object_set(m_gst_playbin, "current-subtitle", -1, NULL);
+		else
+			g_object_set(m_gst_playbin, "current-text", -1, NULL);
 		// m_cachedSubtitleStream = -1;
 		m_subtitle_sync_timer->stop();
 		m_dvb_subtitle_sync_timer->stop();
@@ -4283,7 +4289,10 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		m_currentSubtitleStream = track.pid;
 		m_cachedSubtitleStream = m_currentSubtitleStream;
 		setCacheEntry(false, track.pid);
-		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+		if(m_useplaybin3)
+			g_object_set(m_gst_playbin, "current-subtitle", m_currentSubtitleStream, NULL);
+		else
+			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
 		if (track.type != stDVB) {
 			m_clear_buffers = true;
@@ -4324,7 +4333,10 @@ RESULT eServiceMP3::disableSubtitles() {
 	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = m_currentSubtitleStream;
 	setCacheEntry(false, -1);
-	g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+	if(m_useplaybin3)
+		g_object_set(m_gst_playbin, "current-subtitle", m_currentSubtitleStream, NULL);
+	else
+		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 	m_subtitle_sync_timer->stop();
 	m_dvb_subtitle_sync_timer->stop();
 	m_dvb_subtitle_pages.clear();
