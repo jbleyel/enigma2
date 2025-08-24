@@ -109,6 +109,72 @@ static bool first_play_eServicemp3 = false;
 static GstElement *dvb_audiosink, *dvb_videosink, *dvb_subsink;
 static bool dvb_audiosink_ok, dvb_videosink_ok, dvb_subsink_ok;
 
+
+// --- BEGIN Wrapper-Bins for playbin3 compatibility ---
+static GstElement* create_video_sink_bin(GstElement *dvb_videosink) {
+	GstElement *bin = gst_bin_new("video-sink-bin");
+	GstElement *conv = gst_element_factory_make("videoconvert", NULL);
+	if (!bin || !conv || !dvb_videosink) {
+		eDebug("Error: creating video wrapper bin");
+		return NULL;
+	}
+	gst_bin_add_many(GST_BIN(bin), conv, dvb_videosink, NULL);
+	if (!gst_element_link(conv, dvb_videosink)) {
+		eDebug("Error: Link videoconvert -> dvbvideosink");
+	}
+	GstPad *pad = gst_element_get_static_pad(conv, "sink");
+	GstPad *ghost = gst_ghost_pad_new("sink", pad);
+	gst_pad_set_active(ghost, TRUE);
+	gst_element_add_pad(bin, ghost);
+	gst_object_unref(pad);
+	return bin;
+}
+
+static GstElement* create_audio_sink_bin(GstElement *dvb_audiosink) {
+	GstElement *bin = gst_bin_new("audio-sink-bin");
+	GstElement *conv = gst_element_factory_make("audioconvert", NULL);
+	GstElement *resample = gst_element_factory_make("audioresample", NULL);
+	if (!bin || !conv || !resample || !dvb_audiosink) {
+		eDebug("Error: creating audio wrapper bin");
+		return NULL;
+	}
+	gst_bin_add_many(GST_BIN(bin), conv, resample, dvb_audiosink, NULL);
+	if (!gst_element_link_many(conv, resample, dvb_audiosink, NULL)) {
+		eDebug("Error: Link audioconvert -> audioresample -> dvbaudiosink");
+	}
+	GstPad *pad = gst_element_get_static_pad(conv, "sink");
+	GstPad *ghost = gst_ghost_pad_new("sink", pad);
+	gst_pad_set_active(ghost, TRUE);
+	gst_element_add_pad(bin, ghost);
+	gst_object_unref(pad);
+	return bin;
+}
+
+static GstElement* create_subtitle_sink_bin(GstElement *dvb_subsink) {
+	GstElement *bin = gst_bin_new("subtitle-sink-bin");
+	GstElement *parse = gst_element_factory_make("subparse", NULL);
+
+	if (!bin || !parse || !dvb_subsink) {
+		eDebug("Error: creating subtitle wrapper bin");
+		return NULL;
+	}
+
+	gst_bin_add_many(GST_BIN(bin), parse, dvb_subsink, NULL);
+	if (!gst_element_link(parse, dvb_subsink)) {
+		eDebug("Error: Link subparse -> dvbsubsink");
+	}
+
+	GstPad *pad = gst_element_get_static_pad(parse, "sink");
+	GstPad *ghost = gst_ghost_pad_new("sink", pad);
+	gst_pad_set_active(ghost, TRUE);
+	gst_element_add_pad(bin, ghost);
+	gst_object_unref(pad);
+
+	return bin;
+}
+
+// --- END Wrapper-Bins for playbin3 compatibility ---
+
 /*static functions */
 
 /* Handy asyncrone timers for developpers */
@@ -1140,12 +1206,30 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 				g_object_set(dvb_audiosink, "e2-sync", FALSE, NULL);
 				g_object_set(dvb_audiosink, "e2-async", FALSE, NULL);
 			}
-			g_object_set(m_gst_playbin, "audio-sink", dvb_audiosink, NULL);
+			// Use wrapper if configured to use playbin3
+			if (useplaybin3) {
+				GstElement *abin = create_audio_sink_bin(dvb_audiosink);
+				if (abin)
+					g_object_set(m_gst_playbin, "audio-sink", abin, NULL);
+				else
+					g_object_set(m_gst_playbin, "audio-sink", dvb_audiosink, NULL);
+			} else {
+				g_object_set(m_gst_playbin, "audio-sink", dvb_audiosink, NULL);
+			}
+
 		}
 		if (dvb_videosink && !m_sourceinfo.is_audio) {
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
+			if (useplaybin3) {
+				GstElement *vbin = create_video_sink_bin(dvb_videosink);
+				if (vbin)
+					g_object_set(m_gst_playbin, "video-sink", vbin, NULL);
+				else
+					g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
+			} else {
+				g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
+			}
 		}
 
 		/*
@@ -1200,7 +1284,16 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 			g_object_set(dvb_subsink, "caps", caps, NULL);
 			gst_caps_unref(caps);
 
-			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+			if (useplaybin3) {
+				GstElement *tsbin = create_subtitle_sink_bin(dvb_subsink);
+				if (tsbin)
+					g_object_set(m_gst_playbin, "text-sink", tsbin, NULL);
+				else
+					g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+			} else {
+				g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+			}
+
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
 		GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
