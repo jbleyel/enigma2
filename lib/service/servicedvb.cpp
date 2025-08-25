@@ -1955,31 +1955,30 @@ RESULT eDVBServicePlay::pause()
 	if (m_decoder)
 	{
 		// MOD: New pause logic for stability and precision.
-		m_timeshift_delay_updater_timer->stop(); // Stop delay updater on pause.
-		// MOD: Stop the resume play timer if the user manually pauses.
-		// This prevents a delayed 'resumePlay' from being triggered unexpectedly.
+		m_timeshift_delay_updater_timer->stop();
 		m_resume_play_timer->stop();
-		
+
 		m_slowmotion = 0;
 		m_is_paused = 1;
 
-		// Pause the decoder first to get a stable PTS.
-		RESULT ret = m_decoder->pause();
-
-		// Then, get the precise position while paused.
+		// <<<<< START OF MODIFICATION >>>>>
+		// Step 1: Get the precise position first, while the decoder is still active.
 		if (isTimeshiftActive())
 		{
 			if (getPlayPosition(m_pause_position) != 0)
 			{
 				eWarning("[eDVBServicePlay] Failed to get pause position!");
-				m_pause_position = -1; // Ensure it's invalid if getting the position failed
+				m_pause_position = -1; // Ensure it's an invalid value on failure
 			}
 			else
 			{
 				eDebug("[eDVBServicePlay] Stored pause position at %lld", m_pause_position);
 			}
 		}
-		return ret;
+
+		// Step 2: Now, pause the decoder.
+		return m_decoder->pause();
+		// <<<<< END OF MODIFICATION >>>>>
 	} else
 		return -1;
 }
