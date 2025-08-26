@@ -1076,6 +1076,7 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_noaudio(false),
 	m_is_stream(ref.path.find("://") != std::string::npos),
 	m_is_pvr(!ref.path.empty() && !m_is_stream),
+	m_pause_position(-1),
 	m_is_paused(0),
 	m_timeshift_enabled(0),
 	m_timeshift_active(0),
@@ -1091,17 +1092,14 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_subtitle_widget(0),
 	m_subtitle_sync_timer(eTimer::create(eApp)),
 	m_nownext_timer(eTimer::create(eApp)),
-	// START OF MODIFICATION - Proactive Timeshift Stability & Pause Locking
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// This block contains all the new variables for the robust timeshift recovery mechanism.
 	m_eof_recovery_timer(eTimer::create(eApp)),
 	m_timeshift_delay_updater_timer(eTimer::create(eApp)),
 	m_saved_timeshift_delay(-1),
 	m_stream_corruption_detected(false),
 	m_recovery_attempts(0),
-	m_resume_play_timer(eTimer::create(eApp)),
-	m_glitch_tolerance_timer(eTimer::create(eApp)),
-	m_recovery_pending(false),
-	m_pause_position(-1),
-	m_recovery_delay_snapshot(-1)
+	m_resume_play_timer(eTimer::create(eApp))
 	// END OF MODIFICATION
 {
 #ifdef PASSTHROUGH_FIX
@@ -1116,11 +1114,11 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 #ifdef PASSTHROUGH_FIX
 	CONNECT(m_passthrough_fix_timer->timeout, eDVBServicePlay::forcePassthrough);
 #endif
-	// START OF MODIFICATION - Connect all new timers
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// Connect the new timers to their handler functions.
 	CONNECT(m_eof_recovery_timer->timeout, eDVBServicePlay::onEofRecoveryTimeout);
 	CONNECT(m_timeshift_delay_updater_timer->timeout, eDVBServicePlay::updateTimeshiftDelay);
 	CONNECT(m_resume_play_timer->timeout, eDVBServicePlay::resumePlay);
-	CONNECT(m_glitch_tolerance_timer->timeout, eDVBServicePlay::onGlitchToleranceTimeout);
 	// END OF MODIFICATION
 
 	m_max_attempts = eSimpleConfig::getInt("config.timeshift.recoveryAttempts", 8);	
@@ -1338,12 +1336,6 @@ void eDVBServicePlay::updateTimeshiftDelay()
 		return;
 	}
 
-	// MOD: Do not update delay while paused or during recovery to prevent incorrect values.
-	if (m_recovery_pending)
-	{
-		return;
-	}
-
 	pts_t live_pts = 0, playback_pts = 0;
 	// Define a maximum reasonable delay, e.g., 3 hours in PTS units (3 * 3600 * 90000)
 	const pts_t MAX_REASONABLE_DELAY = 10800LL * 90000;
@@ -1364,72 +1356,21 @@ void eDVBServicePlay::updateTimeshiftDelay()
 	// No 'else' needed; we simply keep the last good value if we can't get a new one.
 }
 
-// START OF MODIFICATION - Glitch Tolerance and Race Condition Prevention
-/**
- * @brief New: Single entry point to start the recovery sequence.
- * This prevents race conditions by using a lock (m_recovery_pending)
- * and introduces a glitch tolerance period.
- */
-void eDVBServicePlay::initiateRecoverySequence()
-{
-	// Use m_recovery_pending as a lock to prevent race conditions
-	if (m_recovery_pending)
-	{
-		eDebug("[Timeshift-Fix] Ignoring redundant recovery trigger (Race condition prevented).");
-		return;
-	}
-
-	// Lock the recovery process
-	m_recovery_pending = true;
-
-	int tolerance_ms = eSimpleConfig::getInt("config.timeshift.glitchTolerance", 300);
-	
-	if (tolerance_ms <= 0) {
-		// If tolerance is 0, start recovery immediately
-		eDebug("[Timeshift-Fix] Immediate recovery (tolerance=0)");
-		handleEofRecovery();
-	} else {
-		eDebug("[Timeshift-Fix] Starting glitch tolerance timer: %d ms", tolerance_ms);
-		m_glitch_tolerance_timer->start(tolerance_ms, true);
-	}
-}
-
-/**
- * @brief New: This function is called after the glitch tolerance period ends.
- * It checks if the stream stabilized or if a full recovery is needed.
- */
-void eDVBServicePlay::onGlitchToleranceTimeout()
-{
-	// Check if any stream corruption events happened during our grace period.
-	if (m_stream_corruption_detected) {
-		eDebug("[Timeshift-Fix] Persistent glitch detected. Starting recovery.");
-		handleEofRecovery();
-	} else {
-		eDebug("[Timeshift-Fix] No glitches during tolerance period. Cancelling recovery.");
-		m_recovery_pending = false;
-	}
-}
-// END OF MODIFICATION
-
 /**
  * @brief This function is the entry point for the recovery process.
  * It's now much simpler: it just uses the pre-calculated delay and starts the recovery timer.
  */
 void eDVBServicePlay::handleEofRecovery()
 {
-	// MOD: Stop the delay updater timer during recovery to reduce timer noise.
-	m_timeshift_delay_updater_timer->stop();
-
 	eDebug("[Timeshift-Fix] Starting recovery process...");
 
 	// Initialize the retry counter for the recovery loop.
 	m_recovery_attempts = 0;
 	
-	// MOD: Take a snapshot of the delay to use a consistent value throughout recovery.
-	m_recovery_delay_snapshot = m_saved_timeshift_delay;
-
-	eDebug("[Timeshift-Fix] Using fixed snapshot delay for recovery: %lld PTS (~%lld seconds)", 
-		   m_recovery_delay_snapshot, m_recovery_delay_snapshot / 90000);
+	// We no longer calculate the delay here. We trust the value in m_saved_timeshift_delay
+	// which was updated proactively by the m_timeshift_delay_updater_timer.
+	eDebug("[Timeshift-Fix] Using pre-calculated delay: %lld PTS (~%lld seconds)", 
+		   m_saved_timeshift_delay, m_saved_timeshift_delay / 90000);
 
 	// Pause the decoder to stabilize the system.
 	if (m_decoder)
@@ -1447,26 +1388,11 @@ void eDVBServicePlay::handleEofRecovery()
 
 void eDVBServicePlay::resumePlay()
 {
-    if (m_decoder)
-    {
-        eDebug("[Timeshift-Fix] Timer triggered: Resuming play.");
-        m_decoder->play();
-    }
-    else
-    {
-        eWarning("[Timeshift-Fix] resumePlay called but no decoder is available.");
-    }
-
-    // Always reset the full state machine, regardless of decoder presence.
-    m_is_paused = 0;
-    m_recovery_pending = false;
-    m_stream_corruption_detected = false;
-
-    // Restart the proactive delay updater now that we are playing again.
-    if (isTimeshiftActive())
-    {
-        m_timeshift_delay_updater_timer->start(2000, false);
-    }
+	if (m_decoder)
+	{
+		eDebug("[Timeshift-Fix] Timer triggered: Resuming play.");
+		m_decoder->play();
+	}
 }
 
 /**
@@ -1475,16 +1401,15 @@ void eDVBServicePlay::resumePlay()
  */
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
-	// Safety net: Check if we are stuck for too long
+	// Safety net: Check if we are stuck for too long (e.g., 40 attempts * 500ms = 20 seconds)
+
 	if (m_recovery_attempts >= m_max_attempts)
 	{
-		eWarning("[Timeshift-Fix] Maximum recovery attempts (%d) reached. Giving up and resuming.", m_max_attempts);
+		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Unpausing.", m_max_attempts);
 		m_eof_recovery_timer->stop();
 		m_recovery_attempts = 0;
-		// MOD: Reset corruption flag to prevent recovery loop on timeout.
-		m_stream_corruption_detected = false;
-		m_recovery_pending = false; // <-- Release lock here
-		unpause(); // Give up and resume.
+		m_stream_corruption_detected = false; // Reset flag on failure
+		unpause(); 
 		m_event(this, evSeekableStatusChanged);
 		return;
 	}
@@ -1504,8 +1429,7 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 
     // 2. Patiently wait for a sufficient buffer to be recorded.
 	// We wait indefinitely (up to the timeout limit) until this condition is met.
-	// MOD: Use the consistent snapshot of the delay for calculation.
-	pts_t required_buffer = (m_recovery_delay_snapshot > 0 ? m_recovery_delay_snapshot : 0) + safety_margin;
+	pts_t required_buffer = (m_saved_timeshift_delay > 0 ? m_saved_timeshift_delay : 0) + safety_margin;
     if ((length - position) < required_buffer)
     {
         eDebug("[Timeshift-Fix] Waiting for buffer (%llu / %llu)... Retrying in 500ms (Attempt %d)", (length - position), required_buffer, m_recovery_attempts);
@@ -1519,10 +1443,9 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     m_recovery_attempts = 0; // Reset counter on success.
     
     pts_t new_live_pts = 0;
-    // MOD: Use the delay snapshot for calculation.
-    if (m_recovery_delay_snapshot > 0 && m_record && !m_record->getCurrentPCR(new_live_pts))
+    if (m_saved_timeshift_delay > 0 && m_record && !m_record->getCurrentPCR(new_live_pts))
     {
-        pts_t new_target_pos = new_live_pts - m_recovery_delay_snapshot;
+        pts_t new_target_pos = new_live_pts - m_saved_timeshift_delay;
 
         // Safety check on the calculated position
         if (new_target_pos < 0) 
@@ -1550,19 +1473,12 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     {
         // Fallback if we cannot calculate the target position. This will result in a changed delay.
         eWarning("[Timeshift-Fix] Could not get valid delay or live PTS. Falling back to seekless recovery.");
-
-        //Free the lock to prevent the loop
-        m_recovery_pending = false;
-        m_stream_corruption_detected = false;
-
         unpause();
     }
     
     m_stream_corruption_detected = false; // Reset for the next event.
     m_event(this, evSeekableStatusChanged);
-    
-	// MOD: The recovery lock is now released in resumePlay() to ensure a safe transition.
-    eDebug("[Timeshift-Fix] Recovery sequence completed. Lock will be released on actual resume.");
+    eDebug("[Timeshift-Fix] Recovery sequence initiated. Play will resume shortly.");
 }
 
 // END OF MODIFICATION
@@ -1954,31 +1870,24 @@ RESULT eDVBServicePlay::pause()
 	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
 	if (m_decoder)
 	{
-		// MOD: New pause logic for stability and precision.
-		m_timeshift_delay_updater_timer->stop();
-		m_resume_play_timer->stop();
-
-		m_slowmotion = 0;
-		m_is_paused = 1;
-
-		// <<<<< START OF MODIFICATION >>>>>
-		// Step 1: Get the precise position first, while the decoder is still active.
+		// MODIFICATION START: Store current playback position before pausing
 		if (isTimeshiftActive())
 		{
-			if (getPlayPosition(m_pause_position) != 0)
-			{
-				eWarning("[eDVBServicePlay] Failed to get pause position!");
-				m_pause_position = -1; // Ensure it's an invalid value on failure
-			}
-			else
+			if (getPlayPosition(m_pause_position) == 0)
 			{
 				eDebug("[eDVBServicePlay] Stored pause position at %lld", m_pause_position);
 			}
+			else
+			{
+				eWarning("[eDVBServicePlay] Failed to get pause position!");
+				m_pause_position = -1; // Ensure it's invalid if getting the position failed
+			}
 		}
+		// MODIFICATION END
 
-		// Step 2: Now, pause the decoder.
+		m_slowmotion = 0;
+		m_is_paused = 1;
 		return m_decoder->pause();
-		// <<<<< END OF MODIFICATION >>>>>
 	} else
 		return -1;
 }
@@ -1987,25 +1896,29 @@ RESULT eDVBServicePlay::unpause()
 {
 	eDebug("[eDVBServicePlay] unpause");
 	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
-
-	if (!m_decoder) return -1;
-
-	// This logic remains to handle recovery if an error was detected *while* paused.
-	if (isTimeshiftActive() && (m_recovery_pending || m_stream_corruption_detected))
+	if (m_decoder)
 	{
-		eDebug("[Timeshift-Fix] Unpause triggered; initiating recovery due to pending/detected issues.");
-		initiateRecoverySequence();
-		return 0;
-	}
+		// MODIFICATION START: Seek to the stored position before unpausing
+		if (isTimeshiftActive())
+		{
+			if (m_pause_position != -1)
+			{
+				eDebug("[eDVBServicePlay] Seeking to stored position %lld before unpausing", m_pause_position);
+				seekTo(m_pause_position);
+				m_pause_position = -1; // Reset position immediately after use
+			}
+			else
+			{
+				eWarning("[eDVBServicePlay] No valid pause position to restore!");
+			}
+		}
+		// MODIFICATION END
 
-	// --- NEW SIMPLIFIED UNPAUSE LOGIC ---
-	// Revert to the old, direct play method for unpausing.
-	// The complex seekTo logic is only needed for the recovery mechanism.
-	eDebug("[eDVBServicePlay] Using direct unpause logic without seek.");
-	m_slowmotion = 0;
-	m_is_paused = 0;
-	// We no longer need the resume timer. Just play directly.
-	return m_decoder->play();
+		m_slowmotion = 0;
+		m_is_paused = 0;
+		return m_decoder->play();
+	} else
+		return -1;
 }
 
 RESULT eDVBServicePlay::seekTo(pts_t to)
@@ -3060,20 +2973,12 @@ void eDVBServicePlay::recordEvent(int event)
 		eWarning("[eDVBServicePlay] recordEvent write error");
 		return;
 	case iDVBTSRecorder::eventStreamCorrupt:
-		// Set the flag that will be checked after the tolerance period
-		m_stream_corruption_detected = true;
-		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt detected.");
-		
-		// Only initiate recovery if not already pending and not paused
-		if (!m_recovery_pending && !m_is_paused)
-		{
-			eDebug("[Timeshift-Fix] Corruption detected, initiating recovery sequence.");
-			initiateRecoverySequence();
-		}
-		else if (m_is_paused)
-		{
-			eDebug("[Timeshift-Fix] Corruption detected during pause, deferring recovery.");
-		}
+		// START OF MODIFICATION - Proactive Timeshift Stability
+		// Trigger the safe recovery handler on stream corruption events.
+		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt");
+		m_stream_corruption_detected = true; // Mark that stream corruption has occurred
+		handleEofRecovery();
+		// END OF MODIFICATION
 		return;
 	default:
 		eDebug("[eDVBServicePlay] recordEvent unhandled record event %d", event);
@@ -3091,12 +2996,11 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 	}
 	else
 	{
-		// Stop all recovery-related timers and release the lock for a clean exit
+		// START OF MODIFICATION - Proactive Timeshift Stability
+		// If not switching to live, we must manually stop the delay updater timer.
 		m_timeshift_delay_updater_timer->stop();
 		m_resume_play_timer->stop();
-		m_glitch_tolerance_timer->stop();
-		m_eof_recovery_timer->stop();
-		m_recovery_pending = false;
+		// END OF MODIFICATION
 	}
 
 	m_timeshift_enabled = 0;
@@ -3370,12 +3274,11 @@ void eDVBServicePlay::switchToLive()
 	if (!m_timeshift_active)
 		return;
 
-	// Stop all recovery-related timers and release the lock for a clean exit
+	// START OF MODIFICATION - Proactive Timeshift Stability
+	// Stop the proactive delay updater timer when switching back to live TV.
 	m_timeshift_delay_updater_timer->stop();
 	m_resume_play_timer->stop();
-	m_glitch_tolerance_timer->stop();
-	m_eof_recovery_timer->stop();
-	m_recovery_pending = false;
+	// END OF MODIFICATION
 
 	eDebug("[eDVBServicePlay] SwitchToLive");
 
@@ -3462,8 +3365,11 @@ void eDVBServicePlay::switchToTimeshift()
 	pause();
 	updateDecoder(true); /* mainly to switch off PCR, and to set pause */
 
+	// START OF MODIFICATION - Proactive Timeshift Stability
 	// Start the proactive delay updater timer. It will run every 2 seconds.
+	// The 'false' parameter means it's a recurring timer.
 	m_timeshift_delay_updater_timer->start(2000, false);
+	// END OF MODIFICATION
 }
 
 void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
