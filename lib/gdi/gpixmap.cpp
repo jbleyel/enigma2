@@ -461,6 +461,173 @@ static void convert_palette(uint32_t *pal, const gPalette &clut)
 
 #define FIX 0x10000
 
+void gPixmap::drawRectangleNew(const gRegion& region, const eRect& area, const gRGB& borderColor, int borderWidth, int radius, uint8_t edges, const gRGB& fillColor) {
+
+	uint32_t borderCol = borderColor.argb();
+	uint32_t fillCol = fillColor.argb();
+	uint8_t fillA = fillColor.a;
+	uint8_t borderA = borderColor.a;
+
+	int tlr = (edges & RADIUS_TOP_LEFT) ? radius : 0;
+	int trr = (edges & RADIUS_TOP_RIGHT) ? radius : 0;
+	int blr = (edges & RADIUS_BOTTOM_LEFT) ? radius : 0;
+	int brr = (edges & RADIUS_BOTTOM_RIGHT) ? radius : 0;
+
+	auto blendPixel = [&](uint32_t* dst, uint32_t srcCol, uint8_t srcA_in, double mul = 1.0) {
+		int a = (int)std::clamp<int>((int)std::round(srcA_in * mul), 0, 255);
+		if (a >= 230)
+			a = 255;
+
+		int sR = (srcCol >> 16) & 0xFF;
+		int sG = (srcCol >> 8) & 0xFF;
+		int sB = (srcCol >> 0) & 0xFF;
+
+		uint32_t dstVal = *dst;
+		int dA = (dstVal >> 24) & 0xFF;
+		int dR = (dstVal >> 16) & 0xFF;
+		int dG = (dstVal >> 8) & 0xFF;
+		int dB = (dstVal >> 0) & 0xFF;
+
+		int sRp = (sR * a + 127) / 255;
+		int sGp = (sG * a + 127) / 255;
+		int sBp = (sB * a + 127) / 255;
+
+		int dRp = (dR * dA + 127) / 255;
+		int dGp = (dG * dA + 127) / 255;
+		int dBp = (dB * dA + 127) / 255;
+
+		int outRp = sRp + (dRp * (255 - a) + 127) / 255;
+		int outGp = sGp + (dGp * (255 - a) + 127) / 255;
+		int outBp = sBp + (dBp * (255 - a) + 127) / 255;
+		int outA = a + (dA * (255 - a) + 127) / 255;
+
+		*dst = (std::min(255, outA) << 24) | (std::min(255, outRp) << 16) | (std::min(255, outGp) << 8) | (std::min(255, outBp));
+	};
+
+	auto drawCorner = [&](int cx, int cy, int r, bool top, bool left) {
+		if (r <= 0)
+			return;
+
+		const int samples = 4; // Supersampling
+		const double invSamples = 1.0 / (samples * samples);
+
+		int innerR = r - borderWidth;
+
+		for (int y = 0; y < r; ++y) {
+			for (int x = 0; x < r; ++x) {
+				int dx = left ? r - x - 1 : x;
+				int dy = top ? r - y - 1 : y;
+
+				int px = cx + x;
+				int py = cy + y;
+				if (px < area.left() || px >= area.right() || py < area.top() || py >= area.bottom())
+					continue;
+
+				uint32_t* dst = (uint32_t*)((uint8_t*)surface->data + py * surface->stride + px * surface->bypp);
+
+				int borderCount = 0;
+				int fillCount = 0;
+
+				// Supersampling (4x4 Subpixel)
+				for (int sy = 0; sy < samples; ++sy) {
+					for (int sx = 0; sx < samples; ++sx) {
+						double subX = dx + (sx + 0.5) / samples;
+						double subY = dy + (sy + 0.5) / samples;
+						double subDist = sqrt(subX * subX + subY * subY);
+
+						if (subDist <= r) {
+							if (subDist >= innerR) {
+								borderCount++;
+							} else {
+								fillCount++;
+							}
+						}
+					}
+				}
+
+				double borderAlpha = borderCount * invSamples;
+				double fillAlpha = fillCount * invSamples;
+
+				if (borderAlpha > 0.0)
+					blendPixel(dst, borderCol, borderA, borderAlpha);
+				if (fillAlpha > 0.0)
+					blendPixel(dst, fillCol, fillA, fillAlpha);
+			}
+		}
+	};
+
+	drawCorner(area.left(), area.top(), tlr, true, true);
+	drawCorner(area.right() - trr, area.top(), trr, true, false);
+	drawCorner(area.left(), area.bottom() - blr, blr, false, true);
+	drawCorner(area.right() - brr, area.bottom() - brr, brr, false, false);
+
+	// horizontal
+	for (int y = 0; y < borderWidth; ++y) {
+		for (int x = area.left() + tlr; x < area.right() - trr; ++x) {
+			blendPixel((uint32_t*)((uint8_t*)surface->data + (area.top() + y) * surface->stride + x * surface->bypp), borderCol, borderA);
+			blendPixel((uint32_t*)((uint8_t*)surface->data + (area.bottom() - 1 - y) * surface->stride + x * surface->bypp), borderCol, borderA);
+		}
+	}
+
+	// vertical
+	for (int x = 0; x < borderWidth; ++x) {
+		for (int y = area.top() + tlr; y < area.bottom() - blr; ++y) {
+			blendPixel((uint32_t*)((uint8_t*)surface->data + y * surface->stride + (area.left() + x) * surface->bypp), borderCol, borderA);
+			blendPixel((uint32_t*)((uint8_t*)surface->data + y * surface->stride + (area.right() - 1 - x) * surface->bypp), borderCol, borderA);
+		}
+	}
+
+	// fill inner area
+	int innerTL = (edges & RADIUS_TOP_LEFT) ? tlr - borderWidth : 0;
+	int innerTR = (edges & RADIUS_TOP_RIGHT) ? trr - borderWidth : 0;
+	int innerBL = (edges & RADIUS_BOTTOM_LEFT) ? blr - borderWidth : 0;
+	int innerBR = (edges & RADIUS_BOTTOM_RIGHT) ? brr - borderWidth : 0;
+
+	for (int y = area.top() + borderWidth; y < area.bottom() - borderWidth; ++y) {
+		uint32_t* dst = (uint32_t*)((uint8_t*)surface->data + y * surface->stride + (area.left() + borderWidth) * surface->bypp);
+		for (int x = area.left() + borderWidth; x < area.right() - borderWidth; ++x) {
+			bool inside = true;
+
+			// top-left
+			if (innerTL > 0 && x < area.left() + tlr && y < area.top() + tlr) {
+				int dx = (area.left() + tlr - x);
+				int dy = (area.top() + tlr - y);
+				if (dx * dx + dy * dy > innerTL * innerTL)
+					inside = false;
+			}
+
+			// top-right
+			if (inside && innerTR > 0 && x >= area.right() - trr && y < area.top() + trr) {
+				int dx = (x - (area.right() - trr - 1));
+				int dy = (area.top() + trr - y);
+				if (dx * dx + dy * dy > innerTR * innerTR)
+					inside = false;
+			}
+
+			// bottom-left
+			if (inside && innerBL > 0 && x < area.left() + blr && y >= area.bottom() - blr) {
+				int dx = (area.left() + blr - x);
+				int dy = (y - (area.bottom() - blr - 1));
+				if (dx * dx + dy * dy > innerBL * innerBL)
+					inside = false;
+			}
+
+			// bottom-right
+			if (inside && innerBR > 0 && x >= area.right() - brr && y >= area.bottom() - brr) {
+				int dx = (x - (area.right() - brr - 1));
+				int dy = (y - (area.bottom() - brr - 1));
+				if (dx * dx + dy * dy > innerBR * innerBR)
+					inside = false;
+			}
+
+			if (inside)
+				blendPixel(dst, fillCol, fillA);
+			++dst;
+		}
+	}
+}
+
+
 void gPixmap::drawRectangle(const gRegion &region, const eRect &area, const gRGB &backgroundColor, const gRGB &borderColor, int borderWidth, const std::vector<gRGB> &gradientColors, uint8_t direction, int radius, uint8_t edges, bool alphablend, int gradientFullSize)
 {
 	if (surface->bpp < 32)
@@ -468,6 +635,13 @@ void gPixmap::drawRectangle(const gRegion &region, const eRect &area, const gRGB
 		eWarning("[gPixmap] couldn't rgbfill %d bpp", surface->bpp);
 		return;
 	}
+
+	if (borderWidth && radius && gradientColors.size() == 0)
+	{
+		drawRectangleNew(region, area, borderColor, borderWidth, radius, edges, backgroundColor);
+		return;
+	}
+
 
 #ifdef GPIXMAP_DEBUG
 	Stopwatch s;
