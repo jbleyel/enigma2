@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
 #include <lib/gdi/gpixmap.h>
 #include <lib/gdi/region.h>
 #include <lib/gdi/accel.h>
