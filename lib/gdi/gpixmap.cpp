@@ -2392,6 +2392,70 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 		}
 		else if ((surface->bpp == 16) && (src.surface->bpp == 8))
 		{
+			uint8_t* srcptr = (uint8_t*)src.surface->data;
+			uint8_t* dstptr = (uint8_t*)surface->data;
+
+			srcptr += srcarea.top() * src.surface->stride + srcarea.left() * src.surface->bypp;
+			dstptr += area.top() * surface->stride + area.left() * surface->bypp;
+
+			if (flag & blitAlphaBlend)
+				eWarning("[gPixmap] ignore unsupported 8bpp -> 16bpp alphablend!");
+
+			bool hasPalette = (src.surface->clut.data && src.surface->clut.colors > 0);
+			uint16_t pal[256];
+
+			if (hasPalette)
+			{
+				// Palette vorbereiten
+				for (int i = 0; i < 256; i++)
+				{
+					uint32_t icol = (i < src.surface->clut.colors) ? src.surface->clut.data[i].argb() : 0x010101 * i;
+		#if BYTE_ORDER == LITTLE_ENDIAN
+					pal[i] = bswap_16(((icol & 0xFF) >> 3) << 11
+									| ((icol & 0xFF00) >> 10) << 5
+									| ((icol & 0xFF0000) >> 19));
+		#else
+					pal[i] = ((icol & 0xFF) >> 3) << 11
+						| ((icol & 0xFF00) >> 10) << 5
+						| ((icol & 0xFF0000) >> 19);
+		#endif
+					pal[i] ^= 0xFF000000;
+				}
+			}
+
+			for (int y = 0; y < area.height(); y++)
+			{
+				uint8_t* psrc = srcptr;
+				uint16_t* pdst = (uint16_t*)dstptr;
+
+				for (int x = 0; x < area.width(); x++)
+				{
+					if (hasPalette)
+					{
+						uint8_t idx = psrc[x];
+						pdst[x] = pal[idx];
+					}
+					else
+					{
+						// Truecolor 8 Bit per channel: 3 Byte pro Pixel
+						uint8_t r = psrc[x*3 + 0];
+						uint8_t g = psrc[x*3 + 1];
+						uint8_t b = psrc[x*3 + 2];
+
+						pdst[x] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+					}
+				}
+
+				if (hasPalette)
+					srcptr += src.surface->stride;
+				else
+					srcptr += src.surface->stride; // truecolor stride = width*3 (bypp), aber src.surface->stride liefert korrekt
+				dstptr += surface->stride;
+			}
+		}
+/*
+		else if ((surface->bpp == 16) && (src.surface->bpp == 8))
+		{
 			uint8_t *srcptr = (uint8_t *)src.surface->data;
 			uint8_t *dstptr = (uint8_t *)surface->data; // !!
 			uint32_t pal[256];
@@ -2430,6 +2494,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 				dstptr += surface->stride;
 			}
 		}
+	*/
 		else if ((surface->bpp == 16) && (src.surface->bpp == 32))
 		{
 			uint8_t *srcptr = (uint8_t *)src.surface->data;
