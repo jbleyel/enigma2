@@ -2311,61 +2311,95 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 				srcptr += src.surface->stride;
 				dstptr += surface->stride;
 			}
-		} else if ((surface->bpp == 16) && (src.surface->bpp == 8)) {
-			uint8_t* srcptr = (uint8_t*)src.surface->data;
-			uint8_t* dstptr = (uint8_t*)surface->data;
+		} 
+		
+else if ((surface->bpp == 16) && (src.surface->bpp == 8))
+{
+    uint8_t* srcptr = (uint8_t*)src.surface->data;
+    uint8_t* dstptr = (uint8_t*)surface->data;
 
-			srcptr += srcarea.top() * src.surface->stride + srcarea.left() * src.surface->bypp;
-			dstptr += area.top() * surface->stride + area.left() * surface->bypp;
+    srcptr += srcarea.top() * src.surface->stride + srcarea.left() * src.surface->bypp;
+    dstptr += area.top() * surface->stride + area.left() * surface->bypp;
 
-			if (flag & blitAlphaBlend)
-				eWarning("[gPixmap] ignore unsupported 8bpp -> 16bpp alphablend!");
+    if (flag & blitAlphaBlend)
+        eWarning("[gPixmap] ignore unsupported 8bpp -> 16bpp alphablend!");
 
-			// Palette vorbereiten: Transparenz direkt berücksichtigen
-			uint16_t pal[256];
-			for (int i = 0; i < 256; i++) {
-				uint32_t icol;
-				if (src.surface->clut.data && (i < src.surface->clut.colors))
-					icol = src.surface->clut.data[i].argb();
-				else
-					icol = 0x010101 * i;
+    // Palette vorbereiten: Transparenz direkt berücksichtigen
+    uint16_t pal[256];
+    for (int i = 0; i < 256; i++)
+    {
+        uint32_t icol;
+        bool isTransparent = false;
 
-				// Alpha = 0 → transparent Pixel
-				if (src.surface->clut.data && (i < src.surface->clut.colors) && src.surface->clut.data[i].a == 0) {
-					pal[i] = 0x0000;
-				} else {
+        if (src.surface->clut.data && (i < src.surface->clut.colors))
+        {
+            icol = src.surface->clut.data[i].argb();
+            if (src.surface->clut.data[i].a == 0 || i == 0) // Index 0 immer transparent
+                isTransparent = true;
+        }
+        else
+        {
+            icol = 0x010101 * i;   // Grauwert, falls kein CLUT
+            if (i == 0)
+                isTransparent = true; // Index 0 als transparent erzwingen
+        }
+
+        if (isTransparent)
+        {
+            pal[i] = 0x0000;
+        }
+        else
+        {
 #if BYTE_ORDER == LITTLE_ENDIAN
-					pal[i] = bswap_16(((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | ((icol & 0xFF0000) >> 19));
+            pal[i] = bswap_16(((icol & 0xFF) >> 3) << 11
+                            | ((icol & 0xFF00) >> 10) << 5
+                            | ((icol & 0xFF0000) >> 19));
 #else
-					pal[i] = ((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | ((icol & 0xFF0000) >> 19);
+            pal[i] = ((icol & 0xFF) >> 3) << 11
+                   | ((icol & 0xFF00) >> 10) << 5
+                   | ((icol & 0xFF0000) >> 19);
 #endif
-				}
-			}
+        }
+    }
 
-			// Blit: Palette direkt anwenden, Alpha-Test optional
-			for (int y = 0; y < area.height(); y++) {
-				uint8_t* psrc = srcptr;
-				uint16_t* pdst = (uint16_t*)dstptr;
+    // Blit: Palette direkt anwenden
+    for (int y = 0; y < area.height(); y++)
+    {
+        uint8_t* psrc = srcptr;
+        uint16_t* pdst = (uint16_t*)dstptr;
 
-				for (int x = 0; x < area.width(); x++) {
-					uint16_t val = pal[psrc[x]];
+        for (int x = 0; x < area.width(); x++)
+        {
+            uint8_t idx = psrc[x];
+            uint16_t val = pal[idx];
 
-					if (flag & blitAlphaTest) {
-						// Nur Pixel mit Alpha > 0 schreiben (transparent = 0x0000)
-						if (val != 0x0000)
-							pdst[x] = val;
-						else
-							pdst[x] = 0x0000; // transparent überschreiben
-					} else {
-						// Alpha-Test nicht gesetzt → alles kopieren
-						pdst[x] = val;
-					}
-				}
+            // Alpha-Test optional
+            if (flag & blitAlphaTest)
+            {
+                if (val != 0x0000)
+                    pdst[x] = val;
+                else
+                    pdst[x] = 0x0000;
+            }
+            else
+            {
+                pdst[x] = val;
+            }
 
-				srcptr += src.surface->stride;
-				dstptr += surface->stride;
-			}
-		} else if ((surface->bpp == 16) && (src.surface->bpp == 32)) {
+            // DEBUG: erstes Pixel jeder Zeile ausgeben
+//            if (x == 0)
+         //   {
+  //              printf("[Debug] Line %d: src_idx=%d, pal=0x%04X, dst=0x%04X\n",  y, idx, pal[idx], pdst[x]);
+       //     }
+        }
+
+        srcptr += src.surface->stride;
+        dstptr += surface->stride;
+    }
+}
+
+		
+		else if ((surface->bpp == 16) && (src.surface->bpp == 32)) {
 			uint8_t* srcptr = (uint8_t*)src.surface->data;
 			uint8_t* dstptr = (uint8_t*)surface->data;
 
