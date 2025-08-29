@@ -2401,26 +2401,26 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 			if (flag & blitAlphaBlend)
 				eWarning("[gPixmap] ignore unsupported 8bpp -> 16bpp alphablend!");
 
-			bool hasPalette = (src.surface->clut.data && src.surface->clut.colors > 0);
+			// Palette vorbereiten
 			uint16_t pal[256];
-
-			if (hasPalette)
+			for (int i = 0; i < 256; i++)
 			{
-				// Palette vorbereiten
-				for (int i = 0; i < 256; i++)
-				{
-					uint32_t icol = (i < src.surface->clut.colors) ? src.surface->clut.data[i].argb() : 0x010101 * i;
+				uint32_t icol;
+				if (src.surface->clut.data && (i < src.surface->clut.colors))
+					icol = src.surface->clut.data[i].argb();
+				else
+					icol = 0x010101 * i;
+
 		#if BYTE_ORDER == LITTLE_ENDIAN
-					pal[i] = bswap_16(((icol & 0xFF) >> 3) << 11
-									| ((icol & 0xFF00) >> 10) << 5
-									| ((icol & 0xFF0000) >> 19));
+				pal[i] = bswap_16(((icol & 0xFF) >> 3) << 11
+								| ((icol & 0xFF00) >> 10) << 5
+								| ((icol & 0xFF0000) >> 19));
 		#else
-					pal[i] = ((icol & 0xFF) >> 3) << 11
-						| ((icol & 0xFF00) >> 10) << 5
-						| ((icol & 0xFF0000) >> 19);
+				pal[i] = ((icol & 0xFF) >> 3) << 11
+					| ((icol & 0xFF00) >> 10) << 5
+					| ((icol & 0xFF0000) >> 19);
 		#endif
-					pal[i] ^= 0xFF000000;
-				}
+				pal[i] ^= 0xFF000000;
 			}
 
 			for (int y = 0; y < area.height(); y++)
@@ -2430,29 +2430,23 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 
 				for (int x = 0; x < area.width(); x++)
 				{
-					if (hasPalette)
-					{
-						uint8_t idx = psrc[x];
-						pdst[x] = pal[idx];
-					}
-					else
-					{
-						// Truecolor 8 Bit per channel: 3 Byte pro Pixel
-						uint8_t r = psrc[x*3 + 0];
-						uint8_t g = psrc[x*3 + 1];
-						uint8_t b = psrc[x*3 + 2];
+					uint8_t idx = psrc[x];
+					uint16_t val = pal[idx];
 
-						pdst[x] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+					if ((flag & blitAlphaTest) && src.surface->clut.data && idx < src.surface->clut.colors)
+					{
+						if (src.surface->clut.data[idx].a == 0)
+							val = 0x0000; // transparent Pixel auf schwarz setzen
 					}
+
+					pdst[x] = val;
 				}
 
-				if (hasPalette)
-					srcptr += src.surface->stride;
-				else
-					srcptr += src.surface->stride; // truecolor stride = width*3 (bypp), aber src.surface->stride liefert korrekt
+				srcptr += src.surface->stride;
 				dstptr += surface->stride;
 			}
 		}
+
 /*
 		else if ((surface->bpp == 16) && (src.surface->bpp == 8))
 		{
