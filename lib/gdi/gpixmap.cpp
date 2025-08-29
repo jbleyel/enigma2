@@ -2321,6 +2321,7 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 			if (flag & blitAlphaBlend)
 				eWarning("[gPixmap] ignore unsupported 8bpp -> 16bpp alphablend!");
 
+			// Palette vorbereiten: Transparenz direkt berücksichtigen
 			uint16_t pal[256];
 			for (int i = 0; i < 256; i++) {
 				uint32_t icol;
@@ -2341,20 +2342,24 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 				}
 			}
 
-			// Blit: Palette, optional Alpha-Test
+			// Blit: Palette direkt anwenden, Alpha-Test optional
 			for (int y = 0; y < area.height(); y++) {
 				uint8_t* psrc = srcptr;
 				uint16_t* pdst = (uint16_t*)dstptr;
 
-				if (flag & blitAlphaTest) {
-					for (int x = 0; x < area.width(); x++) {
-						uint16_t val = pal[psrc[x]];
-						if (val != 0x0000) // nur nicht-transparente Pixel schreiben
+				for (int x = 0; x < area.width(); x++) {
+					uint16_t val = pal[psrc[x]];
+
+					if (flag & blitAlphaTest) {
+						// Nur Pixel mit Alpha > 0 schreiben (transparent = 0x0000)
+						if (val != 0x0000)
 							pdst[x] = val;
+						else
+							pdst[x] = 0x0000; // transparent überschreiben
+					} else {
+						// Alpha-Test nicht gesetzt → alles kopieren
+						pdst[x] = val;
 					}
-				} else {
-					for (int x = 0; x < area.width(); x++)
-						pdst[x] = pal[psrc[x]]; // alles kopieren
 				}
 
 				srcptr += src.surface->stride;
