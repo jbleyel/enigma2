@@ -411,10 +411,19 @@ void eDBoxLCD::dumpLCD(bool png)
 #else
 				pixel16 = *src++;
 #endif
+
 				pixel32.a = 0xFF;
-				pixel32.r = (pixel16 << 3) & 0xF8;
-				pixel32.g = (pixel16 >> 3) & 0xFC;
-				pixel32.b = (pixel16 >> 8) & 0xF8;
+				uint8_t r5 = (pixel16 >> 11) & 0x1F;
+				uint8_t g6 = (pixel16 >> 5) & 0x3F;
+				uint8_t b5 = pixel16 & 0x1F;
+
+				pixel32.r = (r5 << 3) | (r5 >> 2);
+				pixel32.g = (g6 << 2) | (g6 >> 4);
+				pixel32.b = (b5 << 3) | (b5 >> 2);
+
+//				pixel32.r = (pixel16 << 3) & 0xF8;
+//				pixel32.g = (pixel16 >> 3) & 0xFC;
+//				pixel32.b = (pixel16 >> 8) & 0xF8;
 				*dst++ = pixel32;
 			}
 			srcptr += _stride;
