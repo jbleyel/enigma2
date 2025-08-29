@@ -247,7 +247,7 @@ protected:
 
 	/* pvr */
 	bool m_is_pvr;
-	pts_t m_pause_position; // <-- MODIFICATION: Added the new member variable here
+	pts_t m_pause_position;
 	int m_is_paused, m_timeshift_enabled, m_timeshift_active, m_timeshift_changed, m_save_timeshift;
 	int m_first_program_info;
 
@@ -342,19 +342,21 @@ protected:
 
 private:
 
-	// START OF MODIFICATION - Proactive Timeshift Stability
-	// This block declares all the new private members for the robust timeshift recovery mechanism.
-	ePtr<eTimer> m_eof_recovery_timer;              // Timer to manage the recovery process itself.
-	ePtr<eTimer> m_timeshift_delay_updater_timer;   // New timer to proactively save the timeshift delay.
-	ePtr<eTimer> m_resume_play_timer;               // New: Timer to safely resume play after a seek
-	pts_t m_saved_timeshift_delay;                  // Stores the last known-good timeshift delay.
-	bool m_stream_corruption_detected;              // Flag for stream corruption events.
-	int m_recovery_attempts;                        // Safety counter to prevent infinite recovery loops.
-	int m_max_attempts;                             // Maximum number of recovery attempts before giving up.	
-	void handleEofRecovery();                       // Entry point for the recovery process.
-	void onEofRecoveryTimeout();                    // Core logic for the recovery loop.
-	void updateTimeshiftDelay();                    // New function to be called periodically to update the delay.
-	void resumePlay();                              // New: The function called by m_resume_play_timer
+	// START OF MODIFICATION
+	ePtr<eTimer> m_eof_recovery_timer;
+	ePtr<eTimer> m_initial_delay_calc_timer;
+	ePtr<eTimer> m_resume_play_timer;
+	pts_t m_saved_timeshift_delay;
+	bool m_stream_corruption_detected;
+	int m_recovery_attempts;
+	int m_max_attempts;
+	time_t m_timeshift_start_time;
+	
+	void handleEofRecovery();
+	void onEofRecoveryTimeout();
+	void onInitialDelayTimeout();
+	void updateSavedDelay();
+	void resumePlay();
 	// END OF MODIFICATION
 };
 
