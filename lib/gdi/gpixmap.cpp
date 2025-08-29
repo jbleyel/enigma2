@@ -1918,8 +1918,7 @@ void gPixmap::blitRounded8BitScaled(const gPixmap &src, const eRect &pos, const 
 	}
 }
 
-void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, int cornerRadius, uint8_t edges, int flag)
-{
+void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, int cornerRadius, uint8_t edges, int flag) {
 	bool accel = (surface->data_phys && src.surface->data_phys);
 	bool accumulate = accel && (gAccel::getInstance()->accumulate() >= 0);
 	int accelerationthreshold = GFX_SURFACE_BLIT_ACCELERATION_THRESHOLD;
@@ -1933,13 +1932,11 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 
 	int scale_x = FIX, scale_y = FIX;
 
-	if (!(flag & blitScale))
-	{
+	if (!(flag & blitScale)) {
 		// pos' size is ignored if left or top aligning.
 		// if its size isn't set, centre and right/bottom aligning is ignored
 
-		if (_pos.size().isValid())
-		{
+		if (_pos.size().isValid()) {
 			if (flag & blitHAlignCenter)
 				pos.setLeft(_pos.left() + (_pos.width() - src.size().width()) / 2);
 			else if (flag & blitHAlignRight)
@@ -1953,19 +1950,16 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 
 		pos.setWidth(src.size().width());
 		pos.setHeight(src.size().height());
-	}
-	else if (pos.size() == src.size()) /* no scaling required */
+	} else if (pos.size() == src.size()) /* no scaling required */
 		flag &= ~blitScale;
 	else // blitScale is set
 	{
 		ASSERT(src.size().width());
 		ASSERT(src.size().height());
-		scale_x = pos.size().width() * FIX / src.size().width();   // NOSONAR
+		scale_x = pos.size().width() * FIX / src.size().width(); // NOSONAR
 		scale_y = pos.size().height() * FIX / src.size().height(); // NOSONAR
-		if (flag & blitKeepAspectRatio)
-		{
-			if (scale_x > scale_y)
-			{
+		if (flag & blitKeepAspectRatio) {
+			if (scale_x > scale_y) {
 				// vertical is full height, adjust horizontal to be smaller
 				scale_x = scale_y;
 				pos.setWidth(src.size().width() * _pos.height() / src.size().height());
@@ -1973,9 +1967,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 					pos.moveBy((_pos.width() - pos.width()) / 2, 0);
 				else if (flag & blitHAlignRight)
 					pos.moveBy(_pos.width() - pos.width(), 0);
-			}
-			else
-			{
+			} else {
 				// horizontal is full width, adjust vertical to be smaller
 				scale_y = scale_x;
 				pos.setHeight(src.size().height() * _pos.width() / src.size().width());
@@ -1987,11 +1979,9 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 		}
 	}
 
-	if (accumulate)
-	{
+	if (accumulate) {
 		int totalsurface = 0;
-		for (unsigned int i = 0; i < clip.rects.size(); ++i)
-		{
+		for (unsigned int i = 0; i < clip.rects.size(); ++i) {
 			eRect area = pos; /* pos is the virtual (pre-clipping) area on the dest, which can be larger/smaller than src if scaling is enabled */
 			area &= clip.rects[i];
 			area &= eRect(ePoint(0, 0), size());
@@ -2006,12 +1996,9 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 
 			totalsurface += srcarea.surface() * src.surface->bypp;
 		}
-		if (totalsurface < accelerationthreshold)
-		{
+		if (totalsurface < accelerationthreshold) {
 			accel = false;
-		}
-		else
-		{
+		} else {
 			/* total surface is larger than the threshold, no longer apply the threshold on individual clip rects */
 			accelerationthreshold = 0;
 		}
@@ -2019,8 +2006,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 
 	//	eDebug("[gPixmap] SCALE %x %x", scale_x, scale_y);
 
-	for (unsigned int i = 0; i < clip.rects.size(); ++i)
-	{
+	for (unsigned int i = 0; i < clip.rects.size(); ++i) {
 		//		eDebug("[gPixmap] clip rect: %d %d %d %d", clip.rects[i].x(), clip.rects[i].y(), clip.rects[i].width(), clip.rects[i].height());
 		eRect area = pos; /* pos is the virtual (pre-clipping) area on the dest, which can be larger/smaller than src if scaling is enabled */
 		area &= clip.rects[i];
@@ -2041,20 +2027,16 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 		//		eDebug("[gPixmap] srcarea after scale: %d %d %d %d",
 		//			srcarea.x(), srcarea.y(), srcarea.width(), srcarea.height());
 
-		if (cornerRadius && surface->bpp == 32)
-		{
+		if (cornerRadius && surface->bpp == 32) {
 #ifdef GPIXMAP_DEBUG
 			Stopwatch s;
 #endif
-			if (src.surface->bpp == 32)
-			{
+			if (src.surface->bpp == 32) {
 				if (flag & blitScale)
 					blitRounded32BitScaled(src, pos, clip.rects[i], cornerRadius, edges, flag);
 				else
 					blitRounded32Bit(src, pos, clip.rects[i], cornerRadius, edges, flag);
-			}
-			else
-			{
+			} else {
 				if (flag & blitScale)
 					blitRounded8BitScaled(src, pos, clip.rects[i], cornerRadius, edges, flag);
 				else
@@ -2062,7 +2044,8 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 			}
 #ifdef GPIXMAP_DEBUG
 			s.stop();
-			eDebug("[gPixmap] [BLITBENCH] cpu blitRounded %dx%d transparent %d (%d bytes) took %u us", pos.width(), pos.height(), src.surface->transparent, srcarea.surface() * src.surface->bypp, s.elapsed_us());
+			eDebug("[gPixmap] [BLITBENCH] cpu blitRounded %dx%d transparent %d (%d bytes) took %u us", pos.width(), pos.height(), src.surface->transparent, srcarea.surface() * src.surface->bypp,
+				   s.elapsed_us());
 #endif
 			continue;
 		}
@@ -2070,21 +2053,16 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 #ifdef FORCE_NO_ACCELNEVER
 		accel = false;
 #else
-		if (accel)
-		{
-			if (srcarea.surface() * src.surface->bypp < accelerationthreshold)
-			{
+		if (accel) {
+			if (srcarea.surface() * src.surface->bypp < accelerationthreshold) {
 				accel = false;
 			}
 		}
-		if (accel)
-		{
+		if (accel) {
 			/* we have hardware acceleration for this blit operation */
-			if (flag & (blitAlphaTest | blitAlphaBlend))
-			{
+			if (flag & (blitAlphaTest | blitAlphaBlend)) {
 				/* alpha blending is requested */
-				if (gAccel::getInstance()->hasAlphaBlendingSupport())
-				{
+				if (gAccel::getInstance()->hasAlphaBlendingSupport()) {
 #ifdef FORCE_ALPHABLENDING_ACCELERATION
 					/* Hardware alpha blending is broken on the few
 					 * boxes that support it, so only use it
@@ -2099,9 +2077,7 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 					else
 						accel = false;
 #endif
-				}
-				else
-				{
+				} else {
 					/* our hardware does not support alphablending */
 					accel = false;
 				}
@@ -2118,23 +2094,21 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 #endif
 
 #ifdef FORCE_NO_ACCELERATION_SCALE
-	if (accel && (flag & blitScale))
-	{
-		// Reset width in case of round issue
-		if (src.size().width() != srcarea.width())
-			srcarea.setWidth(src.size().width());
+		if (accel && (flag & blitScale)) {
+			// Reset width in case of round issue
+			if (src.size().width() != srcarea.width())
+				srcarea.setWidth(src.size().width());
 
-		// Reset height in case of round issue
-		if (src.size().height() != srcarea.height())
-			srcarea.setHeight(src.size().height());
-	}
+			// Reset height in case of round issue
+			if (src.size().height() != srcarea.height())
+				srcarea.setHeight(src.size().height());
+		}
 #endif
-		if (accel)
-		{
+		if (accel) {
 			flag &= 7; // remove all flags except the blit flags
-			// eDebug("[gPixmap] accel flag %d / area (%d,%d,%d,%d) / srcarea (%d,%d,%d,%d)", flag, area.left(), area.top(), area.width(), area.height(), srcarea.left(), srcarea.top(), srcarea.width(), srcarea.height());
-			if (!gAccel::getInstance()->blit(surface, src.surface, area, srcarea, flag))
-			{
+			// eDebug("[gPixmap] accel flag %d / area (%d,%d,%d,%d) / srcarea (%d,%d,%d,%d)", flag, area.left(), area.top(), area.width(), area.height(), srcarea.left(), srcarea.top(),
+			// srcarea.width(), srcarea.height());
+			if (!gAccel::getInstance()->blit(surface, src.surface, area, srcarea, flag)) {
 #ifdef GPIXMAP_DEBUG
 				s.stop();
 				eDebug("[gPixmap] [BLITBENCH] accel blit (%d bytes) took %u us", srcarea.surface() * src.surface->bypp, s.elapsed_us());
@@ -2148,12 +2122,10 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 			}
 		}
 
-		if (flag & blitScale)
-		{
-			if ((surface->bpp == 32) && (src.surface->bpp == 8))
-			{
-				const uint8_t *srcptr = (uint8_t *)src.surface->data;
-				uint8_t *dstptr = (uint8_t *)surface->data; // !!
+		if (flag & blitScale) {
+			if ((surface->bpp == 32) && (src.surface->bpp == 8)) {
+				const uint8_t* srcptr = (uint8_t*)src.surface->data;
+				uint8_t* dstptr = (uint8_t*)surface->data; // !!
 				uint32_t pal[256];
 				convert_palette(pal, src.surface->clut);
 
@@ -2164,14 +2136,11 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 				const int height = area.height();
 				const int src_height = srcarea.height();
 				const int src_width = srcarea.width();
-				if (flag & blitAlphaTest)
-				{
-					for (int y = 0; y < height; ++y)
-					{
-						const uint8_t *src_row_ptr = srcptr + (((y * src_height) / height) * src_stride);
-						uint32_t *dst = (uint32_t *)dstptr;
-						for (int x = 0; x < width; ++x)
-						{
+				if (flag & blitAlphaTest) {
+					for (int y = 0; y < height; ++y) {
+						const uint8_t* src_row_ptr = srcptr + (((y * src_height) / height) * src_stride);
+						uint32_t* dst = (uint32_t*)dstptr;
+						for (int x = 0; x < width; ++x) {
 							uint32_t pixel = pal[src_row_ptr[(x * src_width) / width]];
 							if (pixel & 0x80000000)
 								*dst = pixel;
@@ -2179,53 +2148,40 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 						}
 						dstptr += surface->stride;
 					}
-				}
-				else if (flag & blitAlphaBlend)
-				{
-					for (int y = 0; y < height; ++y)
-					{
-						const uint8_t *src_row_ptr = srcptr + (((y * src_height) / height) * src_stride);
-						gRGB *dst = (gRGB *)dstptr;
-						for (int x = 0; x < width; ++x)
-						{
+				} else if (flag & blitAlphaBlend) {
+					for (int y = 0; y < height; ++y) {
+						const uint8_t* src_row_ptr = srcptr + (((y * src_height) / height) * src_stride);
+						gRGB* dst = (gRGB*)dstptr;
+						for (int x = 0; x < width; ++x) {
 							dst->alpha_blend(pal[src_row_ptr[(x * src_width) / width]]);
 							++dst;
 						}
 						dstptr += surface->stride;
 					}
-				}
-				else
-				{
-					for (int y = 0; y < height; ++y)
-					{
-						const uint8_t *src_row_ptr = srcptr + (((y * src_height) / height) * src_stride);
-						uint32_t *dst = (uint32_t *)dstptr;
-						for (int x = 0; x < width; ++x)
-						{
+				} else {
+					for (int y = 0; y < height; ++y) {
+						const uint8_t* src_row_ptr = srcptr + (((y * src_height) / height) * src_stride);
+						uint32_t* dst = (uint32_t*)dstptr;
+						for (int x = 0; x < width; ++x) {
 							*dst = pal[src_row_ptr[(x * src_width) / width]];
 							++dst;
 						}
 						dstptr += surface->stride;
 					}
 				}
-			}
-			else if ((surface->bpp == 32) && (src.surface->bpp == 32))
-			{
+			} else if ((surface->bpp == 32) && (src.surface->bpp == 32)) {
 				const int src_stride = src.surface->stride;
-				const uint8_t *srcptr = (const uint8_t *)src.surface->data + srcarea.left() * src.surface->bypp + srcarea.top() * src_stride;
-				uint8_t *dstptr = (uint8_t *)surface->data + area.left() * surface->bypp + area.top() * surface->stride;
+				const uint8_t* srcptr = (const uint8_t*)src.surface->data + srcarea.left() * src.surface->bypp + srcarea.top() * src_stride;
+				uint8_t* dstptr = (uint8_t*)surface->data + area.left() * surface->bypp + area.top() * surface->stride;
 				const int width = area.width();
 				const int height = area.height();
 				const int src_height = srcarea.height();
 				const int src_width = srcarea.width();
-				if (flag & blitAlphaTest)
-				{
-					for (int y = 0; y < height; ++y)
-					{
-						const uint32_t *src_row_ptr = (uint32_t *)(srcptr + (((y * src_height) / height) * src_stride));
-						uint32_t *dst = (uint32_t *)dstptr;
-						for (int x = 0; x < width; ++x)
-						{
+				if (flag & blitAlphaTest) {
+					for (int y = 0; y < height; ++y) {
+						const uint32_t* src_row_ptr = (uint32_t*)(srcptr + (((y * src_height) / height) * src_stride));
+						uint32_t* dst = (uint32_t*)dstptr;
+						for (int x = 0; x < width; ++x) {
 							uint32_t pixel = src_row_ptr[(x * src_width) / width];
 							if (pixel & 0x80000000)
 								*dst = pixel;
@@ -2233,48 +2189,38 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 						}
 						dstptr += surface->stride;
 					}
-				}
-				else if (flag & blitAlphaBlend)
-				{
-					for (int y = 0; y < height; ++y)
-					{
-						const gRGB *src_row_ptr = (gRGB *)(srcptr + (((y * src_height) / height) * src_stride));
-						gRGB *dst = (gRGB *)dstptr;
+				} else if (flag & blitAlphaBlend) {
+					for (int y = 0; y < height; ++y) {
+						const gRGB* src_row_ptr = (gRGB*)(srcptr + (((y * src_height) / height) * src_stride));
+						gRGB* dst = (gRGB*)dstptr;
 
-						for (int x = 0; x < width; ++x)
-						{
-							const gRGB &src_pixel = src_row_ptr[(x * src_width) / width];
+						for (int x = 0; x < width; ++x) {
+							const gRGB& src_pixel = src_row_ptr[(x * src_width) / width];
 							dst->alpha_blend(src_pixel);
 							++dst;
 						}
 						dstptr += surface->stride;
 					}
-				}
-				else
-				{
-					for (int y = 0; y < height; ++y)
-					{
-						const uint32_t *src_row_ptr = (uint32_t *)(srcptr + (((y * src_height) / height) * src_stride));
-						uint32_t *dst = (uint32_t *)dstptr;
-						for (int x = 0; x < width; ++x)
-						{
+				} else {
+					for (int y = 0; y < height; ++y) {
+						const uint32_t* src_row_ptr = (uint32_t*)(srcptr + (((y * src_height) / height) * src_stride));
+						uint32_t* dst = (uint32_t*)dstptr;
+						for (int x = 0; x < width; ++x) {
 							*dst = src_row_ptr[(x * src_width) / width];
 							++dst;
 						}
 						dstptr += surface->stride;
 					}
 				}
-			}
-			else
-			{
+			} else {
 				eWarning("[gPixmap] unimplemented: scale on non-accel surface %d->%d bpp", src.surface->bpp, surface->bpp);
 			}
 #ifdef GPIXMAP_DEBUG
 			s.stop();
-			eDebug("[gPixmap] [BLITBENCH] CPU scale blit %dx%d transparent %d (%d bytes) took %u us", pos.width(), pos.height(), src.surface->transparent, srcarea.surface() * src.surface->bypp, s.elapsed_us());
+			eDebug("[gPixmap] [BLITBENCH] CPU scale blit %dx%d transparent %d (%d bytes) took %u us", pos.width(), pos.height(), src.surface->transparent, srcarea.surface() * src.surface->bypp,
+				   s.elapsed_us());
 #ifdef GPIXMAP_CHECK_THRESHOLD
-			if (accel)
-			{
+			if (accel) {
 				adjustBlitThreshold(s.elapsed_us(), srcarea.surface() * src.surface->bypp);
 			}
 #endif
@@ -2282,116 +2228,90 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 			continue;
 		}
 
-		if ((surface->bpp == 8) && (src.surface->bpp == 8))
-		{
-			uint8_t *srcptr = (uint8_t *)src.surface->data;
-			uint8_t *dstptr = (uint8_t *)surface->data;
+		if ((surface->bpp == 8) && (src.surface->bpp == 8)) {
+			uint8_t* srcptr = (uint8_t*)src.surface->data;
+			uint8_t* dstptr = (uint8_t*)surface->data;
 
 			srcptr += srcarea.left() * src.surface->bypp + srcarea.top() * src.surface->stride;
 			dstptr += area.left() * surface->bypp + area.top() * surface->stride;
-			if (flag & (blitAlphaTest | blitAlphaBlend))
-			{
-				for (int y = area.height(); y != 0; --y)
-				{
+			if (flag & (blitAlphaTest | blitAlphaBlend)) {
+				for (int y = area.height(); y != 0; --y) {
 					// no real alphatest yet
 					int width = area.width();
-					unsigned char *s = (unsigned char *)srcptr;
-					unsigned char *d = (unsigned char *)dstptr;
+					unsigned char* s = (unsigned char*)srcptr;
+					unsigned char* d = (unsigned char*)dstptr;
 					// use duff's device here!
-					while (width--)
-					{
-						if (!*s)
-						{
+					while (width--) {
+						if (!*s) {
 							s++;
 							d++;
-						}
-						else
-						{
+						} else {
 							*d++ = *s++;
 						}
 					}
 					srcptr += src.surface->stride;
 					dstptr += surface->stride;
 				}
-			}
-			else
-			{
+			} else {
 				int linesize = area.width() * surface->bypp;
-				for (int y = area.height(); y != 0; --y)
-				{
+				for (int y = area.height(); y != 0; --y) {
 					memcpy(dstptr, srcptr, linesize);
 					srcptr += src.surface->stride;
 					dstptr += surface->stride;
 				}
 			}
-		}
-		else if ((surface->bpp == 32) && (src.surface->bpp == 32))
-		{
-			uint32_t *srcptr = (uint32_t *)src.surface->data;
-			uint32_t *dstptr = (uint32_t *)surface->data;
+		} else if ((surface->bpp == 32) && (src.surface->bpp == 32)) {
+			uint32_t* srcptr = (uint32_t*)src.surface->data;
+			uint32_t* dstptr = (uint32_t*)surface->data;
 
 			srcptr += srcarea.left() + srcarea.top() * src.surface->stride / 4;
 			dstptr += area.left() + area.top() * surface->stride / 4;
-			for (int y = area.height(); y != 0; --y)
-			{
-				if (flag & blitAlphaTest)
-				{
+			for (int y = area.height(); y != 0; --y) {
+				if (flag & blitAlphaTest) {
 					int width = area.width();
-					uint32_t *src = srcptr;
-					uint32_t *dst = dstptr;
+					uint32_t* src = srcptr;
+					uint32_t* dst = dstptr;
 
-					while (width--)
-					{
-						if (!((*src) & 0xFF000000))
-						{
+					while (width--) {
+						if (!((*src) & 0xFF000000)) {
 							src++;
 							dst++;
-						}
-						else
+						} else
 							*dst++ = *src++;
 					}
-				}
-				else if (flag & blitAlphaBlend)
-				{
+				} else if (flag & blitAlphaBlend) {
 					int width = area.width();
-					gRGB *src = (gRGB *)srcptr;
-					gRGB *dst = (gRGB *)dstptr;
-					while (width--)
-					{
+					gRGB* src = (gRGB*)srcptr;
+					gRGB* dst = (gRGB*)dstptr;
+					while (width--) {
 						dst->alpha_blend(*src++);
 						++dst;
 					}
-				}
-				else
+				} else
 					memcpy(dstptr, srcptr, area.width() * surface->bypp);
-				srcptr = (uint32_t *)((uint8_t *)srcptr + src.surface->stride);
-				dstptr = (uint32_t *)((uint8_t *)dstptr + surface->stride);
+				srcptr = (uint32_t*)((uint8_t*)srcptr + src.surface->stride);
+				dstptr = (uint32_t*)((uint8_t*)dstptr + surface->stride);
 			}
-		}
-		else if ((surface->bpp == 32) && (src.surface->bpp == 8))
-		{
-			const uint8_t *srcptr = (uint8_t *)src.surface->data;
-			uint8_t *dstptr = (uint8_t *)surface->data; // !!
+		} else if ((surface->bpp == 32) && (src.surface->bpp == 8)) {
+			const uint8_t* srcptr = (uint8_t*)src.surface->data;
+			uint8_t* dstptr = (uint8_t*)surface->data; // !!
 			uint32_t pal[256];
 			convert_palette(pal, src.surface->clut);
 
 			srcptr += srcarea.left() * src.surface->bypp + srcarea.top() * src.surface->stride;
 			dstptr += area.left() * surface->bypp + area.top() * surface->stride;
 			const int width = area.width();
-			for (int y = area.height(); y != 0; --y)
-			{
+			for (int y = area.height(); y != 0; --y) {
 				if (flag & blitAlphaTest)
-					blit_8i_to_32_at((uint32_t *)dstptr, srcptr, pal, width);
+					blit_8i_to_32_at((uint32_t*)dstptr, srcptr, pal, width);
 				else if (flag & blitAlphaBlend)
-					blit_8i_to_32_ab((gRGB *)dstptr, srcptr, (const gRGB *)pal, width);
+					blit_8i_to_32_ab((gRGB*)dstptr, srcptr, (const gRGB*)pal, width);
 				else
-					blit_8i_to_32((uint32_t *)dstptr, srcptr, pal, width);
+					blit_8i_to_32((uint32_t*)dstptr, srcptr, pal, width);
 				srcptr += src.surface->stride;
 				dstptr += surface->stride;
 			}
-		}
-		else if ((surface->bpp == 16) && (src.surface->bpp == 8))
-		{
+		} else if ((surface->bpp == 16) && (src.surface->bpp == 8)) {
 			uint8_t* srcptr = (uint8_t*)src.surface->data;
 			uint8_t* dstptr = (uint8_t*)surface->data;
 
@@ -2401,119 +2321,63 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 			if (flag & blitAlphaBlend)
 				eWarning("[gPixmap] ignore unsupported 8bpp -> 16bpp alphablend!");
 
-			// Palette vorbereiten
 			uint16_t pal[256];
-			for (int i = 0; i < 256; i++)
-			{
+			for (int i = 0; i < 256; i++) {
 				uint32_t icol;
 				if (src.surface->clut.data && (i < src.surface->clut.colors))
 					icol = src.surface->clut.data[i].argb();
 				else
 					icol = 0x010101 * i;
 
-		#if BYTE_ORDER == LITTLE_ENDIAN
-				pal[i] = bswap_16(((icol & 0xFF) >> 3) << 11
-								| ((icol & 0xFF00) >> 10) << 5
-								| ((icol & 0xFF0000) >> 19));
-		#else
-				pal[i] = ((icol & 0xFF) >> 3) << 11
-					| ((icol & 0xFF00) >> 10) << 5
-					| ((icol & 0xFF0000) >> 19);
-		#endif
-				pal[i] ^= 0xFF000000;
+				// Alpha = 0 → transparent Pixel
+				if (src.surface->clut.data && (i < src.surface->clut.colors) && src.surface->clut.data[i].a == 0) {
+					pal[i] = 0x0000;
+				} else {
+#if BYTE_ORDER == LITTLE_ENDIAN
+					pal[i] = bswap_16(((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | ((icol & 0xFF0000) >> 19));
+#else
+					pal[i] = ((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | ((icol & 0xFF0000) >> 19);
+#endif
+				}
 			}
 
-			for (int y = 0; y < area.height(); y++)
-			{
+			// Blit: Palette, optional Alpha-Test
+			for (int y = 0; y < area.height(); y++) {
 				uint8_t* psrc = srcptr;
 				uint16_t* pdst = (uint16_t*)dstptr;
 
-				for (int x = 0; x < area.width(); x++)
-				{
-					uint8_t idx = psrc[x];
-					uint16_t val = pal[idx];
-
-					if ((flag & blitAlphaTest) && src.surface->clut.data && idx < src.surface->clut.colors)
-					{
-						if (src.surface->clut.data[idx].a == 0)
-							val = 0x0000; // transparent Pixel auf schwarz setzen
+				if (flag & blitAlphaTest) {
+					for (int x = 0; x < area.width(); x++) {
+						uint16_t val = pal[psrc[x]];
+						if (val != 0x0000) // nur nicht-transparente Pixel schreiben
+							pdst[x] = val;
 					}
-
-					pdst[x] = val;
+				} else {
+					for (int x = 0; x < area.width(); x++)
+						pdst[x] = pal[psrc[x]]; // alles kopieren
 				}
 
 				srcptr += src.surface->stride;
 				dstptr += surface->stride;
 			}
-		}
-
-/*
-		else if ((surface->bpp == 16) && (src.surface->bpp == 8))
-		{
-			uint8_t *srcptr = (uint8_t *)src.surface->data;
-			uint8_t *dstptr = (uint8_t *)surface->data; // !!
-			uint32_t pal[256];
-
-			for (int i = 0; i != 256; ++i)
-			{
-				uint32_t icol;
-				if (src.surface->clut.data && (i < src.surface->clut.colors))
-					icol = src.surface->clut.data[i].argb();
-				else
-					icol = 0x010101 * i;
-#if BYTE_ORDER == LITTLE_ENDIAN
-				pal[i] = bswap_16(((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | (icol & 0xFF0000) >> 19);
-#else
-				pal[i] = ((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | (icol & 0xFF0000) >> 19;
-#endif
-				pal[i] ^= 0xFF000000;
-			}
+		} else if ((surface->bpp == 16) && (src.surface->bpp == 32)) {
+			uint8_t* srcptr = (uint8_t*)src.surface->data;
+			uint8_t* dstptr = (uint8_t*)surface->data;
 
 			srcptr += srcarea.left() * src.surface->bypp + srcarea.top() * src.surface->stride;
 			dstptr += area.left() * surface->bypp + area.top() * surface->stride;
 
-			if (flag & blitAlphaBlend)
-				eWarning("[gPixmap] ignore unsupported 8bpp -> 16bpp alphablend!");
-
-			for (int y = 0; y < area.height(); y++)
-			{
+			for (int y = 0; y < area.height(); y++) {
 				int width = area.width();
-				unsigned char *psrc = (unsigned char *)srcptr;
-				uint16_t *dst = (uint16_t *)dstptr;
-				if (flag & blitAlphaTest)
-					blit_8i_to_16_at(dst, psrc, pal, width);
-				else
-					blit_8i_to_16(dst, psrc, pal, width);
-				srcptr += src.surface->stride;
-				dstptr += surface->stride;
-			}
-		}
-	*/
-		else if ((surface->bpp == 16) && (src.surface->bpp == 32))
-		{
-			uint8_t *srcptr = (uint8_t *)src.surface->data;
-			uint8_t *dstptr = (uint8_t *)surface->data;
+				uint32_t* srcp = (uint32_t*)srcptr;
+				uint16_t* dstp = (uint16_t*)dstptr;
 
-			srcptr += srcarea.left() * src.surface->bypp + srcarea.top() * src.surface->stride;
-			dstptr += area.left() * surface->bypp + area.top() * surface->stride;
-
-			for (int y = 0; y < area.height(); y++)
-			{
-				int width = area.width();
-				uint32_t *srcp = (uint32_t *)srcptr;
-				uint16_t *dstp = (uint16_t *)dstptr;
-
-				if (flag & blitAlphaBlend)
-				{
-					while (width--)
-					{
-						if (!((*srcp) & 0xFF000000))
-						{
+				if (flag & blitAlphaBlend) {
+					while (width--) {
+						if (!((*srcp) & 0xFF000000)) {
 							srcp++;
 							dstp++;
-						}
-						else
-						{
+						} else {
 							gRGB icol = *srcp++;
 #if BYTE_ORDER == LITTLE_ENDIAN
 							uint32_t jcol = bswap_16(*dstp);
@@ -2540,18 +2404,12 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 #endif
 						}
 					}
-				}
-				else if (flag & blitAlphaTest)
-				{
-					while (width--)
-					{
-						if (!((*srcp) & 0xFF000000))
-						{
+				} else if (flag & blitAlphaTest) {
+					while (width--) {
+						if (!((*srcp) & 0xFF000000)) {
 							srcp++;
 							dstp++;
-						}
-						else
-						{
+						} else {
 							uint32_t icol = *srcp++;
 #if BYTE_ORDER == LITTLE_ENDIAN
 							*dstp++ = bswap_16(((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | (icol & 0xFF0000) >> 19);
@@ -2560,11 +2418,8 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 #endif
 						}
 					}
-				}
-				else
-				{
-					while (width--)
-					{
+				} else {
+					while (width--) {
 						uint32_t icol = *srcp++;
 #if BYTE_ORDER == LITTLE_ENDIAN
 						*dstp++ = bswap_16(((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | (icol & 0xFF0000) >> 19);
@@ -2576,22 +2431,19 @@ void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, i
 				srcptr += src.surface->stride;
 				dstptr += surface->stride;
 			}
-		}
-		else
+		} else
 			eWarning("[gPixmap] cannot blit %dbpp from %dbpp", surface->bpp, src.surface->bpp);
 #ifdef GPIXMAP_DEBUG
 		s.stop();
 		eDebug("[gPixmap] [BLITBENCH] cpu blit %dx%d transparent %d (%d bytes) took %u us", pos.width(), pos.height(), src.surface->transparent, srcarea.surface() * src.surface->bypp, s.elapsed_us());
 #ifdef GPIXMAP_CHECK_THRESHOLD
-		if (accel)
-		{
+		if (accel) {
 			adjustBlitThreshold(s.elapsed_us(), srcarea.surface() * src.surface->bypp);
 		}
 #endif
 #endif
 	}
-	if (accumulate)
-	{
+	if (accumulate) {
 		gAccel::getInstance()->sync();
 	}
 }
