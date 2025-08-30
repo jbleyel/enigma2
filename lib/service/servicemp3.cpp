@@ -109,72 +109,6 @@ static bool first_play_eServicemp3 = false;
 static GstElement *dvb_audiosink, *dvb_videosink, *dvb_subsink;
 static bool dvb_audiosink_ok, dvb_videosink_ok, dvb_subsink_ok;
 
-
-// --- BEGIN Wrapper-Bins for playbin3 compatibility ---
-static GstElement* create_video_sink_bin(GstElement *dvb_videosink) {
-	GstElement *bin = gst_bin_new("video-sink-bin");
-	GstElement *conv = gst_element_factory_make("videoconvert", NULL);
-	if (!bin || !conv || !dvb_videosink) {
-		eDebug("Error: creating video wrapper bin");
-		return NULL;
-	}
-	gst_bin_add_many(GST_BIN(bin), conv, dvb_videosink, NULL);
-	if (!gst_element_link(conv, dvb_videosink)) {
-		eDebug("Error: Link videoconvert -> dvbvideosink");
-	}
-	GstPad *pad = gst_element_get_static_pad(conv, "sink");
-	GstPad *ghost = gst_ghost_pad_new("sink", pad);
-	gst_pad_set_active(ghost, TRUE);
-	gst_element_add_pad(bin, ghost);
-	gst_object_unref(pad);
-	return bin;
-}
-
-static GstElement* create_audio_sink_bin(GstElement *dvb_audiosink) {
-	GstElement *bin = gst_bin_new("audio-sink-bin");
-	GstElement *conv = gst_element_factory_make("audioconvert", NULL);
-	GstElement *resample = gst_element_factory_make("audioresample", NULL);
-	if (!bin || !conv || !resample || !dvb_audiosink) {
-		eDebug("Error: creating audio wrapper bin");
-		return NULL;
-	}
-	gst_bin_add_many(GST_BIN(bin), conv, resample, dvb_audiosink, NULL);
-	if (!gst_element_link_many(conv, resample, dvb_audiosink, NULL)) {
-		eDebug("Error: Link audioconvert -> audioresample -> dvbaudiosink");
-	}
-	GstPad *pad = gst_element_get_static_pad(conv, "sink");
-	GstPad *ghost = gst_ghost_pad_new("sink", pad);
-	gst_pad_set_active(ghost, TRUE);
-	gst_element_add_pad(bin, ghost);
-	gst_object_unref(pad);
-	return bin;
-}
-
-static GstElement* create_subtitle_sink_bin(GstElement *dvb_subsink) {
-	GstElement *bin = gst_bin_new("subtitle-sink-bin");
-	GstElement *parse = gst_element_factory_make("subparse", NULL);
-
-	if (!bin || !parse || !dvb_subsink) {
-		eDebug("Error: creating subtitle wrapper bin");
-		return NULL;
-	}
-
-	gst_bin_add_many(GST_BIN(bin), parse, dvb_subsink, NULL);
-	if (!gst_element_link(parse, dvb_subsink)) {
-		eDebug("Error: Link subparse -> dvbsubsink");
-	}
-
-	GstPad *pad = gst_element_get_static_pad(parse, "sink");
-	GstPad *ghost = gst_ghost_pad_new("sink", pad);
-	gst_pad_set_active(ghost, TRUE);
-	gst_element_add_pad(bin, ghost);
-	gst_object_unref(pad);
-
-	return bin;
-}
-
-// --- END Wrapper-Bins for playbin3 compatibility ---
-
 /*static functions */
 
 /* Handy asyncrone timers for developpers */
@@ -369,6 +303,10 @@ bool parseWebVTT(const std::string& vtt_data, std::vector<SubtitleEntry>& subs_o
 	uint64_t start_ms = 0, end_ms = 0, vtt_mpegts_base = 0, local_offset_ms = 0;
 	bool expecting_text = false;
 
+	// Persistent across calls to detect MPEGTS jumps between segments
+	static uint64_t s_last_mpegts_ms = 0;
+	static bool s_has_last_mpegts = false;
+
 	while (std::getline(stream, line)) {
 		if (!line.empty() && line.back() == '\r')
 			line.pop_back();
@@ -391,6 +329,18 @@ bool parseWebVTT(const std::string& vtt_data, std::vector<SubtitleEntry>& subs_o
 				if (vtt_mpegts_base < 1000000) // Ignore less than 1000000
 					vtt_mpegts_base = 0;
 				parse_timecode(local_str, local_offset_ms);
+				// Detect backward jumps in MPEGTS (advertisement -> content switch)
+				if (vtt_mpegts_base > 0) {
+					const uint64_t local_mpegts_ms = vtt_mpegts_base / 90; // 90kHz -> ms
+					if (s_has_last_mpegts && local_mpegts_ms < s_last_mpegts_ms) {
+						// If MPEGTS jump back -> deactivate this segment.
+						eDebug("[parseWebVTT] MPEGTS backward jump detected: %llu -> %llu, disabling mapping for this segment", (unsigned long long)s_last_mpegts_ms,
+							   (unsigned long long)local_mpegts_ms);
+						vtt_mpegts_base = 0; // reset offsets
+					}
+					s_last_mpegts_ms = local_mpegts_ms;
+					s_has_last_mpegts = true;
+				}
 			}
 			continue;
 		}
@@ -415,17 +365,12 @@ bool parseWebVTT(const std::string& vtt_data, std::vector<SubtitleEntry>& subs_o
 				continue;
 
 			// Apply timestamp mapping adjustment
-			// ignore for now
-			/*
-			if (vtt_mpegts_base > 0)
-			{
+			if (vtt_mpegts_base > 0) {
 				const uint64_t local_mpegts_ms = vtt_mpegts_base / 90; // MPEGTS-Ticks (90 kHz) → ms
 				const int64_t delta = static_cast<int64_t>(local_mpegts_ms) - static_cast<int64_t>(local_offset_ms);
-
 				start_ms += delta;
 				end_ms += delta;
 			}
-			*/
 			expecting_text = true;
 			continue;
 		}
@@ -1192,8 +1137,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	eDebug("[eServiceMP3] playbin uri=%s", uri);
 	if (suburi != NULL)
 		eDebug("[eServiceMP3] playbin suburi=%s", suburi);
-	m_useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
-	if (m_useplaybin3)
+	bool useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
+	if (useplaybin3)
 		m_gst_playbin = gst_element_factory_make("playbin3", "playbin3");
 	else
 		m_gst_playbin = gst_element_factory_make("playbin", "playbin");
@@ -1206,30 +1151,12 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 				g_object_set(dvb_audiosink, "e2-sync", FALSE, NULL);
 				g_object_set(dvb_audiosink, "e2-async", FALSE, NULL);
 			}
-			// Use wrapper if configured to use playbin3
-			if (m_useplaybin3) {
-				GstElement *abin = create_audio_sink_bin(dvb_audiosink);
-				if (abin)
-					g_object_set(m_gst_playbin, "audio-sink", abin, NULL);
-				else
-					g_object_set(m_gst_playbin, "audio-sink", dvb_audiosink, NULL);
-			} else {
-				g_object_set(m_gst_playbin, "audio-sink", dvb_audiosink, NULL);
-			}
-
+			g_object_set(m_gst_playbin, "audio-sink", dvb_audiosink, NULL);
 		}
 		if (dvb_videosink && !m_sourceinfo.is_audio) {
 			g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
 			g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
-			if (m_useplaybin3) {
-				GstElement *vbin = create_video_sink_bin(dvb_videosink);
-				if (vbin)
-					g_object_set(m_gst_playbin, "video-sink", vbin, NULL);
-				else
-					g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
-			} else {
-				g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
-			}
+			g_object_set(m_gst_playbin, "video-sink", dvb_videosink, NULL);
 		}
 
 		/*
@@ -1284,20 +1211,8 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 			g_object_set(dvb_subsink, "caps", caps, NULL);
 			gst_caps_unref(caps);
 
-			if (m_useplaybin3) {
-				GstElement *tsbin = create_subtitle_sink_bin(dvb_subsink);
-				if (tsbin)
-					g_object_set(m_gst_playbin, "text-sink", tsbin, NULL);
-				else
-					g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
-
-				g_object_set(m_gst_playbin, "current-subtitle", m_currentSubtitleStream, NULL);
-
-			} else {
-				g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
-				g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
-			}
-
+			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
 		GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
 		gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
@@ -4275,10 +4190,7 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon) {
 		// if (m_currentSubtitleStream == -1)
 		//	starting_subtitle = true;
-		if(m_useplaybin3)
-			g_object_set(m_gst_playbin, "current-subtitle", -1, NULL);
-		else
-			g_object_set(m_gst_playbin, "current-text", -1, NULL);
+		g_object_set(m_gst_playbin, "current-text", -1, NULL);
 		// m_cachedSubtitleStream = -1;
 		m_subtitle_sync_timer->stop();
 		m_dvb_subtitle_sync_timer->stop();
@@ -4289,10 +4201,7 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		m_currentSubtitleStream = track.pid;
 		m_cachedSubtitleStream = m_currentSubtitleStream;
 		setCacheEntry(false, track.pid);
-		if(m_useplaybin3)
-			g_object_set(m_gst_playbin, "current-subtitle", m_currentSubtitleStream, NULL);
-		else
-			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
 		if (track.type != stDVB) {
 			m_clear_buffers = true;
@@ -4333,10 +4242,7 @@ RESULT eServiceMP3::disableSubtitles() {
 	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = m_currentSubtitleStream;
 	setCacheEntry(false, -1);
-	if(m_useplaybin3)
-		g_object_set(m_gst_playbin, "current-subtitle", m_currentSubtitleStream, NULL);
-	else
-		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+	g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 	m_subtitle_sync_timer->stop();
 	m_dvb_subtitle_sync_timer->stop();
 	m_dvb_subtitle_pages.clear();
