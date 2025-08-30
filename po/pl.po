@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-17 17:20+0000\n"
-"PO-Revision-Date: 2025-07-23 13:56+0000\n"
+"POT-Creation-Date: 2025-07-27 15:35+0000\n"
+"PO-Revision-Date: 2025-08-29 23:01+0000\n"
 "Last-Translator: pololoko111 <peciek83@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/pl/>\n"
 "Language: pl\n"
@@ -22,7 +22,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13.1-dev\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 msgid ""
@@ -105,8 +105,8 @@ msgstr " zaktualizowany"
 msgid "!! Boot loader Upgrade !!"
 msgstr "!! Aktualizacja Bootloadera !!"
 
-msgid "# = Reboot Required"
-msgstr "# = Wymagane ponowne uruchomienie"
+msgid "# = Reboot required if this item is changed."
+msgstr "# = Wymagane ponowne uruchomienie w przypadku zmiany tego elementu."
 
 msgid "%-H:%M"
 msgstr "%-H:%M"
@@ -1351,8 +1351,8 @@ msgstr "(puste)"
 msgid "(show optional DVD audio menu)"
 msgstr "(pokaż opcjonalne menu DVD audio)"
 
-msgid "* = Restart Required"
-msgstr "* = Wymagane ponowne uruchomienie"
+msgid "* = Restart required if this item is changed."
+msgstr "* = Wymagane ponowne uruchomienie, jeśli ten element zostanie zmieniony."
 
 msgid "* Only available if more than one interface is active."
 msgstr "* Dostępne tylko wtedy gdy więcej niż jeden interfejs jest aktywny."
@@ -1567,7 +1567,7 @@ msgid "< Default >"
 msgstr "< Domyślna >"
 
 msgid "< Default with Picon >"
-msgstr "< Domyślna z Piconą >"
+msgstr "< Domyślna z pikonami >"
 
 msgid "< User Skin >"
 msgstr "< Skórka Użytkownika >"
@@ -1808,7 +1808,7 @@ msgid "About"
 msgstr "System"
 
 msgid "About OpenATV"
-msgstr "Info o OpenATV"
+msgstr "OpenATV"
 
 msgid "About to start"
 msgstr "Zaraz się rozpocznie"
@@ -2239,6 +2239,9 @@ msgstr "Dostawca wszystkich usług"
 msgid "All supported"
 msgstr "Wszystkie obsługiwane"
 
+msgid "All up/down"
+msgstr "wszystko góra/dół"
+
 msgid "Allocate"
 msgstr "Przydzielanie"
 
@@ -2512,6 +2515,9 @@ msgstr "Czy chcesz usunąć ten crash log:\n"
 msgid "Are you sure you want to delete this?"
 msgstr "Czy na pewno chcesz to usunąć?"
 
+msgid "Are you sure you want to disable Chkroot Multiboot?"
+msgstr "Czy na pewno chcesz wyłączyć Chkroot Multiboot?"
+
 msgid "Are you sure you want to exit this wizard?"
 msgstr "Czy chcesz zamknąć kreatora?"
 
@@ -2695,9 +2701,6 @@ msgstr "Tryb autorski"
 msgid "Auto"
 msgstr "Auto"
 
-msgid "Auto detect"
-msgstr "Automatyczne Wykrywanie"
-
 msgid "Auto Language"
 msgstr "Automatyczny język"
 
@@ -2721,6 +2724,9 @@ msgstr "Automatyczny podział rozdziałów co 'x' minut (0=nigdy)"
 
 msgid "Auto deep standby"
 msgstr "Automatyczne wyłączenie"
+
+msgid "Auto detect"
+msgstr "Automatyczne Wykrywanie"
 
 msgid "Auto flesh"
 msgstr "Auto odświeżanie"
@@ -2765,7 +2771,7 @@ msgid "AutoFS"
 msgstr "AutoFS"
 
 msgid "AutoMountManager"
-msgstr "Menadżer auto montowania"
+msgstr "Menedżer auto montowania"
 
 msgid "AutoRefresh"
 msgstr "Automatyczne odświeżanie"
@@ -3098,7 +3104,7 @@ msgstr "Przepustowość"
 msgid "Black"
 msgstr "Czarny"
 
-msgid "Black Screen"
+msgid "Black screen"
 msgstr "Czarny ekran"
 
 msgid "Black screen till locked"
@@ -3869,9 +3875,6 @@ msgstr "Info Kanału"
 msgid "Channel List"
 msgstr "Lista Kanałów"
 
-msgid "Channel number"
-msgstr "Numer kanału"
-
 msgid "Channel Selection"
 msgstr "Wybór kanału"
 
@@ -3931,6 +3934,9 @@ msgstr "Typ listy kanałów"
 
 msgid "Channel name"
 msgstr "Nazwa kanału"
+
+msgid "Channel number"
+msgstr "Numer kanału"
 
 msgid "Channel preview mode"
 msgstr "Tryb podglądu kanału"
@@ -4025,13 +4031,13 @@ msgid "Chinese (Simplified)"
 msgstr "Chiński (Uproszczony)"
 
 msgid "Chkroot Manager Actions"
-msgstr "Akcje menadżera Chkroot"
+msgstr "Akcje menedżera Chkroot"
 
 msgid "Chkroot MultiBoot Initialization in progress!"
 msgstr "Inicjalizacja Chkroot MultiBoot w toku!"
 
 msgid "Chkroot MultiBoot Manager"
-msgstr "Menadżer Chkroot MultiBoot"
+msgstr "Menedżer Chkroot MultiBoot"
 
 msgid "Choice Box"
 msgstr "Okno wyboru"
@@ -4242,7 +4248,7 @@ msgid "Client"
 msgstr "Klient"
 
 msgid "Client is streaming from this box!"
-msgstr "Klient aktualnie strumieniuje z tego urządzenia!"
+msgstr "Klient przesyła strumieniowo z tego urządzenia!"
 
 msgid "ClientIP"
 msgstr "IP Klienta"
@@ -4285,7 +4291,7 @@ msgid "Close screen"
 msgstr "Zamknij ekran"
 
 msgid "Close the Chkroot MultiBoot Manager"
-msgstr "Zamknij menadżera Chkroot MultiBoot"
+msgstr "Zamknij menedżera Chkroot MultiBoot"
 
 msgid "Close the Device Manager screen"
 msgstr "Zamknij ekran Menedżera urządzeń"
@@ -4294,10 +4300,13 @@ msgid "Close the Device Manager screen and exit all menus"
 msgstr "Zamknij ekran Menedżera urządzeń i wyjdź ze wszystkich menu"
 
 msgid "Close the Kexec MultiBoot Manager"
-msgstr "Zamknij Menadżera Kexec MultiBoot"
+msgstr "Zamknij menedżera Kexec MultiBoot"
 
 msgid "Close the Plugin Browser screen"
 msgstr "Zamknij ekran przeglądarki wtyczek"
+
+msgid "Close the SeekBar after returning to the starting point"
+msgstr "Zamknij pasek postępu po powrocie do punktu początkowego"
 
 msgid "Close the choice box"
 msgstr "Zamknij pole wyboru"
@@ -4526,7 +4535,7 @@ msgid "Configure if service picons will be shown in quickzap."
 msgstr "Skonfiguruj jeśli pikony mają być wyświetlane w quickzap."
 
 msgid "Configure if service picons will be shown in the service list."
-msgstr "Skonfiguruj jeśli pikony mają być wyświetlane w liście kanałów."
+msgstr "Skonfiguruj, czy pikony mają być wyświetlane w liście kanałów."
 
 msgid "Configure if service type icons will be shown."
 msgstr "Skonfiguruj, czy będą wyświetlane ikony typów usług."
@@ -4640,7 +4649,7 @@ msgid "Configure the first subtitle language (highest priority)."
 msgstr "Skonfiguruj pierwszy język napisów (najwyższy priorytet))."
 
 msgid "Configure the font size of the subtitles."
-msgstr "Skonfiguruj rozmiar czcionki napisów telegazety."
+msgstr "Skonfiguruj rozmiar czcionki napisów."
 
 msgid "Configure the font size relative to default size, so 1 increases by 1 point size, and -1 decreases by 1 point size."
 msgstr "Skonfiguruj rozmiar czcionki w stosunku do rozmiaru domyślnego, więc 1 zwiększa się o 1 punkt, a -1 zmniejsza o 1 punkt."
@@ -4805,7 +4814,7 @@ msgid "Configure to show channel names, numbers, picons or all three inside EPG.
 msgstr "Skonfiguruj wyświetlanie nazw kanałów, numerów, pikon lub wszystkich trzech w EPG."
 
 msgid "Configure to show the channel names, picons, or both in the EPG."
-msgstr "Skonfiguruj wyświetlanie nazwy kanałów, pikon, zarówno w EPG."
+msgstr "Skonfiguruj, aby w EPG były wyświetlane nazwy kanałów, pikony lub oba te elementy."
 
 msgid "Configure whether a bold TrueType font is used for teletext."
 msgstr "Skonfiguruj użycie pogrubionej czcionki TrueType dla telegazety."
@@ -5247,7 +5256,7 @@ msgid "Cron"
 msgstr "Cron"
 
 msgid "Cron Manager"
-msgstr "Menadżer cron"
+msgstr "Menedżer cron"
 
 msgid "Cron Timers"
 msgstr "Harmonogramy cron"
@@ -6171,7 +6180,7 @@ msgid "Device"
 msgstr "Urządzenie"
 
 msgid "Device Manager"
-msgstr "Menadżer urządzeń"
+msgstr "Menedżer urządzeń"
 
 msgid "Device Manager Actions"
 msgstr "Akcje Menedżera urządzeń"
@@ -6342,6 +6351,9 @@ msgstr "Wyłączone PIP.\n"
 msgid "Disabled or WPA/WPA2"
 msgstr "Wyłączone lub WPA/WPA2"
 
+msgid "Disabling Chkroot failed!"
+msgstr "Wyłączenie Chkroot nie powiodło się!"
+
 msgid "Dish"
 msgstr "Antena"
 
@@ -6355,7 +6367,7 @@ msgid "Display 4:3 content as"
 msgstr "Wyświetlaj zawartość 4:3 jako"
 
 msgid "Display >16:9 content as"
-msgstr "Wyświetlaj zawartość >16:9 jako"
+msgstr "Wyświetlaj zawartość 16:9 jako"
 
 msgid "Display Settings"
 msgstr "Ustawienia wyświetlacza"
@@ -7265,7 +7277,7 @@ msgid "Enable this option to show all the available Information screens in the I
 msgstr "Włącz tę opcję, aby wyświetlić wszystkie dostępne ekrany informacyjne na liście pozycji menu Informacje."
 
 msgid "Enable this option to show unknown storage devices in device manager."
-msgstr "Włącz tę opcję, aby wyświetlić nieznane urządzenia pamięci masowej w Menadżerze urządzeń."
+msgstr "Włącz tę opcję, aby wyświetlić nieznane urządzenia pamięci masowej w Menedżerze urządzeń."
 
 msgid "Enable this setting if your aerial system needs power."
 msgstr "Włącz to ustawienie, jeśli Twój system antenowy potrzebuje zasilania."
@@ -7698,7 +7710,7 @@ msgstr "Błąd: Tworzenie katalogu '%s' nie powiodło się!"
 
 #, python-format
 msgid "Error: Creating picon target directory: (%s)"
-msgstr "Błąd: Tworzenie katalogu docelowego picon: (%s)"
+msgstr "Błąd: Tworzenie katalogu docelowego pikon: (%s)"
 
 #, python-format
 msgid "Error: Directory '%s' does not exist!"
@@ -8266,7 +8278,7 @@ msgid "File %d of %d"
 msgstr "Plik %d z %d"
 
 msgid "File Commander"
-msgstr "Menadżer plików"
+msgstr "Menedżer plików"
 
 msgid "File Commander - All tasks are complete."
 msgstr "File Commander - Wszystkie zadanie zostały wykonane."
@@ -8468,10 +8480,10 @@ msgstr "Instalacja systemu"
 #. TRANSLATORS: The variable is the name of a distribution.  E.g. "OpenATV".
 #, python-format
 msgid "Flash Manager - %s Images"
-msgstr "Menadżer instalowania - Systemy %s"
+msgstr "Menedżer instalowania - Systemy %s"
 
 msgid "Flash Manager - Distributions"
-msgstr "Menadżer Flash - Dystrybucje"
+msgstr "Menedżer Flash - Dystrybucje"
 
 msgid "Flash Manager Actions"
 msgstr "Akcje programu Flash Manager"
@@ -9187,10 +9199,10 @@ msgid "Hide VBI Line For This Service"
 msgstr "Ukryj linię VBI dla tego kanału"
 
 msgid "Hide any zap error messages."
-msgstr "Ukryj wszystkie komunikaty o błędach przełączania."
+msgstr "Ukryj wszystkie komunikaty o błędach przełączania kanałów."
 
 msgid "Hide error messages from the Common Interface module."
-msgstr "Ukryj komunikaty o błędach w module Common Interface."
+msgstr "Ukryj komunikaty o błędach w module CI."
 
 msgid "Hide known extensions"
 msgstr "Ukryj rozszerzenia znanych plików"
@@ -9211,7 +9223,7 @@ msgid "Hide the InfoBar"
 msgstr "Ukryj pasek informacyjny"
 
 msgid "Hide zap errors"
-msgstr "Ukryj komunikaty błędów przy przełączaniu"
+msgstr "Ukryj komunikaty błędów przy przełączaniu "
 
 msgid "Hide/Show the console screen"
 msgstr "Ukryj/Pokaż ekran konsoli"
@@ -10013,6 +10025,9 @@ msgstr "Wewnętrzny NVMe"
 msgid "Internal USB"
 msgstr "Wewnętrzny USB"
 
+msgid "Internal disk only"
+msgstr "Tylko wewnętrzny hdd"
+
 msgid "Internal flash"
 msgstr "Wewnętrzny flash"
 
@@ -10023,9 +10038,6 @@ msgstr "Wewnętrzny flash:  %s %s "
 #, python-format
 msgid "Internal flash: %s %s as USB Recovery"
 msgstr "Wewnętrzny flash: %s %s USB Recovery"
-
-msgid "Internal disk only"
-msgstr "Tylko wewnętrzny hdd"
 
 msgid "Internet"
 msgstr "Internet"
@@ -10263,7 +10275,7 @@ msgid "Kexec MultiBoot Initialization in progress!"
 msgstr "Inicjowanie Kexec MultiBoot w toku!"
 
 msgid "Kexec MultiBoot Manager"
-msgstr "Menadżer Kexec MultiBoot"
+msgstr "Menedżer Kexec MultiBoot"
 
 msgid "Kexec MultiBoot files are missing."
 msgstr "Brakuje plików Kexec MultiBoot."
@@ -10275,7 +10287,7 @@ msgid "Keyboard"
 msgstr "Klawiatura"
 
 msgid "Keyboard Settings"
-msgstr "Ustawienie klawiatury"
+msgstr "Ustawienia klawiatury"
 
 msgid "Keyboard data entry"
 msgstr "Wprowadzanie danych z klawiatury"
@@ -10760,7 +10772,7 @@ msgid "Log %d/%d"
 msgstr "Log %d/%d"
 
 msgid "Log Manager"
-msgstr "Menadżer log"
+msgstr "Menedżer log"
 
 #, python-format
 msgid "Log file '%s' deleted."
@@ -10777,7 +10789,7 @@ msgid "Log results to harddisk"
 msgstr "Zapisuj log na HDD"
 
 msgid "LogManager"
-msgstr "Menadżer Logów"
+msgstr "Menedżer logów"
 
 msgid "Login"
 msgstr "Login"
@@ -10969,7 +10981,7 @@ msgid "Manage %s"
 msgstr "Zarządzaj %s"
 
 msgid "Manage Locale/Language Selection settings"
-msgstr "Menadżer ustawień Regionu/Języka"
+msgstr "Menedżer ustawień Regionu/Języka"
 
 msgid "Manage Plugins"
 msgstr "Zarządzaj wtyczkami"
@@ -11244,7 +11256,7 @@ msgid "Minimum age %d years"
 msgstr "Wiek %d lat"
 
 msgid "Minimum send interval"
-msgstr "Minimalny odstęp wysyłania"
+msgstr "Minimalny interwał wysyłania"
 
 msgid "Minutes"
 msgstr "minuty"
@@ -11360,7 +11372,7 @@ msgid "Mount"
 msgstr "Montowanie"
 
 msgid "Mount Manager"
-msgstr "Menadżer montowania"
+msgstr "Menedżer montowania"
 
 msgid "Mount Menu Actions"
 msgstr "Akcje menu montowania"
@@ -11709,10 +11721,10 @@ msgid "MultiBoot Information"
 msgstr "Informacje o MultiBoot"
 
 msgid "MultiBoot Manager"
-msgstr "Menadżer MultiBoot"
+msgstr "Menedżer MultiBoot"
 
 msgid "MultiBoot Manager Actions"
-msgstr "Akcje Menadżera MultiBoot"
+msgstr "Akcje Menedżera MultiBoot"
 
 msgid "MultiBoot boot mode"
 msgstr "Tryb startowy MultiBoot"
@@ -12222,7 +12234,7 @@ msgid "No priority"
 msgstr "Bez priorytetu"
 
 msgid "No resource manager"
-msgstr "Brak menadżera zasobów"
+msgstr "Brak menedżera zasobów"
 
 msgid "No satellite, terrestrial or cable tuner is configured. Please check your tuner setup."
 msgstr "Nie skonfigurowano tunera satelitarnego, naziemnego ani kablowego. Sprawdź konfigurację tunera."
@@ -12366,6 +12378,9 @@ msgstr "Określ, ile adresów IP ma być sprawdzanych pod kątem aktywnych poł�
 msgid "Non-Linear"
 msgstr "Nieliniowy"
 
+msgid "Non-flashing"
+msgstr "Nie Flash'uj"
+
 msgid "None"
 msgstr "Żaden"
 
@@ -12422,9 +12437,6 @@ msgstr "Nie Sklasyfikowane"
 
 msgid "Not Defined"
 msgstr "Nie określony"
-
-msgid "Non-flashing"
-msgstr "Nie Flash'uj"
 
 msgid "Not Installed"
 msgstr "Nie zainstalowany"
@@ -13072,7 +13084,7 @@ msgid "Package"
 msgstr "Pakiet"
 
 msgid "Package Manager"
-msgstr "Menadżer pakietów"
+msgstr "Menedżer pakietów"
 
 msgid "Package files:"
 msgstr "Pliki pakietu:"
@@ -13316,7 +13328,7 @@ msgid "Picon and service name"
 msgstr "Pikony i nazwa kanału"
 
 msgid "Picon install location"
-msgstr "Miejsce instalacji picon"
+msgstr "Miejsce instalacji pikon"
 
 msgid "Picon width"
 msgstr "Szerokość pikon"
@@ -14033,6 +14045,9 @@ msgstr "Naciśnij OK aby użyć tego regionu. [%s]"
 msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that image. If available, YELLOW will either delete or wipe the image. A deleted image can be restored with the BLUE button. A wiped image is completely removed and cannot be restored!"
 msgstr "Użyj GÓRA/DÓŁ, aby wybrać slot, a następnie naciśnij OK lub ZIELONY aby uruchomić wybrany system. ŻÓŁTY spowoduje 'Usunięcie' lub 'Wymazanie' systemu. Usunięty system można przywrócić za pomocą NIEBIESKIEGO przycisku. Wymazany system jest całkowicie usunięty co znaczy, że nie może zostać przywrócony!"
 
+msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that image. If available, YELLOW will disable Multiboot, delete, or wipe the selected image. Press BLUE to add more slots."
+msgstr "Naciskaj przyciski GÓRA/DÓŁ, aby wybrać slot, a następnie naciśnij OK lub ZIELONY, aby ponownie uruchomić ten system. Jeśli dostępny, ŻÓŁTY wyłączy funkcję Multiboot, usunie lub wyczyści wybrany system. Naciśnij NIEBIESKI, aby dodać więcej slotów."
+
 msgid "Press this button to emulate a long press on a button pressed afterwards (this also overrides any other actions assigned to emulation button)."
 msgstr "Naciśnij ten przycisk, aby emulować długie naciśnięcie przycisku (to zastąpi wszelkie inne czynności przypisane do tego przycisku)."
 
@@ -14373,14 +14388,14 @@ msgstr "REC"
 msgid "REC "
 msgstr "REC "
 
-msgid "REC symbol"
-msgstr "Symbol REC"
-
 msgid "REC Symbol in Standby"
 msgstr "Symbol REC w trybie czuwania"
 
 msgid "REC Symbol in use"
 msgstr "Symbol REC w użyciu"
+
+msgid "REC symbol"
+msgstr "Symbol REC"
 
 msgid "RED button"
 msgstr "Czerwony przycisk"
@@ -14461,7 +14476,7 @@ msgid "Really delete this entry?"
 msgstr "Czy na pewno usunąć ten wpis?"
 
 msgid "Really reboot into Recovery Mode?"
-msgstr "Czy naprawdę chcesz przejść do trybu awaryjnego?"
+msgstr "Czy na pewno uruchomić ponownie w trybie awaryjnym?"
 
 msgid "Really reboot now?"
 msgstr "Naprawdę uruchomić ponownie?"
@@ -14516,7 +14531,7 @@ msgstr "Tuner lub sterownik nie obsługuje Quad PiP."
 
 #, python-format
 msgid "Receiver information for %s %s"
-msgstr "Informacje o odbiorniku dla %s %s"
+msgstr "Informacje o odbiorniku %s %s"
 
 msgid "Receiver name"
 msgstr "Nazwa odbiornika"
@@ -15723,14 +15738,14 @@ msgstr "Przegląd harmonogramu"
 msgid "Scheduler Settings"
 msgstr "Ustawienia harmonogramu"
 
-msgid "Scheduler standby"
-msgstr "Programator czuwania"
-
 msgid "Scheduler deep standby"
 msgstr "Programator wyłączenia"
 
 msgid "Scheduler log"
 msgstr "Logi programatorów zasilania"
+
+msgid "Scheduler standby"
+msgstr "Programator czuwania"
 
 msgid "Sci-Fi"
 msgstr "Sci-Fi"
@@ -15748,7 +15763,7 @@ msgid "Screen saver movement"
 msgstr "Ruch wygaszacza ekranu"
 
 msgid "Script Manager"
-msgstr "Menadżer skryptów"
+msgstr "Menedżer skryptów"
 
 msgid "ScriptRunner"
 msgstr "Script Runner"
@@ -15816,8 +15831,8 @@ msgstr "Przewiń"
 msgid "Seek Actions"
 msgstr "Akcje Wyszukiwania"
 
-msgid "Seek back short"
-msgstr "Szukaj krótko"
+msgid "Seek Bar"
+msgstr "Pasek postępu"
 
 msgid "Seek backward"
 msgstr "Przewiń do tyłu"
@@ -15828,23 +15843,20 @@ msgstr "Przewiń do tyłu (wprowadź czas)"
 msgid "Seek forward"
 msgstr "Przewiń do przodu"
 
-msgid "Seek forward  short"
-msgstr "Szukaj krótko do przodu"
-
 msgid "Seek forward (enter time)"
 msgstr "Przewiń do przodu (wprowadź czas)"
 
-msgid "Seek forward long"
-msgstr "Szukaj do przodu długo"
+msgid "SeekBar"
+msgstr "Pasek postępu"
+
+msgid "SeekBar Actions"
+msgstr "Akcje paska postępu"
 
 msgid "SeekBar activation"
-msgstr "Aktywacja paska stanu"
-
-msgid "SeekBar"
-msgstr "Pasek stanu"
+msgstr "Aktywacja paska postępu"
 
 msgid "SeekBar sensibility"
-msgstr "Czułość paska stanu"
+msgstr "Czułość paska postępu"
 
 msgid "Seeking connected events"
 msgstr "Wyszukiwanie powiązanych wydarzeń"
@@ -15916,7 +15928,7 @@ msgid "Select 'Yes' to allow each storage device detected to be automatically ex
 msgstr "Wybierz „Tak”, aby zezwolić na automatyczny eksport każdego wykrytego urządzenia pamięci masowej jako udziału Samba."
 
 msgid "Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event."
-msgstr "Jeśli ustawione na 'tak', pozwala wykorzystać pasek wyszukiwania do przewijania timeshift'u."
+msgstr "Wybierz „Tak”, aby zezwolić na użycie paska postępu w celu przejścia do wybranego punktu w ramach zdarzenia."
 
 msgid "Select 'Yes' to always show the bouquet screen first when opening the channel list. Select 'No' to open the channel list using the current bouquet."
 msgstr "Ustawienie tej opcji na 'tak' spowoduje, że zostanie wyświetlona najpierw lista kanałów. Jeśli ustawione na 'nie' zostaną wyświetlone kanały obecnej listy."
@@ -16171,7 +16183,7 @@ msgid "Select Satellites"
 msgstr "Wybierz satelity"
 
 msgid "Select SeekBar to be activated by arrow L/R (long) or << >> (long)."
-msgstr "Wybierz czy pasek stanu ma być aktywowany przez strzałkę L/R (długio) lub << >> (długio)."
+msgstr "Wybierz czy pasek postępu ma być aktywowany przez strzałkę L/R (długio) lub << >> (długio)."
 
 msgid "Select Shares"
 msgstr "Wybierz Udostępnienia"
@@ -16639,7 +16651,7 @@ msgid "Select the location in which to store the recording:"
 msgstr "Wybierz lokalizację, w której ma być zapisane nagranie:"
 
 msgid "Select the location where the picon files will be installed."
-msgstr "Wybierz lokalizację, w której zostaną zainstalowane pliki picon."
+msgstr "Wybierz lokalizację, w której zostaną zainstalowane pliki pikon."
 
 msgid "Select the manufacturer of your SCR device. If the manufacturer is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
 msgstr "Wybierz producenta swojego urządzenia SCR. Jeśli producenta nie ma na liście, ustaw „SCR” na „zdefiniowane przez użytkownika” i ręcznie wprowadź parametry urządzenia zgodnie z jego specyfikacją."
@@ -17020,15 +17032,6 @@ msgstr "Informacje usługi"
 msgid "Service Information Actions"
 msgstr "Akcje informacji usługi"
 
-msgid "Service Name"
-msgstr "Nazwa kanału"
-
-msgid "Service number and service name"
-msgstr "Numer i nazwa kanału"
-
-msgid "Service number, picon and service name"
-msgstr "Pikona, numer i nazwa kanału"
-
 msgid "Service Scan"
 msgstr "Skanowanie kanałów"
 
@@ -17055,7 +17058,7 @@ msgid "Service info"
 msgstr "Info o kanale"
 
 msgid "Service info font size"
-msgstr "Rozmiar czcionki Informacji o kanale"
+msgstr "Rozmiar czcionki informacji o kanale"
 
 msgid ""
 "Service invalid!\n"
@@ -17077,8 +17080,14 @@ msgstr ""
 "Nie znaleziono kanału!\n"
 "(SID nie znaleziony w PAT)"
 
+msgid "Service number and service name"
+msgstr "Numer i nazwa kanału"
+
 msgid "Service number font size"
 msgstr "Rozmiar czcionki numeru kanału"
+
+msgid "Service number, picon and service name"
+msgstr "Pikona, numer i nazwa kanału"
 
 msgid "Service off-air"
 msgstr "Sewis off-air"
@@ -17124,7 +17133,7 @@ msgid "ServiceName"
 msgstr "Nazwa kanału"
 
 msgid "ServicePicon"
-msgstr "Picon Kanału"
+msgstr "Pikon kanału"
 
 msgid "Serviceinfo"
 msgstr "Info o kanale"
@@ -17217,14 +17226,14 @@ msgid "Set the CutList Editor skip time interval for the '%s'/'%s' buttons."
 msgstr "Ustaw odstęp czasu pomijania edytora CutList dla przycisków '%s'/'%s'."
 
 msgid "Set the LEFT/RIGHT button skip percentage for the SeekBar."
-msgstr "Ustaw procent pomijania przycisków LEWO/PRAWO dla paska SeekBar."
+msgstr "Ustaw procent pomijania przycisków LEWO/PRAWO dla paska postępu."
 
 #, python-format
 msgid "Set the MAC address of your %s %s."
 msgstr "Ustaw adres MAC dla %s %s."
 
 msgid "Set the UP/DOWN button skip percentage for the SeekBar."
-msgstr "Ustaw procent pomijania przycisków GÓRA/DÓŁ dla paska SeekBar."
+msgstr "Ustaw procent pomijania przycisków GÓRA/DÓŁ dla paska postępu."
 
 msgid "Set the User ID of the OpenWebif from your fallback tuner"
 msgstr "Wpisz nazwę użytkownika do zalogowania do OpenWebif tunera rezerwowego"
@@ -17254,7 +17263,7 @@ msgid "Set the delay time between repeated loops, this is used by software rende
 msgstr "Ustaw czas opóźnienia między przejściami przewijania. Jest używany przez renderer oprogramowania w niektórych skórkach."
 
 msgid "Set the jump-size of the SeekBar."
-msgstr "Ustaw skok-rozmiar paska wyszukiwania."
+msgstr "Ustaw skok-rozmiar paska postępu."
 
 msgid "Set the number of lines to be saved for 'stout' and 'sterr' output in scripts."
 msgstr "Ustawia liczbę linii, które mają być zapisane dla wyjścia 'stout' i 'sterr' w skryptach."
@@ -17660,7 +17669,7 @@ msgid "Show Display Icons"
 msgstr "Pokaż ikony wyświetlacza"
 
 msgid "Show Display packages"
-msgstr "Pokaż pakiety wyświetlania"
+msgstr "Pokaż pakiety wyświetlacza"
 
 msgid "Show Driver packages"
 msgstr "Pokaż pakiety sterowników"
@@ -18432,11 +18441,11 @@ msgstr "Pakiety komponentów skórki"
 msgid "Skin Packages"
 msgstr "Pakiety skórek"
 
-msgid "Skin setting"
+msgid "Skin Settings"
 msgstr "Ustawienia skóry"
 
-msgid "Skin Settings"
-msgstr "Wybór skóry"
+msgid "Skin setting"
+msgstr "Ustawienia skóry"
 
 msgid "SkinSelection"
 msgstr "Wybór skóry"
@@ -18447,14 +18456,40 @@ msgstr "Przewijanie do tyłu"
 msgid "Skip backward"
 msgstr "Przewiń do tyłu"
 
+#, python-format
+msgid "Skip backward %d second"
+msgid_plural "Skip backward %d seconds"
+msgstr[0] "Przewiń do tyłu o %d sekundę"
+msgstr[1] "Przewiń do tyłu o %d sekundy"
+msgstr[2] "Przewiń do tyłu o %d sekund"
+
+#, python-format
+msgid "Skip backward %s%%"
+msgstr "Przejdź wstecz %s%%"
+
 msgid "Skip backward (enter time)"
 msgstr "Przeskocz do tyłu (wprowadź czas)"
 
 msgid "Skip empty services"
 msgstr "Pomiń puste kanały"
 
+#, python-format
+msgid "Skip for '%s' is disabled"
+msgstr "Pomijanie dla '%s' jest wyłączone"
+
 msgid "Skip forward"
 msgstr "Przeskocz do przodu"
+
+#, python-format
+msgid "Skip forward %d second"
+msgid_plural "Skip forward %d seconds"
+msgstr[0] "Przewiń do przodu o %d sekundę"
+msgstr[1] "Przewiń do przodu o %d sekundy"
+msgstr[2] "Przewiń do przodu o %d sekund"
+
+#, python-format
+msgid "Skip forward %s%%"
+msgstr "Przejdź do przodu %s%%"
 
 msgid "Skip forward (enter time)"
 msgstr "Przeskocz do przodu (wprowadź czas)"
@@ -18476,6 +18511,13 @@ msgstr "Czas pomijania dla przycisku '%s'"
 
 msgid "Skip time for '%s'/'%s' buttons"
 msgstr "Czas pomijania dla przycisków '%s'/'%s'"
+
+#, python-format
+msgid "Skip to %s0%% position (Add %s%% on second press)"
+msgstr "Przejdź do pozycji %s0%% (Dodaj %s%% po drugim naciśnięciu)"
+
+msgid "Skip to 0% (start) position"
+msgstr "Przejdź do pozycji 0% (początkowej)"
 
 msgid "Sleep"
 msgstr "Uśpienie"
@@ -18596,7 +18638,7 @@ msgid "Slot F: Flash Slot Image Backup (Current image)"
 msgstr "Slot F: Kopia zapasowa systemu slotu Flash (bieżący system)"
 
 msgid "Slot Manager"
-msgstr "Menadżer slotów"
+msgstr "Menedżer slotów"
 
 msgid "Slot Manager Actions"
 msgstr "Działania menedżera slotów"
@@ -18606,6 +18648,10 @@ msgstr "Slot R: Pełna kopia zapasowa slotu root (bieżący obraz)"
 
 msgid "Slot count"
 msgstr "Ilość slotów"
+
+#, python-format
+msgid "Slots have been extended by %d..\n"
+msgstr "Liczba slotów została zwiększona o %d..\n"
 
 msgid "Slovak"
 msgstr "Słowacki"
@@ -18690,16 +18736,16 @@ msgid "Softcams"
 msgstr "Softcam"
 
 msgid "Software Management"
-msgstr "Menadżer oprogramowania"
+msgstr "Menedżer oprogramowania"
 
 msgid "Software Manager"
-msgstr "Menadżer oprogramowania"
+msgstr "Menedżer oprogramowania"
 
 msgid "Software Manager Information"
-msgstr "Info o menadżerze oprogramowania"
+msgstr "Info o menedżerze oprogramowania"
 
 msgid "Software Manager Settings"
-msgstr "Ustawienia menadżera oprogramowania"
+msgstr "Ustawienia menedżera oprogramowania"
 
 msgid "Software MultiBoot"
 msgstr "Oprogramowanie MultiBoot"
@@ -18724,7 +18770,7 @@ msgstr ""
 "\n"
 
 msgid "Softwaremanager..."
-msgstr "Menadżer oprogramowania..."
+msgstr "Menedżer oprogramowania..."
 
 msgid "Solomon Islands"
 msgstr "Wyspy Salomona"
@@ -19035,6 +19081,9 @@ msgstr "Czas rozpoczęcia"
 
 msgid "Starts in a few seconds"
 msgstr "Zaczyna się za kilka sekund"
+
+msgid "Startup device not found!"
+msgstr "Nie znaleziono urządzenia startowego!"
 
 #. TRANSLATORS: "State" is location information and not condition based information.
 msgid "State"
@@ -19347,13 +19396,13 @@ msgid "Swap"
 msgstr "Swap"
 
 msgid "Swap File Manager"
-msgstr "Menadżer pliku swap"
+msgstr "Menedżer pliku swap"
 
 msgid "Swap File not found. You have to create the file before to activate."
 msgstr "Nie znaleziono pliku swap. Musisz utworzyć plik przed aktywacją."
 
 msgid "Swap Manager"
-msgstr "Menadżer swap"
+msgstr "Menedżer swap"
 
 msgid "Swap PiP"
 msgstr "Zamień PIP"
@@ -20071,7 +20120,7 @@ msgstr ""
 "Zainstaluj go najpierw."
 
 msgid "The picon directory already exists and must be removed. Do you want to proceed?"
-msgstr "Katalog picon już istnieje i musi zostać usunięty. Czy chcesz kontynuować?"
+msgstr "Katalog pikon już istnieje i musi zostać usunięty. Czy chcesz kontynuować?"
 
 #, python-format
 msgid "The process will take approximately %d minutes to complete."
@@ -20809,7 +20858,7 @@ msgid "To restore the image check the manual or documentation for the receiver."
 msgstr "Aby przywrócić system, sprawdź instrukcję lub dokumentację odbiornika."
 
 msgid "To restore the image use 'OnlineFlash' option in the 'SoftwareManager' menu."
-msgstr "Aby przywrócić system użyj opcji „Instalacja systemu online” w menu „Menadżer oprogramowania”."
+msgstr "Aby przywrócić system użyj opcji „Instalacja systemu online” w menu „Menedżer oprogramowania”."
 
 #, python-format
 msgid "To where would you like to extract '%s'?"
@@ -21149,6 +21198,9 @@ msgstr "Algorytm strojenia"
 
 msgid "Tunisia"
 msgstr "Tunezja"
+
+msgid "Turbo"
+msgstr "Turbo"
 
 msgid "Turbo: One reboot after flash; Fast: One reboot after flash, one reboot after restore; Slow: One reboot after flash, one reboot after restore in GUI."
 msgstr "Turbo: Jeden restart po flashu; Szybki: Jeden restart po flashu, jeden restart po przywróceniu; Wolny: Jeden restart po flashu, jeden restart po przywróceniu interfejsu."
@@ -22371,7 +22423,7 @@ msgid ""
 msgstr ""
 "Witamy w OpenATV.\n"
 "\n"
-"Użyj przycisków GÓRA/DÓŁ na pilocie, aby wybrać opcję. Użyj przycisków LEWO/PRAWO, aby zmienić wartość konfigurowalnej opcji. Następnie naciśnij OK, aby kontynuować w kolejnym ekranie."
+"Użyj przycisków GÓRA/DÓŁ na pilocie, aby wybrać opcję. Użyj przycisków LEWO/PRAWO, aby zmienić wartości konfigurowalnej opcji. Następnie naciśnij przycisk OK, aby przejść do następnego ekranu."
 
 msgid ""
 "Welcome to the Cutlist editor.\n"
@@ -23258,9 +23310,6 @@ msgstr "przygoda/wojenny/western"
 msgid "advertisement/shopping"
 msgstr "reklama/zakupy"
 
-msgid "All up/down"
-msgstr "wszystko góra/dół"
-
 msgid "alpha then oldest"
 msgstr "alfa, następnie najstarszy"
 
@@ -23789,9 +23838,6 @@ msgstr "brak lub nieaktywna karta"
 msgid "no storage devices found"
 msgstr "nie znaleziono urządzenia magazynującego"
 
-msgid "normal"
-msgstr "normalny"
-
 msgid "not"
 msgstr "nie"
 
@@ -23986,9 +24032,6 @@ msgstr "Przeskocz do tyłu"
 msgid "skip forward"
 msgstr "Przeskocz do przodu"
 
-msgid "slow"
-msgstr "wolno"
-
 msgid "soap/melodrama/folkloric"
 msgstr "serial/melodramat/folklor"
 
@@ -24091,9 +24134,6 @@ msgstr "tradycyjna (szybka), dostrajanie"
 msgid "tree delete"
 msgstr "usuwanie drzewa"
 
-msgid "Turbo"
-msgstr "Turbo"
-
 msgid "uShare"
 msgstr "uShare"
 
@@ -24184,6 +24224,27 @@ msgstr "tak (zachować feed'y)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Black Screen"
+#~ msgstr "Czarny ekran"
+
+#~ msgid "Seek back short"
+#~ msgstr "Szukaj krótko"
+
+#~ msgid "Seek forward  short"
+#~ msgstr "Szukaj krótko do przodu"
+
+#~ msgid "Seek forward long"
+#~ msgstr "Szukaj do przodu długo"
+
+#~ msgid "Service Name"
+#~ msgstr "Nazwa kanału"
+
+#~ msgid "normal"
+#~ msgstr "normalny"
+
+#~ msgid "slow"
+#~ msgstr "wolno"
 
 #~ msgid "DVB API version"
 #~ msgstr "Wersja DVB API"
@@ -26291,9 +26352,6 @@ msgstr "®"
 
 #~ msgid "Add bouquet"
 #~ msgstr "Dodaj bukiet"
-
-#~ msgid "Black screen"
-#~ msgstr "Czarny ekran"
 
 #~ msgid "no"
 #~ msgstr "nie"

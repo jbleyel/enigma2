@@ -582,7 +582,7 @@ void eDVBCIInterfaces::recheckPMTHandlers() {
 						useThis = false;
 					}
 				}
-				
+				/*
 				if (!useThis)
 				{
 					if (ci_it->use_count > 0 && !canDescrambleMultipleServices(ci_it))
@@ -590,7 +590,7 @@ void eDVBCIInterfaces::recheckPMTHandlers() {
 					else
 						eTrace("[CI] Slot %d does not match service or CAID – skipping", ci_it->getSlotID());
 				}
-				
+				*/
 			}
 
 			if (useThis) {
