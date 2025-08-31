@@ -342,20 +342,19 @@ protected:
 
 private:
 
-	// START OF MODIFICATION
+	// START OF MODIFICATION - Proactive Timeshift Stability (without glitch tolerance)
 	ePtr<eTimer> m_eof_recovery_timer;
-	ePtr<eTimer> m_initial_delay_calc_timer;
+	ePtr<eTimer> m_timeshift_delay_updater_timer;
 	ePtr<eTimer> m_resume_play_timer;
 	pts_t m_saved_timeshift_delay;
 	bool m_stream_corruption_detected;
 	int m_recovery_attempts;
-	int m_max_attempts;
-	time_t m_timeshift_start_time;
-	
+	int m_max_attempts;	
+	bool m_recovery_pending;
+	pts_t m_recovery_delay_snapshot;
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
-	void onInitialDelayTimeout();
-	void updateSavedDelay();
+	void updateTimeshiftDelay();
 	void resumePlay();
 	// END OF MODIFICATION
 };

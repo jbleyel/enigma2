@@ -2375,7 +2375,7 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 						((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | ((icol & 0xFF0000) >> 19);
 #endif
 
-					if (c.a >= 0x80) // große Alpha = transparent
+					if (c.a >= 0x80) // big alpha > transparent
 						pal[i] = 0x00000000;
 					else
 						pal[i] = 0x80000000 | rgb565;
