@@ -1345,11 +1345,19 @@ void eDVBServicePlay::updateTimeshiftDelay()
 		if (calculated_delay > 0 && calculated_delay < MAX_REASONABLE_DELAY)
 		{
 			m_saved_timeshift_delay = calculated_delay;
+			eDebug("[Timeshift-Debug] SUCCESS (Method 1: PCR): Delay updated to %lld", m_saved_timeshift_delay);
+			return; // Success, exit function
+		}
+		else
+		{
+			 eDebug("[Timeshift-Debug] WARNING (Method 1: PCR): Calculated delay is insane (%lld). Keeping last known value.", calculated_delay);
 		}
 	}
+	
 	// Method 2 (fallback): If PCR fails or delay is not positive, use buffer length
-	else if (pos_ret == 0)
+	if (pos_ret == 0)
 	{
+		eDebug("[Timeshift-Debug] Method 1 (PCR) failed (pcr_ret=%d). Trying Method 2 (getLength).", pcr_ret);
 		pts_t total_length = 0;
 		if (getLength(total_length) == 0 && total_length > playback_pts)
 		{
@@ -1357,14 +1365,24 @@ void eDVBServicePlay::updateTimeshiftDelay()
 			if (calculated_delay > 0 && calculated_delay < MAX_REASONABLE_DELAY)
 			{
 				 m_saved_timeshift_delay = calculated_delay;
+				 eDebug("[Timeshift-Debug] SUCCESS (Method 2: getLength): Delay updated to %lld", m_saved_timeshift_delay);
+			}
+			else
+			{
+				eDebug("[Timeshift-Debug] WARNING (Method 2: getLength): Calculated delay is insane (%lld). Keeping last known value.", calculated_delay);
 			}
 		}
+		else
+		{
+			eDebug("[Timeshift-Debug] FAILED (Method 2: getLength): Could not get a valid length. Keeping last known value.");
+		}
+	}
+	else
+	{
+		eDebug("[Timeshift-Debug] FAILED (All Methods): Could not even get play position. Keeping last known value.");
 	}
 }
 
-/**
- * @brief This function is the entry point for the recovery process.
- */
 void eDVBServicePlay::handleEofRecovery()
 {
 	m_timeshift_delay_updater_timer->stop();
@@ -1399,9 +1417,6 @@ void eDVBServicePlay::resumePlay()
 	}
 }
 
-/**
- * @brief This is the core recovery logic.
- */
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
 	if (m_recovery_attempts >= m_max_attempts)
@@ -1463,8 +1478,6 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 	m_stream_corruption_detected = false;
 	m_event(this, evSeekableStatusChanged);
 }
-
-// MODIFICATION END
 
 void eDVBServicePlay::serviceEventTimeshift(int event)
 {
@@ -1887,6 +1900,13 @@ RESULT eDVBServicePlay::unpause()
 		eDebug("[Timeshift-Fix] Unpause triggered; initiating recovery due to detected issues.");
 		handleEofRecovery();
 		return 0;
+	}
+
+	// MODIFICATION: Start the delay updater timer on unpause.
+	if (isTimeshiftActive() && !m_timeshift_delay_updater_timer->isActive())
+	{
+		eDebug("[Timeshift-Fix] Starting delay updater timer on unpause.");
+		m_timeshift_delay_updater_timer->start(2000, false);
 	}
 
 	m_slowmotion = 0;
@@ -3347,8 +3367,7 @@ void eDVBServicePlay::switchToTimeshift()
 	pause();
 	updateDecoder(true); /* mainly to switch off PCR, and to set pause */
 
-	// Start the proactive delay updater timer. It will run every 2 seconds.
-	m_timeshift_delay_updater_timer->start(2000, false);
+	// MODIFICATION: The timer start logic is now moved to unpause()
 }
 
 void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
