@@ -341,22 +341,23 @@ protected:
 	void recordEvent(int event);
 
 private:
-
-	// START OF MODIFICATION - Proactive Timeshift Stability (without glitch tolerance)
+	// MODIFICATION START: Rewritten timeshift recovery logic variables
 	ePtr<eTimer> m_eof_recovery_timer;
 	ePtr<eTimer> m_timeshift_delay_updater_timer;
 	ePtr<eTimer> m_resume_play_timer;
 	pts_t m_saved_timeshift_delay;
 	bool m_stream_corruption_detected;
 	int m_recovery_attempts;
-	int m_max_attempts;	
+	int m_max_attempts;
 	bool m_recovery_pending;
 	pts_t m_recovery_delay_snapshot;
+	bool m_timeshift_delay_is_locked; // Flag to lock the delay value after first successful capture
+	
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
-	void updateTimeshiftDelay();
+	void updateTimeshiftDelay(); // Renamed from updateSavedDelay
 	void resumePlay();
-	// END OF MODIFICATION
+	// MODIFICATION END
 };
 
 class eStaticServiceDVBBouquetInformation : public iStaticServiceInformation {
