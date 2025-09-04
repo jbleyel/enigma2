@@ -62,6 +62,13 @@ def parseKeymap(filename, context, actionMapInstance, device, domKeys):
 	unmapDict = {}
 	error = False
 	keyId = -1
+	flagToValue = {
+		"m": 1,
+		"b": 2,
+		"r": 4,
+		"l": 8,
+		"s": 32,
+	}
 	for key in domKeys.findall("key"):
 		keyName = key.attrib.get("id")
 		if keyName is None:
@@ -102,14 +109,7 @@ def parseKeymap(filename, context, actionMapInstance, device, domKeys):
 			print(f"[ActionMap] Error: Attribute 'flag' in context '{context}' id '{keyName}' ({keyId}) in file '{filename}' must be specified!")
 			error = True
 		else:
-			flagToValue = lambda x: {
-				"m": 1,
-				"b": 2,
-				"r": 4,
-				"l": 8,
-				"s": 32
-			}[x]
-			newFlags = sum(map(flagToValue, flags))
+			newFlags = sum(flagToValue[x] for x in flags)
 			if not newFlags:
 				print(f"[ActionMap] Error: Attribute 'flag' value '{flags}' in context '{context}' id '{keyName}' ({keyId}) in file '{filename}' appears invalid!")
 				error = True
@@ -216,9 +216,7 @@ class ActionMap:
 					break
 		if leftAction and rightAction and config.misc.actionLeftRightToPageUpPageDown.value:
 			if config.crash.debugActionMaps.value:
-				print("[ActionMap] DEBUG: Creating legacy LEFT/RIGHT navigation action map entries.")
-				print(f"[ActionMap] DEBUG: Left: '{leftAction}'.")
-				print(f"[ActionMap] DEBUG: Right: '{rightAction}'.")
+				print(f"[ActionMap] DEBUG: Creating legacy LEFT/RIGHT navigation action map entries. Left: '{leftAction}' / Right: '{rightAction}'.")
 			self.legacyActions = {
 				"left": leftAction,
 				"right": rightAction
@@ -226,7 +224,7 @@ class ActionMap:
 		else:
 			self.legacyActions = {}
 		if undefinedAction:
-			print(f"[ActionMap] Map context{"s" if len(self.contexts) > 1 else ""} '{"', '".join(sorted(self.contexts))}': Undefined action{"s" if len(undefinedAction) > 1 else ""} '{"', '".join(sorted(undefinedAction))}'!")
+			print(f"[ActionMap] Map context{"s" if len(self.contexts) > 1 else ""} '{", ".join(sorted(self.contexts))}': Undefined action{"s" if len(undefinedAction) > 1 else ""} '{", ".join(sorted(undefinedAction))}'!")
 
 	def getEnabled(self):
 		return self.enabled
