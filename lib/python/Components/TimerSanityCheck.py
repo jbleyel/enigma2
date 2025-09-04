@@ -236,7 +236,6 @@ class TimerSanityCheck:
 			else:
 				print("[TimerSanityCheck] Bug: Unknown flag!")
 			if ci_timer and ci_timer_slot == cihelper.getAssignedSlot(timer.service_ref.ref):
-				print("[TimerSanityCheck] DEBUG - ci_timer ServiceIsAssigned : " + str(timer.service_ref.ref))
 				if event[1] == self.bflag:
 					timer_begin = event[0]
 					timer_end = event[0] + (timer.end - timer.begin)
