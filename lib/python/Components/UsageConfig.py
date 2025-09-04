@@ -2508,7 +2508,7 @@ def InitUsageConfig():
 			config.timeshift.recordingPath.setChoices(choiceList + [(savedValue, savedValue)], default="<default>")
 			config.timeshift.recordingPath.value = savedValue
 	config.timeshift.recordingPath.save()
-	config.timeshift.recoveryAttempts = ConfigSelection(default=8, choices=[(x, x) for x in range(0, 11)])
+	config.timeshift.recoveryAttempts = ConfigSelection(default=20, choices=[(x, x) for x in range(0, 30)])
 	config.timeshift.recoveryBufferMargin = ConfigSelection(default=2, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(0, 11)])
 	config.timeshift.glitchTolerance = ConfigSelection(default=300, choices=[(x, _("%d ms") % x) for x in (0, 10, 50, 100, 300)])
 

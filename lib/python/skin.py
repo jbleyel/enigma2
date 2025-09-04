@@ -2175,8 +2175,11 @@ def readSkin(screen, skin, names, desktop):
 		# widgets (source->renderer).
 		widgetName = widget.attrib.get("name")
 		widgetSource = widget.attrib.get("source")
-		if widgetName is None and widgetSource is None:
-			raise SkinError("The widget has no name and no source")
+		widgetConnection = widget.attrib.get("connection")
+		widgetClass = widget.attrib.get("addon")
+		source = None
+		if widgetName is None and widgetSource is None and widgetClass is None:
+			raise SkinError("The widget has no addon, name or source")
 		if widgetName:
 			# print(f"[Skin] DEBUG: Widget name='{widgetName}'.")
 			usedComponents.add(widgetName)
@@ -2212,7 +2215,10 @@ def readSkin(screen, skin, names, desktop):
 				raise SkinError(f"The source '{widgetSource}' was not found in screen '{myName}'")
 			widgetRenderer = widget.attrib.get("render")
 			if not widgetRenderer:
-				raise SkinError(f"For source '{widgetSource}' a renderer must be defined with a 'render=' attribute")
+				if widgetSource:
+					raise SkinError(f"For source '{widgetSource}' a renderer must be defined with a 'render=' attribute")
+				elif widgetConnection:
+					raise SkinError(f"For connection '{widgetConnection}' a renderer must be defined with a 'render=' attribute")
 			for widgetTemplates in widget.findall("templates"):
 				try:
 					converterClass = my_import(".".join(("Components", "Converter", "XmlMultiContent"))).__dict__.get("XmlMultiContent")
@@ -2259,10 +2265,32 @@ def readSkin(screen, skin, names, desktop):
 			except ImportError:
 				raise SkinError(f"Renderer '{widgetRenderer}' not found")
 			renderer = rendererClass()  # Instantiate renderer.
-			renderer.connect(source)  # Connect to source.
+			if source:
+				renderer.connect(source)  # Connect to source.
 			attributes = renderer.skinAttributes = []
 			collectAttributes(attributes, widget, context, skinPath, ignore=("render", "source"))
 			screen.renderer.append(renderer)
+		elif widgetClass:
+			try:
+				addonClass = my_import(".".join(("Components", "Addons", widgetClass))).__dict__.get(widgetClass)
+			except ImportError:
+				raise SkinError(f"GUI Addon '{widgetClass}' not found")
+
+			if not widgetConnection:
+				raise SkinError(f"The widget is from addon type: {widgetClass} , but no connection is specified.")
+
+			i = 0
+			widgetClassNameBase = f"{name}_{widgetClass}_{widgetConnection}_"
+			while f"{widgetClassNameBase}{i}" in usedComponents:
+				i += 1
+			widgetClassName = f"{widgetClassNameBase}{i}"
+
+			usedComponents.add(widgetClassName)
+
+			screen[widgetClassName] = addonClass()
+			screen[widgetClassName].connectRelatedElement(widgetConnection, screen)
+			attributes = screen[widgetClassName].skinAttributes = []
+			collectAttributes(attributes, widget, context, skinPath, ignore=("addon",))
 
 	def processApplet(widget, context):
 		try:
@@ -2273,6 +2301,8 @@ def readSkin(screen, skin, names, desktop):
 			raise SkinError(f"Applet failed to compile: '{str(err)}'")
 		if widgetType == "onLayoutFinish":
 			screen.onLayoutFinish.append(code)
+		elif widgetType == "onContentChanged":
+			screen.onContentChanged.append(code)
 		else:
 			raise SkinError(f"Applet type '{widgetType}' is unknown")
 
@@ -2415,6 +2445,10 @@ def findWidgets(name):
 				source = widget.get("source")
 				if source is not None:
 					widgetSet.add(source)
+				addonConnection = widget.get("connection")
+				if addonConnection is not None:
+					for x in addonConnection.split(","):
+						widgetSet.add(x)
 		panels = element.findall("panel")
 		if panels is not None:
 			for panel in panels:

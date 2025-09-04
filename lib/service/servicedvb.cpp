@@ -1076,7 +1076,6 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_noaudio(false),
 	m_is_stream(ref.path.find("://") != std::string::npos),
 	m_is_pvr(!ref.path.empty() && !m_is_stream),
-	m_pause_position(-1),
 	m_is_paused(0),
 	m_timeshift_enabled(0),
 	m_timeshift_active(0),
@@ -1100,8 +1099,8 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_recovery_attempts(0),
 	m_resume_play_timer(eTimer::create(eApp)),
 	m_recovery_pending(false),
-	m_recovery_delay_snapshot(-1),
-	m_timeshift_delay_is_locked(false)
+	m_pause_position(-1),
+	m_recovery_delay_snapshot(-1)
 	// MODIFICATION END
 {
 #ifdef PASSTHROUGH_FIX
@@ -1122,7 +1121,7 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	CONNECT(m_resume_play_timer->timeout, eDVBServicePlay::resumePlay);
 	// MODIFICATION END
 
-	m_max_attempts = eSimpleConfig::getInt("config.timeshift.recoveryAttempts", 8);	
+	m_max_attempts = eSimpleConfig::getInt("config.timeshift.recoveryAttempts", 20); // INCREASED DEFAULT TO 20 (10 SECONDS)
 }
 
 eDVBServicePlay::~eDVBServicePlay()
@@ -1322,13 +1321,6 @@ void eDVBServicePlay::serviceEvent(int event)
 
 void eDVBServicePlay::updateTimeshiftDelay()
 {
-	// MODIFICATION START: Implement the "Capture Once" logic for the delay value
-	if (m_timeshift_delay_is_locked)
-	{
-		return; // The delay value has been captured and locked. Do nothing.
-	}
-	// MODIFICATION END
-
 	if (!isTimeshiftActive() || m_is_paused || m_recovery_pending)
 	{
 		return;
@@ -1344,55 +1336,50 @@ void eDVBServicePlay::updateTimeshiftDelay()
 	}
 	int pos_ret = getPlayPosition(playback_pts);
 
-	pts_t calculated_delay = -1;
-
-	// Method 1 (preferred): Use direct PCR value
+	// Method 1 (preferred): Use direct PCR value with strict > 0 check
 	if (m_record && pcr_ret == 0 && pos_ret == 0 && live_pts > playback_pts)
 	{
-		pts_t temp_delay = live_pts - playback_pts;
-		if (temp_delay > 0 && temp_delay < MAX_REASONABLE_DELAY)
+		pts_t calculated_delay = live_pts - playback_pts;
+		// A second check for > 0 is good practice
+		if (calculated_delay > 0 && calculated_delay < MAX_REASONABLE_DELAY)
 		{
-			calculated_delay = temp_delay;
-			eDebug("[Timeshift-Debug] SUCCESS (Method 1: PCR): Calculated delay %lld", calculated_delay);
+			m_saved_timeshift_delay = calculated_delay;
+			eDebug("[Timeshift-Debug] SUCCESS (Method 1: PCR): Delay updated to %lld", m_saved_timeshift_delay);
+			return; // Success, exit function
 		}
 		else
 		{
-			 eDebug("[Timeshift-Debug] WARNING (Method 1: PCR): Calculated delay is insane (%lld).", temp_delay);
+			 eDebug("[Timeshift-Debug] WARNING (Method 1: PCR): Calculated delay is insane (%lld). Keeping last known value.", calculated_delay);
 		}
 	}
-
+	
 	// Method 2 (fallback): If PCR fails or delay is not positive, use buffer length
-	if (calculated_delay <= 0 && pos_ret == 0)
+	if (pos_ret == 0)
 	{
 		eDebug("[Timeshift-Debug] Method 1 (PCR) failed (pcr_ret=%d). Trying Method 2 (getLength).", pcr_ret);
 		pts_t total_length = 0;
 		if (getLength(total_length) == 0 && total_length > playback_pts)
 		{
-			pts_t temp_delay = total_length - playback_pts;
-			if (temp_delay > 0 && temp_delay < MAX_REASONABLE_DELAY)
+			pts_t calculated_delay = total_length - playback_pts;
+			if (calculated_delay > 0 && calculated_delay < MAX_REASONABLE_DELAY)
 			{
-				 calculated_delay = temp_delay;
-				 eDebug("[Timeshift-Debug] SUCCESS (Method 2: getLength): Calculated delay %lld", calculated_delay);
+				 m_saved_timeshift_delay = calculated_delay;
+				 eDebug("[Timeshift-Debug] SUCCESS (Method 2: getLength): Delay updated to %lld", m_saved_timeshift_delay);
 			}
 			else
 			{
-				eDebug("[Timeshift-Debug] WARNING (Method 2: getLength): Calculated delay is insane (%lld).", temp_delay);
+				eDebug("[Timeshift-Debug] WARNING (Method 2: getLength): Calculated delay is insane (%lld). Keeping last known value.", calculated_delay);
 			}
 		}
 		else
 		{
-			eDebug("[Timeshift-Debug] FAILED (Method 2: getLength): Could not get a valid length.");
+			eDebug("[Timeshift-Debug] FAILED (Method 2: getLength): Could not get a valid length. Keeping last known value.");
 		}
 	}
-
-	// MODIFICATION START: Lock the first valid delay value
-	if (calculated_delay > 0)
+	else
 	{
-		m_saved_timeshift_delay = calculated_delay;
-		m_timeshift_delay_is_locked = true;
-		eDebug("[Timeshift-Fix] Initial delay value captured and locked: %lld", m_saved_timeshift_delay);
+		eDebug("[Timeshift-Debug] FAILED (All Methods): Could not even get play position. Keeping last known value.");
 	}
-	// MODIFICATION END
 }
 
 void eDVBServicePlay::handleEofRecovery()
@@ -1418,7 +1405,7 @@ void eDVBServicePlay::resumePlay()
 	{
 		m_decoder->play();
 	}
-
+	
 	m_is_paused = 0;
 	m_recovery_pending = false;
 	m_stream_corruption_detected = false;
@@ -1431,79 +1418,49 @@ void eDVBServicePlay::resumePlay()
 
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
-	// MODIFICATION START: Rewritten recovery logic
-	if (m_recovery_attempts >= m_max_attempts)
-	{
-		eWarning("[Timeshift-Fix] Maximum recovery attempts reached. Engaging Fallback Recovery (resuming play).");
-		m_eof_recovery_timer->stop();
-		m_recovery_attempts = 0;
-		m_stream_corruption_detected = false;
-		m_recovery_pending = false;
-		unpause(); // Fallback Recovery: simply unpause and hope for the best.
-		m_event(this, evSeekableStatusChanged);
-		return;
-	}
 	m_recovery_attempts++;
+	eDebug("[Timeshift-Fix] Recovery attempt %d/%d.", m_recovery_attempts, m_max_attempts);
 
-	// Stage 1: Wait for a safe buffer to form.
-	pts_t length = 0, position = 0;
-	// Use a smaller safety margin as we are only trying to escape the immediate corruption zone.
-	const pts_t safety_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 2) * 90000; // 2 seconds
-
-	if (getLength(length) != 0 || getPlayPosition(position) != 0)
+	// If we haven't reached the maximum number of attempts, continue to wait quietly.
+	if (m_recovery_attempts < m_max_attempts)
 	{
-		eDebug("[Timeshift-Fix] Waiting for buffer: Could not get length/position. Retrying...");
-		m_eof_recovery_timer->start(500, true); // Retry after a delay
+		m_eof_recovery_timer->start(500, true); // wait another 500 milliseconds
 		return;
 	}
 
-	// The key is to check if there's *any* new, potentially good data recorded after our current position.
-	if ((length - position) < safety_margin)
+	// If we reached the maximum number of attempts (the waiting period is over)
+	m_eof_recovery_timer->stop(); // Stop the timer completely
+	m_recovery_attempts = 0;    // Reset the counter for the next time
+
+	if (m_recovery_delay_snapshot > 0 && m_cue)
 	{
-		eDebug("[Timeshift-Fix] Waiting for buffer: Not enough safe buffer yet. (%lld < %lld). Retrying...", (length - position), safety_margin);
-		m_eof_recovery_timer->start(500, true); // Retry after a delay
-		return;
-	}
+		eDebug("[Timeshift-Fix] Recovery time elapsed. Seeking back from live point by %lld PTS.", m_recovery_delay_snapshot);
 
-	// Stage 2: A safe buffer has formed. Attempt the calculated recovery seek.
-	eDebug("[Timeshift-Fix] Safe buffer has formed. Attempting calculated recovery seek.");
-	m_eof_recovery_timer->stop();
-	m_recovery_attempts = 0;
+		// *** The decisive solution here: use the safe and smart jump ***
+		// Mode 1: a relative jump that looks for the nearest keyframe backwards
+		// The negative value (-): means 'go back from the current position' (which is the end of the file)
+		seekRelative(-1, m_recovery_delay_snapshot);
 
-	pts_t new_live_pts = 0;
-	if (m_recovery_delay_snapshot > 0 && m_record && !m_record->getCurrentPCR(new_live_pts))
-	{
-		pts_t new_target_pos = new_live_pts - m_recovery_delay_snapshot;
-		if (new_target_pos < 0)
+		// Very important: Reinitialize the player completely to get rid of any corrupt state
+		updateDecoder(true);
+
+		if (m_decoder)
 		{
-			new_target_pos = 0;
+			// Resume playback after a very short period to allow the player to prepare
+			m_decoder->pause();
+			m_resume_play_timer->start(100, true);
 		}
-		
-		// Sanity check: Don't seek beyond the current buffer length.
-		if (new_target_pos > length)
-		{
-			new_target_pos = length - safety_margin;
-			if (new_target_pos < 0) new_target_pos = 0;
-			eWarning("[Timeshift-Fix] Calculated seek position is beyond buffer length. Seeking to end of buffer instead.");
-		}
-
-		eDebug("[Timeshift-Fix] Calculated Recovery: Seeking to new target position %lld", new_target_pos);
-		seekTo(new_target_pos);
-
-		// A short delay before unpausing after a seek can help stability
-		m_resume_play_timer->start(200, true);
 	}
 	else
 	{
-		eWarning("[Timeshift-Fix] Calculated Recovery failed: Could not get valid live PCR or delay snapshot. Engaging Fallback.");
-		m_recovery_pending = false;
-		m_stream_corruption_detected = false;
-		unpause();
+		eWarning("[Timeshift-Fix] Recovery failed, no valid delay snapshot or cuesheet. Resuming playback as is.");
+		unpause(); // Return to playback as a last resort
 	}
 
+	// Reset the state variables
 	m_stream_corruption_detected = false;
+	m_recovery_pending = false;
 	m_event(this, evSeekableStatusChanged);
-	// MODIFICATION END
 }
 
 void eDVBServicePlay::serviceEventTimeshift(int event)
