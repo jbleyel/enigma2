@@ -3338,7 +3338,7 @@ void eDVBServicePlay::switchToTimeshift()
 		return;
 
 	// MODIFICATION START: Reset recovery state variables when entering timeshift
-	m_timeshift_delay_is_locked = false; // Allow capturing a new delay value for this session
+	//m_timeshift_delay_is_locked = false; // Allow capturing a new delay value for this session
 	// MODIFICATION END
 
 	resetTimeshift(1);
