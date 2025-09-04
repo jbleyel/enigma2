@@ -3337,15 +3337,12 @@ void eDVBServicePlay::switchToTimeshift()
 	if (m_timeshift_active)
 		return;
 
-	// MODIFICATION START: Reset recovery state variables when entering timeshift
-	//m_timeshift_delay_is_locked = false; // Allow capturing a new delay value for this session
-	// MODIFICATION END
-
 	resetTimeshift(1);
 
 	eServiceReferenceDVB r = (eServiceReferenceDVB&)m_reference;
 	r.path = m_timeshift_file;
 
+	// Seek to near the end of the file to begin timeshift playback
 	m_cue->seekTo(0, -1000);
 
 	ePtr<iTsSource> source = createTsSource(r);
@@ -3355,7 +3352,7 @@ void eDVBServicePlay::switchToTimeshift()
 	pause();
 	updateDecoder(true); /* mainly to switch off PCR, and to set pause */
 
-	// The timer start logic is correctly moved to unpause()
+	// MODIFICATION: The timer start logic is now moved to unpause()
 }
 
 void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
@@ -3622,7 +3619,7 @@ void eDVBServicePlay::cutlistToCuesheet()
 	pts_t in = 0, out = 0, length = 0;
 
 	if (getLength(length) != 0)
-		length = 0;
+		length = 0; // Corrected check
 
 	std::multiset<cueEntry>::iterator i(m_cue_entries.begin());
 
