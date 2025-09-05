@@ -247,6 +247,7 @@ protected:
 
 	/* pvr */
 	bool m_is_pvr;
+	pts_t m_pause_position;
 	int m_is_paused, m_timeshift_enabled, m_timeshift_active, m_timeshift_changed, m_save_timeshift;
 	int m_first_program_info;
 
@@ -349,14 +350,11 @@ private:
 	bool m_stream_corruption_detected;
 	int m_recovery_attempts;
 	int m_max_attempts;
-	bool m_recovery_pending;
-	pts_t m_pause_position;
-	pts_t m_recovery_delay_snapshot;
-
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
 	void updateTimeshiftDelay();
 	void resumePlay();
+	bool m_is_recovering_from_stall;
 	// END OF MODIFICATION
 };
 
