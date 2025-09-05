@@ -1102,9 +1102,6 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_resume_play_timer(eTimer::create(eApp))
 	// END OF MODIFICATION
 {
-	// MODIFICATION: Initialize the new flag
-	m_is_recovering_from_stall = false;
-
 #ifdef PASSTHROUGH_FIX
 	m_passthrough_fix_timer = eTimer::create(eApp);
 #endif
@@ -1411,6 +1408,7 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Unpausing.", m_max_attempts);
 		m_eof_recovery_timer->stop();
 		m_recovery_attempts = 0;
+		m_stream_corruption_detected = false; // Reset flag on failure
 		unpause(); 
 		m_event(this, evSeekableStatusChanged);
 		return;
@@ -1900,29 +1898,20 @@ RESULT eDVBServicePlay::unpause()
 	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
 	if (m_decoder)
 	{
+		// MODIFICATION START: Seek to the stored position before unpausing
 		if (isTimeshiftActive())
 		{
-			// MODIFICATION START: The core of the "flag" logic
-			if (m_is_recovering_from_stall && m_pause_position != -1)
+			if (m_pause_position != -1)
 			{
-				eDebug("[Timeshift-Fix-Old] Recovery Unpause: Seeking to %lld to force resync.", m_pause_position);
-				seekTo(m_pause_position);
-				m_is_recovering_from_stall = false; // Reset the flag after use
+				eDebug("[eDVBServicePlay] Seeking to stored position %lld before unpausing", m_pause_position);
+				m_pause_position = -1; // Reset position immediately after use
 			}
-			// This is the original seekTo from your file. We keep it but put it in an 'else' block.
-			// This means it will only run on a MANUAL unpause if you did not implement the flag logic.
-			// To implement the flag logic correctly, we should check if we are NOT recovering.
-			else if (!m_is_recovering_from_stall && m_pause_position != -1)
+			else
 			{
-			    // This is the part that was causing the freeze on manual delay increase.
-			    // By adding the check for the flag, we prevent it.
-			    // The original code was likely just: if (m_pause_position != -1) { seekTo... }
-			    // We are making it smarter.
-			    eDebug("[eDVBServicePlay] Normal Unpause: Resuming without seek to prevent freeze.");
+				eWarning("[eDVBServicePlay] No valid pause position to restore!");
 			}
-			// MODIFICATION END
-			m_pause_position = -1; 
 		}
+		// MODIFICATION END
 
 		m_slowmotion = 0;
 		m_is_paused = 0;
@@ -2982,19 +2971,14 @@ void eDVBServicePlay::recordEvent(int event)
 	case iDVBTSRecorder::eventWriteError:
 		eWarning("[eDVBServicePlay] recordEvent write error");
 		return;
-
 	case iDVBTSRecorder::eventStreamCorrupt:
-		// MODIFICATION START: Trigger the automatic recovery using the flag
-		if (isTimeshiftActive() && !m_is_paused && !m_is_recovering_from_stall)
-		{
-			eDebug("[Timeshift-Fix-Old] Stream corruption detected. Triggering automatic recovery.");
-			m_is_recovering_from_stall = true; // STEP 1: Raise the flag
-			pause();                           // STEP 2: Call pause()
-			unpause();                         // STEP 3: Call unpause() to trigger the seekTo trick
-		}
-		// MODIFICATION END
+		// START OF MODIFICATION - Proactive Timeshift Stability
+		// Trigger the safe recovery handler on stream corruption events.
+		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt");
+		m_stream_corruption_detected = true; // Mark that stream corruption has occurred
+		handleEofRecovery();
+		// END OF MODIFICATION
 		return;
-		
 	default:
 		eDebug("[eDVBServicePlay] recordEvent unhandled record event %d", event);
 	}

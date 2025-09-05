@@ -999,7 +999,6 @@
 		<item level="2" text="Time shift event based file splitting" description="Select 'No' to make time shift use a single buffer file. Use 'Time shift checking for older files [in minutes]' and 'Time shift checking for free space?' to control the size of the buffer file.">config.timeshift.fileSplitting</item>
 		<item level="2" text="Time shift recovery attempts" description="Define the amount of attempts for recovery.">config.timeshift.recoveryAttempts</item>
 		<item level="2" text="Time shift buffer margin" description="Define the buffer margin for timeshift.">config.timeshift.recoveryBufferMargin</item>
-		<item level="2" text="Timeshift glitch tolerance (ms)" description="Time in milliseconds to wait before reacting to stream errors. Higher value = smoother picture (but more delay loss). Lower value = better delay preservation (but more micro-freezes).">config.timeshift.glitchTolerance</item>
 	</setup>
 	<setup key="Tuner" title="Tuner Settings" level="1">
 		<item level="1" text="Force LNB Power" description="Force LNB Tuner Power settings." requires="ForceLNBPowerChanged">config.tunermisc.forceLnbPower</item>
