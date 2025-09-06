@@ -1853,7 +1853,7 @@ RESULT eDVBServicePlay::seek(ePtr<iSeekableService> &ptr)
 	return -1;
 }
 
-	/* TODO: when time shift is enabled but not active, this doesn't work. */
+/* TODO: when time shift is enabled but not active, this doesn't work. */
 RESULT eDVBServicePlay::getLength(pts_t &len)
 {
 	ePtr<iDVBPVRChannel> pvr_channel;
@@ -1864,27 +1864,35 @@ RESULT eDVBServicePlay::getLength(pts_t &len)
 	return pvr_channel->getLength(len);
 }
 
+
 RESULT eDVBServicePlay::pause()
 {
 	eDebug("[eDVBServicePlay] pause");
 	setFastForward_internal(0, m_slowmotion || m_fastforward > 1);
 	if (m_decoder)
 	{
-		// MODIFICATION START: Store current playback position before pausing
-		if (isTimeshiftActive())
+		// MODIFICATION START: Store current playback position ONLY if stream corruption was detected
+		if (isTimeshiftActive() && m_stream_corruption_detected)
 		{
 			if (getPlayPosition(m_pause_position) == 0)
 			{
-				eDebug("[eDVBServicePlay] Stored pause position at %lld", m_pause_position);
+				eDebug("[eDVBServicePlay] Stored pause position at %lld (due to stream corruption)", m_pause_position);
 			}
 			else
 			{
-				eWarning("[eDVBServicePlay] Failed to get pause position!");
+				eWarning("[eDVBServicePlay] Failed to get pause position after stream corruption!");
 				m_pause_position = -1; // Ensure it's invalid if getting the position failed
 			}
+			// Reset the flag immediately after use
+			m_stream_corruption_detected = false;
+		}
+		else
+		{
+			// For manual pause, explicitly DO NOT save the position to prevent seek-related freezes.
+			m_pause_position = -1;
+			eDebug("[eDVBServicePlay] Manual pause: Position NOT saved to prevent potential freeze on resume.");
 		}
 		// MODIFICATION END
-
 		m_slowmotion = 0;
 		m_is_paused = 1;
 		return m_decoder->pause();
