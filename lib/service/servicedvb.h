@@ -342,19 +342,21 @@ protected:
 
 private:
 
-	// START OF MODIFICATION
+	// START OF MODIFICATION - Proactive Timeshift Stability (without glitch tolerance)
 	ePtr<eTimer> m_eof_recovery_timer;
 	ePtr<eTimer> m_timeshift_delay_updater_timer;
 	ePtr<eTimer> m_resume_play_timer;
 	pts_t m_saved_timeshift_delay;
 	bool m_stream_corruption_detected;
 	int m_recovery_attempts;
-	int m_max_attempts;
+	int m_max_attempts;	
+	bool m_recovery_pending;
+	pts_t m_recovery_delay_snapshot;
+	pts_t position; // Needed for recovery logic to access current playback position
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
 	void updateTimeshiftDelay();
 	void resumePlay();
-	bool m_is_recovering_from_stall;
 	// END OF MODIFICATION
 };
 
