@@ -1326,37 +1326,17 @@ void eDVBServicePlay::updateTimeshiftDelay()
 		return;
 	}
 
-	pts_t live_pts = 0, playback_pts = 0;
+	pts_t playback_pts = 0;
 	const pts_t MAX_REASONABLE_DELAY = 10800LL * 90000; // 3 hours
 
-	int pcr_ret = -1;
-	if (m_record)
-	{
-		pcr_ret = m_record->getCurrentPCR(live_pts);
-	}
 	int pos_ret = getPlayPosition(playback_pts);
 
 	// Method 1 (preferred): Use direct PCR value with strict > 0 check
-	if (m_record && pcr_ret == 0 && pos_ret == 0 && live_pts > playback_pts)
-	{
-		pts_t calculated_delay = live_pts - playback_pts;
 		// A second check for > 0 is good practice
-		if (calculated_delay > 0 && calculated_delay < MAX_REASONABLE_DELAY)
-		{
-			m_saved_timeshift_delay = calculated_delay;
-			eDebug("[Timeshift-Debug] SUCCESS (Method 1: PCR): Delay updated to %lld", m_saved_timeshift_delay);
-			return; // Success, exit function
-		}
-		else
-		{
-			 eDebug("[Timeshift-Debug] WARNING (Method 1: PCR): Calculated delay is insane (%lld). Keeping last known value.", calculated_delay);
-		}
-	}
 	
 	// Method 2 (fallback): If PCR fails or delay is not positive, use buffer length
 	if (pos_ret == 0)
 	{
-		eDebug("[Timeshift-Debug] Method 1 (PCR) failed (pcr_ret=%d). Trying Method 2 (getLength).", pcr_ret);
 		pts_t total_length = 0;
 		if (getLength(total_length) == 0 && total_length > playback_pts)
 		{
@@ -1401,19 +1381,9 @@ void eDVBServicePlay::handleEofRecovery()
 
 void eDVBServicePlay::resumePlay()
 {
-	if (m_decoder)
-	{
-		m_decoder->play();
-	}
-	
-	m_is_paused = 0;
 	m_recovery_pending = false;
 	m_stream_corruption_detected = false;
-
-	if (isTimeshiftActive())
-	{
-		m_timeshift_delay_updater_timer->start(2000, false);
-	}
+	unpause();
 }
 
 void eDVBServicePlay::onEofRecoveryTimeout()
