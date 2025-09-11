@@ -351,8 +351,7 @@ private:
 	int m_recovery_attempts;
 	int m_max_attempts;	
 	bool m_recovery_pending;
-	pts_t m_recovery_delay_snapshot;
-	pts_t position; // Needed for recovery logic to access current playback position
+
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
 	void updateTimeshiftDelay();
