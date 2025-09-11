@@ -2489,3 +2489,13 @@ def getSkinFactor(screen=GUI_SKIN_ID):
 	# if skinfactor not in [0.8, 1, 1.5, 3, 6]:
 	# 	print(f"[Skin] Warning: Unexpected result for getSkinFactor '{skinfactor:.4f}'!")
 	return skinfactor
+
+
+def applySkinFactor(*d):
+	"""
+	Multiply the numeric input by the skin factor
+	and return the result as an integer.
+	"""
+	if len(d) == 1:
+		return int(d[0] * getSkinFactor())
+	return tuple([int(value * getSkinFactor()) if isinstance(value, (int, float)) else value for value in d])
