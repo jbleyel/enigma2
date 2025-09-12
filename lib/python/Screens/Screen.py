@@ -1,4 +1,4 @@
-from os.path import isdir, isfile
+from os.path import isfile
 
 from enigma import eRCInput, eTimer, eWindow, getDesktop
 
@@ -6,7 +6,7 @@ from skin import GUI_SKIN_ID, applyAllAttributes, menus, screens, setups
 from Components.ActionMap import ActionMap
 from Components.config import config
 from Components.GUIComponent import GUIComponent
-from Components.Pixmap import Pixmap
+from Components.PixmapLabel import PixmapLabel
 from Components.Sources.Source import Source
 from Components.Sources.StaticText import StaticText
 from Tools.CList import CList
@@ -54,7 +54,7 @@ class Screen(dict):
 		self["Title"] = StaticText()
 		self.screenImage = self.checkImage(className)  # This is the current screen image name.
 		if self.screenImage:
-			self["Image"] = Pixmap()
+			self["Image"] = PixmapLabel()
 		if enableHelp:
 			self["helpActions"] = ActionMap(["HelpActions"], {
 				"displayHelp": self.showHelp
@@ -191,19 +191,22 @@ class Screen(dict):
 			defaultImage = images.get("default", "")
 			screenImage = images.get(image, defaultImage)
 			if screenImage:
-				screenImage = resolveFilename(SCOPE_GUISKIN, screenImage)
-				msg = f"{'Default' if screenImage == defaultImage and image != 'default' else 'Specified'} {source if source else 'screen'} image for '{image}' is '{screenImage}'"
-				if isfile(screenImage):
-					print(f"[Screen] {msg}.")
-				else:
-					print(f"[Screen] Error: {msg} but this is not a file!")
-					screenImage = None
+				if ".png" in screenImage:
+					screenImage = resolveFilename(SCOPE_GUISKIN, screenImage)
+					msg = f"{'Default' if screenImage == defaultImage and image != 'default' else 'Specified'} {source if source else 'screen'} image for '{image}' is '{screenImage}'"
+					if isfile(screenImage):
+						print(f"[Screen] {msg}.")
+					else:
+						print(f"[Screen] Error: {msg} but this is not a file!")
+						screenImage = None
+				elif len(screenImage) == 1:  # ImageFont
+					return screenImage
 		return screenImage
 
 	def setImage(self, image, source=None):
 		self.screenImage = self.checkImage(image, source=source)
 		if self.screenImage and "Image" not in self:
-			self["Image"] = Pixmap()
+			self["Image"] = PixmapLabel()
 
 	def getImage(self):
 		return self.screenImage
@@ -292,10 +295,20 @@ class Screen(dict):
 		self.createGUIScreen(self.instance, self.desktop)
 
 	def createGUIScreen(self, parent, desktop, updateonly=False):
+
+		def addToStack(widget):
+			if hasattr(widget, "stackIndex") and widget.stackIndex != -1:
+				stack = self.stacks[widget.stackIndex]
+				stack.instance.addChild(widget.instance)
+
+		for widget in self.stacks:
+			widget.instance = widget.widget(parent)
+
 		for value in self.renderer:
 			if isinstance(value, GUIComponent):
 				if not updateonly:
 					value.GUIcreate(parent)
+					addToStack(value)
 				if not value.applySkin(desktop, self):
 					print(f"[Screen] Warning: Skin is missing renderer '{value}' in {str(self)}.")
 		for key in self:
@@ -303,6 +316,7 @@ class Screen(dict):
 			if isinstance(value, GUIComponent):
 				if not updateonly:
 					value.GUIcreate(parent)
+					addToStack(value)
 				deprecated = value.deprecationInfo
 				if value.applySkin(desktop, self):
 					if deprecated:
@@ -317,9 +331,16 @@ class Screen(dict):
 			if not updateonly:
 				widget.instance = widget.widget(parent)
 			applyAllAttributes(widget.instance, desktop, widget.skinAttributes, self.scale)
+			addToStack(widget)
+
 		if self.screenImage:
-			screenImage = LoadPixmap(self.screenImage)
-			self["Image"].instance.setPixmap(screenImage)
+			if "/" in self.screenImage:
+				screenImage = LoadPixmap(self.screenImage)
+				self["Image"].setInstance(False)
+				self["Image"].instancePixmap.setPixmap(screenImage)
+			else:
+				self["Image"].setInstance(True)
+				self["Image"].instanceLabel.setText(self.screenImage)
 		for method in self.onLayoutFinish:
 			if not isinstance(method, type(self.close)):
 				exec(method, globals(), locals())
