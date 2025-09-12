@@ -4,7 +4,7 @@ from os import listdir, unlink
 from traceback import print_exc
 from xml.etree.ElementTree import Element, ElementTree, fromstring
 
-from enigma import BT_ALPHABLEND, BT_ALPHATEST, BT_HALIGN_CENTER, BT_HALIGN_LEFT, BT_HALIGN_RIGHT, BT_KEEP_ASPECT_RATIO, BT_SCALE, BT_VALIGN_BOTTOM, BT_VALIGN_CENTER, BT_VALIGN_TOP, addFont, eLabel, eListbox, eListboxPythonMultiContent, ePixmap, ePoint, eRect, eRectangle, eSize, eSlider, eSubtitleWidget, eWidget, eWindow, eWindowStyleManager, eWindowStyleSkinned, getDesktop, gFont, getFontFaces, gMainDC, gRGB
+from enigma import BT_ALPHABLEND, BT_ALPHATEST, BT_HALIGN_CENTER, BT_HALIGN_LEFT, BT_HALIGN_RIGHT, BT_KEEP_ASPECT_RATIO, BT_SCALE, BT_VALIGN_BOTTOM, BT_VALIGN_CENTER, BT_VALIGN_TOP, addFont, eLabel, eListbox, eListboxPythonMultiContent, eStack, ePixmap, ePoint, eRect, eRectangle, eSize, eSlider, eSubtitleWidget, eWidget, eWindow, eWindowStyleManager, eWindowStyleSkinned, getDesktop, gFont, getFontFaces, gMainDC, gRGB
 
 from Components.config import ConfigEnableDisable, ConfigSelection, ConfigSubsection, ConfigText, config
 from Components.SystemInfo import BoxInfo
@@ -900,6 +900,8 @@ class AttributeParser:
 	def applyVerticalScale(self, value):
 		return int(parseInteger(value) * self.scaleTuple[1][0] / self.scaleTuple[1][1])
 
+	def align(self, value):
+		self.guiObject.setAlign(value)
 	def alphaBlend(self, value):
 		self.guiObject.setWidgetAlphaBlend(parseBoolean("alphablend", value))
 
@@ -1097,6 +1099,8 @@ class AttributeParser:
 	def label(self, value):
 		pass
 
+	def layout(self, value):
+		pass
 	def listOrientation(self, value):  # Used by eListBox.
 		self.guiObject.setOrientation(parseListOrientation(value))
 
@@ -1277,8 +1281,12 @@ class AttributeParser:
 	def spacingColor(self, value):
 		self.guiObject.setSpacingColor(parseColor(value, 0x00000000))
 
+	def stack(self, value):
+		pass
 	def tabWidth(self, value):
 		self.guiObject.setTabWidth(parseTabWidth(value, -1))
+	def tag(self, value):
+		self.guiObject.setTag(parseInteger(value, 0))
 
 	def text(self, value):
 		if value:
@@ -1604,7 +1612,7 @@ def reloadWindowStyles():
 
 class additionalWidget:
 	def __init__(self):
-		pass
+		self.childs = []
 
 
 class ComponentTemplates():
@@ -1804,6 +1812,9 @@ class SkinContextVertical(SkinContext):
 				size = (width, height)
 				self.h -= (height + self.spacing)
 				self.y += (height + self.spacing)
+			elif pos == "center":
+				pos = (left, (self.h - height) / 2)
+				size = (width, height)
 			else:
 				if pos in variables:
 					pos = variables[pos]
@@ -1853,6 +1864,9 @@ class SkinContextHorizontal(SkinContext):
 				pos = (self.rx, top)
 				size = (width, height)
 				self.w -= (width + self.spacing)
+			elif pos == "center":
+				pos = ((self.w - width) / 2, top)
+				size = (width, height)
 			else:
 				if pos in variables:
 					pos = variables[pos]
@@ -2135,9 +2149,10 @@ def readSkin(screen, skin, names, desktop):
 	context = SkinContext(context, myScreen.attrib.get("position"), myScreen.attrib.get("size"))
 	screen.additionalWidgets = []
 	screen.renderer = []
+	screen.stacks = []
 	usedComponents = set()
 
-	def processConstant(constant_widget, context):
+	def processConstant(constant_widget, context, target=None):
 		widgetName = constant_widget.attrib.get("name")
 		if widgetName:
 			try:
@@ -2152,7 +2167,7 @@ def readSkin(screen, skin, names, desktop):
 		except ValueError:
 			pass
 
-	def processLayouts(layout, context):
+	def processLayouts(layout, context, target=None):
 		widgetName = layout.attrib.get("name")
 		if widgetName:
 			try:
@@ -2167,10 +2182,31 @@ def readSkin(screen, skin, names, desktop):
 		except ValueError:
 			pass
 
-	def processNone(widget, context):
+	def processNone(widget, context, stack=None):
 		pass
 
-	def processWidget(widget, context):
+	def proccesStackAddition(widget, stack, target):
+		if stack:
+			target.stackIndex = stack.index
+			pos = widget.attrib.get("position")
+			align = eWidget.eStackAlignNone
+			if stack.layout == 0:  # horizontal
+				if "left" in pos:
+					align = eWidget.eStackAlignLeft
+				elif "right" in pos:
+					align = eWidget.eStackAlignRight
+				elif "center" in pos:
+					align = eWidget.eStackAlignCenter
+			else:
+				if "top" in pos:
+					align = eWidget.eStackAlignTop
+				elif "bottom" in pos:
+					align = eWidget.eStackAlignBottom
+				elif "center" in pos:
+					align = eWidget.eStackAlignCenter
+			target.skinAttributes.append(("align", align))
+		return target
+	def processWidget(widget, context, stack=None):
 		# Okay, we either have 1:1-mapped widgets ("old style"), or 1:n-mapped
 		# widgets (source->renderer).
 		widgetName = widget.attrib.get("name")
@@ -2189,6 +2225,7 @@ def readSkin(screen, skin, names, desktop):
 				raise SkinError(f"Component with name '{widgetName}' was not found in skin of screen '{myName}'")
 			# assert screen[widgetName] is not Source
 			collectAttributes(attributes, widget, context, skinPath, ignore=("name",))
+			screen[widgetName] = proccesStackAddition(widget, stack, screen[widgetName])
 		elif widgetSource:
 			# print(f"[Skin] DEBUG: Widget source='{widgetSource}'.")
 			while True:  # Get corresponding source until we found a non-obsolete source.
@@ -2269,6 +2306,7 @@ def readSkin(screen, skin, names, desktop):
 				renderer.connect(source)  # Connect to source.
 			attributes = renderer.skinAttributes = []
 			collectAttributes(attributes, widget, context, skinPath, ignore=("render", "source"))
+			renderer = proccesStackAddition(widget, stack, renderer)
 			screen.renderer.append(renderer)
 		elif widgetClass:
 			try:
@@ -2292,7 +2330,7 @@ def readSkin(screen, skin, names, desktop):
 			attributes = screen[widgetClassName].skinAttributes = []
 			collectAttributes(attributes, widget, context, skinPath, ignore=("addon",))
 
-	def processApplet(widget, context):
+	def processApplet(widget, context, stack=None):
 		try:
 			codeText = widget.text.strip()
 			widgetType = widget.attrib.get("type")
@@ -2306,28 +2344,37 @@ def readSkin(screen, skin, names, desktop):
 		else:
 			raise SkinError(f"Applet type '{widgetType}' is unknown")
 
-	def processLabel(widget, context):
+	def processLabel(widget, context, stack=None):
 		item = additionalWidget()
 		item.widget = eLabel
 		item.skinAttributes = []
 		collectAttributes(item.skinAttributes, widget, context, skinPath, ignore=("name",))
+		item = proccesStackAddition(widget, stack, item)
 		screen.additionalWidgets.append(item)
+		if stack:
+			stack.childs.append(item)
 
-	def processPixmap(widget, context):
+	def processPixmap(widget, context, stack=None):
 		item = additionalWidget()
 		item.widget = ePixmap
 		item.skinAttributes = []
 		collectAttributes(item.skinAttributes, widget, context, skinPath, ignore=("name",))
+		item = proccesStackAddition(widget, stack, item)
 		screen.additionalWidgets.append(item)
+		if stack:
+			stack.childs.append(item)
 
-	def processRectangle(widget, context):
+	def processRectangle(widget, context, stack=None):
 		item = additionalWidget()
 		item.widget = eRectangle
 		item.skinAttributes = []
 		collectAttributes(item.skinAttributes, widget, context, skinPath, ignore=("name",))
+		item = proccesStackAddition(widget, stack, item)
 		screen.additionalWidgets.append(item)
+		if stack:
+			stack.childs.append(item)
 
-	def processScreen(widget, context):
+	def processScreen(widget, context, stack=None):
 		widgets = widget
 		for widget in widgets.findall('constant-widget'):
 			processConstant(widget, context)
@@ -2348,12 +2395,12 @@ def readSkin(screen, skin, names, desktop):
 				continue
 			processor = processors.get(widget.tag, processNone)
 			try:
-				processor(widget, context)
+				processor(widget, context, stack)
 			except SkinError as err:
 				print(f"[Skin] Error: Screen '{myName}' widget '{widget.tag}' {str(err)}!")
 				print_exc()
 
-	def processPanel(widget, context):
+	def processPanel(widget, context, stack=None):
 		name = widget.attrib.get("name")
 		if name:
 			try:
@@ -2378,6 +2425,33 @@ def readSkin(screen, skin, names, desktop):
 			raise SkinError(f"Failed to create skin context (position='{widget.attrib.get('position')}', size='{widget.attrib.get('size')}', font='{widget.attrib.get('font')}') in context '{context}': {err}")
 		processScreen(widget, contextScreen)
 
+	def processStack(widget, context, stack=None):
+		item = additionalWidget()
+		item.widget = eStack
+		layout = widget.attrib.get("layout")
+		item.layout = 0 if layout == "horizontal" else 1
+		classes = {
+			"vertical": SkinContextVertical,
+			"horizontal": SkinContextHorizontal,
+		}
+		contextClass = classes.get(layout, SkinContext)
+		try:
+			contextScreen = contextClass(context, widget.attrib.get("position"), widget.attrib.get("size"), widget.attrib.get("font"))
+			spacing = widget.attrib.get("spacing")
+			if spacing:
+				contextScreen.spacing = int(spacing)
+			item.position = (contextScreen.x, contextScreen.y)
+			item.size = (contextScreen.w, contextScreen.h)
+			item.index = len(screen.stacks)
+			item.childs = []
+			item.skinAttributes = []
+			item = proccesStackAddition(widget, stack, item)
+			screen.stacks.append(item)
+		except Exception as err:
+			raise SkinError(f"Failed to create skin context (position='{widget.attrib.get('position')}', size='{widget.attrib.get('size')}', font='{widget.attrib.get('font')}') in context '{context}': {err}")
+		processScreen(widget, contextScreen, item)
+		if stack:
+			stack.childs.append(item)
 	processors = {
 		None: processNone,
 		"constant-widget": processConstant,
@@ -2387,6 +2461,7 @@ def readSkin(screen, skin, names, desktop):
 		"eLabel": processLabel,
 		"ePixmap": processPixmap,
 		"eRectangle": processRectangle,
+		"eStack": processStack,
 		"panel": processPanel
 	}
 
