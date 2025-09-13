@@ -350,7 +350,6 @@ private:
 	bool m_stream_corruption_detected;
 	int m_recovery_attempts;
 	int m_max_attempts;	
-	bool m_recovery_pending;
 
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
