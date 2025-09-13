@@ -299,7 +299,9 @@ class Screen(dict):
 				stack.instance.addChild(widget.instance)
 
 		for widget in self.stacks:
-			widget.instance = widget.widget(parent)
+			widget.instance = widget.widget(parent, widget.layout)
+			applyAllAttributes(widget.instance, desktop, widget.skinAttributes, self.scale)
+			addToStack(widget)
 
 		for value in self.renderer:
 			if isinstance(value, GUIComponent):

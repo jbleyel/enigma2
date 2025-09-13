@@ -40,7 +40,7 @@ public:
 		setWrap((nowrap == 1) ? 0 : 1);
 	} // DEPRECATED
 	void setUnderline(bool underline);
-	void setRunningText(int direction, long startDelay, long delay, bool runOnce = false);
+	void setScrollText(int direction, long delay, long startDelay, bool runOnce = false);
 	void clearForegroundColor();
 	int getWrap() const {
 		return m_wrap;

@@ -757,6 +757,22 @@ def parseScrollbarScroll(value):
 	return parseOptions(options, "scrollbarScroll", value, 0)
 
 
+def parseScrollText(value):
+	directions = {
+		"vertical": eLabel.SCROLL_BOTTOM_TO_TOP,
+		"horizontal": eLabel.SCROLL_LEFT_TO_RIGHT
+	}
+	values = value.split(",")
+	count = len(values)
+	runOnce = parseBoolean("runonce", values[3]) if count > 3 else False
+	startDelay = parseInteger(values[2]) if count > 2 else 0
+	delay = parseInteger(values[1]) if count > 1 else 100
+	if count:
+		direction = directions.get(values[0], eLabel.SCROLL_NONE)
+	else:
+		direction = eLabel.SCROLL_NONE
+		print(f"[Skin] Error: Attribute 'scrollText' with value '{value}' has invalid element(s)!")
+	return (direction, delay, startDelay, runOnce)
 def parseSeparator(attribute, value):
 	"""
 		left, top, width, height
@@ -1217,6 +1233,8 @@ class AttributeParser:
 	def scrollbarWidth(self, value):
 		self.guiObject.setScrollbarWidth(self.applyHorizontalScale(value))
 
+	def scrollText(self, value):
+		self.guiObject.setScrollText(parseScrollText(value))
 	def secondFont(self, value):
 		self.valueFont(value)
 		attribDeprecationWarning("secondFont", "valueFont")
@@ -1278,6 +1296,8 @@ class AttributeParser:
 		self.scrollbarForegroundPixmap(value)
 		attribDeprecationWarning("sliderPixmap", "scrollbarForegroundPixmap")
 
+	def spacing(self, value):
+		self.guiObject.setSpacing(parseInteger(value))
 	def spacingColor(self, value):
 		self.guiObject.setSpacingColor(parseColor(value, 0x00000000))
 
@@ -2436,15 +2456,18 @@ def readSkin(screen, skin, names, desktop):
 		}
 		contextClass = classes.get(layout, SkinContext)
 		try:
+			item.skinAttributes = []
+			item.childs = []
 			contextScreen = contextClass(context, widget.attrib.get("position"), widget.attrib.get("size"), widget.attrib.get("font"))
 			spacing = widget.attrib.get("spacing")
 			if spacing:
 				contextScreen.spacing = int(spacing)
-			item.position = (contextScreen.x, contextScreen.y)
-			item.size = (contextScreen.w, contextScreen.h)
+#			item.position = (contextScreen.x, contextScreen.y)
+#			item.size = (contextScreen.w, contextScreen.h)
 			item.index = len(screen.stacks)
-			item.childs = []
-			item.skinAttributes = []
+			item.skinAttributes.append(("size", (contextScreen.w, contextScreen.h)))
+			item.skinAttributes.append(("position", (contextScreen.x, contextScreen.y)))
+			item.skinAttributes.append(("spacing", contextScreen.spacing))
 			item = proccesStackAddition(widget, stack, item)
 			screen.stacks.append(item)
 		except Exception as err:

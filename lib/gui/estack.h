@@ -20,6 +20,12 @@ public:
 	void addChild(eWidget* child);
 	void removeChild(eWidget* child);
 
+	int getSpacing() const {
+		return m_spacing;
+	}
+	void setSpacing(int spacing) {
+		m_spacing = spacing;
+	}
 	std::string __str__() const override {
 		std::ostringstream oss;
 		oss << "<eStack Size=(" << size().width() << "," << size().height() << ") Position=(" << position().x() << "," << position().y() << ") Tag=" << getTag() << ">";
@@ -40,6 +46,7 @@ protected:
 private:
 	LayoutDirection m_direction;
 	std::vector<eWidget*> m_stackchilds;
+	int m_spacing;
 };
 
 #endif

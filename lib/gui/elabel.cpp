@@ -247,12 +247,14 @@ eSize eLabel::calculateTextSize(gFont* font, const std::string& string, eSize ta
 	return para.getBoundBox().size();
 }
 
-void eLabel::setRunningText(int direction, long startDelay, long delay, bool runOnce) {
+void eLabel::setScrollText(int direction, long delay, long startDelay, bool runOnce) {
 	if (m_running_text_direction == direction || direction == SCROLL_NONE)
 		return;
 	m_running_text_direction = direction;
 	m_run_once = runOnce;
 	m_start_delay = startDelay;
+	if (m_start_delay > 10000)
+		m_start_delay = 10000;
 	m_delay = std::max(delay, (long)50); // minimum 50 ms
 	m_text_size = calculateTextSize(m_font, m_text, size(), direction == SCROLL_LEFT_TO_RIGHT ? true : false);
 	m_run_text = direction == SCROLL_LEFT_TO_RIGHT ? m_text_size.width() > size().width() : m_text_size.height() > size().height();
