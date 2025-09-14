@@ -28,14 +28,11 @@ void eStack::removeChild(eWidget* child) {
 }
 
 void eStack::invalidateChilds() {
-	eDebug("[eStack] invalidateChilds");
 	recalcLayout();
 }
 
 
 int eStack::event(int event, void* data, void* data2) {
-	eDebug("[eStack] event %d", event);
-
 	if (event == evtPaint)
 		return 0;
 

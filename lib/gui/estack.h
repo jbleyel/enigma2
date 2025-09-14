@@ -26,13 +26,14 @@ public:
 	void setSpacing(int spacing) {
 		m_spacing = spacing;
 	}
-	std::string __str__() const override {
+
+	std::string dumpObject() const override {
 		std::ostringstream oss;
 		oss << "<eStack Size=(" << size().width() << "," << size().height() << ") Position=(" << position().x() << "," << position().y() << ") Tag=" << getTag() << ">";
 		if (m_stackchilds.size() > 0)
 			oss << "\nChilds:\n";
 		for (auto child : m_stackchilds) {
-			oss << "\t" << child->__str__();
+			oss << "\t" << child->dumpObject();
 		}
 		return oss.str();
 	}

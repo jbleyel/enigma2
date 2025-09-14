@@ -773,6 +773,8 @@ def parseScrollText(value):
 		direction = eLabel.SCROLL_NONE
 		print(f"[Skin] Error: Attribute 'scrollText' with value '{value}' has invalid element(s)!")
 	return (direction, delay, startDelay, runOnce)
+
+
 def parseSeparator(attribute, value):
 	"""
 		left, top, width, height
@@ -918,6 +920,7 @@ class AttributeParser:
 
 	def align(self, value):
 		self.guiObject.setAlign(value)
+
 	def alphaBlend(self, value):
 		self.guiObject.setWidgetAlphaBlend(parseBoolean("alphablend", value))
 
@@ -1117,6 +1120,7 @@ class AttributeParser:
 
 	def layout(self, value):
 		pass
+
 	def listOrientation(self, value):  # Used by eListBox.
 		self.guiObject.setOrientation(parseListOrientation(value))
 
@@ -1235,6 +1239,7 @@ class AttributeParser:
 
 	def scrollText(self, value):
 		self.guiObject.setScrollText(parseScrollText(value))
+
 	def secondFont(self, value):
 		self.valueFont(value)
 		attribDeprecationWarning("secondFont", "valueFont")
@@ -1298,13 +1303,16 @@ class AttributeParser:
 
 	def spacing(self, value):
 		self.guiObject.setSpacing(parseInteger(value))
+
 	def spacingColor(self, value):
 		self.guiObject.setSpacingColor(parseColor(value, 0x00000000))
 
 	def stack(self, value):
 		pass
+
 	def tabWidth(self, value):
 		self.guiObject.setTabWidth(parseTabWidth(value, -1))
+
 	def tag(self, value):
 		self.guiObject.setTag(parseInteger(value, 0))
 
@@ -2226,6 +2234,7 @@ def readSkin(screen, skin, names, desktop):
 					align = eWidget.eStackAlignCenter
 			target.skinAttributes.append(("align", align))
 		return target
+
 	def processWidget(widget, context, stack=None):
 		# Okay, we either have 1:1-mapped widgets ("old style"), or 1:n-mapped
 		# widgets (source->renderer).
@@ -2336,15 +2345,12 @@ def readSkin(screen, skin, names, desktop):
 
 			if not widgetConnection:
 				raise SkinError(f"The widget is from addon type: {widgetClass} , but no connection is specified.")
-
 			i = 0
 			widgetClassNameBase = f"{name}_{widgetClass}_{widgetConnection}_"
 			while f"{widgetClassNameBase}{i}" in usedComponents:
 				i += 1
 			widgetClassName = f"{widgetClassNameBase}{i}"
-
 			usedComponents.add(widgetClassName)
-
 			screen[widgetClassName] = addonClass()
 			screen[widgetClassName].connectRelatedElement(widgetConnection, screen)
 			attributes = screen[widgetClassName].skinAttributes = []
@@ -2475,6 +2481,7 @@ def readSkin(screen, skin, names, desktop):
 		processScreen(widget, contextScreen, item)
 		if stack:
 			stack.childs.append(item)
+
 	processors = {
 		None: processNone,
 		"constant-widget": processConstant,

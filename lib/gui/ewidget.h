@@ -20,7 +20,7 @@ public:
 	virtual ~eWidget();
 
 	void move(ePoint pos);
-	virtual void resize(eSize size);
+	void resize(eSize size);
 
 	ePoint position() const {
 		return m_position;
@@ -105,7 +105,6 @@ public:
 	int isVisible() {
 		return (m_vis & wVisShow) && ((!m_parent) || m_parent->isVisible());
 	}
-	/* ... */
 
 	int isLowered() {
 		return (m_lowered > 0);
@@ -151,9 +150,7 @@ private:
 	void insertIntoParent();
 	void doPaint(gPainter& painter, const gRegion& region, int layer);
 	void recalcClipRegionsWhenVisible();
-
 	void parentRemoved();
-
 
 	eWidget *m_current_focus, *m_focus_owner;
 
@@ -170,7 +167,6 @@ private:
 	uint8_t m_cornerRadiusEdges;
 
 	int m_tag;
-
 
 protected:
 	void mayKillFocus();
@@ -197,18 +193,13 @@ public:
 		evtKey,
 		evtChangedPosition,
 		evtChangedSize,
-
 		evtParentChangedPosition,
-
 		evtParentVisibilityChanged,
 		evtWillChangePosition, /* new size is eRect *data */
 		evtWillChangeSize,
-
 		evtAction,
-
 		evtFocusGot,
 		evtFocusLost,
-
 		evtUserWidget,
 	};
 	virtual int event(int event, void* data = 0, void* data2 = 0);
@@ -260,9 +251,13 @@ public:
 		m_stack = stack;
 	}
 
-	virtual std::string __str__() const {
+	virtual std::string getClassName() const {
+		return std::string("eWidget");
+	}
+
+	virtual std::string dumpObject() const {
 		std::ostringstream oss;
-		oss << "<eWidget Size=(" << size().width() << "," << size().height() << ") Position=(" << position().x() << "," << position().y() << ") Tag=" << getTag() << ">";
+		oss << "<" << getClassName() << " Size=(" << size().width() << "," << size().height() << ") Position=(" << position().x() << "," << position().y() << ") Tag=" << getTag() << ">";
 		return oss.str();
 	}
 };
