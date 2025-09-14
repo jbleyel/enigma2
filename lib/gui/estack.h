@@ -8,24 +8,21 @@
 
 class eStack : public eWidget {
 public:
-	enum LayoutDirection : uint8_t { Horizontal, Vertical };
+	enum LayoutDirection : uint8_t {
+		Horizontal,
+		Vertical
+	};
 
 	eStack(eWidget* parent = nullptr, LayoutDirection dir = Vertical);
 
 	void setLayoutDirection(LayoutDirection dir);
-	LayoutDirection layoutDirection() const {
-		return m_direction;
-	}
+	LayoutDirection layoutDirection() const { return m_direction; }
 
 	void addChild(eWidget* child);
 	void removeChild(eWidget* child);
 
-	int getSpacing() const {
-		return m_spacing;
-	}
-	void setSpacing(int spacing) {
-		m_spacing = spacing;
-	}
+	int getSpacing() const { return m_spacing; }
+	void setSpacing(int spacing) { m_spacing = spacing; }
 
 	std::string dumpObject() const override {
 		std::ostringstream oss;
@@ -37,7 +34,6 @@ public:
 		}
 		return oss.str();
 	}
-
 
 protected:
 	int event(int event, void* data = 0, void* data2 = 0) override;

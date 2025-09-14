@@ -1,6 +1,6 @@
 #include <lib/gui/estack.h>
 
-eStack::eStack(eWidget* parent, LayoutDirection dir) : eWidget(parent), m_direction(dir),m_spacing(0) {}
+eStack::eStack(eWidget* parent, LayoutDirection dir) : eWidget(parent), m_direction(dir), m_spacing(0) {}
 
 void eStack::setLayoutDirection(LayoutDirection dir) {
 	m_direction = dir;
@@ -70,21 +70,19 @@ void eStack::recalcLayout() {
 			if (child->align() & eStackAlignLeft) {
 				cx = x;
 				x += cw;
-				if( lcount > 0 )
-				{
-					x+= m_spacing;
-					cx+= m_spacing;
+				if (lcount > 0) {
+					x += m_spacing;
+					cx += m_spacing;
 				}
-				lcount ++;
+				lcount++;
 			} else if (child->align() & eStackAlignRight) {
 				cx = xr - cw;
 				xr -= cx;
-				if( lcount > 0 )
-				{
-					cx-= m_spacing;
-					xr-= m_spacing;
+				if (lcount > 0) {
+					cx -= m_spacing;
+					xr -= m_spacing;
 				}
-				rcount ++;
+				rcount++;
 			} else if (child->align() & eStackAlignCenter)
 				cx = (stack_w - cw) / 2;
 
@@ -93,21 +91,19 @@ void eStack::recalcLayout() {
 			if (child->align() & eStackAlignTop) {
 				cy = y;
 				y += cy;
-				if( tcount > 0 )
-				{
-					y+= m_spacing;
-					cy+= m_spacing;
+				if (tcount > 0) {
+					y += m_spacing;
+					cy += m_spacing;
 				}
-				tcount ++;
+				tcount++;
 			} else if (child->align() & eStackAlignBottom) {
 				cy = yb - ch;
 				yb -= cy;
-				if( bcount > 0 )
-				{
-					cy-= m_spacing;
-					yb-= m_spacing;
+				if (bcount > 0) {
+					cy -= m_spacing;
+					yb -= m_spacing;
 				}
-				bcount ++;
+				bcount++;
 			} else if (child->align() & eStackAlignCenter)
 				cy = (stack_h - ch) / 2;
 

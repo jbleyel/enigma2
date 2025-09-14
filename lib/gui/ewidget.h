@@ -22,15 +22,9 @@ public:
 	void move(ePoint pos);
 	void resize(eSize size);
 
-	ePoint position() const {
-		return m_position;
-	}
-	eSize size() const {
-		return m_size;
-	}
-	eSize csize() const {
-		return m_client_size;
-	}
+	ePoint position() const { return m_position; }
+	eSize size() const { return m_size; }
+	eSize csize() const { return m_client_size; }
 
 	virtual void invalidate(const gRegion& region = gRegion::invalidRegion());
 
@@ -38,13 +32,9 @@ public:
 	   is "this", but it can be overridden in case a widget
 	   has a "client area", which is implemented as a child
 	   widget. eWindow overrides this, for example. */
-	virtual eWidget* child() {
-		return this;
-	}
+	virtual eWidget* child() { return this; }
 
-	eWidget* getParent() {
-		return m_parent;
-	}
+	eWidget* getParent() { return m_parent; }
 
 	void show();
 	void hide();
@@ -60,21 +50,13 @@ public:
 		style = m_style;
 		return 0;
 	}
-	void setStyle(eWindowStyle* style) {
-		m_style = style;
-	}
+	void setStyle(eWindowStyle* style) { m_style = style; }
 
 	virtual void setBackgroundColor(const gRGB& col);
-	virtual void clearBackgroundColor() {
-		m_have_background_color = false;
-	}
+	virtual void clearBackgroundColor() { m_have_background_color = false; }
 
-	virtual void setBorderWidth(int width) {
-		setWidgetBorderWidth(width);
-	}
-	virtual void setBorderColor(const gRGB& color) {
-		setWidgetBorderColor(color);
-	}
+	virtual void setBorderWidth(int width) { setWidgetBorderWidth(width); }
+	virtual void setBorderColor(const gRGB& color) { setWidgetBorderColor(color); }
 
 	virtual void setWidgetBorderWidth(int width) {
 		m_border_width = width;
@@ -91,39 +73,25 @@ public:
 		invalidate();
 	}
 
-	virtual void setPadding(const eRect& padding) {
-		m_padding = padding;
-	}
-	virtual eRect getPadding() {
-		return m_padding;
-	}
+	virtual void setPadding(const eRect& padding) { m_padding = padding; }
+	virtual eRect getPadding() { return m_padding; }
 
 	void setZPosition(int z);
 	void setTransparent(int transp);
 
 	/* untested code */
-	int isVisible() {
-		return (m_vis & wVisShow) && ((!m_parent) || m_parent->isVisible());
-	}
+	int isVisible() { return (m_vis & wVisShow) && ((!m_parent) || m_parent->isVisible()); }
 
-	int isLowered() {
-		return (m_lowered > 0);
-	}
+	int isLowered() { return (m_lowered > 0); }
 
-	int isTransparent() {
-		return m_vis & wVisTransparent;
-	}
+	int isTransparent() { return m_vis & wVisTransparent; }
 
 	ePoint getAbsolutePosition();
 
 	eWidgetAnimation m_animation;
 
-	int getTag() const {
-		return m_tag;
-	}
-	void setTag(int tag) {
-		m_tag = tag;
-	}
+	int getTag() const { return m_tag; }
+	void setTag(int tag) { m_tag = tag; }
 
 
 private:
@@ -165,7 +133,6 @@ private:
 
 	int m_cornerRadius;
 	uint8_t m_cornerRadiusEdges;
-
 	int m_tag;
 
 protected:
@@ -179,7 +146,6 @@ protected:
 	gRGB m_border_color;
 	eRect m_padding;
 	bool m_alphaBlend = false;
-
 	uint8_t m_align = eStackAlignNone;
 	virtual void invalidateChilds() {}
 
@@ -206,25 +172,23 @@ public:
 	void setFocus(eWidget* focus);
 
 	/* enable this if you need the absolute position of the widget */
-	void setPositionNotifyChild(int n) {
-		m_notify_child_on_position_change = 1;
-	}
+	void setPositionNotifyChild(int n) { m_notify_child_on_position_change = 1; }
 
 	void notifyShowHide();
 
 	void setBackgroundGradient(const gRGB& startcolor, const gRGB& midcolor, const gRGB& endcolor, uint8_t direction, bool alphablend);
 
 	void setCornerRadius(int radius, uint8_t edges);
-	uint8_t getCornerRadiusEdges() {
-		return m_cornerRadiusEdges;
-	}
+	uint8_t getCornerRadiusEdges() { return m_cornerRadiusEdges; }
 	int getCornerRadius();
 
-	bool isGradientSet() {
-		return m_gradient_set;
-	}
+	bool isGradientSet() { return m_gradient_set; }
 
-	enum { GRADIENT_OFF = 0, GRADIENT_VERTICAL = 1, GRADIENT_HORIZONTAL = 2 };
+	enum {
+		GRADIENT_OFF = 0,
+		GRADIENT_VERTICAL = 1,
+		GRADIENT_HORIZONTAL = 2
+	};
 
 	enum {
 		RADIUS_TOP_LEFT = 1,
@@ -238,22 +202,21 @@ public:
 		RADIUS_ALL = 15,
 	};
 
-	enum { eStackAlignNone = 0, eStackAlignLeft = 1, eStackAlignRight = 2, eStackAlignTop = 4, eStackAlignBottom = 8, eStackAlignCenter = 16 };
+	enum {
+		eStackAlignNone = 0,
+		eStackAlignLeft = 1,
+		eStackAlignRight = 2,
+		eStackAlignTop = 4,
+		eStackAlignBottom = 8,
+		eStackAlignCenter = 16
+	};
 
-	void setAlign(uint8_t a) {
-		m_align = a;
-	}
-	uint8_t align() const {
-		return m_align;
-	}
+	void setAlign(uint8_t a) { m_align = a; }
+	uint8_t align() const { return m_align; }
 	eWidget* m_stack;
-	void setStack(eWidget* stack) {
-		m_stack = stack;
-	}
+	void setStack(eWidget* stack) { m_stack = stack; }
 
-	virtual std::string getClassName() const {
-		return std::string("eWidget");
-	}
+	virtual std::string getClassName() const { return std::string("eWidget"); }
 
 	virtual std::string dumpObject() const {
 		std::ostringstream oss;
