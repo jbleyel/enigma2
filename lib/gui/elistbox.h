@@ -260,8 +260,7 @@ public:
 	void goFirst() { moveSelection(moveFirst); }
 	void goLast() { moveSelection(moveLast); }
 
-	enum ListboxActions
-	{
+	enum ListboxActions {
 		moveUp,
 		moveDown,
 		moveTop,
@@ -272,13 +271,15 @@ public:
 		refresh,
 		moveLeft,
 		moveRight,
-		moveFirst,				// for future use
-		moveLast,				// for future use
-		movePageLeft,			// for future use
-		movePageRight,			// for future use
-		moveEnd = moveBottom,	// deprecated
-		pageUp = movePageUp,	// deprecated
-		pageDown = movePageDown // deprecated
+		// for future use
+		moveFirst,
+		moveLast,
+		movePageLeft,
+		movePageRight,
+		// deprecated
+		moveEnd = moveBottom,
+		pageUp = movePageUp,
+		pageDown = movePageDown
 	};
 
 	void setItemHeight(int h);
