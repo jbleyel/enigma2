@@ -1115,20 +1115,20 @@ class AttributeParser:
 		# print(f"[Skin] DEBUG: Scale itemWidth {int(value)} -> {self.applyHorizontalScale(value)}.")
 		self.guiObject.setItemWidth(self.applyHorizontalScale(value))
 
-	def label(self, value):
+	def label(self, value):  # This is a dummy method for the parser.
 		pass
 
-	def layout(self, value):
+	def layout(self, value):  # This is a dummy method for the parser.
 		pass
 
 	def listOrientation(self, value):  # Used by eListBox.
 		self.guiObject.setOrientation(parseListOrientation(value))
 
 	def noWrap(self, value):
-		self.wrap("0" if parseBoolean("noWrap", value) else "1")
+		self.wrap("0" if parseBoolean("nowrap", value) else "1")
 		# attribDeprecationWarning("noWrap", "wrap")
 
-	def objectTypes(self, value):
+	def objectTypes(self, value):  # This is a dummy method for the parser.
 		pass
 
 	def orientation(self, value):  # Used by eSlider.
@@ -1157,7 +1157,7 @@ class AttributeParser:
 	def position(self, value):
 		self.guiObject.move(ePoint(*value) if isinstance(value, tuple) else parsePosition(value, self.scaleTuple, self.guiObject, self.desktop, self.guiObject.csize()))
 
-	def resolution(self, value):
+	def resolution(self, value):  # This is a dummy method for the parser.
 		pass
 
 	def scale(self, value):
@@ -1307,7 +1307,7 @@ class AttributeParser:
 	def spacingColor(self, value):
 		self.guiObject.setSpacingColor(parseColor(value, 0x00000000))
 
-	def stack(self, value):
+	def stack(self, value):  # This is a dummy method for the parser.
 		pass
 
 	def tabWidth(self, value):
@@ -1575,7 +1575,7 @@ def loadSingleSkinData(desktop, screenID, domSkin, pathSkin, scope=SCOPE_GUISKIN
 			style.setLabelFont(parseFont(label.attrib.get("font", "Regular;20"), ((1, 1), (1, 1))))
 		for listBox in tag.findall("listbox"):
 			pageSize = parseInteger(listBox.attrib.get("pageSize", eListbox.DefaultPageSize), eListbox.DefaultPageSize)
-			enableWrapAround = parseBoolean("enableWrapAround", listBox.attrib.get("enableWrapAround", "True" if eListbox.DefaultWrapAround else "False"))
+			enableWrapAround = parseBoolean("enablewraparound", listBox.attrib.get("enableWrapAround", "True" if eListbox.DefaultWrapAround else "False"))
 			style.setListboxFont(parseFont(listBox.attrib.get("font", "Regular;20"), ((1, 1), (1, 1))))
 			scrollbarBorderWidth = parseInteger(listBox.attrib.get("scrollbarBorderWidth", eListbox.DefaultScrollBarBorderWidth), eListbox.DefaultScrollBarBorderWidth)
 			if "scrollbarBorderWidth" not in scrollLabelStyle:
@@ -2210,7 +2210,7 @@ def readSkin(screen, skin, names, desktop):
 		except ValueError:
 			pass
 
-	def processNone(widget, context, stack=None):
+	def processNone(widget, context, stack=None):  # This is a dummy method for the parser.
 		pass
 
 	def proccesStackAddition(widget, stack, target):
@@ -2468,8 +2468,6 @@ def readSkin(screen, skin, names, desktop):
 			spacing = widget.attrib.get("spacing")
 			if spacing:
 				contextScreen.spacing = int(spacing)
-#			item.position = (contextScreen.x, contextScreen.y)
-#			item.size = (contextScreen.w, contextScreen.h)
 			item.index = len(screen.stacks)
 			item.skinAttributes.append(("size", (contextScreen.w, contextScreen.h)))
 			item.skinAttributes.append(("position", (contextScreen.x, contextScreen.y)))

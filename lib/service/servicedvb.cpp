@@ -1415,12 +1415,12 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 	}
 	m_recovery_attempts++;
 
-    pts_t length = 0, position = 0;
+    pts_t last_recorded_pts = 0, position = 0;
     // Use a configurable safety margin. Default to 5 seconds.
     const pts_t safety_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 5 * 90000); 
 
     // 1. If we can't get info, just wait and retry. Don't switch to live.
-    if (getLength(length) != 0 || getPlayPosition(position) != 0)
+    if (!m_record || m_record->getCurrentPCR(last_recorded_pts) != 0 || getPlayPosition(position) != 0)
     {
         eWarning("[Timeshift-Fix] Could not get length/position. Retrying in 500ms (Attempt %d)", m_recovery_attempts);
         m_eof_recovery_timer->start(500, true);
@@ -1430,9 +1430,9 @@ void eDVBServicePlay::onEofRecoveryTimeout()
     // 2. Patiently wait for a sufficient buffer to be recorded.
 	// We wait indefinitely (up to the timeout limit) until this condition is met.
 	pts_t required_buffer = (m_saved_timeshift_delay > 0 ? m_saved_timeshift_delay : 0) + safety_margin;
-    if ((length - position) < required_buffer)
+    if ((last_recorded_pts - position) < required_buffer)
     {
-        eDebug("[Timeshift-Fix] Waiting for buffer (%llu / %llu)... Retrying in 500ms (Attempt %d)", (length - position), required_buffer, m_recovery_attempts);
+        eDebug("[Timeshift-Fix] Waiting for buffer (%llu / %llu)... Retrying in 500ms (Attempt %d)", (last_recorded_pts - position), required_buffer, m_recovery_attempts);
         m_eof_recovery_timer->start(500, true); // Retry in 500ms
         return;
     }

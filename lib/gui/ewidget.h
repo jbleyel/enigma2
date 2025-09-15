@@ -93,7 +93,6 @@ public:
 	int getTag() const { return m_tag; }
 	void setTag(int tag) { m_tag = tag; }
 
-
 private:
 	eWidgetDesktop* m_desktop;
 
