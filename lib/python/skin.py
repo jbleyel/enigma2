@@ -764,7 +764,8 @@ def parseScrollText(value):
 	}
 	values = value.split(",")
 	count = len(values)
-	runOnce = parseBoolean("runonce", values[3]) if count > 3 else False
+	runOnce = parseBoolean("runonce", values[4]) if count > 4 else False
+	endDelay = parseInteger(values[3]) if count > 3 else 0
 	startDelay = parseInteger(values[2]) if count > 2 else 0
 	delay = parseInteger(values[1]) if count > 1 else 100
 	if count:
@@ -772,7 +773,7 @@ def parseScrollText(value):
 	else:
 		direction = eLabel.SCROLL_NONE
 		print(f"[Skin] Error: Attribute 'scrollText' with value '{value}' has invalid element(s)!")
-	return (direction, delay, startDelay, runOnce)
+	return (direction, delay, startDelay, endDelay, runOnce)
 
 
 def parseSeparator(attribute, value):
@@ -1238,7 +1239,7 @@ class AttributeParser:
 		self.guiObject.setScrollbarWidth(self.applyHorizontalScale(value))
 
 	def scrollText(self, value):
-		self.guiObject.setScrollText(parseScrollText(value))
+		self.guiObject.setScrollText(*parseScrollText(value))
 
 	def secondFont(self, value):
 		self.valueFont(value)

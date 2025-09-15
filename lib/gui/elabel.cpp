@@ -9,9 +9,11 @@ eLabel::eLabel(eWidget* parent, int markedPos) : eWidget(parent), scrollTimer(eT
 
 	style->getFont(eWindowStyle::fontStatic, m_font);
 
-	/* default to topleft alignment */
+	// default to topleft alignment
 	m_valign = alignTop;
 	m_halign = alignBidi;
+
+	m_scroll_step = 2; // pixels per tick
 
 	CONNECT(scrollTimer->timeout, eLabel::updateScrollPosition);
 }
@@ -19,22 +21,24 @@ eLabel::eLabel(eWidget* parent, int markedPos) : eWidget(parent), scrollTimer(eT
 int eLabel::event(int event, void* data, void* data2) {
 	switch (event) {
 		case evtPaint: {
+			// get style and allow base class to paint background etc.
 			ePtr<eWindowStyle> style;
-
 			getStyle(style);
-
 			eWidget::event(event, data, data2);
 
 			gPainter& painter = *(gPainter*)data2;
 
+			// set font & style
 			painter.setFont(m_font);
 			style->setStyle(painter, eWindowStyle::styleLabel);
 
+			// choose foreground color (shadow has priority in existing code)
 			if (m_have_shadow_color)
 				painter.setForegroundColor(m_shadow_color);
 			else if (m_have_foreground_color)
 				painter.setForegroundColor(m_foreground_color);
 
+			// build render flags
 			int flags = 0;
 			if (m_valign == alignTop)
 				flags |= gPainter::RT_VALIGN_TOP;
@@ -63,38 +67,57 @@ int eLabel::event(int event, void* data, void* data2) {
 			if (isGradientSet() || m_blend)
 				flags |= gPainter::RT_BLEND;
 
-			int x = m_padding.x();
-			int y = m_padding.y();
+			int posX = m_padding.x();
+			int posY = m_padding.y();
 
-			int w = m_running_text_direction == SCROLL_LEFT_TO_RIGHT ? m_text_size.width() : size().width() - m_padding.right();
-			int h = m_running_text_direction == SCROLL_BOTTOM_TO_TOP ? m_text_size.height() : size().height() - m_padding.bottom();
+			// visible area (account for left/top + right/bottom padding)
+			int visibleW = size().width() - m_padding.x() - m_padding.right();
+			int visibleH = size().height() - m_padding.y() - m_padding.bottom();
+			if (visibleW < 0)
+				visibleW = 0;
+			if (visibleH < 0)
+				visibleH = 0;
 
-			auto position = eRect(x, y, w, h);
-			if (scrollTimer->isActive() && m_run_once && m_first_run && m_scroll_pos == 0) {
-				scrollTimer->stop();
-				m_run_text = false;
+			int rectW, rectH;
+
+			/* For horizontal scroll we need full text width, height = visibleH.
+			   For vertical scroll we need full text height, width = visibleW.
+			   For non-scrolling modes we keep the visible area. */
+			if (m_running_text_direction == SCROLL_LEFT_TO_RIGHT) {
+				rectW = m_text_size.width(); // full text width (no-wrap computed earlier)
+				rectH = visibleH;
+			} else if (m_running_text_direction == SCROLL_BOTTOM_TO_TOP) {
+				rectW = visibleW;
+				rectH = m_text_size.height(); // full text height (wrapped)
+			} else {
+				// no running text: render within visible
+				rectW = visibleW;
+				rectH = visibleH;
 			}
 
+			auto position = eRect(posX, posY, rectW, rectH);
+
+			// apply scrolling offset (only if scrolling is active)
 			if (m_running_text_direction && m_run_text) {
+				// ensure timer is started with initial delay if not active
 				if (!scrollTimer->isActive()) {
 					scrollTimer->start(m_start_delay);
-					m_scroll_pos = 0;
 				}
-				if (m_scroll_pos > (m_running_text_direction == SCROLL_LEFT_TO_RIGHT ? m_text_size.width() : m_text_size.height())) {
-					m_scroll_pos = m_running_text_direction == SCROLL_LEFT_TO_RIGHT ? -size().width() : -size().height();
-					if (!m_first_run)
-						m_first_run = true;
-				}
+				/* move the whole text-block - the sign follows existing convention:
+				   position.x() - m_scroll_pos / position.y() - m_scroll_pos */
 				if (m_running_text_direction == SCROLL_LEFT_TO_RIGHT)
 					position.setX(position.x() - m_scroll_pos);
 				else if (m_running_text_direction == SCROLL_BOTTOM_TO_TOP)
 					position.setY(position.y() - m_scroll_pos);
 			}
 
-			/* if we don't have shadow, m_shadow_offset will be 0,0 */
+			// if we don't have shadow, m_shadow_offset will be 0,0
+			// draw border/outline first
 			auto shadowposition = eRect(position.x() - m_shadow_offset.x(), position.y() - m_shadow_offset.y(), position.width() - m_shadow_offset.x(), position.height() - m_shadow_offset.y());
+
 			painter.renderText(shadowposition, m_text, flags, m_text_border_color, m_text_border_width, m_pos, &m_text_offset, m_tab_width);
 
+			// draw main text (foreground or shadowed)
 			if (m_have_shadow_color) {
 				if (!m_have_foreground_color)
 					style->setStyle(painter, eWindowStyle::styleLabel);
@@ -102,7 +125,6 @@ int eLabel::event(int event, void* data, void* data2) {
 					painter.setForegroundColor(m_foreground_color);
 
 				painter.setBackgroundColor(m_shadow_color);
-
 				painter.renderText(position, m_text, flags, gRGB(), 0, m_pos, &m_text_shaddowoffset, m_tab_width);
 			}
 
@@ -121,8 +143,24 @@ int eLabel::event(int event, void* data, void* data2) {
 				m_scroll_started = false;
 			}
 			return 0;
+		case evtChangedSize:
+			updateTextSize();
+			[[fallthrough]];
 		default:
 			return eWidget::event(event, data, data2);
+	}
+}
+
+void eLabel::updateTextSize() {
+	m_run_text = false;
+	if (m_running_text_direction == SCROLL_LEFT_TO_RIGHT) {
+		m_text_size = calculateTextSize(m_font, m_text, size(), true); // nowrap
+		if (m_text_size.width() > size().width())
+			m_run_text = true;
+	} else if (m_running_text_direction == SCROLL_BOTTOM_TO_TOP) {
+		m_text_size = calculateTextSize(m_font, m_text, size(), false); // allow wrap
+		if (m_text_size.height() > size().height())
+			m_run_text = true;
 	}
 }
 
@@ -130,6 +168,7 @@ void eLabel::setText(const std::string& string) {
 	if (m_text == string)
 		return;
 	m_text = string;
+	updateTextSize();
 	event(evtChangedText);
 }
 
@@ -247,30 +286,79 @@ eSize eLabel::calculateTextSize(gFont* font, const std::string& string, eSize ta
 	return para.getBoundBox().size();
 }
 
-void eLabel::setScrollText(int direction, long delay, long startDelay, bool runOnce) {
+void eLabel::setScrollText(int direction, long delay, long startDelay, long endDelay, bool runOnce) {
 	if (m_running_text_direction == direction || direction == SCROLL_NONE)
 		return;
+
 	m_running_text_direction = direction;
 	m_run_once = runOnce;
-	m_start_delay = startDelay;
-	if (m_start_delay > 10000)
-		m_start_delay = 10000;
-	m_delay = std::max(delay, (long)50); // minimum 50 ms
-	m_text_size = calculateTextSize(m_font, m_text, size(), direction == SCROLL_LEFT_TO_RIGHT ? true : false);
-	m_run_text = direction == SCROLL_LEFT_TO_RIGHT ? m_text_size.width() > size().width() : m_text_size.height() > size().height();
-	eDebug("[eLabel] m_run_text = %d text width=%i text height=%i size width=%i size height=%i", m_run_text, m_text_size.width(), m_text_size.height(), size().width(), size().height());
-	if (m_run_text) {
-		m_first_run = false;
-		m_scroll_started = false;
-		invalidate();
-	}
+	m_start_delay = std::min(startDelay, 10000L);
+	m_end_delay = std::min(endDelay, 10000L);
+	m_delay = std::max(delay, (long)50);
+
+	m_run_text = true;
+	m_scroll_pos = 0;
+
+	m_first_run = false;
+	m_scroll_started = false;
 }
 
 void eLabel::updateScrollPosition() {
-	m_scroll_pos += 2;
+	if (!m_run_text)
+		return;
+
+	// calculate visible area
+	int visibleW = std::max(1, size().width() - m_padding.x() - m_padding.right());
+	int visibleH = std::max(1, size().height() - m_padding.y() - m_padding.bottom());
+
+	// compute max_scroll depending on direction
+	int max_scroll = 0;
+	if (m_running_text_direction == SCROLL_LEFT_TO_RIGHT)
+		max_scroll = std::max(0, m_text_size.width() - visibleW);
+	else if (m_running_text_direction == SCROLL_BOTTOM_TO_TOP)
+		max_scroll = std::max(0, m_text_size.height() - visibleH);
+
+	// increment scroll by step, clamp to max_scroll
+	int step = std::min(m_scroll_step, max_scroll - m_scroll_pos);
+	m_scroll_pos += step;
+
+	// check if we reached the end
+	if (m_scroll_pos >= max_scroll) {
+		m_scroll_pos = max_scroll;
+
+		// handle end delay
+		if (!m_end_delay_active && m_end_delay > 0) {
+			m_end_delay_active = true;
+			scrollTimer->start(m_end_delay); // pause at end
+			return;
+		}
+
+		// after end delay, reset end delay flag
+		m_end_delay_active = false;
+
+		if (m_run_once) {
+			// RunOnce: jump to start and stop
+			m_scroll_pos = 0;
+			scrollTimer->stop();
+			m_run_text = false;
+			invalidate();
+			return;
+		} else {
+			// Loop: jump to start and wait start delay
+			m_scroll_pos = 0;
+			m_scroll_started = false;
+			scrollTimer->start(m_start_delay);
+			invalidate();
+			return;
+		}
+	}
+
+	// first tick after start → change timer interval
 	if (!m_scroll_started) {
 		m_scroll_started = true;
 		scrollTimer->changeInterval(m_delay);
 	}
+
+	// trigger repaint
 	invalidate();
 }

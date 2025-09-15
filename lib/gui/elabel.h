@@ -40,7 +40,7 @@ public:
 	void setWrap(int wrap);
 	void setNoWrap(int nowrap) { setWrap((nowrap == 1) ? 0 : 1); } // DEPRECATED
 	void setUnderline(bool underline);
-	void setScrollText(int direction, long delay, long startDelay, bool runOnce = false);
+	void setScrollText(int direction, long delay, long startDelay, long endDelay, bool runOnce = false);
 	void clearForegroundColor();
 	int getWrap() const { return m_wrap; }
 	int getNoWrap() const { return (m_wrap == 0) ? 1 : 0; } // DEPRECATED
@@ -71,6 +71,7 @@ private:
 	bool m_underline = false;
 	int m_tab_width = -1;
 	// Scroll
+	int m_scroll_step;
 	bool m_first_run = false;
 	bool m_run_once = false;
 	int m_running_text_direction = SCROLL_NONE;
@@ -78,10 +79,13 @@ private:
 	bool m_scroll_started = false;
 	int m_scroll_pos = 0;
 	int m_start_delay = 0;
+	int m_end_delay = 0;
+	bool m_end_delay_active = false;
 	int m_delay = 0;
 	eSize m_text_size;
 	ePtr<eTimer> scrollTimer;
 	void updateScrollPosition();
+	void updateTextSize();
 
 	enum eLabelEvent {
 		evtChangedText = evtUserWidget,
