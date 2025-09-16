@@ -2509,7 +2509,7 @@ def InitUsageConfig():
 			config.timeshift.recordingPath.value = savedValue
 	config.timeshift.recordingPath.save()
 	config.timeshift.recoveryAttempts = ConfigSelection(default=20, choices=[(x, x) for x in range(0, 30)])
-	config.timeshift.recoveryBufferMargin = ConfigSelection(default=2, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(0, 11)])
+	config.timeshift.recoveryBufferMargin = ConfigSelection(default=1, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(0, 11)])
 
 
 def calcFrontendPriorityIntval(config_priority, config_priority_multiselect, config_priority_strictly):
