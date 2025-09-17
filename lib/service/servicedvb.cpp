@@ -1353,7 +1353,7 @@ void eDVBServicePlay::updateTimeshiftDelay()
 
 /**
  * @brief This function is the entry point for the recovery process.
- * It's now much simpler: it just uses the pre-calculated delay and starts the recovery timer.
+ * It now immediately pauses the decoder to prevent buffer drain, then starts the recovery timer.
  */
 void eDVBServicePlay::handleEofRecovery()
 {
@@ -1365,12 +1365,20 @@ void eDVBServicePlay::handleEofRecovery()
 	eDebug("[Timeshift-Fix] Using pre-calculated delay: %lld PTS (~%lld seconds)", 
 		   m_saved_timeshift_delay, m_saved_timeshift_delay / 90000);
 
+	// Immediately pause the decoder to stop buffer drain and preserve the timeshift delay.
+	if (m_decoder)
+	{
+		eDebug("[Timeshift-Fix] Pausing decoder immediately to preserve buffer.");
+		m_decoder->pause();
+	}
+
 	// Clear any pending next-file operations to prevent conflicts.
 	m_timeshift_file_next.clear();
 
 	// Start the recovery timer. The main logic is in onEofRecoveryTimeout.
 	m_eof_recovery_timer->start(500, true);
 }
+
 
 /**
  * @brief This is the core recovery logic. It now simulates the manual pause/unpause sequence
