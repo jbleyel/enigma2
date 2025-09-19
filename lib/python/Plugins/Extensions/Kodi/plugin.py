@@ -60,25 +60,25 @@ class SetAudio:
 		if BoxInfo.getItem("CanDownmixAC3"):
 			try:
 				self.ac3 = open("/proc/stb/audio/ac3", "r").read()
-			except:
+			except OSError:
 				pass
 
 		if BoxInfo.getItem("CanDownmixDTS"):
 			try:
 				self.dts = open("/proc/stb/audio/dts", "r").read()
-			except:
+			except OSError:
 				pass
 
 		if BoxInfo.getItem("CanDownmixAAC"):
 			try:
 				self.aac = open("/proc/stb/audio/aac", "r").read()
-			except:
+			except OSError:
 				pass
 
 		if BoxInfo.getItem("CanDownmixAACPlus"):
 			try:
 				self.aacplus = open("/proc/stb/audio/aacplus", "r").read()
-			except:
+			except OSError:
 				pass
 
 
