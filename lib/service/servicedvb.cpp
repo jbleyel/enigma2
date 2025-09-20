@@ -1098,7 +1098,9 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_timeshift_delay_updater_timer(eTimer::create(eApp)),
 	m_saved_timeshift_delay(-1),
 	m_stream_corruption_detected(false),
-	m_recovery_attempts(0)
+	m_recovery_attempts(0),
+	m_recovery_target_pts(-1), // Target PTS to seek to after recovery
+	m_last_known_good_playback_pts(0) // Last known good PTS for fallback
 	// END OF MODIFICATION
 {
 #ifdef PASSTHROUGH_FIX
@@ -1323,7 +1325,7 @@ void eDVBServicePlay::serviceEvent(int event)
 /**
  * @brief This new function is called periodically by a timer.
  * Its purpose is to proactively and safely update the timeshift delay
- * while the system is in a stable, running state.
+ * and the last known good playback position while the system is in a stable, running state.
  */
 void eDVBServicePlay::updateTimeshiftDelay()
 {
@@ -1345,41 +1347,59 @@ void eDVBServicePlay::updateTimeshiftDelay()
 		{
 			// If the value is sane, store it.
 			m_saved_timeshift_delay = calculated_delay;
+			// Also store the last known good playback position.
+			m_last_known_good_playback_pts = playback_pts;
 		}
 	}
 }
 
 /**
  * @brief This function is the entry point for the recovery process.
- *        It now IMMEDIATELY pauses the decoder to preserve the buffer and delay,
- *        then starts the recovery timer.
+ *        It captures the exact playback position, then pauses the decoder and starts the recovery timer.
  */
 void eDVBServicePlay::handleEofRecovery()
 {
-	eDebug("[Timeshift-Fix] Stream corruption detected. Pausing decoder immediately and starting recovery timer...");
+	eDebug("[Timeshift-Fix] Stream corruption detected. Pausing decoder immediately...");
 
-	// CRITICAL STEP: Pause the decoder instantly to prevent buffer drain and preserve the current playback position.
-	if (m_decoder)
+	if (getPlayPosition(m_recovery_target_pts) != 0) 
 	{
-		m_decoder->pause();
-		m_is_paused = 1; // Update our internal state to reflect the pause and prevent inconsistent behavior.
+		eWarning("[Timeshift-Fix] Failed to get current playback position. Falling back to last known good position.");
+		// Use the last known good position instead of zero
+		if (m_last_known_good_playback_pts > 0) 
+		{
+			m_recovery_target_pts = m_last_known_good_playback_pts;
+			eDebug("[Timeshift-Fix] Using last known good playback position: %lld", m_recovery_target_pts);
+		} 
+		else 
+		{
+			eWarning("[Timeshift-Fix] No last known good position available. Using 0 as fallback.");
+			m_recovery_target_pts = 0;
+		}
+	} 
+	else 
+	{
+		eDebug("[Timeshift-Fix] Captured target playback PTS at corruption: %lld", m_recovery_target_pts);
 	}
 
-	// Initialize the retry counter for the recovery loop.
-	m_recovery_attempts = 0;
+	// CRITICAL STEP: Pause the decoder instantly to prevent buffer drain.
+	if (m_decoder) {
+		m_decoder->pause();
+		m_is_paused = 1;
+	}
 	
-	// Start the recovery timer. The main logic is in onEofRecoveryTimeout.
+	// Reset recovery attempts and start the timer.
+	m_recovery_attempts = 0;
 	m_eof_recovery_timer->start(500, true);
 }
 
+
 /**
- * @brief This is the core recovery logic. It now performs a full reset of the timeshift
+ * @brief This is the core recovery logic. It performs a full reset of the timeshift
  *        playback service to ensure all components are correctly re-synchronized after a fault.
- *        It assumes the decoder is already paused from handleEofRecovery.
  */
 void eDVBServicePlay::onEofRecoveryTimeout()
 {
-	// --- Buffer Wait Mechanism ---
+	// --- START OF BUFFER WAIT MECHANISM ---
 	if (m_recovery_attempts >= m_max_attempts)
 	{
 		eWarning("[Timeshift-Fix] Recovery timed out after %d attempts. Falling back to a simple unpause.", m_max_attempts);
@@ -1392,64 +1412,42 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 	}
 	m_recovery_attempts++;
 
-	pts_t last_recorded_pts = 0, position = 0;
-	// We MUST get the play position, as it's frozen at the exact point of failure now.
-	if (!m_record || m_record->getCurrentPCR(last_recorded_pts) != 0 || getPlayPosition(position) != 0)
+	pts_t last_recorded_pts = 0;
+	if (!m_record || m_record->getCurrentPCR(last_recorded_pts) != 0)
 	{
-		eWarning("[Timeshift-Fix] Could not get PTS data for buffer check. Retrying... (Attempt %d)", m_recovery_attempts);
+		eWarning("[Timeshift-Fix] Could not get live PCR for buffer check. Retrying... (Attempt %d)", m_recovery_attempts);
 		m_eof_recovery_timer->start(500, true);
 		return;
 	}
 
-	const pts_t safety_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 2) * 90000;
+	const pts_t safety_margin = eSimpleConfig::getInt("config.timeshift.recoveryBufferMargin", 1) * 90000;
 	
-	// IMPORTANT: We calculate the delay HERE, using the frozen 'position' value for maximum accuracy.
-	pts_t current_delay = last_recorded_pts > position ? last_recorded_pts - position : 0;
-	if (current_delay > 0)
+	// We must ensure the recorder has written data *past* our target restart point
+	if (last_recorded_pts < (m_recovery_target_pts + safety_margin))
 	{
-		m_saved_timeshift_delay = current_delay;
-		eDebug("[Timeshift-Fix] Accurate delay calculated at point of failure: %lld PTS", m_saved_timeshift_delay);
-	}
-
-	// We now wait for the buffer to be LARGER than the delay we just calculated.
-	if (current_delay < safety_margin)
-	{
-		eDebug("[Timeshift-Fix] Waiting for buffer to fill (current delay %llu / required margin %llu)... Retrying...", current_delay, safety_margin);
+		eDebug("[Timeshift-Fix] Waiting for buffer to fill (last written PTS %llu / required PTS %llu)... Retrying...", last_recorded_pts, m_recovery_target_pts + safety_margin);
 		m_eof_recovery_timer->start(500, true);
 		return;
 	}
-	// --- End of Buffer Wait Mechanism ---
+	// --- END OF BUFFER WAIT MECHANISM ---
 
 	m_eof_recovery_timer->stop();
 	m_recovery_attempts = 0;
 
-	// --- START OF FULL REBUILD LOGIC ---
-	eDebug("[Timeshift-Fix] Sufficient buffer found. Performing a full playback service rebuild.");
+	// Use the pre-captured absolute playback position as the target.
+	pts_t restart_position = m_recovery_target_pts;
+	eDebug("[Timeshift-Fix] Using pre-captured target position for recovery: %lld", restart_position);
 
-	pts_t new_live_pts = 0;
-	if (m_saved_timeshift_delay <= 0 || !m_record || m_record->getCurrentPCR(new_live_pts))
-	{
-		eWarning("[Timeshift-Fix] Could not get new live PCR for restart calculation. Aborting and falling back to unpause.");
-		m_stream_corruption_detected = false;
-		unpause();
-		return;
-	}
-
-	// 1. Calculate the exact PTS point where we need to restart playback.
-	pts_t restart_position = new_live_pts - m_saved_timeshift_delay;
-	if (restart_position < 0) restart_position = 0;
-	eDebug("[Timeshift-Fix] Calculated restart position: %lld", restart_position);
-
-	// 2. Free the old, paused/faulty timeshift playback service handler.
+	// 1. Free the old, paused/faulty timeshift playback service handler.
 	m_service_handler_timeshift.free();
 
-	// 3. Reset internal state for a new session.
+	// 2. Reset internal state for a new session.
 	resetTimeshift(1);
 
-	// 4. Pre-configure the starting point for the new session.
+	// 3. Pre-configure the starting point for the new session.
 	m_cue->seekTo(0, restart_position);
 
-	// 5. Build and tune the new, clean playback service.
+	// 4. Build and tune the new, clean playback service.
 	eServiceReferenceDVB r = (eServiceReferenceDVB&)m_reference;
 	r.path = m_timeshift_file;
 	ePtr<iTsSource> source = createTsSource(r);
@@ -1458,7 +1456,6 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 	m_stream_corruption_detected = false;
 	m_event(this, evSeekableStatusChanged);
 	eDebug("[Timeshift-Fix] Playback service rebuild initiated. Waiting for new service to tune...");
-	// --- END OF FULL REBUILD LOGIC ---
 }
 
 // END OF MODIFICATION

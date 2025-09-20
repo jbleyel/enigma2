@@ -349,6 +349,8 @@ private:
 	bool m_stream_corruption_detected;
 	int m_recovery_attempts;
 	int m_max_attempts;
+	pts_t m_recovery_target_pts;
+	pts_t m_last_known_good_playback_pts;
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
 	void updateTimeshiftDelay();
