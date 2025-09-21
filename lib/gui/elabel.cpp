@@ -76,7 +76,7 @@ int eLabel::event(int event, void* data, void* data2) {
 				// perform blit of the text pixmap
 				eSize s(size());
 				eRect rec = eRect(ePoint(0, 0), size());
-				painter.blit(m_textPixmap, eRect(ePoint(-srcX, -srcY), s), rec, 0, 100);
+				painter.blit(m_textPixmap, eRect(ePoint(-srcX, -srcY), s), rec, 0);
 
 				m_paint_pixmap = false;
 				// skip the normal renderText logic for scrolling
