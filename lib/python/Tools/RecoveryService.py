@@ -27,6 +27,7 @@ from socket import gethostname
 from time import time
 from twisted.web import server, resource, proxy
 from twisted.internet import reactor, ssl
+import html
 
 CA_FILE = "/etc/enigma2/ca.pem"
 KEY_FILE = "/etc/enigma2/key.pem"
@@ -129,7 +130,7 @@ class RootLeaf(resource.Resource):
 
 	def render_POST(self, request):
 		cmd = request.args.get(b"cmd", [b""])[0].decode()
-		return f"<html><body><h1>Button '{cmd}' gedrückt!</h1><a href='/'>&lt;- zurück</a></body></html>".encode()
+		return f"<html><body><h1>Button '{html.escape(cmd)}' gedrückt!</h1><a href='/'>&lt;- zurück</a></body></html>".encode()
 
 
 class RootResource(resource.Resource):
