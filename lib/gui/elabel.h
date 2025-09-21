@@ -22,9 +22,19 @@ public:
 	};
 
 	enum {
-		SCROLL_NONE,
-		SCROLL_LEFT_TO_RIGHT,
-		SCROLL_BOTTOM_TO_TOP
+		scrollNone,
+		scrollLeft,
+		scrollRight,
+		scrollTop,
+		scrollBottom
+	};
+
+	enum {
+		scrollModeNormal,
+		scrollModeCached,
+		scrollModeBounce,
+		scrollModeBounceCached,
+		scrollModeRoll
 	};
 
 	void setVAlign(int align);
@@ -40,7 +50,7 @@ public:
 	void setWrap(int wrap);
 	void setNoWrap(int nowrap) { setWrap((nowrap == 1) ? 0 : 1); } // DEPRECATED
 	void setUnderline(bool underline);
-	void setScrollText(int direction, long delay, long startDelay, long endDelay, bool runOnce = false);
+	void setScrollText(int direction, long delay, long startDelay, long endDelay, int repeat, int stepSize, int mode);
 	void clearForegroundColor();
 	int getWrap() const { return m_wrap; }
 	int getNoWrap() const { return (m_wrap == 0) ? 1 : 0; } // DEPRECATED
@@ -73,19 +83,26 @@ private:
 	// Scroll
 	int m_scroll_step;
 	bool m_first_run = false;
-	bool m_run_once = false;
-	int m_running_text_direction = SCROLL_NONE;
-	bool m_run_text = false;
+	int m_repeat = 0;
+	int m_repeat_count = 0;
+	int m_scroll_text_direction = scrollNone;
+	bool m_scroll_text = false;
 	bool m_scroll_started = false;
 	int m_scroll_pos = 0;
 	int m_start_delay = 0;
 	int m_end_delay = 0;
 	bool m_end_delay_active = false;
 	int m_delay = 0;
+	int m_scroll_mode = 0;
+	bool m_scroll_swap = false;
+	bool m_paint_pixmap = false;
+	bool m_use_cached_pixmap = false;
 	eSize m_text_size;
 	ePtr<eTimer> scrollTimer;
 	void updateScrollPosition();
 	void updateTextSize();
+	void createScrollPixmap();
+	ePtr<gPixmap> m_textPixmap;
 
 	enum eLabelEvent {
 		evtChangedText = evtUserWidget,

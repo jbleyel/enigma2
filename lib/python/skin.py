@@ -759,21 +759,49 @@ def parseScrollbarScroll(value):
 
 def parseScrollText(value):
 	directions = {
-		"vertical": eLabel.SCROLL_BOTTOM_TO_TOP,
-		"horizontal": eLabel.SCROLL_LEFT_TO_RIGHT
+		"left": eLabel.scrollLeft,
+		"right": eLabel.scrollRight,
+		"top": eLabel.scrollTop,
+		"bottom": eLabel.scrollBottom
 	}
-	values = value.split(",")
-	count = len(values)
-	runOnce = parseBoolean("runonce", values[4]) if count > 4 else False
-	endDelay = parseInteger(values[3]) if count > 3 else 0
-	startDelay = parseInteger(values[2]) if count > 2 else 0
-	delay = parseInteger(values[1]) if count > 1 else 100
-	if count:
-		direction = directions.get(values[0], eLabel.SCROLL_NONE)
-	else:
-		direction = eLabel.SCROLL_NONE
-		print(f"[Skin] Error: Attribute 'scrollText' with value '{value}' has invalid element(s)!")
-	return (direction, delay, startDelay, endDelay, runOnce)
+
+	modes = {
+		"cached": eLabel.scrollModeCached,
+		"bounce": eLabel.scrollModeBounce,
+		"bounceCached": eLabel.scrollModeBounceCached,
+		"roll": eLabel.scrollModeRoll,
+	}
+
+	direction = eLabel.scrollNone
+	stepDelay = 100
+	startDelay = 0
+	endDelay = 0
+	repeat = 0
+	stepSize = 2
+	mode = eLabel.scrollModeNormal
+
+	for part in value.split(","):
+		if "=" in part:
+			key, val = (s.strip() for s in part.split("=", 1))
+			match key:
+				case "direction":
+					direction = directions.get(val, eLabel.scrollNone)
+				case "stepDelay":
+					stepDelay = parseInteger(val)
+				case "startDelay":
+					startDelay = parseInteger(val)
+				case "endDelay":
+					endDelay = parseInteger(val)
+				case "repeat":
+					repeat = parseInteger(val)
+				case "stepSize":
+					stepSize = parseInteger(val)
+				case "mode":
+					mode = modes.get(val)
+				case _:
+					pass
+
+	return (direction, stepDelay, startDelay, endDelay, repeat, stepSize, mode)
 
 
 def parseSeparator(attribute, value):
