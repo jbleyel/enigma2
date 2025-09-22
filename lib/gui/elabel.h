@@ -82,7 +82,6 @@ private:
 	int m_tab_width = -1;
 	// Scroll
 	int m_scroll_step;
-	bool m_first_run = false;
 	int m_repeat = 0;
 	int m_repeat_count = 0;
 	int m_scroll_text_direction = scrollNone;

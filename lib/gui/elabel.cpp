@@ -199,7 +199,6 @@ int eLabel::event(int event, void* data, void* data2) {
 		case evtParentVisibilityChanged:
 			if (!isVisible()) {
 				scrollTimer->stop();
-				m_first_run = false;
 				m_scroll_started = false;
 				m_scroll_swap = false;
 			}
@@ -232,7 +231,6 @@ void eLabel::updateTextSize() {
 	}
 	if (m_scroll_text) {
 		scrollTimer->stop();
-		m_first_run = false;
 		m_scroll_started = false;
 		m_scroll_swap = false;
 
@@ -500,7 +498,6 @@ void eLabel::setScrollText(int direction, long delay, long startDelay, long endD
 	m_scroll_text = true;
 	m_scroll_pos = 0;
 
-	m_first_run = false;
 	m_scroll_started = false;
 }
 

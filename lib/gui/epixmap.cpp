@@ -389,6 +389,6 @@ void ePixmap::nextFrame() {
 	event(evtChangedPixmap);
 
 	// Start timer for this frame
-	if (m_currentFrame < m_delays.size())
+	if (static_cast<size_t>(m_currentFrame) < m_delays.size())
 		m_animTimer->start(m_delays[m_currentFrame], true);
 }
