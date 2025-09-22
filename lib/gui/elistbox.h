@@ -260,7 +260,8 @@ public:
 	void goFirst() { moveSelection(moveFirst); }
 	void goLast() { moveSelection(moveLast); }
 
-	enum ListboxActions {
+	enum ListboxActions
+	{
 		moveUp,
 		moveDown,
 		moveTop,
@@ -271,15 +272,13 @@ public:
 		refresh,
 		moveLeft,
 		moveRight,
-		// for future use
-		moveFirst,
-		moveLast,
-		movePageLeft,
-		movePageRight,
-		// deprecated
-		moveEnd = moveBottom,
-		pageUp = movePageUp,
-		pageDown = movePageDown
+		moveFirst,				// for future use
+		moveLast,				// for future use
+		movePageLeft,			// for future use
+		movePageRight,			// for future use
+		moveEnd = moveBottom,	// deprecated
+		pageUp = movePageUp,	// deprecated
+		pageDown = movePageDown // deprecated
 	};
 
 	void setItemHeight(int h);
@@ -490,6 +489,9 @@ public:
 	int getMaxItemTextWidth() { return m_content->getMaxItemTextWidth(); }
 	void redrawItemByIndex(int index) { entryChanged(index); }
 
+	void setScrollText(int direction, long delay, long startDelay, long endDelay, int repeat, int stepSize, int mode);
+
+
 #ifndef SWIG
 	struct eListboxStyle *getLocalStyle(void);
 
@@ -504,6 +506,15 @@ public:
 
 	int getEntryTop();
 	void invalidate(const gRegion &region = gRegion::invalidRegion()) override;
+
+	// scroll
+	int m_delay = 0;
+	int m_start_delay = 0;
+	int m_end_delay = 0;
+	int m_repeat = 0;
+	int m_scroll_step;
+	int m_scroll_text_direction = 0;
+	int m_scroll_mode = 0;
 
 protected:
 	int event(int event, void *data = 0, void *data2 = 0);

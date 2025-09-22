@@ -55,6 +55,23 @@ protected:
 private:
 	int m_saved_cursor_line;
 	ePtr<gFont> m_font_zoomed;
+	// scroll
+	bool m_scroll_text = false;
+	bool m_scroll_started = false;
+	bool m_paint_pixmap = false;
+	int m_scroll_pos = 0;
+	int m_repeat_count = 0;
+	bool m_scroll_swap = false;
+	bool m_end_delay_active = false;
+	eSize m_text_size;
+	eSize m_scroll_size;
+	void updateScrollPosition();
+	void updateTextSize(std::string &text, gFont* font);
+	std::string m_scroll_text_str;
+	int m_scroll_index = -1;
+//	void createScrollPixmap();
+	ePtr<eTimer> scrollTimer;
+	ePtr<gPixmap> m_textPixmap;
 
 protected:
 	int m_cursor;

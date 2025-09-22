@@ -1866,3 +1866,23 @@ void eListbox::setItemGradientMarkedandSelected(const gRGB &startcolor, const gR
 {
 	setItemGradientInternal(3, startcolor, midcolor, endcolor, direction, alphablend);
 }
+
+void eListbox::setScrollText(int direction, long delay, long startDelay, long endDelay, int repeat, int stepSize, int mode) {
+	if (m_scroll_text_direction == direction || direction == 0)
+		return;
+
+	m_scroll_text_direction = direction;
+	m_repeat = repeat;
+	m_start_delay = std::min(startDelay, 10000L);
+	m_end_delay = std::min(endDelay, 10000L);
+	m_delay = std::max(delay, (long)50);
+	m_scroll_step = std::max(stepSize, 1);
+	m_scroll_mode = mode;
+	//m_use_cached_pixmap = (mode == scrollModeBounceCached || mode == scrollModeCached || mode == scrollModeRoll);
+
+/*
+	m_scroll_text = true;
+	m_scroll_pos = 0;
+	m_scroll_started = false;
+*/
+}
