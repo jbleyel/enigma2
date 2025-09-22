@@ -163,68 +163,152 @@ void ePixmap::setAniPixmapFromFile(const char *filename, bool autostart)
     if (!gif)
         return;
 
+    int width  = gif->SWidth;
+    int height = gif->SHeight;
+
+    ColorMapObject *globalColorMap = gif->SColorMap;
+
     GifRecordType recordType;
-    int delay = 10; // Default delay (0.1s)
-    GifByteType *extension = nullptr;
-    int extCode = 0;
+    int delay = 100; // Default delay (1/100 sec)
+
+    int disposal = 0;
+    int transparent = -1;
+    bool has_transparency = false;
+
+    // Canvas für zusammengesetzte Frames (Indexwerte ins Colormap)
+    std::vector<unsigned char> canvas(width * height, 0);
+
+    // Backup-Buffer für Disposal=3
+    std::vector<unsigned char> prevBuffer(width * height, 0);
 
     do {
         if (DGifGetRecordType(gif, &recordType) == GIF_ERROR)
             break;
 
         switch (recordType) {
+        case EXTENSION_RECORD_TYPE: {
+            int extCode;
+            GifByteType *extension;
+            if (DGifGetExtension(gif, &extCode, &extension) == GIF_ERROR)
+                break;
+
+            if (extCode == GRAPHICS_EXT_FUNC_CODE && extension != nullptr) {
+                int blockSize = extension[0];
+                if (blockSize >= 4) {
+
+                    unsigned char packed = extension[1];
+                    int delay_cs = extension[2] | (extension[3] << 8); // in 1/100s
+                    int local_transparent = (packed & 0x01) ? extension[4] : -1;
+
+                    disposal = (packed >> 2) & 0x07;
+                    has_transparency = (packed & 0x01) != 0;
+                    transparent = local_transparent;
+                    delay = (delay_cs > 0) ? delay_cs * 10 : 100; // ms
+                }
+            }
+
+            while (extension != nullptr) {
+                if (DGifGetExtensionNext(gif, &extension) == GIF_ERROR)
+                    break;
+            }
+            break;
+        }
+
         case IMAGE_DESC_RECORD_TYPE: {
             if (DGifGetImageDesc(gif) == GIF_ERROR)
                 break;
-            int w = gif->Image.Width;
-            int h = gif->Image.Height;
-            ePtr<gPixmap> pix(new gPixmap(w, h, 8, nullptr, gPixmap::accelAlways));
-            unsigned char *buffer = new unsigned char[w * h];
-            unsigned char *row = buffer;
 
-            ColorMapObject *cmap = gif->Image.ColorMap ? gif->Image.ColorMap : gif->SColorMap;
-            pix->surface->clut.colors = cmap->ColorCount;
-            pix->surface->clut.data = new gRGB[cmap->ColorCount];
-            for (int i = 0; i < cmap->ColorCount; ++i) {
-                pix->surface->clut.data[i].r = cmap->Colors[i].Red;
-                pix->surface->clut.data[i].g = cmap->Colors[i].Green;
-                pix->surface->clut.data[i].b = cmap->Colors[i].Blue;
-                pix->surface->clut.data[i].a = 0;
-            }
+            int left   = gif->Image.Left;
+            int top    = gif->Image.Top;
+            int fw     = gif->Image.Width;
+            int fh     = gif->Image.Height;
 
-            if (!gif->Image.Interlace) {
-                for (int y = 0; y < h; ++y) {
-                    if (DGifGetLine(gif, row, w) == GIF_ERROR)
-                        break;
-                    row += w;
+            // Vorherigen Frame sichern falls Disposal=3
+            if (disposal == 3)
+                prevBuffer = canvas;
+
+            // Disposal anwenden
+            if (disposal == 2) {
+                // Hintergrund löschen (0 setzen)
+                for (int y = 0; y < fh; y++) {
+                    int cy = top + y;
+                    if (cy >= height) continue;
+                    for (int x = 0; x < fw; x++) {
+                        int cx = left + x;
+                        if (cx < width)
+                            canvas[cy * width + cx] = 0;
+                    }
                 }
-            } else {
-                static const int IOffset[] = {0, 4, 2, 1};
-                static const int IJumps[] = {8, 8, 4, 2};
-                for (int j = 0; j < 4; ++j)
-                    for (int y = IOffset[j]; y < h; y += IJumps[j])
-                        DGifGetLine(gif, buffer + y * w, w);
+            }
+            else if (disposal == 3) {
+                canvas = prevBuffer;
+            }
+            // Disposal=0/1: nichts tun
+
+            // Lokale oder globale Palette
+            ColorMapObject *colorMap = gif->Image.ColorMap ? gif->Image.ColorMap : globalColorMap;
+
+            // Frame-Daten lesen
+            std::vector<unsigned char> buffer(fw * fh);
+            for (int y = 0; y < fh; y++) {
+                if (DGifGetLine(gif, buffer.data() + y * fw, fw) == GIF_ERROR)
+                    break;
             }
 
-            memcpy(pix->surface->data, buffer, w * h);
-            delete[] buffer;
+            // In Canvas übertragen
+            for (int y = 0; y < fh; y++) {
+                int cy = top + y;
+                if (cy >= height) continue;
+                for (int x = 0; x < fw; x++) {
+                    int cx = left + x;
+                    if (cx >= width) continue;
+                    unsigned char pixel = buffer[y * fw + x];
+                    if (pixel == transparent)
+                        continue; // Skip transparent pixel
+                    canvas[cy * width + cx] = pixel;
+                }
+            }
+
+            // Neues gPixmap mit 32 Bit BGRA
+            ePtr<gPixmap> pix = new gPixmap(width, height, 32, nullptr, gPixmap::accelAlways);
+            uint32_t* pixdata = static_cast<uint32_t*>(pix->surface->data);
+
+            // Canvas (Indexwerte) -> echte BGRA-Farben
+            for (int y = 0; y < height; ++y) {
+                for (int x = 0; x < width; ++x) {
+                    int idx = canvas[y * width + x];
+                    uint32_t outPixel = 0x00000000u; // default transparent black
+
+                    if (idx >= 0 && colorMap && idx < colorMap->ColorCount) {
+                        GifColorType c = colorMap->Colors[idx];
+                        bool pixelIsTransparent = (has_transparency && idx == transparent);
+
+                        uint8_t A = pixelIsTransparent ? 0x00 : 0xFF;
+                        uint8_t R = c.Red;
+                        uint8_t G = c.Green;
+                        uint8_t B = c.Blue;
+
+                        // BGRA (niedrigstes Byte = B)
+                        outPixel = (static_cast<uint32_t>(B)      ) |
+                                   (static_cast<uint32_t>(G) << 8 ) |
+                                   (static_cast<uint32_t>(R) << 16) |
+                                   (static_cast<uint32_t>(A) << 24);
+                    }
+
+                    pixdata[y * (pix->surface->stride / 4) + x] = outPixel;
+                }
+            }
 
             frames.push_back(pix);
-            delays.push_back(delay * 10); // ms
+            delays.push_back(delay);
 
-            delay = 10; // Reset for next frame
+            eDebug("[ePixmap] frame: %d delay=%d disposal=%d transparent=%d hasTransparency=%d left=%d top=%d w=%d h=%d", 
+                (int)frames.size() - 1, delay, disposal, transparent, has_transparency,
+                left, top, fw, fh);
+
             break;
         }
-        case EXTENSION_RECORD_TYPE: {
-            if (DGifGetExtension(gif, &extCode, &extension) == GIF_ERROR)
-                break;
-            if (extCode == GRAPHICS_EXT_FUNC_CODE && extension != nullptr)
-                delay = extension[2] << 8 | extension[1];
-            while (extension != nullptr)
-                if (DGifGetExtensionNext(gif, &extension) == GIF_ERROR)
-                    break;
-            break;
-        }
+
         default:
             break;
         }
@@ -235,17 +319,186 @@ void ePixmap::setAniPixmapFromFile(const char *filename, bool autostart)
     m_frames = frames;
     m_delays = delays;
     m_currentFrame = 0;
-	if( autostart )
-	{
-		if (!m_frames.empty()) {
-			m_pixmap = m_frames[0];
-			event(evtChangedPixmap);
-			if (m_frames.size() > 1)
-				startAnimation();
-		}
-	}
-	
+
+    if (autostart && !m_frames.empty()) {
+        m_pixmap = m_frames[0];
+        event(evtChangedPixmap);
+        if (m_frames.size() > 1)
+            startAnimation();
+    }
 }
+
+
+
+/*
+void ePixmap::setAniPixmapFromFile(const char *filename, bool autostart)
+{
+    std::vector<ePtr<gPixmap>> frames;
+    std::vector<int> delays;
+
+    int error = 0;
+    GifFileType *gif = DGifOpenFileName(filename, &error);
+    if (!gif)
+        return;
+
+    int width  = gif->SWidth;
+    int height = gif->SHeight;
+
+    ColorMapObject *globalColorMap = gif->SColorMap;
+
+    GifRecordType recordType;
+    int delay = 100; // Default delay (1/100 sec)
+
+    int disposal = 0;
+    int transparent = -1;
+    bool has_transparency = false;
+
+    // Canvas für zusammengesetzte Frames
+    std::vector<unsigned char> canvas(width * height, 0);
+
+    // Backup-Buffer für Disposal=3
+    std::vector<unsigned char> prevBuffer(width * height, 0);
+
+    do {
+        if (DGifGetRecordType(gif, &recordType) == GIF_ERROR)
+            break;
+
+        switch (recordType) {
+        case EXTENSION_RECORD_TYPE: {
+            int extCode;
+            GifByteType *extension;
+            if (DGifGetExtension(gif, &extCode, &extension) == GIF_ERROR)
+                break;
+
+            if (extCode == GRAPHICS_EXT_FUNC_CODE && extension != nullptr) {
+                int blockSize = extension[0];
+                if (blockSize >= 4) {
+
+                    unsigned char packed = extension[1];
+                    int delay_cs = extension[2] | (extension[3] << 8); // in 1/100s
+                    int local_transparent = (packed & 0x01) ? extension[4] : -1;
+
+                    disposal = (packed >> 2) & 0x07;
+                    has_transparency = (packed & 0x01) != 0;
+                    transparent = local_transparent;
+                    delay = (delay_cs > 0) ? delay_cs * 10 : 100; // ms
+
+//                    eDebug("Parsed GCE: disposal=%d has_trans=%d transparent=%d delay_ms=%d", disposal, has_transparency, transparent, delay);
+
+                }
+
+            }
+
+            while (extension != nullptr) {
+                if (DGifGetExtensionNext(gif, &extension) == GIF_ERROR)
+                    break;
+            }
+            break;
+        }
+
+        case IMAGE_DESC_RECORD_TYPE: {
+            if (DGifGetImageDesc(gif) == GIF_ERROR)
+                break;
+
+            int left   = gif->Image.Left;
+            int top    = gif->Image.Top;
+            int fw     = gif->Image.Width;
+            int fh     = gif->Image.Height;
+
+            // Vorherigen Frame sichern falls Disposal=3
+            if (disposal == 3)
+                prevBuffer = canvas;
+
+            // Disposal anwenden
+            if (disposal == 2) {
+                // Hintergrund löschen (0 setzen)
+                for (int y = 0; y < fh; y++) {
+                    int cy = top + y;
+                    if (cy >= height) continue;
+                    for (int x = 0; x < fw; x++) {
+                        int cx = left + x;
+                        if (cx < width)
+                            canvas[cy * width + cx] = 0;
+                    }
+                }
+            }
+            else if (disposal == 3) {
+                canvas = prevBuffer;
+            }
+            // Disposal=0/1: nichts tun
+
+            // Lokale oder globale Palette
+            ColorMapObject *colorMap = gif->Image.ColorMap ? gif->Image.ColorMap : globalColorMap;
+
+            // Frame-Daten lesen
+            std::vector<unsigned char> buffer(fw * fh);
+            for (int y = 0; y < fh; y++) {
+                if (DGifGetLine(gif, buffer.data() + y * fw, fw) == GIF_ERROR)
+                    break;
+            }
+
+            // In Canvas übertragen
+            for (int y = 0; y < fh; y++) {
+                int cy = top + y;
+                if (cy >= height) continue;
+                for (int x = 0; x < fw; x++) {
+                    int cx = left + x;
+                    if (cx >= width) continue;
+                    unsigned char pixel = buffer[y * fw + x];
+                    if (pixel == transparent)
+                        continue; // Skip transparent pixel
+                    canvas[cy * width + cx] = pixel;
+                }
+            }
+
+            // Neues gPixmap erzeugen
+            ePtr<gPixmap> pix = new gPixmap(width, height, 8, nullptr, gPixmap::accelAlways);
+            unsigned char* pixdata = static_cast<unsigned char*>(pix->surface->data);
+
+            memcpy(pixdata, canvas.data(), width * height);
+
+            // CLUT setzen
+            if (colorMap) {
+                pix->surface->clut.colors = colorMap->ColorCount;
+                pix->surface->clut.data = new gRGB[colorMap->ColorCount];
+                for (int i = 0; i < colorMap->ColorCount; ++i) {
+                    pix->surface->clut.data[i].r = colorMap->Colors[i].Red;
+                    pix->surface->clut.data[i].g = colorMap->Colors[i].Green;
+                    pix->surface->clut.data[i].b = colorMap->Colors[i].Blue;
+                    pix->surface->clut.data[i].a = 0;  // reverse Alpha bleibt
+                }
+            }
+
+            frames.push_back(pix);
+            delays.push_back(delay);
+
+            eDebug("[ePixmap] frame: %d delay=%d disposal=%d transparent=%d hasTransparency=%d left=%d top=%d w=%d h=%d", 
+                (int)frames.size() - 1, delay, disposal, transparent, has_transparency,
+                left, top, fw, fh);
+
+            break;
+        }
+
+        default:
+            break;
+        }
+    } while (recordType != TERMINATE_RECORD_TYPE);
+
+    DGifCloseFile(gif, &error);
+
+    m_frames = frames;
+    m_delays = delays;
+    m_currentFrame = 0;
+
+    if (autostart && !m_frames.empty()) {
+        m_pixmap = m_frames[0];
+        event(evtChangedPixmap);
+        if (m_frames.size() > 1)
+            startAnimation();
+    }
+}
+
+*/
 
 void ePixmap::startAnimation(bool once)
 {
@@ -257,8 +510,13 @@ void ePixmap::startAnimation(bool once)
 
 void ePixmap::nextFrame()
 {
+    if (m_frames.empty()) return;
+    
     m_currentFrame = (m_currentFrame + 1) % m_frames.size();
 	m_pixmap = m_frames[m_currentFrame];
 	event(evtChangedPixmap);
-    m_animTimer->start(m_delays[m_currentFrame], true);
+
+	if (m_currentFrame < m_delays.size())
+        m_animTimer->start(m_delays[m_currentFrame], true);
+
 }
