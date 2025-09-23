@@ -1,6 +1,7 @@
 #include <lib/gui/elistbox.h>
 #include <lib/gui/elistboxcontent.h>
 #include <lib/gui/eslider.h>
+#include <lib/gui/elabel.h>
 #include <lib/actions/action.h>
 #include <lib/base/nconfig.h>
 #ifdef USE_LIBVUGLES2
@@ -20,7 +21,7 @@ uint8_t eListbox::defaultScrollBarMode = eListbox::DefaultScrollBarMode;
 uint8_t eListbox::defaultScrollbarRadiusEdges = 0;
 bool eListbox::defaultWrapAround = eListbox::DefaultWrapAround;
 
-eListbox::eListbox(eWidget *parent) : eWidget(parent), m_prev_scrollbar_page(-1), m_scrollbar_mode(showNever), m_scrollbar_scroll(byPage),
+eListbox::eListbox(eWidget *parent) : eWidget(parent), m_textPixmap(nullptr), m_prev_scrollbar_page(-1), m_scrollbar_mode(showNever), m_scrollbar_scroll(byPage),
 									  m_content_changed(false), m_enabled_wrap_around(false), m_itemwidth_set(false), m_itemheight_set(false), m_scrollbar_width(10),
 									  m_scrollbar_height(10), m_scrollbar_length(0), m_top(0), m_left(0), m_selected(0), m_itemheight(25), m_itemwidth(25),
 									  m_orientation(orVertical), m_max_columns(0), m_max_rows(0), m_selection_enabled(1), m_page_size(0), m_item_alignment(0), xOffset(0), yOffset(0),
@@ -495,6 +496,30 @@ int eListbox::event(int event, void *data, void *data2)
 			return 0;
 
 		gPainter &painter = *(gPainter *)data2;
+
+		if (m_paint_pixmap && m_textPixmap) {
+			int srcX = m_scroll_rect.x();
+			int srcY = m_scroll_rect.y();
+
+			int scrollX = 0;
+			int scrollY = 0;
+
+			// determine source offset based on scroll direction
+			if (m_scroll_text_direction == eLabel::scrollLeft || m_scroll_text_direction == eLabel::scrollRight)
+				scrollX = m_content->getScollPos();
+			else if (m_scroll_text_direction == eLabel::scrollTop || m_scroll_text_direction == eLabel::scrollBottom)
+				scrollY = m_content->getScollPos();
+
+			// perform blit of the text pixmap
+			eSize s(m_scroll_rect.width(), m_scroll_rect.height());
+			eRect rec = m_scroll_rect;
+			painter.blit(m_textPixmap, eRect(ePoint(srcX-scrollX, srcY-scrollY), s), rec, 0);
+
+			m_paint_pixmap = false;
+			// skip the normal renderText logic for scrolling
+			return 0;
+		}
+
 		gRegion entryRect;
 		m_content->cursorSave();
 		if (m_orientation == orVertical)
@@ -1878,7 +1903,7 @@ void eListbox::setScrollText(int direction, long delay, long startDelay, long en
 	m_delay = std::max(delay, (long)50);
 	m_scroll_step = std::max(stepSize, 1);
 	m_scroll_mode = mode;
-	//m_use_cached_pixmap = (mode == scrollModeBounceCached || mode == scrollModeCached || mode == scrollModeRoll);
+	m_use_cached_pixmap = (mode == eLabel::scrollModeBounceCached || mode == eLabel::scrollModeCached || mode == eLabel::scrollModeRoll);
 
 /*
 	m_scroll_text = true;

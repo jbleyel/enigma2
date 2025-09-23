@@ -57,6 +57,7 @@ protected:
 	virtual int getItemWidth() { return -1; }
 	virtual uint8_t getOrientation() { return 1; }
 	virtual int getMaxItemTextWidth() { return 1; }
+	virtual int getScollPos() { return 0; }
 
 	eListbox *m_listbox;
 #endif
@@ -515,6 +516,10 @@ public:
 	int m_scroll_step;
 	int m_scroll_text_direction = 0;
 	int m_scroll_mode = 0;
+	bool m_paint_pixmap = false;
+	bool m_use_cached_pixmap = false;
+	eRect m_scroll_rect;
+	ePtr<gPixmap> m_textPixmap;
 
 protected:
 	int event(int event, void *data = 0, void *data2 = 0);

@@ -60,7 +60,7 @@ int iListboxContent::currentCursorSelectable()
 DEFINE_REF(eListboxPythonStringContent);
 
 eListboxPythonStringContent::eListboxPythonStringContent()
-	: m_saved_cursor_line(0), scrollTimer(eTimer::create(eApp)), m_textPixmap(nullptr), m_cursor(0), m_saved_cursor(0), m_itemheight(25), m_itemwidth(25), m_max_text_width(0), m_orientation(1)
+	: m_saved_cursor_line(0), scrollTimer(eTimer::create(eApp)), m_cursor(0), m_saved_cursor(0), m_itemheight(25), m_itemwidth(25), m_max_text_width(0), m_orientation(1)
 {
 	CONNECT(scrollTimer->timeout, eListboxPythonStringContent::updateScrollPosition);
 }
@@ -397,6 +397,13 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 			int flags = 0;
 			if (alphablendtext)
 				flags |= gPainter::RT_BLEND;
+
+			eRect position = eRect(text_offset, itemRect.size());
+			int m_scroll_text_direction = m_listbox->m_scroll_text_direction;
+
+			if(selected && m_scroll_text_direction && m_scroll_index != m_cursor)
+				m_listbox->m_scroll_rect = position;
+
 			if (local_style)
 			{
 				text_offset += local_style->m_text_padding.topLeft();
@@ -425,43 +432,38 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 				int paddingw = local_style->m_text_padding.width();
 				int paddingh = local_style->m_text_padding.height();
 
-				auto position = eRect(text_offset.x(), text_offset.y(), itemRect.width() - (paddingx * 2) - paddingw, itemRect.height() - (paddingy * 2) - paddingh);
-
-				int m_scroll_text_direction = m_listbox->m_scroll_text_direction;
+				position = eRect(text_offset.x(), text_offset.y(), itemRect.width() - (paddingx * 2) - paddingw, itemRect.height() - (paddingy * 2) - paddingh);
+			}
 
 				// eDebug("[eListboxPythonStringContent] paint m_scroll_text_direction %d", m_scroll_text_direction);
 
-				if(selected && m_scroll_text_direction) {
-					if(m_scroll_index != m_cursor)
-					{
-						m_scroll_index = m_cursor;
-						m_scroll_size = eSize(position.width(), position.height());
-						m_scroll_text_str = string;
-						updateTextSize(m_scroll_text_str, fnt);
-					}
-					if(m_scroll_text)
-					{
-						// ensure timer is started with initial delay if not active
-						if (!scrollTimer->isActive()) {
-							scrollTimer->start(m_listbox->m_start_delay);
-						}
-						/* move the whole text-block - the sign follows existing convention:
-						position.x() - m_scroll_pos / position.y() - m_scroll_pos */
-						if (m_scroll_text_direction == eLabel::scrollLeft || m_scroll_text_direction == eLabel::scrollRight)
-							position.setX(position.x() - m_scroll_pos);
-						else if (m_scroll_text_direction == eLabel::scrollTop || m_scroll_text_direction == eLabel::scrollBottom)
-							position.setY(position.y() - m_scroll_pos);
-						painter.renderText(position, m_scroll_text_str.empty() ? string : m_scroll_text_str.c_str(), flags, border_color, border_size);
-						painter.clippop();
-						return;
-					}
+			if(selected && m_scroll_text_direction) {
+				if(m_scroll_index != m_cursor)
+				{
+					m_scroll_index = m_cursor;
+					m_scroll_size = eSize(position.width(), position.height());
+					m_scroll_text_str = string;
+					updateTextSize(m_scroll_text_str, fnt, flags, border_color, border_size);
 				}
-				painter.renderText(position, string, flags, border_color, border_size);
+				if(m_scroll_text)
+				{
+					// ensure timer is started with initial delay if not active
+					if (!scrollTimer->isActive()) {
+						scrollTimer->start(m_listbox->m_start_delay);
+					}
+					/* move the whole text-block - the sign follows existing convention:
+					position.x() - m_scroll_pos / position.y() - m_scroll_pos */
+					if (m_scroll_text_direction == eLabel::scrollLeft || m_scroll_text_direction == eLabel::scrollRight)
+						position.setX(position.x() - m_scroll_pos);
+					else if (m_scroll_text_direction == eLabel::scrollTop || m_scroll_text_direction == eLabel::scrollBottom)
+						position.setY(position.y() - m_scroll_pos);
+					painter.renderText(position, m_scroll_text_str.empty() ? string : m_scroll_text_str.c_str(), flags, border_color, border_size);
+					painter.clippop();
+					return;
+				}
 			}
-			else
-			{
-				painter.renderText(eRect(text_offset, itemRect.size()), string, flags, border_color, border_size);
-			}
+			painter.renderText(position, string, flags, border_color, border_size);
+
 		}
 	}
 
@@ -483,6 +485,12 @@ void eListboxPythonStringContent::setList(ePyObject list)
 
 	if (m_listbox)
 		m_listbox->entryReset(false);
+
+	if (m_scroll_text) {
+		scrollTimer->stop();
+		m_scroll_started = false;
+		m_scroll_swap = false;
+	}
 }
 
 void eListboxPythonStringContent::updateEntry(int index, ePyObject entry)
@@ -557,7 +565,7 @@ static eSize calculateTextSize(gFont* font, const std::string& string, eSize tar
 	return para.getBoundBox().size();
 }
 
-void eListboxPythonStringContent::updateTextSize(std::string &text, gFont* font) {
+void eListboxPythonStringContent::updateTextSize(std::string &text, gFont* font, int flags, gRGB &border_color, int border_size) {
 	m_scroll_text = false;
 
 	if(m_listbox)
@@ -572,6 +580,11 @@ void eListboxPythonStringContent::updateTextSize(std::string &text, gFont* font)
 
 			if (m_text_size.width() > m_scroll_size.width()) {
 				m_scroll_text = true;
+
+				if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll)
+					m_text_size.setWidth(m_text_size.width() + m_scroll_size.width() * 1.5);
+
+				/*
 				if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll && m_scroll_text_direction == eLabel::scrollLeft)
 				{
 					int spacePx = calculateTextSize(font, " ", eSize(0,0), true).width();
@@ -580,13 +593,14 @@ void eListboxPythonStringContent::updateTextSize(std::string &text, gFont* font)
 					m_text_size.setWidth(m_text_size.width() + m_scroll_size.width() + (nSpaces * spacePx));
 					text = text + spaceStr + text;
 				}
+				*/
 			}
 		} else if (m_scroll_text_direction == eLabel::scrollTop || m_scroll_text_direction == eLabel::scrollBottom) {
 			m_text_size = calculateTextSize(font, text, m_scroll_size, false); // allow wrap
 			if (m_text_size.height() > m_scroll_size.height()) {
-//				if (m_scroll_mode == eLabel::scrollModeRoll)
-//					m_text_size.setHeight(m_text_size.height() + m_scroll_size.height() * 1.5);
 				m_scroll_text = true;
+				if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll)
+					m_text_size.setHeight(m_text_size.height() + m_scroll_size.height() * 1.5);
 			}
 		}
 		if (m_scroll_text) {
@@ -601,116 +615,79 @@ void eListboxPythonStringContent::updateTextSize(std::string &text, gFont* font)
 				m_scroll_pos = std::max(0, m_text_size.width() - visibleW);
 			else if (m_scroll_text_direction == eLabel::scrollBottom)
 				m_scroll_pos = std::max(0, m_text_size.height() - visibleH);
+
+			if (m_listbox->m_use_cached_pixmap) {
+				// limit 1MB pixmap size
+				if ((m_text_size.width() * m_text_size.height()) > 1000000) {
+					m_listbox->m_use_cached_pixmap = false;
+					if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll)
+						m_listbox->m_scroll_mode = eLabel::scrollModeNormal;
+				} else
+					createScrollPixmap(text, font, flags, border_color, border_size);
+			}
 		}
 	}
 }
 
-/*
-void eListboxPythonStringContent::createScrollPixmap() {
-	if (!m_scroll_text)
+void eListboxPythonStringContent::createScrollPixmap(std::string &text, gFont* font, int flags, gRGB &border_color, int border_size) {
+	if (!m_scroll_text || !m_listbox)
 		return;
-
+		
 	int w = std::max(m_text_size.width(), m_scroll_size.width());
 	int h = std::max(m_text_size.height(), m_scroll_size.height());
 
 	eSize s = eSize(w, h);
 
-	m_textPixmap = new gPixmap(s, 32, gPixmap::accelNever);
+	m_listbox->m_textPixmap = new gPixmap(s, 32, gPixmap::accelNever);
 
-	// build flags as in paint
-	int flags = 0;
-	if (m_valign == alignTop)
-		flags |= gPainter::RT_VALIGN_TOP;
-	else if (m_valign == alignCenter)
-		flags |= gPainter::RT_VALIGN_CENTER;
-	else if (m_valign == alignBottom)
-		flags |= gPainter::RT_VALIGN_BOTTOM;
-
-	if (m_halign == alignLeft)
-		flags |= gPainter::RT_HALIGN_LEFT;
-	else if (m_halign == alignCenter)
-		flags |= gPainter::RT_HALIGN_CENTER;
-	else if (m_halign == alignRight)
-		flags |= gPainter::RT_HALIGN_RIGHT;
-	else if (m_halign == alignBlock)
-		flags |= gPainter::RT_HALIGN_BLOCK;
-
-	if (m_wrap == 1)
-		flags |= gPainter::RT_WRAP;
-	else if (m_wrap == 2)
-		flags |= gPainter::RT_ELLIPSIS;
-
-	if (m_underline)
-		flags |= gPainter::RT_UNDERLINE;
-
-	ePtr<gDC> dc = new gDC(m_textPixmap);
+	ePtr<gDC> dc = new gDC(m_listbox->m_textPixmap);
 	gPainter p(dc);
 
 	ePtr<eWindowStyle> style;
-	getStyle(style);
+	m_listbox->getStyle(style);
 
-	style->setStyle(p, eWindowStyle::styleLabel);
-	p.setFont(m_font);
+	style->setStyle(p, eWindowStyle::styleListboxSelected);
+	p.setFont(font);
 	p.resetClip(eRect(ePoint(0, 0), s));
 
-	if (m_have_background_color)
-		p.setBackgroundColor(m_background_color);
+	eListboxStyle *local_style = m_listbox->getLocalStyle();
 
+	int posX = 0;
+	int posY = 0;
+
+
+	eRect position = eRect(posX, posY, s.width(), s.height());
+
+	if(local_style)
+	{
+		if (local_style->is_set.background_color_selected)
+			p.setBackgroundColor(local_style->m_background_color_selected);
+		if (local_style->is_set.foreground_color_selected)
+			p.setForegroundColor(local_style->m_foreground_color_selected);
+
+		int paddingx = local_style->m_text_padding.x();
+		int paddingy = local_style->m_text_padding.y();
+		int paddingw = local_style->m_text_padding.width();
+		int paddingh = local_style->m_text_padding.height();
+
+		position = eRect(paddingx, paddingy, s.width() - (paddingx * 2) - paddingw, s.height() - (paddingy * 2) - paddingh);
+
+	}
 	p.clear();
 
-	if (m_have_shadow_color)
-		p.setForegroundColor(m_shadow_color);
-	else if (m_have_foreground_color)
-		p.setForegroundColor(m_foreground_color);
-
-	int posX = m_padding.x();
-	int posY = m_padding.y();
-	w = s.width() - m_padding.x() - m_padding.right();
-	h = s.height() - m_padding.y() - m_padding.bottom();
-
-	auto position = eRect(posX, posY, w, h);
-
-	auto shadowposition = eRect(position.x() - m_shadow_offset.x(), position.y() - m_shadow_offset.y(), position.width() - m_shadow_offset.x(), position.height() - m_shadow_offset.y());
-
-	p.renderText(shadowposition, m_text, flags, m_text_border_color, m_text_border_width, m_pos, &m_text_offset, m_tab_width);
-
-	if (m_have_shadow_color) {
-		if (!m_have_foreground_color)
-			style->setStyle(p, eWindowStyle::styleLabel);
+	p.renderText(position, text.c_str(), flags, border_color, border_size);
+	
+	if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll) {
+		if (m_listbox->m_scroll_text_direction == eLabel::scrollLeft || m_listbox->m_scroll_text_direction == eLabel::scrollRight)
+			posX = s.width() - m_scroll_size.width();
 		else
-			p.setForegroundColor(m_foreground_color);
+			posY = s.height() - m_scroll_size.height();
+		
+		position = eRect(posX, posY, position.width() - posX, position.height() - posY);
 
-		p.setBackgroundColor(m_shadow_color);
-		p.renderText(position, m_text, flags, gRGB(), 0, m_pos, &m_text_shaddowoffset, m_tab_width);
-	}
-
-	if (m_scroll_mode == scrollModeRoll) {
-		if (m_scroll_text_direction == scrollLeft || m_scroll_text_direction == scrollRight)
-			posX = s.width() - size().width();
-		else
-			posY = s.height() - size().height();
-
-		w = s.width() - m_padding.x() - m_padding.right();
-		h = s.height() - m_padding.y() - m_padding.bottom();
-
-		auto position = eRect(posX, posY, w, h);
-
-		auto shadowposition = eRect(position.x() - m_shadow_offset.x(), position.y() - m_shadow_offset.y(), position.width() - m_shadow_offset.x(), position.height() - m_shadow_offset.y());
-
-		p.renderText(shadowposition, m_text, flags, m_text_border_color, m_text_border_width, m_pos, &m_text_offset, m_tab_width);
-
-		if (m_have_shadow_color) {
-			if (!m_have_foreground_color)
-				style->setStyle(p, eWindowStyle::styleLabel);
-			else
-				p.setForegroundColor(m_foreground_color);
-
-			p.setBackgroundColor(m_shadow_color);
-			p.renderText(position, m_text, flags, gRGB(), 0, m_pos, &m_text_shaddowoffset, m_tab_width);
-		}
+		p.renderText(position, text.c_str(), flags, border_color, border_size);
 	}
 }
-*/
 
 void eListboxPythonStringContent::updateScrollPosition() {
 
@@ -813,11 +790,9 @@ void eListboxPythonStringContent::updateScrollPosition() {
 			scrollTimer->changeInterval(m_delay);
 		}
 
-		bool m_use_cached_pixmap = false;
-
 		// request repaint
-		if (m_use_cached_pixmap && m_textPixmap)
-			m_paint_pixmap = true;
+		if (m_listbox->m_use_cached_pixmap && m_listbox->m_textPixmap)
+			m_listbox->m_paint_pixmap = true;
 
 		m_listbox->entryChanged(m_scroll_index);
 	}
