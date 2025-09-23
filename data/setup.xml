@@ -517,6 +517,7 @@
 		<item level="2" text="Include DVB details" description="Enable this option to add extra DVB details to the debug log file.">config.crash.debugDVB</item>
 		<item level="2" text="Include teletext details" description="Enable this option to add extra teletext details to the debug log file.">config.crash.debugTeletext</item>
 		<item level="2" text="Include storage device data" description="Enable this option to add storage device information detected during system boot and hot plug events to the debug log file.">config.crash.debugStorage</item>
+		<item level="2" text="Include bouquet data" description="Enable this option to add bouquet information detected during system boot to the debug log file.">config.crash.debugDVBDB</item>
 		<item level="2" text="Limit debug log size (MB)" description="Allows you to set the maximum size of the Debug log size (MB). When that size is reached, a new file will be created.">config.crash.debugloglimit</item>
 		<item level="2" text="Show Log Manager in Extension Menu" description="Allows you to show/hide Log Manager in the Extension Menu screen (BLUE button).">config.logmanager.showinextensions</item>
 		<item level="2" text="Maximum no of days" description="Logs older then the set no of days will be deleted.">config.crash.daysloglimit</item>
@@ -1064,7 +1065,7 @@
 		<item level="1" text="Sort Extension Menu" description="Select the sort order of the Extension Menu entries.">config.usage.sortExtensionslist</item>
 		<item level="1" text="Show Restart Network in Extensions *" description="Enable to show the 'Restart Network' entry in the Extension Menu screen.">config.usage.show_restart_network_extensionslist</item>
 		<item level="1" text="Sort Plugin Browser" description="Select the sort order of the Plugin Browser menu entries. User defined also allows the menu entries to be hidden.">config.usage.plugins_sort_mode</item>
-		<item level="1" text="Setup entry sort" description="Enable to display setup entries alphabetically.">config.usage.sort_settings</item>
+		<!--<item level="1" text="Setup entry sort" description="Enable to display setup entries alphabetically.">config.usage.sort_settings</item>-->
 		<item level="1" text="Show setup default value" description="Select if the default value for a setup entry is shown and, if so, where it is displayed in relation to the description.">config.usage.setupShowDefault</item>
 		<item level="2" text="Show True/False as graphical switch" description="Enable to display all True/False, Yes/No, On/Off and Enable/Disable setup options as a graphical switch.">config.usage.boolean_graphic</item>
 		<item level="2" text="Show additional slider value" description="Enable to display the current value of the slider at end of the slider bar.">config.usage.show_slider_value</item>
