@@ -1101,7 +1101,8 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_recovery_attempts(0),
 	m_recovery_seek_pending(false),
 	m_recovery_target_pts(0),
-	m_recovery_retry_count(0)
+	m_recovery_retry_count(0),
+	m_timeshift_pids_removed(false)
 	// END OF MODIFICATION
 {
 #ifdef PASSTHROUGH_FIX
@@ -1549,6 +1550,17 @@ void eDVBServicePlay::verifyAndResumeRecovery()
 		{
 			eDebug("[Timeshift-Fix] Seek SUCCESS! Verified: %lld.", verified_pos);
 		}
+	}
+
+	// After successful recovery, re-add the PIDs to continue indexing
+	if (m_record && m_timeshift_pids_removed)
+	{
+		eDebug("[Timeshift-Fix] Resuming PID recording after successful recovery.");
+		for (int pid : m_pids_active)
+		{
+			m_record->addPID(pid);
+		}
+		m_timeshift_pids_removed = false;
 	}
 
 	// All checks passed or retries exhausted, resume playback.
@@ -2930,14 +2942,24 @@ void eDVBServicePlay::recordEvent(int event)
 		eWarning("[eDVBServicePlay] recordEvent write error");
 		return;
 	case iDVBTSRecorder::eventStreamCorrupt:
-		// START OF MODIFICATION - Proactive Timeshift Stability
 		// If a recovery is already in progress, do nothing to prevent re-triggering.
 		if (m_stream_corruption_detected) return;
 
 		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt, initiating recovery.");
+
+		// Remove PIDs to pause indexing and protect the .sc file
+		if (m_record && !m_timeshift_pids_removed)
+		{
+			eDebug("[Timeshift-Fix] Removing PIDs to pause indexing during corruption.");
+			for (int pid : m_pids_active)
+			{
+				m_record->removePID(pid);
+			}
+			m_timeshift_pids_removed = true;
+		}
+
 		m_stream_corruption_detected = true; // Set corruption flag
 		handleEofRecovery();                 // Start the recovery process
-		// END OF MODIFICATION
 		return;
 	default:
 		eDebug("[eDVBServicePlay] recordEvent unhandled record event %d", event);
@@ -2948,6 +2970,8 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 {
 	if (!m_timeshift_enabled)
 		return -1;
+
+	m_timeshift_pids_removed = false;
 
 	if (swToLive)
 	{

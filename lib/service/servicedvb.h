@@ -341,20 +341,18 @@ protected:
 	void recordEvent(int event);
 
 private:
-	// START OF MODIFICATION - FINAL VERSION
-	// Declarations for all new members and methods used in the recovery mechanism.
+	// START OF MODIFICATION
 	ePtr<eTimer> m_eof_recovery_timer;
 	ePtr<eTimer> m_timeshift_delay_updater_timer;
 	ePtr<eTimer> m_recovery_verifier_timer;
-
 	pts_t m_saved_timeshift_delay;
 	bool m_stream_corruption_detected;
 	int m_recovery_attempts;
-	int m_max_attempts;
 	bool m_recovery_seek_pending;
 	pts_t m_recovery_target_pts;
 	int m_recovery_retry_count;
-
+	int m_max_attempts;
+	bool m_timeshift_pids_removed;
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
 	void updateTimeshiftDelay();

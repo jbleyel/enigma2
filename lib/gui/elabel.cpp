@@ -61,16 +61,16 @@ int eLabel::event(int event, void* data, void* data2) {
 			if (m_scroll_text && m_textPixmap && m_paint_pixmap) {
 				// ensure timer is started with initial delay if not active
 				if (!scrollTimer->isActive()) {
-					scrollTimer->start(m_start_delay);
+					scrollTimer->start(m_scroll_config.startDelay);
 				}
 
 				int srcX = 0;
 				int srcY = 0;
 
 				// determine source offset based on scroll direction
-				if (m_scroll_text_direction == scrollLeft || m_scroll_text_direction == scrollRight)
+				if (m_scroll_config.direction == eScrollConfig::scrollLeft || m_scroll_config.direction == eScrollConfig::scrollRight)
 					srcX = m_scroll_pos;
-				else if (m_scroll_text_direction == scrollTop || m_scroll_text_direction == scrollBottom)
+				else if (m_scroll_config.direction == eScrollConfig::scrollTop || m_scroll_config.direction == eScrollConfig::scrollBottom)
 					srcY = m_scroll_pos;
 
 				// perform blit of the text pixmap
@@ -99,30 +99,7 @@ int eLabel::event(int event, void* data, void* data2) {
 				painter.setForegroundColor(m_foreground_color);
 
 			// build render flags
-			int flags = 0;
-			if (m_valign == alignTop)
-				flags |= gPainter::RT_VALIGN_TOP;
-			else if (m_valign == alignCenter)
-				flags |= gPainter::RT_VALIGN_CENTER;
-			else if (m_valign == alignBottom)
-				flags |= gPainter::RT_VALIGN_BOTTOM;
-
-			if (m_halign == alignLeft)
-				flags |= gPainter::RT_HALIGN_LEFT;
-			else if (m_halign == alignCenter)
-				flags |= gPainter::RT_HALIGN_CENTER;
-			else if (m_halign == alignRight)
-				flags |= gPainter::RT_HALIGN_RIGHT;
-			else if (m_halign == alignBlock)
-				flags |= gPainter::RT_HALIGN_BLOCK;
-
-			if (m_wrap == 1)
-				flags |= gPainter::RT_WRAP;
-			else if (m_wrap == 2)
-				flags |= gPainter::RT_ELLIPSIS;
-
-			if (m_underline)
-				flags |= gPainter::RT_UNDERLINE;
+			int flags = buildFlags();
 
 			if (isGradientSet() || m_blend)
 				flags |= gPainter::RT_BLEND;
@@ -143,10 +120,10 @@ int eLabel::event(int event, void* data, void* data2) {
 			/* For horizontal scroll we need full text width, height = visibleH.
 			   For vertical scroll we need full text height, width = visibleW.
 			   For non-scrolling modes we keep the visible area. */
-			if (m_scroll_text_direction == scrollLeft || m_scroll_text_direction == scrollRight) {
+			if (m_scroll_config.direction == eScrollConfig::scrollLeft || m_scroll_config.direction == eScrollConfig::scrollRight) {
 				rectW = m_text_size.width(); // full text width (no-wrap computed earlier)
 				rectH = visibleH;
-			} else if (m_scroll_text_direction == scrollTop || m_scroll_text_direction == scrollBottom) {
+			} else if (m_scroll_config.direction == eScrollConfig::scrollTop || m_scroll_config.direction == eScrollConfig::scrollBottom) {
 				rectW = visibleW;
 				rectH = m_text_size.height(); // full text height (wrapped)
 			} else {
@@ -158,16 +135,16 @@ int eLabel::event(int event, void* data, void* data2) {
 			auto position = eRect(posX, posY, rectW, rectH);
 
 			// apply scrolling offset (only if scrolling is active)
-			if (m_scroll_text_direction && m_scroll_text) {
+			if (m_scroll_config.direction && m_scroll_text) {
 				// ensure timer is started with initial delay if not active
 				if (!scrollTimer->isActive()) {
-					scrollTimer->start(m_start_delay);
+					scrollTimer->start(m_scroll_config.startDelay);
 				}
 				/* move the whole text-block - the sign follows existing convention:
 				   position.x() - m_scroll_pos / position.y() - m_scroll_pos */
-				if (m_scroll_text_direction == scrollLeft || m_scroll_text_direction == scrollRight)
+				if (m_scroll_config.direction == eScrollConfig::scrollLeft || m_scroll_config.direction == eScrollConfig::scrollRight)
 					position.setX(position.x() - m_scroll_pos);
-				else if (m_scroll_text_direction == scrollTop || m_scroll_text_direction == scrollBottom)
+				else if (m_scroll_config.direction == eScrollConfig::scrollTop || m_scroll_config.direction == eScrollConfig::scrollBottom)
 					position.setY(position.y() - m_scroll_pos);
 			}
 
@@ -214,17 +191,17 @@ int eLabel::event(int event, void* data, void* data2) {
 void eLabel::updateTextSize() {
 	m_scroll_text = false;
 
-	if (m_scroll_text_direction == scrollLeft || m_scroll_text_direction == scrollRight) {
+	if (m_scroll_config.direction == eScrollConfig::scrollLeft || m_scroll_config.direction == eScrollConfig::scrollRight) {
 		m_text_size = calculateTextSize(m_font, m_text, size(), true); // nowrap
 		if (m_text_size.width() > size().width()) {
 			m_scroll_text = true;
-			if (m_scroll_mode == scrollModeRoll)
+			if (m_scroll_config.mode == eScrollConfig::scrollModeRoll)
 				m_text_size.setWidth(m_text_size.width() + size().width() * 1.5);
 		}
-	} else if (m_scroll_text_direction == scrollTop || m_scroll_text_direction == scrollBottom) {
+	} else if (m_scroll_config.direction == eScrollConfig::scrollTop || m_scroll_config.direction == eScrollConfig::scrollBottom) {
 		m_text_size = calculateTextSize(m_font, m_text, size(), false); // allow wrap
 		if (m_text_size.height() > size().height()) {
-			if (m_scroll_mode == scrollModeRoll)
+			if (m_scroll_config.mode == eScrollConfig::scrollModeRoll)
 				m_text_size.setHeight(m_text_size.height() + size().height() * 1.5);
 			m_scroll_text = true;
 		}
@@ -237,17 +214,17 @@ void eLabel::updateTextSize() {
 		int visibleW = std::max(1, size().width() - m_padding.x() - m_padding.right());
 		int visibleH = std::max(1, size().height() - m_padding.y() - m_padding.bottom());
 
-		if (m_scroll_text_direction == scrollRight)
+		if (m_scroll_config.direction == eScrollConfig::scrollRight)
 			m_scroll_pos = std::max(0, m_text_size.width() - visibleW);
-		else if (m_scroll_text_direction == scrollBottom)
+		else if (m_scroll_config.direction == eScrollConfig::scrollBottom)
 			m_scroll_pos = std::max(0, m_text_size.height() - visibleH);
 
-		if (m_use_cached_pixmap) {
+		if (m_scroll_config.cached) {
 			// limit 1MB pixmap size
 			if ((m_text_size.width() * m_text_size.height()) > 1000000) {
-				m_use_cached_pixmap = false;
-				if (m_scroll_mode == scrollModeRoll)
-					m_scroll_mode = scrollModeNormal;
+				m_scroll_config.cached = false;
+				if (m_scroll_config.mode == eScrollConfig::scrollModeRoll)
+					m_scroll_config.mode = eScrollConfig::scrollModeNormal;
 			} else
 				createScrollPixmap();
 		}
@@ -266,30 +243,7 @@ void eLabel::createScrollPixmap() {
 	m_textPixmap = new gPixmap(s, 32, gPixmap::accelNever);
 
 	// build flags as in paint
-	int flags = 0;
-	if (m_valign == alignTop)
-		flags |= gPainter::RT_VALIGN_TOP;
-	else if (m_valign == alignCenter)
-		flags |= gPainter::RT_VALIGN_CENTER;
-	else if (m_valign == alignBottom)
-		flags |= gPainter::RT_VALIGN_BOTTOM;
-
-	if (m_halign == alignLeft)
-		flags |= gPainter::RT_HALIGN_LEFT;
-	else if (m_halign == alignCenter)
-		flags |= gPainter::RT_HALIGN_CENTER;
-	else if (m_halign == alignRight)
-		flags |= gPainter::RT_HALIGN_RIGHT;
-	else if (m_halign == alignBlock)
-		flags |= gPainter::RT_HALIGN_BLOCK;
-
-	if (m_wrap == 1)
-		flags |= gPainter::RT_WRAP;
-	else if (m_wrap == 2)
-		flags |= gPainter::RT_ELLIPSIS;
-
-	if (m_underline)
-		flags |= gPainter::RT_UNDERLINE;
+	int flags = buildFlags();
 
 	ePtr<gDC> dc = new gDC(m_textPixmap);
 	gPainter p(dc);
@@ -332,8 +286,8 @@ void eLabel::createScrollPixmap() {
 		p.renderText(position, m_text, flags, gRGB(), 0, m_pos, &m_text_shaddowoffset, m_tab_width);
 	}
 
-	if (m_scroll_mode == scrollModeRoll) {
-		if (m_scroll_text_direction == scrollLeft || m_scroll_text_direction == scrollRight)
+	if (m_scroll_config.mode == eScrollConfig::scrollModeRoll) {
+		if (m_scroll_config.direction == eScrollConfig::scrollLeft || m_scroll_config.direction == eScrollConfig::scrollRight)
 			posX = s.width() - size().width();
 		else
 			posY = s.height() - size().height();
@@ -482,22 +436,21 @@ eSize eLabel::calculateTextSize(gFont* font, const std::string& string, eSize ta
 }
 
 void eLabel::setScrollText(int direction, long delay, long startDelay, long endDelay, int repeat, int stepSize, int mode) {
-	if (m_scroll_text_direction == direction || direction == scrollNone)
+	if (m_scroll_config.direction == direction || direction == eScrollConfig::scrollNone)
 		return;
 
-	m_scroll_text_direction = direction;
-	m_repeat = repeat;
-	m_repeat_count = 0;
-	m_start_delay = std::min(startDelay, 10000L);
-	m_end_delay = std::min(endDelay, 10000L);
-	m_delay = std::max(delay, (long)50);
-	m_scroll_step = std::max(stepSize, 1);
-	m_scroll_mode = mode;
-	m_use_cached_pixmap = (mode == scrollModeBounceCached || mode == scrollModeCached || mode == scrollModeRoll);
+	m_scroll_config.direction = direction;
+	m_scroll_config.repeat = repeat;
+	m_scroll_config.startDelay = std::min(startDelay, 10000L);
+	m_scroll_config.endDelay = std::min(endDelay, 10000L);
+	m_scroll_config.delay = std::max(delay, (long)50);
+	m_scroll_config.stepSize = std::max(stepSize, 1);
+	m_scroll_config.mode = mode;
+	m_scroll_config.cached = (mode == eScrollConfig::scrollModeBounceCached || mode == eScrollConfig::scrollModeCached || mode == eScrollConfig::scrollModeRoll);
 
 	m_scroll_text = true;
 	m_scroll_pos = 0;
-
+	m_repeat_count = 0;
 	m_scroll_started = false;
 }
 
@@ -512,20 +465,20 @@ void eLabel::updateScrollPosition() {
 
 	// compute max_scroll depending on direction
 	int max_scroll = 0;
-	if (m_scroll_text_direction == scrollLeft || m_scroll_text_direction == scrollRight)
+	if (m_scroll_config.direction == eScrollConfig::scrollLeft || m_scroll_config.direction == eScrollConfig::scrollRight)
 		max_scroll = std::max(0, m_text_size.width() - visibleW);
-	else if (m_scroll_text_direction == scrollTop || m_scroll_text_direction == scrollBottom)
+	else if (m_scroll_config.direction == eScrollConfig::scrollTop || m_scroll_config.direction == eScrollConfig::scrollBottom)
 		max_scroll = std::max(0, m_text_size.height() - visibleH);
 
 	// determine step sign
-	int step = m_scroll_step;
+	int step = m_scroll_config.stepSize;
 	bool reverse = false;
 
-	if (m_scroll_text_direction == scrollRight || m_scroll_text_direction == scrollBottom)
+	if (m_scroll_config.direction == eScrollConfig::scrollRight || m_scroll_config.direction == eScrollConfig::scrollBottom)
 		reverse = true;
 
 	// in bounce mode, swap direction when m_scroll_swap is active
-	if (m_scroll_mode == scrollModeBounce && m_scroll_swap)
+	if (m_scroll_config.mode == eScrollConfig::scrollModeBounce && m_scroll_swap)
 		reverse = !reverse;
 
 	if (reverse)
@@ -542,29 +495,29 @@ void eLabel::updateScrollPosition() {
 
 	// check if end reached
 	if (m_scroll_pos == 0 || m_scroll_pos == max_scroll) {
-		if (m_scroll_mode == scrollModeBounce || m_scroll_mode == scrollModeBounceCached) {
+		if (m_scroll_config.mode == eScrollConfig::scrollModeBounce || m_scroll_config.mode == eScrollConfig::scrollModeBounceCached) {
 			// toggle bounce direction
 			m_scroll_swap = !m_scroll_swap;
 
 			// handle end delay
-			if (!m_end_delay_active && m_end_delay > 0) {
+			if (!m_end_delay_active && m_scroll_config.endDelay > 0) {
 				m_end_delay_active = true;
-				scrollTimer->start(m_end_delay);
+				scrollTimer->start(m_scroll_config.endDelay);
 				return;
 			}
 			m_end_delay_active = false;
 		} else {
 			// classic repeat/stop behavior
-			if (!m_end_delay_active && m_end_delay > 0) {
+			if (!m_end_delay_active && m_scroll_config.endDelay > 0) {
 				m_end_delay_active = true;
-				scrollTimer->start(m_end_delay);
-				if (m_repeat != -1)
+				scrollTimer->start(m_scroll_config.endDelay);
+				if (m_scroll_config.repeat != -1)
 					m_repeat_count++;
 				return;
 			}
 			m_end_delay_active = false;
 
-			if (m_repeat == 0 || (m_repeat != -1 && m_repeat_count >= m_repeat)) {
+			if (m_scroll_config.repeat == 0 || (m_scroll_config.repeat != -1 && m_repeat_count >= m_scroll_config.repeat)) {
 				// Run once → stop scrolling
 				scrollTimer->stop();
 				m_scroll_text = false;
@@ -573,13 +526,13 @@ void eLabel::updateScrollPosition() {
 				return;
 			} else {
 				// Loop → reset position and wait for start delay
-				if (m_scroll_text_direction == scrollLeft || m_scroll_text_direction == scrollTop)
+				if (m_scroll_config.direction == eScrollConfig::scrollLeft || m_scroll_config.direction == eScrollConfig::scrollTop)
 					m_scroll_pos = 0;
 				else
 					m_scroll_pos = max_scroll;
 
 				m_scroll_started = false;
-				scrollTimer->start(m_start_delay);
+				scrollTimer->start(m_scroll_config.startDelay);
 				invalidate();
 				return;
 			}
@@ -589,11 +542,11 @@ void eLabel::updateScrollPosition() {
 	// first tick after start → set timer interval
 	if (!m_scroll_started) {
 		m_scroll_started = true;
-		scrollTimer->changeInterval(m_delay);
+		scrollTimer->changeInterval(m_scroll_config.delay);
 	}
 
 	// request repaint
-	if (m_use_cached_pixmap && m_textPixmap)
+	if (m_scroll_config.cached && m_textPixmap)
 		m_paint_pixmap = true;
 
 	invalidate();

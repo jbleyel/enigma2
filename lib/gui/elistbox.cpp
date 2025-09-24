@@ -1,7 +1,6 @@
 #include <lib/gui/elistbox.h>
 #include <lib/gui/elistboxcontent.h>
 #include <lib/gui/eslider.h>
-#include <lib/gui/elabel.h>
 #include <lib/actions/action.h>
 #include <lib/base/nconfig.h>
 #ifdef USE_LIBVUGLES2
@@ -505,9 +504,9 @@ int eListbox::event(int event, void *data, void *data2)
 			int scrollY = 0;
 
 			// determine source offset based on scroll direction
-			if (m_scroll_text_direction == eLabel::scrollLeft || m_scroll_text_direction == eLabel::scrollRight)
+			if (m_scroll_config.direction == eScrollConfig::scrollLeft || m_scroll_config.direction == eScrollConfig::scrollRight)
 				scrollX = m_content->getScollPos();
-			else if (m_scroll_text_direction == eLabel::scrollTop || m_scroll_text_direction == eLabel::scrollBottom)
+			else if (m_scroll_config.direction == eScrollConfig::scrollTop || m_scroll_config.direction == eScrollConfig::scrollBottom)
 				scrollY = m_content->getScollPos();
 
 			// perform blit of the text pixmap
@@ -1893,21 +1892,15 @@ void eListbox::setItemGradientMarkedandSelected(const gRGB &startcolor, const gR
 }
 
 void eListbox::setScrollText(int direction, long delay, long startDelay, long endDelay, int repeat, int stepSize, int mode) {
-	if (m_scroll_text_direction == direction || direction == 0)
+	if (m_scroll_config.direction == direction || direction == 0)
 		return;
 
-	m_scroll_text_direction = direction;
-	m_repeat = repeat;
-	m_start_delay = std::min(startDelay, 10000L);
-	m_end_delay = std::min(endDelay, 10000L);
-	m_delay = std::max(delay, (long)50);
-	m_scroll_step = std::max(stepSize, 1);
-	m_scroll_mode = mode;
-	m_use_cached_pixmap = (mode == eLabel::scrollModeBounceCached || mode == eLabel::scrollModeCached || mode == eLabel::scrollModeRoll);
-
-/*
-	m_scroll_text = true;
-	m_scroll_pos = 0;
-	m_scroll_started = false;
-*/
+	m_scroll_config.direction = direction;
+	m_scroll_config.repeat = repeat;
+	m_scroll_config.startDelay = std::min(startDelay, 10000L);
+	m_scroll_config.endDelay = std::min(endDelay, 10000L);
+	m_scroll_config.delay = std::max(delay, (long)50);
+	m_scroll_config.stepSize = std::max(stepSize, 1);
+	m_scroll_config.mode = mode;
+	m_scroll_config.cached = (mode == eScrollConfig::scrollModeBounceCached || mode == eScrollConfig::scrollModeCached || mode == eScrollConfig::scrollModeRoll);
 }

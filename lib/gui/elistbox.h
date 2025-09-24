@@ -2,6 +2,7 @@
 #define __lib_listbox_h
 
 #include <lib/gui/ewidget.h>
+#include <lib/gui/elabel.h>
 #include <connection.h>
 #include <vector>
 
@@ -509,15 +510,8 @@ public:
 	void invalidate(const gRegion &region = gRegion::invalidRegion()) override;
 
 	// scroll
-	int m_delay = 0;
-	int m_start_delay = 0;
-	int m_end_delay = 0;
-	int m_repeat = 0;
-	int m_scroll_step;
-	int m_scroll_text_direction = 0;
-	int m_scroll_mode = 0;
+	eScrollConfig m_scroll_config;
 	bool m_paint_pixmap = false;
-	bool m_use_cached_pixmap = false;
 	eRect m_scroll_rect;
 	ePtr<gPixmap> m_textPixmap;
 

@@ -399,9 +399,9 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 				flags |= gPainter::RT_BLEND;
 
 			eRect position = eRect(text_offset, itemRect.size());
-			int m_scroll_text_direction = m_listbox->m_scroll_text_direction;
+			int scroll_text_direction = m_listbox->m_scroll_config.direction;
 
-			if(selected && m_scroll_text_direction && m_scroll_index != m_cursor)
+			if(selected && scroll_text_direction && m_scroll_index != m_cursor)
 				m_listbox->m_scroll_rect = position;
 
 			if (local_style)
@@ -437,7 +437,7 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 
 				// eDebug("[eListboxPythonStringContent] paint m_scroll_text_direction %d", m_scroll_text_direction);
 
-			if(selected && m_scroll_text_direction) {
+			if(selected && scroll_text_direction) {
 				if(m_scroll_index != m_cursor)
 				{
 					m_scroll_index = m_cursor;
@@ -449,13 +449,13 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 				{
 					// ensure timer is started with initial delay if not active
 					if (!scrollTimer->isActive()) {
-						scrollTimer->start(m_listbox->m_start_delay);
+						scrollTimer->start(m_listbox->m_scroll_config.startDelay);
 					}
 					/* move the whole text-block - the sign follows existing convention:
 					position.x() - m_scroll_pos / position.y() - m_scroll_pos */
-					if (m_scroll_text_direction == eLabel::scrollLeft || m_scroll_text_direction == eLabel::scrollRight)
+					if (scroll_text_direction == eScrollConfig::scrollLeft || scroll_text_direction == eScrollConfig::scrollRight)
 						position.setX(position.x() - m_scroll_pos);
-					else if (m_scroll_text_direction == eLabel::scrollTop || m_scroll_text_direction == eLabel::scrollBottom)
+					else if (scroll_text_direction == eScrollConfig::scrollTop || scroll_text_direction == eScrollConfig::scrollBottom)
 						position.setY(position.y() - m_scroll_pos);
 					painter.renderText(position, m_scroll_text_str.empty() ? string : m_scroll_text_str.c_str(), flags, border_color, border_size);
 					painter.clippop();
@@ -500,7 +500,6 @@ void eListboxPythonStringContent::updateEntry(int index, ePyObject entry)
 		PyList_SET_ITEM(m_list, index, entry);
 		if (m_listbox)
 			m_listbox->entryChanged(index);
-
 	}
 }
 
@@ -570,22 +569,20 @@ void eListboxPythonStringContent::updateTextSize(std::string &text, gFont* font,
 
 	if(m_listbox)
 	{
-		// eDebug("[eListboxPythonStringContent] updateTextSize");
-		int m_scroll_text_direction = m_listbox->m_scroll_text_direction;
+		int scroll_text_direction = m_listbox->m_scroll_config.direction;
 
-		if (m_scroll_text_direction == eLabel::scrollLeft || m_scroll_text_direction == eLabel::scrollRight) {
+		if (scroll_text_direction == eScrollConfig::scrollLeft || scroll_text_direction == eScrollConfig::scrollRight) {
 			m_text_size = calculateTextSize(font, text, m_scroll_size, true); // nowrap
 
-			// eDebug("[eListboxPythonStringContent] updateTextSize m_text_size.width %d m_scroll_size.width %d", m_text_size.width(), m_scroll_size.width());
 
 			if (m_text_size.width() > m_scroll_size.width()) {
 				m_scroll_text = true;
 
-				if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll)
+				if (m_listbox->m_scroll_config.mode == eScrollConfig::scrollModeRoll)
 					m_text_size.setWidth(m_text_size.width() + m_scroll_size.width() * 1.5);
 
 				/*
-				if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll && m_scroll_text_direction == eLabel::scrollLeft)
+				if (m_listbox->m_scroll_config.mode == eScrollConfig::scrollModeRoll && scroll_text_direction == eScrollConfig::scrollLeft)
 				{
 					int spacePx = calculateTextSize(font, " ", eSize(0,0), true).width();
 					int nSpaces = (m_scroll_size.width() * 0.5 + spacePx - 1) / spacePx;
@@ -595,11 +592,11 @@ void eListboxPythonStringContent::updateTextSize(std::string &text, gFont* font,
 				}
 				*/
 			}
-		} else if (m_scroll_text_direction == eLabel::scrollTop || m_scroll_text_direction == eLabel::scrollBottom) {
+		} else if (scroll_text_direction == eScrollConfig::scrollTop || scroll_text_direction == eScrollConfig::scrollBottom) {
 			m_text_size = calculateTextSize(font, text, m_scroll_size, false); // allow wrap
 			if (m_text_size.height() > m_scroll_size.height()) {
 				m_scroll_text = true;
-				if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll)
+				if (m_listbox->m_scroll_config.mode == eScrollConfig::scrollModeRoll)
 					m_text_size.setHeight(m_text_size.height() + m_scroll_size.height() * 1.5);
 			}
 		}
@@ -611,17 +608,17 @@ void eListboxPythonStringContent::updateTextSize(std::string &text, gFont* font,
 			int visibleW = m_scroll_size.width();
 			int visibleH = m_scroll_size.height();
 
-			if (m_scroll_text_direction == eLabel::scrollRight)
+			if (scroll_text_direction == eScrollConfig::scrollRight)
 				m_scroll_pos = std::max(0, m_text_size.width() - visibleW);
-			else if (m_scroll_text_direction == eLabel::scrollBottom)
+			else if (scroll_text_direction == eScrollConfig::scrollBottom)
 				m_scroll_pos = std::max(0, m_text_size.height() - visibleH);
 
-			if (m_listbox->m_use_cached_pixmap) {
+			if (m_listbox->m_scroll_config.cached) {
 				// limit 1MB pixmap size
 				if ((m_text_size.width() * m_text_size.height()) > 1000000) {
-					m_listbox->m_use_cached_pixmap = false;
-					if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll)
-						m_listbox->m_scroll_mode = eLabel::scrollModeNormal;
+					m_listbox->m_scroll_config.cached = false;
+					if (m_listbox->m_scroll_config.mode == eScrollConfig::scrollModeRoll)
+						m_listbox->m_scroll_config.mode = eScrollConfig::scrollModeNormal;
 				} else
 					createScrollPixmap(text, font, flags, border_color, border_size);
 			}
@@ -677,8 +674,8 @@ void eListboxPythonStringContent::createScrollPixmap(std::string &text, gFont* f
 
 	p.renderText(position, text.c_str(), flags, border_color, border_size);
 	
-	if (m_listbox->m_scroll_mode == eLabel::scrollModeRoll) {
-		if (m_listbox->m_scroll_text_direction == eLabel::scrollLeft || m_listbox->m_scroll_text_direction == eLabel::scrollRight)
+	if (m_listbox->m_scroll_config.mode == eScrollConfig::scrollModeRoll) {
+		if (m_listbox->m_scroll_config.direction == eScrollConfig::scrollLeft || m_listbox->m_scroll_config.direction == eScrollConfig::scrollRight)
 			posX = s.width() - m_scroll_size.width();
 		else
 			posY = s.height() - m_scroll_size.height();
@@ -693,13 +690,10 @@ void eListboxPythonStringContent::updateScrollPosition() {
 
 	if (m_listbox)
 	{
-		// eDebug("[eListboxPythonStringContent] updateScrollPosition");
-		int m_scroll_text_direction = m_listbox->m_scroll_text_direction;
-		int m_repeat = m_listbox->m_repeat;
-		int m_start_delay = m_listbox->m_start_delay;
-		int m_end_delay = m_listbox->m_end_delay;
-		int m_delay	= m_listbox->m_delay;
-		int m_scroll_mode = m_listbox->m_scroll_mode;
+		int scroll_text_direction = m_listbox->m_scroll_config.direction;
+		int repeat = m_listbox->m_scroll_config.repeat;
+		int end_delay = m_listbox->m_scroll_config.endDelay;
+		int scroll_mode = m_listbox->m_scroll_config.mode;
 
 		if (!m_scroll_text)
 			return;
@@ -710,20 +704,20 @@ void eListboxPythonStringContent::updateScrollPosition() {
 
 		// compute max_scroll depending on direction
 		int max_scroll = 0;
-		if (m_scroll_text_direction == eLabel::scrollLeft || m_scroll_text_direction == eLabel::scrollRight)
+		if (scroll_text_direction == eScrollConfig::scrollLeft || scroll_text_direction == eScrollConfig::scrollRight)
 			max_scroll = std::max(0, m_text_size.width() - visibleW);
-		else if (m_scroll_text_direction == eLabel::scrollTop || m_scroll_text_direction == eLabel::scrollBottom)
+		else if (scroll_text_direction == eScrollConfig::scrollTop || scroll_text_direction == eScrollConfig::scrollBottom)
 			max_scroll = std::max(0, m_text_size.height() - visibleH);
 
 		// determine step sign
-		int step = m_listbox->m_scroll_step;
+		int step = m_listbox->m_scroll_config.stepSize;
 		bool reverse = false;
 
-		if (m_scroll_text_direction == eLabel::scrollRight || m_scroll_text_direction == eLabel::scrollBottom)
+		if (scroll_text_direction == eScrollConfig::scrollRight || scroll_text_direction == eScrollConfig::scrollBottom)
 			reverse = true;
 
 		// in bounce mode, swap direction when m_scroll_swap is active
-		if (m_scroll_mode == eLabel::scrollModeBounce && m_scroll_swap)
+		if (scroll_mode == eScrollConfig::scrollModeBounce && m_scroll_swap)
 			reverse = !reverse;
 
 		if (reverse)
@@ -740,29 +734,29 @@ void eListboxPythonStringContent::updateScrollPosition() {
 
 		// check if end reached
 		if (m_scroll_pos == 0 || m_scroll_pos == max_scroll) {
-			if (m_scroll_mode == eLabel::scrollModeBounce || m_scroll_mode == eLabel::scrollModeBounceCached) {
+			if (scroll_mode == eScrollConfig::scrollModeBounce || scroll_mode == eScrollConfig::scrollModeBounceCached) {
 				// toggle bounce direction
 				m_scroll_swap = !m_scroll_swap;
 
 				// handle end delay
-				if (!m_end_delay_active && m_end_delay > 0) {
+				if (!m_end_delay_active && end_delay > 0) {
 					m_end_delay_active = true;
-					scrollTimer->start(m_end_delay);
+					scrollTimer->start(end_delay);
 					return;
 				}
 				m_end_delay_active = false;
 			} else {
 				// classic repeat/stop behavior
-				if (!m_end_delay_active && m_end_delay > 0) {
+				if (!m_end_delay_active && end_delay > 0) {
 					m_end_delay_active = true;
-					scrollTimer->start(m_end_delay);
-					if (m_repeat != -1)
+					scrollTimer->start(end_delay);
+					if (repeat != -1)
 						m_repeat_count++;
 					return;
 				}
 				m_end_delay_active = false;
 
-				if (m_repeat == 0 || (m_repeat != -1 && m_repeat_count >= m_repeat)) {
+				if (repeat == 0 || (repeat != -1 && m_repeat_count >= repeat)) {
 					// Run once → stop scrolling
 					scrollTimer->stop();
 					m_scroll_text = false;
@@ -771,13 +765,13 @@ void eListboxPythonStringContent::updateScrollPosition() {
 					return;
 				} else {
 					// Loop → reset position and wait for start delay
-					if (m_scroll_text_direction == eLabel::scrollLeft || m_scroll_text_direction == eLabel::scrollTop)
+					if (scroll_text_direction == eScrollConfig::scrollLeft || scroll_text_direction == eScrollConfig::scrollTop)
 						m_scroll_pos = 0;
 					else
 						m_scroll_pos = max_scroll;
 
 					m_scroll_started = false;
-					scrollTimer->start(m_start_delay);
+					scrollTimer->start(m_listbox->m_scroll_config.startDelay);
 					m_listbox->entryChanged(m_scroll_index);
 					return;
 				}
@@ -787,11 +781,11 @@ void eListboxPythonStringContent::updateScrollPosition() {
 		// first tick after start → set timer interval
 		if (!m_scroll_started) {
 			m_scroll_started = true;
-			scrollTimer->changeInterval(m_delay);
+			scrollTimer->changeInterval(m_listbox->m_scroll_config.delay);
 		}
 
 		// request repaint
-		if (m_listbox->m_use_cached_pixmap && m_listbox->m_textPixmap)
+		if (m_listbox->m_scroll_config.cached && m_listbox->m_textPixmap)
 			m_listbox->m_paint_pixmap = true;
 
 		m_listbox->entryChanged(m_scroll_index);

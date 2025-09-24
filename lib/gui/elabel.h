@@ -3,6 +3,35 @@
 
 #include <lib/gui/ewidget.h>
 
+struct eScrollConfig
+{
+	enum {
+		scrollNone,
+		scrollLeft,
+		scrollRight,
+		scrollTop,
+		scrollBottom
+	};
+
+	enum {
+		scrollModeNormal,
+		scrollModeCached,
+		scrollModeBounce,
+		scrollModeBounceCached,
+		scrollModeRoll
+	};
+
+	int direction = scrollNone;
+	long delay = 100;
+	long startDelay = 0;
+	long endDelay = 0;
+	int repeat = 0;
+	int stepSize = 1;
+	int mode = scrollModeNormal;
+	bool cached = false;
+};
+
+
 class eLabel : public eWidget {
 public:
 	eLabel(eWidget* parent, int markedPos = -1);
@@ -21,21 +50,6 @@ public:
 		alignBidi
 	};
 
-	enum {
-		scrollNone,
-		scrollLeft,
-		scrollRight,
-		scrollTop,
-		scrollBottom
-	};
-
-	enum {
-		scrollModeNormal,
-		scrollModeCached,
-		scrollModeBounce,
-		scrollModeBounceCached,
-		scrollModeRoll
-	};
 
 	void setVAlign(int align);
 	void setHAlign(int align);
@@ -71,6 +85,36 @@ protected:
 	std::string getClassName() const override { return std::string("eLabel"); }
 
 private:
+	int buildFlags() const {
+
+		int flags = 0;
+		if (m_valign == alignTop)
+			flags |= gPainter::RT_VALIGN_TOP;
+		else if (m_valign == alignCenter)
+			flags |= gPainter::RT_VALIGN_CENTER;
+		else if (m_valign == alignBottom)
+			flags |= gPainter::RT_VALIGN_BOTTOM;
+
+		if (m_halign == alignLeft)
+			flags |= gPainter::RT_HALIGN_LEFT;
+		else if (m_halign == alignCenter)
+			flags |= gPainter::RT_HALIGN_CENTER;
+		else if (m_halign == alignRight)
+			flags |= gPainter::RT_HALIGN_RIGHT;
+		else if (m_halign == alignBlock)
+			flags |= gPainter::RT_HALIGN_BLOCK;
+
+		if (m_wrap == 1)
+			flags |= gPainter::RT_WRAP;
+		else if (m_wrap == 2)
+			flags |= gPainter::RT_ELLIPSIS;
+
+		if (m_underline)
+			flags |= gPainter::RT_UNDERLINE;
+
+		return flags;
+	}
+
 	int m_have_foreground_color = 0;
 	int m_have_shadow_color = 0;
 	gRGB m_foreground_color, m_shadow_color, m_text_border_color;
@@ -81,21 +125,14 @@ private:
 	bool m_underline = false;
 	int m_tab_width = -1;
 	// Scroll
-	int m_scroll_step;
-	int m_repeat = 0;
+	eScrollConfig m_scroll_config;
 	int m_repeat_count = 0;
-	int m_scroll_text_direction = scrollNone;
 	bool m_scroll_text = false;
 	bool m_scroll_started = false;
 	int m_scroll_pos = 0;
-	int m_start_delay = 0;
-	int m_end_delay = 0;
 	bool m_end_delay_active = false;
-	int m_delay = 0;
-	int m_scroll_mode = 0;
 	bool m_scroll_swap = false;
 	bool m_paint_pixmap = false;
-	bool m_use_cached_pixmap = false;
 	eSize m_text_size;
 	ePtr<eTimer> scrollTimer;
 	void updateScrollPosition();
