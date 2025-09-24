@@ -193,7 +193,7 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 	int width = gif->SWidth;
 	int height = gif->SHeight;
 
-	ColorMapObject* globalColorMap = gif->SColorMap;
+	const ColorMapObject* globalColorMap = gif->SColorMap;
 
 	GifRecordType recordType;
 	int delay = 100; // Default delay (1/100 sec)
@@ -271,7 +271,7 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 				// Disposal=0/1: -> do nothing
 
 				// local or global palette
-				ColorMapObject* colorMap = gif->Image.ColorMap ? gif->Image.ColorMap : globalColorMap;
+				const ColorMapObject* colorMap = gif->Image.ColorMap ? gif->Image.ColorMap : globalColorMap;
 
 				// Read frame data
 				std::vector<unsigned char> buffer(fw * fh);
@@ -373,7 +373,7 @@ void ePixmap::nextFrame() {
 	// Advance to next frame
 	m_currentFrame++;
 
-	if (m_currentFrame >= m_frames.size()) {
+	if (static_cast<size_t>(m_currentFrame) >= m_frames.size()) {
 		if (m_playOnce) {
 			// Stop after the last frame when playing once
 			m_currentFrame = m_frames.size() - 1; // stay on last frame
