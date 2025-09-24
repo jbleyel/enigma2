@@ -167,50 +167,21 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 
 		if (packet[0] != 0x47)
 		{
-			const unsigned char* match = packet + 1;
-			int resync_attempts = 0;
-			const int max_resync = 5; // Maximum number of resynchronization attempts
-
-			while (resync_attempts < max_resync && match < (packet + 188))
+			const unsigned char* match = (const unsigned char*)memchr(packet+1, 0x47, 188-1);
+			if (match != NULL)
 			{
-				// Search for 0x47
-				match = (const unsigned char*)memchr(match, 0x47, (packet + 188) - match);
-				if (!match)
-					break;
-
-				// *** Validate the next packet ***
-				bool valid_sync = true;
-				for (int i = 1; i < 3 && valid_sync; ++i)
-				{
-					if ((match + i * 188) >= (packet + 188) || *(match + i * 188) != 0x47)
-						valid_sync = false;
-				}
-
-				if (valid_sync)
-				{
-					eDebug("[eDVBTSTools] getPTS resync SUCCESS at offset %ld", match - packet);
-					offset += (match - packet) - 188;
-					packet = (unsigned char*)match; // Update the packet pointer
-					break;
-				}
-				else
-				{
-					eDebug("[eDVBTSTools] getPTS found 0x47 but not valid sync, continuing...");
-					match++; // Continue searching from the next byte
-					resync_attempts++;
-				}
+				eDebug("[eDVBTSTools] getPTS resync %ld", match - packet);
+				offset += (match - packet) - 188;
 			}
-
-			if (resync_attempts >= max_resync || !match)
+			else
 			{
-				eDebug("[eDVBTSTools] getPTS resync failed after %d attempts", max_resync);
+				eDebug("[eDVBTSTools] getPTS resync failed");
 				if (resync_failed_counter == 0)
 				{
 					eDebug("[eDVBTSTools] getPTS Too many resync failures, probably not a valid stream");
 					return -1;
 				}
 				--resync_failed_counter;
-				continue;
 			}
 			continue;
 		}
@@ -496,24 +467,7 @@ int eDVBTSTools::getOffset(off_t &offset, pts_t &pts, int marg)
 				return 0;
 			}
 		}
-		// *** Safe modification: Use the closest sample directly ***
-		if (!m_samples.empty())
-		{
-			// Find the closest sample
-			auto it = m_samples.lower_bound(pts);
-			if (it != m_samples.begin() && (it == m_samples.end() || (pts - std::prev(it)->first) < (it->first - pts)))
-			{
-				it = std::prev(it);
-			}
-			if (it != m_samples.end())
-			{
-				offset = it->second;
-				pts = it->first;
-				eDebug("[eDVBTSTools] getOffset: Using closest sample: PTS=%lld, Offset=%ld", pts, (intmax_t)offset);
-				return 0;
-			}
-		}
-		// *** End of modification ***
+
 		int bitrate = calcBitrate();
 		offset = pts * (pts_t)bitrate / 8ULL / 90000ULL;
 		eDebug("[eDVBTSTools] getOffset fallback, bitrate=%d, results in %016jx", bitrate, (intmax_t)offset);
