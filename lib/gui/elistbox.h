@@ -491,6 +491,8 @@ public:
 	int getMaxItemTextWidth() { return m_content->getMaxItemTextWidth(); }
 	void redrawItemByIndex(int index) { entryChanged(index); }
 
+	int getScrollbarListOffset();
+
 	void setScrollText(int direction, long delay, long startDelay, long endDelay, int repeat, int stepSize, int mode);
 
 
