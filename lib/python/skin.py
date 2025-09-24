@@ -4,7 +4,7 @@ from os import listdir, unlink
 from traceback import print_exc
 from xml.etree.ElementTree import Element, ElementTree, fromstring
 
-from enigma import BT_ALPHABLEND, BT_ALPHATEST, BT_HALIGN_CENTER, BT_HALIGN_LEFT, BT_HALIGN_RIGHT, BT_KEEP_ASPECT_RATIO, BT_SCALE, BT_VALIGN_BOTTOM, BT_VALIGN_CENTER, BT_VALIGN_TOP, addFont, eLabel, eListbox, eListboxPythonMultiContent, eStack, ePixmap, ePoint, eRect, eRectangle, eSize, eSlider, eSubtitleWidget, eWidget, eWindow, eWindowStyleManager, eWindowStyleSkinned, getDesktop, gFont, getFontFaces, gMainDC, gRGB
+from enigma import BT_ALPHABLEND, BT_ALPHATEST, BT_HALIGN_CENTER, BT_HALIGN_LEFT, BT_HALIGN_RIGHT, BT_KEEP_ASPECT_RATIO, BT_SCALE, BT_VALIGN_BOTTOM, BT_VALIGN_CENTER, BT_VALIGN_TOP, addFont, eLabel, eListbox, eListboxPythonMultiContent, eStack, ePixmap, ePoint, eRect, eRectangle, eScrollConfig, eSize, eSlider, eSubtitleWidget, eWidget, eWindow, eWindowStyleManager, eWindowStyleSkinned, getDesktop, gFont, getFontFaces, gMainDC, gRGB
 
 from Components.config import ConfigEnableDisable, ConfigSelection, ConfigSubsection, ConfigText, config
 from Components.SystemInfo import BoxInfo
@@ -759,26 +759,26 @@ def parseScrollbarScroll(value):
 
 def parseScrollText(value):
 	directions = {
-		"left": eLabel.scrollLeft,
-		"right": eLabel.scrollRight,
-		"top": eLabel.scrollTop,
-		"bottom": eLabel.scrollBottom
+		"left": eScrollConfig.scrollLeft,
+		"right": eScrollConfig.scrollRight,
+		"top": eScrollConfig.scrollTop,
+		"bottom": eScrollConfig.scrollBottom
 	}
 
 	modes = {
-		"cached": eLabel.scrollModeCached,
-		"bounce": eLabel.scrollModeBounce,
-		"bounceCached": eLabel.scrollModeBounceCached,
-		"roll": eLabel.scrollModeRoll,
+		"cached": eScrollConfig.scrollModeCached,
+		"bounce": eScrollConfig.scrollModeBounce,
+		"bounceCached": eScrollConfig.scrollModeBounceCached,
+		"roll": eScrollConfig.scrollModeRoll,
 	}
 
-	direction = eLabel.scrollNone
+	direction = eScrollConfig.scrollNone
 	stepDelay = 100
 	startDelay = 0
 	endDelay = 0
 	repeat = 0
 	stepSize = 2
-	mode = eLabel.scrollModeNormal
+	mode = eScrollConfig.scrollModeNormal
 
 	for part in value.split(","):
 		if "=" in part:
