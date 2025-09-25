@@ -2709,7 +2709,7 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 
 				eRect imgRect = eRect(rect.x() + paddingLeft, rect.y() + paddingTop, rect.width() - paddingLeft - paddingRight, rect.height() - paddingTop - paddingBottom);
 
-				painter.blit(pixmap, imgRect, imgRect, flags, i);
+				painter.blit(pixmap, imgRect, imgRect, flags);
 				painter.clippop();
 				break;
 			}
