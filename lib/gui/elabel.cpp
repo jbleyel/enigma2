@@ -190,7 +190,7 @@ void eLabel::updateTextSize() {
 	if (m_scroll_config.direction == eScrollConfig::scrollNone)
 		return;
 
-	m_scroll_text = false;
+	stopScroll();
 
 	if (m_scroll_config.direction == eScrollConfig::scrollLeft || m_scroll_config.direction == eScrollConfig::scrollRight) {
 		m_text_size = calculateTextSize(m_font, m_text, size(), true); // nowrap
@@ -208,8 +208,6 @@ void eLabel::updateTextSize() {
 		}
 	}
 	if (m_scroll_text) {
-		stopScroll();
-
 		int visibleW = std::max(1, size().width() - m_padding.x() - m_padding.right());
 		int visibleH = std::max(1, size().height() - m_padding.y() - m_padding.bottom());
 
@@ -477,10 +475,7 @@ void eLabel::updateScrollPosition() {
 
 	// determine step sign
 	int step = m_scroll_config.stepSize;
-	bool reverse = false;
-
-	if (m_scroll_config.direction == eScrollConfig::scrollRight || m_scroll_config.direction == eScrollConfig::scrollBottom)
-		reverse = true;
+	bool reverse = (m_scroll_config.direction == eScrollConfig::scrollRight || m_scroll_config.direction == eScrollConfig::scrollBottom);
 
 	// in bounce mode, swap direction when m_scroll_swap is active
 	if (m_scroll_config.mode == eScrollConfig::scrollModeBounce && m_scroll_swap)
@@ -510,21 +505,21 @@ void eLabel::updateScrollPosition() {
 			if (!m_end_delay_active && bounceDelay > 0) {
 				m_end_delay_active = true;
 				m_scroll_started = false;
+				scrollTimer->stop();
 				scrollTimer->start(bounceDelay);
 				return;
 			}
-			m_end_delay_active = false;
 		} else {
 			// classic repeat/stop behavior
 			if (!m_end_delay_active && m_scroll_config.endDelay > 0) {
 				m_end_delay_active = true;
 				m_scroll_started = false;
+				scrollTimer->stop();
 				scrollTimer->start(m_scroll_config.endDelay);
 				if (m_scroll_config.repeat != -1)
 					m_repeat_count++;
 				return;
 			}
-			m_end_delay_active = false;
 
 			if (m_scroll_config.repeat == 0 || (m_scroll_config.repeat != -1 && m_repeat_count >= m_scroll_config.repeat)) {
 				// Run once → stop scrolling
@@ -539,6 +534,7 @@ void eLabel::updateScrollPosition() {
 					m_scroll_pos = max_scroll;
 
 				m_scroll_started = false;
+				scrollTimer->stop();
 				scrollTimer->start(m_scroll_config.startDelay);
 				invalidate();
 				return;
@@ -549,6 +545,7 @@ void eLabel::updateScrollPosition() {
 	// first tick after start → set timer interval
 	if (!m_scroll_started) {
 		m_scroll_started = true;
+		m_end_delay_active = false;
 		scrollTimer->changeInterval(m_scroll_config.delay);
 	}
 

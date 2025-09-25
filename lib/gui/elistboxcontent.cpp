@@ -561,7 +561,8 @@ static eSize calculateTextSize(gFont* font, const std::string& string, eSize tar
 }
 
 void eListboxPythonStringContent::updateTextSize(std::string& text, gFont* font, int flags, gRGB& border_color, int border_size) {
-	m_scroll_text = false;
+	if (m_scroll_text)
+		stopScroll();
 
 	if (m_listbox) {
 		int scroll_text_direction = m_listbox->m_scroll_config.direction;
@@ -596,7 +597,6 @@ void eListboxPythonStringContent::updateTextSize(std::string& text, gFont* font,
 			}
 		}
 		if (m_scroll_text) {
-			stopScroll();
 
 			int visibleW = m_scroll_size.width();
 			int visibleH = m_scroll_size.height();
@@ -710,10 +710,7 @@ void eListboxPythonStringContent::updateScrollPosition() {
 
 		// determine step sign
 		int step = m_listbox->m_scroll_config.stepSize;
-		bool reverse = false;
-
-		if (scroll_text_direction == eScrollConfig::scrollRight || scroll_text_direction == eScrollConfig::scrollBottom)
-			reverse = true;
+		bool reverse = (scroll_text_direction == eScrollConfig::scrollRight || scroll_text_direction == eScrollConfig::scrollBottom);
 
 		// in bounce mode, swap direction when m_scroll_swap is active
 		if (scroll_mode == eScrollConfig::scrollModeBounce && m_scroll_swap)
@@ -742,21 +739,21 @@ void eListboxPythonStringContent::updateScrollPosition() {
 				if (!m_end_delay_active && bounceDelay > 0) {
 					m_end_delay_active = true;
 					m_scroll_started = false;
+					scrollTimer->stop();
 					scrollTimer->start(bounceDelay);
 					return;
 				}
-				m_end_delay_active = false;
 			} else {
 				// classic repeat/stop behavior
 				if (!m_end_delay_active && end_delay > 0) {
 					m_end_delay_active = true;
 					m_scroll_started = false;
+					scrollTimer->stop();
 					scrollTimer->start(end_delay);
 					if (repeat != -1)
 						m_repeat_count++;
 					return;
 				}
-				m_end_delay_active = false;
 
 				if (repeat == 0 || (repeat != -1 && m_repeat_count >= repeat)) {
 					// Run once → stop scrolling
@@ -771,6 +768,7 @@ void eListboxPythonStringContent::updateScrollPosition() {
 						m_scroll_pos = max_scroll;
 
 					m_scroll_started = false;
+					scrollTimer->stop();
 					scrollTimer->start(m_listbox->m_scroll_config.startDelay);
 					m_listbox->entryChanged(m_scroll_index);
 					return;
@@ -781,6 +779,7 @@ void eListboxPythonStringContent::updateScrollPosition() {
 		// first tick after start → set timer interval
 		if (!m_scroll_started) {
 			m_scroll_started = true;
+			m_end_delay_active = false;
 			scrollTimer->changeInterval(m_listbox->m_scroll_config.delay);
 		}
 
