@@ -353,6 +353,7 @@ private:
 	int m_recovery_retry_count;
 	int m_max_attempts;
 	bool m_timeshift_pids_removed;
+	pts_t m_recovery_start_playback_pos; // <-- The crucial addition
 	void handleEofRecovery();
 	void onEofRecoveryTimeout();
 	void updateTimeshiftDelay();
