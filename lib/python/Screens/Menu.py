@@ -699,12 +699,12 @@ class AnimMain(Screen):
 		self.tlist = tlist
 		self.setTitle(menuTitle)
 		self.skinName = "Animmain"
-		ipage = 1
+		ipage = 1  # noqa F841
 		list = []
-		nopic = len(tlist)
+		nopic = len(tlist)  # noqa F841
 		self.pos = []
 		self.index = 0
-		list = []
+		list = []  # noqa F841
 		tlist = []
 		self["label1"] = StaticText()
 		self["label2"] = StaticText()
@@ -748,7 +748,7 @@ class AnimMain(Screen):
 		else:
 			nh = int(float(nop) / 2)
 		self.index = nh
-		i = 0
+		i = 0  # noqa F841
 		self.onShown.append(self.openTest)
 
 	def key_menu(self):
@@ -830,9 +830,9 @@ class IconMain(Screen):
 		self.tlist = tlist
 		self.setTitle(menuTitle)
 		self.skinName = "Iconmain"
-		ipage = 1
-		list = []
-		nopic = len(self.tlist)
+		ipage = 1  # noqa F841
+		list = []  # noqa F841
+		nopic = len(self.tlist)  # noqa F841
 		self.pos = []
 		self.ipage = 1
 		self.index = 0
@@ -840,7 +840,7 @@ class IconMain(Screen):
 		self.indx = []
 		n1 = len(tlist)
 		self.picnum = n1
-		list = []
+		list = []  # noqa F841
 		tlist = []
 		self["label1"] = StaticText()
 		self["label2"] = StaticText()
@@ -886,10 +886,10 @@ class IconMain(Screen):
 			"9": self.keyNumberGlobal
 		}, prio=0)
 		self.index = 0
-		i = 0
+		i = 0  # noqa F841
 		self.maxentry = 29
 		self.istart = 0
-		i = 0
+		i = 0  # noqa F841
 		self.onShown.append(self.openTest)
 
 	def key_menu(self):

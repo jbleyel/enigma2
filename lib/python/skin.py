@@ -101,7 +101,7 @@ def InitSkins():
 			except Exception as err:
 				print(f"[Skin] RESTORE_SKIN: Error occurred!  ({err})")
 	# #################################################################################################
-	runCallbacks = False
+	runCallbacks = False  # noqa F841
 	# Add the emergency skin.  This skin should provide enough functionality
 	# to enable basic GUI functions to work.
 	loadSkin(EMERGENCY_SKIN, scope=SCOPE_GUISKIN, desktop=getDesktop(GUI_SKIN_ID), screenID=GUI_SKIN_ID)
@@ -151,7 +151,7 @@ def InitSkins():
 	if resolution[0] and resolution[1]:
 		gMainDC.getInstance().setResolution(resolution[0], resolution[1])
 		getDesktop(GUI_SKIN_ID).resize(eSize(resolution[0], resolution[1]))
-	runCallbacks = True
+	runCallbacks = True  # noqa F841
 	# Load all XML templates.
 	reloadSkinTemplates()
 
