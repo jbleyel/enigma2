@@ -1272,7 +1272,7 @@ class EPGSelection(Screen):
 	def OpenSingleEPG(self):
 		cur = self[f"list{self.activeList}"].getCurrent()
 		if cur[0] is not None:
-			event = cur[0]
+			event = cur[0]  # noqa F841
 			serviceref = cur[1].ref
 			if serviceref is not None:
 				self.session.open(SingleEPG, serviceref)
@@ -1511,7 +1511,8 @@ class EPGSelection(Screen):
 		self["recordingactions"].setEnabled(False)
 		self["epgactions"].setEnabled(False)
 		self["dialogactions"].setEnabled(True)
-		self["epgcatchupactions"].setEnabled(False)
+		if "epgcatchupactions" in self:
+			self["epgcatchupactions"].setEnabled(False)
 		self.ChoiceBoxDialog.instantiateActionMap(True)
 		self.ChoiceBoxDialog.show()
 		if "input_actions" in self:
@@ -1552,8 +1553,8 @@ class EPGSelection(Screen):
 		serviceref = cur[1]
 		if event is None:
 			return
-		eventid = event.getEventId()
-		refstr = serviceref.ref.toString()
+		eventid = event.getEventId()  # noqa F841
+		refstr = serviceref.ref.toString()  # noqa F841
 		newEntry = RecordTimerEntry(serviceref, checkOldTimers=True, dirname=preferredTimerPath(), *parseEvent(event, isZapTimer=zap), justplay=zap)
 		self.InstantRecordDialog = self.session.instantiateDialog(InstantRecordTimerEntry, newEntry, zap, zaprecord)
 		retval = [True, self.InstantRecordDialog.retval()]
@@ -1755,7 +1756,7 @@ class EPGSelection(Screen):
 			self.key_green_choice = self.ADD_TIMER
 		if self.eventviewDialog and (self.type == EPG_TYPE_INFOBAR or self.type == EPG_TYPE_INFOBARGRAPH):
 			self.infoKeyPressed(True)
-		if callable(self.catchupPlayerFunc):
+		if "epgcatchupactions" in self and callable(self.catchupPlayerFunc):
 			self.setupKeyPlayButtonDisplay(event.getBeginTime(), serviceref)
 
 	def moveTimeLines(self, force=False):

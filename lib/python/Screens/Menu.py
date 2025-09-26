@@ -699,12 +699,10 @@ class AnimMain(Screen):
 		self.tlist = tlist
 		self.setTitle(menuTitle)
 		self.skinName = "Animmain"
-		ipage = 1  # noqa F841
-		list = []
-		nopic = len(tlist)  # noqa F841
+		self.ipage = 1
+		# nopic = len(tlist)
 		self.pos = []
 		self.index = 0
-		list = []  # noqa F841
 		tlist = []
 		self["label1"] = StaticText()
 		self["label2"] = StaticText()
@@ -830,9 +828,8 @@ class IconMain(Screen):
 		self.tlist = tlist
 		self.setTitle(menuTitle)
 		self.skinName = "Iconmain"
-		ipage = 1  # noqa F841
-		list = []  # noqa F841
-		nopic = len(self.tlist)  # noqa F841
+		self.ipage = 1
+		# nopic = len(self.tlist)
 		self.pos = []
 		self.ipage = 1
 		self.index = 0
@@ -840,7 +837,6 @@ class IconMain(Screen):
 		self.indx = []
 		n1 = len(tlist)
 		self.picnum = n1
-		list = []  # noqa F841
 		tlist = []
 		self["label1"] = StaticText()
 		self["label2"] = StaticText()
