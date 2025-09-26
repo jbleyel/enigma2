@@ -101,11 +101,6 @@ class ResolveLists:
 	def __init__(self):
 		pass
 
-	def clearResolveLists(self):
-		skin.clear()
-		lcdSkin.clear()
-		fonts.clear()
-
 
 def resolveFilename(scope, base="", path_prefix=None):
 	def addIfExists(paths):

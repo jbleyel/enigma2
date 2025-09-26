@@ -13,6 +13,8 @@ class NTPSyncPoller:
 	def __init__(self):
 		self.timer = eTimer()
 		self.Console = Console()
+		self.onTimeUpdated = []
+		self.previousTime = time()
 
 	def startTimer(self):
 		if self.timeCheck not in self.timer.callback:
@@ -41,9 +43,22 @@ class NTPSyncPoller:
 			eDVBLocalTimeHandler.getInstance().setUseDVBTime(timeSource == "0")
 			eEPGCache.getInstance().timeUpdated()
 			self.timer.startLongTimer(config.misc.useNTPminutes.value * 60)
+			if abs(time() - self.previousTime) > 60:
+				for func in self.onTimeUpdated:
+					if callable(func):
+						func()
 		else:
 			print("[NetworkTime] System time not yet available.")
 			self.timer.startLongTimer(10)
 
+	def addTimeUpdatedCallback(self, func):
+		if func not in self.onTimeUpdated:
+			self.onTimeUpdated.append(func)
+
+	def removeTimeUpdatedCallback(self, func):
+		if func in self.onTimeUpdated:
+			self.onTimeUpdated.remove(func)
+
 
 ntpSyncPoller = NTPSyncPoller()
+ntpsyncpoller = ntpSyncPoller  # This is used by some plugins like ABM
