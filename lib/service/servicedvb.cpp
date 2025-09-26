@@ -1400,7 +1400,7 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 
 	m_eof_recovery_timer->stop();
 	m_recovery_attempts = 0;
-	eDebug("[eDVBServicePlay] Sufficient buffer found. Performing playback service rebuild.");
+	eDebug("[eDVBServicePlay] Sufficient buffer. Performing surgical recovery with explicit flush.");
 
 	if (m_saved_timeshift_delay <= 0)
 	{
@@ -1408,25 +1408,47 @@ void eDVBServicePlay::onEofRecoveryTimeout()
 		m_saved_timeshift_delay = 5 * 90000;
 	}
 	
-	eDebug("[eDVBServicePlay] Using pre-corruption delay for seek: %lld", m_saved_timeshift_delay);
-
-	pts_t new_live_pts = live_pts;
-
-	pts_t restart_position = new_live_pts - m_saved_timeshift_delay;
+	pts_t restart_position = live_pts - m_saved_timeshift_delay;
 	eDebug("[eDVBServicePlay] Calculated restart position to preserve delay: %lld", restart_position);
+
+	// MODIFICATION: Start of the surgical recovery logic, replacing the costly full rebuild.
+	if (m_decoder)
+	{
+
+		// MODIFICATION: Safely cast to the concrete decoder to access specific methods.
+		if (m_decoder->canFlush()) {
+			m_decoder->flush();
+		} else {
+			// MODIFICATION: Fallback for other decoders: reset PIDs to force a state refresh.
+			eWarning("[eDVBServicePlay] Cannot cast to eTSMPEGDecoder, falling back to PID reset method to flush.");
+			m_decoder->setVideoPID(-1, -1);
+			m_decoder->setAudioPID(-1, -1);
+			m_decoder->set();
+		}
+	}
 	
-	m_service_handler_timeshift.free();
-	resetTimeshift(1);
-
-	eServiceReferenceDVB r = (eServiceReferenceDVB&)m_reference;
-	r.path = m_timeshift_file;
-	ePtr<iTsSource> source = createTsSource(r);
-	m_service_handler_timeshift.tuneExt(r, source, m_timeshift_file.c_str(), m_cue, 0, m_dvb_service, eDVBServicePMTHandler::timeshift_playback, false);
-
-	m_recovery_seek_pending = true;
-	m_recovery_target_pts = restart_position;
+	// MODIFICATION: Seek to the new safe position in the timeshift file.
 	seekTo(restart_position);
-	eDebug("[eDVBServicePlay] Rebuild initiated. Waiting for eventNewProgramInfo to verify seek.");
+	
+	// MODIFICATION: Re-apply current service info to resynchronize the decoder.
+	updateDecoder(false);
+	
+	if (m_record && m_timeshift_pids_removed)
+	{
+		eDebug("[eDVBServicePlay] Resuming PID recording after successful recovery.");
+		for (int pid : m_pids_active)
+			m_record->addPID(pid);
+		m_timeshift_pids_removed = false;
+	}
+
+	if (m_is_paused)
+	{
+		unpause();
+	}
+
+	m_event((iPlayableService*)this, evSeekableStatusChanged);
+	m_stream_corruption_detected = false;
+	// MODIFICATION: End of the surgical recovery logic.
 }
 
 void eDVBServicePlay::serviceEventTimeshift(int event)
