@@ -101,7 +101,7 @@ def InitSkins():
 			except Exception as err:
 				print(f"[Skin] RESTORE_SKIN: Error occurred!  ({err})")
 	# #################################################################################################
-	runCallbacks = False  # noqa F841
+	runCallbacks = False
 	# Add the emergency skin.  This skin should provide enough functionality
 	# to enable basic GUI functions to work.
 	loadSkin(EMERGENCY_SKIN, scope=SCOPE_GUISKIN, desktop=getDesktop(GUI_SKIN_ID), screenID=GUI_SKIN_ID)
