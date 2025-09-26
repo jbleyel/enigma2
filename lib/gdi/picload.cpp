@@ -407,6 +407,15 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	filepara->ox = width;
 	filepara->oy = height;
 
+	/*
+	 * Ensure 16-bit samples are normalized to 8-bit early so that any
+	 * tRNS / palette / alpha values are returned in 8-bit form by libpng.
+	 * Some PNGs can mix sample depths and this previously caused alpha
+	 * mismatches later when converting images to 16bit surfaces.
+	 */
+	if (bit_depth == 16)
+		png_set_strip_16(png_ptr);
+
 	// Determine transparency: either alpha channel present (any color type with alpha)
 	// or tRNS chunk present (indexed or single-color transparency).
 	filepara->transparent = false;
