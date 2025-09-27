@@ -21,7 +21,7 @@ __version__ = "1.0"
 
 
 from OpenSSL import crypto
-from OpenSSL import SSL
+#from OpenSSL import SSL
 import os
 from socket import gethostname
 from time import time

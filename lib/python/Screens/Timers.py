@@ -9,7 +9,7 @@ from RecordTimer import AFTEREVENT as RECORD_AFTEREVENT, RecordTimerEntry, TIMER
 from ServiceReference import ServiceReference
 from skin import parseBoolean, parseFont, parseInteger
 from timer import TimerEntry
-from Components.DataBaseAPI import moviedb
+from Components.DataBaseAPI import moviedb  # noqa F401
 from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigClock, ConfigDateTime, ConfigIP, ConfigSelection, ConfigSubDict, ConfigText, ConfigYesNo, config
 from Components.GUIComponent import GUIComponent

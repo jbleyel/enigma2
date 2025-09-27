@@ -1,5 +1,5 @@
 from pickle import dump, load
-from os import W_OK, access, listdir, mkdir, rename, rmdir, stat
+from os import W_OK, access, listdir, mkdir, rename, stat
 from os.path import abspath, exists, isdir, isfile, join, normpath, pardir, realpath, split, splitext
 from time import time
 
@@ -354,10 +354,10 @@ class MovieSelection(Screen, SelectionEventInfo, InfoBarBase, ProtectedScreen):
 		tPreview = _("Preview")
 		tFwd = f"{_("skip forward")} ({tPreview})"
 		tBack = f"{_("skip backward")} ({tPreview})"
-		sfwd = lambda: self.seekRelative(1, config.seek.selfdefined_46.value * 90000)
-		ssfwd = lambda: self.seekRelative(1, config.seek.selfdefined_79.value * 90000)
-		sback = lambda: self.seekRelative(-1, config.seek.selfdefined_46.value * 90000)
-		ssback = lambda: self.seekRelative(-1, config.seek.selfdefined_79.value * 90000)
+		sfwd = lambda: self.seekRelative(1, config.seek.selfdefined_46.value * 90000)  # noqa E731
+		ssfwd = lambda: self.seekRelative(1, config.seek.selfdefined_79.value * 90000)  # noqa E731
+		sback = lambda: self.seekRelative(-1, config.seek.selfdefined_46.value * 90000)  # noqa E731
+		ssback = lambda: self.seekRelative(-1, config.seek.selfdefined_79.value * 90000)  # noqa E731
 		self["SeekActions"] = HelpableActionMap(self, ["MovielistSeekActions"], {
 			"playpauseService": (self.preview, _("Preview")),
 			"seekFwd": (sfwd, tFwd),

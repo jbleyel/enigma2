@@ -1,3 +1,5 @@
+# flake8: noqa F401, E402
+
 from bisect import insort
 from datetime import datetime
 from inspect import getfullargspec
@@ -57,7 +59,7 @@ from Screens.Screen import Screen
 from Screens.ScreenSaver import ScreenSaver
 from Screens.Setup import Setup
 import Screens.Standby
-from Screens.Standby import Standby, TryQuitMainloop
+from Screens.Standby import Standby, TryQuitMainloop  # noqa F401
 from Screens.Timers import RecordTimerEdit, RecordTimerOverview
 from Screens.UnhandledKey import UnhandledKey
 from Tools import Notifications
@@ -870,6 +872,7 @@ class SeekBar(Screen):
 		<widget name="length" position="e-110,10" size="100,20" font="Regular;20" transparent="1" verticalAlignment="center" />
 	</screen>"""
 
+	ARROW_TRADITIONAL = "t"
 	ARROW_SYMMETRICAL = "s"
 	ARROW_DEFINED = "d"
 	SKIP_SYMMETRICAL = "s"
@@ -929,6 +932,11 @@ class SeekBar(Screen):
 			"cancel": (self.keyCancel, _("Close the SeekBar after returning to the starting point"))
 		}, prio=0, description=_("SeekBar Actions"))
 		match config.seek.arrowSkipMode.value:
+			case self.ARROW_TRADITIONAL:
+				self["arrowSeekActions"] = HelpableActionMap(self, ["NavigationActions"], {
+					"left": (self.keyLeft, boundFunction(sensibilityHelp, "LEFT")),
+					"right": (self.keyRight, boundFunction(sensibilityHelp, "RIGHT"))
+				}, prio=0, description=_("SeekBar Actions"))
 			case self.ARROW_SYMMETRICAL:
 				self["arrowSeekActions"] = HelpableActionMap(self, ["NavigationActions"], {
 					"up": (self.keyUp, boundFunction(sensibilityHelp, "UP")),
@@ -981,18 +989,18 @@ class SeekBar(Screen):
 				}, prio=0, description=_("SeekBar Actions"))
 		self.seekable = False
 		service = session.nav.getCurrentService()
-		if service:
+		serviceReference = self.session.nav.getCurrentlyPlayingServiceReference()
+		if service and serviceReference:
 			self.seek = service.seek()
 			if not self.seek:
 				print("[InfoBarGenerics] SeekBar: The current service does not support seeking!")
 				self.close()
-			if self.seek.isCurrentlySeekable():
+			if self.seek.isCurrentlySeekable() in (1, 3) and serviceReference.type == 1:  # 0=Not seek-able, 1=Blu-ray, 3=Fully seek-able. Type == 1 solves an issue in GStreamer where all media is always seek-able!
 				self.seekable = True
 		else:
 			print("[InfoBarGenerics] SeekBar: There is no current service so there is nothing to seek!")
 			self.close()
-		serviceReference = self.session.nav.getCurrentlyPlayingServiceReference()
-		self.length = self.seek.getLength()[1] if serviceReference and serviceReference.getPath() else None
+		self.length = self.seek.getLength()[1] if serviceReference.getPath() else None
 		self.eventTracker = ServiceEventTracker(screen=self, eventmap={
 			iPlayableService.evEOF: self.endOfFile
 		})
@@ -2040,7 +2048,7 @@ class SecondInfoBar(Screen):
 		refstr = serviceref.ref.toString()
 		for timer in self.session.nav.RecordTimer.timer_list:
 			if timer.eit == eventid and timer.service_ref.ref.toString() == refstr:
-				cb_func = lambda ret: not ret or self.removeTimer(timer)
+				cb_func = lambda ret: not ret or self.removeTimer(timer)  # noqa E731
 				self.session.openWithCallback(cb_func, MessageBox, _("Do you really want to delete '%s'?") % event.getEventName())
 				break
 		else:
@@ -4134,7 +4142,7 @@ class InfoBarSubserviceSelection:
 				self.session.open(PluginBrowser)
 
 
-from Components.Sources.HbbtvApplication import HbbtvApplication
+from Components.Sources.HbbtvApplication import HbbtvApplication  # noqa F402
 gHbbtvApplication = HbbtvApplication()
 
 
@@ -4509,9 +4517,9 @@ class InfoBarCueSheetSupport:
 			# Hmm, this implies we don't resume if the length is unknown.
 			if (last > 900000) and (not length[1] or (last < length[1] - 900000)):
 				self.resume_point = last
-				l = last // 90000
+				last = last // 90000
 				if "ask" in config.usage.on_movie_start.value or not length[1]:
-					Notifications.AddNotificationWithCallback(self.playLastCB, MessageBox, _("Do you want to resume this playback?") + "\n" + (_("Resume position at %s") % ("%d:%02d:%02d" % (l / 3600, l % 3600 / 60, l % 60))), timeout=30, default="yes" in config.usage.on_movie_start.value)
+					Notifications.AddNotificationWithCallback(self.playLastCB, MessageBox, _("Do you want to resume this playback?") + "\n" + (_("Resume position at %s") % ("%d:%02d:%02d" % (last / 3600, last % 3600 / 60, last % 60))), timeout=30, default="yes" in config.usage.on_movie_start.value)
 				elif config.usage.on_movie_start.value == "resume":
 					Notifications.AddNotificationWithCallback(self.playLastCB, MessageBox, _("Resuming playback"), timeout=2, type=MessageBox.TYPE_INFO)
 

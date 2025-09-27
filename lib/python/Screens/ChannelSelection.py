@@ -2,7 +2,7 @@ from os import listdir, remove, rename
 from os.path import join
 from time import localtime, strftime, time
 
-from enigma import eActionMap, eDBoxLCD, eDVBDB, eEPGCache, ePoint, eRCInput, eServiceCenter, eServiceReference, eServiceReferenceDVB, eTimer, getPrevAsciiCode, iPlayableService, iServiceInformation, loadPNG, getBestPlayableServiceReference
+from enigma import eActionMap, eDBoxLCD, eDVBDB, eEPGCache, ePoint, eRCInput, eServiceCenter, eServiceReference, eServiceReferenceDVB, eTimer, getPrevAsciiCode, iPlayableService, iServiceInformation, loadPNG
 
 from RecordTimer import AFTEREVENT, RecordTimerEntry, TIMERTYPE
 from ServiceReference import ServiceReference, getStreamRelayRef, hdmiInServiceRef, serviceRefAppendPath, service_types_radio_ref, service_types_tv_ref
@@ -2151,12 +2151,12 @@ class ChannelSelectionEPG(InfoBarButtonSetup):
 			return
 		for timer in self.session.nav.RecordTimer.timer_list:
 			if timer.eit == eventid and ":".join(timer.service_ref.ref.toString().split(":")[:11]) == refstr:
-				rt_func = lambda ret: self.removeTimer(timer)
+				rt_func = lambda ret: self.removeTimer(timer)  # noqa E731
 				if not next:
 					menu = [(_("Delete Timer"), "CALLFUNC", rt_func), (_("No"), "CALLFUNC", self.closeChoiceBoxDialog)]
 					title = _("Do you really want to remove the timer for %s?") % eventname
 				else:
-					cb_func2 = lambda ret: self.editTimer(timer)
+					cb_func2 = lambda ret: self.editTimer(timer)  # noqa E731
 					menu = [
 						(_("Delete Timer"), "CALLFUNC", self.RemoveTimerDialogCB, rt_func),
 						(_("Edit Timer"), "CALLFUNC", self.RemoveTimerDialogCB, cb_func2)
