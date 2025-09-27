@@ -371,9 +371,6 @@ static unsigned char* bmp_load(const char* file, int* x, int* y) {
  * @param background
  * @return void
  */
-
-/*
-
 static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = false) {
 	png_uint_32 width, height;
 	int bit_depth, color_type, interlace_type;
@@ -410,31 +407,17 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	filepara->ox = width;
 	filepara->oy = height;
 
-	// Determine transparency: either alpha channel present (any color type with alpha)
-	// or tRNS chunk present (indexed or single-color transparency).
-	filepara->transparent = false;
-	if (color_type & PNG_COLOR_MASK_ALPHA) {
-		// any color type that has an alpha channel (GRAY_ALPHA or RGB_ALPHA)
+	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA)
 		filepara->transparent = true;
-		filepara->bits = 32; // treat as RGBA-capable
-	} else if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
-		// tRNS present => logical transparency exists (palette entries or single transparent color)
-		filepara->transparent = true;
-		// NOTE: keep bits as-is for paletted/grayscale (we may want to keep 8-bit indexed)
-	}
+	else
+	{
+		png_bytep trans_alpha = NULL;
+		int num_trans = 0;
+		png_color_16p trans_color = NULL;
 
-#ifdef PICLOAD_FORCE_32BIT
-	// When we have indexed (8bit) PNG convert it to standard 32bit png so to preserve transparency and to allow proper alphablending
-	// This allow to prevent greenish background on some rendering surfaces.
-	if (color_type == PNG_COLOR_TYPE_PALETTE && bit_depth == 8) {
-		color_type = PNG_COLOR_TYPE_RGBA;
-		png_set_expand(png_ptr);
-		png_set_palette_to_rgb(png_ptr);
-		png_set_tRNS_to_alpha(png_ptr);
-		bit_depth = 32;
-		eDebug("[ePicLoad] Interlaced PNG 8bit -> 32bit");
+		png_get_tRNS(png_ptr, info_ptr, &trans_alpha, &num_trans, &trans_color);
+		filepara->transparent = (trans_alpha != NULL);
 	}
-#endif
 
 	// Case 1: Indexed / grayscale (<= 8bit)
 	if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE)) {
@@ -471,39 +454,34 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 			if (num_palette)
 				filepara->palette = new gRGB[num_palette];
 
-			// Get tRNS data if present
-			png_bytep trans = NULL;
-			int num_trans = 0;
-			png_get_tRNS(png_ptr, info_ptr, &trans, &num_trans, 0);
-
-			for (int i = 0; i < num_palette; i++) {
+			for (int i = 0; i < num_palette; i++)
+			{
+				filepara->palette[i].a = 0;
 				filepara->palette[i].r = palette[i].red;
 				filepara->palette[i].g = palette[i].green;
 				filepara->palette[i].b = palette[i].blue;
-				filepara->palette[i].a = (i < num_trans) ? (255 - trans[i]) : 0;
 			}
-		} else {
-			// No palette, build grayscale ramp
+
+			if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+			{
+				png_byte *trans;
+				png_get_tRNS(png_ptr, info_ptr, &trans, &num_palette, 0);
+				for (int i = 0; i < num_palette; i++)
+					filepara->palette[i].a = 255 - trans[i];
+			}
+		}
+		else
+		{
 			int c_cnt = 1 << bit_depth;
+			int c_step = (256 - 1) / (c_cnt - 1);
 			filepara->palette_size = c_cnt;
 			filepara->palette = new gRGB[c_cnt];
-
-			if (bit_depth == 8) {
-				for (int i = 0; i < 256; i++) {
-					filepara->palette[i].r = i;
-					filepara->palette[i].g = i;
-					filepara->palette[i].b = i;
-					filepara->palette[i].a = 0;
-				}
-			} else {
-				int c_step = 255 / (c_cnt - 1);
-				for (int i = 0; i < c_cnt; i++) {
-					int val = i * c_step;
-					filepara->palette[i].r = val;
-					filepara->palette[i].g = val;
-					filepara->palette[i].b = val;
-					filepara->palette[i].a = 0;
-				}
+			for (int i = 0; i < c_cnt; i++)
+			{
+				filepara->palette[i].a = 0;
+				filepara->palette[i].r = i * c_step;
+				filepara->palette[i].g = i * c_step;
+				filepara->palette[i].b = i * c_step;
 			}
 		}
 
@@ -519,21 +497,8 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
 			png_set_gray_to_rgb(png_ptr);
 
-		if ((color_type == PNG_COLOR_TYPE_PALETTE) || (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) ||
-			(png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS) && !(color_type & PNG_COLOR_MASK_ALPHA))) {
+		if ((color_type == PNG_COLOR_TYPE_PALETTE) || (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) || (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)))
 			png_set_expand(png_ptr);
-		}
-
-		if (forceRGB && (color_type & PNG_COLOR_MASK_ALPHA)) {
-			png_set_strip_alpha(png_ptr);
-			png_color_16 bg;
-			bg.red = (background >> 16) & 0xFF;
-			bg.green = (background >> 8) & 0xFF;
-			bg.blue = (background) & 0xFF;
-			bg.gray = bg.green;
-			bg.index = 0;
-			png_set_background(png_ptr, &bg, PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
-		}
 
 		int number_passes = 1;
 		if (interlace_type != PNG_INTERLACE_NONE) {
@@ -543,7 +508,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		png_read_update_info(png_ptr, info_ptr);
 
 		int bpp = png_get_rowbytes(png_ptr, info_ptr) / width;
-		eDebug("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
+		eTrace("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
 		if ((bpp != 4) && (bpp != 3)) {
 			eDebug("[ePicLoad] Error processing (did not get RGB data from PNG file)");
 			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
@@ -613,199 +578,6 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 			filepara->pic_buffer = pic_buffer;
 			filepara->bits = 24;
 		}
-	}
-}
-*/
-
-static void png_load(Cfilepara *filepara, unsigned int background, bool forceRGB = false)
-{
-	png_uint_32 width, height;
-	int bit_depth, color_type, interlace_type;
-	png_byte *fbptr;
-	CFile fh(filepara->file, "rb");
-	if (!fh)
-		return;
-
-	png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	if (png_ptr == NULL)
-	{
-		eDebug("[ePicLoad] Error png_create_read_struct");
-		return;
-	}
-	png_infop info_ptr = png_create_info_struct(png_ptr);
-	if (info_ptr == NULL)
-	{
-		eDebug("[ePicLoad] Error png_create_info_struct");
-		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
-		return;
-	}
-
-	if (setjmp(png_jmpbuf(png_ptr)))
-	{
-		eDebug("[ePicLoad] Error setjmp");
-		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-		return;
-	}
-
-	png_init_io(png_ptr, fh);
-
-	png_read_info(png_ptr, info_ptr);
-	png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, &interlace_type, NULL, NULL);
-	int pixel_cnt = width * height;
-
-	filepara->ox = width;
-	filepara->oy = height;
-
-	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA)
-		filepara->transparent = true;
-	else
-	{
-		png_bytep trans_alpha = NULL;
-		int num_trans = 0;
-		png_color_16p trans_color = NULL;
-
-		png_get_tRNS(png_ptr, info_ptr, &trans_alpha, &num_trans, &trans_color);
-		filepara->transparent = (trans_alpha != NULL);
-	}
-
-	if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE))
-	{
-		if (bit_depth < 8)
-			png_set_packing(png_ptr);
-
-		unsigned char *pic_buffer = new unsigned char[pixel_cnt];
-		if (!pic_buffer)
-		{
-			eDebug("[ePicLoad] Error malloc");
-			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-			return;
-		}
-
-		int number_passes = png_set_interlace_handling(png_ptr);
-		png_read_update_info(png_ptr, info_ptr);
-
-		for (int pass = 0; pass < number_passes; pass++)
-		{
-			fbptr = (png_byte *)pic_buffer;
-			for (unsigned int i = 0; i < height; i++, fbptr += width)
-				png_read_row(png_ptr, fbptr, NULL);
-		}
-
-		if (png_get_valid(png_ptr, info_ptr, PNG_INFO_PLTE))
-		{
-			png_color *palette;
-			int num_palette;
-			png_get_PLTE(png_ptr, info_ptr, &palette, &num_palette);
-
-			filepara->palette_size = num_palette;
-			if (num_palette)
-				filepara->palette = new gRGB[num_palette];
-
-			for (int i = 0; i < num_palette; i++)
-			{
-				filepara->palette[i].a = 0;
-				filepara->palette[i].r = palette[i].red;
-				filepara->palette[i].g = palette[i].green;
-				filepara->palette[i].b = palette[i].blue;
-			}
-
-			if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
-			{
-				png_byte *trans;
-				png_get_tRNS(png_ptr, info_ptr, &trans, &num_palette, 0);
-				for (int i = 0; i < num_palette; i++)
-					filepara->palette[i].a = 255 - trans[i];
-			}
-		}
-		else
-		{
-			int c_cnt = 1 << bit_depth;
-			int c_step = (256 - 1) / (c_cnt - 1);
-			filepara->palette_size = c_cnt;
-			filepara->palette = new gRGB[c_cnt];
-			for (int i = 0; i < c_cnt; i++)
-			{
-				filepara->palette[i].a = 0;
-				filepara->palette[i].r = i * c_step;
-				filepara->palette[i].g = i * c_step;
-				filepara->palette[i].b = i * c_step;
-			}
-		}
-		filepara->pic_buffer = pic_buffer;
-		filepara->bits = 8;
-		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-	}
-	else
-	{
-		if (bit_depth == 16)
-			png_set_strip_16(png_ptr);
-
-		if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-			png_set_gray_to_rgb(png_ptr);
-
-		if ((color_type == PNG_COLOR_TYPE_PALETTE) || (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) || (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)))
-			png_set_expand(png_ptr);
-
-		int number_passes = png_set_interlace_handling(png_ptr);
-		png_read_update_info(png_ptr, info_ptr);
-
-		int bpp = png_get_rowbytes(png_ptr, info_ptr) / width;
-		if ((bpp != 4) && (bpp != 3))
-		{
-			eDebug("[ePicLoad] Error processing");
-			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-			return;
-		}
-
-		unsigned char *pic_buffer = new unsigned char[pixel_cnt * bpp];
-		if (!pic_buffer)
-		{
-			eDebug("[ePicLoad] Error malloc");
-			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-			return;
-		}
-
-		for (int pass = 0; pass < number_passes; pass++)
-		{
-			fbptr = (png_byte *)pic_buffer;
-			for (unsigned int i = 0; i < height; i++, fbptr += width * bpp)
-				png_read_row(png_ptr, fbptr, NULL);
-		}
-		png_read_end(png_ptr, info_ptr);
-		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-
-		if (bpp == 4)
-		{
-			unsigned char *pic_buffer24 = new unsigned char[pixel_cnt * 3];
-			if (!pic_buffer24)
-			{
-				eDebug("[ePicLoad] Error malloc");
-				delete[] pic_buffer;
-				return;
-			}
-
-			unsigned char *src = pic_buffer;
-			unsigned char *dst = pic_buffer24;
-			int bg_r = (background >> 16) & 0xFF;
-			int bg_g = (background >> 8) & 0xFF;
-			int bg_b = background & 0xFF;
-			for (int i = 0; i < pixel_cnt; i++)
-			{
-				int r = (int)*src++;
-				int g = (int)*src++;
-				int b = (int)*src++;
-				int a = (int)*src++;
-
-				*dst++ = ((r - bg_r) * a) / 255 + bg_r;
-				*dst++ = ((g - bg_g) * a) / 255 + bg_g;
-				*dst++ = ((b - bg_b) * a) / 255 + bg_b;
-			}
-			delete[] pic_buffer;
-			filepara->pic_buffer = pic_buffer24;
-		}
-		else
-			filepara->pic_buffer = pic_buffer;
-		filepara->bits = 24;
 	}
 }
 
