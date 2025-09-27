@@ -420,12 +420,6 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		// NOTE: keep bits as-is for paletted/grayscale (we may want to keep 8-bit indexed)
 	}
 
-	if (bit_depth == 8 && color_type == PNG_COLOR_TYPE_RGBA) {
-		eDebug("[ePicLoad] force 32bit filepara->transparent %d / filepara->bits %d" , filepara->transparent, filepara->bits);
-		png_set_expand(png_ptr);
-		bit_depth = 32;
-	}
-
 #ifdef PICLOAD_FORCE_32BIT
 	// When we have indexed (8bit) PNG convert it to standard 32bit png so to preserve transparency and to allow proper alphablending
 	// This allow to prevent greenish background on some rendering surfaces.
@@ -513,9 +507,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		filepara->pic_buffer = pic_buffer;
 		filepara->bits = 8;
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-	}
-	// Case 2: Truecolor / RGBA
-	else {
+	} else { // Truecolor / RGBA
 		if (bit_depth == 16)
 			png_set_strip_16(png_ptr);
 
@@ -570,56 +562,74 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		png_read_end(png_ptr, info_ptr);
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 
-		// Assign output
-		if (bpp == 4 && filepara->transparent) {
-			filepara->bits = 32;
-			filepara->pic_buffer = pic_buffer;
-		} else if (bpp == 4) {
-			// Precompute blend table (static, initialized once)
-			static bool blend_init = false;
-			static unsigned char blend_table[256][256];
-			if (!blend_init) {
-				for (int a = 0; a < 256; ++a) {
-					for (int c = 0; c < 256; ++c) {
-						blend_table[a][c] = (unsigned char)((c * a + 127) / 255);
-					}
-				}
-				blend_init = true;
-			}
-
-			// Convert RGBA -> RGB using background color
-			unsigned char* pic_buffer24 = new unsigned char[pixel_cnt * 3];
-			if (!pic_buffer24) {
-				eDebug("[ePicLoad] Error malloc");
-				delete[] pic_buffer;
-				return;
-			}
-
+		// -------- Special Case: 8-bit RGBA PNGs --------
+		if (bit_depth == 8 && color_type == PNG_COLOR_TYPE_RGBA) {
 			unsigned char* src = pic_buffer;
-			unsigned char* dst = pic_buffer24;
-			int bg_r = (background >> 16) & 0xFF;
-			int bg_g = (background >> 8) & 0xFF;
-			int bg_b = background & 0xFF;
-			for (int i = 0; i < pixel_cnt; i++) {
-				int r = *src++;
-				int g = *src++;
-				int b = *src++;
-				int a = *src++;
+			unsigned char* dst = new unsigned char[pixel_cnt * 4];
 
-				*dst++ = blend_table[a][r] + blend_table[255 - a][bg_r];
-				*dst++ = blend_table[a][g] + blend_table[255 - a][bg_g];
-				*dst++ = blend_table[a][b] + blend_table[255 - a][bg_b];
+			for (int i = 0; i < pixel_cnt; i++) {
+				dst[i * 4 + 0] = src[i * 4 + 0]; // R
+				dst[i * 4 + 1] = src[i * 4 + 1]; // G
+				dst[i * 4 + 2] = src[i * 4 + 2]; // B
+				dst[i * 4 + 3] = src[i * 4 + 3]; // A
 			}
+
 			delete[] pic_buffer;
-			filepara->pic_buffer = pic_buffer24;
-			filepara->bits = 24;
+			pic_buffer = dst;
+			filepara->pic_buffer = dst;
+			filepara->bits = 32;
+			filepara->transparent = true;
+			eDebug("[ePicLoad] Special 8-bit RGBA -> 32bit buffer");
 		} else {
-			filepara->pic_buffer = pic_buffer;
-			filepara->bits = 24;
+			if (bpp == 4 && filepara->transparent) {
+				filepara->bits = 32;
+				filepara->pic_buffer = pic_buffer;
+			} else if (bpp == 4) {
+				// Precompute blend table (static, initialized once)
+				static bool blend_init = false;
+				static unsigned char blend_table[256][256];
+				if (!blend_init) {
+					for (int a = 0; a < 256; ++a) {
+						for (int c = 0; c < 256; ++c) {
+							blend_table[a][c] = (unsigned char)((c * a + 127) / 255);
+						}
+					}
+					blend_init = true;
+				}
+
+				// Convert RGBA -> RGB using background color
+				unsigned char* pic_buffer24 = new unsigned char[pixel_cnt * 3];
+				if (!pic_buffer24) {
+					eDebug("[ePicLoad] Error malloc");
+					delete[] pic_buffer;
+					return;
+				}
+
+				unsigned char* src = pic_buffer;
+				unsigned char* dst = pic_buffer24;
+				int bg_r = (background >> 16) & 0xFF;
+				int bg_g = (background >> 8) & 0xFF;
+				int bg_b = background & 0xFF;
+				for (int i = 0; i < pixel_cnt; i++) {
+					int r = *src++;
+					int g = *src++;
+					int b = *src++;
+					int a = *src++;
+
+					*dst++ = blend_table[a][r] + blend_table[255 - a][bg_r];
+					*dst++ = blend_table[a][g] + blend_table[255 - a][bg_g];
+					*dst++ = blend_table[a][b] + blend_table[255 - a][bg_b];
+				}
+				delete[] pic_buffer;
+				filepara->pic_buffer = pic_buffer24;
+				filepara->bits = 24;
+			} else {
+				filepara->pic_buffer = pic_buffer;
+				filepara->bits = 24;
+			}
 		}
 	}
 }
-
 //-------------------------------------------------------------------
 
 struct r_jpeg_error_mgr {
