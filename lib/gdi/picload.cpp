@@ -617,7 +617,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 }
 */
 
-static void png_load(Cfilepara *filepara, unsigned int background)
+static void png_load(Cfilepara *filepara, unsigned int background, bool forceRGB = false)
 {
 	png_uint_32 width, height;
 	int bit_depth, color_type, interlace_type;
