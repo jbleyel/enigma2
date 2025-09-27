@@ -505,6 +505,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 
 		if ((color_type == PNG_COLOR_TYPE_PALETTE) || (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) || (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)))
 			png_set_expand(png_ptr);
+
 		if (forceRGB && (color_type & PNG_COLOR_MASK_ALPHA)) {
 			png_set_strip_alpha(png_ptr);
 			png_color_16 bg;
