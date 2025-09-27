@@ -407,16 +407,17 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	filepara->ox = width;
 	filepara->oy = height;
 
-	if (color_type == PNG_COLOR_TYPE_RGBA || color_type == PNG_COLOR_TYPE_GA)
+	// Determine transparency: either alpha channel present (any color type with alpha)
+	// or tRNS chunk present (indexed or single-color transparency).
+	filepara->transparent = false;
+	if (color_type & PNG_COLOR_MASK_ALPHA) {
+		// any color type that has an alpha channel (GRAY_ALPHA or RGB_ALPHA)
 		filepara->transparent = true;
-	else
-	{
-		png_bytep trans_alpha = NULL;
-		int num_trans = 0;
-		png_color_16p trans_color = NULL;
-
-		png_get_tRNS(png_ptr, info_ptr, &trans_alpha, &num_trans, &trans_color);
-		filepara->transparent = (trans_alpha != NULL);
+		filepara->bits = 32; // treat as RGBA-capable
+	} else if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
+		// tRNS present => logical transparency exists (palette entries or single transparent color)
+		filepara->transparent = true;
+		// NOTE: keep bits as-is for paletted/grayscale (we may want to keep 8-bit indexed)
 	}
 
 	// Case 1: Indexed / grayscale (<= 8bit)
@@ -454,34 +455,39 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 			if (num_palette)
 				filepara->palette = new gRGB[num_palette];
 
-			for (int i = 0; i < num_palette; i++)
-			{
-				filepara->palette[i].a = 0;
+			// Get tRNS data if present
+			png_bytep trans = NULL;
+			int num_trans = 0;
+			png_get_tRNS(png_ptr, info_ptr, &trans, &num_trans, 0);
+
+			for (int i = 0; i < num_palette; i++) {
 				filepara->palette[i].r = palette[i].red;
 				filepara->palette[i].g = palette[i].green;
 				filepara->palette[i].b = palette[i].blue;
+				filepara->palette[i].a = (i < num_trans) ? (255 - trans[i]) : 0;
 			}
-
-			if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
-			{
-				png_byte *trans;
-				png_get_tRNS(png_ptr, info_ptr, &trans, &num_palette, 0);
-				for (int i = 0; i < num_palette; i++)
-					filepara->palette[i].a = 255 - trans[i];
-			}
-		}
-		else
-		{
+		} else {
+			// No palette, build grayscale ramp
 			int c_cnt = 1 << bit_depth;
-			int c_step = (256 - 1) / (c_cnt - 1);
 			filepara->palette_size = c_cnt;
 			filepara->palette = new gRGB[c_cnt];
-			for (int i = 0; i < c_cnt; i++)
-			{
-				filepara->palette[i].a = 0;
-				filepara->palette[i].r = i * c_step;
-				filepara->palette[i].g = i * c_step;
-				filepara->palette[i].b = i * c_step;
+
+			if (bit_depth == 8) {
+				for (int i = 0; i < 256; i++) {
+					filepara->palette[i].r = i;
+					filepara->palette[i].g = i;
+					filepara->palette[i].b = i;
+					filepara->palette[i].a = 0;
+				}
+			} else {
+				int c_step = 255 / (c_cnt - 1);
+				for (int i = 0; i < c_cnt; i++) {
+					int val = i * c_step;
+					filepara->palette[i].r = val;
+					filepara->palette[i].g = val;
+					filepara->palette[i].b = val;
+					filepara->palette[i].a = 0;
+				}
 			}
 		}
 
@@ -491,16 +497,23 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	}
 	// Case 2: Truecolor / RGBA
 	else {
-		eDebug("[ePicLoad] True Color");
 		if (bit_depth == 16)
 			png_set_strip_16(png_ptr);
 
 		if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
 			png_set_gray_to_rgb(png_ptr);
 
-		if ((color_type == PNG_COLOR_TYPE_PALETTE) || (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) || (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))) {
-			eDebug("[ePicLoad] png_set_expand");
+		if ((color_type == PNG_COLOR_TYPE_PALETTE) || (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) || (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)))
 			png_set_expand(png_ptr);
+		if (forceRGB && (color_type & PNG_COLOR_MASK_ALPHA)) {
+			png_set_strip_alpha(png_ptr);
+			png_color_16 bg;
+			bg.red = (background >> 16) & 0xFF;
+			bg.green = (background >> 8) & 0xFF;
+			bg.blue = (background) & 0xFF;
+			bg.gray = bg.green;
+			bg.index = 0;
+			png_set_background(png_ptr, &bg, PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
 		}
 
 		int number_passes = 1;
@@ -525,12 +538,26 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 			return;
 		}
 
-		// Read rows
-		for (int pass = 0; pass < number_passes; pass++) {
-			fbptr = (png_byte*)pic_buffer;
-			for (unsigned int i = 0; i < height; i++, fbptr += width * bpp)
-				png_read_row(png_ptr, fbptr, NULL);
+		
+		if (bpp == 4 && filepara->transparent) {
+		
+	        png_bytep* rowptr = new png_bytep[height];
+	        for (unsigned int i = 0; i < height; i++)
+	            rowptr[i] = pic_buffer + i * width * 4;
+
+	        png_read_image(png_ptr, rowptr);
+	        delete[] rowptr;
 		}
+		else 
+		{
+			// Read rows
+			for (int pass = 0; pass < number_passes; pass++) {
+				fbptr = (png_byte*)pic_buffer;
+				for (unsigned int i = 0; i < height; i++, fbptr += width * bpp)
+					png_read_row(png_ptr, fbptr, NULL);
+			}
+		}
+		
 		png_read_end(png_ptr, info_ptr);
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 
@@ -538,20 +565,6 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		eDebug("[ePicLoad] bpp %d / transparent %d", bpp, filepara->transparent);
 		
 		if (bpp == 4 && filepara->transparent) {
-			unsigned char* pic_buffer32 = new unsigned char[pixel_cnt * 4];
-			if (!pic_buffer32) {
-				eDebug("[ePicLoad] Error malloc");
-				delete[] pic_buffer;
-				return;
-			}
-
-			unsigned char* src = pic_buffer;
-			unsigned char* dst = pic_buffer32;
-			for (int i = 0; i < pixel_cnt * 4; i++)
-				dst[i] = src[i];
-
-			delete[] pic_buffer;
-			filepara->pic_buffer = pic_buffer32;
 			filepara->bits = 32;
 		} else if (bpp == 4) {
 			// Precompute blend table (static, initialized once)
