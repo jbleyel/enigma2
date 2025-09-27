@@ -491,14 +491,17 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	}
 	// Case 2: Truecolor / RGBA
 	else {
+		eDebug("[ePicLoad] True Color");
 		if (bit_depth == 16)
 			png_set_strip_16(png_ptr);
 
 		if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
 			png_set_gray_to_rgb(png_ptr);
 
-		if ((color_type == PNG_COLOR_TYPE_PALETTE) || (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) || (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)))
+		if ((color_type == PNG_COLOR_TYPE_PALETTE) || (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) || (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))) {
+			eDebug("[ePicLoad] png_set_expand");
 			png_set_expand(png_ptr);
+		}
 
 		int number_passes = 1;
 		if (interlace_type != PNG_INTERLACE_NONE) {
@@ -508,7 +511,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		png_read_update_info(png_ptr, info_ptr);
 
 		int bpp = png_get_rowbytes(png_ptr, info_ptr) / width;
-		eTrace("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
+		eDebug("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
 		if ((bpp != 4) && (bpp != 3)) {
 			eDebug("[ePicLoad] Error processing (did not get RGB data from PNG file)");
 			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
@@ -532,10 +535,13 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 
 		// Assign output
+		eDebug("[ePicLoad] bpp %d / transparent %d", bpp, filepara->transparent);
+		/*
 		if (bpp == 4 && filepara->transparent) {
 			filepara->bits = 32;
 			filepara->pic_buffer = pic_buffer;
-		} else if (bpp == 4) {
+		} else 
+		*/ if (bpp == 4) {
 			// Precompute blend table (static, initialized once)
 			static bool blend_init = false;
 			static unsigned char blend_table[256][256];
