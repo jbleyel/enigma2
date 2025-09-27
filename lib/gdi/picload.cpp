@@ -536,12 +536,24 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 
 		// Assign output
 		eDebug("[ePicLoad] bpp %d / transparent %d", bpp, filepara->transparent);
-		/*
+		
 		if (bpp == 4 && filepara->transparent) {
+			unsigned char* pic_buffer32 = new unsigned char[pixel_cnt * 4];
+			if (!pic_buffer32) {
+				eDebug("[ePicLoad] Error malloc");
+				delete[] pic_buffer;
+				return;
+			}
+
+			unsigned char* src = pic_buffer;
+			unsigned char* dst = pic_buffer32;
+			for (int i = 0; i < pixel_cnt * 4; i++)
+				dst[i] = src[i];
+
+			delete[] pic_buffer;
+			filepara->pic_buffer = pic_buffer32;
 			filepara->bits = 32;
-			filepara->pic_buffer = pic_buffer;
-		} else 
-		*/ if (bpp == 4) {
+		} else if (bpp == 4) {
 			// Precompute blend table (static, initialized once)
 			static bool blend_init = false;
 			static unsigned char blend_table[256][256];
