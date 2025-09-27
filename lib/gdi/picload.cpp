@@ -516,10 +516,9 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 			png_set_background(png_ptr, &bg, PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
 		}
 
-		int number_passes = 1;
 		if (interlace_type != PNG_INTERLACE_NONE) {
-			number_passes = png_set_interlace_handling(png_ptr);
-			eDebug("[ePicLoad] PNG interlaced, using %d passes", number_passes);
+			png_set_interlace_handling(png_ptr);
+			eTrace("[ePicLoad] PNG interlaced, using interlace handling");
 		}
 		png_read_update_info(png_ptr, info_ptr);
 
@@ -538,33 +537,29 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 			return;
 		}
 
-		
-		if (bpp == 4 && filepara->transparent) {
-		
-	        png_bytep* rowptr = new png_bytep[height];
-	        for (unsigned int i = 0; i < height; i++)
-	            rowptr[i] = pic_buffer + i * width * 4;
+		// always use png_read_image (works for interlaced and non-interlaced)
+		png_bytep* rowptr = new png_bytep[height];
+		if (!rowptr) {
+			eDebug("[ePicLoad] Error malloc rowptr");
+			delete[] pic_buffer;
+			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+			return;
+		}
+		for (unsigned int y = 0; y < height; ++y)
+			rowptr[y] = pic_buffer + y * (width * bpp);
 
-	        png_read_image(png_ptr, rowptr);
-	        delete[] rowptr;
-		}
-		else 
-		{
-			// Read rows
-			for (int pass = 0; pass < number_passes; pass++) {
-				fbptr = (png_byte*)pic_buffer;
-				for (unsigned int i = 0; i < height; i++, fbptr += width * bpp)
-					png_read_row(png_ptr, fbptr, NULL);
-			}
-		}
-		
+		png_read_image(png_ptr, rowptr);
+		delete[] rowptr;
+
+
 		png_read_end(png_ptr, info_ptr);
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 
 		// Assign output
 		eDebug("[ePicLoad] bpp %d / transparent %d", bpp, filepara->transparent);
-		
+
 		if (bpp == 4 && filepara->transparent) {
+			filepara->pic_buffer = pic_buffer;
 			filepara->bits = 32;
 		} else if (bpp == 4) {
 			// Precompute blend table (static, initialized once)
