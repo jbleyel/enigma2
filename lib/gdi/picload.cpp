@@ -407,15 +407,6 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	filepara->ox = width;
 	filepara->oy = height;
 
-	/*
-	 * Ensure 16-bit samples are normalized to 8-bit early so that any
-	 * tRNS / palette / alpha values are returned in 8-bit form by libpng.
-	 * Some PNGs can mix sample depths and this previously caused alpha
-	 * mismatches later when converting images to 16bit surfaces.
-	 */
-	if (bit_depth == 16)
-		png_set_strip_16(png_ptr);
-
 	// Determine transparency: either alpha channel present (any color type with alpha)
 	// or tRNS chunk present (indexed or single-color transparency).
 	filepara->transparent = false;
@@ -427,6 +418,13 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		// tRNS present => logical transparency exists (palette entries or single transparent color)
 		filepara->transparent = true;
 		// NOTE: keep bits as-is for paletted/grayscale (we may want to keep 8-bit indexed)
+	}
+
+
+	if (color_type == PNG_COLOR_TYPE_RGBA && bit_depth == 8) {
+		filepara->transparent = true;
+		filepara->bits = 32;
+		eDebug("[ePicLoad] Force 8-bit RGBA -> 32bit path");
 	}
 
 	// Case 1: Indexed / grayscale (<= 8bit)
@@ -506,6 +504,9 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	}
 	// Case 2: Truecolor / RGBA
 	else {
+		if (bit_depth == 16)
+			png_set_strip_16(png_ptr);
+
 		if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
 			png_set_gray_to_rgb(png_ptr);
 
