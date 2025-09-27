@@ -420,7 +420,13 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		// NOTE: keep bits as-is for paletted/grayscale (we may want to keep 8-bit indexed)
 	}
 
-//#ifdef PICLOAD_FORCE_32BIT
+	if (bit_depth == 8 && color_type == PNG_COLOR_TYPE_RGBA) {
+		eDebug("[ePicLoad] force 32bit filepara->transparent %d / filepara->bits %d" , filepara->transparent, filepara->bits);
+		png_set_expand(png_ptr);
+		bit_depth = 32;
+	}
+
+#ifdef PICLOAD_FORCE_32BIT
 	// When we have indexed (8bit) PNG convert it to standard 32bit png so to preserve transparency and to allow proper alphablending
 	// This allow to prevent greenish background on some rendering surfaces.
 	if (color_type == PNG_COLOR_TYPE_PALETTE && bit_depth == 8) {
@@ -431,7 +437,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		bit_depth = 32;
 		eDebug("[ePicLoad] Interlaced PNG 8bit -> 32bit");
 	}
-//#endif
+#endif
 
 	// Case 1: Indexed / grayscale (<= 8bit)
 	if ((bit_depth <= 8) && (color_type == PNG_COLOR_TYPE_GRAY || color_type & PNG_COLOR_MASK_PALETTE)) {
@@ -522,6 +528,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		}
 
 		if (forceRGB && (color_type & PNG_COLOR_MASK_ALPHA)) {
+			eDebug("[ePicLoad] forceRGB");
 			png_set_strip_alpha(png_ptr);
 			png_color_16 bg;
 			bg.red = (background >> 16) & 0xFF;
@@ -540,7 +547,7 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		png_read_update_info(png_ptr, info_ptr);
 
 		int bpp = png_get_rowbytes(png_ptr, info_ptr) / width;
-		eTrace("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
+		eDebug("[ePicLoad] RGB data from PNG file int bpp %x)", bpp);
 		if ((bpp != 4) && (bpp != 3)) {
 			eDebug("[ePicLoad] Error processing (did not get RGB data from PNG file)");
 			png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
