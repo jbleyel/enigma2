@@ -1357,7 +1357,7 @@ void eDVBServicePlay::handleEofRecovery()
 		m_is_paused = 1;
 	}
 	m_recovery_attempts = 0;
-	m_eof_recovery_timer->start(500, true);
+	m_eof_recovery_timer->start(100, true);
 }
 
 void eDVBServicePlay::onEofRecoveryTimeout()

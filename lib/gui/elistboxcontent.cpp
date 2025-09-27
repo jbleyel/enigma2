@@ -572,6 +572,7 @@ void eListboxPythonStringContent::updateTextSize(std::string& text, gFont* font,
 
 
 			if (m_text_size.width() > m_scroll_size.width()) {
+				m_text_size.setWidth(m_text_size.width() + font->pointSize / 10); // avoid issues with rounding
 				m_scroll_text = true;
 
 				if (m_listbox->m_scroll_config.mode == eScrollConfig::scrollModeRoll)
@@ -591,6 +592,7 @@ void eListboxPythonStringContent::updateTextSize(std::string& text, gFont* font,
 		} else if (scroll_text_direction == eScrollConfig::scrollTop || scroll_text_direction == eScrollConfig::scrollBottom) {
 			m_text_size = calculateTextSize(font, text, m_scroll_size, false); // allow wrap
 			if (m_text_size.height() > m_scroll_size.height()) {
+				m_text_size.setHeight(m_text_size.height() + font->pointSize / 10); // avoid issues with rounding
 				m_scroll_text = true;
 				if (m_listbox->m_scroll_config.mode == eScrollConfig::scrollModeRoll)
 					m_text_size.setHeight(m_text_size.height() + m_scroll_size.height() * 1.5);

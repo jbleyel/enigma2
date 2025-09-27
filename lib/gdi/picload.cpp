@@ -506,9 +506,6 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 	}
 	// Case 2: Truecolor / RGBA
 	else {
-		if (bit_depth == 16)
-			png_set_strip_16(png_ptr);
-
 		if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
 			png_set_gray_to_rgb(png_ptr);
 
