@@ -2414,6 +2414,15 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 				uint32_t* srcp = (uint32_t*)srcptr;
 				uint16_t* dstp = (uint16_t*)dstptr;
 
+				if (y == 0) {
+					uint32_t firstPix = *srcp;
+					uint8_t a = (firstPix >> 24) & 0xFF;
+					uint8_t r = (firstPix >> 16) & 0xFF;
+					uint8_t g = (firstPix >> 8) & 0xFF;
+					uint8_t b = firstPix & 0xFF;
+					eDebug("[gPixmap] [blit] 32->16 First source pixel raw=0x%08X  ARGB=(%02X,%02X,%02X,%02X)", firstPix, a, r, g, b);
+				}
+
 				while (width--) {
 					uint32_t pix = *srcp++;
 					uint8_t a = (pix >> 24) & 0xFF;
