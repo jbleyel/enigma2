@@ -849,15 +849,15 @@ class SchedulerEntry(TimerEntry):
 						if functionTimerEntryFunction and callable(functionTimerEntryFunction):
 							self.startFunctionTimer(functionTimerEntryFunction, functionTimerCancelFunction if callable(functionTimerCancelFunction) else None, functionTimerIsThreaded)
 
-						#if "isThreaded" in functionTimerEntry and not functionTimerEntry["isThreaded"]:
-						#	self.is_threaded = False
-						#elif "isScreen" in functionTimerEntry and not functionTimerEntry["isScreen"]:
-						#	self.is_threaded = False
-						#self.execnotifyafter = self.notify_after_t
-						#if self.notify_t and not Screens.Standby.inStandby:
-						#	Notifications.AddNotificationWithCallback(self.askForScheduledTimer, MessageBox, _("An scheduled task wants to execute following function at your STB\n\n %s \n\nContinue?") % functionTimerEntry["name"], timeout = 20)
-						#else:
-						#	self.askForScheduledTimer(True)
+						# if "isThreaded" in functionTimerEntry and not functionTimerEntry["isThreaded"]:
+						# self.is_threaded = False
+						# elif "isScreen" in functionTimerEntry and not functionTimerEntry["isScreen"]:
+						# self.is_threaded = False
+						# self.execnotifyafter = self.notify_after_t
+						# if self.notify_t and not Screens.Standby.inStandby:
+						# Notifications.AddNotificationWithCallback(self.askForScheduledTimer, MessageBox, _("An scheduled task wants to execute following function at your STB\n\n %s \n\nContinue?") % functionTimerEntry["name"], timeout = 20)
+						# else:
+						# self.askForScheduledTimer(True)
 
 				return True
 
@@ -876,18 +876,18 @@ class SchedulerEntry(TimerEntry):
 						functionTimerIsThreaded = functionTimerEntry.get("isThreaded")
 						if functionTimerIsThreaded and self.timerThread.is_alive():
 							self.timerThread.join(timeout=1)
-#							threadId = self.timerThread.ident
-#							exc = py_object(SystemExit)
-#							res = pythonapi.PyThreadState_SetAsyncExc(c_long(threadId), exc)
-#							if res == 0:
-#								print("[Scheduler] Thread can not be terminated!")
-#							elif res > 1:
-#								pythonapi.PyThreadState_SetAsyncExc(threadId, None)
-#								print("[Scheduler] Thread can not be terminated!")
-#							elif res == 1:
-#								print("[Scheduler] Thread successfully terminated.")
-#							del exc
-#							del res
+# threadId = self.timerThread.ident
+# exc = py_object(SystemExit)
+# res = pythonapi.PyThreadState_SetAsyncExc(c_long(threadId), exc)
+# if res == 0:
+# print("[Scheduler] Thread can not be terminated!")
+# elif res > 1:
+# pythonapi.PyThreadState_SetAsyncExc(threadId, None)
+# print("[Scheduler] Thread can not be terminated!")
+# elif res == 1:
+# print("[Scheduler] Thread successfully terminated.")
+# del exc
+# del res
 
 			if self.afterEvent == AFTEREVENT.WAKEUP:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("wakeuppowertimer")
