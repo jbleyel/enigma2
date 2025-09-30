@@ -1,5 +1,5 @@
 from enigma import eListbox, eListboxPythonMultiContent, BT_ALIGN_CENTER, iPlayableService, iRecordableService, eServiceReference, iServiceInformation, gFont, RT_HALIGN_LEFT, RT_VALIGN_CENTER, RT_VALIGN_TOP, RT_HALIGN_CENTER, eTimer, getDesktop, eSize, eStreamServer
-from skin import parseScale, applySkinFactor, parseColor, parseFont, parameters
+from skin import applySkinFactor, parseColor, parseFont, parameters
 
 from Components.Addons.GUIAddon import GUIAddon
 from Components.Converter.ServiceInfo import getVideoHeight
@@ -364,7 +364,7 @@ class ServiceInfoBar(GUIAddon):
 			if attrib == "pixmapsDisabled":
 				self.pixmapsDisabled = {k: v for k, v in (item.split(':') for item in value.split(','))}
 			elif attrib == "spacing":
-				self.spacing = parseScale(value)
+				self.spacing = self.parseScale(value)
 			elif attrib == "alignment":
 				self.alignment = value
 			elif attrib == "orientation":
@@ -380,7 +380,7 @@ class ServiceInfoBar(GUIAddon):
 			elif attrib == "separatorLineColor":
 				self.foreColor = parseColor(value).argb()
 			elif attrib == "separatorLineThickness":
-				self.separatorLineThickness = parseScale(value)
+				self.separatorLineThickness = self.parseScale(value)
 			elif attrib == "autoresizeMode":
 				self.autoresizeMode = value
 			elif attrib == "font":

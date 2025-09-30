@@ -2,7 +2,7 @@ from Components.Addons.GUIAddon import GUIAddon
 
 from enigma import eListbox, eListboxPythonMultiContent, gFont, RT_BLEND, RT_HALIGN_LEFT, RT_VALIGN_CENTER, getDesktop, eSize
 
-from skin import applySkinFactor, parseFont, parseColor, parseScale
+from skin import applySkinFactor, parseFont, parseColor
 
 from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixmapAlphaBlend
 from Components.Label import Label
@@ -81,13 +81,13 @@ class MainMenu(GUIAddon):
 			self.source.setConnectedGuiElement(self)
 
 	def setMinWidth(self, value):
-		self.minWidth = parseScale(value)
+		self.minWidth = self.parseScale(value)
 
 	def setMaxWidth(self, value):
-		self.maxWidth = parseScale(value)
+		self.maxWidth = self.parseScale(value)
 
 	def setIconSize(self, value):
-		self.iconSize = parseScale(value)
+		self.iconSize = self.parseScale(value)
 
 	def setForegroundColor(self, value):
 		self.foregroundColor = parseColor(value).argb()
@@ -99,11 +99,11 @@ class MainMenu(GUIAddon):
 		self.backgroundColor = parseColor(value).argb()
 
 	def setItemWidth(self, value):
-		self.itemWidth = parseScale(value)
+		self.itemWidth = self.parseScale(value)
 		self.l.setItemWidth(self.itemWidth)
 
 	def setItemHeight(self, value):
-		self.itemHeight = parseScale(value)
+		self.itemHeight = self.parseScale(value)
 		self.l.setItemHeight(self.itemHeight)
 
 	def postWidgetCreate(self, instance):
@@ -139,15 +139,15 @@ class MainMenu(GUIAddon):
 			elif attrib == "backgroundColor":
 				self.backgroundColor = parseColor(value).argb()
 			elif attrib == "iconSize":
-				self.iconSize = parseScale(value)
+				self.iconSize = self.parseScale(value)
 			elif attrib == "minWidth":
-				self.minWidth = parseScale(value)
+				self.minWidth = self.parseScale(value)
 			elif attrib == "maxWidth":
-				self.maxWidth = parseScale(value)
+				self.maxWidth = self.parseScale(value)
 			elif attrib == "itemWidth":
-				self.itemWidth = parseScale(value)
+				self.itemWidth = self.parseScale(value)
 			elif attrib == "itemHeight":
-				self.itemHeight = parseScale(value)
+				self.itemHeight = self.parseScale(value)
 			else:
 				attribs.append((attrib, value))
 		self.skinAttributes = attribs
