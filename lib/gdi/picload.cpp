@@ -1459,12 +1459,12 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 	if (xoff != 0 || yoff != 0) {
 		unsigned int background;
 		if (m_filepara->bits == 8) {
-			eDebug("[ePicload] backgound %d")
+			eDebug("[ePicload] background %d");
 			gRGB bg(m_conf.background);
 			background = surface->clut.findOrAddColor(bg);
 			eDebug("[ePicload] 8Bit m_conf.background %d / backgound %d", m_conf.background, backgound);
 		} else {
-			background = m_conf.background;
+			background = m_conf.background ^ 0xFF000000;
 		}
 
 		if (yoff != 0) {
