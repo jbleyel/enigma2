@@ -2398,49 +2398,65 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 					eDebug("[gPixmap] [blit] 32->16 First source pixel raw=0x%08X  ARGB=(%02X,%02X,%02X,%02X)", firstPix, a, r, g, b);
 				}
 
-				while (width--) {
-					uint32_t pix = *srcp++;
-					uint8_t a = (pix >> 24) & 0xFF;
-					uint8_t r = (pix >> 16) & 0xFF;
-					uint8_t g = (pix >> 8) & 0xFF;
-					uint8_t b = pix & 0xFF;
-
-					// Alpha-Test
-					if ((flag & blitAlphaTest) && a == 0) {
-						dstp++;
-						continue;
-					}
-
-					uint16_t dstcol;
+				if (flag & blitAlphaBlend) {
+					while (width--) {
+						if (!((*srcp) & 0xFF000000)) {
+							srcp++;
+							dstp++;
+						} else {
+							gRGB icol = *srcp++;
 #if BYTE_ORDER == LITTLE_ENDIAN
-					dstcol = bswap_16(*dstp);
+							uint32_t jcol = bswap_16(*dstp);
 #else
-					dstcol = *dstp;
+							uint32_t jcol = *dstp;
 #endif
-					// 16-Bit RGB565 Hintergrund in 8-Bit-RGB konvertieren
-					int bg_r = (dstcol >> 11) & 0x1F;
-					int bg_g = (dstcol >> 5) & 0x3F;
-					int bg_b = dstcol & 0x1F;
-					bg_r = (bg_r << 3) | (bg_r >> 2); // 5-Bit -> 8-Bit
-					bg_g = (bg_g << 2) | (bg_g >> 4); // 6-Bit -> 8-Bit
-					bg_b = (bg_b << 3) | (bg_b >> 2); // 5-Bit -> 8-Bit
+							int bg_b = (jcol >> 8) & 0xF8;
+							int bg_g = (jcol >> 3) & 0xFC;
+							int bg_r = (jcol << 3) & 0xF8;
 
-					// Alpha-Blending
-					if (flag & blitAlphaBlend) {
-						r = ((r - bg_r) * a) / 255 + bg_r;
-						g = ((g - bg_g) * a) / 255 + bg_g;
-						b = ((b - bg_b) * a) / 255 + bg_b;
-					}
+							int a = icol.a;
+							int r = icol.r;
+							int g = icol.g;
+							int b = icol.b;
 
-					// 8-Bit RGB -> 16-Bit RGB565
-					uint16_t dst16 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+							r = ((r - bg_r) * a) / 255 + bg_r;
+							g = ((g - bg_g) * a) / 255 + bg_g;
+							b = ((b - bg_b) * a) / 255 + bg_b;
+
 #if BYTE_ORDER == LITTLE_ENDIAN
-					*dstp++ = bswap_16(dst16);
+							*dstp++ = bswap_16((b >> 3) << 11 | (g >> 2) << 5 | r >> 3);
 #else
-					*dstp++ = dst16;
+							*dstp++ = (b >> 3) << 11 | (g >> 2) << 5 | r >> 3;
 #endif
+						}
+					}
+				} else if (flag & blitAlphaTest) {
+					while (width--) {
+						if (!((*srcp) & 0xFF000000)) {
+							srcp++;
+							dstp++;
+						} else {
+							uint32_t icol = *srcp++;
+#if BYTE_ORDER == LITTLE_ENDIAN
+							*dstp++ = bswap_16(((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 |
+											   (icol & 0xFF0000) >> 19);
+#else
+							*dstp++ =
+								((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | (icol & 0xFF0000) >> 19;
+#endif
+						}
+					}
+				} else {
+					while (width--) {
+						uint32_t icol = *srcp++;
+#if BYTE_ORDER == LITTLE_ENDIAN
+						*dstp++ = bswap_16(((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 |
+										   (icol & 0xFF0000) >> 19);
+#else
+						*dstp++ = ((icol & 0xFF) >> 3) << 11 | ((icol & 0xFF00) >> 10) << 5 | (icol & 0xFF0000) >> 19;
+#endif
+					}
 				}
-
 				srcptr += src.surface->stride;
 				dstptr += surface->stride;
 			}
