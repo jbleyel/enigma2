@@ -23,11 +23,6 @@ public:
 	void invalidate();
 	eSize getItemSize() { return m_itemsize; }
 	int getMaxItemTextWidth();
-	void setSeparatorLineColor(const gRGB &col) { 
-		m_sepline_color = col;
-		m_sepline_color_set = 1;
-	}
-	void setSepLineThickness(int value) { m_sepline_thickness = value; }
 	uint8_t getOrientation() { return m_orientation; }
 	
 #ifndef SWIG
@@ -87,9 +82,6 @@ protected:
 	int m_itemwidth;
 	int m_max_text_width;
 	uint8_t m_orientation;
-	gRGB m_sepline_color;
-	int m_sepline_color_set;
-	int m_sepline_thickness;
 #endif
 };
 

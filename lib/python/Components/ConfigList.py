@@ -1,6 +1,6 @@
-from enigma import eListbox, eListboxPythonConfigContent, ePoint, eRCInput, eTimer
+from enigma import eListbox, eListboxPythonConfigContent, ePoint, eRCInput, eTimer, gRGB
 
-from skin import parameters
+from skin import parameters, parseColor
 from Components.ActionMap import HelpableActionMap, HelpableNumberActionMap
 from Components.config import ACTIONKEY_0, ACTIONKEY_ASCII, ACTIONKEY_BACKSPACE, ACTIONKEY_DELETE, ACTIONKEY_ERASE, ACTIONKEY_FIRST, ACTIONKEY_LAST, ACTIONKEY_LEFT, ACTIONKEY_NUMBERS, ACTIONKEY_RIGHT, ACTIONKEY_SELECT, ACTIONKEY_TIMEOUT, ACTIONKEY_TOGGLE, ConfigBoolean, ConfigElement, ConfigInteger, ConfigMACText, ConfigNumber, ConfigSelection, ConfigSequence, ConfigText, config, configfile
 from Components.GUIComponent import GUIComponent
@@ -32,8 +32,6 @@ class ConfigList(GUIComponent):
 		self.current = None
 		self.sepLineColor = 0xFFFFFF
 		self.sepLineThickness = 1
-		self.l.setSeparatorLineColor(gRGB(self.sepLineColor))
-		self.l.setSepLineThickness(self.sepLineThickness)
 
 	def execBegin(self):
 		rcinput = eRCInput.getInstance()
@@ -52,6 +50,7 @@ class ConfigList(GUIComponent):
 	def postWidgetCreate(self, instance):
 		instance.selectionChanged.get().append(self.selectionChanged)
 		instance.setContent(self.l)
+		instance.setSeparatorColor(gRGB(self.sepLineColor))
 
 	def preWidgetRemove(self, instance):
 		if isinstance(self.current, tuple) and len(self.current) >= 2:
