@@ -341,12 +341,14 @@ protected:
 	void recordEvent(int event);
 
 private:
-	// Timeshift stream recovery
-	ePtr<eTimer> m_eof_recovery_timer;
+	// -- START: Precise Recovery System --
+	ePtr<eTimer> m_precise_recovery_timer;
+	pts_t m_saved_timeshift_delay;
 	bool m_stream_corruption_detected;
 	bool m_timeshift_pids_removed;
 	void handleEofRecovery();
-	void onEofRecoveryTimeout();
+	void startPreciseRecoveryCheck();
+	// -- END: Precise Recovery System --
 };
 
 class eStaticServiceDVBBouquetInformation : public iStaticServiceInformation {
