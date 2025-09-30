@@ -180,7 +180,7 @@ class ConfigList(GUIComponent):
 					attribs.append(("separatorColor", value))
 				elif attrib == "sepLineThickness":
 					pass
-					# self.sepLineThickness = int(value)
+					# self.sepLineThickness = int(value) # This is currently not working
 				else:
 					attribs.append((attrib, value))
 			self.skinAttributes = attribs
