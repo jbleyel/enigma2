@@ -107,8 +107,8 @@ class ServiceInfoBar(GUIAddon):
 	def gotRecordEvent(self, service, event):
 		prevRecords = self.records_running
 		if event in (iRecordableService.evEnd, iRecordableService.evStart, None):
-			recs = self.nav.getRecordings()
-			self.records_running = len(recs)
+			recs = self.nav.getRealRecordingsCount()
+			self.records_running = recs
 			if self.records_running != prevRecords:
 				self.updateAddon()
 

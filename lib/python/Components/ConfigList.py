@@ -30,6 +30,10 @@ class ConfigList(GUIComponent):
 		self.timer = eTimer()
 		self.onSelectionChanged = []
 		self.current = None
+		self.sepLineColor = 0xFFFFFF
+		self.sepLineThickness = 1
+		self.l.setSeparatorLineColor(gRGB(self.sepLineColor))
+		self.l.setSepLineThickness(self.sepLineThickness)
 
 	def execBegin(self):
 		rcinput = eRCInput.getInstance()

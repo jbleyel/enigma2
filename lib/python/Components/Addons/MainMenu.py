@@ -2,10 +2,22 @@ from Components.Addons.GUIAddon import GUIAddon
 
 from enigma import eListbox, eListboxPythonMultiContent, gFont, RT_BLEND, RT_HALIGN_LEFT, RT_VALIGN_CENTER, getDesktop, eSize
 
-from skin import applySkinFactor, parseFont, parseColor
+from skin import applySkinFactor, parseFont, parseColor, parameters, menuicons
 
 from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixmapAlphaBlend
 from Components.Label import Label
+from Tools.LoadPixmap import LoadPixmap
+from Tools.Directories import resolveFilename, SCOPE_CURRENT_SKIN
+
+
+def MenuEntryPixmap(key):
+	if not menuicons:
+		return None
+	w, h = parameters.get("MenuIconSize", (50, 50))
+	pngPath = menuicons.get(key, menuicons.get("default", ""))
+	if pngPath:
+		png = LoadPixmap(resolveFilename(SCOPE_CURRENT_SKIN, pngPath), cached=True, width=w, height=0 if pngPath.endswith(".svg") else h)
+	return png
 
 
 class MainMenu(GUIAddon):
@@ -48,7 +60,7 @@ class MainMenu(GUIAddon):
 
 	def buildEntry(self, *args):
 		item_text = args[0]
-		menupng = args[5] if len(args) >= 6 else None
+		menupng = MenuEntryPixmap(args[5]) if len(args) >= 6 else None
 		xPos = 17
 		yPos = 5
 
@@ -126,6 +138,9 @@ class MainMenu(GUIAddon):
 			self.instance.resize(eSize(destWidth, curSize.height()))
 			self.relatedScreen.screenContentChanged()
 		self.l.setList(self.source.list)
+		if self.relatedScreen is not None:
+			self.relatedScreen["navigationActions"].setEnabled(False)
+			self.relatedScreen["menu"].enableAutoNavigation(True)
 
 	def applySkin(self, desktop, parent):
 		attribs = []
