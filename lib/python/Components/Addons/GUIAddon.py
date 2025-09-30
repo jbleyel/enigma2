@@ -9,16 +9,16 @@ class GUIAddon(GUIComponent):
 		self.sources = {}
 		self.relatedScreen = None
 
-	def parseScale(s):
+	def parseScale(self, value):
 		# Replaces "f" with skin factor in non-coordinte fields and evaluates the formula
 		try:
-			val = int(s)
+			val = int(value)
 		except ValueError:
 			f = getSkinFactor()  # noqa: F841
 			try:
-				val = int(eval(s))
+				val = int(eval(value))
 			except Exception as err:
-				print("[Skin] parseScale: %s '%s': formula '%s' cannot be evaluated!" % (type(err).__name__, err, s))
+				print("[Skin] parseScale: %s '%s': formula '%s' cannot be evaluated!" % (type(err).__name__, err, value))
 				val = 0
 		return val
 
