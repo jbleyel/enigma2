@@ -66,6 +66,7 @@ def getTrashcanSize(startPath="."):
 class Trashcan:
 	def __init__(self, session):
 		self.session = session
+		self.realRecordingCount = 0
 		session.nav.record_event.append(self.gotRecordEvent)
 		self.gotRecordEvent(None, None)
 
@@ -73,8 +74,9 @@ class Trashcan:
 		self.destroy()
 
 	def gotRecordEvent(self, service, event):
-		self.recordings = len(self.session.nav.getRecordings(False, pNavigation.isRealRecording))
-		if event == iRecordableService.evEnd:
+		oldRecordingsCount = self.realRecordingCount
+		self.realRecordingCount = self.session.nav.getRealRecordingsCount()
+		if event == iRecordableService.evEnd and oldRecordingsCount != self.realRecordingCount:
 			self.cleanIfIdle()
 
 	def destroy(self):
@@ -83,8 +85,8 @@ class Trashcan:
 		self.session = None
 
 	def cleanIfIdle(self):  # RecordTimer calls this when preparing a recording. That is a nice moment to clean up.
-		if self.recordings:
-			print("[Trashcan] %d recording(s) are in progress." % self.recordings)
+		if self.realRecordingCount:
+			print("[Trashcan] %d recording(s) are in progress." % self.realRecordingCount)
 			return
 		timeLimit = int(time()) - (config.usage.movielist_trashcan_days.value * 3600 * 24)
 		reserveBytes = 1024 * 1024 * 1024 * config.usage.movielist_trashcan_reserve.value

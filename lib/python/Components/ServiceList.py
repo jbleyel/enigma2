@@ -791,7 +791,7 @@ class ServiceListLegacy(ServiceListBase):
 		numberHeight = self.ItemHeight // 2 if twoLines and config.usage.servicelist_servicenumber_valign.value == "1" else self.ItemHeight
 		self.l.setElementPosition(self.l.celServiceNumber, eRect(self.listMarginLeft, 0, channelNumberWidth, numberHeight))
 
-		#progress view modes for two lines
+		# progress view modes for two lines
 		#  0 - single, centered
 		# 10 - single, upper line
 		#  1 - dual, bar upper line, value lower line
@@ -1139,7 +1139,7 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 	def resetReloadTimer(self):
 		self.reloadTimer.stop()
 		# TODO enable this if code is finshed
-		#self.reloadTimer.startLongTimer(60 - datetime.now().second)
+		# self.reloadTimer.startLongTimer(60 - datetime.now().second)
 
 	def postWidgetCreate(self, instance):
 		instance.setContent(self.l)

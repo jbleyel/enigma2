@@ -162,7 +162,7 @@ class StorageDevice():
 		task.weighting = 5
 		task.setTool('parted')
 		alignment = "min" if self.size < (1024 ** 3) else "opt"  # 1GB -> "min" else "opt"
-		#parttype = "gpt" if self.size > (2 * (1024 ** 3)) else "msdos"  # 2GB -> "gpt" else "msdos"
+		# parttype = "gpt" if self.size > (2 * (1024 ** 3)) else "msdos"  # 2GB -> "gpt" else "msdos"
 		task.args += ['-a', alignment, '-s', self.disk_path, 'mklabel', partitionType]
 		start = 0
 		for partition in partitions:
