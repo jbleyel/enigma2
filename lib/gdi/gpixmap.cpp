@@ -2707,6 +2707,8 @@ gColor gPalette::findOrAddColor(const gRGB rgb) {
 	if (!data)
 		return (rgb.r + rgb.g + rgb.b) / 3;
 
+	eDebug("[gPalette] findOrAddColor rgb.a %d", rgb.a);
+
 	if (rgb.a == 255) /* Fully transparent, then RGB does not matter */
 	{
 		for (int t = 0; t < colors; t++)
@@ -2716,6 +2718,7 @@ gColor gPalette::findOrAddColor(const gRGB rgb) {
 
 	for (int t = 0; t < colors; t++) {
 		if (data[t].r == rgb.r && data[t].g == rgb.g && data[t].b == rgb.b && data[t].a == rgb.a) {
+			eDebug("[gPalette] findOrAddColor found in palette 0x%08X", data->argb());
 			return t;
 		}
 	}
@@ -2728,6 +2731,7 @@ gColor gPalette::findOrAddColor(const gRGB rgb) {
 		}
 		data = newData;
 		data[colors] = rgb;
+		eDebug("[gPalette] findOrAddColor new index %d", colors + 1);
 		return colors++;
 	}
 
@@ -2750,6 +2754,7 @@ gColor gPalette::findOrAddColor(const gRGB rgb) {
 		}
 	}
 
+	eDebug("[gPalette] findOrAddColor best_choice %d", best_choice);
 	return best_choice;
 }
 
