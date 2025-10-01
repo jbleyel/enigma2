@@ -38,7 +38,7 @@ extern "C" {
 }
 #endif
 
-// #define DEBUG_PICLOAD
+#define DEBUG_PICLOAD
 
 #ifdef DEBUG_PICLOAD
 #include "../base/benchmark.h"
@@ -1651,6 +1651,14 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				sws_scale(sws_ctx, src_slices, src_stride, 0, m_filepara->oy, dst_slices, dst_stride);
 				sws_freeContext(sws_ctx);
 
+				uint8_t b = filepara->pic_buffer[0];
+				uint8_t g = filepara->pic_buffer[1];
+				uint8_t r = filepara->pic_buffer[2];
+				uint8_t a = filepara->pic_buffer[3];
+
+				eDebug("[ePicLoad] png_load 32 First pixel after swscale pixel RGBA = R:%02X G:%02X B:%02X A:%02X",
+					r, g, b, a);
+
 				delete m_filepara; // so caller can start a new decode in background
 				m_filepara = NULL;
 				if (m_exif) {
@@ -1738,6 +1746,17 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				}
 			}
 		}
+	}
+
+	if (m_filepara->bits == 32) {
+
+		uint8_t b = filepara->pic_buffer[0];
+		uint8_t g = filepara->pic_buffer[1];
+		uint8_t r = filepara->pic_buffer[2];
+		uint8_t a = filepara->pic_buffer[3];
+
+		eDebug("[ePicLoad] png_load 32 First pixel after scale pixel RGBA = R:%02X G:%02X B:%02X A:%02X",
+			r, g, b, a);
 	}
 
 	delete m_filepara; // so caller can start a new decode in background
