@@ -1337,7 +1337,7 @@ void eDVBServicePlay::handleEofRecovery()
 		m_decoder->pause();
 		m_is_paused = 1;
 	}
-	m_precise_recovery_timer->start(200, false); // Start monitoring every second
+	m_precise_recovery_timer->start(50, false); // Start monitoring every second
 }
 
 void eDVBServicePlay::startPreciseRecoveryCheck()
@@ -1379,13 +1379,13 @@ void eDVBServicePlay::startPreciseRecoveryCheck()
 		else
 		{
 			// If not yet recovered, check again after a short interval
-			m_precise_recovery_timer->start(200, false);
+			m_precise_recovery_timer->start(50, false);
 		}
 	}
 	else
 	{
 		// If we can't get reliable data, check again
-		m_precise_recovery_timer->start(200, false);
+		m_precise_recovery_timer->start(50, false);
 	}
 }
 // -- END: Precise Recovery System --
