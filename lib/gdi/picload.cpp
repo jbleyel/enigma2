@@ -1800,6 +1800,7 @@ RESULT ePicLoad::setPara(int width, int height, double aspectRatio, int as, bool
 	m_conf.aspect_ratio = as == 0 ? 0.0 : aspectRatio / as;
 	m_conf.usecache = useCache;
 	m_conf.auto_orientation = auto_orientation;
+	m_conf.forceRGB = false;
 
 	if (resizeType > 100)
 	{

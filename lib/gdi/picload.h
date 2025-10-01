@@ -23,11 +23,10 @@ struct Cfilepara {
 	std::string picinfo;
 	bool callback;
 	bool transparent;
-	bool forceRGB;
 
 	Cfilepara(const char* mfile, int mid, std::string size)
 		: file(strdup(mfile)), pic_buffer(NULL), palette(NULL), palette_size(0), bits(24), id(mid), max_x(0), max_y(0),
-		  ox(0), oy(0), picinfo(mfile), callback(true), transparent(true), forceRGB(false) {
+		  ox(0), oy(0), picinfo(mfile), callback(true), transparent(true) {
 		picinfo += "\n" + size + "\n";
 	}
 
@@ -68,6 +67,7 @@ class ePicLoad : public eMainloop, public eThread, public sigc::trackable, publi
 		bool auto_orientation;
 		int thumbnailsize;
 		int test;
+		bool forceRGB;
 		PConf();
 	} m_conf;
 
