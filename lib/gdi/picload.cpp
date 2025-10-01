@@ -538,12 +538,15 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 			filepara->pic_buffer = pic_buffer;
 			filepara->bits = 32;
 
-			uint32_t firstPix = *filepara->pic_buffer;
-			uint8_t a = (firstPix >> 24) & 0xFF;
-			uint8_t r = (firstPix >> 16) & 0xFF;
-			uint8_t g = (firstPix >> 8) & 0xFF;
-			uint8_t b = firstPix & 0xFF;
-			eDebug("[ePicLoad] png_load First source pixel raw=0x%08X", firstPix);
+			uint8_t r = filepara->pic_buffer[0];
+			uint8_t g = filepara->pic_buffer[1];
+			uint8_t b = filepara->pic_buffer[2];
+			uint8_t a = filepara->pic_buffer[3];
+
+			uint32_t firstPix = (r << 24) | (g << 16) | (b << 8) | a;
+			eDebug("[ePicLoad] png_load 32 First pixel RGBA = R:%02X G:%02X B:%02X A:%02X  (raw=0x%08X)",
+				r, g, b, a, firstPix);
+
 
 		} else if (bpp == 4) {
 			// Precompute blend table (static, initialized once)
