@@ -537,6 +537,14 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		if (bpp == 4 && filepara->transparent) {
 			filepara->pic_buffer = pic_buffer;
 			filepara->bits = 32;
+
+			uint32_t firstPix = *filepara->pic_buffer;
+			uint8_t a = (firstPix >> 24) & 0xFF;
+			uint8_t r = (firstPix >> 16) & 0xFF;
+			uint8_t g = (firstPix >> 8) & 0xFF;
+			uint8_t b = firstPix & 0xFF;
+			eDebug("[ePicLoad] png_load First source pixel raw=0x%08X", firstPix);
+
 		} else if (bpp == 4) {
 			// Precompute blend table (static, initialized once)
 			static bool blend_init = false;
