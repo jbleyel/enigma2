@@ -69,6 +69,7 @@ class ChoiceBoxNew(Screen):
 				self.buttonMap[button] = choiceList[index]
 				actions[button] = (actionMethods.get(button, self.keyNumberGlobal), _("Select the %s entry") % button.upper())
 		self["text"] = Label(text)
+		self["description"] = Label()
 		self["list"] = ChoiceList(list=self.choiceList, selection=selection)
 		self["actions"] = HelpableNumberActionMap(self, ["OkActions", "ColorActions", "TextActions", "NumberActions"], actions, prio=-1, description=_("Choice List Selection Actions"))  # Priority needs to be higher for instantiated versions of this screen.
 		self["cancelAction"] = HelpableActionMap(self, ["OkCancelActions"], {
@@ -94,6 +95,8 @@ class ChoiceBoxNew(Screen):
 		self["summary_selection"] = StaticText()  # Temporary hack to support old display skins.
 		self.onLayoutFinish.append(self.layoutFinished)
 		self.list = self.choiceList  # Support for old skins and plugins
+		if self.updateEntry not in self["list"].onSelectionChanged:
+			self["list"].onSelectionChanged.append(self.updateEntry)
 
 	def layoutFinished(self):
 		self["list"].enableAutoNavigation(False)  # Override list box navigation.
@@ -200,6 +203,19 @@ class ChoiceBoxNew(Screen):
 
 	def createSummary(self):
 		return ChoiceBoxSummary
+
+	def updateEntry(self):
+		currentIndex = self["list"].getCurrentIndex()
+		if self.list:
+			print(self.list[currentIndex])
+		if self.list and len(self.list[currentIndex][0]) > 2 and isinstance(self.list[currentIndex][0][2], str):
+			self["description"].setText(self.list[currentIndex][0][2])
+		else:
+			self["description"].setText("")
+
+	def __del__(self):
+		if self.updateEntry in self["list"].onSelectionChanged:
+			self["list"].onSelectionChanged.remove(self.updateEntry)
 
 
 class ChoiceBoxSummary(ScreenSummary):
