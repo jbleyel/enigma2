@@ -941,19 +941,28 @@ class NIM:
 		return None
 
 	def isEnabled(self):
-		conf = config.Nims[self.slot].dvbc if self.getType() == "DVB-C" else config.Nims[self.slot].dvbs
-		return conf.value != "nothing" or self.isFBCLinkEnabled()
+		if self.canBeCompatible("DVB-S") and config.Nims[self.slot].dvbs.configMode.value != "nothing" or self.isFBCLinkEnabled():
+			return True
+		if self.canBeCompatible("DVB-T") and config.Nims[self.slot].dvbt.configMode.value != "nothing":
+			return True
+		if self.canBeCompatible("DVB-C") and config.Nims[self.slot].dvbc.configMode.value != "nothing":
+			return True
+		if self.canBeCompatible("ATSC") and config.Nims[self.slot].atsc.configMode.value != "nothing":
+			return True
+		return False
 
 	friendly_full_description = property(getFriendlyFullDescription)
 	friendly_full_description_compressed = property(getFriendlyFullDescriptionCompressed)
-	config_mode_dvbs = property(lambda self: config.Nims[self.slot].dvbs.configMode.value)
-	config_mode_dvbt = property(lambda self: config.Nims[self.slot].dvbt.configMode.value)
-	config_mode_dvbc = property(lambda self: config.Nims[self.slot].dvbc.configMode.value)
-	config_mode_atsc = property(lambda self: config.Nims[self.slot].atsc.configMode.value)
 
 	config = property(lambda self: config.Nims[self.slot])
 	empty = property(lambda self: self.getType() is None)
 	enabled = property(isEnabled)
+
+	# currently not used
+	config_mode_dvbs = property(lambda self: (self.canBeCompatible("DVB-S") and config.Nims[self.slot].dvbs.configMode.value) or "nothing")
+	config_mode_dvbt = property(lambda self: (self.canBeCompatible("DVB-T") and config.Nims[self.slot].dvbt.configMode.value) or "nothing")
+	config_mode_dvbc = property(lambda self: (self.canBeCompatible("DVB-C") and config.Nims[self.slot].dvbc.configMode.value) or "nothing")
+	config_mode_atsc = property(lambda self: (self.canBeCompatible("ATSC") and config.Nims[self.slot].atsc.configMode.value) or "nothing")
 
 
 class NimManager:
