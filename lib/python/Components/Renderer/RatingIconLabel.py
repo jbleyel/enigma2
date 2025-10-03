@@ -1,3 +1,4 @@
+from re import search
 from enigma import eLabel, gRGB
 
 from skin import parseColor
@@ -57,7 +58,7 @@ class RatingIconLabel(Renderer):
 							self.hideLabel()
 							return
 					else:
-						age = int(self.source.text.replace("+", ""))
+						age = int(search(r"\d+", self.source.text.replace("+", "")).group())
 						if age <= 15:
 							age += 3
 						ageText = str(age)
