@@ -1094,9 +1094,10 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_nownext_timer(eTimer::create(eApp)),
 	// -- START: Precise Recovery System --
 	m_precise_recovery_timer(eTimer::create(eApp)),
-	m_saved_timeshift_delay(0),
 	m_stream_corruption_detected(false),
-	m_timeshift_pids_removed(false)
+	m_timeshift_pids_removed(false), // Obsolete, but kept for compatibility
+	m_original_timeshift_delay(0),
+	m_delay_calculated(false)
 	// -- END: Precise Recovery System --
 {
 #ifdef PASSTHROUGH_FIX
@@ -1312,80 +1313,85 @@ void eDVBServicePlay::serviceEvent(int event)
 }
 
 // -- START: Precise Recovery System --
+// Helper function to reset all recovery state variables.
+void eDVBServicePlay::resetRecoveryState()
+{
+	m_original_timeshift_delay = 0;
+	m_delay_calculated = false;
+	m_stream_corruption_detected = false;
+	if (m_precise_recovery_timer->isActive())
+		m_precise_recovery_timer->stop();
+}
+
+// Called on stream corruption. The new logic pauses playback but continues recording.
 void eDVBServicePlay::handleEofRecovery()
 {
-	eDebug("[PreciseRecovery] Corruption detected. Pausing and starting buffer monitor.");
-	if (m_decoder)
+	eDebug("[PreciseRecovery] Corruption detected. Pausing playback, recording continues.");
+
+	// 1. Calculate and store the original timeshift delay ONCE per session.
+	if (!m_delay_calculated && m_record)
 	{
 		pts_t live_pts = 0, playback_pts = 0;
-		// Measure the delay at the EXACT moment of pausing
-		if (m_record && m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0)
+		if (m_record->getCurrentPCR(live_pts) == 0 && 
+			getPlayPosition(playback_pts) == 0 && 
+			live_pts > playback_pts) // Ensure delay is not negative.
 		{
-			eDebug("[PreciseRecovery-DEBUG] Values at corruption: live_pts=%lld, playback_pts=%lld", live_pts, playback_pts);
-			if (live_pts > playback_pts)
-			{
-				m_saved_timeshift_delay = live_pts - playback_pts;
-				eDebug("[PreciseRecovery-DEBUG] Target delay precisely captured: %lld PTS units", m_saved_timeshift_delay);
-			}
-			else
-			{
-				// Fallback in case of timing issues, though unlikely.
-				m_saved_timeshift_delay = 1 * 90000; // Default to 1 second
-			}
+			m_original_timeshift_delay = live_pts - playback_pts;
+			m_delay_calculated = true;
+			eDebug("[PreciseRecovery] Original delay target set: %lld PTS", m_original_timeshift_delay);
 		}
-		
+	}
+
+	// 2. Pause PLAYBACK only.
+	if (m_decoder && !m_is_paused)
+	{
 		m_decoder->pause();
 		m_is_paused = 1;
 	}
-	m_precise_recovery_timer->start(50, false); // Start monitoring every second
+	
+	// 3. Start the monitoring timer.
+	m_precise_recovery_timer->start(100, false); 
 }
 
+// The periodic check function to monitor buffer recovery.
 void eDVBServicePlay::startPreciseRecoveryCheck()
 {
-	if (!m_stream_corruption_detected)
+	if (!m_stream_corruption_detected || !m_record || !m_delay_calculated)
 	{
 		m_precise_recovery_timer->stop();
 		return;
 	}
 
 	pts_t live_pts = 0, playback_pts = 0;
-	// Ensure we have a target delay and can get reliable PTS values
-	if (m_saved_timeshift_delay > 0 && m_record && m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0)
+	if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0)
 	{
 		pts_t current_delay = live_pts - playback_pts;
-		eDebug("[PreciseRecovery-DEBUG] Checking... current_delay=%lld, target_delay=%lld (live_pts=%lld, playback_pts=%lld)", current_delay, m_saved_timeshift_delay, live_pts, playback_pts);
 		
-		// The key condition: resume only when the current delay is restored to the target
-		if (current_delay >= m_saved_timeshift_delay)
+		// 4. Check if we have reached the original, fixed target delay.
+		if (current_delay >= m_original_timeshift_delay)
 		{
-			eDebug("[PreciseRecovery-DEBUG] Target delay reached! Resuming playback. (Final delay was %lld)", current_delay);
+			eDebug("[PreciseRecovery] Target delay reached. Resuming playback.");
 			m_precise_recovery_timer->stop();
+			m_stream_corruption_detected = false;
 			
-			if (m_record && m_timeshift_pids_removed)
-			{
-				for (int pid : m_pids_active)
-					m_record->addPID(pid);
-				m_timeshift_pids_removed = false;
-			}
-			
+			// 5. Resume playback.
 			if (m_is_paused)
 			{
 				unpause();
 			}
-
-			m_stream_corruption_detected = false;
+				
 			m_event((iPlayableService*)this, evSeekableStatusChanged);
 		}
 		else
 		{
-			// If not yet recovered, check again after a short interval
-			m_precise_recovery_timer->start(50, false);
+			// Not there yet, keep checking.
+			m_precise_recovery_timer->start(100, false);
 		}
 	}
 	else
 	{
-		// If we can't get reliable data, check again
-		m_precise_recovery_timer->start(50, false);
+		// If we can't get reliable readings, try again.
+		m_precise_recovery_timer->start(100, false);
 	}
 }
 // -- END: Precise Recovery System --
@@ -1449,9 +1455,10 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 			m_event((iPlayableService*)this, evSOF);
 		break;
 	case eDVBServicePMTHandler::eventEOF:
-		if (m_timeshift_pids_removed)
+		// Ignore EOF event if we are in the middle of a recovery process.
+		if (m_stream_corruption_detected)
 		{
-			eDebug("[eDVBServicePlay] Ignoring EOF while PIDs are removed (stream corruption recovery)");
+			eDebug("[eDVBServicePlay] Ignoring EOF during stream corruption recovery.");
 			break;
 		}
 		if ((!m_is_paused) && (m_skipmode >= 0))
@@ -2852,22 +2859,12 @@ void eDVBServicePlay::recordEvent(int event)
 		eWarning("[eDVBServicePlay] recordEvent write error");
 		return;
 	case iDVBTSRecorder::eventStreamCorrupt:
+		// Do not re-trigger if a recovery is already in progress.
 		if (m_stream_corruption_detected) return;
 
 		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt, initiating recovery.");
-
-		if (m_record && !m_timeshift_pids_removed)
-		{
-			eDebug("[eDVBServicePlay] Removing PIDs to pause indexing during corruption.");
-			for (int pid : m_pids_active)
-			{
-				m_record->removePID(pid);
-			}
-			m_timeshift_pids_removed = true;
-		}
-
 		m_stream_corruption_detected = true;
-		handleEofRecovery();
+		handleEofRecovery(); // The entire redesigned recovery logic is now centralized here.
 		return;
 	default:
 		eDebug("[eDVBServicePlay] recordEvent unhandled record event %d", event);
@@ -2879,7 +2876,9 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 	if (!m_timeshift_enabled)
 		return -1;
 
-	m_saved_timeshift_delay = 0;
+	// Reset the recovery system state for the next timeshift session.
+	resetRecoveryState();
+	
 	m_timeshift_pids_removed = false;
 
 	if (swToLive)
@@ -2888,10 +2887,12 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 	}
 
 	m_timeshift_enabled = 0;
-	m_stream_corruption_detected = false;
 
-	m_record->stop();
-	m_record = 0;
+	if (m_record)
+	{
+		m_record->stop();
+		m_record = 0;
+	}
 
 	if (m_timeshift_fd >= 0)
 	{
@@ -3160,11 +3161,10 @@ void eDVBServicePlay::switchToLive()
 
 	eDebug("[eDVBServicePlay] SwitchToLive");
 
-	m_saved_timeshift_delay = 0;
-
+	// Reset the recovery system state.
+	resetRecoveryState();
+	
 	resetTimeshift(0);
-
-	m_stream_corruption_detected = false;
 
 	m_is_paused = m_skipmode = m_fastforward = m_slowmotion = 0; /* not supported in live mode */
 

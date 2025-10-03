@@ -339,7 +339,7 @@ class Screen(dict):
 			addToStack(widget)
 		if self.screenImage:
 			screenImage = LoadPixmap(self.screenImage)
-			self["Image"].instance.setPixmap(screenImage)
+			self["Image"].setPixmap(screenImage)
 		for method in self.onLayoutFinish:
 			if not isinstance(method, type(self.close)):
 				exec(method, globals(), locals())
