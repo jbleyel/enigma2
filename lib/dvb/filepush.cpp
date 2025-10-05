@@ -146,7 +146,7 @@ void eFilePushThread::thread()
 							eDebug("[eFilePushThread] wait for driver eof timeout - %ds", poll_timeout_count / 4);
 						continue;
 					case 1:
-						eDebug("[eFilePushThread] wait for driver eof ok");
+						eDebug("[eFilePushThread] wait for driver eof ok / m_mode %d" , m_mode);
 						break;
 					default:
 						eDebug("[eFilePushThread] wait for driver eof aborted by signal");

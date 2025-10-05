@@ -1373,6 +1373,7 @@ void eDVBServicePlay::startPreciseRecoveryCheck()
 			eDebug("[PreciseRecovery] Target delay reached. Resuming playback.");
 			m_precise_recovery_timer->stop();
 			m_stream_corruption_detected = false;
+			usleep(300000);
 			
 			// 5. Resume playback.
 			if (m_is_paused)
