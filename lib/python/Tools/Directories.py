@@ -98,8 +98,11 @@ class ResolveLists:
 	lcdSkin = []
 	fonts = []
 
-	def __init__(self):
-		pass
+
+def clearResolveLists():
+	ResolveLists.skin.clear()
+	ResolveLists.lcdSkin.clear()
+	ResolveLists.fonts.clear()
 
 
 def resolveFilename(scope, base="", path_prefix=None):

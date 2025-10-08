@@ -34,11 +34,11 @@ class NTPSyncPoller:
 
 	def updateSchedule(self, data=None, retVal=None, extraArgs=None):
 		if retVal and data:
-			print("[NetworkTime] Error %d: Unable to synchronize the time!\n%s" % (retVal, data.strip()))
+			print(f"[NetworkTime] Error {retVal}: Unable to synchronize the time!\n{data.strip()}")
 		nowTime = time()
 		if nowTime > 10000:
 			timeSource = config.misc.SyncTimeUsing.value
-			print("[NetworkTime] Setting time to '%s' (%s) from '%s'." % (ctime(nowTime), str(nowTime), config.misc.SyncTimeUsing.toDisplayString(timeSource)))
+			print(f"[NetworkTime] Setting time to '{ctime(nowTime)}' ({str(nowTime)}) from '{config.misc.SyncTimeUsing.toDisplayString(timeSource)}'.")
 			setRTCtime(nowTime)
 			eDVBLocalTimeHandler.getInstance().setUseDVBTime(timeSource == "0")
 			eEPGCache.getInstance().timeUpdated()
