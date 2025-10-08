@@ -206,8 +206,6 @@ class ChoiceBoxNew(Screen):
 
 	def updateEntry(self):
 		currentIndex = self["list"].getCurrentIndex()
-		if self.list:
-			print(self.list[currentIndex])
 		if self.list and len(self.list[currentIndex][0]) > 2 and isinstance(self.list[currentIndex][0][2], str):
 			self["description"].setText(self.list[currentIndex][0][2])
 		else:
