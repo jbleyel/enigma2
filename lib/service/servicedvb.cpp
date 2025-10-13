@@ -1366,14 +1366,17 @@ void eDVBServicePlay::startPreciseRecoveryCheck()
 	if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0)
 	{
 		pts_t current_delay = live_pts - playback_pts;
-		
+
+		int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recovery_buffer_delay", 300);
+		const pts_t safety_buffer_pts = recovery_delay_ms * 90;
+		const pts_t target_delay_with_buffer = m_original_timeshift_delay + safety_buffer_pts;
+
 		// 4. Check if we have reached the original, fixed target delay.
-		if (current_delay >= m_original_timeshift_delay)
+		if (current_delay >= target_delay_with_buffer)
 		{
 			eDebug("[PreciseRecovery] Target delay reached. Resuming playback.");
 			m_precise_recovery_timer->stop();
 			m_stream_corruption_detected = false;
-			usleep(300000);
 			
 			// 5. Resume playback.
 			if (m_is_paused)
