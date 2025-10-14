@@ -1269,14 +1269,40 @@ void eDVBServicePlay::serviceEvent(int event)
 		break;
 	}
 	case eDVBServicePMTHandler::eventNoResources:
-	case eDVBServicePMTHandler::eventNoPAT:
 	case eDVBServicePMTHandler::eventNoPATEntry:
-	case eDVBServicePMTHandler::eventNoPMT:
-	case eDVBServicePMTHandler::eventTuneFailed:
 	case eDVBServicePMTHandler::eventMisconfiguration:
 	{
 		eDebug("[eDVBServicePlay] DVB service failed to tune - error %d", event);
 		m_event((iPlayableService*)this, evTuneFailed);
+		break;
+	}
+	case eDVBServicePMTHandler::eventTuneFailed:
+	case eDVBServicePMTHandler::eventNoPAT:
+	case eDVBServicePMTHandler::eventNoPMT:
+	{
+		// Check if timeshift is active and we are not already in a recovery state
+		if (m_timeshift_enabled && !m_stream_corruption_detected)
+		{
+			eDebug("[PreciseRecovery] Tune Failed/Signal Loss during timeshift. Initiating recovery.");
+			
+			// 1. Mark that we are entering recovery mode
+			m_stream_corruption_detected = true;
+			
+			// 2. Call the EXACT SAME recovery handler as stream corruption
+			handleEofRecovery(); // This will pause playback and start the recovery timer.
+
+			// 3. In addition, attempt to retune the service in the background.
+			// The original service reference is in m_reference.
+			// We can reuse the existing service handler to retune.
+			m_service_handler.tuneExt((eServiceReferenceDVB&)m_reference, nullptr, m_reference.path.c_str(), nullptr, false, m_dvb_service, eDVBServicePMTHandler::livetv, true);
+
+			// We don't signal tune failed to the UI yet, we are trying to recover.
+		}
+		else
+		{
+			eDebug("[eDVBServicePlay] DVB service failed to tune - error %d", event);
+			m_event((iPlayableService*)this, evTuneFailed);
+		}
 		break;
 	}
 	case eDVBServicePMTHandler::eventNewProgramInfo:
