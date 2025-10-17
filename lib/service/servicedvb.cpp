@@ -1868,6 +1868,7 @@ RESULT eDVBServicePlay::pause()
 		return -1;
 }
 
+// +++ START MODIFICATION: Reset recovery state on manual unpause +++
 RESULT eDVBServicePlay::unpause()
 {
 	eDebug("[eDVBServicePlay] unpause");
@@ -1876,10 +1877,21 @@ RESULT eDVBServicePlay::unpause()
 	{
 		m_slowmotion = 0;
 		m_is_paused = 0;
+        
+        // If a stream corruption event occurred while the user was paused,
+        // its state will be stale. Reset the recovery state machine
+        // so that new corruption events can be handled correctly.
+        if (m_stream_corruption_detected)
+        {
+            eDebug("[PreciseRecovery] User resumed playback. Resetting recovery state.");
+            resetRecoveryState();
+        }
+
 		return m_decoder->play();
 	} else
 		return -1;
 }
+// +++ END MODIFICATION +++
 
 RESULT eDVBServicePlay::seekTo(pts_t to)
 {
