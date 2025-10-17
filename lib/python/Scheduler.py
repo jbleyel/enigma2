@@ -251,13 +251,18 @@ class Scheduler(Timer):
 	# abort the timer. Don't run trough all the stages.
 	#
 	def doActivate(self, timer):
+		print(f"[Scheduler] DEBUG doActivate state={timer.state}")
 		if timer.shouldSkip():
 			timer.state = SchedulerEntry.StateEnded
+			print("[Scheduler] DEBUG doActivate shouldSkip")
 		else:
 			# When active returns True this means "accepted", otherwise the current
 			# state is kept. The timer entry itself will fix up the delay.
 			if timer.activate():
 				timer.state += 1
+
+			print(f"[Scheduler] DEBUG after activate state={timer.state}")
+
 		try:
 			self.timer_list.remove(timer)
 		except ValueError:
@@ -393,9 +398,9 @@ class Scheduler(Timer):
 		timer.abort()  # Abort timer. This sets the end time to current time, so timer will be stopped.
 		if timer.state != timer.StateEnded:
 			self.timeChanged(timer)
-		# print("[Scheduler] State: %s." % timer.state)
-		# print("[Scheduler] In processed: %s." % timer in self.processed_timers)
-		# print("[Scheduler] In running: %s." % timer in self.timer_list)
+		print("[Scheduler] State: %s." % timer.state)
+		print("[Scheduler] In processed: %s." % timer in self.processed_timers)
+		print("[Scheduler] In running: %s." % timer in self.timer_list)
 		if timer.state != TimerEntry.StateEnded:  # Disable timer first.
 			timer.disable()
 		if not timer.dontSave:  # Auto increase instant timer if possible.
@@ -404,6 +409,11 @@ class Scheduler(Timer):
 					self.timeChanged(timerItem)
 		if timer in self.processed_timers:  # Now the timer should be in the processed_timers list, remove it from there.
 			self.processed_timers.remove(timer)
+
+		if timer.timerType == TIMERTYPE.OTHER and timer.function:
+			timer.state = timer.StateEnded - 1
+			timer.activate()  # force cancel
+
 		self.saveTimers()
 
 	def getNextZapTime(self):
@@ -501,6 +511,7 @@ class SchedulerEntry(TimerEntry):
 			return f"SchedulerEntry(type={timertype}, begin={ctime(self.begin)} Disabled)"
 
 	def activate(self):
+		print(f"[Scheduler] DEBUG activate state={self.state}")
 		global DSsave, InfoBar, RBsave, RSsave, aeDSsave, wasTimerWakeup
 		if not InfoBar:
 			try:
@@ -532,6 +543,7 @@ class SchedulerEntry(TimerEntry):
 			if self.timerType == TIMERTYPE.AUTODEEPSTANDBY:
 				self.getNetworkTraffic(getInitialValue=True)
 		if nextState in (self.StateRunning, self.StateEnded):
+			print("[Scheduler] DEBUG activate nextState self.StateRunning, self.StateEnded")
 			if NavigationInstance.instance.Scheduler is None:
 				# DEBUG: Running/Ended timer at system start has no navigation instance.
 				# First fix: Crash in getPriorityCheck (NavigationInstance.instance.Scheduler...).
@@ -557,11 +569,14 @@ class SchedulerEntry(TimerEntry):
 			elif exists(TIMER_FLAG_FILE) and not wasTimerWakeup:
 				wasTimerWakeup = int(open(TIMER_FLAG_FILE).read()) and True or False
 		if nextState == self.StatePrepared:
+			print("[Scheduler] DEBUG activate nextState self.StatePrepared")
 			self.log(6, f"Prepare okay, waiting for begin {ctime(self.begin)}.")
 			self.backoff = 0
 			return True
 		elif nextState == self.StateRunning:
+			print("[Scheduler] DEBUG activate nextState self.StateRunning")
 			if self.cancelled or self.failed or self.timerType == TIMERTYPE.NONE:  # If this timer has been canceled, failed or undefined just go to "end" state.
+				print(f"[Scheduler] DEBUG activate nextState self.StateRunning / self.cancelled={self.cancelled} / self.failed={self.failed}")
 				return True
 			elif self.timerType == TIMERTYPE.WAKEUP:
 				if DEBUG:
@@ -994,6 +1009,7 @@ class SchedulerEntry(TimerEntry):
 		}[nextState]
 
 	def timeChanged(self):
+		print("[Scheduler] timeChanged")
 		oldPrepare = int(self.start_prepare)
 		self.start_prepare = self.begin - self.prepare_time
 		self.backoff = 0
@@ -1001,6 +1017,7 @@ class SchedulerEntry(TimerEntry):
 			self.log(15, f"Time changed, start preparing is now {ctime(self.start_prepare)}.")
 
 	def do_backoff(self):
+		print("[Scheduler] do_backoff")
 		if Screens.Standby.inStandby and not wasTimerWakeup or RSsave or RBsave or aeDSsave or DSsave:
 			self.backoff = 300
 		else:

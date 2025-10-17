@@ -271,7 +271,7 @@ class ActionMap:
 				print(f"[ActionMap] Map screen '{self.parentScreen}' context '{context}' -> Action '{action}'.")
 			response = self.actions[action]()
 			return response if response is not None else 1
-		print(f"[ActionMap] Map screen '{self.parentScreen}' context '{context}' -> Unknown action '{action}'!  (Typo in map?)")
+		# print(f"[ActionMap] Map screen '{self.parentScreen}' context '{context}' -> Unknown action '{action}'!  (Typo in map?)")
 		return 0
 
 	def legacyAction(self, context, action):
@@ -281,7 +281,7 @@ class ActionMap:
 				print(self.legacyActions[action])
 			response = self.legacyActions[action]()
 			return response if response is not None else 1
-		print(f"[ActionMap] Map screen '{self.parentScreen}' context '{context}' -> Unknown legacy action '{action}'!  (Typo in map?)")
+		# print(f"[ActionMap] Map screen '{self.parentScreen}' context '{context}' -> Unknown legacy action '{action}'!  (Typo in map?)")
 		return 0
 
 	def destroy(self):
