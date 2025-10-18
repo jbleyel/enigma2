@@ -23,9 +23,7 @@ extern "C" {
 #include <gif_lib.h>
 }
 
-#ifdef HAVE_WEBP
 #include <webp/decode.h>
-#endif
 
 #include <nanosvg.h>
 #include <nanosvgrast.h>
@@ -522,10 +520,8 @@ int detectImageType(const char* filename) {
 			if (id[0] == 'G' && id[1] == 'I' && id[2] == 'F')
 				return F_GIF;
 
-#ifdef HAVE_WEBP
 			if (n > 11 && id[0] == 'R' && id[1] == 'I' && id[2] == 'F' && id[3] == 'F' && id[8] == 'W' && id[9] == 'E' && id[10] == 'B' && id[11] == 'P')
 				return F_WEBP;
-#endif
 
 			if (id[0] == '<' && (id[1] == 's' || id[1] == 'S') && (id[2] == 'v' || id[2] == 'V') && (id[3] == 'g' || id[3] == 'G'))
 				return F_SVG;
@@ -578,8 +574,6 @@ bool isAnimatedGIF(const char* filename) {
 	return false;
 }
 
-#ifdef HAVE_WEBP
-
 int loadWEBP(ePtr<gPixmap>& result, const char* filename, int cached) {
 	if (cached && (result = PixmapCache::Get(filename)))
 		return 0;
@@ -631,8 +625,6 @@ int loadWEBP(ePtr<gPixmap>& result, const char* filename, int cached) {
 	return 0;
 }
 
-#endif
-
 int loadImage(ePtr<gPixmap>& result, const char* filename, int accel, int width, int height, int cached, float scale, int keepAspect, int align, bool autoDetect) {
 	int detect = 0;
 	if (autoDetect)
@@ -646,10 +638,8 @@ int loadImage(ePtr<gPixmap>& result, const char* filename, int accel, int width,
 		return loadJPG(result, filename, cached == -1 ? 0 : cached);
 	else if (detect == F_GIF || endsWith(filename, ".gif"))
 		return loadGIF(result, filename, accel, cached == -1 ? 0 : cached);
-#ifdef HAVE_WEBP
 	else if (detect == F_WEBP || endsWith(filename, ".webp"))
 		return loadWEBP(result, filename, cached == -1 ? 0 : cached);
-#endif
 	return 0;
 }
 
