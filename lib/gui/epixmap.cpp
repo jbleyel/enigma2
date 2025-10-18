@@ -172,18 +172,22 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 	const ColorMapObject* globalColorMap = gif->SColorMap;
 
 	GifRecordType recordType;
-	int delay = 100; // Default delay (ms)
+	int delay = 100; // default delay (ms)
 
 	// GCE state (applies only to next image)
 	int disposal = 0;
 	int transparentIndex = -1;
 	bool has_transparency = false;
 
-	// Canvas holds 32-bit pixels (same numeric layout as original code)
-	std::vector<uint32_t> canvas(width * height, 0x00000000u); // fully transparent
+	// Canvas holds 32-bit pixels
+	std::vector<uint32_t> canvas(width * height, 0x00000000u); // temporary transparent
 	std::vector<uint32_t> prevCanvas = canvas; // for disposal=3
 
-	// helper to read extensions completely (DGifGetExtension gives first block)
+
+	// Convert background color to 32-bit format (B | G<<8 | R<<16 | A<<24)
+	uint32_t bgColor = m_have_background_color ? (uint32_t(m_background_color.b)) | (uint32_t(m_background_color.g) << 8) | (uint32_t(m_background_color.r) << 16) | (uint32_t(255 - m_background_color.a) << 24) : 0x00000000u;
+
+	// Read GIF records
 	do {
 		if (DGifGetRecordType(gif, &recordType) == GIF_ERROR)
 			break;
@@ -196,7 +200,6 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 					break;
 
 				if (extCode == GRAPHICS_EXT_FUNC_CODE && extension != nullptr) {
-					// extension points to first sub-block: extension[0] = block size (should be 4)
 					int blockSize = extension[0];
 					if (blockSize >= 4) {
 						unsigned char packed = extension[1];
@@ -210,7 +213,7 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 					}
 				}
 
-				// consume any remaining extension sub-blocks
+				// consume remaining extension sub-blocks
 				while (extension != nullptr) {
 					if (DGifGetExtensionNext(gif, &extension) == GIF_ERROR)
 						break;
@@ -227,12 +230,13 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 				int fw = gif->Image.Width;
 				int fh = gif->Image.Height;
 
-				// Backup for disposal == 3
+				// Backup canvas for disposal=3
 				if (disposal == 3)
 					prevCanvas = canvas;
 
-				// Apply disposal == 2 (restore to background -> transparent) for the image rect
+				// Apply disposal method
 				if (disposal == 2) {
+					// Fill the image rect with background color
 					for (int y = 0; y < fh; ++y) {
 						int cy = top + y;
 						if (cy < 0 || cy >= height)
@@ -241,28 +245,25 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 							int cx = left + x;
 							if (cx < 0 || cx >= width)
 								continue;
-							canvas[cy * width + cx] = 0x00000000u; // transparent
+							canvas[cy * width + cx] = bgColor;
 						}
 					}
 				} else if (disposal == 3) {
-					// restore previous canvas (we already saved it above)
+					// Restore previous canvas
 					canvas = prevCanvas;
 				}
-				// disposal 0/1: do nothing (render on top of current canvas)
+				// disposal 0/1: do nothing
 
 				// choose palette: local or global
 				const ColorMapObject* frameColorMap = gif->Image.ColorMap ? gif->Image.ColorMap : globalColorMap;
 
-				// read frame index data, handling interlace properly
+				// read frame indices, handle interlace
 				std::vector<unsigned char> indexBuffer(fw * fh);
 				if (gif->Image.Interlace) {
-					// Deinterlace according to GIF spec: passes (start, step)
 					const int start[] = {0, 4, 2, 1};
 					const int step[] = {8, 8, 4, 2};
-					int row = 0;
 					for (int p = 0; p < 4; ++p) {
 						for (int y = start[p]; y < fh; y += step[p]) {
-							// DGifGetLine reads one output scanline; place it into proper row y
 							if (DGifGetLine(gif, indexBuffer.data() + y * fw, fw) == GIF_ERROR)
 								goto after_image_read;
 						}
@@ -275,7 +276,7 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 				}
 			after_image_read:
 
-				// Composite indices into canvas (respect transparency: skip transparent index to keep previous pixel)
+				// Composite indices into canvas (skip transparent pixels)
 				for (int y = 0; y < fh; ++y) {
 					int cy = top + y;
 					if (cy < 0 || cy >= height)
@@ -287,22 +288,19 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 						unsigned char idx = indexBuffer[y * fw + x];
 
 						if (has_transparency && (int)idx == transparentIndex) {
-							// transparent: leave canvas pixel as-is (do not overwrite)
+							// transparent: leave canvas pixel as-is (bgColor or previous frame)
 							continue;
 						}
 						if (frameColorMap && idx < frameColorMap->ColorCount) {
 							GifColorType c = frameColorMap->Colors[idx];
-							// keep same numeric layout as original code (Blue | Green<<8 | Red<<16 | Alpha<<24)
-							uint32_t outPixel = (uint32_t(c.Blue)) | (uint32_t(c.Green) << 8) | (uint32_t(c.Red) << 16) | (0xFFu << 24);
-							canvas[cy * width + cx] = outPixel;
+							canvas[cy * width + cx] = (uint32_t(c.Blue)) | (uint32_t(c.Green) << 8) | (uint32_t(c.Red) << 16) | (0xFFu << 24);
 						} else {
-							// no palette -> set transparent to be safe
-							canvas[cy * width + cx] = 0x00000000u;
+							canvas[cy * width + cx] = bgColor;
 						}
 					}
 				}
 
-				// create gPixmap (32-bit) and copy canvas into pixmap buffer
+				// create 32-bit gPixmap and copy canvas
 				ePtr<gPixmap> pix = new gPixmap(width, height, 32, nullptr, gPixmap::accelAlways);
 				uint32_t* pixdata = static_cast<uint32_t*>(pix->surface->data);
 				int stride_pixels = pix->surface->stride / 4;
@@ -315,7 +313,7 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 				frames.push_back(pix);
 				delays.push_back(delay);
 
-				// GCE values apply only to this image -> reset them (except global defaults)
+				// Reset GCE for next frame
 				disposal = 0;
 				has_transparency = false;
 				transparentIndex = -1;
@@ -331,7 +329,7 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 
 	DGifCloseFile(gif, &error);
 
-	// assign results to members
+	// assign results
 	m_frames = frames;
 	m_delays = delays;
 	m_currentFrame = 0;
