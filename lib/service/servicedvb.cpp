@@ -1361,7 +1361,7 @@ void eDVBServicePlay::handleEofRecovery()
 	{
 		// --- Logic 1: Custom delay is set via API ---
 		// The goal is to enforce the fixed delay provided by the external source (plugin).
-		if (!m_delay_calculated && m_record)
+		if (m_record)
 		{
 			pts_t live_pts = 0;
 			if (m_record->getCurrentPCR(live_pts) == 0)
@@ -1382,7 +1382,7 @@ void eDVBServicePlay::handleEofRecovery()
 	{
 		// --- Logic 2: No custom delay (Normal behavior) ---
 		// The goal is to maintain the user's current timeshift delay.
-		if (!m_delay_calculated && m_record)
+		if (m_record)
 		{
 			pts_t live_pts = 0, playback_pts = 0;
 			if (m_record->getCurrentPCR(live_pts) == 0 &&
