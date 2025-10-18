@@ -626,7 +626,7 @@ int loadWEBP(ePtr<gPixmap>& result, const char* filename, int cached) {
 }
 
 int loadImage(ePtr<gPixmap>& result, const char* filename, int accel, int width, int height, int cached, float scale, int keepAspect, int align, bool autoDetect) {
-	int detect = 0;
+	int detect = -1;
 	if (autoDetect)
 		detect = detectImageType(filename);
 
