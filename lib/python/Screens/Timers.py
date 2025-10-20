@@ -1261,6 +1261,11 @@ class SchedulerEdit(Setup):
 			("no", _("Standard (Always)")),
 			("noquery", _("Without query"))
 		])
+		self.timerFunctionRunIf = ConfigSelection(default=self.timer.functionRunIf, choices=[
+			(0, _("Standard (Always)")),
+			(1, _("Only in standby")),
+			(2, _("Only not in standby"))
+		])
 		self.timerSleepDelay = ConfigSelection(default=self.timer.autosleepdelay, choices=[
 			(1, _("%d Minute") % 1),
 			(3, _("%d Minutes") % 3),
@@ -1361,6 +1366,9 @@ class SchedulerEdit(Setup):
 			if self.timerSleepWindow.value:
 				self.timer.autosleepbegin = self.getTimeStamp(now, self.timerSleepStart.value)
 				self.timer.autosleepend = self.getTimeStamp(now, self.timerSleepEnd.value)
+		if self.function:
+			self.timer.functionRunIf = self.timerFunctionRunIf.value
+
 		if self.timerRepeat.value == "repeated":
 			if self.timerRepeatPeriod.value == "daily":
 				for day in (0, 1, 2, 3, 4, 5, 6):

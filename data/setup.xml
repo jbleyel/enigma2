@@ -897,6 +897,7 @@
 				<item level="0" text="End time" description="Select the time when this timer should end.">self.timerEndTime</item>
 				<item level="0" text="After event" description="Select the action to perform when the timer ends.">self.timerAfterEvent</item>
 			</if>
+			<item level="0" text="Execution condition" description="Select condition for the action." conditional="self.function is not None">self.timerFunctionRunIf</item>
 		</if>
 	</setup>
 	<setup key="Skin" title="Skin Settings">

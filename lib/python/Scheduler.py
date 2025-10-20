@@ -1,5 +1,4 @@
 from bisect import insort
-from ctypes import pythonapi, py_object, c_long
 from datetime import datetime
 from os import fsync, remove, rename
 from os.path import exists
@@ -103,11 +102,8 @@ class FunctionTimerThread(Thread):
 		self.daemon = True
 
 	def run(self):
-		print("FunctionTimerThread run")
 		result = self.entryFunction(self.timerEnty)
-		print(f"FunctionTimerThread run result '{result}'")
 		if self.callbackFunction and callable(self.callbackFunction):
-			print("FunctionTimerThread callbackFunction")
 			self.callbackFunction(result)
 
 
@@ -183,6 +179,7 @@ class Scheduler(Timer):
 			timerEntry.append(f"ipadress=\"{timer.ipadress}\"")
 			if timer.function:
 				timerEntry.append(f"function=\"{timer.function}\"")
+				timerEntry.append(f"runIf=\"{timer.functionRunIf}\"")
 
 			timerLog = []
 			for logTime, logCode, logMsg in timer.log_entries:
@@ -244,6 +241,8 @@ class Scheduler(Timer):
 		entry.netip = timerDom.get("netip", "false").lower() in ("true", "yes")
 		entry.ipadress = timerDom.get("ipadress", "0.0.0.0")
 		entry.function = timerDom.get("function")
+		if entry.function:
+			entry.functionRunIf = int(timerDom.get("runIf", "0"))
 		for log in timerDom.findall("log"):
 			entry.log_entries.append((int(log.get("time")), int(log.get("code")), log.text.strip()))
 		return entry
@@ -252,22 +251,18 @@ class Scheduler(Timer):
 	# abort the timer. Don't run trough all the stages.
 	#
 	def doActivate(self, timer):
-		print(f"[Scheduler] DEBUG doActivate state={timer.state}")
 		if timer.shouldSkip():
 			timer.state = SchedulerEntry.StateEnded
-			print("[Scheduler] DEBUG doActivate shouldSkip")
 		else:
 			# When active returns True this means "accepted", otherwise the current
 			# state is kept. The timer entry itself will fix up the delay.
 			if timer.activate():
 				timer.state += 1
-
-			print(f"[Scheduler] DEBUG after activate state={timer.state}")
-
-		try:
-			self.timer_list.remove(timer)
-		except ValueError:
-			print("[Scheduler] Remove timer from timer list failed!")
+		if timer in self.timer_list:
+			try:
+				self.timer_list.remove(timer)
+			except ValueError:
+				print("[Scheduler] Remove timer from timer list failed!")
 		if timer.state < SchedulerEntry.StateEnded:  # Did this timer reached the last state?
 			insort(self.timer_list, timer)  # No, sort it into active list.
 		else:  # Yes, process repeated, and re-add.
@@ -399,9 +394,6 @@ class Scheduler(Timer):
 		timer.abort()  # Abort timer. This sets the end time to current time, so timer will be stopped.
 		if timer.state != timer.StateEnded:
 			self.timeChanged(timer)
-		print("[Scheduler] State: %s." % timer.state)
-		print("[Scheduler] In processed: %s." % timer in self.processed_timers)
-		print("[Scheduler] In running: %s." % timer in self.timer_list)
 		if timer.state != TimerEntry.StateEnded:  # Disable timer first.
 			timer.disable()
 		if not timer.dontSave:  # Auto increase instant timer if possible.
@@ -452,7 +444,8 @@ class Scheduler(Timer):
 class SchedulerEntry(TimerEntry):
 	def __init__(self, begin, end, disabled=False, afterEvent=AFTEREVENT.NONE, timerType=TIMERTYPE.WAKEUP, checkOldTimers=False, autosleepdelay=60):
 		TimerEntry.__init__(self, int(begin), int(end))
-		print("[SchedulerEntry] DEBUG: Running init code.")
+		if DEBUG:
+			print("[SchedulerEntry] DEBUG: Running init code.")
 		if checkOldTimers and self.begin < int(time()) - 1209600:
 			self.begin = int(time())
 		# Check auto Scheduler.
@@ -512,7 +505,8 @@ class SchedulerEntry(TimerEntry):
 			return f"SchedulerEntry(type={timertype}, begin={ctime(self.begin)} Disabled)"
 
 	def activate(self):
-		print(f"[Scheduler] DEBUG activate state={self.state}")
+		if DEBUG:
+			print(f"[Scheduler] DEBUG activate state={self.state}")
 		global DSsave, InfoBar, RBsave, RSsave, aeDSsave, wasTimerWakeup
 		if not InfoBar:
 			try:
@@ -544,7 +538,6 @@ class SchedulerEntry(TimerEntry):
 			if self.timerType == TIMERTYPE.AUTODEEPSTANDBY:
 				self.getNetworkTraffic(getInitialValue=True)
 		if nextState in (self.StateRunning, self.StateEnded):
-			print("[Scheduler] DEBUG activate nextState self.StateRunning, self.StateEnded")
 			if NavigationInstance.instance.Scheduler is None:
 				# DEBUG: Running/Ended timer at system start has no navigation instance.
 				# First fix: Crash in getPriorityCheck (NavigationInstance.instance.Scheduler...).
@@ -570,14 +563,11 @@ class SchedulerEntry(TimerEntry):
 			elif exists(TIMER_FLAG_FILE) and not wasTimerWakeup:
 				wasTimerWakeup = int(open(TIMER_FLAG_FILE).read()) and True or False
 		if nextState == self.StatePrepared:
-			print("[Scheduler] DEBUG activate nextState self.StatePrepared")
 			self.log(6, f"Prepare okay, waiting for begin {ctime(self.begin)}.")
 			self.backoff = 0
 			return True
 		elif nextState == self.StateRunning:
-			print("[Scheduler] DEBUG activate nextState self.StateRunning")
 			if self.cancelled or self.failed or self.timerType == TIMERTYPE.NONE:  # If this timer has been canceled, failed or undefined just go to "end" state.
-				print(f"[Scheduler] DEBUG activate nextState self.StateRunning / self.cancelled={self.cancelled} / self.failed={self.failed}")
 				return True
 			elif self.timerType == TIMERTYPE.WAKEUP:
 				if DEBUG:
@@ -876,8 +866,7 @@ class SchedulerEntry(TimerEntry):
 						if DEBUG:
 							print("[Scheduler] DEBUG Call cancelFunction")
 						self.cancelFunction()
-						self.state = self.StateRunning  # Reset state to running after cancel function.
-						return False
+						return True
 			if self.afterEvent == AFTEREVENT.WAKEUP:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("wakeuppowertimer")
 				if Screens.Standby.inStandby:
@@ -969,7 +958,6 @@ class SchedulerEntry(TimerEntry):
 			self.timerThread.start()
 
 	def functionTimerCallback(self, success):
-		print(f"functionTimerCallback '{success}'")
 		self.failed = not success
 		self.end = int(time()) - 1
 		NavigationInstance.instance.Scheduler.doActivate(self)
@@ -985,7 +973,6 @@ class SchedulerEntry(TimerEntry):
 		}[nextState]
 
 	def timeChanged(self):
-		print("[Scheduler] timeChanged")
 		oldPrepare = int(self.start_prepare)
 		self.start_prepare = self.begin - self.prepare_time
 		self.backoff = 0
@@ -993,7 +980,6 @@ class SchedulerEntry(TimerEntry):
 			self.log(15, f"Time changed, start preparing is now {ctime(self.start_prepare)}.")
 
 	def do_backoff(self):
-		print("[Scheduler] do_backoff")
 		if Screens.Standby.inStandby and not wasTimerWakeup or RSsave or RBsave or aeDSsave or DSsave:
 			self.backoff = 300
 		else:
@@ -1207,17 +1193,17 @@ class FunctionTimers:
 				if callable(info.get("entryFunction")) and callable(info.get("cancelFunction")):
 					self.items[key] = info
 				else:
-					print("[FunctionTimer] Error: Both 'entryFunction' and 'cancelFunction' must be callable functions!")
+					print("[FunctionTimers] Error: Both 'entryFunction' and 'cancelFunction' must be callable functions!")
 			else:
-				print(f"[FunctionTimer] Error: The key '{key}' is already defined!")
+				print(f"[FunctionTimers] Error: The key '{key}' is already defined!")
 		else:
-			print("[FunctionTimer] Error: Parameter 'key' must be a string and 'info' must be a dictionary!")
+			print("[FunctionTimers] Error: Parameter 'key' must be a string and 'info' must be a dictionary!")
 
 	def remove(self, key):
 		if key in self.items:
 			del self.items[key]
 		else:
-			print(f"[FunctionTimer] Error: The key '{key}' was not found!")
+			print(f"[FunctionTimers] Error: The key '{key}' was not found!")
 
 	def getList(self):
 		return self.items
