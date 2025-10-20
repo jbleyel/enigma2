@@ -187,7 +187,7 @@ void eFilePushThread::thread()
 					continue;
 				}
 				break;
-			}	
+			}
 			else
 			{
 				/* Write data to mux */

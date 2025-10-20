@@ -95,19 +95,19 @@ def parseEvent(event):
 
 
 class FunctionTimerThread(Thread):
-	def __init__(self, entryFunction, callbackFunction, **kwargs):
-		super(FunctionTimerThread, self).__init__()
+	def __init__(self, entryFunction, callbackFunction, timerEnty):
+		Thread.__init__(self)
 		self.entryFunction = entryFunction
 		self.callbackFunction = callbackFunction
-		self.kwargs = kwargs if kwargs is not None else {}
+		self.timerEnty = timerEnty
 		self.daemon = True
 
 	def run(self):
 		print("FunctionTimerThread run")
-		self.entryFunction(**self.kwargs)
+		result = self.entryFunction(self.timerEnty)
 		if self.callbackFunction and callable(self.callbackFunction):
 			print("FunctionTimerThread callbackFunction")
-			self.callbackFunction()
+			self.callbackFunction(result)
 
 
 class Scheduler(Timer):
@@ -845,11 +845,11 @@ class SchedulerEntry(TimerEntry):
 			elif self.timerType == TIMERTYPE.OTHER and self.function:
 				if DEBUG:
 					print(f"[Scheduler] self.timerType == TIMERTYPE.OTHER: / function = {self.function}")
-				functionTimerEntry = functionTimer.getItem(self.function)
+				functionTimerEntry = functionTimers.getItem(self.function)
 				if functionTimerEntry:
 					functionTimerEntryFunction = functionTimerEntry.get("entryFunction")
 					functionTimerCancelFunction = functionTimerEntry.get("cancelFunction")
-					functionTimerIsThreaded = functionTimerEntry.get("isThreaded")
+					functionTimerUseOwnThread = functionTimerEntry.get("useOwnThread")
 					if DEBUG:
 						print(f"[Scheduler] functionTimerEntryFunction = {functionTimerEntryFunction}")
 
@@ -861,49 +861,22 @@ class SchedulerEntry(TimerEntry):
 
 					if doFunc:
 						self.end += 7200
-						if functionTimerEntryFunction and callable(functionTimerEntryFunction):
-							self.startFunctionTimer(functionTimerEntryFunction, functionTimerCancelFunction if callable(functionTimerCancelFunction) else None, functionTimerIsThreaded)
-
-						# if "isThreaded" in functionTimerEntry and not functionTimerEntry["isThreaded"]:
-						# self.is_threaded = False
-						# elif "isScreen" in functionTimerEntry and not functionTimerEntry["isScreen"]:
-						# self.is_threaded = False
-						# self.execnotifyafter = self.notify_after_t
-						# if self.notify_t and not Screens.Standby.inStandby:
-						# Notifications.AddNotificationWithCallback(self.askForScheduledTimer, MessageBox, _("An scheduled task wants to execute following function at your STB\n\n %s \n\nContinue?") % functionTimerEntry["name"], timeout = 20)
-						# else:
-						# self.askForScheduledTimer(True)
+						if functionTimerEntryFunction and callable(functionTimerEntryFunction) and functionTimerCancelFunction and callable(functionTimerCancelFunction):
+							self.startFunctionTimer(functionTimerEntryFunction, functionTimerCancelFunction, functionTimerUseOwnThread)
 
 				return True
 
 		elif nextState == self.StateEnded:
 			if DEBUG:
-				print("[Scheduler] DEBUG nextState self.StateEnded")
+				print(f"[Scheduler] DEBUG nextState self.StateEnded / self.cancelled={self.cancelled} / self.failed={self.failed}")
 			if self.timerType == TIMERTYPE.OTHER and self.function:
-				if self.cancelled or self.failed:
+				if self.cancelled:
 					if self.cancelFunction and callable(self.cancelFunction):
 						if DEBUG:
 							print("[Scheduler] DEBUG Call cancelFunction")
 						self.cancelFunction()
-
-					functionTimerEntry = functionTimer.getItem(self.function)
-					if functionTimerEntry:
-						functionTimerIsThreaded = functionTimerEntry.get("isThreaded")
-						if functionTimerIsThreaded and self.timerThread.is_alive():
-							self.timerThread.join(timeout=1)
-# threadId = self.timerThread.ident
-# exc = py_object(SystemExit)
-# res = pythonapi.PyThreadState_SetAsyncExc(c_long(threadId), exc)
-# if res == 0:
-# print("[Scheduler] Thread can not be terminated!")
-# elif res > 1:
-# pythonapi.PyThreadState_SetAsyncExc(threadId, None)
-# print("[Scheduler] Thread can not be terminated!")
-# elif res == 1:
-# print("[Scheduler] Thread successfully terminated.")
-# del exc
-# del res
-
+						self.state = self.StateStopping
+						return True
 			if self.afterEvent == AFTEREVENT.WAKEUP:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("wakeuppowertimer")
 				if Screens.Standby.inStandby:
@@ -982,21 +955,20 @@ class SchedulerEntry(TimerEntry):
 				print("[Scheduler] Reset wakeup state.")
 		wasTimerWakeup = False
 
-	def startFunctionTimer(self, entryFunction, cancelFunction, isThreaded):
+	def startFunctionTimer(self, entryFunction, cancelFunction, useOwnThread):
 		if DEBUG:
 			print("[Scheduler] DEBUG startFunctionTimer")
 		self.cancelFunction = cancelFunction
-		if isThreaded:
-			self.timerThread = FunctionTimerThread(entryFunction, self.functionTimerCallback, timerEntry=self)
-			self.timerThread.start()
+		if useOwnThread:
+			entryFunction(self.functionTimerCallback, self)
 		else:
-			entryFunction(self)
-			self.functionTimerCallback()
+			self.timerThread = FunctionTimerThread(entryFunction, self.functionTimerCallback, self)
+			self.timerThread.start()
 
-	def functionTimerCallback(self):
+	def functionTimerCallback(self, success):
 		print("functionTimerCallback")
 		self.end = int(time()) - 1
-		self.timeChanged()
+		self.activate()
 
 	def getNextActivation(self):
 		if self.state in (self.StateEnded, self.StateFailed):
@@ -1240,4 +1212,22 @@ class FunctionTimer:
 		return self.items.get(item)
 
 
-functionTimer = FunctionTimer()
+functionTimers = FunctionTimer()
+
+# Sample entryFunction function timer with own Thread
+"""
+def startTask(callback, timerEntry):
+	# Start a Thread here...
+	# When done or failed callback(True/False)
+"""
+
+# Sample entryFunction function timer without own Thread
+"""
+def startTask(timerEntry):
+	# Start a task here...
+	return True/False
+"""
+
+
+def addFunctionTimer(key, name, entryFunction, cancelFunction, useOwnThread=False):
+	functionTimers.add((key, {"name": name, "entryFunction": entryFunction, "cancelFunction": cancelFunction, "useOwnThread": useOwnThread}))

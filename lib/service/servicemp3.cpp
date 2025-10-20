@@ -1690,7 +1690,7 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
 		m_last_seek_count = 0;
 		m_event((iPlayableService*)this, evUpdatedInfo);
 	}
-	//eDebug("[eServiceMP3] seekToImpl DONE position %" G_GINT64_FORMAT, (gint64)m_last_seek_pos);
+	// eDebug("[eServiceMP3] seekToImpl DONE position %" G_GINT64_FORMAT, (gint64)m_last_seek_pos);
 	if (!m_paused) {
 		if (!m_to_paused) {
 			m_seeking_or_paused = false;
@@ -1712,7 +1712,7 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
  */
 RESULT eServiceMP3::seekTo(pts_t to) {
 	RESULT ret = -1;
-	eDebug("[eServiceMP3] seekTo pts_t to %" G_GINT64_FORMAT, (gint64)to);
+	// eDebug("[eServiceMP3] seekTo pts_t to %" G_GINT64_FORMAT, (gint64)to);
 	if (m_gst_playbin) {
 		m_prev_decoder_time = -1;
 		m_decoder_time_valid_state = 0;

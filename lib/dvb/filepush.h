@@ -20,11 +20,6 @@ class eFilePushThread: public eThread, public sigc::trackable, public iObject
 	DECLARE_REF(eFilePushThread);
 public:
 	eFilePushThread(int prio_class=IOPRIO_CLASS_BE, int prio_level=0, int blocksize=188, size_t buffersize=188*1024, int flags=0);
-		/* prio_class: IOPRIO_CLASS_BE, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE */
-		/* prio_level: 0-7, 0 is lowest, 7 is highest */
-		/* blocksize: size of a single TS packet */
-		/* buffersize: size of the internal buffer */
-		/* flags: reserved for future use */
 	~eFilePushThread();
 	void thread();
 	void stop();
@@ -78,12 +73,7 @@ public:
 	void stop();
 	void start(int sourcefd);
 
-	// START OF CHANGE - Timeshift Stability Fix
-	// Added 'evtStreamCorrupt' to the event enum. This allows the recording thread
-	// to send a new, specific signal to its owner when it detects corruption.
 	enum { evtEOF, evtReadError, evtWriteError, evtUser, evtStopped, evtStreamCorrupt };
-	// END OF CHANGE
-	
 	sigc::signal<void(int)> m_event;
 
 	int getProtocol() { return m_protocol;}

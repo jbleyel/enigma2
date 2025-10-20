@@ -4,7 +4,7 @@ from time import localtime, mktime, strftime, time
 
 from enigma import BT_SCALE, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, eEPGCache, eLabel, eListbox, eListboxPythonMultiContent, eSize, eTimer
 
-from Scheduler import AFTEREVENT as SCHEDULER_AFTEREVENT, SchedulerEntry, TIMERTYPE as SCHEDULER_TYPE, functionTimer
+from Scheduler import AFTEREVENT as SCHEDULER_AFTEREVENT, SchedulerEntry, TIMERTYPE as SCHEDULER_TYPE, functionTimers
 from RecordTimer import AFTEREVENT as RECORD_AFTEREVENT, RecordTimerEntry, TIMERTYPE as RECORD_TIMERTYPE, parseEvent
 from ServiceReference import ServiceReference
 from skin import parseBoolean, parseFont, parseInteger
@@ -374,7 +374,7 @@ class SchedulerList(TimerListBase):
 		minorWidth = (textWidth - self.statusOffset) // 4 - 5
 		majorWidth = textWidth - self.statusOffset - minorWidth - 10
 		res = [None]
-		functionName = timer.function and functionTimer.getItem(timer.function).get("name")
+		functionName = timer.function and functionTimers.getItem(timer.function).get("name")
 		typeText = functionName or SCHEDULER_TYPE_NAMES.get(timer.timerType, UNKNOWN)
 		if repeatIcon:
 			res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, self.indent, ((self.topHeight - self.iconHeight) // 2), self.iconWidth, self.iconHeight, repeatIcon, None, None, BT_SCALE))
@@ -1242,7 +1242,7 @@ class SchedulerEdit(Setup):
 			repeated = None
 			weekday = DAY_LIST[int(strftime("%u", localtime(self.timer.begin))) - 1]
 			days[weekday] = True
-		functionTimerItems = functionTimer.get()
+		functionTimerItems = functionTimers.get()
 		choices = [
 			# (SCHEDULER_TYPES.get(SCHEDULER_TYPE.NONE), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.NONE)),
 			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.WAKEUP), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.WAKEUP)),
@@ -1332,7 +1332,7 @@ class SchedulerEdit(Setup):
 			self.timerEndTime.value = self.timerStartTime.value
 		now = int(time())
 		self.timer.resetRepeated()
-		if self.timerType.value in functionTimer.get():
+		if self.timerType.value in functionTimers.get():
 			self.timer.timerType = SCHEDULER_TYPE.OTHER
 			self.timer.function = self.timerType.value
 		else:

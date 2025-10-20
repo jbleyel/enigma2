@@ -922,17 +922,8 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 			//	eDebugNoNewLine(" %02X", pkt[i]);
 			//}
 			//eDebugNoNewLine("\n");
-			
-			// START OF CHANGE - Timeshift Stability Fix
-			// Original code returned 0, which means "continue processing".
-			// This is wrong because a "broken startcode" indicates stream corruption.
-			// Continuing would cause the parser to seek rapidly, losing the timeshift buffer.
-			// We now return a new, distinct error code (-2) to signal this specific
-			// failure to the caller (eDVBRecordFileThread in demux.cpp).
-			// The caller can then catch this error and trigger a recovery mechanism
-			// instead of continuing to process bad data.
+
 			return -2;
-			// END OF CHANGE - Timeshift Stability Fix
 		}
 
 		if (pkt[7] & 0x80) // PTS present?
@@ -1092,10 +1083,7 @@ inline int eMPEGStreamParserTS::wantPacket(const unsigned char *pkt) const
 	return m_streamtype == eDVBVideo::MPEG2; /* we need all packets for MPEG2, but only PUSI packets for H.264 */
 }
 
-// START OF CHANGE - Timeshift Stability Fix
-// Changed the function return type from 'void' to 'int' to propagate the error code.
 int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int len)
-// END OF CHANGE
 {
 	const unsigned char *packet = (const unsigned char*)data;
 	const unsigned char *packet_start = packet;
@@ -1171,12 +1159,9 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 
 			if (m_pktptr == m_packetsize)
 			{
-				// START OF CHANGE - Timeshift Stability Fix
-				// Capture the return value from processPacket and return it if it's an error.
 				int res = processPacket(m_pkt, offset + (packet - packet_start));
 				if (res != 0) return res;
-				m_need_next_packet = res; // This was original logic, might need adjustment based on what res means
-				// END OF CHANGE
+				m_need_next_packet = res;
 				m_pktptr = 0;
 			}
 		} else if (len >= (unsigned int)m_header_offset + 4)  /* if we have a full header... */
@@ -1185,12 +1170,9 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 			{
 				if (len >= (unsigned int)m_packetsize)          /* packet complete? */
 				{
-					// START OF CHANGE - Timeshift Stability Fix
-					// Capture the return value from processPacket and return it if it's an error.
 					int res = processPacket(packet, offset + (packet - packet_start));
 					if (res != 0) return res;
 					m_need_next_packet = res;
-					// END OF CHANGE
 				} else
 				{
 					memcpy(m_pkt, packet, len);  /* otherwise queue it up */
@@ -1216,10 +1198,7 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 		}
 	}
 	commit();
-	// START OF CHANGE - Timeshift Stability Fix
-	// Return 0 for success.
 	return 0;
-	// END OF CHANGE
 }
 
 void eMPEGStreamParserTS::addAccessPoint(off_t offset, pts_t pts, bool streamtime)

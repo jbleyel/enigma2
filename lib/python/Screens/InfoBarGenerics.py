@@ -200,7 +200,7 @@ class InfoBarUnhandledKey:
 			KEYIDS["KEY_DOWN"],  # 108.
 			KEYIDS["KEY_CHANNELUP"],  # 402.
 			KEYIDS["KEY_CHANNELDOWN"],  # 403.
-			KEYIDS["KEY_NEXT"],  #407.
+			KEYIDS["KEY_NEXT"],  # 407.
 			KEYIDS["KEY_PREVIOUS"]  # 412.
 		)
 

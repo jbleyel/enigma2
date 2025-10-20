@@ -7,7 +7,7 @@ from threading import Thread, Lock, current_thread
 from enigma import eServiceCenter, eServiceReference, iServiceInformation, eTimer
 from Components.Task import Task, Job, job_manager
 from Components.config import config, ConfigDirectory, ConfigYesNo, ConfigSelection
-from Scheduler import functionTimer
+from Scheduler import functionTimers
 from Screens.MessageBox import MessageBox
 from Tools.Notifications import AddPopup
 from Tools.MovieInfoParser import getExtendedMovieDescription
@@ -78,9 +78,9 @@ class DatabaseTask(Task):
 		if self.stopFunction and callable(self.stopFunction):
 			self.stopFunction()
 		debugPrint("job finished", LOGLEVEL.INFO)
-#		from Screens.Standby import inStandby
-#		if not inStandby:
-#			AddPopup(text = self.msgtxt, type = MessageBox.TYPE_INFO, timeout = 20, id = "db_update_stopped")
+# from Screens.Standby import inStandby
+# if not inStandby:
+# AddPopup(text = self.msgtxt, type = MessageBox.TYPE_INFO, timeout = 20, id = "db_update_stopped")
 
 	def abort(self):
 		self.msgtxt = _("Database update was cancelled")
@@ -1002,4 +1002,4 @@ def backgroundDBUpdateCancel():
 	pass
 
 
-functionTimer.add(("moviedbupdate", {"name": _("Update movie database (full)"), "entryFunction": backgroundDBUpdate, "cancelFunction": backgroundDBUpdateCancel, "isThreaded": True}))
+# functionTimers.add(("moviedbupdate", {"name": _("Update movie database (full)"), "entryFunction": backgroundDBUpdate, "cancelFunction": backgroundDBUpdateCancel, "isThreaded": True}))
