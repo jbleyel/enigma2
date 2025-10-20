@@ -9,7 +9,7 @@ from RecordTimer import AFTEREVENT as RECORD_AFTEREVENT, RecordTimerEntry, TIMER
 from ServiceReference import ServiceReference
 from skin import parseBoolean, parseFont, parseInteger
 from timer import TimerEntry
-from Components.DataBaseAPI import moviedb  # noqa F401
+# from Components.DataBaseAPI import moviedb  # noqa F401
 from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigClock, ConfigDateTime, ConfigIP, ConfigSelection, ConfigSubDict, ConfigText, ConfigYesNo, config
 from Components.GUIComponent import GUIComponent
@@ -374,7 +374,7 @@ class SchedulerList(TimerListBase):
 		minorWidth = (textWidth - self.statusOffset) // 4 - 5
 		majorWidth = textWidth - self.statusOffset - minorWidth - 10
 		res = [None]
-		functionName = timer.function and functionTimers.getItem(timer.function).get("name")
+		functionName = timer.function and functionTimers.getNameForItem(timer.function)
 		typeText = functionName or SCHEDULER_TYPE_NAMES.get(timer.timerType, UNKNOWN)
 		if repeatIcon:
 			res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, self.indent, ((self.topHeight - self.iconHeight) // 2), self.iconWidth, self.iconHeight, repeatIcon, None, None, BT_SCALE))
@@ -1242,7 +1242,7 @@ class SchedulerEdit(Setup):
 			repeated = None
 			weekday = DAY_LIST[int(strftime("%u", localtime(self.timer.begin))) - 1]
 			days[weekday] = True
-		functionTimerItems = functionTimers.get()
+		functionTimerItems = functionTimers.getList()
 		choices = [
 			# (SCHEDULER_TYPES.get(SCHEDULER_TYPE.NONE), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.NONE)),
 			(SCHEDULER_TYPES.get(SCHEDULER_TYPE.WAKEUP), SCHEDULER_TYPE_NAMES.get(SCHEDULER_TYPE.WAKEUP)),
@@ -1332,7 +1332,7 @@ class SchedulerEdit(Setup):
 			self.timerEndTime.value = self.timerStartTime.value
 		now = int(time())
 		self.timer.resetRepeated()
-		if self.timerType.value in functionTimers.get():
+		if self.timerType.value in functionTimers.getList():
 			self.timer.timerType = SCHEDULER_TYPE.OTHER
 			self.timer.function = self.timerType.value
 		else:

@@ -105,6 +105,7 @@ class FunctionTimerThread(Thread):
 	def run(self):
 		print("FunctionTimerThread run")
 		result = self.entryFunction(self.timerEnty)
+		print(f"FunctionTimerThread run result '{result}'")
 		if self.callbackFunction and callable(self.callbackFunction):
 			print("FunctionTimerThread callbackFunction")
 			self.callbackFunction(result)
@@ -875,8 +876,8 @@ class SchedulerEntry(TimerEntry):
 						if DEBUG:
 							print("[Scheduler] DEBUG Call cancelFunction")
 						self.cancelFunction()
-						self.state = self.StateStopping
-						return True
+						self.state = self.StateRunning  # Reset state to running after cancel function.
+						return False
 			if self.afterEvent == AFTEREVENT.WAKEUP:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("wakeuppowertimer")
 				if Screens.Standby.inStandby:
@@ -960,15 +961,18 @@ class SchedulerEntry(TimerEntry):
 			print("[Scheduler] DEBUG startFunctionTimer")
 		self.cancelFunction = cancelFunction
 		if useOwnThread:
-			entryFunction(self.functionTimerCallback, self)
+			result = entryFunction(self.functionTimerCallback, self)
+			if DEBUG:
+				print(f"[Scheduler] DEBUG startFunctionTimer own thread started {result}")
 		else:
 			self.timerThread = FunctionTimerThread(entryFunction, self.functionTimerCallback, self)
 			self.timerThread.start()
 
 	def functionTimerCallback(self, success):
-		print("functionTimerCallback")
+		print(f"functionTimerCallback '{success}'")
+		self.failed = not success
 		self.end = int(time()) - 1
-		self.activate()
+		NavigationInstance.instance.Scheduler.doActivate(self)
 
 	def getNextActivation(self):
 		if self.state in (self.StateEnded, self.StateFailed):
@@ -1193,41 +1197,46 @@ class SchedulerEntry(TimerEntry):
 		return False
 
 
-class FunctionTimer:
+class FunctionTimers:
 	def __init__(self):
 		self.items = {}
 
-	def add(self, fnc):
-		if isinstance(fnc, (tuple, list)) and len(fnc) == 2 and isinstance(fnc[0], str) and isinstance(fnc[1], dict) and fnc[0] not in self.items:
-			self.items[fnc[0]] = fnc[1]
+	def add(self, key, info):
+		if isinstance(key, str) and isinstance(info, dict):
+			if key not in self.items:
+				if callable(info.get("entryFunction")) and callable(info.get("cancelFunction")):
+					self.items[key] = info
+				else:
+					print("[FunctionTimer] Error: Both 'entryFunction' and 'cancelFunction' must be callable functions!")
+			else:
+				print(f"[FunctionTimer] Error: The key '{key}' is already defined!")
+		else:
+			print("[FunctionTimer] Error: Parameter 'key' must be a string and 'info' must be a dictionary!")
 
-	def remove(self, fncid):
-		if isinstance(fncid, str) and fncid in self.items:
-			self.items.pop(fncid)
+	def remove(self, key):
+		if key in self.items:
+			del self.items[key]
+		else:
+			print(f"[FunctionTimer] Error: The key '{key}' was not found!")
 
-	def get(self):
+	def getList(self):
 		return self.items
 
-	def getItem(self, item):
-		return self.items.get(item)
+	def getItem(self, key):
+		return self.items.get(key)
+
+	def getNameForItem(self, key):
+		return self.items.get(key, {}).get("name")
 
 
-functionTimers = FunctionTimer()
-
-# Sample entryFunction function timer with own Thread
-"""
-def startTask(callback, timerEntry):
-	# Start a Thread here...
-	# When done or failed callback(True/False)
-"""
-
-# Sample entryFunction function timer without own Thread
-"""
-def startTask(timerEntry):
-	# Start a task here...
-	return True/False
-"""
+functionTimers = FunctionTimers()
 
 
-def addFunctionTimer(key, name, entryFunction, cancelFunction, useOwnThread=False):
-	functionTimers.add((key, {"name": name, "entryFunction": entryFunction, "cancelFunction": cancelFunction, "useOwnThread": useOwnThread}))
+def addFunctionTimer(key: str, name: str, entryFunction, cancelFunction, useOwnThread=False):
+	"""Convenience wrapper for adding a function timer entry."""
+	functionTimers.add(key, {
+		"name": name,
+		"entryFunction": entryFunction,
+		"cancelFunction": cancelFunction,
+		"useOwnThread": useOwnThread
+	})

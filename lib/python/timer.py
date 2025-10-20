@@ -188,7 +188,6 @@ class TimerEntry:
 	StateEnded = 3
 	StateFailed = 4
 	StateDisabled = 5
-	StateStopping = 6
 
 	def __init__(self, begin, end):
 		self.prepare_time = 20

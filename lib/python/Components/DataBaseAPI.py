@@ -7,7 +7,7 @@ from threading import Thread, Lock, current_thread
 from enigma import eServiceCenter, eServiceReference, iServiceInformation, eTimer
 from Components.Task import Task, Job, job_manager
 from Components.config import config, ConfigDirectory, ConfigYesNo, ConfigSelection
-from Scheduler import functionTimers
+from Scheduler import addFunctionTimer
 from Screens.MessageBox import MessageBox
 from Tools.Notifications import AddPopup
 from Tools.MovieInfoParser import getExtendedMovieDescription
@@ -1002,4 +1002,4 @@ def backgroundDBUpdateCancel():
 	pass
 
 
-# functionTimers.add(("moviedbupdate", {"name": _("Update movie database (full)"), "entryFunction": backgroundDBUpdate, "cancelFunction": backgroundDBUpdateCancel, "isThreaded": True}))
+# addFunctionTimer("moviedbupdate", _("Update movie database (full)"), backgroundDBUpdate, backgroundDBUpdateCancel, useOwnThread=False)
