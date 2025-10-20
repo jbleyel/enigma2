@@ -345,7 +345,6 @@ private:
 	// This system handles stream corruption during timeshift, with support for a custom recovery delay.
 	ePtr<eTimer> m_precise_recovery_timer;
 	bool m_stream_corruption_detected;
-	bool m_timeshift_pids_removed; // Obsolete, but kept for compatibility.
 	pts_t m_original_timeshift_delay; // Stores the target timeshift delay.
 	bool m_delay_calculated; // Flag to ensure delay is calculated only once.
 	int m_recovery_delay_seconds; // Custom recovery delay in seconds, set via API.

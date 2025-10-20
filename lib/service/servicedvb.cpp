@@ -27,7 +27,7 @@
 #include <lib/service/servicedvbfcc.h>
 #include "servicepeer.h"
 
-		/* for subtitles */
+/* for subtitles */
 #include <lib/gui/esubtitle.h>
 
 #include <sys/vfs.h>
@@ -1092,14 +1092,11 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_subtitle_widget(0),
 	m_subtitle_sync_timer(eTimer::create(eApp)),
 	m_nownext_timer(eTimer::create(eApp)),
-	// -- START: Precise Recovery System --
 	m_precise_recovery_timer(eTimer::create(eApp)),
 	m_stream_corruption_detected(false),
-	m_timeshift_pids_removed(false), // Obsolete, but kept for compatibility
 	m_original_timeshift_delay(0),
 	m_delay_calculated(false),
-    m_recovery_delay_seconds(0) // +++ MODIFICATION: Initialize new recovery variable
-	// -- END: Precise Recovery System --
+    m_recovery_delay_seconds(0)
 {
 #ifdef PASSTHROUGH_FIX
 	m_passthrough_fix_timer = eTimer::create(eApp);
@@ -1113,9 +1110,7 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 #ifdef PASSTHROUGH_FIX
 	CONNECT(m_passthrough_fix_timer->timeout, eDVBServicePlay::forcePassthrough);
 #endif
-	// -- START: Precise Recovery System --
 	CONNECT(m_precise_recovery_timer->timeout, eDVBServicePlay::startPreciseRecoveryCheck);
-	// -- END: Precise Recovery System --
 }
 
 eDVBServicePlay::~eDVBServicePlay()
@@ -1284,7 +1279,7 @@ void eDVBServicePlay::serviceEvent(int event)
 		// Check if timeshift is active and we are not already in a recovery state
 		if (m_timeshift_enabled && !m_stream_corruption_detected)
 		{
-			eDebug("[PreciseRecovery] Tune Failed/Signal Loss during timeshift. Initiating recovery.");
+			eTrace("[PreciseRecovery] Tune Failed/Signal Loss during timeshift. Initiating recovery.");
 			
 			// 1. Mark that we are entering recovery mode
 			m_stream_corruption_detected = true;
@@ -1333,7 +1328,6 @@ void eDVBServicePlay::serviceEvent(int event)
 	}
 }
 
-// -- START: Precise Recovery System --
 // Helper function to reset all recovery state variables.
 void eDVBServicePlay::resetRecoveryState()
 {
@@ -1344,18 +1338,16 @@ void eDVBServicePlay::resetRecoveryState()
 		m_precise_recovery_timer->stop();
 }
 
-// +++ START MODIFICATION: Integrate API-driven Logic +++
 // Called on stream corruption. The new logic is decoupled from any plugin.
 void eDVBServicePlay::handleEofRecovery()
 {
-    // +++ FIX: Do not trigger recovery if playback is paused by the user.
     if (m_is_paused)
     {
-        eDebug("[PreciseRecovery] Recovery skipped: Playback is paused.");
+        eTrace("[PreciseRecovery] Recovery skipped: Playback is paused.");
         return;
     }
 
-	eDebug("[PreciseRecovery] Corruption detected. Pausing playback, recording continues.");
+	eTrace("[PreciseRecovery] Corruption detected. Pausing playback, recording continues.");
 
 	if (m_recovery_delay_seconds > 0)
 	{
@@ -1374,7 +1366,7 @@ void eDVBServicePlay::handleEofRecovery()
 				// Target = (current live clock) - (desired delay duration).
 				m_original_timeshift_delay = live_pts - plugin_delay_pts;
 				m_delay_calculated = true;
-				eDebug("[PreciseRecovery] Custom Delay ACTIVE. Target delay fingerprint set (based on %d sec API delay)", m_recovery_delay_seconds);
+				eTrace("[PreciseRecovery] Custom Delay ACTIVE. Target delay fingerprint set (based on %d sec API delay)", m_recovery_delay_seconds);
 			}
 		}
 	}
@@ -1392,7 +1384,7 @@ void eDVBServicePlay::handleEofRecovery()
 				// This is the original, correct calculation for maintaining the current delay.
 				m_original_timeshift_delay = live_pts - playback_pts;
 				m_delay_calculated = true;
-				eDebug("[PreciseRecovery] Custom Delay INACTIVE. Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+				eTrace("[PreciseRecovery] Custom Delay INACTIVE. Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
 			}
 		}
 	}
@@ -1407,7 +1399,6 @@ void eDVBServicePlay::handleEofRecovery()
 	// 3. Start the monitoring timer.
 	m_precise_recovery_timer->start(100, false); 
 }
-// +++ END MODIFICATION +++
 
 // The periodic check function to monitor buffer recovery.
 void eDVBServicePlay::startPreciseRecoveryCheck()
@@ -1422,15 +1413,11 @@ void eDVBServicePlay::startPreciseRecoveryCheck()
 	if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0)
 	{
 		pts_t current_delay = live_pts - playback_pts;
-		
-		int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recovery_buffer_delay", 300);
-		const pts_t safety_buffer_pts = recovery_delay_ms * 90;
-		const pts_t target_delay_with_buffer = m_original_timeshift_delay + safety_buffer_pts;
-		
+
 		// 4. Check if we have reached the original, fixed target delay plus a safety buffer.
-		if (current_delay >= target_delay_with_buffer)
+		if (current_delay >= m_original_timeshift_delay)
 		{
-			eDebug("[PreciseRecovery] Target delay reached. Resuming playback.");
+			eTrace("[PreciseRecovery] Target delay reached. Resuming playback.");
 			m_precise_recovery_timer->stop();
 			m_stream_corruption_detected = false;
 			
@@ -1454,7 +1441,6 @@ void eDVBServicePlay::startPreciseRecoveryCheck()
 		m_precise_recovery_timer->start(100, false);
 	}
 }
-// -- END: Precise Recovery System --
 
 void eDVBServicePlay::serviceEventTimeshift(int event)
 {
@@ -1468,7 +1454,11 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 			updateDecoder();
 			if (m_first_program_info & 2)
 			{
-				if (m_slowmotion) m_decoder->setSlowMotion(m_slowmotion);
+				if (m_slowmotion)
+				{
+					eDebug("[eDVBServicePlay] re-apply slowmotion after time shift file change");
+					m_decoder->setSlowMotion(m_slowmotion);
+				}
 				if (m_fastforward)
 				{
 					eDebug("[eDVBServicePlay] re-apply skip %d, ratio %d after time shift file change", m_skipmode, m_fastforward);
@@ -1518,7 +1508,7 @@ void eDVBServicePlay::serviceEventTimeshift(int event)
 		// Ignore EOF event if we are in the middle of a recovery process.
 		if (m_stream_corruption_detected)
 		{
-			eDebug("[eDVBServicePlay] Ignoring EOF during stream corruption recovery.");
+			eTrace("[eDVBServicePlay] Ignoring EOF during stream corruption recovery.");
 			break;
 		}
 		if ((!m_is_paused) && (m_skipmode >= 0))
@@ -1669,7 +1659,6 @@ RESULT eDVBServicePlay::stop()
 	return 0;
 }
 
-// +++ START MODIFICATION: Extend setTarget to handle custom recovery delay +++
 RESULT eDVBServicePlay::setTarget(int target, bool noaudio)
 {
     // Handle custom recovery delay command (range 10000+)
@@ -1678,7 +1667,7 @@ RESULT eDVBServicePlay::setTarget(int target, bool noaudio)
     if (target >= 10000 && target < 10100) // Allows up to a 99-second delay
     {
         m_recovery_delay_seconds = target - 10000;
-        eDebug("[eDVBServicePlay] setTarget: Custom recovery delay set to %d seconds.", m_recovery_delay_seconds);
+        eTrace("[eDVBServicePlay] setTarget: Custom recovery delay set to %d seconds.", m_recovery_delay_seconds);
         return 0; // Command processed
     }
 
@@ -1713,8 +1702,6 @@ RESULT eDVBServicePlay::setTarget(int target, bool noaudio)
 	m_noaudio = noaudio;
 	return 0;
 }
-// +++ END MODIFICATION +++
-
 
 RESULT eDVBServicePlay::connectEvent(const sigc::slot<void(iPlayableService*,int)> &event, ePtr<eConnection> &connection)
 {
@@ -1853,7 +1840,6 @@ RESULT eDVBServicePlay::getLength(pts_t &len)
 	return pvr_channel->getLength(len);
 }
 
-
 RESULT eDVBServicePlay::pause()
 {
 	eDebug("[eDVBServicePlay] pause");
@@ -1868,7 +1854,6 @@ RESULT eDVBServicePlay::pause()
 		return -1;
 }
 
-// +++ START MODIFICATION: Reset recovery state on manual unpause +++
 RESULT eDVBServicePlay::unpause()
 {
 	eDebug("[eDVBServicePlay] unpause");
@@ -1883,7 +1868,7 @@ RESULT eDVBServicePlay::unpause()
         // so that new corruption events can be handled correctly.
         if (m_stream_corruption_detected)
         {
-            eDebug("[PreciseRecovery] User resumed playback. Resetting recovery state.");
+            eTrace("[PreciseRecovery] User resumed playback. Resetting recovery state.");
             resetRecoveryState();
         }
 
@@ -1891,7 +1876,6 @@ RESULT eDVBServicePlay::unpause()
 	} else
 		return -1;
 }
-// +++ END MODIFICATION +++
 
 RESULT eDVBServicePlay::seekTo(pts_t to)
 {
@@ -2965,12 +2949,8 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 	// Reset the recovery system state for the next timeshift session.
 	resetRecoveryState();
 	
-	m_timeshift_pids_removed = false;
-
 	if (swToLive)
-	{
 		switchToLive();
-	}
 
 	m_timeshift_enabled = 0;
 
