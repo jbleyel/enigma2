@@ -104,12 +104,12 @@ class ItaClassifications(dict):
 		#            0   1   2   3    4    5    6     7     8     9     10    11    12    13    14    15
 		shortText = ("", "", "", "T", "T", "T", "BA", "BA", "BA", "12", "12", "12", "14", "14", "14", "18")
 		longText = {
-			"": _("Non Classificato"),
-			"T": _("Per Tutti"),
-			"BA": _("Bambini Accompagnati"),
-			"12": _("Dai 12 anni in su"),
-			"14": _("Dai 14 anni in su"),
-			"18": _("Dai 18 anni in su")
+			"": "Non Classificato",
+			"T": "Per Tutti",
+			"BA": "Bambini Accompagnati",
+			"12": "Dai 12 anni in su",
+			"14": "Dai 14 anni in su",
+			"18": "Dai 18 anni in su"
 		}
 		images = {
 			"": "ratings/blank.png",

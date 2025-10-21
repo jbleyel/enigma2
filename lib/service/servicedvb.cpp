@@ -1400,43 +1400,37 @@ void eDVBServicePlay::handleEofRecovery()
 	m_precise_recovery_timer->start(100, false); 
 }
 
-// The periodic check function to monitor buffer recovery.
-void eDVBServicePlay::startPreciseRecoveryCheck()
-{
-	if (!m_stream_corruption_detected || !m_record || !m_delay_calculated)
-	{
+void eDVBServicePlay::startPreciseRecoveryCheck() {
+	if (!m_stream_corruption_detected || !m_record || !m_delay_calculated) {
 		m_precise_recovery_timer->stop();
 		return;
 	}
 
 	pts_t live_pts = 0, playback_pts = 0;
-	if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0)
-	{
+	if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
 		pts_t current_delay = live_pts - playback_pts;
 
+		int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recovery_buffer_delay", 300);
+		const pts_t safety_buffer_pts = recovery_delay_ms * 90;
+		const pts_t target_delay_with_buffer = m_original_timeshift_delay + safety_buffer_pts;
+
 		// 4. Check if we have reached the original, fixed target delay plus a safety buffer.
-		if (current_delay >= m_original_timeshift_delay)
-		{
+		if (current_delay >= target_delay_with_buffer) {
 			eTrace("[PreciseRecovery] Target delay reached. Resuming playback.");
 			m_precise_recovery_timer->stop();
 			m_stream_corruption_detected = false;
-			
+
 			// 5. Resume playback.
-			if (m_is_paused)
-			{
+			if (m_is_paused) {
 				unpause();
 			}
-				
+
 			m_event((iPlayableService*)this, evSeekableStatusChanged);
-		}
-		else
-		{
+		} else {
 			// Not there yet, keep checking.
 			m_precise_recovery_timer->start(100, false);
 		}
-	}
-	else
-	{
+	} else {
 		// If we can't get reliable readings, try again.
 		m_precise_recovery_timer->start(100, false);
 	}

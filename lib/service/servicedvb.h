@@ -21,7 +21,9 @@ class eServiceFactoryDVB : public iServiceHandler {
 public:
 	eServiceFactoryDVB();
 	virtual ~eServiceFactoryDVB();
-	enum { id = eServiceReference::idDVB };
+	enum {
+		id = eServiceReference::idDVB
+	};
 
 	// iServiceHandler
 	RESULT play(const eServiceReference&, ePtr<iPlayableService>& ptr);
@@ -286,9 +288,7 @@ protected:
 		pts_t where;
 		unsigned int what;
 
-		bool operator<(const struct cueEntry& o) const {
-			return where < o.where;
-		}
+		bool operator<(const struct cueEntry& o) const { return where < o.where; }
 		cueEntry(const pts_t& where, unsigned int what) : where(where), what(what) {}
 	};
 
@@ -360,9 +360,7 @@ class eStaticServiceDVBBouquetInformation : public iStaticServiceInformation {
 	eServiceReference m_playable_service;
 
 public:
-	eServiceReference& getPlayableService() {
-		return m_playable_service;
-	}
+	eServiceReference& getPlayableService() { return m_playable_service; }
 	RESULT getName(const eServiceReference& ref, std::string& name);
 	int getLength(const eServiceReference& ref);
 	int isPlayable(const eServiceReference& ref, const eServiceReference& ignore, bool simulate);

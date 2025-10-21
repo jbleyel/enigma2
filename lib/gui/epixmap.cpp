@@ -185,7 +185,9 @@ void ePixmap::setAniPixmapFromFile(const char* filename, bool autostart) {
 
 
 	// Convert background color to 32-bit format (B | G<<8 | R<<16 | A<<24)
-	uint32_t bgColor = m_have_background_color ? (uint32_t(m_background_color.b)) | (uint32_t(m_background_color.g) << 8) | (uint32_t(m_background_color.r) << 16) | (uint32_t(255 - m_background_color.a) << 24) : 0x00000000u;
+	uint32_t bgColor = m_have_background_color
+						   ? (uint32_t(m_background_color.b)) | (uint32_t(m_background_color.g) << 8) | (uint32_t(m_background_color.r) << 16) | (uint32_t(255 - m_background_color.a) << 24)
+						   : 0x00000000u;
 
 	// Read GIF records
 	do {
