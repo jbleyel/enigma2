@@ -866,6 +866,7 @@ class SchedulerEntry(TimerEntry):
 						if DEBUG:
 							print("[Scheduler] DEBUG Call cancelFunction")
 						self.cancelFunction()
+						self.cancelFunction = None
 						return True
 			if self.afterEvent == AFTEREVENT.WAKEUP:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("wakeuppowertimer")

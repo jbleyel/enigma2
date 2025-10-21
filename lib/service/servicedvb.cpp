@@ -1410,7 +1410,7 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 	if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
 		pts_t current_delay = live_pts - playback_pts;
 
-		int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recovery_buffer_delay", 300);
+		int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recoveryBufferDelay", 300);
 		const pts_t safety_buffer_pts = recovery_delay_ms * 90;
 		const pts_t target_delay_with_buffer = m_original_timeshift_delay + safety_buffer_pts;
 

@@ -1311,6 +1311,9 @@ class SchedulerEdit(Setup):
 		for callback in onSchedulerCreate:
 			callback(self)
 
+	def isFunctionTimer(self):
+		return self.timerType.value in functionTimers.getList()
+
 	def createSetup(self):  # NOSONAR silence S2638
 		Setup.createSetup(self)
 		for callback in onSchedulerSetup:
@@ -1366,7 +1369,7 @@ class SchedulerEdit(Setup):
 			if self.timerSleepWindow.value:
 				self.timer.autosleepbegin = self.getTimeStamp(now, self.timerSleepStart.value)
 				self.timer.autosleepend = self.getTimeStamp(now, self.timerSleepEnd.value)
-		if self.function:
+		if self.timer.function:
 			self.timer.functionRunIf = self.timerFunctionRunIf.value
 
 		if self.timerRepeat.value == "repeated":
