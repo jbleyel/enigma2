@@ -999,7 +999,7 @@
 		<item level="2" text="Time shift checking for free space" description="If the free space is less than setting value, then an attempt is made to delete the old time shift files.">config.timeshift.checkFreeSpace</item>
 		<item level="2" text="Time shift buffer delete after zap" description="Select 'No' to save older events even after zapping or interrupting time shifting.">config.timeshift.deleteAfterZap</item>
 		<item level="2" text="Time shift event based file splitting" description="Select 'No' to make time shift use a single buffer file. Use 'Time shift checking for older files [in minutes]' and 'Time shift checking for free space?' to control the size of the buffer file.">config.timeshift.fileSplitting</item>
-		<item level="2" text="Time shift recovery buffer delay" description="Define the time shift recovery buffer delay.">config.timeshift.recoveryBufferDelay</item>
+		<item level="2" text="Time shift recovery buffer" description="Extra buffer time to add after a stream error. Helps prevent stuttering when playback resumes">config.timeshift.recoveryBufferDelay</item>
 	</setup>
 	<setup key="Tuner" title="Tuner Settings" level="1">
 		<item level="1" text="Force LNB Power" description="Force LNB Tuner Power settings." requires="ForceLNBPowerChanged">config.tunermisc.forceLnbPower</item>
