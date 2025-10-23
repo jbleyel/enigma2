@@ -287,6 +287,8 @@ class ServiceListBase(GUIComponent):
 		self.picServiceGroup = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/ico_service_group.png"))
 		self.picCrypto = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/icon_crypt.png"))
 		self.picRecord = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/record.png"))
+		self.picCatchup = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/ico_catchup-fs8.png"))
+		self.picBackup = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/ico_altref-fs8.png"))
 		self.picFavorites = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/epgclock_primetime.png"))  # TODO
 
 	def connectSelChanged(self, fnc):
@@ -551,17 +553,21 @@ class ServiceListLegacy(ServiceListBase):
 		if self.picServiceGroup:
 			self.l.setPixmap(self.l.picServiceGroup, self.picServiceGroup)
 
+		if self.picCrypto:
+			self.l.setPixmap(self.l.picCrypto, self.picCrypto)
+
+		if self.picRecord:
+			self.l.setPixmap(self.l.picRecord, self.picRecord)
+
+		if self.picCatchup:
+			self.l.setPixmap(self.l.picCatchup, self.picCatchup)
+
+		if self.picBackup:
+			self.l.setPixmap(self.l.picBackup, self.picBackup)
+
 		pic = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "icons/ico_stream.png"))
 		if pic:
 			self.l.setPixmap(self.l.picStream, pic)
-
-		pic = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "icons/icon_crypt.png"))
-		if pic:
-			self.l.setPixmap(self.l.picCrypto, pic)
-
-		pic = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "icons/record.png"))
-		if pic:
-			self.l.setPixmap(self.l.picRecord, pic)
 
 		self.listHeight = 0
 		self.listWidth = 0
@@ -1032,13 +1038,18 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 		elif service.flags & eServiceReference.isDirectory:
 			pixmap = self.picFolder
 		else:
-			orbpos = service.getUnsignedData(4) >> 16
-			if orbpos == 0xFFFF:
-				pixmap = self.picDVB_C
-			elif orbpos == 0xEEEE:
-				pixmap = self.picDVB_T
+			if "&backupref=" in service.toString():
+				pixmap = self.picBackup
+			elif "catchupdays=" in service.toString():
+				pixmap = self.picCatchup
 			else:
-				pixmap = self.picDVB_S
+				orbpos = service.getUnsignedData(4) >> 16
+				if orbpos == 0xFFFF:
+					pixmap = self.picDVB_C
+				elif orbpos == 0xEEEE:
+					pixmap = self.picDVB_T
+				else:
+					pixmap = self.picDVB_S
 		return pixmap
 
 	def buildOptionEntryServiceResolutionPixmap(self, service):  # TODO Resolution type icon
