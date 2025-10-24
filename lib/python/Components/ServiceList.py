@@ -1038,9 +1038,9 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 		elif service.flags & eServiceReference.isDirectory:
 			pixmap = self.picFolder
 		else:
-			if "&backupref=" in service.toString():
-				pixmap = self.picBackup
-			elif "catchupdays=" in service.toString():
+			# if "&backupref=" in service.toString():
+			# pixmap = self.picBackup
+			if "catchupdays=" in service.toString():
 				pixmap = self.picCatchup
 			else:
 				orbpos = service.getUnsignedData(4) >> 16

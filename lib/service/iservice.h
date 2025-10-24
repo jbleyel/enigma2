@@ -425,6 +425,7 @@ public:
 		sGamma,
 		sVideoInfo,
 		sExtendedDescription,
+		sIsRecoveringStream,
 		sSubServices,
 
 		sUser = 0x100

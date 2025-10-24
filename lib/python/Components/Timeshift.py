@@ -230,6 +230,20 @@ class InfoBarTimeshift:
 		self.__evSOF()
 
 	def __evSOF(self):
+
+		if not self.timeshiftEnabled():
+			return
+
+		# --- START OF MODIFICATION: C++ Sync ---
+		# Check if the C++ core is currently handling stream recovery.
+		# If so, Python must ignore this SOF event to prevent conflicts.
+		service = self.session.nav.getCurrentService()
+		info = service and service.info()
+		if info and info.getInfo(iServiceInformation.sIsRecoveringStream):
+			print("[Timeshift.py] SOF event ignored: C++ is handling stream recovery.")
+			return  # Exit immediately, letting C++ take full control.
+		# --- END OF MODIFICATION ---
+
 		if not self.timeshiftEnabled() or self.pts_CheckFileChanged_timer.isActive() or self.pts_SeekBack_timer.isActive() or self.pts_StartSeekBackTimer.isActive() or self.pts_SeekToPos_timer.isActive():
 			return
 		self.pts_switchtolive = False
@@ -268,6 +282,19 @@ class InfoBarTimeshift:
 		self.__evEOF()
 
 	def __evEOF(self):
+		if not self.timeshiftEnabled():
+			return
+
+		# --- START OF MODIFICATION: C++ Sync ---
+		# Check if the C++ core is currently handling stream recovery.
+		# This is the most critical check to prevent conflicts with the C++ fix.
+		service = self.session.nav.getCurrentService()
+		info = service and service.info()
+		if info and info.getInfo(iServiceInformation.sIsRecoveringStream):
+			print("[Timeshift.py] EOF event ignored: C++ is handling stream recovery.")
+			return  # Exit immediately, letting C++ take full control.
+		# --- END OF MODIFICATION ---
+
 		if not self.timeshiftEnabled() or self.pts_CheckFileChanged_timer.isActive() or self.pts_SeekBack_timer.isActive() or self.pts_StartSeekBackTimer.isActive() or self.pts_SeekToPos_timer.isActive():
 			return
 		self.pts_switchtolive = False
