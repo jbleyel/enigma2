@@ -1261,11 +1261,16 @@ class SchedulerEdit(Setup):
 			("no", _("Standard (Always)")),
 			("noquery", _("Without query"))
 		])
-		self.timerFunctionRunIf = ConfigSelection(default=self.timer.functionRunIf, choices=[
-			(0, _("Standard (Always)")),
-			(1, _("Only in standby")),
-			(2, _("Only not in standby"))
+
+		self.timerFunctionStandby = ConfigSelection(default=self.timer.functionStandby, choices=[
+			(0, _("Ignore Standby")),
+			(1, _("Only in Standby")),
+			(2, _("Never in Standby"))
 		])
+		self.timerFunctionStandbyRetry = ConfigYesNo(default=self.timer.functionStandbyRetry)
+		self.timerFunctionRetryCountOnError = ConfigSelection(default=self.timer.functionRetryCountOnError, choices=[(0, _("Disabled"))] + [(x, x) for x in (1, 2, 3)])
+		self.timerFunctionRetryDelayOnError = ConfigSelection(default=self.timer.functionRetryDelayOnError, choices=[(x * 60, ngettext("%d Minute", "%d Minutes", x) % x) for x in (3, 5, 10)])
+
 		self.timerSleepDelay = ConfigSelection(default=self.timer.autosleepdelay, choices=[
 			(1, _("%d Minute") % 1),
 			(3, _("%d Minutes") % 3),
@@ -1315,6 +1320,14 @@ class SchedulerEdit(Setup):
 		return self.timerType.value in functionTimers.getList()
 
 	def createSetup(self):  # NOSONAR silence S2638
+		if self.isFunctionTimer():
+			self.timerSetEndTime.value = True
+			begin = self.getTimeStamp(self.timerRepeatStartDate.value, self.timerStartTime.value)
+			end = self.getTimeStamp(self.timerRepeatStartDate.value, self.timerEndTime.value)
+			if end <= begin + 60:
+				end = begin + 120 * 60  # Ensure at least 2 minutes duration.
+				tm = localtime(end)
+				self.timerEndTime.value = [tm.tm_hour, tm.tm_min]
 		Setup.createSetup(self)
 		for callback in onSchedulerSetup:
 			callback(self)
@@ -1370,7 +1383,10 @@ class SchedulerEdit(Setup):
 				self.timer.autosleepbegin = self.getTimeStamp(now, self.timerSleepStart.value)
 				self.timer.autosleepend = self.getTimeStamp(now, self.timerSleepEnd.value)
 		if self.timer.function:
-			self.timer.functionRunIf = self.timerFunctionRunIf.value
+			self.timer.functionStandby = self.timerFunctionStandby.value
+			self.timer.functionStandbyRetry = self.timerFunctionStandbyRetry.value
+			self.timer.functionRetryCountOnError = self.timerFunctionRetryCountOnError.value
+			self.timer.functionRetryDelayOnError = self.timerFunctionRetryDelayOnError.value
 
 		if self.timerRepeat.value == "repeated":
 			if self.timerRepeatPeriod.value == "daily":

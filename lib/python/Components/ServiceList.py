@@ -287,8 +287,8 @@ class ServiceListBase(GUIComponent):
 		self.picServiceGroup = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/ico_service_group.png"))
 		self.picCrypto = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/icon_crypt.png"))
 		self.picRecord = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/record.png"))
-		self.picCatchup = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/ico_catchup-fs8.png"))
-		self.picBackup = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/ico_altref-fs8.png"))
+		self.picStream = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/ico_stream.png"))
+		self.picCatchup = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/ico_catchup.png"))
 		self.picFavorites = LoadPixmap(path=resolveFilename(SCOPE_GUISKIN, "icons/epgclock_primetime.png"))  # TODO
 
 	def connectSelChanged(self, fnc):
@@ -562,12 +562,8 @@ class ServiceListLegacy(ServiceListBase):
 		if self.picCatchup:
 			self.l.setPixmap(self.l.picCatchup, self.picCatchup)
 
-		if self.picBackup:
-			self.l.setPixmap(self.l.picBackup, self.picBackup)
-
-		pic = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "icons/ico_stream.png"))
-		if pic:
-			self.l.setPixmap(self.l.picStream, pic)
+		if self.picStream:
+			self.l.setPixmap(self.l.picStream, self.picStream)
 
 		self.listHeight = 0
 		self.listWidth = 0
@@ -1038,10 +1034,10 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 		elif service.flags & eServiceReference.isDirectory:
 			pixmap = self.picFolder
 		else:
-			# if "&backupref=" in service.toString():
-			# pixmap = self.picBackup
 			if "catchupdays=" in service.toString():
 				pixmap = self.picCatchup
+			elif "%3a//" in service.toString():
+				pixmap = self.picStream
 			else:
 				orbpos = service.getUnsignedData(4) >> 16
 				if orbpos == 0xFFFF:

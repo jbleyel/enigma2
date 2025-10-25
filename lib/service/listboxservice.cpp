@@ -757,12 +757,8 @@ void eListboxServiceContent::paint(gPainter &painter, eWindowStyle &style, const
 		bool serviceFallback = false;
 		int isplayable_value;
 
-		bool isBackupAvailable = false;
 		bool isCatchUpAvailable = false;
 		std::string orig_ref_str = ref.toString();
-		if (orig_ref_str.find("&backupref=") != std::string::npos) {
-			isBackupAvailable = true;
-		}
 
 		if (orig_ref_str.find("catchupdays=") != std::string::npos) {
 			isCatchUpAvailable = true;
@@ -1006,7 +1002,6 @@ void eListboxServiceContent::paint(gPainter &painter, eWindowStyle &style, const
 							const char *filename = ref.path.c_str();
 							ePtr<gPixmap> &pixmap =
 								(m_cursor->flags & eServiceReference::isGroup) ? m_pixmaps[picServiceGroup] :
-								(isBackupAvailable) ? m_pixmaps[picBackup] :
 								(isCatchUpAvailable) ? m_pixmaps[picCatchup] :
 								(strstr(filename, "://")) ? m_pixmaps[picStream] :
 								(orbpos == 0xFFFF) ? m_pixmaps[picDVB_C] :
