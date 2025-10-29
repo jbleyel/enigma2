@@ -2113,6 +2113,7 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 			const int sH = src.size().height();
 			const int dW = srcarea.width();
 			const int dH = srcarea.height();
+			eDebug("[gPixmap] FORCE_NO_ACCELERATION_SCALE %d/%d H %d/%d", sW, dW, sH, dH);
 
 			if (sW == dW && sH != dH) {
 				int diffH = abs(sH - dH);
