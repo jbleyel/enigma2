@@ -2113,20 +2113,22 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 			const int sH = src.size().height();
 			const int dW = srcarea.width();
 			const int dH = srcarea.height();
-			eDebug("[gPixmap] FORCE_NO_ACCELERATION_SCALE %d/%d H %d/%d", sW, dW, sH, dH);
+			// eDebug("[gPixmap] FORCE_NO_ACCELERATION_SCALE %d/%d H %d/%d", sW, dW, sH, dH);
 
 			if (sW == dW && sH != dH) {
 				int diffH = abs(sH - dH);
 				if (diffH < 3) {
-					eDebug("[gPixmap] correcting minor height diff %d -> setHeight(%d)", diffH, sH);
+					// eDebug("[gPixmap] correcting minor height diff %d -> setHeight(%d)", diffH, sH);
 					srcarea.setHeight(sH);
 				}
 			} else if (sH == dH && sW != dW) {
 				int diffW = abs(sW - dW);
 				if (diffW < 3) {
-					eDebug("[gPixmap] correcting minor width diff %d -> setWidth(%d)", diffW, sW);
+					// eDebug("[gPixmap] correcting minor width diff %d -> setWidth(%d)", diffW, sW);
 					srcarea.setWidth(sW);
 				}
+			} else if (sW != dW && sH != dH) {
+				accel = false;
 			}
 		}
 #endif
