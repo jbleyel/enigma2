@@ -2109,21 +2109,19 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 
 #ifdef FORCE_NO_ACCELERATION_SCALE
 		if (accel && (flag & blitScale)) {
-
-			if (src.size().width() != srcarea.width() || src.size().height() != srcarea.height())
-			{
-				eDebug("[gPixmap] forcing no acceleration for scaling blit W %d / %d", src.size().width(), srcarea.width());
-				eDebug("[gPixmap] forcing no acceleration for scaling blit H %d / %d", src.size().height(), srcarea.height());
-				accel = false;
+			if (src.size().width() == srcarea.width()) {
+				int dh = abs(src.size().height() - srcarea.height());
+				if (dh > 0 && dh < 3) {
+					eDebug("[gPixmap] forcing no acceleration for scaling blit H %d / %d (diff %d)", src.size().height(), srcarea.height(), dh);
+					accel = false;
+				}
+			} else if (src.size().height() == srcarea.height()) {
+				int dw = abs(src.size().width() - srcarea.width());
+				if (dw > 0 && dw < 3) {
+					eDebug("[gPixmap] forcing no acceleration for scaling blit W %d / %d (diff %d)", src.size().width(), srcarea.width(), dw);
+					accel = false;
+				}
 			}
-
-			// Reset width in case of round issue
-//			if (src.size().width() != srcarea.width())
-//				srcarea.setWidth(src.size().width());
-
-			// Reset height in case of round issue
-//			if (src.size().height() != srcarea.height())
-//				srcarea.setHeight(src.size().height());
 		}
 #endif
 		if (accel) {
