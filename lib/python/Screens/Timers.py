@@ -1,17 +1,17 @@
 from datetime import datetime
 from os import stat, statvfs
-from time import localtime, mktime, strftime, time
+from time import ctime, localtime, mktime, strftime, time
 
 from enigma import BT_SCALE, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, eEPGCache, eLabel, eListbox, eListboxPythonMultiContent, eSize, eTimer
 
-from Scheduler import AFTEREVENT as SCHEDULER_AFTEREVENT, SchedulerEntry, TIMERTYPE as SCHEDULER_TYPE, functionTimers
 from RecordTimer import AFTEREVENT as RECORD_AFTEREVENT, RecordTimerEntry, TIMERTYPE as RECORD_TIMERTYPE, parseEvent
+from Scheduler import AFTEREVENT as SCHEDULER_AFTEREVENT, SchedulerEntry, TIMERTYPE as SCHEDULER_TYPE, functionTimers
 from ServiceReference import ServiceReference
 from skin import parseBoolean, parseFont, parseInteger
 from timer import TimerEntry
-# from Components.DataBaseAPI import moviedb  # noqa F401
 from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigClock, ConfigDateTime, ConfigIP, ConfigSelection, ConfigSubDict, ConfigText, ConfigYesNo, config
+# from Components.DataBaseAPI import moviedb  # noqa F401
 from Components.GUIComponent import GUIComponent
 from Components.Label import Label
 from Components.ScrollLabel import ScrollLabel
@@ -44,7 +44,7 @@ MODE_CONFLICT = 4
 #
 # Timer mode data.
 #
-MODE_DATA = {  # Skin name, Screen title, ActionMap description
+MODE_DATA = {  # Skin name, Screen title, ActionMap description.
 	MODE_SCHEDULER: ("SchedulerOverview", _("Scheduler Overview"), _("Scheduler Actions")),
 	MODE_ENERGY: ("EnergyTimerOverview", _("EnergyTimer Overview"), _("EnergyTimer Actions")),
 	MODE_SLEEP: ("SleepTimerOverview", _("SleepTimer Overview"), _("SleepTimer Actions")),
@@ -117,7 +117,6 @@ TIMER_STATES = {
 	TimerEntry.StateDisabled: _("Disabled")
 }
 DEEPSTANDBY_SUPPORT = BoxInfo.getItem("DeepstandbySupport")
-
 SCHEDULER_TYPES = {
 	SCHEDULER_TYPE.NONE: "nothing",
 	SCHEDULER_TYPE.WAKEUP: "wakeup",
@@ -130,7 +129,6 @@ SCHEDULER_TYPES = {
 	SCHEDULER_TYPE.RESTART: "restart",
 	SCHEDULER_TYPE.OTHER: "other"
 }
-
 SCHEDULER_VALUES = dict([(SCHEDULER_TYPES[x], x) for x in SCHEDULER_TYPES.keys()])
 SCHEDULER_TYPE_NAMES = {
 	SCHEDULER_TYPE.AUTODEEPSTANDBY: _("Auto deep standby") if DEEPSTANDBY_SUPPORT else _("Auto shut down"),
@@ -156,7 +154,6 @@ SCHEDULER_AFTER_EVENT_NAMES = {
 	SCHEDULER_AFTEREVENT.STANDBY: _("Go to standby"),
 	SCHEDULER_AFTEREVENT.DEEPSTANDBY: _("Go to deep standby") if DEEPSTANDBY_SUPPORT else _("Shut down")
 }
-
 RECORDTIMER_TYPES = {
 	RECORD_TIMERTYPE.RECORD: "record",
 	RECORD_TIMERTYPE.ZAP: "zap",
@@ -226,7 +223,7 @@ class TimerListBase(GUIComponent):
 		self.iconAutoTimer = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "icons/timer_autotimer.png"))
 		self.iconIceTVTimer = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "icons/timer_icetv.png"))
 		self.line = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "div-h.png"))
-		self.l = self.timerListWidget  # This is for compatibility reasons
+		self.l = self.timerListWidget  # This is for compatibility reasons.
 
 	def postWidgetCreate(self, instance):
 		instance.setContent(self.timerListWidget)
@@ -374,7 +371,7 @@ class SchedulerList(TimerListBase):
 		minorWidth = (textWidth - self.statusOffset) // 4 - 5
 		majorWidth = textWidth - self.statusOffset - minorWidth - 10
 		res = [None]
-		functionName = timer.function and functionTimers.getNameForItem(timer.function)
+		functionName = timer.function and functionTimers.getName(timer.function)
 		typeText = functionName or SCHEDULER_TYPE_NAMES.get(timer.timerType, UNKNOWN)
 		if repeatIcon:
 			res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, self.indent, ((self.topHeight - self.iconHeight) // 2), self.iconWidth, self.iconHeight, repeatIcon, None, None, BT_SCALE))
@@ -675,7 +672,7 @@ class SchedulerOverview(TimerOverviewBase):
 	def __init__(self, session):
 		self["timerlist"] = SchedulerList([])
 		TimerOverviewBase.__init__(self, session, mode=MODE_SCHEDULER)
-		self.skinName.insert(0, "PowerTimerOverview")  # Fallback for old skins
+		self.skinName.insert(0, "PowerTimerOverview")  # Fallback for old skins.
 
 	def doChangeCallbackAppend(self):
 		self.session.nav.Scheduler.on_state_change.append(self.onStateChange)
@@ -828,12 +825,12 @@ class SchedulerOverview(TimerOverviewBase):
 			self.reloadTimerList()
 
 	# def refill(self):
-	#	length = len(self.timerList)
-	#	self.fillTimerList()
-	#	if length and length != len(self.timerList):
-	#		self["timerlist"].entryRemoved(self["timerlist"].getCurrentIndex())
-	#	else:
-	#		self["timerlist"].invalidate()
+	# 	length = len(self.timerList)
+	# 	self.fillTimerList()
+	# 	if length and length != len(self.timerList):
+	# 		self["timerlist"].entryRemoved(self["timerlist"].getCurrentIndex())
+	# 	else:
+	# 		self["timerlist"].invalidate()
 
 
 class RecordTimerOverview(TimerOverviewBase):
@@ -862,7 +859,6 @@ class RecordTimerOverview(TimerOverviewBase):
 		if self.fallbackTimer.list:
 			timerList.extend([(timer, False) for timer in self.fallbackTimer.list if timer.state != 3])
 			timerList.extend([(timer, True) for timer in self.fallbackTimer.list if timer.state == 3])
-
 		timerList.extend([(timer, False) for timer in self.session.nav.RecordTimer.timer_list])
 		timerList.extend([(timer, True) for timer in self.session.nav.RecordTimer.processed_timers])
 		if config.usage.timerlist_finished_timer_position.index:  # End of list.
@@ -1208,6 +1204,7 @@ class ConflictTimerOverview(TimerOverviewBase):
 class SchedulerEdit(Setup):
 	def __init__(self, session, timer):
 		self.timer = timer
+		self.endTimeChanged = False
 		self.createConfig()
 		Setup.__init__(self, session, "Scheduler")
 
@@ -1261,16 +1258,14 @@ class SchedulerEdit(Setup):
 			("no", _("Standard (Always)")),
 			("noquery", _("Without query"))
 		])
-
 		self.timerFunctionStandby = ConfigSelection(default=self.timer.functionStandby, choices=[
 			(0, _("Ignore Standby")),
 			(1, _("Only in Standby")),
 			(2, _("Never in Standby"))
 		])
 		self.timerFunctionStandbyRetry = ConfigYesNo(default=self.timer.functionStandbyRetry)
-		self.timerFunctionRetryCountOnError = ConfigSelection(default=self.timer.functionRetryCountOnError, choices=[(0, _("Disabled"))] + [(x, x) for x in (1, 2, 3)])
-		self.timerFunctionRetryDelayOnError = ConfigSelection(default=self.timer.functionRetryDelayOnError, choices=[(x * 60, ngettext("%d Minute", "%d Minutes", x) % x) for x in (3, 5, 10)])
-
+		self.timerFunctionRetryCount = ConfigSelection(default=self.timer.functionRetryCount, choices=[(0, _("Disabled"))] + [(x, str(x)) for x in range(1, 6)])
+		self.timerFunctionRetryDelay = ConfigSelection(default=self.timer.functionRetryDelay, choices=[(x * 60, ngettext("%d Minute", "%d Minutes", x) % x) for x in (3, 5, 10, 20, 30, 60)])
 		self.timerSleepDelay = ConfigSelection(default=self.timer.autosleepdelay, choices=[
 			(1, _("%d Minute") % 1),
 			(3, _("%d Minutes") % 3),
@@ -1307,6 +1302,8 @@ class SchedulerEdit(Setup):
 		self.timerStartTime = ConfigClock(default=self.timer.begin)
 		self.timerSetEndTime = ConfigYesNo(default=(int((self.timer.end - self.timer.begin) / 60.0) > 4))
 		self.timerEndTime = ConfigClock(default=self.timer.end)
+		print("[SchedulerEdit] INIT self.timerEndTime", self.timerEndTime.value)
+
 		self.timerAfterEvent = ConfigSelection(default=SCHEDULER_AFTER_EVENTS.get(self.timer.afterEvent, "nothing"), choices=[
 			(SCHEDULER_AFTER_EVENTS.get(SCHEDULER_AFTEREVENT.NONE), SCHEDULER_AFTER_EVENT_NAMES.get(SCHEDULER_AFTEREVENT.NONE)),
 			(SCHEDULER_AFTER_EVENTS.get(SCHEDULER_AFTEREVENT.WAKEUPTOSTANDBY), SCHEDULER_AFTER_EVENT_NAMES.get(SCHEDULER_AFTEREVENT.WAKEUPTOSTANDBY)),
@@ -1321,16 +1318,30 @@ class SchedulerEdit(Setup):
 
 	def createSetup(self):  # NOSONAR silence S2638
 		if self.isFunctionTimer():
-			self.timerSetEndTime.value = True
-			begin = self.getTimeStamp(self.timerRepeatStartDate.value, self.timerStartTime.value)
-			end = self.getTimeStamp(self.timerRepeatStartDate.value, self.timerEndTime.value)
-			if end <= begin + 60:
-				end = begin + 120 * 60  # Ensure at least 2 minutes duration.
-				tm = localtime(end)
-				self.timerEndTime.value = [tm.tm_hour, tm.tm_min]
+			if self.timer.isNewTimer:
+				self.checkEndDate()
 		Setup.createSetup(self)
 		for callback in onSchedulerSetup:
 			callback(self)
+
+	def checkEndDate(self):
+		begin = self.getTimeStamp(self.timer.begin, self.timerStartTime.value)
+		end = self.getTimeStamp(self.timer.begin, self.timerEndTime.value)
+		print(f"[SchedulerEdit] checkEndDate begin={ctime(begin)} end={ctime(end)}")
+		if end <= begin + 60:
+			end = begin + 2 * 60 * 60  # Ensure at least 2 hours duration.
+			tm = localtime(end)
+			self.timerEndTime.value = [tm.tm_hour, tm.tm_min]
+			print("[SchedulerEdit] Adjusted end time to %02d:%02d" % (tm.tm_hour, tm.tm_min))
+
+	def changedEntry(self):
+		Setup.changedEntry(self)
+		if self.isFunctionTimer() and self.timer.isNewTimer and not self.endTimeChanged:
+			current = self["config"].getCurrent()[1]
+			if current == self.timerEndTime:
+				self.endTimeChanged = True
+			elif current == self.timerStartTime:
+				self.checkEndDate()
 
 	def keyCancel(self):
 		if self["config"].isChanged():
@@ -1349,7 +1360,7 @@ class SchedulerEdit(Setup):
 	def keySave(self, result=None):
 		for callback in onSchedulerSave:
 			callback(self)
-		if not self.timerSetEndTime.value:
+		if not self.timerSetEndTime.value and not self.isFunctionTimer():
 			self.timerEndTime.value = self.timerStartTime.value
 		now = int(time())
 		self.timer.resetRepeated()
@@ -1362,13 +1373,20 @@ class SchedulerEdit(Setup):
 		if self.timerRepeat.value == "once":
 			date = self.timerRepeatStartDate.value
 			startTime = self.timerStartTime.value
+
+			print("[SchedulerEdit] startTime", startTime)
+
 			begin = self.getTimeStamp(date, startTime)
 			endTime = self.timerEndTime.value
+
+			print("[SchedulerEdit] endTime", endTime)
+
 			end = self.getTimeStamp(date, endTime)
 			if end < begin:  # If end is less than start then add 1 day to the end time.
 				end += 86400
 			self.timer.begin = begin
 			self.timer.end = end
+			print("[SchedulerEdit] one-time timer set for %s to %s" % (strftime("%Y-%m-%d %H:%M", localtime(self.timer.begin)), strftime("%Y-%m-%d %H:%M", localtime(self.timer.end))))
 		if self.timerType.value in ("autostandby", "autodeepstandby"):
 			self.timer.begin = now + 10
 			self.timer.end = self.timer.begin
@@ -1385,9 +1403,8 @@ class SchedulerEdit(Setup):
 		if self.timer.function:
 			self.timer.functionStandby = self.timerFunctionStandby.value
 			self.timer.functionStandbyRetry = self.timerFunctionStandbyRetry.value
-			self.timer.functionRetryCountOnError = self.timerFunctionRetryCountOnError.value
-			self.timer.functionRetryDelayOnError = self.timerFunctionRetryDelayOnError.value
-
+			self.timer.functionRetryCount = self.timerFunctionRetryCount.value
+			self.timer.functionRetryDelay = self.timerFunctionRetryDelay.value
 		if self.timerRepeat.value == "repeated":
 			if self.timerRepeatPeriod.value == "daily":
 				for day in (0, 1, 2, 3, 4, 5, 6):
@@ -1420,7 +1437,6 @@ class SchedulerEdit(Setup):
 		for i in range(self.timerNetIPCount.value):
 			ipAdresses.append(".".join("%d" % d for d in self.timerIPAddress[i].value))
 		self.timer.ipadress = ",".join(ipAdresses)
-
 		self.session.nav.Scheduler.saveTimers()
 		for notifier in self.onSave:
 			notifier()
@@ -1434,7 +1450,7 @@ class SchedulerEdit(Setup):
 class RecordTimerEdit(Setup):
 	def __init__(self, session, timer):
 		self.timer = timer
-		self.newEntry = False  # TODO
+		self.newEntry = False  # TODO.
 		self.timer.service_ref_prev = self.timer.service_ref
 		self.timer.begin_prev = self.timer.begin
 		self.timer.end_prev = self.timer.end
@@ -1442,7 +1458,7 @@ class RecordTimerEdit(Setup):
 		self.timer.dirname_prev = self.timer.dirname
 		self.fallbackInfo = None
 		self.initEndTime = True
-		self.session = session  # We need session before createConfig
+		self.session = session  # We need session before createConfig.
 		self.createConfig()
 		if self.timer.external:
 			FallbackTimerDirs(self, self.fallbackResult)
@@ -1530,7 +1546,6 @@ class RecordTimerEdit(Setup):
 		if default not in locations:
 			locations.append(default)
 		self.timerLocation = ConfigSelection(default=default, choices=locations)
-
 		self.tags = self.timer.tags[:]
 		if not self.tags:  # If no tags found, make name of event default tag set.
 			tagName = self.timer.name.strip()
@@ -1545,7 +1560,6 @@ class RecordTimerEdit(Setup):
 			(RECORDTIMER_AFTER_EVENTS.get(RECORD_AFTEREVENT.AUTO), RECORDTIMER_AFTER_EVENT_NAMES.get(RECORD_AFTEREVENT.AUTO))
 		])
 		self.timerFallback = ConfigYesNo(default=self.timer.external_prev or self.newEntry and config.usage.remote_fallback_external_timer.value and config.usage.remote_fallback.value and config.usage.remote_fallback_external_timer_default.value)
-
 		for callback in onRecordTimerCreate:
 			callback(self)
 
@@ -1559,7 +1573,7 @@ class RecordTimerEdit(Setup):
 		current = self["config"].getCurrent()[1]
 		if current == self.timerFallback:
 			self.timer.external = self.timerFallback.value
-			self.selectionChanged()  # Force getSpace()
+			self.selectionChanged()  # Force getSpace().
 		elif current == self.timerLocation and self.timerType.value != "zap":
 			self.getSpace()
 		elif current == self.timerType and self.timerType.value == "zap":
@@ -1573,7 +1587,7 @@ class RecordTimerEdit(Setup):
 	def selectionChanged(self):
 		Setup.selectionChanged(self)
 		if self.timerType.value != "zap":
-			self.getSpace()  # TODO This will be called every time on selectionChanged and that's not good
+			self.getSpace()  # TODO This will be called every time on selectionChanged and that's not good.
 
 	def keySelect(self):
 		current = self["config"].getCurrent()[1]
@@ -1707,23 +1721,23 @@ class RecordTimerEdit(Setup):
 	# These functions have been separated from the main code so that they can be overridden in sub-classes.
 	#
 	def getTags(self):
-		if not self.timer.external:  # TODO Fallback
-			def getTagsCallback(result):
-				if result is not None:
-					self.tags = result
-					self.timerTags.setChoices([not result and "None" or " ".join(result)])
+		def getTagsCallback(result):
+			if result is not None:
+				self.tags = result
+				self.timerTags.setChoices([not result and "None" or " ".join(result)])
 
+		if not self.timer.external:  # TODO Fallback.
 			self.session.openWithCallback(getTagsCallback, TagEditor, tags=self.tags)
 
 	def getChannels(self):
-		if not self.timer.external:  # TODO Fallback
-			def getChannelsCallback(*result):
-				if result:
-					self.timerServiceReference = ServiceReference(result[0])
-					self.timerService.setCurrentText(self.timerServiceReference.getServiceName())
-					for callback in onRecordTimerChannelChange:
-						callback(self)
+		def getChannelsCallback(*result):
+			if result:
+				self.timerServiceReference = ServiceReference(result[0])
+				self.timerService.setCurrentText(self.timerServiceReference.getServiceName())
+				for callback in onRecordTimerChannelChange:
+					callback(self)
 
+		if not self.timer.external:  # TODO Fallback.
 			from Screens.ChannelSelection import SimpleChannelSelection  # This must be here to avoid a boot loop!
 			self.session.openWithCallback(getChannelsCallback, SimpleChannelSelection, _("Select the channel from which to record:"), currentBouquet=True)
 
@@ -1778,14 +1792,14 @@ class RecordTimerEdit(Setup):
 			return (defaultMoviePath(), [defaultMoviePath()])
 
 	def getLocation(self):
-		if not self.timer.external:  # TODO Fallback
-			def getLocationCallback(result):
-				if result:
-					if config.movielist.videodirs.value != self.timerLocation.choices:
-						self.timerLocation.setChoices(config.movielist.videodirs.value, default=result)
-					self.timerLocation.value = result
-				self.getSpace()
+		def getLocationCallback(result):
+			if result:
+				if config.movielist.videodirs.value != self.timerLocation.choices:
+					self.timerLocation.setChoices(config.movielist.videodirs.value, default=result)
+				self.timerLocation.value = result
+			self.getSpace()
 
+		if not self.timer.external:  # TODO Fallback.
 			self.session.openWithCallback(getLocationCallback, MovieLocationBox, _("Select the location in which to store the recording:"), self.timerLocation.value, minFree=100)  # We require at least 100MB free space.
 
 	def getSpace(self):
@@ -1849,7 +1863,7 @@ class SleepTimer(Setup):
 			ref = self.session.nav.getCurrentlyPlayingServiceOrGroup()
 			if ref:
 				path = ref.getPath()
-				if path:  # Movie
+				if path:  # Movie.
 					service = self.session.nav.getCurrentService()
 					seek = service and service.seek()
 					if seek:
@@ -1859,7 +1873,7 @@ class SleepTimer(Setup):
 							sleepTimer = length[1] - position[1]
 							if sleepTimer > 0:
 								sleepTimer = int(sleepTimer // 90000)
-				else:  # Service
+				else:  # Service.
 					epg = eEPGCache.getInstance()
 					event = epg.lookupEventTime(ref, -1, 0)
 					if event:

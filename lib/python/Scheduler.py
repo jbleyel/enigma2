@@ -212,8 +212,8 @@ class Scheduler(Timer):
 				timerEntry.append(f"function=\"{timer.function}\"")
 				timerEntry.append(f"runinstandby=\"{timer.functionStandby}\"")
 				timerEntry.append(f"runinstandbyretry=\"{int(timer.functionStandbyRetry)}\"")
-				timerEntry.append(f"retryonerrorcount=\"{int(timer.functionRetryCountOnError)}\"")
-				timerEntry.append(f"retryonerrordelay=\"{int(timer.functionRetryDelayOnError)}\"")
+				timerEntry.append(f"retrycount=\"{int(timer.functionRetryCount)}\"")
+				timerEntry.append(f"retrydelay=\"{int(timer.functionRetryDelay)}\"")
 
 			timerLog = []
 			for logTime, logCode, logMsg in timer.log_entries:
@@ -278,11 +278,12 @@ class Scheduler(Timer):
 		if entry.function:
 			entry.functionStandby = int(timerDom.get("runinstandby", "0"))
 			entry.functionStandbyRetry = int(timerDom.get("runinstandbyretry", "0"))
-			entry.functionRetryCountOnError = int(timerDom.get("retryonerrorcount", "3"))
-			entry.functionRetryDelayOnError = int(timerDom.get("retryonerrordelay", "3"))
+			entry.functionRetryCount = int(timerDom.get("retrycount", "0"))
+			entry.functionRetryDelay = int(timerDom.get("retrydelay", "5"))
 
 		for log in timerDom.findall("log"):
 			entry.log_entries.append((int(log.get("time")), int(log.get("code")), log.text.strip()))
+		entry.isNewTimer = False
 		return entry
 
 	# When activating a timer which has already passed, simply
@@ -522,8 +523,10 @@ class SchedulerEntry(TimerEntry):
 		self.cancelFunction = None
 		self.functionStandby = 0  # 0 Always / 1 Standby / 2 Online
 		self.functionStandbyRetry = False
-		self.functionRetryCountOnError = 3
-		self.functionRetryDelayOnError = 3  # minutes
+		self.functionRetryCount = 0  # default diabled
+		self.functionRetryDelay = 5  # 5 minutes
+		self.functionRetryCounter = 0
+		self.isNewTimer = True
 
 	def __repr__(self, getType=False):
 		timertype = {
@@ -1005,18 +1008,34 @@ class SchedulerEntry(TimerEntry):
 			self.timerThread.start()
 
 	def functionTimerCallback(self, success):
+		if DEBUG:
+			print(f"[Scheduler] DEBUG functionTimerCallback success={success}")
+		if self.functionRetryCount > 0 and not success:
+			self.functionRetryCounter += 1
+			if self.functionRetryCounter <= self.functionRetryCount:
+				if DEBUG:
+					print(f"[Scheduler] DEBUG functionTimerCallback retry {self.functionRetryCounter} of {self.functionRetryCount} after {self.functionRetryDelay} minutes")
+				nextBegin = int(time()) + (self.functionRetryDelay * 60)
+				if nextBegin < self.end:
+					self.start_prepare = nextBegin
+					self.state = self.StateWaiting
+					NavigationInstance.instance.Scheduler.doActivate(self)
+					return
 		self.failed = not success
-		self.end = int(time()) - 1
+		self.state = self.StateEnded if success else self.StateFailed
 		NavigationInstance.instance.Scheduler.doActivate(self)
 
 	def getNextActivation(self):
+		print(f"[Scheduler] getNextActivation state={self.state}")
 		if self.state in (self.StateEnded, self.StateFailed):
-			return self.end
+			print(f"[Scheduler] getNextActivation return self.end={self.end}")
+			return int(time()) - 1 if self.function else self.end
 		nextState = self.state + 1
+		print(f"[Scheduler] getNextActivation return nextState {nextState} self.end={self.end}")
 		return {
 			self.StatePrepared: self.start_prepare,
 			self.StateRunning: self.begin,
-			self.StateEnded: self.end
+			self.StateEnded: int(time()) + 10 if self.function else self.end
 		}[nextState]
 
 	def timeChanged(self):
@@ -1258,18 +1277,19 @@ class FunctionTimers:
 	def getItem(self, key):
 		return self.items.get(key)
 
-	def getNameForItem(self, key):
+	def getName(self, key):
 		return self.items.get(key, {}).get("name")
 
 
 functionTimers = FunctionTimers()
 
 
-def addFunctionTimer(key: str, name: str, entryFunction, cancelFunction, useOwnThread=False):
+def addFunctionTimer(key: str, name: str, entryFunction, cancelFunction, useOwnThread=False, estimatedDuration=0):
 	"""Convenience wrapper for adding a function timer entry."""
 	functionTimers.add(key, {
 		"name": name,
 		"entryFunction": entryFunction,
 		"cancelFunction": cancelFunction,
-		"useOwnThread": useOwnThread
+		"useOwnThread": useOwnThread,
+		"estimatedDuration": estimatedDuration
 	})
