@@ -2107,6 +2107,25 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 		Stopwatch s;
 #endif
 
+#ifdef FORCE_NO_ACCELERATION_SCALE
+		if (accel && (flag & blitScale)) {
+
+			if (src.size().width() != srcarea.width() || src.size().height() != srcarea.height())
+			{
+				eDebug("[gPixmap] forcing no acceleration for scaling blit W %d / %d", src.size().width(), srcarea.width());
+				eDebug("[gPixmap] forcing no acceleration for scaling blit H %d / %d", src.size().height(), srcarea.height());
+				accel = false;
+			}
+
+			// Reset width in case of round issue
+//			if (src.size().width() != srcarea.width())
+//				srcarea.setWidth(src.size().width());
+
+			// Reset height in case of round issue
+//			if (src.size().height() != srcarea.height())
+//				srcarea.setHeight(src.size().height());
+		}
+#endif
 		if (accel) {
 			flag &= 7; // remove all flags except the blit flags
 			// eDebug("[gPixmap] accel flag %d / area (%d,%d,%d,%d) / srcarea (%d,%d,%d,%d)", flag, area.left(),
