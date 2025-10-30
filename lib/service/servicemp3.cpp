@@ -1415,6 +1415,7 @@ RESULT eServiceMP3::start() {
 	ASSERT(m_state == stIdle);
 
 	m_subtitles_paused = false;
+	m_base_mpegts = -1;  // Reset MPEGTS base for WebVTT at new start
 	if (m_gst_playbin) {
 		eDebug("[eServiceMP3] *** starting pipeline ****");
 		GstStateChangeReturn ret;
@@ -1670,6 +1671,7 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
 	// eDebug("[eServiceMP3] seekToImpl pts_t to %" G_GINT64_FORMAT, (gint64)to);
 	/* convert pts to nanoseconds */
 	m_last_seek_pos = to;
+	m_base_mpegts = -1;  // Reset when seeking to avoid stale base
 
 	if(m_pending_seek_pos == 0 && to > 0)
 	{
@@ -3790,6 +3792,84 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad* pad) {
  *
  * @param[in] buffer The GstBuffer containing subtitle data.
  */
+
+void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
+	if (!buffer || m_currentSubtitleStream < 0 || m_currentSubtitleStream >= (int)m_subtitleStreams.size())
+		return;
+
+	GstMapInfo map;
+	if (!gst_buffer_map(buffer, &map, GST_MAP_READ))
+		return;
+
+	int subType = m_subtitleStreams[m_currentSubtitleStream].type;
+
+	if (subType == stWebVTT) {
+		std::string vtt_string(reinterpret_cast<char*>(map.data), map.size);
+		std::vector<SubtitleEntry> parsed_subs;
+
+		eDebug("SUB DEBUG line");
+		eDebug(">>>\n%s\n<<<", vtt_string.c_str());
+
+		if (parseWebVTT(vtt_string, parsed_subs)) {
+			for (const auto& sub : parsed_subs) {
+				if (sub.vtt_mpegts_base) {
+					if (!m_vtt_live)
+						m_vtt_live = true;
+
+					int64_t decoder_pts = getLiveDecoderTime();
+					int64_t delta = 0;
+
+					// Initialize base_mpegts per segment if not set
+					if (m_base_mpegts < 0) {
+						m_base_mpegts = sub.vtt_mpegts_base;
+						eDebug("[SUB DEBUG] Initializing m_base_mpegts=%" PRId64, m_base_mpegts);
+					}
+
+					if (decoder_pts >= 0) {
+						const uint64_t pts_mask = (1ULL << 33) - 1;
+						delta = ((sub.vtt_mpegts_base & pts_mask) - (m_base_mpegts & pts_mask)) / 90; // ms
+						eDebug("[SUB DEBUG] base_mpegts=%" PRId64 " mpegts=%" PRId64 " decoder=%" PRId64 " masked_mpegts=%" PRId64 " masked_decoder=%" PRId64 " delta_ms=%" PRId64, m_base_mpegts,
+							   sub.vtt_mpegts_base, decoder_pts, sub.vtt_mpegts_base & pts_mask, decoder_pts & pts_mask, delta);
+					}
+
+					int64_t adjusted_start = sub.start_time_ms + delta;
+					int64_t adjusted_end = sub.end_time_ms + delta;
+
+					eDebug("[SUB DEBUG] Timestamps: start=%" PRId64 " end=%" PRId64 " delta=%" PRId64 " adjusted_start=%" PRId64 " adjusted_end=%" PRId64, sub.start_time_ms, sub.end_time_ms, delta,
+						   adjusted_start, adjusted_end);
+
+					std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
+					m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
+				} else {
+					eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
+					m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
+				}
+			}
+
+			if (!parsed_subs.empty())
+				m_subtitle_sync_timer->start(250, true);
+		}
+
+	} else if (subType == stDVB) {
+		uint8_t* data = map.data;
+		int64_t buf_pos = GST_BUFFER_PTS(buffer);
+		m_dvb_subtitle_parser->processBuffer(data, map.size, buf_pos / 1000000ULL);
+
+	} else if (subType < stVOB) {
+		std::string line(reinterpret_cast<char*>(map.data), map.size);
+		uint32_t start_ms = GST_BUFFER_PTS(buffer) / 1000000ULL;
+		uint32_t duration = GST_BUFFER_DURATION(buffer) / 1000000ULL;
+		uint32_t end_ms = start_ms + duration;
+
+		m_subtitle_pages.insert(subtitle_pages_map_pair_t(end_ms, subtitle_page_t(start_ms, end_ms, line)));
+		m_subtitle_sync_timer->start(250, true);
+	}
+
+	gst_buffer_unmap(buffer, &map);
+}
+
+/*
+
 void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 	if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size()) {
 		GstMapInfo map;
@@ -3872,7 +3952,7 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 		gst_buffer_unmap(buffer, &map);
 	}
 }
-
+*/
 /**
  * @brief Adds a new DVB subtitle page to the list and pushes it to the subtitle widget.
  *

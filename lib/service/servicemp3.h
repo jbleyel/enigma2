@@ -436,6 +436,8 @@ private:
 	int64_t m_initial_vtt_mpegts;
 	int64_t m_vtt_live_base_time;
 	bool m_vtt_live;
+	int64_t m_base_mpegts = -1;
+
 
 	void pushDVBSubtitles();
 	void pushSubtitles();
