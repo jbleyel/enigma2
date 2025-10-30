@@ -340,12 +340,15 @@ bool parseWebVTT(const std::string& vtt_data, std::vector<SubtitleEntry>& subs_o
 				continue;
 
 			// Apply timestamp mapping adjustment
+			// ignore for now
+			/*
 			if (vtt_mpegts_base > 0) {
 				const uint64_t local_mpegts_ms = vtt_mpegts_base / 90; // MPEGTS-Ticks (90 kHz) → ms
 				const int64_t delta = static_cast<int64_t>(local_mpegts_ms) - static_cast<int64_t>(local_offset_ms);
 				start_ms += delta;
 				end_ms += delta;
 			}
+			*/
 			expecting_text = true;
 			continue;
 		}
