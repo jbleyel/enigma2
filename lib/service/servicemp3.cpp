@@ -3819,29 +3819,28 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 					int64_t decoder_pts = getLiveDecoderTime();
 					int64_t delta = 0;
 
-					// Initialize base_mpegts per segment if not set
-					if (m_base_mpegts < 0) {
-						m_base_mpegts = sub.vtt_mpegts_base;
-						eDebug("[SUB DEBUG] Initializing m_base_mpegts=%" PRId64, m_base_mpegts);
-					}
+					// Delta = absolute position of segment minus LOCAL offset
+					int64_t segment_ms = sub.vtt_mpegts_base / 90; // MPEGTS -> ms
+					delta = segment_ms - sub.local_offset_ms;
 
-					if (decoder_pts >= 0) {
-						const uint64_t pts_mask = (1ULL << 33) - 1;
-						delta = ((sub.vtt_mpegts_base & pts_mask) - (m_base_mpegts & pts_mask)) / 90; // ms
-						eDebug("[SUB DEBUG] base_mpegts=%" PRId64 " mpegts=%" PRId64 " decoder=%" PRId64 " masked_mpegts=%" PRId64 " masked_decoder=%" PRId64 " delta_ms=%" PRId64, m_base_mpegts,
-							   sub.vtt_mpegts_base, decoder_pts, sub.vtt_mpegts_base & pts_mask, decoder_pts & pts_mask, delta);
-					}
-
+					// Adjust start/end relative to decoder
 					int64_t adjusted_start = sub.start_time_ms + delta;
 					int64_t adjusted_end = sub.end_time_ms + delta;
 
-					eDebug("[SUB DEBUG] Timestamps: start=%" PRId64 " end=%" PRId64 " delta=%" PRId64 " adjusted_start=%" PRId64 " adjusted_end=%" PRId64, sub.start_time_ms, sub.end_time_ms, delta,
+					// Optional: shift to current decoder time if sub is in the past
+					if (decoder_pts > 0 && adjusted_end < decoder_pts) {
+						adjusted_start += decoder_pts - adjusted_end;
+						adjusted_end += decoder_pts - adjusted_end;
+					}
+
+					eDebug("[SUB DEBUG] start=%" PRId64 " end=%" PRId64 " delta=%" PRId64 " adjusted_start=%" PRId64 " adjusted_end=%" PRId64, sub.start_time_ms, sub.end_time_ms, delta,
 						   adjusted_start, adjusted_end);
 
 					std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
 					m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
 				} else {
-					eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s", sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
+					// Keine MPEGTS, normale Sub
+					std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
 					m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
 				}
 			}
@@ -3861,12 +3860,14 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 		uint32_t duration = GST_BUFFER_DURATION(buffer) / 1000000ULL;
 		uint32_t end_ms = start_ms + duration;
 
+		std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
 		m_subtitle_pages.insert(subtitle_pages_map_pair_t(end_ms, subtitle_page_t(start_ms, end_ms, line)));
 		m_subtitle_sync_timer->start(250, true);
 	}
 
 	gst_buffer_unmap(buffer, &map);
 }
+
 
 /*
 
