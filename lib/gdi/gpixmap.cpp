@@ -2109,15 +2109,15 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 
 #ifdef FORCE_NO_ACCELERATION_SCALE
 		if (accel && (flag & blitScale)) {
-			if (sW != dW || sH != dH)
-				accel = false;
-
-			/*
 			const int sW = src.size().width();
 			const int sH = src.size().height();
 			const int dW = srcarea.width();
 			const int dH = srcarea.height();
-			// eDebug("[gPixmap] FORCE_NO_ACCELERATION_SCALE %d/%d H %d/%d", sW, dW, sH, dH);
+			if (sW != dW || sH != dH)
+				accel = false;
+
+			/*
+			eDebug("[gPixmap] FORCE_NO_ACCELERATION_SCALE %d/%d H %d/%d", sW, dW, sH, dH);
 
 			if (sW != dW || sH != dH) {
 				if (sW == dW && sH != dH) {
