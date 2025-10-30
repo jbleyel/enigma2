@@ -2108,37 +2108,8 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 #endif
 
 #ifdef FORCE_NO_ACCELERATION_SCALE
-		if (accel && (flag & blitScale)) {
-			const int sW = src.size().width();
-			const int sH = src.size().height();
-			const int dW = srcarea.width();
-			const int dH = srcarea.height();
-			if (sW != dW || sH != dH)
-				accel = false;
-
-			/*
-			eDebug("[gPixmap] FORCE_NO_ACCELERATION_SCALE %d/%d H %d/%d", sW, dW, sH, dH);
-
-			if (sW != dW || sH != dH) {
-				if (sW == dW && sH != dH) {
-					int diffH = abs(sH - dH);
-					if (diffH < 3) {
-						// eDebug("[gPixmap] correcting minor height diff %d -> setHeight(%d)", diffH, sH);
-						srcarea.setHeight(sH);
-					}
-					else
-						accel = false;
-				} else if (sH == dH && sW != dW) {
-					int diffW = abs(sW - dW);
-					if (diffW < 3) {
-						// eDebug("[gPixmap] correcting minor width diff %d -> setWidth(%d)", diffW, sW);
-						srcarea.setWidth(sW);
-					}
-					else
-						accel = false;
-				}
-			}
-			*/
+		if (accel && (flag & blitScale) && (src.size().width() != srcarea.width() || src.size().height() != srcarea.height())) {
+			accel = false;
 		}
 #endif
 		if (accel) {
