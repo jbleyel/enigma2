@@ -3795,7 +3795,6 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad* pad) {
  *
  * @param[in] buffer The GstBuffer containing subtitle data.
  */
-
 void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 	if (!buffer || m_currentSubtitleStream < 0 || m_currentSubtitleStream >= (int)m_subtitleStreams.size())
 		return;
@@ -3805,7 +3804,6 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 		return;
 
 	int subType = m_subtitleStreams[m_currentSubtitleStream].type;
-
 	if (subType == stWebVTT) {
 		std::string vtt_string(reinterpret_cast<char*>(map.data), map.size);
 		std::vector<SubtitleEntry> parsed_subs;
@@ -3816,33 +3814,69 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 		if (parseWebVTT(vtt_string, parsed_subs)) {
 			for (const auto& sub : parsed_subs) {
 				if (sub.vtt_mpegts_base) {
-					if (!m_vtt_live)
-						m_vtt_live = true;
+					const uint64_t pts_mask = (1ULL << 33) - 1;
+					int64_t segment_ms = static_cast<int64_t>(sub.vtt_mpegts_base / 90);
+					int64_t local_offset = static_cast<int64_t>(sub.local_offset_ms);
+					int64_t abs_start_ms = segment_ms - local_offset + static_cast<int64_t>(sub.start_time_ms);
+					int64_t abs_end_ms = segment_ms - local_offset + static_cast<int64_t>(sub.end_time_ms);
 
 					int64_t decoder_pts = getLiveDecoderTime();
-					int64_t delta = 0;
+					const int64_t LIVE_WINDOW_MS = 30 * 1000;
+					const int64_t PAST_MARGIN_MS = 10 * 1000;
 
-					// Delta = absolute position of segment minus LOCAL offset
-					int64_t segment_ms = sub.vtt_mpegts_base / 90; // MPEGTS -> ms
-					delta = segment_ms - sub.local_offset_ms;
+					auto mod33diff = [&](uint64_t a, uint64_t b) -> int64_t {
+						uint64_t da = (a & pts_mask);
+						uint64_t db = (b & pts_mask);
+						int64_t diff = static_cast<int64_t>(da) - static_cast<int64_t>(db);
+						if (diff > static_cast<int64_t>(pts_mask / 2))
+							diff -= static_cast<int64_t>(pts_mask) + 1;
+						else if (diff < -static_cast<int64_t>(pts_mask / 2))
+							diff += static_cast<int64_t>(pts_mask) + 1;
+						return diff;
+					};
 
-					// Adjust start/end relative to decoder
-					int64_t adjusted_start = sub.start_time_ms + delta;
-					int64_t adjusted_end = sub.end_time_ms + delta;
-
-					// Optional: shift to current decoder time if sub is in the past
-					if (decoder_pts > 0 && adjusted_end < decoder_pts) {
-						adjusted_start += decoder_pts - adjusted_end;
-						adjusted_end += decoder_pts - adjusted_end;
+					bool decide_live = false;
+					if (decoder_pts > 0) {
+						int64_t diff = abs_start_ms - decoder_pts;
+						if (std::llabs(diff) <= LIVE_WINDOW_MS)
+							decide_live = true;
+						else {
+							int64_t masked_diff_ms = mod33diff(sub.vtt_mpegts_base, static_cast<uint64_t>(decoder_pts * 90)) / 90;
+							if (std::llabs(masked_diff_ms) <= LIVE_WINDOW_MS)
+								decide_live = true;
+						}
+					} else {
+						if (sub.local_offset_ms != 0)
+							decide_live = true;
+						else if (segment_ms < (5 * 60 * 1000))
+							decide_live = true;
 					}
 
-					eDebug("[SUB DEBUG] start=%" PRId64 " end=%" PRId64 " delta=%" PRId64 " adjusted_start=%" PRId64 " adjusted_end=%" PRId64, sub.start_time_ms, sub.end_time_ms, delta,
-						   adjusted_start, adjusted_end);
+					int64_t adjusted_start, adjusted_end;
+					if (decide_live) {
+						if (!m_vtt_live)
+							m_vtt_live = true;
+						adjusted_start = abs_start_ms;
+						adjusted_end = abs_end_ms;
 
-					std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
-					m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
+						if (decoder_pts > 0 && adjusted_end < decoder_pts - PAST_MARGIN_MS) {
+							eDebug("[eServiceMP3] *** current sub has already ended, skip: %" PRId64, adjusted_end - decoder_pts);
+						} else {
+							std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
+							m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
+						}
+					} else {
+						if (m_initial_vtt_mpegts == 0)
+							m_initial_vtt_mpegts = sub.vtt_mpegts_base;
+
+						int64_t delta_ms = static_cast<int64_t>((sub.vtt_mpegts_base - m_initial_vtt_mpegts) / 90);
+						adjusted_start = static_cast<int64_t>(sub.start_time_ms) + delta_ms;
+						adjusted_end = static_cast<int64_t>(sub.end_time_ms) + delta_ms;
+
+						std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
+						m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
+					}
 				} else {
-					// Keine MPEGTS, normale Sub
 					std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
 					m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
 				}
@@ -3851,19 +3885,16 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 			if (!parsed_subs.empty())
 				m_subtitle_sync_timer->start(250, true);
 		}
-
 	} else if (subType == stDVB) {
 		uint8_t* data = map.data;
 		int64_t buf_pos = GST_BUFFER_PTS(buffer);
 		m_dvb_subtitle_parser->processBuffer(data, map.size, buf_pos / 1000000ULL);
-
 	} else if (subType < stVOB) {
 		std::string line(reinterpret_cast<char*>(map.data), map.size);
 		uint32_t start_ms = GST_BUFFER_PTS(buffer) / 1000000ULL;
 		uint32_t duration = GST_BUFFER_DURATION(buffer) / 1000000ULL;
 		uint32_t end_ms = start_ms + duration;
 
-		std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
 		m_subtitle_pages.insert(subtitle_pages_map_pair_t(end_ms, subtitle_page_t(start_ms, end_ms, line)));
 		m_subtitle_sync_timer->start(250, true);
 	}
@@ -4277,6 +4308,9 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		m_dvb_subtitle_sync_timer->stop();
 		m_dvb_subtitle_pages.clear();
 		m_subtitle_pages.clear();
+		m_initial_vtt_mpegts = 0;
+		m_vtt_live = false;
+		m_vtt_live_base_time = -1;
 		m_prev_decoder_time = -1;
 		m_decoder_time_valid_state = 0;
 		m_currentSubtitleStream = track.pid;
@@ -4328,6 +4362,9 @@ RESULT eServiceMP3::disableSubtitles() {
 	m_dvb_subtitle_sync_timer->stop();
 	m_dvb_subtitle_pages.clear();
 	m_subtitle_pages.clear();
+	m_initial_vtt_mpegts = 0;
+	m_vtt_live = false;
+	m_vtt_live_base_time = -1;
 	m_prev_decoder_time = -1;
 	m_decoder_time_valid_state = 0;
 	if (m_subtitle_widget)
