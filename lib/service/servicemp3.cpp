@@ -219,6 +219,7 @@ struct SubtitleEntry {
 	uint64_t start_time_ms;
 	uint64_t end_time_ms;
 	uint64_t vtt_mpegts_base;
+	uint64_t local_offset_ms;
 	std::string text;
 };
 
@@ -326,6 +327,7 @@ bool parseWebVTT(const std::string& vtt_data, std::vector<SubtitleEntry>& subs_o
 				entry.start_time_ms = start_ms;
 				entry.end_time_ms = end_ms;
 				entry.vtt_mpegts_base = vtt_mpegts_base;
+				entry.local_offset_ms = local_offset_ms;
 				entry.text = current_text;
 				subs_out.push_back(entry);
 				current_text.clear();
@@ -368,6 +370,7 @@ bool parseWebVTT(const std::string& vtt_data, std::vector<SubtitleEntry>& subs_o
 		entry.start_time_ms = start_ms;
 		entry.end_time_ms = end_ms;
 		entry.vtt_mpegts_base = vtt_mpegts_base;
+		entry.local_offset_ms = local_offset_ms;
 		entry.text = current_text;
 		subs_out.push_back(entry);
 	}
