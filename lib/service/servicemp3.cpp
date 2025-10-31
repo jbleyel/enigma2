@@ -3795,88 +3795,6 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad* pad) {
  *
  * @param[in] buffer The GstBuffer containing subtitle data.
  */
-void eServiceMP3::pullSubtitle(GstBuffer* buffer)
-{
-    if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size()) {
-        GstMapInfo map;
-        if (!gst_buffer_map(buffer, &map, GST_MAP_READ))
-            return;
-        int subType = m_subtitleStreams[m_currentSubtitleStream].type;
-        if (subType == stWebVTT) {
-            std::string vtt_string(reinterpret_cast<char*>(map.data), map.size);
-            std::vector<SubtitleEntry> parsed_subs;
-
-            eDebug("SUB DEBUG line");
-            eDebug(">>>\n%s\n<<<", vtt_string.c_str());
-
-            if (parseWebVTT(vtt_string, parsed_subs)) {
-                // Use instance member m_base_mpegts instead of a static local
-                for (const auto& sub : parsed_subs) {
-                    if (sub.vtt_mpegts_base) {
-                        if (!m_vtt_live)
-                            m_vtt_live = true; // Set live flag if we have a base MPEGTS
-                        int64_t decoder_pts = getLiveDecoderTime();
-                        int64_t delta = 0;
-
-                        // Initialize base MPEGTS with first subtitle's MPEGTS (member)
-                        if (m_base_mpegts < 0) {
-                            m_base_mpegts = (int64_t)sub.vtt_mpegts_base;
-                            eDebug("[SUB DEBUG] Initializing m_base_mpegts=%" PRId64, m_base_mpegts);
-                        }
-
-                        if (decoder_pts >= 0) {
-                            // Calculate delta based on MPEGTS difference
-                            delta = ( (int64_t)sub.vtt_mpegts_base - m_base_mpegts ) / 90; // Convert 90kHz ticks -> ms
-
-                            // Debug
-                            const uint64_t pts_mask = (1ULL << 33) - 1;
-                            eDebug("[SUB DEBUG] m_base_mpegts=%" PRId64 " mpegts=%" PRId64 " decoder=%" PRId64
-                                   " masked_mpegts=%" PRId64 " masked_decoder=%" PRId64 " delta_ms=%" PRId64,
-                                   m_base_mpegts, (int64_t)sub.vtt_mpegts_base, decoder_pts,
-                                   (int64_t)(sub.vtt_mpegts_base & pts_mask), (int64_t)(decoder_pts & pts_mask), delta);
-                        }
-
-                        int64_t adjusted_start = (int64_t)sub.start_time_ms + delta;
-                        int64_t adjusted_end   = (int64_t)sub.end_time_ms   + delta;
-
-                        eDebug("[SUB DEBUG] Timestamps: start=%" PRId64 " end=%" PRId64 " delta=%" PRId64
-                               " adjusted_start=%" PRId64 " adjusted_end=%" PRId64,
-                               sub.start_time_ms, sub.end_time_ms, delta, adjusted_start, adjusted_end);
-
-                        std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
-                        m_subtitle_pages.insert(subtitle_pages_map_pair_t(
-                            adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
-                    } else {
-                        // No MPEGTS mapping for this cue — treat as plain relative VTT cue
-                        eDebug("[SUB] %" PRIu64 " ms - %" PRIu64 " ms:\n%s",
-                               sub.start_time_ms, sub.end_time_ms, sub.text.c_str());
-                        std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
-                        m_subtitle_pages.insert(subtitle_pages_map_pair_t(
-                            sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
-                    }
-                }
-                if (!parsed_subs.empty())
-                    m_subtitle_sync_timer->start(250, true);
-            }
-        } else if (subType == stDVB) {
-            uint8_t* data = map.data;
-            int64_t buf_pos = GST_BUFFER_PTS(buffer);
-            m_dvb_subtitle_parser->processBuffer(data, map.size, buf_pos / 1000000ULL);
-        } else if (subType < stVOB) {
-            std::string line(reinterpret_cast<char*>(map.data), map.size);
-            uint32_t start_ms = GST_BUFFER_PTS(buffer) / 1000000ULL;
-            uint32_t duration = GST_BUFFER_DURATION(buffer) / 1000000ULL;
-            uint32_t end_ms = start_ms + duration;
-
-            m_subtitle_pages.insert(subtitle_pages_map_pair_t(end_ms, subtitle_page_t(start_ms, end_ms, line)));
-            m_subtitle_sync_timer->start(250, true);
-        }
-        gst_buffer_unmap(buffer, &map);
-    }
-}
-
-/*
-
 void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 	if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size()) {
 		GstMapInfo map;
@@ -3891,8 +3809,6 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 			eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
 			if (parseWebVTT(vtt_string, parsed_subs)) {
-				static int64_t base_mpegts = 0; // Store first MPEGTS as base
-
 				for (const auto& sub : parsed_subs) {
 					if (sub.vtt_mpegts_base) {
 						if (!m_vtt_live)
@@ -3901,9 +3817,9 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 						int64_t delta = 0;
 
 						// Initialize base MPEGTS with first subtitle's MPEGTS
-						if (base_mpegts == 0) {
-							base_mpegts = sub.vtt_mpegts_base;
-							eDebug("[SUB DEBUG] Initializing base_mpegts=%" PRId64, base_mpegts);
+						if (m_base_mpegts == -1) {
+							m_base_mpegts = sub.vtt_mpegts_base;
+							eDebug("[SUB DEBUG] Initializing base_mpegts=%" PRId64, m_base_mpegts);
 						}
 
 						if (decoder_pts >= 0) {
@@ -3911,12 +3827,12 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 							const uint64_t pts_mask = (1ULL << 33) - 1; // 33-bit mask
 
 							// Calculate delta based on MPEGTS difference
-							delta = (sub.vtt_mpegts_base - base_mpegts) / 90; // Convert to ms
+							delta = (sub.vtt_mpegts_base - m_base_mpegts) / 90; // Convert to ms
 
 							// Debug
-							eDebug("[SUB DEBUG] base_mpegts=%" PRId64 " mpegts=%" PRId64 " decoder=%" PRId64
+							eDebug("[SUB DEBUG] m_base_mpegts=%" PRId64 " mpegts=%" PRId64 " decoder=%" PRId64
 								   " masked_mpegts=%" PRId64 " masked_decoder=%" PRId64 " delta_ms=%" PRId64,
-								   base_mpegts, sub.vtt_mpegts_base, decoder_pts, sub.vtt_mpegts_base & pts_mask,
+								   m_base_mpegts, sub.vtt_mpegts_base, decoder_pts, sub.vtt_mpegts_base & pts_mask,
 								   decoder_pts & pts_mask, delta);
 						}
 
@@ -3959,7 +3875,7 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 		gst_buffer_unmap(buffer, &map);
 	}
 }
-*/
+
 /**
  * @brief Adds a new DVB subtitle page to the list and pushes it to the subtitle widget.
  *
