@@ -3804,6 +3804,7 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 		return;
 
 	int subType = m_subtitleStreams[m_currentSubtitleStream].type;
+
 	if (subType == stWebVTT) {
 		std::string vtt_string(reinterpret_cast<char*>(map.data), map.size);
 		std::vector<SubtitleEntry> parsed_subs;
@@ -3812,74 +3813,54 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 		eDebug(">>>\n%s\n<<<", vtt_string.c_str());
 
 		if (parseWebVTT(vtt_string, parsed_subs)) {
+			int64_t decoder_pts = getLiveDecoderTime();
+			const int64_t LIVE_WINDOW_MS = 30000; // ±30s für Live-Detection
+			const int64_t PAST_MARGIN_MS = 10000; // Subtitles, die vor decoder_pts liegen, ignorieren
+
 			for (const auto& sub : parsed_subs) {
-				if (sub.vtt_mpegts_base) {
-					const uint64_t pts_mask = (1ULL << 33) - 1;
-					int64_t segment_ms = static_cast<int64_t>(sub.vtt_mpegts_base / 90);
-					int64_t local_offset = static_cast<int64_t>(sub.local_offset_ms);
-					int64_t abs_start_ms = segment_ms - local_offset + static_cast<int64_t>(sub.start_time_ms);
-					int64_t abs_end_ms = segment_ms - local_offset + static_cast<int64_t>(sub.end_time_ms);
+				int64_t segment_ms = static_cast<int64_t>(sub.vtt_mpegts_base / 90);
+				int64_t abs_start_ms = segment_ms - static_cast<int64_t>(sub.local_offset_ms) + static_cast<int64_t>(sub.start_time_ms);
+				int64_t abs_end_ms = segment_ms - static_cast<int64_t>(sub.local_offset_ms) + static_cast<int64_t>(sub.end_time_ms);
 
-					int64_t decoder_pts = getLiveDecoderTime();
-					const int64_t LIVE_WINDOW_MS = 30 * 1000;
-					const int64_t PAST_MARGIN_MS = 10 * 1000;
+				bool decide_live = false;
 
-					auto mod33diff = [&](uint64_t a, uint64_t b) -> int64_t {
-						uint64_t da = (a & pts_mask);
-						uint64_t db = (b & pts_mask);
-						int64_t diff = static_cast<int64_t>(da) - static_cast<int64_t>(db);
-						if (diff > static_cast<int64_t>(pts_mask / 2))
-							diff -= static_cast<int64_t>(pts_mask) + 1;
-						else if (diff < -static_cast<int64_t>(pts_mask / 2))
-							diff += static_cast<int64_t>(pts_mask) + 1;
-						return diff;
-					};
+				// Live-Erkennung
+				if (decoder_pts > 0) {
+					int64_t diff = abs_start_ms - decoder_pts;
+					if (std::llabs(diff) <= LIVE_WINDOW_MS)
+						decide_live = true;
+				} else if (sub.local_offset_ms == 0) {
+					// Live-Stream mit LOCAL=0
+					decide_live = true;
+				}
 
-					bool decide_live = false;
-					if (decoder_pts > 0) {
-						int64_t diff = abs_start_ms - decoder_pts;
-						if (std::llabs(diff) <= LIVE_WINDOW_MS)
-							decide_live = true;
-						else {
-							int64_t masked_diff_ms = mod33diff(sub.vtt_mpegts_base, static_cast<uint64_t>(decoder_pts * 90)) / 90;
-							if (std::llabs(masked_diff_ms) <= LIVE_WINDOW_MS)
-								decide_live = true;
-						}
-					} else {
-						if (sub.local_offset_ms != 0)
-							decide_live = true;
-						else if (segment_ms < (5 * 60 * 1000))
-							decide_live = true;
-					}
+				int64_t adjusted_start = 0;
+				int64_t adjusted_end = 0;
 
-					int64_t adjusted_start, adjusted_end;
-					if (decide_live) {
-						if (!m_vtt_live)
-							m_vtt_live = true;
-						adjusted_start = abs_start_ms;
-						adjusted_end = abs_end_ms;
+				if (decide_live) {
+					// Live-Mode
+					if (!m_vtt_live)
+						m_vtt_live = true;
 
-						if (decoder_pts > 0 && adjusted_end < decoder_pts - PAST_MARGIN_MS) {
-							eDebug("[eServiceMP3] *** current sub has already ended, skip: %" PRId64, adjusted_end - decoder_pts);
-						} else {
-							std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
-							m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
-						}
-					} else {
-						if (m_initial_vtt_mpegts == 0)
-							m_initial_vtt_mpegts = sub.vtt_mpegts_base;
+					adjusted_start = abs_start_ms;
+					adjusted_end = abs_end_ms;
 
-						int64_t delta_ms = static_cast<int64_t>((sub.vtt_mpegts_base - m_initial_vtt_mpegts) / 90);
-						adjusted_start = static_cast<int64_t>(sub.start_time_ms) + delta_ms;
-						adjusted_end = static_cast<int64_t>(sub.end_time_ms) + delta_ms;
-
-						std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
-						m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
+					if (decoder_pts > 0 && adjusted_end < decoder_pts - PAST_MARGIN_MS) {
+						eDebug("[eServiceMP3] *** current sub has already ended, skip: %" PRId64, adjusted_end - decoder_pts);
+						continue;
 					}
 				} else {
-					std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
-					m_subtitle_pages.insert(subtitle_pages_map_pair_t(sub.end_time_ms, subtitle_page_t(sub.start_time_ms, sub.end_time_ms, sub.text)));
+					// VOD-Mode
+					if (m_initial_vtt_mpegts == 0)
+						m_initial_vtt_mpegts = sub.vtt_mpegts_base;
+
+					int64_t delta_ms = static_cast<int64_t>((sub.vtt_mpegts_base - m_initial_vtt_mpegts) / 90);
+					adjusted_start = static_cast<int64_t>(sub.start_time_ms) + delta_ms;
+					adjusted_end = static_cast<int64_t>(sub.end_time_ms) + delta_ms;
 				}
+
+				std::lock_guard<std::mutex> lock(m_subtitle_pages_mutex);
+				m_subtitle_pages.insert(subtitle_pages_map_pair_t(adjusted_end, subtitle_page_t(adjusted_start, adjusted_end, sub.text)));
 			}
 
 			if (!parsed_subs.empty())
