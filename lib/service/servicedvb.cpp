@@ -1364,7 +1364,7 @@ void eDVBServicePlay::handleEofRecovery()
 				
 				// 3. Calculate the target delay "fingerprint".
 				// Target = (current live clock) - (desired delay duration).
-				m_original_timeshift_delay = live_pts - plugin_delay_pts;
+				m_original_timeshift_delay = plugin_delay_pts;
 				m_delay_calculated = true;
 				eTrace("[PreciseRecovery] Custom Delay ACTIVE. Target delay fingerprint set (based on %d sec API delay)", m_recovery_delay_seconds);
 			}
