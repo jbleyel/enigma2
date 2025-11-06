@@ -1276,8 +1276,10 @@ void eDVBServicePlay::serviceEvent(int event)
 	case eDVBServicePMTHandler::eventNoPAT:
 	case eDVBServicePMTHandler::eventNoPMT:
 	{
+		bool recovery_enabled = eSimpleConfig::getBool("config.timeshift.preciseRecovery", true);
+
 		// Check if timeshift is active and we are not already in a recovery state
-		if (m_timeshift_enabled && !m_stream_corruption_detected)
+		if (recovery_enabled && m_timeshift_enabled && !m_stream_corruption_detected)
 		{
 			eTrace("[PreciseRecovery] Tune Failed/Signal Loss during timeshift. Initiating recovery.");
 			
@@ -2926,7 +2928,8 @@ void eDVBServicePlay::recordEvent(int event)
 		return;
 	case iDVBTSRecorder::eventStreamCorrupt:
 		// Do not re-trigger if a recovery is already in progress.
-		if (m_stream_corruption_detected) return;
+		bool recovery_enabled = eSimpleConfig::getBool("config.timeshift.preciseRecovery", true);
+		if (m_stream_corruption_detected || !recovery_enabled) return;
 
 		eWarning("[eDVBServicePlay] recordEvent eventStreamCorrupt, initiating recovery.");
 		m_stream_corruption_detected = true;

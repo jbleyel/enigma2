@@ -55,7 +55,6 @@ class Timer:
 				when = next
 		if now < 1072224000 and when > now + 5:
 			when = now + 5  # System time has not yet been set (before 01.01.2004), keep a short poll interval.
-		# print(f"[Timer] Next activation at {when} (in {when - now} seconds).")
 		self.setNextActivation(now, when)
 
 	# We keep on processing the first entry until it goes into the future.
@@ -87,7 +86,6 @@ class Timer:
 			from traceback import print_stack
 			print_stack()
 			delay = int(delay)
-		# print(f"[Timer] Setting next activation in {delay} ms.")
 		self.timer.start(delay, True)
 		self.next = when
 

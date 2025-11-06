@@ -1254,7 +1254,7 @@ class SchedulerEdit(Setup):
 		default = self.timer.function or SCHEDULER_TYPES.get(self.timer.timerType, "wakeup")
 		self.timerType = ConfigSelection(default=default, choices=choices)
 		self.timerActiveInStandby = ConfigSelection(default=self.timer.autosleepinstandbyonly, choices=[
-			("yes", _("Only in standby")),
+			("yes", _("Only in Standby")),
 			("no", _("Standard (Always)")),
 			("noquery", _("Without query"))
 		])

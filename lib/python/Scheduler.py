@@ -444,6 +444,7 @@ class Scheduler(Timer):
 
 		if timer.timerType == TIMERTYPE.OTHER and timer.function:
 			timer.state = timer.StateEnded - 1
+			timer.enable()  # re-enable to allow function execution
 			timer.activate()  # force cancel
 
 		self.saveTimers()
