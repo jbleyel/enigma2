@@ -12,8 +12,8 @@ class GenresETSI:
 	maintype = (
 		_("Reserved"),
 		_("Movie/Drama"),
-		_("News/Current Affairs"),
-		_("Show/Games show"),
+		_("News/Current affairs"),
+		_("Show/Game show"),
 		_("Sports"),
 		_("Children/Youth"),
 		_("Music/Ballet/Dance"),
@@ -21,51 +21,51 @@ class GenresETSI:
 		_("Social/Political/Economics"),
 		_("Education/Science/Factual"),
 		_("Leisure hobbies"),
-		_("Other")
+		_("Special characteristics")
 	)
 
 	subtype = {
 		# Movie/Drama
 		1: (
 			_("movie/drama (general)"),
-			_("detective/thriller"),
-			_("adventure/western/war"),
-			_("science fiction/fantasy/horror"),
-			_("comedy"),
-			_("soap/melodrama/folkloric"),
-			_("romance"),
-			_("serious/classical/religious/historical movie/drama"),
-			_("adult movie/drama")
+			_("Detective/Thriller"),
+			_("Adventure/Western/War"),
+			_("Science fiction/Fantasy/Horror"),
+			_("Comedy"),
+			_("Soap/Melodrama/Folkloric"),
+			_("Romance"),
+			_("Serious/Classical/Religious/Historical/Drama"),
+			_("Adult movie/Drama")
 		),
 		# News/Current Affairs
 		2: (
-			_("news/current affairs (general)"),
-			_("news/weather report"),
-			_("news magazine"),
-			_("documentary"),
-			_("discussion/interview/debate")
+			_("News/Current affairs"),
+			_("News/Weather report"),
+			_("News magazine"),
+			_("Documentary"),
+			_("Discussion/Interview/Debate")
 		),
 		# Show/Game show
 		3: (
-			_("show/game show (general)"),
-			_("game show/quiz/contest"),
-			_("variety show"),
-			_("talk show")
+			_("Show/Game show"),
+			_("Game show/Quiz/Contest"),
+			_("Variety show"),
+			_("Talk show")
 		),
 		# Sports
 		4: (
-			_("sports (general)"),
+			_("Sports"),
 			_("special events"),
-			_("sports magazine"),
-			_("football/soccer"),
-			_("tennis/squash"),
+			_("Sports magazines"),
+			_("Football/Soccer"),
+			_("Tennis/Squash"),
 			_("team sports"),
-			_("athletics"),
-			_("motor sport"),
-			_("water sport"),
-			_("winter sport"),
-			_("equestrian"),
-			_("martial sports")
+			_("Athletics"),
+			_("Motor sport"),
+			_("Water sport"),
+			_("Winter sport"),
+			_("Equestrian"),
+			_("Martial sports")
 		),
 		# Children/Youth
 		5: (
@@ -74,69 +74,69 @@ class GenresETSI:
 			_("entertainment (6-14 year old)"),
 			_("entertainment (10-16 year old)"),
 			_("information/education/school program"),
-			_("cartoon/puppets")
+			_("Cartoons/Puppets")
 		),
 		# Music/Ballet/Dance
 		6: (
-			_("music/ballet/dance (general)"),
-			_("rock/pop"),
-			_("serious music/classic music"),
-			_("folk/traditional music"),
-			_("jazz"),
-			_("musical/opera"),
-			_("ballet")
+			_("Music/Ballet/Dance"),
+			_("Rock/Pop"),
+			_("Serious music/Classic music"),
+			_("Folk/Traditional music"),
+			_("Jazz"),
+			_("Musical/Opera"),
+			_("Ballet")
 		),
 		# Arts/Culture
 		7: (
 			_("arts/culture (without music, general)"),
-			_("performing arts"),
-			_("fine arts"),
-			_("religion"),
-			_("popular culture/traditional arts"),
-			_("literature"),
-			_("film/cinema"),
-			_("experimental film/video"),
-			_("broadcasting/press"),
-			_("new media"),
-			_("arts/culture magazine"),
-			_("fashion")
+			_("Performing arts"),
+			_("Fine arts"),
+			_("Religion"),
+			_("Popular culture/Traditional arts"),
+			_("Literature"),
+			_("Film/Cinema"),
+			_("Experimental film/video"),
+			_("Broadcasting/Press"),
+			_("New media"),
+			_("Arts/Culture magazines"),
+			_("Fashion")
 		),
 		# Social/Political/Economics
 		8: (
 			_("social/political issues/economics (general)"),
-			_("magazines/reports/documentary"),
-			_("economics/social advisory"),
-			_("remarkable people")
+			_("Magazines/Reports/Documentary"),
+			_("Economics/Social advisory"),
+			_("Remarkable people")
 		),
 		# Education/Science/...
 		9: (
-			_("education/science/factual topics (general)"),
-			_("nature/animals/environment"),
-			_("technology/natural science"),
-			_("medicine/physiology/psychology"),
-			_("foreign countries/expeditions"),
-			_("social/spiritual science"),
-			_("further education"),
-			_("languages")
+			_("Education/Science/Factual"),
+			_("Nature/Animals/Environment"),
+			_("Technology/Natural sciences"),
+			_("Medicine/Physiology/Psychology"),
+			_("Foreign countries/Expeditions"),
+			_("Social/Spiritual sciences"),
+			_("Further education"),
+			_("Languages")
 		),
 
-		# Leisure hobies
+		# Leisure hobbies
 		10: (
-			_("leisure hobbies (general)"),
-			_("tourism/travel"),
-			_("handicraft"),
-			_("motoring"),
-			_("fitness & health"),
-			_("cooking"),
-			_("advertisement/shopping"),
-			_("gardening")
+			_("Leisure hobbies"),
+			_("Tourism/Travel"),
+			_("Handicraft"),
+			_("Motoring"),
+			_("Fitness and Health"),
+			_("Cooking"),
+			_("Advertisement/Shopping"),
+			_("Gardening")
 		),
-		# Other
+		# Special characteristics
 		11: (
-			_("original language"),
-			_("black & white"),
-			_("unpublished"),
-			_("live broadcast")
+			_("Original language"),
+			_("Black & White"),
+			_("Unpublished"),
+			_("Live broadcast")
 		),
 	}
 
@@ -224,8 +224,8 @@ class GenresAUSIceTV:
 	maintype = (
 		_("Miscellaneous"),
 		_("Movie/Drama"),
-		_("News/Current Affairs"),
-		_("Show/Games show"),
+		_("News/Current affairs"),
+		_("Show/Game show"),
 		_("Sports"),
 		_("Children/Youth"),
 		_("Music/Ballet/Dance"),
@@ -423,7 +423,7 @@ class GenresGBROpenTV:
 		2: (
 			_("No Category"),  # 0x20
 			_("Adult"),  # 0x21
-			_("Unused 0x22"),  # 0x22
+			_("Unused %s") % "0x22",  # 0x22
 			_("Shopping"),  # 0x23
 		),
 		# Children
@@ -485,17 +485,17 @@ class GenresGBROpenTV:
 			_("Hip Hop"),  # 0x8a
 			_("Soul/Rhythm Blues"),  # 0x8b
 			_("Dance"),  # 0x8c
-			_("Unused 0x8d"),  # 0x8d
-			_("Unused 0x8e"),  # 0x8e
-			_("Unused 0x8f"),  # 0x8f
+			_("Unused %s") % "0x8d",  # 0x8d
+			_("Unused %s") % "0x8e",  # 0x8e
+			_("Unused %s") % "0x8f",  # 0x8f
 		),
 		# Music cont...
 		9: (
 			_("Features"),  # 0x90
-			_("Unused 0x91"),  # 0x91
-			_("Unused 0x92"),  # 0x92
-			_("Unused 0x93"),  # 0x93
-			_("Unused 0x94"),  # 0x94
+			_("Unused %s") % "0x91",  # 0x91
+			_("Unused %s") % "0x92",  # 0x92
+			_("Unused %s") % "0x93",  # 0x93
+			_("Unused %s") % "0x94",  # 0x94
 			_("Lifestyle"),  # 0x95
 			_("News and Weather"),  # 0x96
 			_("Easy Listening"),  # 0x97
@@ -535,11 +535,11 @@ class GenresGBROpenTV:
 			_("General"),  # 0xc0
 			_("Action"),  # 0xc1
 			_("Animation"),  # 0xc2
-			_("Unused 0xc3"),  # 0xc3
+			_("Unused %s") % "0xc3",  # 0xc3
 			_("Comedy"),  # 0xc4
 			_("Family"),  # 0xc5
 			_("Drama"),  # 0xc6
-			_("Unused 0xc7"),  # 0xc7
+			_("Unused %s") % "0xc7",  # 0xc7
 			_("Sci-Fi"),  # 0xc8
 			_("Thriller"),  # 0xc9
 			_("Horror"),  # 0xca
@@ -589,211 +589,185 @@ class GenresGBROpenTV:
 
 class GenresITAOpenTV:
 	maintype = (
-		_("Generale"),  # 0x0
-		_("Generale"),  # 0x1
-		_("Intrattenimento"),  # 0x2
-		_("Intrattenimento"),  # 0x3
-		_("Sport"),  # 0x4
-		_("Sport"),  # 0x5
-		_("Film"),  # 0x6
-		_("Film"),  # 0x7
-		_("Mondo e Tendenze"),  # 0x8
-		_("Mondo e Tendenze"),  # 0x9
-		_("Informazione"),  # 0xa
-		_("Informazione"),  # 0xb
-		_("Ragazzi e Musica"),  # 0xc
-		_("Ragazzi e Musica"),  # 0xd
-		_("Altri Programmi"),  # 0xe
-		_("Altri Programmi"),  # 0xf
+		"Generale",  # 0x0
+		"Generale",  # 0x1
+		"Intrattenimento",  # 0x2
+		"Intrattenimento",  # 0x3
+		"Sport",  # 0x4
+		"Sport",  # 0x5
+		"Film",  # 0x6
+		"Film",  # 0x7
+		"Mondo e Tendenze",  # 0x8
+		"Mondo e Tendenze",  # 0x9
+		"Informazione",  # 0xa
+		"Informazione",  # 0xb
+		"Ragazzi e Musica",  # 0xc
+		"Ragazzi e Musica",  # 0xd
+		"Altri Programmi",  # 0xe
+		"Altri Programmi",  # 0xf
 	)
 
 	subtype = {
 		# Generale
 		0: (
-			_("Non Definito"),  # 0x00
+			"Non Definito",  # 0x00
 		),
 		# Intrattenimento
 		2: (
-			_("Generale"),  # 0x20
-			_("Fiction"),  # 0x21
-			_("Sit Com"),  # 0x22
-			_("Show"),  # 0x23
-			_("Telefilm"),  # 0x24
-			_("Soap Opera"),  # 0x25
-			_("Telenovela"),  # 0x26
-			_("Fantascienza"),  # 0x27
-			_("Animazione"),  # 0x28
-			_("Giallo"),  # 0x29
-			_("Drammatico"),  # 0x2a
-			_("Romantico"),  # 0x2b
-			_("Miniserie"),  # 0x2c
-			_("Spettacolo"),  # 0x2d
-			_("Quiz"),  # 0x2e
-			_("Talk Show"),  # 0x2f
+			"Generale",  # 0x20
+			"Fiction",  # 0x21
+			"Sit Com",  # 0x22
+			"Show",  # 0x23
+			"Telefilm",  # 0x24
+			"Soap Opera",  # 0x25
+			"Telenovela",  # 0x26
+			"Fantascienza",  # 0x27
+			"Animazione",  # 0x28
+			"Giallo",  # 0x29
+			"Drammatico",  # 0x2a
+			"Romantico",  # 0x2b
+			"Miniserie",  # 0x2c
+			"Spettacolo",  # 0x2d
+			"Quiz",  # 0x2e
+			"Talk Show",  # 0x2f
 		),
 		# Intrattenimento cont..
 		3: (
-			_("Varieta"),  # 0x30
-			_("Festival"),  # 0x31
-			_("Teatro"),  # 0x32
-			_("Gioco"),  # 0x33
+			"Varieta",  # 0x30
+			"Festival",  # 0x31
+			"Teatro",  # 0x32
+			"Gioco",  # 0x33
 		),
 		# Sport
 		4: (
-			_("Generale"),  # 0x40
-			_("Calcio"),  # 0x41
-			_("Tennis"),  # 0x42
-			_("Motori"),  # 0x43
-			_("Altri"),  # 0x44
-			_("Baseball"),  # 0x45
-			_("Ciclismo"),  # 0x46
-			_("Rugby"),  # 0x47
-			_("Basket"),  # 0x48
-			_("Boxe"),  # 0x49
-			_("Atletica"),  # 0x4a
-			_("Football USA"),  # 0x4b
-			_("Hockey"),  # 0x4c
-			_("Sci"),  # 0x4d
-			_("Equestri"),  # 0x4e
-			_("Golf"),  # 0x4f
+			"Generale",  # 0x40
+			"Calcio",  # 0x41
+			"Tennis",  # 0x42
+			"Motori",  # 0x43
+			"Altri",  # 0x44
+			"Baseball",  # 0x45
+			"Ciclismo",  # 0x46
+			"Rugby",  # 0x47
+			"Basket",  # 0x48
+			"Boxe",  # 0x49
+			"Atletica",  # 0x4a
+			"Football USA",  # 0x4b
+			"Hockey",  # 0x4c
+			"Sci",  # 0x4d
+			"Equestri",  # 0x4e
+			"Golf",  # 0x4f
 		),
 		# Sport cont..
 		5: (
-			_("Nuoto"),  # 0x50
-			_("Wrestling"),  # 0x51
+			"Nuoto",  # 0x50
+			"Wrestling",  # 0x51
 		),
 		# Film
 		6: (
-			_("Generale"),  # 0x60
-			_("Drammatico"),  # 0x61
-			_("Commedia"),  # 0x62
-			_("Romantico"),  # 0x63
-			_("Azione"),  # 0x64
-			_("Fantascienza"),  # 0x65
-			_("Western"),  # 0x66
-			_("Comico"),  # 0x67
-			_("Fantastico"),  # 0x68
-			_("Avventura"),  # 0x69
-			_("Poliziesco"),  # 0x6a
-			_("Guerra"),  # 0x6b
-			_("Horror"),  # 0x6c
-			_("Animazione"),  # 0x6d
-			_("Thriller"),  # 0x6e
-			_("Musicale"),  # 0x6f
+			"Generale",  # 0x60
+			"Drammatico",  # 0x61
+			"Commedia",  # 0x62
+			"Romantico",  # 0x63
+			"Azione",  # 0x64
+			"Fantascienza",  # 0x65
+			"Western",  # 0x66
+			"Comico",  # 0x67
+			"Fantastico",  # 0x68
+			"Avventura",  # 0x69
+			"Poliziesco",  # 0x6a
+			"Guerra",  # 0x6b
+			"Horror",  # 0x6c
+			"Animazione",  # 0x6d
+			"Thriller",  # 0x6e
+			"Musicale",  # 0x6f
 		),
 		# Film cont..
 		7: (
-			_("Corto"),  # 0x70
-			_("Cortometraggio"),  # 0x71
+			"Corto",  # 0x70
+			"Cortometraggio",  # 0x71
 		),
 		# Mondo e Tendenze
 		8: (
-			_("Generale"),  # 0x80
-			_("Natura"),  # 0x81
-			_("Arte e Cultura"),  # 0x82
-			_("Lifestyle"),  # 0x83
-			_("Viaggi"),  # 0x84
-			_("Documentario"),  # 0x85
-			_("Societa"),  # 0x86
-			_("Scienza"),  # 0x87
-			_("Storia"),  # 0x88
-			_("Sport"),  # 0x89
-			_("Pesca"),  # 0x8a
-			_("Popoli"),  # 0x8b
-			_("Cinema"),  # 0x8c
-			_("Musica"),  # 0x8d
-			_("Hobby"),  # 0x8e
-			_("Caccia"),  # 0x8f
+			"Generale",  # 0x80
+			"Natura",  # 0x81
+			"Arte e Cultura",  # 0x82
+			"Lifestyle",  # 0x83
+			"Viaggi",  # 0x84
+			"Documentario",  # 0x85
+			"Societa",  # 0x86
+			"Scienza",  # 0x87
+			"Storia",  # 0x88
+			"Sport",  # 0x89
+			"Pesca",  # 0x8a
+			"Popoli",  # 0x8b
+			"Cinema",  # 0x8c
+			"Musica",  # 0x8d
+			"Hobby",  # 0x8e
+			"Caccia",  # 0x8f
 		),
 		# Mondo e Tendenze cont..
 		9: (
-			_("Reportage"),  # 0x90
-			_("Magazine"),  # 0x91
-			_("Magazine Cultura"),  # 0x92
-			_("Magazine Scienza"),  # 0x93
-			_("Politica"),  # 0x94
-			_("Magazine Cinema"),  # 0x95
-			_("Magazine Sport"),  # 0x96
-			_("Attualita"),  # 0x97
-			_("Moda"),  # 0x98
-			_("Economia"),  # 0x99
-			_("Magazine Caccia e Pesca"),  # 0x9a
-			_("Magazine Viaggi"),  # 0x9b
-			_("Magazine Natura"),  # 0x9c
-			_("Magazine Musica"),  # 0x9d
-			_("Religione"),  # 0x9e
-			_("Televendita"),  # 0x9f
+			"Reportage",  # 0x90
+			"Magazine",  # 0x91
+			"Magazine Cultura",  # 0x92
+			"Magazine Scienza",  # 0x93
+			"Politica",  # 0x94
+			"Magazine Cinema",  # 0x95
+			"Magazine Sport",  # 0x96
+			"Attualita",  # 0x97
+			"Moda",  # 0x98
+			"Economia",  # 0x99
+			"Magazine Caccia e Pesca",  # 0x9a
+			"Magazine Viaggi",  # 0x9b
+			"Magazine Natura",  # 0x9c
+			"Magazine Musica",  # 0x9d
+			"Religione",  # 0x9e
+			"Televendita",  # 0x9f
 		),
 		# Informazione
 		10: (
-			_("Generale"),  # 0xa0
-			_("Notiziario"),  # 0xa1
-			_("Sport"),  # 0xa2
-			_("Economia"),  # 0xa3
+			"Generale",  # 0xa0
+			"Notiziario",  # 0xa1
+			"Sport",  # 0xa2
+			"Economia",  # 0xa3
 		),
 		# Ragazzi e Musica
 		12: (
-			_("Generale"),  # 0xc0
-			_("Bambini"),  # 0xc1
-			_("Ragazzi"),  # 0xc2
-			_("Cartoni Animati"),  # 0xc3
-			_("Musica"),  # 0xc4
-			_("Film Animazione"),  # 0xc5
-			_("Film"),  # 0xc6
-			_("Telefilm"),  # 0xc7
-			_("Magazine"),  # 0xc8
-			_("Inutilizzato 0xc9"),  # 0xc9
-			_("Inutilizzato 0xca"),  # 0xca
-			_("Inutilizzato 0xcb"),  # 0xcb
-			_("Inutilizzato 0xcc"),  # 0xcc
-			_("Inutilizzato 0xcd"),  # 0xcd
-			_("Inutilizzato 0xce"),  # 0xce
-			_("Inutilizzato 0xcf"),  # 0xcf
+			"Generale",  # 0xc0
+			"Bambini",  # 0xc1
+			"Ragazzi",  # 0xc2
+			"Cartoni Animati",  # 0xc3
+			"Musica",  # 0xc4
+			"Film Animazione",  # 0xc5
+			"Film",  # 0xc6
+			"Telefilm",  # 0xc7
+			"Magazine",  # 0xc8
+			"Inutilizzato 0xc9",  # 0xc9
+			"Inutilizzato 0xca",  # 0xca
+			"Inutilizzato 0xcb",  # 0xcb
+			"Inutilizzato 0xcc",  # 0xcc
+			"Inutilizzato 0xcd",  # 0xcd
+			"Inutilizzato 0xce",  # 0xce
+			"Inutilizzato 0xcf",  # 0xcf
 		),
 		# Ragazzi e Musica cont..
 		13: (
-			_("Inutilizzato 0xd0"),  # 0xd0
-			_("Inutilizzato 0xd1"),  # 0xd1
-			_("Inutilizzato 0xd2"),  # 0xd2
-			_("Inutilizzato 0xd3"),  # 0xd3
-			_("Danza"),  # 0xd4
+			"Inutilizzato 0xd0",  # 0xd0
+			"Inutilizzato 0xd1",  # 0xd1
+			"Inutilizzato 0xd2",  # 0xd2
+			"Inutilizzato 0xd3",  # 0xd3
+			"Danza",  # 0xd4
 		),
 		# Altri Programmi
 		14: (
-			_("Generale"),  # 0xe0
-			_("Educational"),  # 0xe1
-			_("Regionale"),  # 0xe2
-			_("Shopping"),  # 0xe3
-			_("Inutilizzato 0xe4"),  # 0xe4
-			_("Inizio e Fine Trasmissioni"),  # 0xe5
-			_("Eventi Speciali"),  # 0xe6
-			_("Film per Adulti"),  # 0xe7
-		),
-	}
-
-
-class GenresAUSOpenTV:
-	# TODO: "OT3": "AUS"
-	maintype = (
-		_("General"),  # 0x0
-	)
-
-	subtype = {
-		0: (
-			_("No Category"),  # 0x00
-		),
-	}
-
-
-class GenresNZLOpenTV:
-	# TODO: "OT4": "NZL"
-	maintype = (
-		_("General"),  # 0x0
-	)
-
-	subtype = {
-		0: (
-			_("No Category"),  # 0x00
+			"Generale",  # 0xe0
+			"Educational",  # 0xe1
+			"Regionale",  # 0xe2
+			"Shopping",  # 0xe3
+			"Inutilizzato 0xe4",  # 0xe4
+			"Inizio e Fine Trasmissioni",  # 0xe5
+			"Eventi Speciali",  # 0xe6
+			"Film per Adulti",  # 0xe7
 		),
 	}
 
@@ -873,8 +847,6 @@ countries = {
 	"AUSIceTV": (__getGenreStringMainIceTV, __getGenreStringSubIceTV, GenresAUSIceTV()),
 	"GBROpenTV": (__getGenreStringMainOpenTV, __getGenreStringSubOpenTV, GenresGBROpenTV()),
 	"ITAOpenTV": (__getGenreStringMainOpenTV, __getGenreStringSubOpenTV, GenresITAOpenTV()),
-	"AUSOpenTV": (__getGenreStringMainOpenTV, __getGenreStringSubOpenTV, GenresAUSOpenTV()),
-	"NZLOpenTV": (__getGenreStringMainOpenTV, __getGenreStringSubOpenTV, GenresNZLOpenTV()),
 	"ETSIOpenTV": (__getGenreStringMainOpenTV, __getGenreStringSubOpenTV, GenresETSIOpenTV())
 }
 

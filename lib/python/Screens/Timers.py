@@ -1302,8 +1302,6 @@ class SchedulerEdit(Setup):
 		self.timerStartTime = ConfigClock(default=self.timer.begin)
 		self.timerSetEndTime = ConfigYesNo(default=(int((self.timer.end - self.timer.begin) / 60.0) > 4))
 		self.timerEndTime = ConfigClock(default=self.timer.end)
-		print("[SchedulerEdit] INIT self.timerEndTime", self.timerEndTime.value)
-
 		self.timerAfterEvent = ConfigSelection(default=SCHEDULER_AFTER_EVENTS.get(self.timer.afterEvent, "nothing"), choices=[
 			(SCHEDULER_AFTER_EVENTS.get(SCHEDULER_AFTEREVENT.NONE), SCHEDULER_AFTER_EVENT_NAMES.get(SCHEDULER_AFTEREVENT.NONE)),
 			(SCHEDULER_AFTER_EVENTS.get(SCHEDULER_AFTEREVENT.WAKEUPTOSTANDBY), SCHEDULER_AFTER_EVENT_NAMES.get(SCHEDULER_AFTEREVENT.WAKEUPTOSTANDBY)),
@@ -1317,9 +1315,8 @@ class SchedulerEdit(Setup):
 		return self.timerType.value in functionTimers.getList()
 
 	def createSetup(self):  # NOSONAR silence S2638
-		if self.isFunctionTimer():
-			if self.timer.isNewTimer:
-				self.checkEndDate()
+		if self.isFunctionTimer() and self.timer.isNewTimer:
+			self.checkEndDate()
 		Setup.createSetup(self)
 		for callback in onSchedulerSetup:
 			callback(self)
@@ -1327,12 +1324,10 @@ class SchedulerEdit(Setup):
 	def checkEndDate(self):
 		begin = self.getTimeStamp(self.timer.begin, self.timerStartTime.value)
 		end = self.getTimeStamp(self.timer.begin, self.timerEndTime.value)
-		print(f"[SchedulerEdit] checkEndDate begin={ctime(begin)} end={ctime(end)}")
 		if end <= begin + 60:
 			end = begin + 2 * 60 * 60  # Ensure at least 2 hours duration.
 			tm = localtime(end)
 			self.timerEndTime.value = [tm.tm_hour, tm.tm_min]
-			print("[SchedulerEdit] Adjusted end time to %02d:%02d" % (tm.tm_hour, tm.tm_min))
 
 	def changedEntry(self):
 		Setup.changedEntry(self)
@@ -1373,20 +1368,13 @@ class SchedulerEdit(Setup):
 		if self.timerRepeat.value == "once":
 			date = self.timerRepeatStartDate.value
 			startTime = self.timerStartTime.value
-
-			print("[SchedulerEdit] startTime", startTime)
-
 			begin = self.getTimeStamp(date, startTime)
 			endTime = self.timerEndTime.value
-
-			print("[SchedulerEdit] endTime", endTime)
-
 			end = self.getTimeStamp(date, endTime)
 			if end < begin:  # If end is less than start then add 1 day to the end time.
 				end += 86400
 			self.timer.begin = begin
 			self.timer.end = end
-			print("[SchedulerEdit] one-time timer set for %s to %s" % (strftime("%Y-%m-%d %H:%M", localtime(self.timer.begin)), strftime("%Y-%m-%d %H:%M", localtime(self.timer.end))))
 		if self.timerType.value in ("autostandby", "autodeepstandby"):
 			self.timer.begin = now + 10
 			self.timer.end = self.timer.begin

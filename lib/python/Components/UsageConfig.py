@@ -1397,7 +1397,7 @@ def InitUsageConfig():
 	]
 	config.misc.epggenrecountry = ConfigSelection(default="", choices=choiceList)
 	choiceList.extend([
-		("GBR", _("Great Britain")),
+		("GBR", _("United Kingdom")),
 		("ITA", _("Italy"))
 	])
 	config.misc.epgratingcountry = ConfigSelection(default="", choices=choiceList)

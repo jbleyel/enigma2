@@ -96,7 +96,7 @@ class FlashManager(Screen):
 		self["description"] = StaticText()
 		self["list"] = ChoiceList(list=[ChoiceEntryComponent("", ((_("Retrieving image list, please wait...")), "Loading"))])
 		self.feedUrls = [
-			("OpenATV", f"https://images.mynonpublic.com/openatv/json/{BoxInfo.getItem("BoxName")}")
+			("OpenATV", "https://images.mynonpublic.com/openatv/json/%s" % BoxInfo.getItem("BoxName"))
 		]
 		self.callLater(self.getImagesList)
 
@@ -122,7 +122,7 @@ class FlashManager(Screen):
 							"name": str(file.split(sep)[-1])
 						}
 				except Exception:
-					print(f"[FlashManager] getImagesList Error: Unable to extract file list from Zip file '{file}'!")
+					print("[FlashManager] getImagesList Error: Unable to extract file list from Zip file '%s'!" % file)
 
 		def getImagesListCallback(retVal=None):  # The retVal argument absorbs the unwanted return value from MessageBox.
 			if self.imageFeed != "OpenATV":
@@ -135,7 +135,7 @@ class FlashManager(Screen):
 		if not self.imagesList:
 			index = findInList(self.imageFeed)
 			box = machinebuild if index else boxname
-			feedURL = self.feedUrls[index][FEED_JSON_URL] if index else f"https://images.mynonpublic.com/openatv/json/{box}"
+			feedURL = self.feedUrls[index][FEED_JSON_URL] if index else "https://images.mynonpublic.com/openatv/json/%s" % box
 			try:
 				req = Request(feedURL, None, USER_AGENT)
 				self.imagesList = dict(load(urlopen(req)))
@@ -143,27 +143,27 @@ class FlashManager(Screen):
 				# 	url = "%s%s" % (config.usage.alternative_imagefeed.value, box)
 				# 	self.imagesList.update(dict(load(urlopen(url))))
 			except Exception:
-				print(f"[FlashManager] getImagesList Error: Unable to load json data from URL '{feedURL}'!")
+				print("[FlashManager] getImagesList Error: Unable to load json data from URL '%s'!" % feedURL)
 				self.imagesList = {}
 			# searchFolders = []
 			# Get all folders of /media/ and /media/net/ and only if OpenATV
 			if not index:
-				for media in [f"/media/{x}" for x in listdir("/media")] + ([f"/media/net/{x}" for x in listdir("/media/net")] if isdir("/media/net") else []):
-					# print(f"[FlashManager] getImagesList DEBUG: media='{media}'.")
+				for media in ["/media/%s" % x for x in listdir("/media")] + (["/media/net/%s" % x for x in listdir("/media/net")] if isdir("/media/net") else []):
+					# print("[FlashManager] getImagesList DEBUG: media='%s'." % media)
 					if not (BoxInfo.getItem("HasMMC") and "/mmc" in media) and isdir(media):
 						getImages(media, [join(media, x) for x in listdir(media) if splitext(x)[1] == ".zip" and (boxname in x or machinebuild in x or model in x)])
 						for folder in ["images", "downloaded_images", "imagebackups"]:
 							if folder in listdir(media):
 								subFolder = join(media, folder)
-								# print(f"[FlashManager] getImagesList DEBUG: subFolder='{subFolder}'.")
+								# print("[FlashManager] getImagesList DEBUG: subFolder='%s'." % subFolder)
 								if isdir(subFolder) and not islink(subFolder) and not ismount(subFolder):
-									# print(f"[FlashManager] getImagesList DEBUG: Next subFolder='{subFolder}'.")
+									# print("[FlashManager] getImagesList DEBUG: Next subFolder='%s'." % subFolder)
 									getImages(subFolder, [join(subFolder, x) for x in listdir(subFolder) if splitext(x)[1] == ".zip" and (boxname in x or machinebuild in x or model in x)])
 									for dir in [dir for dir in [join(subFolder, dir) for dir in listdir(subFolder)] if isdir(dir) and splitext(dir)[1] == ".unzipped"]:
 										try:
 											rmtree(dir)
 										except OSError as err:
-											print(f"[FlashManager] getImagesList Error {err.errno}: Unable to remove directory '{dir}'!  ({err.strerror})")
+											print("[FlashManager] getImagesList Error %d: Unable to remove directory '%s'!  (%s)" % (err.errno, dir, err.strerror))
 
 		imageList = []
 		for catagory in sorted(self.imagesList.keys(), reverse=True):
@@ -234,16 +234,16 @@ class FlashManager(Screen):
 		self.selectionChanged()
 
 	def keyDistribution(self):
-		self.feedUrls = [["OpenATV", f"https://images.mynonpublic.com/openatv/json/{BoxInfo.getItem("BoxName")}"]]
+		self.feedUrls = [["OpenATV", "https://images.mynonpublic.com/openatv/json/%s" % BoxInfo.getItem("BoxName")]]
 		distributionList = []
 		default = 0
 		machine = BoxInfo.getItem("machinebuild")
 		try:
-			req = Request(f"https://raw.githubusercontent.com/OpenATV/FlashImage/gh-pages/{machine}.json", None, USER_AGENT)
+			req = Request("https://raw.githubusercontent.com/OpenATV/FlashImage/gh-pages/%s.json" % machine, None, USER_AGENT)
 			responseList = load(urlopen(req, timeout=5))
 			self.feedUrls = self.feedUrls + responseList
 		except Exception as err:
-			print(f"[FlashManager] Error: getavailable Distribution List for '{machine}'! ({err})")
+			print("[FlashManager] Error: getavailable Distribution List for '%s'! (%s)" % (machine, err))
 		for index, distribution in enumerate([feed[FEED_DISTRIBUTION] for feed in self.feedUrls]):
 			distributionList.append((distribution, distribution))
 			if distribution == self.imageFeed:
@@ -374,13 +374,13 @@ class FlashImage(Screen):
 	def getImageListCallback(self, imageDictionary):
 		self.getImageList = None
 		currentSlotCode = MultiBoot.getCurrentSlotCode()
-		print(f"[FlashManager] Current image slot is '{currentSlotCode}'.")
+		print("[FlashManager] Current image slot is '%s'." % currentSlotCode)
 		choices = []
 		default = 0
-		currentMsg = f"  -  {_("Current")}"
+		currentMsg = "  -  %s" % _("Current")
 		slotMsg = _("Slot '%s' %s: %s%s")
 		for index, slotCode in enumerate(sorted(imageDictionary.keys(), key=lambda x: (not x.isnumeric(), int(x) if x.isnumeric() else x))):
-			print(f"[FlashManager] Image Slot '{slotCode}': {str(imageDictionary[slotCode])}.")
+			print("[FlashManager] Image Slot '%s': %s." % (slotCode, str(imageDictionary[slotCode])))
 			slotType = "eMMC" if "mmcblk" in imageDictionary[slotCode]["device"] else "USB"
 			current = ""
 			if slotCode == currentSlotCode:
@@ -400,7 +400,7 @@ class FlashImage(Screen):
 							fs = statvfs(path)
 							return (fs.f_bavail * fs.f_frsize) / (1 << 20)
 						except OSError as err:
-							print(f"[FlashManager] checkMedia Error {err.errno}: Unable to get status for '{path}'!  ({err.strerror})")
+							print("[FlashManager] checkMedia Error %d: Unable to get status for '%s'!  (%s)" % (err.errno, path, err.strerror))
 					return 0
 
 				def checkIfDevice(path, diskStats):
@@ -413,7 +413,7 @@ class FlashImage(Screen):
 						return (path, True)
 				devices = []
 				mounts = []
-				for path in [f"/media/{x}" for x in listdir("/media")] + ([f"/media/net/{x}" for x in listdir("/media/net")] if isdir("/media/net") else []):
+				for path in ["/media/%s" % x for x in listdir("/media")] + (["/media/net/%s" % x for x in listdir("/media/net")] if isdir("/media/net") else []):
 					if checkIfDevice(path, diskStats):
 						devices.append((path, availableSpace(path)))
 					else:
@@ -434,7 +434,7 @@ class FlashImage(Screen):
 			if destination:
 				destination = join(destination, "images")
 				self.zippedImage = "://" in self.source and join(destination, self.imageName) or self.source
-				self.unzippedImage = join(destination, f"{self.imageName[:-4]}.unzipped")
+				self.unzippedImage = join(destination, "%s.unzipped" % self.imageName[:-4])
 				try:
 					if isfile(destination):
 						unlink(destination)
@@ -467,11 +467,12 @@ class FlashImage(Screen):
 
 	def flashPostAction(self, retVal=True):
 		if retVal:
+			self.recordCheck = False
 			text = _("Please select what to do after flash of the following image:")
-			text = f"{text}\n{self.imageName}"
+			text = "%s\n%s" % (text, self.imageName)
 			if BoxInfo.getItem("distro") in self.imageName:
 				if exists(join(self.backupBasePath, "images/config/myrestore.sh")):
-					text = f"{text}\n" + _("(The file '/media/hdd/images/config/myrestore.sh' exists and will be run after the image is flashed.)")
+					text = "%s\n%s" % (text, _("(The file '/media/hdd/images/config/myrestore.sh' exists and will be run after the image is flashed.)"))
 				choices = [
 					(_("Upgrade (Flash & restore all)"), "restoresettingsandallplugins"),
 					(_("Clean (Just flash and start clean)"), "wizard"),
@@ -538,7 +539,7 @@ class FlashImage(Screen):
 					if not exists(rootFolder):
 						makedirs(rootFolder)
 				except OSError as err:
-					print(f"[FlashManager] postFlashActionCallback Error {err.errno}: Failed to create '{rootFolder}' folder!  ({err.strerror})")
+					print("[FlashManager] postFlashActionCallback Error %d: Failed to create '%s' folder!  (%s)" % (err.errno, rootFolder, err.strerror))
 				if restoreSettings:
 					filesToCreate.append("settings")
 				if restoreAllPlugins:
@@ -551,7 +552,7 @@ class FlashImage(Screen):
 						try:
 							open(path, "w").close()
 						except OSError as err:
-							print(f"[FlashManager] postFlashActionCallback Error {err.errno}: failed to create {path}! ({err.strerror})")
+							print("[FlashManager] postFlashActionCallback Error %d: failed to create %s! (%s)" % (err.errno, path, err.strerror))
 					else:
 						if exists(path):
 							unlink(path)
@@ -566,7 +567,7 @@ class FlashImage(Screen):
 								elif exists(path):
 									unlink(path)
 						except OSError as err:
-							print(f"[FlashManager] postFlashActionCallback Error {err.errno}: Failed to create restore mode flag file '{path}'!  ({err.strerror})")
+							print("[FlashManager] postFlashActionCallback Error %d: Failed to create restore mode flag file '%s'!  (%s)" % (err.errno, path, err.strerror))
 				self.startDownload()
 			else:
 				self.keyCancel()
@@ -617,7 +618,7 @@ class FlashImage(Screen):
 	def unzip(self):
 		self["header"].setText(_("Unzipping Image"))
 		self["summary_header"].setText(self["header"].getText())
-		self["info"].setText(f"{self.imageName}\n\n{_("Please wait")}")
+		self["info"].setText("%s\n\n%s" % (self.imageName, _("Please wait")))
 		self["progress"].hide()
 		self.delay = eTimer()
 		self.delay.callback.append(self.startUnzip)
@@ -637,7 +638,7 @@ class FlashImage(Screen):
 				remove(target)
 			self.flashImage()
 		except Exception as err:
-			print(f"[FlashManager] startUnzip Error: {str(err)}!")
+			print("[FlashManager] startUnzip Error: %s!" % str(err))
 			self.session.openWithCallback(self.keyCancel, MessageBox, _("Error unzipping image '%s'!") % self.imageName, type=MessageBox.TYPE_ERROR, windowTitle=self.getTitle())
 
 	def flashImage(self):
@@ -666,22 +667,22 @@ class FlashImage(Screen):
 					cmdArgs = ["-r", "-k", "-f"]
 					Console().ePopen([UMOUNT, UMOUNT, "/proc/cmdline"])
 				else:
-					cmdArgs = [f"-r{mtdRootFS}", "-k", f"-m{self.slotCode}"]
+					cmdArgs = ["-r%s" % mtdRootFS, "-k", "-m%s" % self.slotCode]
 					if "uuid" in bootSlots[self.slotCode] and "mmcblk" not in mtdRootFS:
-						cmdArgs.insert(2, f"-s{BoxInfo.getItem("model")[2:]}/linuxrootfs")
+						cmdArgs.insert(2, "-s%s/linuxrootfs" % BoxInfo.getItem("model")[2:])
 			elif BoxInfo.getItem("model") in ("dreamone", "dreamtwo") and not BoxInfo.getItem("HasGPT"):  # Temp solution ofgwrite auto detection not ready.
-				cmdArgs = [f"-r{mtdRootFS}", f"-k{mtdKernel}"]
+				cmdArgs = ["-r%s" % mtdRootFS, "-k%s" % mtdKernel]
 			elif BoxInfo.getItem("model") in ("dreamone", "dreamtwo") and BoxInfo.getItem("HasGPT"):  # Temp solution ofgwrite auto detection not ready.
-				cmdArgs = [f"-r{mtdRootFS}", "-a"]
+				cmdArgs = ["-r%s" % mtdRootFS, "-a"]
 			elif BoxInfo.getItem("model") in ("dm820", "dm7080"):  # Temp solution ofgwrite auto detection not ready.
-				cmdArgs = ["-rmmcblk0p1"] if rootSubDir is None else [f"-r{mtdRootFS}", f"-c{currentSlot}", f"-m{self.slotCode}"]
+				cmdArgs = ["-rmmcblk0p1"] if rootSubDir is None else ["-r%s" % mtdRootFS, "-c%s" % currentSlot, "-m%s" % self.slotCode]
 			elif MultiBoot.canMultiBoot() and self.slotCode not in ("R", "F"):  # Receiver with SD card MultiBoot if (rootSubDir) is None.
 				if BoxInfo.getItem("chkrootmb"):
-					cmdArgs = [f"-r{mtdRootFS}", f"-c{currentSlot}", f"-m{self.slotCode}"]
+					cmdArgs = ["-r%s" % mtdRootFS, "-c%s" % currentSlot, "-m%s" % self.slotCode]
 				else:
-					cmdArgs = [f"-r{mtdRootFS}", f"-k{mtdKernel}", "-m0"] if (rootSubDir) is None else ["-r", "-k", f"-m{self.slotCode}"]
+					cmdArgs = ["-r%s" % mtdRootFS, "-k%s" % mtdKernel, "-m0"] if (rootSubDir) is None else ["-r", "-k", "-m%s" % self.slotCode]
 			elif BoxInfo.getItem("model") in ("dm800se", "dm500hd"):  # Temp solution ofgwrite auto detection not ready.
-				cmdArgs = [f"-r{mtdRootFS}", "-f"]
+				cmdArgs = ["-r%s" % mtdRootFS, "-f"]
 			elif BoxInfo.getItem("model") in ("zgemmah82h",):  # Temp solution ofgwrite kill e2 not allways works.
 				cmdArgs = ["-r", "-k", "-f"]
 			elif mtdKernel == mtdRootFS:  # Receiver with kernel and rootfs on one partition.
@@ -689,7 +690,7 @@ class FlashImage(Screen):
 			else:  # Normal non MultiBoot receiver.
 				cmdArgs = ["-r", "-k"]
 			self.containerOFGWrite = Console()
-			self.containerOFGWrite.ePopen([OFGWRITE, OFGWRITE] + cmdArgs + [f'{imageFiles}'], callback=self.flashImageDone)
+			self.containerOFGWrite.ePopen([OFGWRITE, OFGWRITE] + cmdArgs + ['%s' % imageFiles], callback=self.flashImageDone)
 			fbClass.getInstance().lock()
 		else:
 			self.session.openWithCallback(self.keyCancel, MessageBox, _("Error: Image '%s' to install is invalid!") % self.imageName, type=MessageBox.TYPE_ERROR, windowTitle=self.getTitle())
@@ -700,6 +701,6 @@ class FlashImage(Screen):
 		if retVal == 0:
 			self["header"].setText(_("Flashing image successful"))
 			self["summary_header"].setText(self["header"].getText())
-			self["info"].setText(f"{self.imageName}\n\n{_("Press OK for MultiBoot selection.")}\n{_("Press EXIT to close.")}")
+			self["info"].setText("%s\n\n%s\n%s" % (self.imageName, _("Press OK for MultiBoot selection."), _("Press EXIT to close.")))
 		else:
 			self.session.openWithCallback(self.keyCancel, MessageBox, _("Flashing image '%s' was not successful!") % self.imageName, type=MessageBox.TYPE_ERROR, windowTitle=self.getTitle())
