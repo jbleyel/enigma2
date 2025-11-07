@@ -1341,65 +1341,43 @@ void eDVBServicePlay::resetRecoveryState()
 }
 
 // Called on stream corruption. The new logic is decoupled from any plugin.
-void eDVBServicePlay::handleEofRecovery()
-{
-    if (m_is_paused)
-    {
-        eTrace("[PreciseRecovery] Recovery skipped: Playback is paused.");
-        return;
-    }
+void eDVBServicePlay::handleEofRecovery() {
+	if (m_is_paused) {
+		eTrace("[PreciseRecovery] Recovery skipped: Playback is paused.");
+		return;
+	}
 
-	eTrace("[PreciseRecovery] Corruption detected. Pausing playback, recording continues.");
+	eTrace("[PreciseRecovery] Corruption detected. Starting instant PTS sampling...");
 
-	if (m_recovery_delay_seconds > 0)
-	{
-		// --- Logic 1: Custom delay is set via API ---
-		// The goal is to enforce the fixed delay provided by the external source (plugin).
-		if (m_record)
-		{
-			pts_t live_pts = 0;
-			if (m_record->getCurrentPCR(live_pts) == 0)
-			{
-				// 1. Use the delay value already stored in our internal variable (in seconds).
-				// 2. Convert it to PTS.
+	if (m_record) {
+		pts_t live_pts = 0, playback_pts = 0;
+		// Sample PTS immediately before pause to avoid scheduling latency
+		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
+			if (m_recovery_delay_seconds > 0) {
+				// Logic 1: Custom delay from API
 				pts_t plugin_delay_pts = (pts_t)m_recovery_delay_seconds * 90000;
-				
-				// 3. Calculate the target delay "fingerprint".
-				// Target = (current live clock) - (desired delay duration).
 				m_original_timeshift_delay = plugin_delay_pts;
-				m_delay_calculated = true;
-				eTrace("[PreciseRecovery] Custom Delay ACTIVE. Target delay fingerprint set (based on %d sec API delay)", m_recovery_delay_seconds);
-			}
-		}
-	}
-	else
-	{
-		// --- Logic 2: No custom delay (Normal behavior) ---
-		// The goal is to maintain the user's current timeshift delay.
-		if (m_record)
-		{
-			pts_t live_pts = 0, playback_pts = 0;
-			if (m_record->getCurrentPCR(live_pts) == 0 &&
-				getPlayPosition(playback_pts) == 0 &&
-				live_pts > playback_pts)
-			{
-				// This is the original, correct calculation for maintaining the current delay.
+				eTrace("[PreciseRecovery] Custom delay ACTIVE: %d seconds (%lld PTS)", m_recovery_delay_seconds, m_original_timeshift_delay);
+			} else {
+				// Logic 2: Maintain current delay
 				m_original_timeshift_delay = live_pts - playback_pts;
-				m_delay_calculated = true;
-				eTrace("[PreciseRecovery] Custom Delay INACTIVE. Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+				eTrace("[PreciseRecovery] Custom delay INACTIVE. Instant delay fingerprint: %lld PTS", m_original_timeshift_delay);
 			}
+			m_delay_calculated = true;
+		} else {
+			eTrace("[PreciseRecovery] Failed to sample PTS, aborting recovery.");
+			return; // Don't proceed if we can't get accurate sample
 		}
 	}
 
-	// 2. Pause PLAYBACK only.
-	if (m_decoder && !m_is_paused)
-	{
+	// Now pause playback (after sampling)
+	if (m_decoder && !m_is_paused) {
 		m_decoder->pause();
 		m_is_paused = 1;
 	}
-	
-	// 3. Start the monitoring timer.
-	m_precise_recovery_timer->start(100, false); 
+
+	// Start the monitoring timer.
+	m_precise_recovery_timer->start(50, false);
 }
 
 void eDVBServicePlay::startPreciseRecoveryCheck() {
@@ -1415,6 +1393,7 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 		int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recoveryBufferDelay", 300);
 		const pts_t safety_buffer_pts = recovery_delay_ms * 90;
 		const pts_t target_delay_with_buffer = m_original_timeshift_delay + safety_buffer_pts;
+		eTrace("[PreciseRecovery] Checking: current=%lld, target=%lld, diff=%lld", current_delay, target_delay_with_buffer, current_delay - target_delay_with_buffer);
 
 		// 4. Check if we have reached the original, fixed target delay plus a safety buffer.
 		if (current_delay >= target_delay_with_buffer) {
@@ -1430,11 +1409,11 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 			m_event((iPlayableService*)this, evSeekableStatusChanged);
 		} else {
 			// Not there yet, keep checking.
-			m_precise_recovery_timer->start(100, false);
+			m_precise_recovery_timer->start(50, false);
 		}
 	} else {
 		// If we can't get reliable readings, try again.
-		m_precise_recovery_timer->start(100, false);
+		m_precise_recovery_timer->start(50, false);
 	}
 }
 
