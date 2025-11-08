@@ -41,7 +41,6 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <ranges>
 
 using namespace std;
 
@@ -3118,13 +3117,12 @@ void eDVBServicePlay::setCutListEnable(int enable)
 	cutlistToCuesheet();
 }
 
-void eDVBServicePlay::updateTimeshiftPids()
-{
+void eDVBServicePlay::updateTimeshiftPids() {
 	if (!m_record)
 		return;
 
 	eDVBServicePMTHandler::program program;
-	eDVBServicePMTHandler &h = m_timeshift_active ? m_service_handler_timeshift : m_service_handler;
+	eDVBServicePMTHandler& h = m_timeshift_active ? m_service_handler_timeshift : m_service_handler;
 
 	if (h.getProgramInfo(program))
 		return;
@@ -3142,41 +3140,49 @@ void eDVBServicePlay::updateTimeshiftPids()
 	if (program.textPid != -1)
 		pids_to_record.insert(program.textPid);
 
-    // Video-Streams
-    for (const auto &v : program.videoStreams) {
-        if (timing_pid == -1) {
-            timing_pid = v.pid;
-            timing_stream_type = v.type;
-            timing_pid_type = iDVBTSRecorder::video_pid;
-        }
-        pids_to_record.insert(v.pid);
-    }
+	// Video-Streams
+	for (const auto& v : program.videoStreams) {
+		if (timing_pid == -1) {
+			timing_pid = v.pid;
+			timing_stream_type = v.type;
+			timing_pid_type = iDVBTSRecorder::video_pid;
+		}
+		pids_to_record.insert(v.pid);
+	}
 
-    // Audio-Streams
-    for (const auto &a : program.audioStreams) {
-        if (timing_pid == -1) {
-            timing_pid = a.pid;
-            timing_stream_type = a.type;
-            timing_pid_type = iDVBTSRecorder::audio_pid;
-        }
-        pids_to_record.insert(a.pid);
-    }
+	// Audio-Streams
+	for (const auto& a : program.audioStreams) {
+		if (timing_pid == -1) {
+			timing_pid = a.pid;
+			timing_stream_type = a.type;
+			timing_pid_type = iDVBTSRecorder::audio_pid;
+		}
+		pids_to_record.insert(a.pid);
+	}
 
-    // Subtitle-Streams
-    for (const auto &s : program.subtitleStreams)
-        pids_to_record.insert(s.pid);
+	// Subtitle-Streams
+	for (const auto& s : program.subtitleStreams) {
+		pids_to_record.insert(s.pid);
+	}
 
-	for (int pid : std::views::set_difference(pids_to_record, m_pids_active))
+	std::set<int> new_pids, obsolete_pids;
+
+	std::set_difference(pids_to_record.begin(), pids_to_record.end(), m_pids_active.begin(), m_pids_active.end(), std::inserter(new_pids, new_pids.begin()));
+
+	std::set_difference(m_pids_active.begin(), m_pids_active.end(), pids_to_record.begin(), pids_to_record.end(), std::inserter(obsolete_pids, obsolete_pids.begin()));
+
+	for (int pid : new_pids) {
 		m_record->addPID(pid);
+	}
 
-	for (int pid : std::views::set_difference(m_pids_active, pids_to_record))
+	for (int pid : obsolete_pids) {
 		m_record->removePID(pid);
+	}
 
 	m_pids_active = pids_to_record;
 
 	if (timing_pid != -1)
 		m_record->setTimingPID(timing_pid, timing_pid_type, timing_stream_type);
-	
 }
 
 RESULT eDVBServicePlay::setNextPlaybackFile(const char *f)
