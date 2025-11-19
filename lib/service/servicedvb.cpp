@@ -1656,7 +1656,7 @@ RESULT eDVBServicePlay::setTarget(int target, bool noaudio)
 			if (m_decoder && !m_noaudio)
 			{
 				m_noaudio = true;
-				m_decoder->setSyncPCR(-1);
+				//m_decoder->setSyncPCR(-1);
 				m_decoder->setAudioPID(-1, -1);
 				m_decoder->set();
 				return 0;
