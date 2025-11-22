@@ -48,6 +48,7 @@ private:
 	sigc::signal<void(struct iTSMPEGDecoder::videoEvent)> m_event;
 	int m_width, m_height, m_framerate, m_aspect, m_progressive, m_gamma;
 	static int readApiSize(int fd, int &xres, int &yres, int &aspect);
+	static int streamTypes[5];
 public:
 	enum { UNKNOWN = -1, MPEG2, MPEG4_H264, VC1 = 3, MPEG4_Part2, VC1_SM, MPEG1, H265_HEVC, AVS = 16, AVS2 = 40 };
 	eDVBVideo(eDVBDemux *demux, int dev, bool fcc_enable=false);
