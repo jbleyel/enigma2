@@ -367,11 +367,10 @@ DEFINE_REF(eDVBVideo);
 
 int eDVBVideo::m_close_invalidates_attributes = -1;
 int eDVBVideo::m_debug = -1;
-int eDVBVideo::streamTypes[5] = { -1, -1, -1, -1, -1 };
 
 eDVBVideo::eDVBVideo(eDVBDemux *demux, int dev, bool fcc_enable)
 	: m_demux(demux), m_dev(dev), m_fcc_enable(fcc_enable),
-	m_width(-1), m_height(-1), m_framerate(-1), m_aspect(-1), m_progressive(-1), m_gamma(-1)
+	m_width(-1), m_height(-1), m_framerate(-1), m_aspect(-1), m_progressive(-1), m_gamma(-1), m_streamType(-1)
 {
 
 	if (eDVBVideo::m_debug < 0)
@@ -488,7 +487,7 @@ int eDVBVideo::startPid(int pid, int type)
 			break;
 		}
 
-		if (eDVBVideo::streamTypes[m_dev] != streamtype) {
+		if (m_streamType != streamtype) {
 			if(eDVBVideo::m_debug)
 			{
 				eDebugNoNewLineStart("[eDVBVideo%d] VIDEO_SET_STREAMTYPE %d - ", m_dev, streamtype);
@@ -499,7 +498,7 @@ int eDVBVideo::startPid(int pid, int type)
 			}
 			else
 				::ioctl(m_fd, VIDEO_SET_STREAMTYPE, streamtype);
-			eDVBVideo::streamTypes[m_dev] = streamtype;
+			m_streamType = streamtype;
 		}
 		else
 		{
