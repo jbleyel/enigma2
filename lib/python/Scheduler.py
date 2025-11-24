@@ -102,7 +102,11 @@ class FunctionTimerThread(Thread):
 		self.daemon = True
 
 	def run(self):
-		result = self.entryFunction(self.timerEnty)
+		try:
+			result = self.entryFunction(self.timerEnty)
+		except Exception as err:
+			result = False
+			print(f"[Scheduler] Error in FunctionTimerThread: {err}")
 		if self.callbackFunction and callable(self.callbackFunction):
 			self.callbackFunction(result)
 
@@ -214,6 +218,8 @@ class Scheduler(Timer):
 				timerEntry.append(f"runinstandbyretry=\"{int(timer.functionStandbyRetry)}\"")
 				timerEntry.append(f"retrycount=\"{int(timer.functionRetryCount)}\"")
 				timerEntry.append(f"retrydelay=\"{int(timer.functionRetryDelay)}\"")
+			if timer.failed:
+				timerEntry.append("failed=\"1\"")
 
 			timerLog = []
 			for logTime, logCode, logMsg in timer.log_entries:
@@ -284,6 +290,7 @@ class Scheduler(Timer):
 		for log in timerDom.findall("log"):
 			entry.log_entries.append((int(log.get("time")), int(log.get("code")), log.text.strip()))
 		entry.isNewTimer = False
+		entry.failed = int(timerDom.get("failed") or "0")
 		return entry
 
 	# When activating a timer which has already passed, simply
