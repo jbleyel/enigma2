@@ -500,10 +500,6 @@ int eDVBVideo::startPid(int pid, int type)
 				::ioctl(m_fd, VIDEO_SET_STREAMTYPE, streamtype);
 			m_streamType = streamtype;
 		}
-		else
-		{
-			eDebug("[eDVBVideo%d] use cached VIDEO_SET_STREAMTYPE %d - ", m_dev, streamtype);
-		}
 	}
 
 	if (m_fd_demux >= 0)
@@ -1570,25 +1566,58 @@ void eTSMPEGDecoder::demux_event(int event)
 	}
 }
 
-RESULT eTSMPEGDecoder::getPTS(int what, pts_t &pts)
-{
-	if (what == 0) /* auto */
-		what = m_video ? 1 : 2;
+RESULT eTSMPEGDecoder::getPTS(int what, pts_t& pts) {
+	// Auto detection mode (what == 0)
+	if (what == 0) {
+		pts_t video_pts = 0, audio_pts = 0;
+		int ret_video = -1;
 
-	if (what == 1) /* video */
+		// 1. Attempt to read both values
+		if (m_video)
+			ret_video = m_video->getPTS(video_pts);
+
+		// Note: eDVBAudio::getPTS always returns 0, so checking return value is useless.
+		// We will rely on the actual audio_pts value instead.
+		if (m_audio)
+			m_audio->getPTS(audio_pts);
+
+		// 2. Check for "Mute" status or audio freeze
+		if (m_video && ret_video == 0) {
+			// Since eDVBAudio::getPTS returns 0 even on fail, checking ret_audio is not enough.
+			// We check if audio_pts is 0 (uninitialized/failed) OR if sync drift > 0.5s (45000).
+			if (audio_pts == 0 || abs(video_pts - audio_pts) > 45000) {
+				pts = video_pts; // Rely on video immediately
+				return 0;
+			}
+		}
+
+		// 3. Normal mode: Rely on audio if it seems valid
+		if (m_audio && audio_pts != 0) {
+			pts = audio_pts;
+			return 0;
+		}
+
+		// 4. Last resort
+		if (m_video && ret_video == 0) {
+			pts = video_pts;
+			return 0;
+		}
+
+		return -1;
+	}
+
+	if (what == 1) /* force video */
 	{
 		if (m_video)
 			return m_video->getPTS(pts);
-		else
-			return -1;
+		return -1;
 	}
 
-	if (what == 2) /* audio */
+	if (what == 2) /* force audio */
 	{
 		if (m_audio)
 			return m_audio->getPTS(pts);
-		else
-			return -1;
+		return -1;
 	}
 
 	return -1;
