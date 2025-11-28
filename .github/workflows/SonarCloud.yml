@@ -1,4 +1,5 @@
 name: SonarCloud
+
 on:
   push:
     branches: [ master ]
@@ -8,26 +9,41 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build and Analyze
     runs-on: ubuntu-24.04
     container:
       image: ghcr.io/openatv/enigma2-buildenv/enigma2-buildenv:latest
       options: --user root
     env:
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory
+
     steps:
+      # 1️⃣ Checkout Repository
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # 2️⃣ Setup Python
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
+      # 3️⃣ Install SonarCloud Build Wrapper
       - name: Install SonarCloud Build Wrapper
         uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v4
         id: bw
 
+      # 4️⃣ Debug Build Wrapper Pfad
+      - name: Debug build-wrapper path
+        run: |
+          echo "Build wrapper path: ${{ steps.bw.outputs.build-wrapper-bin }}"
+          ls -l ${{ steps.bw.outputs.build-wrapper-bin }}
+
+      # 5️⃣ Build-Wrapper ausführbar machen (sicherstellen)
+      - name: Make build-wrapper executable
+        run: chmod +x "${{ steps.bw.outputs.build-wrapper-bin }}"
+
+      # 6️⃣ Run Build mit Build Wrapper
       - name: Run build-wrapper
         env:
           CC: "gcc-14"
@@ -39,10 +55,9 @@ jobs:
           export CPPFLAGS="-I/usr/include/python3.13"
           ./configure PYTHON=python3.13 --with-libsdl=no --with-boxtype=nobox --enable-dependency-tracking ac_cv_prog_c_openmp=-fopenmp --with-gstversion=1.0 --with-textlcd
 
-          "${{ steps.bw.outputs.build-wrapper-bin }}" \
-            --out-dir "${BUILD_WRAPPER_OUT_DIR}" \
-            make
+          "${{ steps.bw.outputs.build-wrapper-bin }}" --out-dir "${BUILD_WRAPPER_OUT_DIR}" make
 
+      # 7️⃣ Run SonarCloud Scan
       - name: Run SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v4
         env:
