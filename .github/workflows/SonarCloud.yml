@@ -25,7 +25,7 @@ jobs:
           python-version: '3.13'
 
       - name: Install SonarCloud Build Wrapper
-        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v2
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v4
         id: bw
 
       - name: Run build-wrapper
@@ -43,11 +43,12 @@ jobs:
             --out-dir "${BUILD_WRAPPER_OUT_DIR}" \
             make
 
-      - name: Run sonar-scanner
+      - name: Run SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v4
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          sonar-scanner \
-            -Dsonar.cfamily.compile-commands="${BUILD_WRAPPER_OUT_DIR}/compile_commands.json" \
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: >
+            -Dsonar.cfamily.compile-commands=${BUILD_WRAPPER_OUT_DIR}/compile_commands.json
             -Dsonar.verbose=true
