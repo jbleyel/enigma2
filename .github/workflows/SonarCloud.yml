@@ -24,8 +24,20 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install sonar-scanner and build-wrapper
-        uses: SonarSource/sonarcloud-github-c-cpp@v2
+      - name: Install sonar-scanner + build-wrapper
+        run: |
+          export SONAR_SCANNER_VERSION=5.0.1.3006
+          export BUILD_WRAPPER_VERSION=6.0.0.4432
+
+          curl -sSLo sonar-scanner.zip "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip"
+          unzip sonar-scanner.zip -d /opt
+          export PATH="/opt/sonar-scanner-$SONAR_SCANNER_VERSION-linux/bin:$PATH"
+
+          curl -sSLo build-wrapper.zip "https://binaries.sonarsource.com/CommercialDistribution/build-wrapper-linux-x86/build-wrapper-linux-x86-$BUILD_WRAPPER_VERSION.zip"
+          unzip build-wrapper.zip -d /opt
+          export PATH="/opt/build-wrapper-linux-x86-$BUILD_WRAPPER_VERSION:$PATH"
+
+          echo "$PATH"
 
       - name: Run build-wrapper
         env:
