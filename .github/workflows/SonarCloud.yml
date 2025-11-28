@@ -28,17 +28,12 @@ jobs:
         with:
           python-version: '3.13'
 
-      # 3️⃣ Install Build Wrapper Manuell
-      - name: Download and prepare build-wrapper
-        run: |
-          BW_VERSION=6.0.0.4432
-          curl -sSLo build-wrapper.zip "https://binaries.sonarsource.com/CommercialDistribution/build-wrapper-linux-x86/build-wrapper-linux-x86-$BW_VERSION.zip"
-          unzip build-wrapper.zip -d $HOME/build-wrapper
-          chmod +x $HOME/build-wrapper/build-wrapper-linux-x86-64
-          echo "Build wrapper ready at $HOME/build-wrapper/build-wrapper-linux-x86-64"
+      # 3️⃣ Install Build Wrapper (automatisch)
+      - name: Install Build Wrapper
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v6
 
       # 4️⃣ Run Build mit Build Wrapper
-      - name: Run build-wrapper
+      - name: Run Build Wrapper
         env:
           CC: "gcc-14"
           CXX: "g++-14"
@@ -49,16 +44,16 @@ jobs:
           export CPPFLAGS="-I/usr/include/python3.13"
           ./configure PYTHON=python3.13 --with-libsdl=no --with-boxtype=nobox --enable-dependency-tracking ac_cv_prog_c_openmp=-fopenmp --with-gstversion=1.0 --with-textlcd
 
-          BUILD_WRAPPER="$HOME/build-wrapper/build-wrapper-linux-x86-64"
-          "$BUILD_WRAPPER" --out-dir "${BUILD_WRAPPER_OUT_DIR}" make
+          # Clean build mit Build Wrapper
+          build-wrapper-linux-x86-64 --out-dir "${BUILD_WRAPPER_OUT_DIR}" make
 
-      # 5️⃣ Run SonarCloud Scan
-      - name: Run SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v4
+      # 5️⃣ SonarCloud Scan
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: >
-            -Dsonar.cfamily.compile-commands=${BUILD_WRAPPER_OUT_DIR}/compile_commands.json
+            --define "sonar.cfamily.compile-commands=${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
             -Dsonar.verbose=true
