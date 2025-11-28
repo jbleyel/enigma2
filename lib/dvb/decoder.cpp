@@ -1568,6 +1568,10 @@ void eTSMPEGDecoder::demux_event(int event)
 
 RESULT eTSMPEGDecoder::getPTS(int what, pts_t& pts) {
 	// Auto detection mode (what == 0)
+
+	if (what == 0) /* auto */
+		what = m_video ? 1 : 2;
+
 	if (what == 0) {
 		pts_t video_pts = 0, audio_pts = 0;
 		int ret_video = -1;
