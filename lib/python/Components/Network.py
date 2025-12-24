@@ -371,8 +371,16 @@ class Network:
 			if attribute in self.ifaces[iface]:
 				del self.ifaces[iface][attribute]
 
+	def useDHCP(self):
+		ifaces = sorted(list(self.ifaces.keys()))
+		for iface in ifaces:
+			if self.getAdapterAttribute(iface, "up"):
+				if self.getAdapterAttribute(iface, "dhcp"):
+					return True
+		return False
+
 	def getNameserverList(self):
-		return [[0, 0, 0, 0], [0, 0, 0, 0]] if len(self.nameservers) == 0 else self.nameservers
+		return [] if len(self.nameservers) == 0 else self.nameservers
 
 	def clearNameservers(self):
 		self.nameservers = []

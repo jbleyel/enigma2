@@ -221,7 +221,7 @@ class DNSSettings(Setup):
 		self.dnsInitial = iNetwork.getNameserverList()
 		print(f"[NetworkSetup] DNSSettings: Initial DNS list: {self.dnsInitial}.")
 		self.dnsOptions = {
-			"custom": [[0, 0, 0, 0]],
+			"custom": [self.defaultGW()],
 			"dhcp-router": iNetwork.getNameserverList(),
 		}
 		if BoxInfo.getItem("DNSCrypt"):
@@ -243,9 +243,16 @@ class DNSSettings(Setup):
 		dnsSource = config.usage.dns.value
 		if dnsSource not in self.dnsOptions:
 			dnsSource = "custom"
-			self.dnsOptions["custom"] = self.dnsInitial[:]
+		self.dnsOptions["custom"] = self.dnsInitial[:]
 		self.dnsServerItems = []
 		Setup.__init__(self, session=session, setup="DNS")
+
+	def defaultGW(self):
+		ifaces = sorted(list(iNetwork.ifaces.keys()))
+		for iface in ifaces:
+			if iNetwork.getAdapterAttribute(iface, "up"):
+				return iNetwork.getAdapterAttribute(iface, "gateway")
+		return [0, 0, 0, 0]
 
 	def createSetup(self):  # NOSONAR silence S2638
 		if config.usage.dns.value != "dnscrypt":
@@ -257,7 +264,10 @@ class DNSSettings(Setup):
 				items = [ReadOnly(NoSave(ConfigIP(default=x))) for x in self.dnsServers if isinstance(x, list)] + [ReadOnly(NoSave(ConfigText(default=x, fixed_size=False))) for x in self.dnsServers if isinstance(x, str)]
 			entry = None
 			for item, entry in enumerate(items, start=1):
-				self.dnsServerItems.append(getConfigListEntry(_("Name server %d") % item, entry, _("Enter DNS (Dynamic Name Server) %d's IP address.") % item))
+				name = _("Name server %d") % item
+				if config.usage.dns.value != "custom":
+					name = (name, 0)
+				self.dnsServerItems.append(getConfigListEntry(name, entry, _("Enter DNS (Dynamic Name Server) %d's IP address.") % item))
 		else:
 			self.dnsServerItems = []
 		Setup.createSetup(self, appendItems=self.dnsServerItems)
