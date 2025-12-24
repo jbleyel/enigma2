@@ -143,9 +143,6 @@ int eDVBServiceStream::doRecord()
 			eDebug("[eDVBServiceStream] NO DEMUX available");
 			return -1;
 		}
-
-		eDebug("[eDVBServiceStream] createTSRecorder m_ref.path '%s'.", m_ref.path.c_str());
-
 		if (m_ref.path.empty())
 			demux->createTSRecorder(m_record, /*packetsize*/ 188, /*streaming*/ true);
 		else

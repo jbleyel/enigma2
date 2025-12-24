@@ -535,6 +535,7 @@ class SchedulerEntry(TimerEntry):
 		self.functionRetryDelay = 5  # 5 minutes
 		self.functionRetryCounter = 0
 		self.isNewTimer = True
+		self.functionProgress = 0
 
 	def __repr__(self, getType=False):
 		timertype = {

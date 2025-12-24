@@ -384,6 +384,9 @@ class SchedulerList(TimerListBase):
 		res.append((eListboxPythonMultiContent.TYPE_TEXT, leftOffset + self.statusOffset + minorWidth + 10, self.topHeight, majorWidth, self.bottomHeight, 2, RT_HALIGN_RIGHT | RT_VALIGN_CENTER, bottomText))
 		if self.showSeparator:
 			res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, 0, height - 2, width, 2, self.line, None, None, BT_SCALE))
+		if timer.function and timer.functionProgress:
+			res.append((eListboxPythonMultiContent.TYPE_PROGRESS, width / 2 - 50, self.topHeight + 2, 100, self.bottomHeight - 4, timer.functionProgress, 2))
+
 		return res
 
 
