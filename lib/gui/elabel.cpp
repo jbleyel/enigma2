@@ -13,7 +13,7 @@ Licensed under GPLv2.
 #include <lib/gui/elabel.h>
 #include <lib/gui/ewindowstyleskinned.h>
 
-eLabel::eLabel(eWidget* parent, int markedPos) : eWidget(parent), scrollTimer(eTimer::create(eApp)), m_textPixmap(nullptr) {
+eLabel::eLabel(eWidget* parent, int markedPos) : eWidget(parent), m_textPixmap(nullptr) {
 	m_pos = markedPos;
 	ePtr<eWindowStyle> style;
 	getStyle(style);
@@ -23,8 +23,6 @@ eLabel::eLabel(eWidget* parent, int markedPos) : eWidget(parent), scrollTimer(eT
 	// default to topleft alignment
 	m_valign = alignTop;
 	m_halign = alignBidi;
-
-	CONNECT(scrollTimer->timeout, eLabel::updateScrollPosition);
 }
 
 int eLabel::event(int event, void* data, void* data2) {
@@ -130,9 +128,12 @@ int eLabel::event(int event, void* data, void* data2) {
 			// draw border/outline first
 			auto shadowposition = eRect(position.x() - m_shadow_offset.x(), position.y() - m_shadow_offset.y(), position.width() - m_shadow_offset.x(), position.height() - m_shadow_offset.y());
 
-			// Clip to visible padded area for non-cached rendering (Normal/Bounce)
-			eRect clipRect(ePoint(m_padding.x(), m_padding.y()), eSize(visibleW, visibleH));
-			painter.resetClip(clipRect);
+			// If scrolling text is active
+			// clip to the visible padded area. Otherwise do normal rendering.
+			if (m_scroll_text) {
+				eRect clipRect(ePoint(m_padding.x(), m_padding.y()), eSize(visibleW, visibleH));
+				painter.resetClip(clipRect);
+			}
 
 			painter.renderText(shadowposition, m_text, flags, m_text_border_color, m_text_border_width, m_pos, &m_text_offset, m_tab_width);
 
@@ -435,11 +436,17 @@ void eLabel::setScrollText(int direction, long delay, long startDelay, long endD
 	m_scroll_config.stepSize = std::max(stepSize, 1);
 	m_scroll_config.mode = mode;
 	m_scroll_config.cached = (mode == eScrollConfig::scrollModeBounceCached || mode == eScrollConfig::scrollModeCached || mode == eScrollConfig::scrollModeRoll);
+	// ensure timer exists before stopping/clearing scroll state (stopScroll assumes scrollTimer)
+	if (!scrollTimer) {
+		scrollTimer = eTimer::create(eApp);
+		CONNECT(scrollTimer->timeout, eLabel::updateScrollPosition);
+	}
 	stopScroll();
 }
 
 void eLabel::stopScroll() {
-	scrollTimer->stop();
+	if (scrollTimer)
+		scrollTimer->stop();
 	m_end_delay_active = false;
 	m_scroll_text = false;
 	m_scroll_pos = 0;
@@ -493,6 +500,7 @@ void eLabel::updateScrollPosition() {
 			// use startDelay when we returned to the beginning (0)
 			long bounceDelay = (m_scroll_pos == max_scroll) ? m_scroll_config.endDelay : m_scroll_config.startDelay;
 			if (!m_end_delay_active && bounceDelay > 0) {
+				// don't toggle m_scroll_swap immediately — toggle AFTER the delay
 				m_end_delay_active = true;
 				m_scroll_started = false;
 				scrollTimer->stop();
