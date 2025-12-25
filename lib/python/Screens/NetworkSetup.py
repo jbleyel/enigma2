@@ -217,13 +217,9 @@ class NetworkAdapterSelection(Screen):
 
 class DNSSettings(Setup):
 	def __init__(self, session):
-		iNetwork.loadNameserverConfig()
-		self.dnsInitial = iNetwork.getNameserverList()
+		self.dnsInitial = iNetwork.loadResolveConfig()
 		print(f"[NetworkSetup] DNSSettings: Initial DNS list: {self.dnsInitial}.")
-		self.dnsOptions = {
-			"custom": [self.defaultGW()],
-			"dhcp-router": iNetwork.getNameserverList(),
-		}
+		self.dnsOptions = {}
 		if BoxInfo.getItem("DNSCrypt"):
 			self.dnsOptions["dnscrypt"] = [[127, 0, 0, 1]]
 		fileDom = fileReadXML(resolveFilename(SCOPE_SKINS, "dnsservers.xml"), source=MODULE_NAME)
@@ -233,18 +229,31 @@ class DNSSettings(Setup):
 				ipv4s = dns.get("ipv4", "")
 				if ipv4s:
 					for ipv4 in [x.strip() for x in ipv4s.split(",")]:
-						addresses.append([int(x) for x in ipv4.split(".")])  # IanSav: This can crash if the IPv4 data is invalid!
+						addresses.append([int(x) for x in ipv4.split(".")])
 				ipv6s = dns.get("ipv6", "")
 				if ipv6s:
-					# for ipv6 in [x.strip() for x in ipv6s.split(",")]:  # IanSav: The IPv6 data should be validated as valid hex.
-					# 	addresses.append([int(x, 16) for x in ipv6.split(":")])
 					addresses.extend([x.strip() for x in ipv6s.split(",")])
 				self.dnsOptions[key] = addresses
 		dnsSource = config.usage.dns.value
 		if dnsSource not in self.dnsOptions:
 			dnsSource = "custom"
-		self.dnsOptions["custom"] = self.dnsInitial[:]
+
 		self.dnsServerItems = []
+		self.dnsOptions["custom"] = [self.defaultGW(), [0, 0, 0, 0], "", ""]
+		self.dnsOptions["dhcp-router"] = [self.defaultGW(), [0, 0, 0, 0], "", ""]
+		v4pos = 0
+		v6pos = 2
+		for addr in self.dnsInitial:
+			if isinstance(addr, list) and len(addr) == 4:
+				self.dnsOptions["custom"][v4pos] = addr
+				self.dnsOptions["dhcp-router"][v4pos] = addr
+				v4pos += 1
+			if isinstance(addr, str):
+				if ip_address(addr).version == 6:
+					self.dnsOptions["custom"][v6pos] = addr
+					self.dnsOptions["dhcp-router"][v6pos] = addr
+					v6pos += 1
+
 		Setup.__init__(self, session=session, setup="DNS")
 
 	def defaultGW(self):
@@ -257,11 +266,24 @@ class DNSSettings(Setup):
 	def createSetup(self):  # NOSONAR silence S2638
 		if config.usage.dns.value != "dnscrypt":
 			self.dnsServers = self.dnsOptions[config.usage.dns.value][:]
+			v4 = config.usage.dnsMode.value != 3
+			v6 = config.usage.dnsMode.value != 2
 			self.dnsServerItems = []
 			if config.usage.dns.value == "custom":
-				items = [NoSave(ConfigIP(default=x)) for x in self.dnsServers if isinstance(x, list)] + [NoSave(ConfigText(default=x, fixed_size=False)) for x in self.dnsServers if isinstance(x, str)]
+				items = []
+				if v4:
+					items.append(NoSave(ConfigIP(self.dnsServers[0])))
+					items.append(NoSave(ConfigIP(self.dnsServers[1])))
+				if v6:
+					items.append(NoSave(ConfigText(default=self.dnsServers[2], fixed_size=False)))
+					items.append(NoSave(ConfigText(default=self.dnsServers[3], fixed_size=False)))
 			else:
-				items = [ReadOnly(NoSave(ConfigIP(default=x))) for x in self.dnsServers if isinstance(x, list)] + [ReadOnly(NoSave(ConfigText(default=x, fixed_size=False))) for x in self.dnsServers if isinstance(x, str)]
+				items = []
+				for addr in self.dnsServers:
+					if v4 and isinstance(addr, list) and len(addr) == 4:
+						items.append(ReadOnly(NoSave(ConfigIP(default=addr))))
+					elif v6 and isinstance(addr, str):
+						items.append(ReadOnly(NoSave(ConfigText(default=addr, fixed_size=False))))
 			entry = None
 			for item, entry in enumerate(items, start=1):
 				name = _("Name server %d") % item
@@ -271,6 +293,18 @@ class DNSSettings(Setup):
 		else:
 			self.dnsServerItems = []
 		Setup.createSetup(self, appendItems=self.dnsServerItems)
+
+	def changedEntry(self):
+		if config.usage.dns.value == "custom":
+			current = self["config"].getCurrent()
+			if current in self.dnsServerItems:
+				idx = self.dnsServerItems.index(current)
+				if config.usage.dnsMode.value == 3:  # IPV6 only
+					idx += 2
+				value = current[1].value
+				# TODO: validate IPv6
+				self.dnsServers[idx] = value
+		return Setup.changedEntry(self)
 
 	def keySave(self):
 		iNetwork.clearNameservers()

@@ -270,14 +270,31 @@ class Network:
 				lines = linesV4
 			case 3:
 				lines = linesV6
-		suffix = [f"domain {config.usage.dnsSuffix.value}"] if config.usage.dnsSuffix.value else []
-		rotate = ["options rotate"] if config.usage.dnsRotate.value else []
 		if not useDHCPforDNS:
+			suffix = [f"domain {config.usage.dnsSuffix.value}"] if config.usage.dnsSuffix.value else []
+			rotate = ["options rotate"] if config.usage.dnsRotate.value else []
 			fileWriteLines(self.resolvFile, rotate + suffix + lines, source=MODULE_NAME)
 		if config.usage.dns.value != "dhcp-router":
 			fileWriteLines(self.nameserverFile, lines, source=MODULE_NAME)
 		elif exists(self.nameserverFile):
 			remove(self.nameserverFile)
+
+	def loadResolveConfig(self):
+		nameServers = []
+		ipRegExpV4 = r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
+		ipRegExpV6 = r"(^|(?<=[^\w:.]))(([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4})(?=$|(?![\w:.]))"
+		ipPatternV4 = compile(ipRegExpV4)
+		nameserverPatternV4 = compile(f"nameserver +{ipRegExpV4}")
+		nameserverPatternV6 = compile(f"nameserver +{ipRegExpV6}")
+		self.nameservers = []
+		for line in fileReadLines(self.resolvFile, default=[], source=MODULE_NAME):
+			if self.regExpMatch(nameserverPatternV4, line) is not None:
+				ip = self.regExpMatch(ipPatternV4, line)
+				if ip:
+					self.nameservers.append(self.convertIP(ip))
+			elif self.regExpMatch(nameserverPatternV6, line) is not None:
+				self.nameservers.append(line.replace("nameserver ", ""))
+		return nameServers
 
 	def loadNameserverConfig(self):
 		ipRegExpV4 = r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
@@ -388,16 +405,6 @@ class Network:
 	def addNameserver(self, nameserver):
 		if nameserver not in self.nameservers:
 			self.nameservers.append(nameserver)
-
-	def removeNameserver(self, nameserver):
-		if nameserver in self.nameservers:
-			self.nameservers.remove(nameserver)
-
-	def changeNameserver(self, oldNameserver, newNameserver):
-		if oldNameserver in self.nameservers:
-			for pos, nameserver in enumerate(self.nameservers):
-				if self.nameservers[pos] == oldNameserver:
-					self.nameservers[pos] = newNameserver
 
 	def resetNetworkConfig(self, mode="lan", callback=None):
 		self.resetNetworkConsole = Console()
