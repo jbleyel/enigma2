@@ -332,21 +332,6 @@ class DNSSettings(Setup):
 		else:
 			self.close()
 
-	def getNetworkRoutes(self):
-		# # cat /proc/net/route
-		# Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
-		# eth0    00000000        FE08A8C0        0003    0       0       0       00000000        0       0       0
-		# eth0    0008A8C0        00000000        0001    0       0       0       00FFFFFF        0       0       0
-		gateways = []
-		lines = []
-		lines = fileReadLines("/proc/net/route", lines, source=MODULE_NAME)
-		headings = lines.pop(0)  # noqa F841
-		for line in lines:
-			data = line.split()
-			if data[1] == "00000000" and int(data[3]) & 0x03 and data[7] == "00000000":  # If int(flags) & 0x03 is True this is a gateway (0x02) and it is up (0x01).
-				gateways.append((data[0], tuple(reversed([int(data[2][x:x + 2], 16) for x in range(0, len(data[2]), 2)]))))
-		return gateways
-
 	def tomlBool(self, val):
 		return "true" if bool(val) else "false"
 
@@ -895,14 +880,6 @@ class AdapterSetup(ConfigListScreen, Screen):
 	def runAsync(self, finished_cb):
 		self.finished_cb = finished_cb
 		self.keySave()
-
-	def NameserverSetupClosed(self, *ret):
-		iNetwork.loadNameserverConfig()
-		nameserver = (iNetwork.getNameserverList() + [[0, 0, 0, 0]] * 2)[0:2]
-		self.primaryDNS = NoSave(ConfigIP(default=nameserver[0]))
-		self.secondaryDNS = NoSave(ConfigIP(default=nameserver[1]))
-		self.createSetup()
-		self.layoutFinished()
 
 	def cleanup(self):
 		iNetwork.stopLinkStateConsole()

@@ -152,7 +152,7 @@ class Network:
 
 		print(f"[Network] DEBUG: '{iface}' InterfaceData={self.ifaces[iface]}")
 		self.configuredNetworkAdapters = self.configuredInterfaces  # Save configured interface list.
-		self.loadNameserverConfig()  # Load name servers only once.
+		self.nameservers = self.loadNameserverConfig()  # Load name servers only once.
 		self.config_ready = True
 		self.msgPlugins()
 		if callback and callable(callback):
@@ -256,9 +256,14 @@ class Network:
 			lines.append("")
 		fileWriteLines(self.networkInterfaceFile, lines, source=MODULE_NAME)
 		self.configuredNetworkAdapters = self.configuredInterfaces
-		self.writeNameserverConfig(dhcpAdapter != [])
+		self.writeNameserverConfig()
 
-	def writeNameserverConfig(self, useDHCPforDNS=False):
+	def writeNameserverConfig(self):
+		useDHCPforDNS = False
+		for iface in sorted(list(self.ifaces.keys())):
+			if self.ifaces[iface]["up"] and self.ifaces[iface]["dhcp"]:
+				useDHCPforDNS = True
+
 		linesV4 = ["nameserver %d.%d.%d.%d" % tuple(nameserver) for nameserver in self.nameservers if isinstance(nameserver, list)]
 		linesV6 = [f"nameserver {nameserver}" for nameserver in self.nameservers if isinstance(nameserver, str)]
 		match config.usage.dnsMode.value:
@@ -279,43 +284,27 @@ class Network:
 		elif exists(self.nameserverFile):
 			remove(self.nameserverFile)
 
-	def loadResolveConfig(self):
+	def loadNameserverConfig(self, fileName=None):
+		if not fileName:
+			fileName = self.resolvFile if config.usage.dns.value == "dhcp-router" else self.nameserverFile
 		nameServers = []
 		ipRegExpV4 = r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
 		ipRegExpV6 = r"(^|(?<=[^\w:.]))(([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4})(?=$|(?![\w:.]))"
 		ipPatternV4 = compile(ipRegExpV4)
 		nameserverPatternV4 = compile(f"nameserver +{ipRegExpV4}")
 		nameserverPatternV6 = compile(f"nameserver +{ipRegExpV6}")
-		self.nameservers = []
-		for line in fileReadLines(self.resolvFile, default=[], source=MODULE_NAME):
+		for line in fileReadLines(fileName, default=[], source=MODULE_NAME):
 			if self.regExpMatch(nameserverPatternV4, line) is not None:
 				ip = self.regExpMatch(ipPatternV4, line)
 				if ip:
-					self.nameservers.append(self.convertIP(ip))
+					nameServers.append(self.convertIP(ip))
 			elif self.regExpMatch(nameserverPatternV6, line) is not None:
-				self.nameservers.append(line.replace("nameserver ", ""))
+				nameServers.append(line.replace("nameserver ", ""))
+		print(f"[Network] DEBUG: Nameservers: {nameServers}.")
 		return nameServers
 
-	def loadNameserverConfig(self):
-		ipRegExpV4 = r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
-		ipRegExpV6 = r"(^|(?<=[^\w:.]))(([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4})(?=$|(?![\w:.]))"
-		ipPatternV4 = compile(ipRegExpV4)
-		nameserverPatternV4 = compile(f"nameserver +{ipRegExpV4}")
-		nameserverPatternV6 = compile(f"nameserver +{ipRegExpV6}")
-		self.nameservers = []
-		fileName = self.resolvFile if config.usage.dns.value == "dhcp-router" else self.nameserverFile
-		for line in fileReadLines(fileName, default=[], source=MODULE_NAME):
-			if line == "options rotate":
-				config.usage.dnsRotate.value = True
-			elif line.startswith("domain "):
-				config.usage.dnsSuffix.value = line.replace("domain ", "")
-			elif self.regExpMatch(nameserverPatternV4, line) is not None:
-				ip = self.regExpMatch(ipPatternV4, line)
-				if ip:
-					self.nameservers.append(self.convertIP(ip))
-			elif self.regExpMatch(nameserverPatternV6, line) is not None:
-				self.nameservers.append(line.replace("nameserver ", ""))
-		print(f"[Network] DEBUG: Nameservers: {self.nameservers}.")
+	def loadResolveConfig(self):
+		return self.loadNameserverConfig(self.resolvFile)
 
 	def getConfiguredAdapters(self):
 		return self.configuredNetworkAdapters
