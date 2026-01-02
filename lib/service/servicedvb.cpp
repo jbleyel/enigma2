@@ -1625,36 +1625,59 @@ RESULT eDVBServicePlay::stop()
 
 RESULT eDVBServicePlay::setTarget(int target, bool noaudio)
 {
-	// start/stop audio
-	if (target == 1000)
-	{
-		if (noaudio) // stop audio
-		{
-			if (m_decoder && !m_noaudio)
-			{
-				m_noaudio = true;
-				m_decoder->setSyncPCR(-1);
-				m_decoder->setAudioPID(-1, -1);
-				m_decoder->set();
-				return 0;
-			}
-		}
-		else // start audio
-		{
-			if (m_noaudio)
-			{
-				m_noaudio = false;
-				updateDecoder(m_noaudio);
-				return 0;
-			}
-		}
-		return -1;
-	}
+    // target 1000 is used exclusively by IPAudio plugin
+    if (target == 1000)
+    {
+        if (noaudio) // Request to Mute DVB Audio (Start IPAudio)
+        {
+            if (m_decoder && !m_noaudio)
+            {
+                m_noaudio = true;
 
-	m_is_primary = !target;
-	m_decoder_index = target;
-	m_noaudio = noaudio;
-	return 0;
+                // [FIX START] HiSilicon TimeShift Drift Workaround
+                // Problem: setAudioPID(-1, -1) stops the demuxer data flow, causing STC clock to freeze.
+                // Solution: Feed the REAL Audio PID but with an INVALID Stream Type (0xFF).
+                // This keeps the hardware buffer active (preventing drift) but the decoder produces silence.
+
+                // Safety Check: Ensure we have a valid Audio PID before applying the fix.
+                if (m_current_audio_pid > 0 && m_current_audio_pid < 0x1FFF)
+                {
+                    eDebug("[eDVBServicePlay] setTarget: HiSilicon Fix -> Sending PID 0x%x with Type 0xFF to keep STC alive.", m_current_audio_pid);
+                    m_decoder->setAudioPID(m_current_audio_pid, 0xFF);
+                }
+                else
+                {
+                    // Fallback: If no valid audio PID, stop it normally (Drift is inevitable here but safe).
+                    eWarning("[eDVBServicePlay] setTarget: No valid audio PID found! Falling back to standard stop.");
+                    m_decoder->setAudioPID(-1, -1);
+                }
+
+                // Do NOT call setSyncPCR(-1) - we need PCR to keep running.
+                m_decoder->set();
+                // [FIX END]
+
+                return 0;
+            }
+        }
+        else // Request to Unmute/Restore DVB Audio
+        {
+            if (m_noaudio)
+            {
+                m_noaudio = false;
+                eDebug("[eDVBServicePlay] setTarget: Restoring DVB Audio state.");
+                // updateDecoder() will force a full refresh, restoring the correct PID, Type, and SyncPCR.
+                updateDecoder(); 
+                return 0;
+            }
+        }
+        return -1;
+    }
+
+    // Standard behavior for other targets (Pip, etc.)
+    m_is_primary = !target;
+    m_decoder_index = target;
+    m_noaudio = noaudio;
+    return 0;
 }
 
 RESULT eDVBServicePlay::connectEvent(const sigc::slot<void(iPlayableService*,int)> &event, ePtr<eConnection> &connection)
