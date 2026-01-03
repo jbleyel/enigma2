@@ -700,7 +700,7 @@ class InfoBarTimeshift:
 					fullname = getRecordingFilename(ptsfilename, recordingPath)
 					link(join(config.timeshift.path.value, savefilename), f"{fullname}.ts")
 					with open(f"{fullname}.ts.meta", "w") as metafile:
-						metafile.write(f"{self.pts_curevent_servicerefname}\n{self.getCurrentEventName}\n{self.ptsCurrentEventDescription}\n{int(self.pts_starttime)}\n{metamergestring}")
+						metafile.write(f"{self.pts_curevent_servicerefname}\n{self.ptsCurrentEventName}\n{self.ptsCurrentEventDescription}\n{int(self.pts_starttime)}\n{metamergestring}")
 					self.ptsCreateEITFile(fullname)
 				elif timeshiftfile.startswith("pts_livebuffer"):
 					with open(join(config.timeshift.path.value, f"{timeshiftfile}.meta")) as readmetafile:  # Save stored time shift buffer by creating hard link to ts file.

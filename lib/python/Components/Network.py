@@ -260,12 +260,12 @@ class Network:
 
 	def writeNameserverConfig(self):
 		useDHCPforDNS = False
-		for iface in sorted(list(self.ifaces.keys())):
+		for iface in sorted(self.ifaces.keys()):
 			if self.ifaces[iface]["up"] and self.ifaces[iface]["dhcp"]:
 				useDHCPforDNS = True
 
-		linesV4 = ["nameserver %d.%d.%d.%d" % tuple(nameserver) for nameserver in self.nameservers if isinstance(nameserver, list)]
-		linesV6 = [f"nameserver {nameserver}" for nameserver in self.nameservers if isinstance(nameserver, str)]
+		linesV4 = ["nameserver %d.%d.%d.%d" % tuple(nameserver) for nameserver in self.nameservers if isinstance(nameserver, list) and nameserver != [0, 0, 0, 0]]
+		linesV6 = [f"nameserver {nameserver}" for nameserver in self.nameservers if isinstance(nameserver, str) and nameserver]
 		match config.usage.dnsMode.value:
 			case 0:
 				lines = linesV4 + linesV6
@@ -275,12 +275,12 @@ class Network:
 				lines = linesV4
 			case 3:
 				lines = linesV6
+		suffix = [f"domain {config.usage.dnsSuffix.value}"] if config.usage.dnsSuffix.value else []
+		rotate = ["options rotate"] if config.usage.dnsRotate.value else []
 		if not useDHCPforDNS:
-			suffix = [f"domain {config.usage.dnsSuffix.value}"] if config.usage.dnsSuffix.value else []
-			rotate = ["options rotate"] if config.usage.dnsRotate.value else []
 			fileWriteLines(self.resolvFile, rotate + suffix + lines, source=MODULE_NAME)
 		if config.usage.dns.value != "dhcp-router":
-			fileWriteLines(self.nameserverFile, lines, source=MODULE_NAME)
+			fileWriteLines(self.nameserverFile, rotate + suffix + lines, source=MODULE_NAME)
 		elif exists(self.nameserverFile):
 			remove(self.nameserverFile)
 
@@ -378,7 +378,7 @@ class Network:
 				del self.ifaces[iface][attribute]
 
 	def useDHCP(self):
-		ifaces = sorted(list(self.ifaces.keys()))
+		ifaces = sorted(self.ifaces.keys())
 		for iface in ifaces:
 			if self.getAdapterAttribute(iface, "up"):
 				if self.getAdapterAttribute(iface, "dhcp"):
@@ -394,6 +394,16 @@ class Network:
 	def addNameserver(self, nameserver):
 		if nameserver not in self.nameservers:
 			self.nameservers.append(nameserver)
+
+	def removeNameserver(self, nameserver):
+		if nameserver in self.nameservers:
+			self.nameservers.remove(nameserver)
+
+	def changeNameserver(self, oldNameserver, newNameserver):
+		if oldNameserver in self.nameservers:
+			for pos, nameserver in enumerate(self.nameservers):
+				if self.nameservers[pos] == oldNameserver:
+					self.nameservers[pos] = newNameserver
 
 	def resetNetworkConfig(self, mode="lan", callback=None):
 		self.resetNetworkConsole = Console()

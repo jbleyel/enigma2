@@ -206,14 +206,14 @@
 			<item level="0" text="Use DoH servers" description="Only use DNS servers implementing the DNS-over-HTTPS protocol. This causes DNS lookups to be made via the encrypted HTTPS protocol.">config.usage.DNSCryptDoH</item>
 			<item level="0" text="Use ODoH servers" description="Only use DNS servers implementing the Oblivious DNS-over-HTTPS protocol. This adds another layer of privacy by adding a proxy layer to the DNS-over-HTTPS request.">config.usage.DNSCryptODoH</item>
 			<item level="0" text="Use only DNSSEC servers" description="Server must support DNS Security Extensions (DNSSEC). This is a data signing option that protects the integrity of the DNS data against compromises like cache poisoning.">config.usage.DNSCryptDNSSEC</item>
-			<item level="0" text="Use only no-log servers" description="Server must not log user queries (declarative). This can improve the privacy of DNS lookups by not not logging the request on the server providing the data.">config.usage.DNSCryptNoLog</item>
+			<item level="0" text="Use only no-log servers" description="Server must not log user queries (declarative). This can improve the privacy of DNS lookups by not logging the request on the server providing the data.">config.usage.DNSCryptNoLog</item>
 			<item level="0" text="Use only no-filter servers" description="Server must not enforce its own blocklist. Some servers may implement their own blacklists to block sites for parental control, ad blocking, etc. reasons.">config.usage.DNSCryptNoFilter</item>
 			<item level="0" text="Use DNS cache" description="Use a DNS cache to locally store recent DNS lookups to improve performance, reduce latency and outgoing traffic.">config.usage.DNSCryptCache</item>
 			<item level="0" text="Enable monitoring UI" description="Select 'Yes' to enable the monitoring UI web interface for the DNSCrypt subsystem.">config.usage.DNSCryptUI</item>
-			<if conditional="config.usage.DNSCryptUI.value">
-				<item level="0" text="Monitoring UI username" description="Set the username for the monitoring UI web interface.">config.usage.DNSCryptUsername</item>
-				<item level="0" text="Monitoring UI password" description="Set the password for the monitoring UI web interface.">config.usage.DNSCryptPassword</item>
-				<item level="0" text="Monitoring UI port" description="Set the port address (8080-9999) for the monitoring UI web interface.">config.usage.DNSCryptPort</item>
+			<if conditional="config.usage.DNSCryptUI.value" indent="1">
+				<item level="0" text="Username" description="Set the username for the monitoring UI web interface.">config.usage.DNSCryptUsername</item>
+				<item level="0" text="Password" description="Set the password for the monitoring UI web interface.">config.usage.DNSCryptPassword</item>
+				<item level="0" text="Port" description="Set the port address (8080-9999) for the monitoring UI web interface.">config.usage.DNSCryptPort</item>
 				<item level="0" text="Privacy level" description="Set the privacy level for the monitoring UI web interface.">config.usage.DNSCryptPrivacy</item>
 			</if>
 		</if>
@@ -371,7 +371,7 @@
 			<item level="0" text="Remove all other data" description="Select 'Yes' to remove all other files and directories not covered by the options above." conditional="len(self.others)">config.factory.resetOthers</item>
 		</if>
 	</setup>
-	<setup key="Fallbacktuner" title="Fallback tuner setup" level="2">
+	<setup key="Fallbacktuner" title="Fallback Tuner Setup" level="2">
 		<item text="Enable fallback remote receiver" description="Enable remote receiver to be tried to tune into services that can't be tuned into locally (e.g. tuner is occupied or service type is unavailable on the local tuner). Specify complete URL including http:// and port number (normally ...:8001), e.g. http://second_receiver:8001.">config.usage.remote_fallback_enabled</item>
 		<item text="Import from remote receiver URL" description="Import channels and/or EPG from remote receiver URL when receiver is booted.">config.usage.remote_fallback_import</item>
 		<if conditional="config.usage.remote_fallback_enabled.value">
@@ -448,7 +448,7 @@
 		<item level="0" text="Enabled" description="Enable or disable using HDMI-CEC.">config.hdmicec.enabled</item>
 		<if conditional="config.hdmicec.enabled.value">
 			<item level="0" text="Advanced Settings" description="Enable the advanced HDMI-CEC setting options.">config.hdmicec.advanced_settings</item>
-			<item level="0" text="Regard Deep Standby as Standby" description="Enables sending the same TV commands for Deep Standby as for regular Standby.">config.hdmicec.handle_deepstandby_events</item>
+			<item level="0" text="Regard Deep Standby as Standby" description="Set to 'Yes' to enable sending the same TV commands for Deep Standby as for regular Standby.">config.hdmicec.handle_deepstandby_events</item>
 			<item level="0" text="Wait for timesync at startup" description="If the Deep Standby workaround is enabled wait until the system time is synchronized. Depending on the requirement the device wake up will continuing after a maximum of 2 minutes." conditional="config.hdmicec.advanced_settings.value and config.hdmicec.handle_deepstandby_events.value and config.workaround.deeprecord.value">config.hdmicec.deepstandby_waitfortimesync</item>
 			<item level="0" text="Put TV in Standby" description="Automatically put the TV in Standby whenever the receiver goes into Standby or Deep Standby.">config.hdmicec.control_tv_standby</item>
 			<item level="0" text="Even if TV has another input active?" description="You can skip this function and turn off the TV when you wake the receiver from Standby and immediately switch back to Standby." conditional="config.hdmicec.advanced_settings.value and config.hdmicec.control_tv_standby.value">config.hdmicec.tv_standby_notinputactive</item>
@@ -601,6 +601,9 @@
 		<item text="Enable automatic shares" description="Select 'Yes' to allow each storage device detected to be automatically exported as samba share.">config.samba.enableAutoShare</item>
 		<item text="Automatic shares access" description="Select the access mode for the automatically exported samba shares." conditional="config.samba.enableAutoShare.value">config.samba.autoShareAccess</item>
 	</setup>
+	<setup key="NetworkZeroTier" title="ZeroTier Settings">
+		<item text="Network-ID" description="Enter the ZeroTier Network ID. The ID should be exactly 16 characters in length.">config.network.ZeroTierNetworkId</item>
+	</setup>
 	<setup key="OSCamInfoSetup" title="OSCam Information Settings">
 		<item level="0" text="Read Userdata from 'oscam.conf'" description="Read Userdata from 'oscam.conf'">config.oscaminfo.userDataFromConf</item>
 		<if conditional="not config.oscaminfo.userDataFromConf.value">
@@ -749,7 +752,7 @@
 		<item level="1" text="Recordings abort PiP" description="When enabled, a recording is allowed to abort picture-in-picture mode, when there are no free tuners.">config.recording.ask_to_abort_pip</item>
 		<item level="1" text="Recordings abort pseudo recordings" description="When enabled, a recording is allowed to abort pseudo recordings, when there are no free tuners.">config.recording.ask_to_abort_pseudo_rec</item>
 		<item level="1" text="Recordings abort streaming" description="When enabled, a recording is allowed to abort streaming, when there are no free tuners.">config.recording.ask_to_abort_streaming</item>
-		<item level="0" text="Preparation time for recording" description="During this time, the transmitter and recording destination are checked. If the destination (e.g., NAS) isn’t ready in time, this time can be increased.">config.recording.prepare_time</item>
+		<item level="0" text="Preparation time for recording" description="During this time, the transmitter and recording destination are checked. If the destination (e.g., NAS) isn't ready in time, this time can be increased.">config.recording.prepare_time</item>
 		<item level="0" text="Margin before recording" description="When nonzero, a recording will start the nominated period before the starting time indicated in the EPG.">config.recording.margin_before</item>
 		<item level="0" text="Margin after recording" description="When nonzero, a recording will stop the nominated period after the ending time indicated in the EPG.">config.recording.margin_after</item>
 		<item level="0" text="Use Zap timer end times" description="Select 'Yes' to enable new Zap timers to have an end time turned on and defined by default.">config.recording.zap_has_endtime</item>
@@ -975,7 +978,7 @@
 			<item level="2" text="AI Translation enabled" description="Select 'Yes' to enable AI-Powered Translation for all teletext and DVB subtitles.">config.subtitles.ai_enabled</item>
 			<item level="2" text="AI Translation language" description="Select the AI-Powered Translation target language.">config.subtitles.ai_translate_to</item>
 			<item level="2" text="AI Translation color" description="Select the color to be used for the AI-Powered Translation text.">config.subtitles.ai_subtitle_colors</item>
-			<item level="2" text="AI Translation optimization" description="The AI-Powered Translation service will be optimized to provide the best performance based on the the Internet connection upload speed selected.">config.subtitles.ai_connection_speed</item>
+			<item level="2" text="AI Translation optimization" description="The AI-Powered Translation service will be optimized to provide the best performance based on the Internet connection upload speed selected.">config.subtitles.ai_connection_speed</item>
 			<item level="2" text="AI Translation subscription code" description="Enter the subscription code to fully enable the AI-Powered Translation plugin, the unified code for trial is 15.">config.subtitles.ai_subscription_code</item>
 			<item level="2" text="AI Translation mode" description="The AI mode used for translating languages. You can choose the one that gives the most accurate translation for your target language.">config.subtitles.ai_mode</item>
 		</if>
@@ -1018,7 +1021,7 @@
 		<item level="1" text="Show warning when time shift is stopped" description="When enabled, a warning will be displayed and the user will get an option to stop or to continue the time shift.">config.timeshift.check</item>
 		<item level="2" text="Show status messages on switch to live TV" description="When enabled, show status or error messages.">config.timeshift.showLiveTVMsg</item>
 		<item level="2" text="Time shift save action on zap" description="Select if time shift must continue when set to record.">config.timeshift.favoriteSaveAction</item>
-		<item level="2" text="Stop time shift while recording" description="Disables timeshift during recording (advisable for USB sticks).">config.timeshift.stopWhileRecording</item>
+		<item level="2" text="Stop time shift while recording" description="Stops time shift being used if a recording is in progress. This is advisable for USB sticks.">config.timeshift.stopWhileRecording</item>
 		<item level="2" text="Skip jumping to live while timeshifting with plugins" description="If set to 'Yes', allows the use of time shift with alternative audio plugins.">config.timeshift.skipReturnToLive</item>
 		<item level="2" text="Use time shift SeekBar while time shifting" description="Select 'Yes' to allow use of the SeekBar to jump to a selected point within the event.">config.timeshift.showInfoBar</item>
 		<item level="2" text="Time shift buffer limit" description="Older files in the time shift directory are removed on every event change.">config.timeshift.maxHours</item>
@@ -1037,7 +1040,7 @@
 		<item level="2" text="Preferred tuner for recordings" description="Configure which tuner will be preferred for recordings, when more than one tuner is available. 'Disabled' would select a tuner based on preferred tuner in customize screen. 'Auto' would choose based on E2's default rules, ignoring preferred tuner in customize screen.">config.usage.recording_frontend_priority</item>
 		<item level="2" text="Preferred tuners for recordings, multiple selection allowed" description="In expert mode, configure which tuners will be preferred for recordings, when more than one tuner is available." conditional="config.usage.recording_frontend_priority.value in ('experimental_mode', 'expert_mode')">config.usage.recording_frontend_priority_multiselect</item>
 		<item level="2" text="Experimental: strict limitation to preferred tuners for recordings" description="Configure whether another tuner from the preferred list is allocated for recordings instead of sharing a tuner that is already active receiving the same live TV channel." conditional="config.usage.recording_frontend_priority.value == 'experimental_mode'">config.usage.recording_frontend_priority_strictly</item>
-		<item level="2" text="Disable background scanning" description="When tuned to a service, the system normally scans the transponder for changes and saves them. Enable only if you know what you’re doing.">config.misc.disable_background_scan</item>
+		<item level="2" text="Disable background scanning" description="When tuned to a service, the system normally scans the transponder for changes and saves them. Enable only if you know what you're doing.">config.misc.disable_background_scan</item>
 		<item level="2" text="Ignore DVB-S namespace sub network" description="On valid ONIDs, ignore frequency sub network part.">config.usage.subnetwork</item>
 		<item level="2" text="Ignore DVB-C namespace sub network" description="On valid ONIDs, ignore frequency sub network part.">config.usage.subnetwork_cable</item>
 		<item level="2" text="Ignore DVB-T namespace sub network" description="On valid ONIDs, ignore frequency sub network part.">config.usage.subnetwork_terrestrial</item>
@@ -1076,7 +1079,7 @@
 		<!--item level="2" text="Enable Startup Bootvideo" description="You can Enable or Disable the Startup Bootvideo.">config.misc.bootvideo</item-->
 		<item level="1" text="After PowerLost" description="Select what should be done when the %s %s was shutdown incorrectly, or after the Power was lost.">config.usage.shutdownNOK_action</item>
 		<item level="1" text="Boot-up action" description="Select what should be done when the %s %s was boot-up, normal playing or goto Standby.">config.usage.boot_action</item>
-		<item level="2" text="Wake up time before a timer begins [mins]" description="Default wake-up is 5 minutes before Deep Standby. Adjust if the wake-up is too early or late, e.g., for network drives.">config.workaround.wakeuptime</item>
+		<item level="2" text="Wake up time before a timer begins" description="Default wake-up is 5 minutes prior to timer start to wake up from Deep Standby. Adjust if the wake-up is too early or late, e.g., for network drives.">config.workaround.wakeuptime</item>
 		<item level="1" text="Use workaround for wake up from deep-standby" description="If enabled, a time window is used to detect wake-ups from Deep Standby triggered by a timer. The default setting is disabled, which uses a special signal from the receiver. However, some devices send an incorrect or no signal, causing wake-up detection to fail.">config.workaround.deeprecord</item>
 		<item level="2" text="Time window for detection of the wake up by a timer [mins]" description="The default settings are wake up time - 5 minutes and timer begin time + 5 minutes. This setting changed the time window before the wake up time. So can be detected a wake up by a timer even at very early starting receivers." requires="config.workaround.deeprecord">config.workaround.wakeupwindow</item>
 		<!--item level="2" text="Remote control model shown" description="Which remote control gets shown. Only influences graphical representation.">config.usage.rc_model</item-->
@@ -1154,7 +1157,7 @@
 	<setup key="VolumeAdjust" title="Volume Adjust Settings">
 		<item level="0" text="Volume adjustment mode" description="Select 'Disabled' to disable all automated volume adjustments. Select 'Defined volume offsets' to assign a specified offset to the service's volume level. Select 'Last used/set volume' to remember the volume level last used for each service.">config.volumeAdjust.adjustMode</item>
 		<if conditional="config.volumeAdjust.adjustMode.value == 1">
-			<item level="0" text="Default volume offset" description="This is the initial / default volume offset applied to any services added the the volume adjust list.">config.volumeAdjust.defaultOffset</item>
+			<item level="0" text="Default volume offset" description="This is the initial / default volume offset applied to any services added to the volume adjust list.">config.volumeAdjust.defaultOffset</item>
 			<item level="0" text="Default Dolby Digital / Dolby AC-3 offset" description="This offset will only be used if the channel does not have its own volume offset.">config.volumeAdjust.dolbyOffset</item>
 		</if>
 		<if conditional="config.volumeAdjust.adjustMode.value != 0">
