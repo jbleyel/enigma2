@@ -116,6 +116,11 @@ def InitUsageConfig():
 	config.usage.show_spinner = ConfigYesNo(default=True)
 	config.usage.screenSaverStartTimer = ConfigSelection(default=0, choices=[(0, _("Disabled"))] + [(x, ngettext("%d Second", "%d Seconds", x) % x) for x in (5, 10, 20, 30, 40, 50)] + [(x * 60, ngettext("%d Minute", "%d Minutes", x) % x) for x in (1, 5, 10, 15, 20, 30, 45, 60)])
 	config.usage.screenSaverMoveTimer = ConfigSelection(default=10, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(1, 61)])
+	config.usage.screenSaverMode = ConfigSelection(default=1, choices=[
+		(0, _("Blank screen")),
+		(1, _("Logo")),
+		(2, _("Picon"))
+	])
 	config.usage.informationShowAllMenuScreens = ConfigYesNo(default=False)
 	config.usage.informationExtraSpacing = ConfigYesNo(False)
 	config.usage.movieSelectionInMenu = ConfigYesNo(False)
@@ -2365,6 +2370,20 @@ def InitUsageConfig():
 	] + [(x, ngettext("%d Second", "%d Seconds", x) % x) for x in (2, 5, 10, 20, 30)] + [(x * 60, ngettext("%d Minute", "%d Minutes", x) % x) for x in (1, 2, 3)]
 	config.oscaminfo.autoUpdateLog = ConfigSelection(default=0, choices=choiceList)
 	BoxInfo.setItem("OScamInstalled", False)
+
+	config.softcsa = ConfigSubsection()
+	config.softcsa.decoderRelease = ConfigSelection(default=0, choices=[
+			(0, _("Quick")),
+			(1, _("Normal"))
+	])
+	config.softcsa.syncMode = ConfigSelection(default=0, choices=[
+			(0, _("Automatic")),
+			(1, _("Synchronous"))
+	])
+	config.softcsa.waitForDataTimeout = ConfigSelection(
+		default=800,
+		choices=[(x, _("%d ms") % x) for x in range(100, 2001, 100)]
+	)
 
 	config.misc.softcam_streamrelay_url = ConfigIP(default=[127, 0, 0, 1], auto_jump=True)
 	config.misc.softcam_streamrelay_port = ConfigInteger(default=17999, limits=(0, 65535))

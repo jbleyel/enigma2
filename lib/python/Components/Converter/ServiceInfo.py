@@ -1,3 +1,4 @@
+from string import Formatter
 
 from enigma import eAVControl, iPlayableService, iServiceInformation
 
@@ -58,6 +59,8 @@ class ServiceInfo(Converter):
 	VPID = 44
 	XRES = 45
 	YRES = 46
+	IS_SOFTCSA = 47
+	FORMAT_STRING = 48
 
 	VIDEO_INFO_WIDTH = 0
 	VIDEO_INFO_HEIGHT = 1
@@ -67,65 +70,88 @@ class ServiceInfo(Converter):
 	VIDEO_INFO_GAMMA = 5
 
 	def __init__(self, argument):
+		def handleType(self, argument, keys=False):
+			tokens = {
+				"AudioPid": (self.APID, (iPlayableService.evUpdatedInfo,)),
+				"AudioTracksAvailable": (self.AUDIOTRACKS_AVAILABLE, (iPlayableService.evUpdatedInfo,)),
+				"EditMode": (self.EDITMODE, (iPlayableService.evUpdatedInfo,)),
+				"Editmode": (self.EDITMODE, (iPlayableService.evUpdatedInfo,)),
+				"FrameRate": (self.FRAMERATE, (iPlayableService.evVideoSizeChanged, iPlayableService.evUpdatedInfo)),
+				"Framerate": (self.FRAMERATE, (iPlayableService.evVideoSizeChanged, iPlayableService.evUpdatedInfo)),
+				"FrequencyInfo": (self.FREQUENCY_INFORMATION, (iPlayableService.evUpdatedInfo,)),
+				"Freq_Info": (self.FREQUENCY_INFORMATION, (iPlayableService.evUpdatedInfo,)),
+				"HasHBBTV": (self.HAS_HBBTV, (iPlayableService.evUpdatedInfo, iPlayableService.evHBBTVInfo,)),
+				"HasTeletext": (self.HAS_TELETEXT, (iPlayableService.evUpdatedInfo,)),
+				"HasTelext": (self.HAS_TELETEXT, (iPlayableService.evUpdatedInfo,)),
+				"Is1080": (self.IS_1080, (iPlayableService.evVideoSizeChanged,)),
+				"Is480": (self.IS_480, (iPlayableService.evVideoSizeChanged,)),
+				"Is4K": (self.IS_4K, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
+				"Is576": (self.IS_576, (iPlayableService.evVideoSizeChanged,)),
+				"Is720": (self.IS_720, (iPlayableService.evVideoSizeChanged,)),
+				"IsCrypted": (self.IS_CRYPTED, (iPlayableService.evUpdatedInfo,)),
+				"IsSoftCSA": (self.IS_SOFTCSA, (iPlayableService.evUpdatedInfo,)),
+				"IsHD": (self.IS_HD, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
+				"IsHDHDR": (self.IS_HDHDR, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
+				"IsHDR": (self.IS_HDR, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
+				"IsHDR10": (self.IS_HDR10, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
+				"IsHLG": (self.IS_HLG, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
+				"IsIPStream": (self.IS_STREAM, (iPlayableService.evUpdatedInfo,)),
+				"IsMultichannel": (self.IS_MULTICHANNEL, (iPlayableService.evUpdatedInfo,)),
+				"IsNotWidescreen": (self.IS_NOT_WIDESCREEN, (iPlayableService.evVideoSizeChanged,)),
+				"IsSD": (self.IS_SD, (iPlayableService.evVideoSizeChanged,)),
+				# "IsSDAndNotWidescreen": (self.IS_SD_AND_NOT_WIDESCREEN, (iPlayableService.evVideoSizeChanged, iPlayableService.evUpdatedInfo)),
+				# "IsSDAndWidescreen": (self.IS_SD_AND_WIDESCREEN, (iPlayableService.evVideoSizeChanged, iPlayableService.evUpdatedInfo)),
+				"IsSDR": (self.IS_SDR, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
+				"IsStereo": (self.IS_STEREO, (iPlayableService.evUpdatedInfo,)),
+				"IsStream": (self.IS_STREAM, (iPlayableService.evUpdatedInfo,)),
+				# "IsVideoAVC": (self.IS_VIDEO_AVC, (iPlayableService.evUpdatedInfo,)),
+				# "IsVideoHEVC": (self.IS_VIDEO_HEVC, (iPlayableService.evUpdatedInfo,)),
+				# "IsVideoMPEG2": (self.IS_VIDEO_MPEG2, (iPlayableService.evUpdatedInfo,)),
+				"IsWidescreen": (self.IS_WIDESCREEN, (iPlayableService.evVideoSizeChanged,)),
+				"OnId": (self.ONID, (iPlayableService.evUpdatedInfo,)),
+				"PcrPid": (self.PCRPID, (iPlayableService.evUpdatedInfo,)),
+				"PmtPid": (self.PMTPID, (iPlayableService.evUpdatedInfo,)),
+				"Progressive": (self.PROGRESSIVE, (iPlayableService.evVideoProgressiveChanged, iPlayableService.evUpdatedInfo)),
+				# "Provider": (self.PROVIDER, self.getTextItem, (iPlayableService.evStart,)),
+				# "Reference": (self.REFERENCE, self.getTextItem, (iPlayableService.evStart,)),
+				"Sid": (self.SID, (iPlayableService.evUpdatedInfo,)),
+				"SubservicesAvailable": (self.SUBSERVICES_AVAILABLE, (iPlayableService.evUpdatedEventInfo,)),
+				"SubtitlesAvailable": (self.SUBTITLES_AVAILABLE, (iPlayableService.evUpdatedInfo,)),
+				"TransferBPS": (self.TRANSFERBPS, (iPlayableService.evUpdatedInfo,)),
+				"TsId": (self.TSID, (iPlayableService.evUpdatedInfo,)),
+				"TxtPid": (self.TXTPID, (iPlayableService.evUpdatedInfo,)),
+				"VideoHeight": (self.YRES, (iPlayableService.evVideoSizeChanged,)),
+				"VideoInfo": (self.VIDEO_INFORMATION, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoFramerateChanged, iPlayableService.evVideoProgressiveChanged, iPlayableService.evUpdatedInfo)),
+				"VideoPid": (self.VPID, (iPlayableService.evUpdatedInfo,)),
+				# "VideoSize": (self.VIDEO_SIZE, (iPlayableService.evVideoSizeChanged,)),
+				"VideoWidth": (self.XRES, (iPlayableService.evVideoSizeChanged,)),
+			}
+			return tokens.keys() if keys else tokens.get(argument)
+
 		Converter.__init__(self, argument)
 		# Poll.__init__(self)
 		# self.poll_interval = 10000
 		# self.poll_enabled = True
 		self.argument = argument
-		self.token, self.interestingEvents = {
-			"AudioPid": (self.APID, (iPlayableService.evUpdatedInfo,)),
-			"AudioTracksAvailable": (self.AUDIOTRACKS_AVAILABLE, (iPlayableService.evUpdatedInfo,)),
-			"EditMode": (self.EDITMODE, (iPlayableService.evUpdatedInfo,)),
-			"Editmode": (self.EDITMODE, (iPlayableService.evUpdatedInfo,)),
-			"FrameRate": (self.FRAMERATE, (iPlayableService.evVideoSizeChanged, iPlayableService.evUpdatedInfo)),
-			"Framerate": (self.FRAMERATE, (iPlayableService.evVideoSizeChanged, iPlayableService.evUpdatedInfo)),
-			"FrequencyInfo": (self.FREQUENCY_INFORMATION, (iPlayableService.evUpdatedInfo,)),
-			"Freq_Info": (self.FREQUENCY_INFORMATION, (iPlayableService.evUpdatedInfo,)),
-			"HasHBBTV": (self.HAS_HBBTV, (iPlayableService.evUpdatedInfo, iPlayableService.evHBBTVInfo,)),
-			"HasTeletext": (self.HAS_TELETEXT, (iPlayableService.evUpdatedInfo,)),
-			"HasTelext": (self.HAS_TELETEXT, (iPlayableService.evUpdatedInfo,)),
-			"Is1080": (self.IS_1080, (iPlayableService.evVideoSizeChanged,)),
-			"Is480": (self.IS_480, (iPlayableService.evVideoSizeChanged,)),
-			"Is4K": (self.IS_4K, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
-			"Is576": (self.IS_576, (iPlayableService.evVideoSizeChanged,)),
-			"Is720": (self.IS_720, (iPlayableService.evVideoSizeChanged,)),
-			"IsCrypted": (self.IS_CRYPTED, (iPlayableService.evUpdatedInfo,)),
-			"IsHD": (self.IS_HD, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
-			"IsHDHDR": (self.IS_HDHDR, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
-			"IsHDR": (self.IS_HDR, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
-			"IsHDR10": (self.IS_HDR10, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
-			"IsHLG": (self.IS_HLG, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
-			"IsIPStream": (self.IS_STREAM, (iPlayableService.evUpdatedInfo,)),
-			"IsMultichannel": (self.IS_MULTICHANNEL, (iPlayableService.evUpdatedInfo,)),
-			"IsNotWidescreen": (self.IS_NOT_WIDESCREEN, (iPlayableService.evVideoSizeChanged,)),
-			"IsSD": (self.IS_SD, (iPlayableService.evVideoSizeChanged,)),
-			# "IsSDAndNotWidescreen": (self.IS_SD_AND_NOT_WIDESCREEN, (iPlayableService.evVideoSizeChanged, iPlayableService.evUpdatedInfo)),
-			# "IsSDAndWidescreen": (self.IS_SD_AND_WIDESCREEN, (iPlayableService.evVideoSizeChanged, iPlayableService.evUpdatedInfo)),
-			"IsSDR": (self.IS_SDR, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoGammaChanged)),
-			"IsStereo": (self.IS_STEREO, (iPlayableService.evUpdatedInfo,)),
-			"IsStream": (self.IS_STREAM, (iPlayableService.evUpdatedInfo,)),
-			# "IsVideoAVC": (self.IS_VIDEO_AVC, (iPlayableService.evUpdatedInfo,)),
-			# "IsVideoHEVC": (self.IS_VIDEO_HEVC, (iPlayableService.evUpdatedInfo,)),
-			# "IsVideoMPEG2": (self.IS_VIDEO_MPEG2, (iPlayableService.evUpdatedInfo,)),
-			"IsWidescreen": (self.IS_WIDESCREEN, (iPlayableService.evVideoSizeChanged,)),
-			"OnId": (self.ONID, (iPlayableService.evUpdatedInfo,)),
-			"PcrPid": (self.PCRPID, (iPlayableService.evUpdatedInfo,)),
-			"PmtPid": (self.PMTPID, (iPlayableService.evUpdatedInfo,)),
-			"Progressive": (self.PROGRESSIVE, (iPlayableService.evVideoProgressiveChanged, iPlayableService.evUpdatedInfo)),
-			# "Provider": (self.PROVIDER, self.getTextItem, (iPlayableService.evStart,)),
-			# "Reference": (self.REFERENCE, self.getTextItem, (iPlayableService.evStart,)),
-			"Sid": (self.SID, (iPlayableService.evUpdatedInfo,)),
-			"SubservicesAvailable": (self.SUBSERVICES_AVAILABLE, (iPlayableService.evUpdatedEventInfo,)),
-			"SubtitlesAvailable": (self.SUBTITLES_AVAILABLE, (iPlayableService.evUpdatedInfo,)),
-			"TransferBPS": (self.TRANSFERBPS, (iPlayableService.evUpdatedInfo,)),
-			"TsId": (self.TSID, (iPlayableService.evUpdatedInfo,)),
-			"TxtPid": (self.TXTPID, (iPlayableService.evUpdatedInfo,)),
-			"VideoHeight": (self.YRES, (iPlayableService.evVideoSizeChanged,)),
-			"VideoInfo": (self.VIDEO_INFORMATION, (iPlayableService.evVideoSizeChanged, iPlayableService.evVideoFramerateChanged, iPlayableService.evVideoProgressiveChanged, iPlayableService.evUpdatedInfo)),
-			"VideoPid": (self.VPID, (iPlayableService.evUpdatedInfo,)),
-			# "VideoSize": (self.VIDEO_SIZE, (iPlayableService.evVideoSizeChanged,)),
-			"VideoWidth": (self.XRES, (iPlayableService.evVideoSizeChanged,)),
-		}.get(argument)
+
+		tokens = [key for key in ["{%s}" % x for x in handleType("", keys=True)] if key in argument] if "{" in argument and "}" in argument else []
+		if tokens:
+			tokens = []
+			interestingEvents = []
+			for literal, field, formatSpec, conversion in Formatter().parse(argument):
+				if literal:
+					tokens.append(literal)
+				if field:
+					typeValue, interestingEvent = handleType(field)
+					if typeValue:
+						interestingEvents.extend(list(interestingEvent))
+						tokens.append(typeValue)
+			self.interestingEvents = tuple(set(interestingEvents))
+			self.token = self.FORMAT_STRING
+			self.tokens = tokens
+		else:
+			self.types = []
+			self.token, self.interestingEvents = handleType(argument)
 		self.instanceInfoBarSubserviceSelection = None
 
 	@cached
@@ -176,7 +202,9 @@ class ServiceInfo(Converter):
 				case self.IS_720:
 					result = videoHeight > 700 and videoHeight <= 720
 				case self.IS_CRYPTED:
-					result = info.getInfo(iServiceInformation.sIsCrypted) == 1
+					result = info.getInfo(iServiceInformation.sIsCrypted) == 1 and info.getInfo(iServiceInformation.sIsSoftCSA) != 1
+				case self.IS_SOFTCSA:
+					result = info.getInfo(iServiceInformation.sIsSoftCSA) == 1
 				case self.IS_HD:
 					result = videoHeight > 700 and videoHeight <= 1080 and videoGamma < 1
 				case self.IS_HDHDR:
@@ -228,7 +256,7 @@ class ServiceInfo(Converter):
 	boolean = property(getBoolean)
 
 	@cached
-	def getText(self):
+	def getText(self, token=None):
 		result = ""
 		service = self.source.service
 		info = service and service.info()
@@ -240,7 +268,7 @@ class ServiceInfo(Converter):
 			frameRate = videoData[self.VIDEO_INFO_FRAME_RATE] if videoData[self.VIDEO_INFO_FRAME_RATE] != -1 else eAVControl.getInstance().getFrameRate(0)
 			progressive = videoData[self.VIDEO_INFO_PROGRESSIVE] if videoData[self.VIDEO_INFO_PROGRESSIVE] != -1 else eAVControl.getInstance().getProgressive()
 			progressive = "p" if progressive else "i"
-			match self.token:
+			match token or self.token:
 				case self.APID:
 					result = info.getInfoString(iServiceInformation.sAudioPID)
 				case self.FRAMERATE:
@@ -290,6 +318,12 @@ class ServiceInfo(Converter):
 					result = f"{videoWidth}"
 				case self.YRES:
 					result = f"{videoHeight}"
+				case self.FORMAT_STRING:
+					out = []
+					for part in self.tokens:
+						out.append(self.getText(part[0]) if isinstance(part, int) else part)
+					result = "".join(out)
+
 		# print(f"[ServiceInfo] DEBUG: Converter string argument '{self.argument}' result is '{result}'{"." if isinstance(result, str) else " TYPE MISMATCH!"}")
 		return result
 

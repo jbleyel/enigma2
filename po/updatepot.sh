@@ -70,7 +70,7 @@ else
 	find $findoptions .. -name "*.xml" -exec python3 xml2po.py {} \+ > enigma2-xml.pot
 fi
 printf "Merging pot files to create: enigma2.pot\n"
-cat enigma2-py.pot enigma2-xml.pot | msguniq -s --no-wrap --no-location -o enigma2.pot -
+cat enigma2-py.pot enigma2-xml.pot | msguniq -s --no-wrap -o enigma2.pot -
 #printf "remove pot Creation date\n"
 #$localgsed -i -e'/POT-Creation/d' enigma2.pot
 printf "remove temp pot files\n"

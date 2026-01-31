@@ -714,21 +714,23 @@ bool eFBCTunerManager::CanLink(eDVBRegisteredFrontend *fe) const
 	return true;
 }
 
-int eFBCTunerManager::getLinkedSlotID(int fe_id) const
-{
+
+int eFBCTunerManager::getLinkedSlotID(int fe_id) const {
 	int link = -1;
-	eDVBRegisteredFrontend *prev_fe;
-	eSmartPtrList<eDVBRegisteredFrontend> &frontends = m_res_mgr->m_frontend;
-	for (eSmartPtrList<eDVBRegisteredFrontend>::iterator it(frontends.begin()); it != frontends.end(); ++it) {
-		if((it->m_frontend->getSlotID() == fe_id) && ((prev_fe = FrontendGetLinkPtr(it, link_prev)))) {
-		
+	eSmartPtrList<eDVBRegisteredFrontend>& frontends = m_res_mgr->m_frontend;
+
+	for (auto it = frontends.begin(); it != frontends.end(); ++it) {
+		if (it->m_frontend->getSlotID() != fe_id)
+			continue;
+
+		eDVBRegisteredFrontend* prev_fe = FrontendGetLinkPtr(it, link_prev);
+		if (prev_fe) {
 			link = FESlotID(prev_fe);
 			break;
 		}
 	}
 
 	eTrace(" [*][eFBCTunerManager::getLinkedSlotID] fe_id : %d, link : %d", fe_id, link);
-
 	return link;
 }
 

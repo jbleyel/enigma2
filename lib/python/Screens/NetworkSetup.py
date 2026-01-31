@@ -75,17 +75,24 @@ class NetworkAdapterSelection(Screen):
 		self.edittext = _("Press OK to edit the settings.")
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Select"))
-		self["key_yellow"] = StaticText("")
-		self["key_blue"] = StaticText(_("Network Restart"))
+		self["key_yellow"] = StaticText(_("Network Restart"))
+		self["key_blue"] = StaticText(_(""))
 		self["introduction"] = StaticText(self.edittext)
 		self["OkCancelActions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions"], {
 			"cancel": (self.close, _("Exit network interface list")),
-			"ok": (self.okbuttonClick, _("Select interface")),
+			"ok": (self.menubuttonClick, _("Select interface")),
 			"red": (self.close, _("Exit network interface list")),
 			"green": (self.okbuttonClick, _("Select interface")),
-			"blue": (self.restartLanAsk, _("Restart network to with current setup")),
+			"yellow": (self.restartLanAsk, _("Restart network to with current setup")),
 			"menu": (self.menubuttonClick, _("Select interface"))
 		}, prio=0, description=_("Network Adapter Actions"))
+
+		if exists(resolveFilename(SCOPE_PLUGINS, "SystemPlugins/NetworkWizard/networkwizard.xml")):
+			self["wizardActions"] = HelpableActionMap(self, ["ColorActions"], {
+				"blue": (self.openNetworkWizard, _("Use the network wizard to configure selected network adapter"))
+			}, prio=0, description=_("Network Adapter Actions"))
+			self["key_blue"].setText(_("Network Wizard"))
+
 		self.adapters = [(iNetwork.getFriendlyAdapterName(x), x) for x in iNetwork.getAdapterList()]
 		if not self.adapters:
 			self.adapters = [(iNetwork.getFriendlyAdapterName(x), x) for x in iNetwork.getConfiguredAdapters()]
@@ -186,6 +193,16 @@ class NetworkAdapterSelection(Screen):
 				self.session.open(MessageBox, _("Finished configuring your network"), type=MessageBox.TYPE_INFO, timeout=10, default=False)
 			RestartNetworkNew.start(callback=restartfinishedCB)
 
+	def openNetworkWizard(self):
+		try:
+			from Plugins.SystemPlugins.NetworkWizard.NetworkWizard import NetworkWizard
+		except ImportError:
+			self.session.open(MessageBox, _("The network wizard extension is not installed!\nPlease install it."), type=MessageBox.TYPE_INFO, timeout=10)
+		else:
+			selection = self["list"].getCurrent()
+			if selection is not None:
+				self.session.openWithCallback(self.AdapterSetupClosed, NetworkWizard, selection[0])
+
 
 class DNSSettings(Setup):
 	def __init__(self, session):
@@ -226,6 +243,12 @@ class DNSSettings(Setup):
 				v6pos += 1
 
 		Setup.__init__(self, session=session, setup="DNS")
+		self["key_yellow"] = StaticText()
+		self["key_blue"] = StaticText()
+		self["moveActions"] = HelpableActionMap(self, ["ColorActions"], {
+			"yellow": (self.moveItemUp, _("Move the item up")),
+			"blue": (self.moveItemDown, _("Move the item down"))
+		}, prio=0, description=_("Network Setup Actions"))
 
 	def defaultGW(self):
 		ifaces = sorted(iNetwork.ifaces.keys())
@@ -264,6 +287,37 @@ class DNSSettings(Setup):
 		else:
 			self.dnsServerItems = []
 		Setup.createSetup(self, appendItems=self.dnsServerItems)
+
+	def updateActions(self):
+		current = self["config"].getCurrent()
+		if current in self.dnsServerItems and config.usage.dns.value not in ("dnscrypt", "dhcp-router"):
+			self["moveActions"].setEnabled(True)
+			self["key_yellow"].setText(_("Move Up"))
+			self["key_blue"].setText(_("Move Down"))
+		else:
+			self["moveActions"].setEnabled(False)
+			self["key_yellow"].setText("")
+			self["key_blue"].setText("")
+
+	def moveItemUp(self):
+		current = self["config"].getCurrent()
+		if current in self.dnsServerItems:
+			idx = self.dnsServerItems.index(current)
+			if idx > 0:
+				old = self.dnsOptions[config.usage.dns.value][:]
+				old[idx], old[idx - 1] = old[idx - 1], old[idx]
+				self.dnsOptions = old
+				self.createSetup()
+
+	def moveItemDown(self):
+		current = self["config"].getCurrent()
+		if current in self.dnsServerItems:
+			idx = self.dnsServerItems.index(current)
+			if idx < len(self.dnsServerItems) - 1:
+				old = self.dnsOptions[config.usage.dns.value][:]
+				old[idx], old[idx + 1] = old[idx + 1], old[idx]
+				self.dnsOptions = old
+				self.createSetup()
 
 	def changedEntry(self):
 		if config.usage.dns.value == "custom":

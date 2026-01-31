@@ -187,6 +187,7 @@ void eDVBServicePMTHandler::PMTready(int error)
 		case streamserver:
 		case scrambled_streamserver:
 		case streamclient:
+		case scrambled_livetv:
 			eEPGTransponderDataReader::getInstance()->PMTready(this);
 			break;
 		default:
@@ -222,7 +223,7 @@ void eDVBServicePMTHandler::PMTready(int error)
 void eDVBServicePMTHandler::sendEventNoPatEntry()
 {
 	serviceEvent(eventNoPATEntry);
-	
+
 	ePtr<iDVBFrontend> fe;
 	if (!m_channel->getFrontend(fe))
 	{
@@ -1075,6 +1076,13 @@ int eDVBServicePMTHandler::getPVRChannel(ePtr<iDVBPVRChannel> &pvr_channel)
 		return -1;
 }
 
+void eDVBServicePMTHandler::allocatePVRChannel()
+{
+	eDVBChannelID chid;
+	m_resourceManager->allocatePVRChannel(chid, m_pvr_channel);
+	m_pvr_channel->getDemux(m_demux, 0);
+}
+
 void eDVBServicePMTHandler::SDTScanEvent(int event)
 {
 	switch (event)
@@ -1205,10 +1213,6 @@ int eDVBServicePMTHandler::tuneExt(eServiceReferenceDVB &ref, ePtr<iTsSource> &s
 				sigc::mem_fun(*this, &eDVBServicePMTHandler::channelStateChanged),
 				m_channelStateChanged_connection);
 			m_last_channel_state = -1;
-			int _state;
-			m_channel->getState(_state);
-			if(eDVBServicePMTHandler::m_debug)
-				eDebug("[eDVBServicePMTHandler] tuneExt state. %d" , _state);
 			channelStateChanged(m_channel);
 
 			m_channel->connectEvent(

@@ -7,7 +7,7 @@ from enigma import ePixmap
 class RatingIcon(Renderer):
 	def __init__(self):
 		Renderer.__init__(self)
-		self.small = 0
+		self.small = False
 
 	GUI_WIDGET = ePixmap
 
@@ -15,12 +15,13 @@ class RatingIcon(Renderer):
 		self.changed((self.CHANGED_DEFAULT,))
 
 	def applySkin(self, desktop, parent):
-		attribs = self.skinAttributes[:]
-		for (attrib, value) in self.skinAttributes:
+		newAttribs = []
+		for attrib, value in self.skinAttributes:
 			if attrib == "small":
-				if value == "1":
-					self.small = 1
-		self.skinAttributes = attribs
+				self.small = value == "1"
+			else:
+				newAttribs.append((attrib, value))
+		self.skinAttributes = newAttribs
 		rc = Renderer.applySkin(self, desktop, parent)
 		self.changed((self.CHANGED_DEFAULT,))
 		return rc
@@ -39,8 +40,7 @@ class RatingIcon(Renderer):
 					if age <= 15:
 						age += 3
 
-					pngEnding = "ratings/%d%s.png" % (age, "_s" if self.small else "")
-					print(pngEnding)
+					pngEnding = f"ratings/{age}{"_s" if self.small else ""}.png"
 					pngname = resolveFilename(SCOPE_GUISKIN, pngEnding)
 					self.instance.setPixmapFromFile(pngname)
 					self.instance.show()
