@@ -1285,7 +1285,7 @@ void eDVBServicePlay::serviceEvent(int event)
 	case eDVBServicePMTHandler::eventNoPAT:
 	case eDVBServicePMTHandler::eventNoPMT:
 	{
-		bool recovery_enabled = false; // Disable precise recovery for now
+		bool recovery_enabled = true;
 		// Check if timeshift is active and we are not already in a recovery state
 		if (recovery_enabled && m_timeshift_enabled && !m_stream_corruption_detected)
 		{
@@ -1448,12 +1448,21 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 	pts_t final_target_delay = m_original_timeshift_delay + safety_buffer_pts;
 
 #ifdef ENABLE_TIMESHIFT_HW_LATENCY_FIX
-	const pts_t latency_correction = 2000 * 90;
+	// Read configured latency from settings.
+	// Default is 2000ms (optimized for Broadcom/Dreambox hard-sync buffers).
+	// For faster devices (e.g., HiSilicon), this can be reduced to 0-500ms.
+	int hw_latency_ms = eSimpleConfig::getInt("config.timeshift.hwLatencyCorrection", 2000);
+
+	// Safety Clamp: Restrict value between 0ms and 5000ms to prevent insane values.
+	if (hw_latency_ms < 0) hw_latency_ms = 0;
+	if (hw_latency_ms > 5000) hw_latency_ms = 5000;
+
+	const pts_t latency_correction = hw_latency_ms * 90;
 
 	if (final_target_delay > latency_correction)
 		final_target_delay -= latency_correction;
 	else
-		final_target_delay = 9000;
+		final_target_delay = 9000; // Enforce a minimum safe delay of 100ms
 #endif
 
 	if (current_delay >= final_target_delay) {
@@ -3099,7 +3108,6 @@ void eDVBServicePlay::recordEvent(int event) {
 			eWarning("[eDVBServicePlay] recordEvent write error");
 			return;
 		case iDVBTSRecorder::eventStreamCorrupt: {
-			return; // Disabled for now.
 			// Do not re-trigger if a recovery is already in progress.
 			if (m_stream_corruption_detected)
 				return;
