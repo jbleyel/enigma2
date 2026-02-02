@@ -2025,9 +2025,38 @@ RESULT eDVBServicePlay::getPlayPosition(pts_t &pos)
 	}
 	else if (m_decoder)
 	{
-		r = m_decoder->getPTS(0, pos);
-		if (r)
-			return r;
+		// IPAudio fix: When m_noaudio is true (audio decoder stopped),
+		// the hardware STC on HiSilicon drivers is frozen because it's
+		// coupled to the audio PCR/master clock.
+		// Solution: Explicitly request video PTS instead of relying on
+		// auto-selection which would fail.
+		// getPTS(0) = auto, getPTS(1) = video, getPTS(2) = audio
+		if (m_noaudio)
+		{
+			if (m_have_video_pid)
+			{
+				// TV channel: use video PTS
+				r = m_decoder->getPTS(1, pos);  // 1 = video PTS
+			}
+			else
+			{
+				// Radio channel (no video): no reliable PTS source available
+				// Try audio PTS anyway (may fail on HiSilicon)
+				r = m_decoder->getPTS(2, pos);  // 2 = audio PTS
+			}
+			if (r)
+			{
+				eDebug("[eDVBServicePlay] getPlayPosition: PTS failed (noaudio mode, have_video=%d)", m_have_video_pid);
+				return r;
+			}
+		}
+		else
+		{
+			// Normal case: use auto PTS selection
+			r = m_decoder->getPTS(0, pos);
+			if (r)
+				return r;
+		}
 	}
 
 		/* fixup */
@@ -3422,6 +3451,25 @@ void eDVBServicePlay::updateTimeshiftPids() {
 
 	if (timing_pid != -1)
 		m_record->setTimingPID(timing_pid, timing_pid_type, timing_stream_type);
+
+
+	// Enable independent PCR tracking for Precise Recovery
+	// This ensures getCurrentPCR() works even if audio decoder is stopped (IPAudio)
+	int pcr_pid = program.pcrPid;
+	if (pcr_pid == -1 || pcr_pid == 0x1FFF)
+	{
+		// If no explicit PCR PID, use video PID (common case)
+		if (!program.videoStreams.empty())
+			pcr_pid = program.videoStreams[0].pid;
+		else if (!program.audioStreams.empty())
+			pcr_pid = program.audioStreams[0].pid;
+	}
+	if (pcr_pid > 0 && pcr_pid < 0x1FFF)
+	{
+		m_record->setPCRPID(pcr_pid);
+		eDebug("[eDVBServicePlay] PCR tracking enabled on PID 0x%04X", pcr_pid);
+	}
+
 }
 
 RESULT eDVBServicePlay::setNextPlaybackFile(const char *f)

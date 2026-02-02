@@ -436,7 +436,10 @@ eDVBRecordFileThread::eDVBRecordFileThread(int packetsize, int bufferCount, int 
 	 m_sync_mode(sync_mode),
 	 m_aio(bufferCount),
 	 m_current_buffer(m_aio.begin()),
-	 m_buffer_use_histogram(bufferCount+1, 0)
+	 m_buffer_use_histogram(bufferCount+1, 0),
+	 m_pcr_pid(-1),
+	 m_last_pcr(0),
+	 m_pcr_valid(false)
 {
 	if (m_buffer == MAP_FAILED)
 		eFatal("[eDVBRecordFileThread] Failed to allocate filepush buffer, contact MiLo\n");
@@ -481,6 +484,85 @@ int eDVBRecordFileThread::getLastPTS(pts_t &pts)
 int eDVBRecordFileThread::getFirstPTS(pts_t &pts)
 {
 	return m_ts_parser.getFirstPTS(pts);
+}
+
+void eDVBRecordFileThread::setPCRPID(int pid)
+{
+	m_pcr_pid = pid;
+	m_pcr_valid = false;
+	m_last_pcr = 0;
+	eDebug("[eDVBRecordFileThread] PCR tracking enabled on PID 0x%04X", pid);
+}
+
+int eDVBRecordFileThread::getLastPCR(pts_t &pcr)
+{
+	if (!m_pcr_valid)
+		return -1;
+	pcr = m_last_pcr;
+	return 0;
+}
+
+void eDVBRecordFileThread::extractPCRFromBuffer(const unsigned char* buffer, int len)
+{
+	// Scan TS packets for PCR
+	int packet_size = 188;
+	int offset = 0;
+	
+	// Find sync byte if needed
+	while (offset < len && buffer[offset] != 0x47)
+		offset++;
+	
+	while (offset + packet_size <= len)
+	{
+		const unsigned char* pkt = buffer + offset;
+		
+		// Verify sync byte
+		if (pkt[0] != 0x47)
+		{
+			offset++;
+			while (offset < len && buffer[offset] != 0x47)
+				offset++;
+			continue;
+		}
+		
+		// Extract PID from TS header
+		uint16_t pid = ((pkt[1] & 0x1F) << 8) | pkt[2];
+		
+		// Check if this is our PCR PID
+		if (pid == (uint16_t)m_pcr_pid)
+		{
+			// Check adaptation field control (bits 5-4 of byte 3)
+			int afc = (pkt[3] >> 4) & 0x03;
+			
+			// Adaptation field present? (afc == 2 or afc == 3)
+			if (afc >= 2)
+			{
+				int adaptation_length = pkt[4];
+				
+				// Need at least 7 bytes for PCR (1 flags + 6 PCR)
+				if (adaptation_length >= 7)
+				{
+					// Check PCR flag (bit 4 of adaptation flags byte at pkt[5])
+					if (pkt[5] & 0x10)
+					{
+						// Extract 33-bit PCR base from bytes 6-10
+						// PCR = base * 300 + extension, we only use base (90kHz)
+						pts_t pcr_base = 
+							((pts_t)pkt[6] << 25) |
+							((pts_t)pkt[7] << 17) |
+							((pts_t)pkt[8] << 9)  |
+							((pts_t)pkt[9] << 1)  |
+							((pts_t)(pkt[10] >> 7) & 0x01);
+						
+						m_last_pcr = pcr_base;
+						m_pcr_valid = true;
+					}
+				}
+			}
+		}
+		
+		offset += packet_size;
+	}
 }
 
 int eDVBRecordFileThread::AsyncIO::wait(volatile int* stop_flag)
@@ -643,6 +725,12 @@ int eDVBRecordFileThread::asyncWrite(int len)
 			m_event(eFilePushThreadRecorder::evtStreamCorrupt);
 			return len;
 		}
+		
+		// Additionally extract PCR if PCR tracking is enabled
+		if (m_pcr_pid >= 0 && m_pcr_pid != 0x1FFF)
+		{
+			extractPCRFromBuffer(m_buffer, len);
+		}
 	}
 
 #ifdef SHOW_WRITE_TIME
@@ -763,6 +851,8 @@ int eDVBRecordFileThread::writeData(int len)
 		len = asyncWrite(len);
 		if (len < 0)
 		{
+			if (m_stop)
+				return len;
 			// Check for ENOSYS (AIO not supported by kernel) - automatic fallback to sync
 			if (errno == ENOSYS)
 			{
@@ -779,6 +869,8 @@ int eDVBRecordFileThread::writeData(int len)
 		int r = m_current_buffer->wait(&m_stop);
 		if (r < 0)
 		{
+			if (m_stop)
+				return len;
 			// Check for ENOSYS in wait (aio_return) - automatic fallback to sync
 			if (errno == ENOSYS)
 			{
@@ -1238,13 +1330,25 @@ RESULT eDVBTSRecorder::stop()
 RESULT eDVBTSRecorder::getCurrentPCR(pts_t &pcr)
 {
 	if (!m_running)
-		return 0;
+		return -1;
 	if (!m_thread)
-		return 0;
-		/* XXX: we need a lock here */
+		return -1;
+	
+	/* XXX: we need a lock here */
 
-			/* we don't filter PCR data, so just use the last received PTS, which is not accurate, but better than nothing */
+	// First try: Get PCR from dedicated PCR tracker (works even if audio decoder is stopped)
+	if (m_thread->getLastPCR(pcr) == 0)
+		return 0;
+
+	// Fallback: Use last PTS from timing PID parser
 	return m_thread->getLastPTS(pcr);
+}
+
+RESULT eDVBTSRecorder::setPCRPID(int pid)
+{
+	if (m_thread)
+		m_thread->setPCRPID(pid);
+	return 0;
 }
 
 RESULT eDVBTSRecorder::getFirstPTS(pts_t &pts)
