@@ -1333,8 +1333,7 @@ RESULT eDVBTSRecorder::getCurrentPCR(pts_t &pcr)
 		return -1;
 	if (!m_thread)
 		return -1;
-	
-	/* XXX: we need a lock here */
+		/* XXX: we need a lock here */
 
 	// First try: Get PCR from dedicated PCR tracker (works even if audio decoder is stopped)
 	if (m_thread->getLastPCR(pcr) == 0)

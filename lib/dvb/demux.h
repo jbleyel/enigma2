@@ -108,7 +108,7 @@ public:
 	// PCR tracking for Precise Recovery (independent of audio decoder)
 	void setPCRPID(int pid);
 	int getLastPCR(pts_t &pcr);
-	
+
 	// Virtual: wait for first data (only ScrambledThread actually waits)
 	virtual bool waitForFirstData(int /*timeout_ms*/) { return true; }
 

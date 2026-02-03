@@ -1413,8 +1413,14 @@ void eDVBServicePlay::handleEofRecovery() {
 		}
 	}
 
-	// Pause PLAYBACK only
-	if (m_decoder && !m_is_paused) {
+	// Pause PLAYBACK only (SoftDecoder or Hardware Decoder)
+	if (m_soft_decoder && m_csa_session && m_csa_session->isActive() && !m_timeshift_active)
+	{
+		m_soft_decoder->pause();
+		m_is_paused = 1;
+	}
+	else if (m_decoder && !m_is_paused)
+	{
 		m_decoder->pause();
 		m_is_paused = 1;
 	}
@@ -3452,7 +3458,6 @@ void eDVBServicePlay::updateTimeshiftPids() {
 	if (timing_pid != -1)
 		m_record->setTimingPID(timing_pid, timing_pid_type, timing_stream_type);
 
-
 	// Enable independent PCR tracking for Precise Recovery
 	// This ensures getCurrentPCR() works even if audio decoder is stopped (IPAudio)
 	int pcr_pid = program.pcrPid;
@@ -3469,7 +3474,6 @@ void eDVBServicePlay::updateTimeshiftPids() {
 		m_record->setPCRPID(pcr_pid);
 		eDebug("[eDVBServicePlay] PCR tracking enabled on PID 0x%04X", pcr_pid);
 	}
-
 }
 
 RESULT eDVBServicePlay::setNextPlaybackFile(const char *f)
