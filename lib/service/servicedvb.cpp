@@ -1406,37 +1406,15 @@ void eDVBServicePlay::handleEofRecovery() {
 	// Logic: Maintain the user's current timeshift delay (Live - Playback)
 	if (m_record) {
 		pts_t live_pts = 0, playback_pts = 0;
-		// --- [DEBUG_TRACE] START ---
-		int pcr_ret = m_record->getCurrentPCR(live_pts);
-		int play_ret = getPlayPosition(playback_pts);
-		pts_t diff = 0;
-		if (live_pts > playback_pts) diff = live_pts - playback_pts;
-		eDebug("[DEBUG_TRACE] handleEofRecovery BEFORE CALC: LivePCR_Ret=%d, LivePTS=%lld, Play_Ret=%d, PlayPTS=%lld, RawDiff=%lld", 
-			pcr_ret, live_pts, play_ret, playback_pts, diff);
-		// --- [DEBUG_TRACE] END ---
-
-		if (pcr_ret == 0 && play_ret == 0 && live_pts > playback_pts) {
+		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
 			m_original_timeshift_delay = live_pts - playback_pts;
 			m_delay_calculated = true;
 			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
-			
-			// --- [DEBUG_TRACE] ---
-			eDebug("[DEBUG_TRACE] Fingerprint SAVED: %lld", m_original_timeshift_delay);
-		} else {
-			eDebug("[DEBUG_TRACE] FAILED to save fingerprint! Live or Play invalid.");
 		}
 	}
 
-	// Pause PLAYBACK only (SoftDecoder or Hardware Decoder)
-	if (m_soft_decoder && m_csa_session && m_csa_session->isActive() && !m_timeshift_active)
-	{
-		eDebug("[DEBUG_TRACE] PAUSING SoftDecoder...");
-		m_soft_decoder->pause();
-		m_is_paused = 1;
-	}
-	else if (m_decoder && !m_is_paused)
-	{
-		eDebug("[DEBUG_TRACE] PAUSING Hardware Decoder...");
+	// Pause PLAYBACK only
+	if (m_decoder && !m_is_paused) {
 		m_decoder->pause();
 		m_is_paused = 1;
 	}
@@ -1454,8 +1432,6 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 	pts_t live_pts = 0, playback_pts = 0;
 
 	if (m_record->getCurrentPCR(live_pts) != 0 || getPlayPosition(playback_pts) != 0 || live_pts == 0) {
-		// --- [DEBUG_TRACE] ---
-		eDebug("[DEBUG_TRACE] Check Failed: Cant read PTS. Live=%lld, Play=%lld", live_pts, playback_pts);
 		m_precise_recovery_timer->start(100, false);
 		return;
 	}
@@ -1472,12 +1448,8 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 	pts_t final_target_delay = m_original_timeshift_delay + safety_buffer_pts;
 
 #ifdef ENABLE_TIMESHIFT_HW_LATENCY_FIX
-	// Read configured latency from settings.
-	// Default is 2000ms (optimized for Broadcom/Dreambox hard-sync buffers).
-	// For faster devices (e.g., HiSilicon), this can be reduced to 0-500ms.
 	int hw_latency_ms = eSimpleConfig::getInt("config.timeshift.hwLatencyCorrection", 2000);
 
-	// Safety Clamp: Restrict value between 0ms and 5000ms to prevent insane values.
 	if (hw_latency_ms < 0) hw_latency_ms = 0;
 	if (hw_latency_ms > 5000) hw_latency_ms = 5000;
 
@@ -1486,16 +1458,10 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 	if (final_target_delay > latency_correction)
 		final_target_delay -= latency_correction;
 	else
-		final_target_delay = 9000; // Enforce a minimum safe delay of 100ms
+		final_target_delay = 9000; 
 #endif
 
-	// --- [DEBUG_TRACE] CORE ANALYSIS ---
-	eDebug("[DEBUG_TRACE] MONITOR: Live=%lld, Play=%lld, CurrDelay=%lld, Target=%lld, (Original=%lld)", 
-		live_pts, playback_pts, current_delay, final_target_delay, m_original_timeshift_delay);
-
 	if (current_delay >= final_target_delay) {
-		eDebug("[DEBUG_TRACE] CONDITION MET! Resuming playback. (CurrDelay >= Target)");
-
 		m_precise_recovery_timer->stop();
 		m_stream_corruption_detected = false;
 
@@ -2055,12 +2021,6 @@ RESULT eDVBServicePlay::getPlayPosition(pts_t &pos)
 	}
 	else if (m_decoder)
 	{
-		// IPAudio fix: When m_noaudio is true (audio decoder stopped),
-		// the hardware STC on HiSilicon drivers is frozen because it's
-		// coupled to the audio PCR/master clock.
-		// Solution: Explicitly request video PTS instead of relying on
-		// auto-selection which would fail.
-		// getPTS(0) = auto, getPTS(1) = video, getPTS(2) = audio
 		if (m_noaudio)
 		{
 			if (m_have_video_pid)
@@ -3485,25 +3445,6 @@ void eDVBServicePlay::updateTimeshiftPids() {
 
 	if (timing_pid != -1)
 		m_record->setTimingPID(timing_pid, timing_pid_type, timing_stream_type);
-
-	// Enable independent PCR tracking for Precise Recovery
-	// This ensures getCurrentPCR() works even if audio decoder is stopped (IPAudio)
-	int pcr_pid = program.pcrPid;
-	if (pcr_pid == -1 || pcr_pid == 0x1FFF)
-	{
-		// If no explicit PCR PID, use video PID (common case)
-		if (!program.videoStreams.empty())
-			pcr_pid = program.videoStreams[0].pid;
-		else if (!program.audioStreams.empty())
-			pcr_pid = program.audioStreams[0].pid;
-	}
-	if (pcr_pid > 0 && pcr_pid < 0x1FFF)
-	{
-		m_record->setPCRPID(pcr_pid);
-		eDebug("[DEBUG_TRACE] FORCE PCR PID ACTIVATED on PID: 0x%04X", pcr_pid);
-	} else {
-		eDebug("[DEBUG_TRACE] NO FORCE PCR. pcr_pid invalid: 0x%04X", pcr_pid);
-	}
 }
 
 RESULT eDVBServicePlay::setNextPlaybackFile(const char *f)
