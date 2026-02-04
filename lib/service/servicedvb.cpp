@@ -1406,21 +1406,37 @@ void eDVBServicePlay::handleEofRecovery() {
 	// Logic: Maintain the user's current timeshift delay (Live - Playback)
 	if (m_record) {
 		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
+		// --- [DEBUG_TRACE] START ---
+		int pcr_ret = m_record->getCurrentPCR(live_pts);
+		int play_ret = getPlayPosition(playback_pts);
+		pts_t diff = 0;
+		if (live_pts > playback_pts) diff = live_pts - playback_pts;
+		eDebug("[DEBUG_TRACE] handleEofRecovery BEFORE CALC: LivePCR_Ret=%d, LivePTS=%lld, Play_Ret=%d, PlayPTS=%lld, RawDiff=%lld", 
+			pcr_ret, live_pts, play_ret, playback_pts, diff);
+		// --- [DEBUG_TRACE] END ---
+
+		if (pcr_ret == 0 && play_ret == 0 && live_pts > playback_pts) {
 			m_original_timeshift_delay = live_pts - playback_pts;
 			m_delay_calculated = true;
 			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+			
+			// --- [DEBUG_TRACE] ---
+			eDebug("[DEBUG_TRACE] Fingerprint SAVED: %lld", m_original_timeshift_delay);
+		} else {
+			eDebug("[DEBUG_TRACE] FAILED to save fingerprint! Live or Play invalid.");
 		}
 	}
 
 	// Pause PLAYBACK only (SoftDecoder or Hardware Decoder)
 	if (m_soft_decoder && m_csa_session && m_csa_session->isActive() && !m_timeshift_active)
 	{
+		eDebug("[DEBUG_TRACE] PAUSING SoftDecoder...");
 		m_soft_decoder->pause();
 		m_is_paused = 1;
 	}
 	else if (m_decoder && !m_is_paused)
 	{
+		eDebug("[DEBUG_TRACE] PAUSING Hardware Decoder...");
 		m_decoder->pause();
 		m_is_paused = 1;
 	}
@@ -1438,6 +1454,8 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 	pts_t live_pts = 0, playback_pts = 0;
 
 	if (m_record->getCurrentPCR(live_pts) != 0 || getPlayPosition(playback_pts) != 0 || live_pts == 0) {
+		// --- [DEBUG_TRACE] ---
+		eDebug("[DEBUG_TRACE] Check Failed: Cant read PTS. Live=%lld, Play=%lld", live_pts, playback_pts);
 		m_precise_recovery_timer->start(100, false);
 		return;
 	}
@@ -1471,7 +1489,13 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 		final_target_delay = 9000; // Enforce a minimum safe delay of 100ms
 #endif
 
+	// --- [DEBUG_TRACE] CORE ANALYSIS ---
+	eDebug("[DEBUG_TRACE] MONITOR: Live=%lld, Play=%lld, CurrDelay=%lld, Target=%lld, (Original=%lld)", 
+		live_pts, playback_pts, current_delay, final_target_delay, m_original_timeshift_delay);
+
 	if (current_delay >= final_target_delay) {
+		eDebug("[DEBUG_TRACE] CONDITION MET! Resuming playback. (CurrDelay >= Target)");
+
 		m_precise_recovery_timer->stop();
 		m_stream_corruption_detected = false;
 
@@ -3170,14 +3194,18 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 	// recorder stop() removes PID filters from the same demux, killing the new thread.
 	if (m_record)
 	{
-		// Detach and cleanup timeshift's own CSA session
+		// Stop the recorder thread FIRST to prevent race condition:
+		// The thread accesses m_serviceDescrambler without synchronization,
+		// so we must ensure it's not running before we release the CSA session.
+		m_record->stop();
+
+		// Now safe to detach and cleanup timeshift's CSA session
 		if (m_timeshift_csa_session)
 		{
 			eDebug("[eDVBServicePlay] Detaching and destroying timeshift CSA session");
 			m_record->setDescrambler(nullptr);
-			m_timeshift_csa_session = nullptr;  // Release the separate timeshift session
+			m_timeshift_csa_session = nullptr;
 		}
-		m_record->stop();
 		m_record = 0;
 	}
 
@@ -3326,9 +3354,9 @@ void eDVBServicePlay::stopTapToFD()
 {
 	if(m_tap_recorder != nullptr)
 	{
-		// Detach descrambler before stopping
-		m_tap_recorder->setDescrambler(nullptr);
+		// Stop thread FIRST to prevent race condition with m_serviceDescrambler access
 		m_tap_recorder->stop();
+		m_tap_recorder->setDescrambler(nullptr);
 		m_tap_recorder = nullptr;
 	}
 }
@@ -3472,7 +3500,9 @@ void eDVBServicePlay::updateTimeshiftPids() {
 	if (pcr_pid > 0 && pcr_pid < 0x1FFF)
 	{
 		m_record->setPCRPID(pcr_pid);
-		eDebug("[eDVBServicePlay] PCR tracking enabled on PID 0x%04X", pcr_pid);
+		eDebug("[DEBUG_TRACE] FORCE PCR PID ACTIVATED on PID: 0x%04X", pcr_pid);
+	} else {
+		eDebug("[DEBUG_TRACE] NO FORCE PCR. pcr_pid invalid: 0x%04X", pcr_pid);
 	}
 }
 
