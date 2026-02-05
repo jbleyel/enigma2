@@ -2011,47 +2011,32 @@ RESULT eDVBServicePlay::getPlayPosition(pts_t &pos)
 
 	int r = 0;
 
-		/* if there is a decoder, use audio or video PTS */
-	// Check SoftDecoder only if session is active AND not in timeshift playback
-	if (m_soft_decoder && m_csa_session && m_csa_session->isActive() && !m_timeshift_active)
-	{
-		r = m_soft_decoder->getPTS(0, pos);
+	/* if there is a decoder, use audio or video PTS */
+
+	// Case 1: SoftDecoder active (for live descrambling, NOT during timeshift playback)
+	if (m_soft_decoder && m_csa_session && m_csa_session->isActive() && !m_timeshift_active) {
+		if (m_noaudio && m_have_video_pid)
+			r = m_soft_decoder->getPTS(1, pos); // Video PTS
+		else
+			r = m_soft_decoder->getPTS(0, pos); // Auto
+
 		if (r)
 			return r;
 	}
-	else if (m_decoder)
-	{
-		if (m_noaudio)
-		{
-			if (m_have_video_pid)
-			{
-				// TV channel: use video PTS
-				r = m_decoder->getPTS(1, pos);  // 1 = video PTS
-			}
-			else
-			{
-				// Radio channel (no video): no reliable PTS source available
-				// Try audio PTS anyway (may fail on HiSilicon)
-				r = m_decoder->getPTS(2, pos);  // 2 = audio PTS
-			}
-			if (r)
-			{
-				eDebug("[eDVBServicePlay] getPlayPosition: PTS failed (noaudio mode, have_video=%d)", m_have_video_pid);
-				return r;
-			}
-		}
+	// Case 2: Normal hardware decoder
+	else if (m_decoder) {
+		if (m_noaudio && m_have_video_pid)
+			r = m_decoder->getPTS(1, pos); // Video PTS
 		else
-		{
-			// Normal case: use auto PTS selection
-			r = m_decoder->getPTS(0, pos);
-			if (r)
-				return r;
-		}
+			r = m_decoder->getPTS(0, pos); // Auto (original behavior)
+
+		if (r)
+			return r;
 	}
 
-		/* fixup */
-	ePtr<iTSMPEGDecoder> decoder = (m_soft_decoder && m_csa_session && m_csa_session->isActive() && !m_timeshift_active)
-		? m_soft_decoder->getDecoder() : m_decoder;
+	/* fixup */
+	ePtr<iTSMPEGDecoder> decoder = (m_soft_decoder && m_csa_session && m_csa_session->isActive() && !m_timeshift_active) ? m_soft_decoder->getDecoder() : m_decoder;
+
 	return pvr_channel->getCurrentPosition(m_decode_demux, pos, decoder);
 }
 
