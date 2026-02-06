@@ -48,9 +48,6 @@ public:
 	virtual RESULT getCurrentPCR(pts_t &pcr) = 0;
 	virtual RESULT getFirstPTS(pts_t &pts) = 0;
 
-	// Set PCR PID for independent tracking (enables recovery when audio decoder is stopped)
-	virtual RESULT setPCRPID(int pid) = 0;
-
 	virtual RESULT setDescrambler(ePtr<iServiceScrambled>) = 0;
 
 	// Wait for first data to be written (for SoftDecoder sync)

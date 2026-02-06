@@ -105,10 +105,6 @@ public:
 	void enableAccessPoints(bool enable) { m_ts_parser.enableAccessPoints(enable); }
 	void setDescrambler(ePtr<iServiceScrambled> serviceDescrambler) { m_serviceDescrambler = serviceDescrambler; };
 
-	// PCR tracking for Precise Recovery (independent of audio decoder)
-	void setPCRPID(int pid);
-	int getLastPCR(pts_t &pcr);
-
 	// Virtual: wait for first data (only ScrambledThread actually waits)
 	virtual bool waitForFirstData(int /*timeout_ms*/) { return true; }
 
@@ -141,14 +137,6 @@ protected:
 	AsyncIOvector::iterator m_current_buffer;
 	std::vector<int> m_buffer_use_histogram;
 	ePtr<iServiceScrambled> m_serviceDescrambler;
-
-	// PCR tracking state
-	int m_pcr_pid;
-	pts_t m_last_pcr;
-	bool m_pcr_valid;
-
-	// Extract PCR values from TS buffer
-	void extractPCRFromBuffer(const unsigned char* buffer, int len);
 };
 
 class eDVBRecordStreamThread: public eDVBRecordFileThread
@@ -212,9 +200,6 @@ public:
 
 	RESULT getCurrentPCR(pts_t &pcr);
 	RESULT getFirstPTS(pts_t &pts);
-
-	// Set PCR PID for independent tracking (for IPAudio compatibility)
-	RESULT setPCRPID(int pid);
 
 	RESULT connectEvent(const sigc::slot<void(int)> &event, ePtr<eConnection> &conn);
 
