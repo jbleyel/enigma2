@@ -1406,10 +1406,18 @@ void eDVBServicePlay::handleEofRecovery() {
 	// Logic: Maintain the user's current timeshift delay (Live - Playback)
 	if (m_record) {
 		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
-			m_original_timeshift_delay = live_pts - playback_pts;
-			m_delay_calculated = true;
-			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+		// Fix: Handle PTS wrap-around logic correctly
+		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts != 0) {
+			if (live_pts >= playback_pts)
+				m_original_timeshift_delay = live_pts - playback_pts;
+			else
+				m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
+			
+			// Sanity check: If delay is absurdly large (e.g. > 4 hours), ignore it (likely a glitch, not wrap-around)
+			if (m_original_timeshift_delay < 4 * 3600 * 90000LL) {
+				m_delay_calculated = true;
+				eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+			}
 		}
 	}
 
@@ -3028,8 +3036,11 @@ RESULT eDVBServicePlay::startTimeshift()
 	if (m_service_handler.getDataDemux(demux))
 		return -2;
 
-	// Always create a recorder - use eDVBRecordScrambledThread which supports optional descrambling
-	demux->createTSRecorder(m_record, 188, false);  // false = use ScrambledThread
+	// Use eDVBRecordScrambledThread only if SoftCSA is active, otherwise use standard recorder (efficient for OScam)
+	if (m_csa_session && (!m_csa_session->isEcmAnalyzed() || m_csa_session->isActive()))
+        demux->createTSRecorder(m_record, 188, false);  // false = use ScrambledThread
+    else
+        demux->createTSRecorder(m_record);  // Standard (FTA or confirmed OScam)
 	if (!m_record)
 		return -3;
 
@@ -3134,14 +3145,11 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 	// Reset the recovery system state for the next timeshift session.
 	resetRecoveryState();
 
-	// IMPORTANT: Stop the timeshift recorder BEFORE switching to live!
-	// Otherwise the SoftDecoder starts and allocates resources, then the old
-	// recorder stop() removes PID filters from the same demux, killing the new thread.
-	if (m_record)
+	// IMPORTANT: Handle SoftCSA resource conflict.
+	// We MUST stop the recorder early ONLY if SoftCSA is active to free the demux for the SoftDecoder.
+	if (m_csa_session && m_csa_session->isActive() && m_record)
 	{
-		// Stop the recorder thread FIRST to prevent race condition:
-		// The thread accesses m_serviceDescrambler without synchronization,
-		// so we must ensure it's not running before we release the CSA session.
+		eDebug("[eDVBServicePlay] SoftCSA active: Stopping recorder BEFORE switchToLive");
 		m_record->stop();
 
 		// Now safe to detach and cleanup timeshift's CSA session
@@ -3154,11 +3162,26 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 		m_record = 0;
 	}
 
-	m_timeshift_enabled = 0;
-
-	// NOW switch to live (SoftDecoder can safely allocate resources)
+	// NOW switch to live.
+	// For standard playback (non-SoftCSA), the recorder is still running here, ensuring smooth transition.
+	// For SoftCSA, the recorder was stopped above to prevent resource deadlock.
 	if (swToLive)
 		switchToLive();
+
+	m_timeshift_enabled = 0;
+
+	// Stop the recorder for the standard case (if it wasn't already stopped by the SoftCSA block)
+	if (m_record)
+	{
+		m_record->stop();
+		
+		if (m_timeshift_csa_session)
+		{
+			m_record->setDescrambler(nullptr);
+			m_timeshift_csa_session = nullptr;
+		}
+		m_record = 0;
+	}
 
 	if (m_timeshift_fd >= 0)
 	{
@@ -3457,6 +3480,8 @@ void eDVBServicePlay::switchToLive()
 
 	// If we have a CSA session that is active (algo=3), restart the SoftDecoder
 	// It was stopped in switchToTimeshift() to free decoder resources
+	// The timeshift file already contains descrambled data from m_record
+	// We'll restart SoftDecoder when returning to live
 	if (m_soft_decoder && m_csa_session && m_csa_session->isActive() && !m_soft_decoder->isRunning())
 	{
 		eDebug("[eDVBServicePlay] Restarting SoftDecoder after timeshift");
