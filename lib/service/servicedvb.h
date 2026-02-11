@@ -369,8 +369,7 @@ private:
 	bool m_stream_corruption_detected;
 	pts_t m_original_timeshift_delay; // Stores the target timeshift delay.
 	bool m_delay_calculated; // Flag to ensure delay is calculated only once.
-	time_t m_last_corruption_time; // Timestamp of last corruption event for cooldown
-	
+
 	void handleEofRecovery();
 	void startPreciseRecoveryCheck();
 	void resetRecoveryState(); // Resets all recovery state variables.

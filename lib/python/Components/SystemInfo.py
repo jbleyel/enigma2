@@ -454,6 +454,8 @@ BoxInfo.setItem("WakeOnLANType", getWakeOnLANType(BoxInfo.getItem("WakeOnLAN")))
 BoxInfo.setItem("XcoreVFD", MODEL in ("xc7346", "xc7439"))
 BoxInfo.setItem("ZapMode", fileCheck("/proc/stb/video/zapmode") or fileCheck("/proc/stb/video/zapping_mode"))
 BoxInfo.setItem("DisplaySetup", MODEL not in ("dreamone",))
+BoxInfo.setItem("DM9X0", MODEL in ("dm900", "dm920"))
+
 
 # Dont't sort.
 BoxInfo.setItem("ConfigDisplay", BoxInfo.getItem("FrontpanelDisplay") and DISPLAYTYPE not in ("7segment",))
