@@ -718,8 +718,6 @@ class InfoBarNumberZap:
 		if number == 0:
 			if isinstance(self, InfoBarPiP) and self.pipHandles0Action():
 				self.pipDoHandle0Action()
-			elif self.servicelist.history and self.servicelist.isSubservices():
-				self.servicelist.setHistoryPath()
 			elif len(self.servicelist.history) > 1 or config.usage.panicbutton.value:
 				self.checkTimeshiftRunning(self.recallPrevService)
 		else:
@@ -1765,13 +1763,14 @@ class InfoBarStreamRelay:
 			service = service or nav.getCurrentlyPlayingServiceReference()
 			if service:
 				servicestring = service.toCompareString()
+				currentlyPlaying = nav.getCurrentlyPlayingServiceReference()
 				if servicestring in self.__services:
 					self.__services.remove(servicestring)
 				else:
 					self.__services.append(servicestring)
-					if nav.getCurrentlyPlayingServiceReference() and nav.getCurrentlyPlayingServiceReference() == service:
-						nav.restartService()
 				self.write()
+				if currentlyPlaying and currentlyPlaying == service:
+					nav.restartService()
 
 	def __getData(self):
 		return self.__services
