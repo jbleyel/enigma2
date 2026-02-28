@@ -1972,29 +1972,35 @@ RESULT eServiceMP3::getPlayPosition(pts_t& pts) {
 	// todo :Check if amlogic stb's are always using gstreamer < 1
 	// if not this procedure needs to be altered.
 	// if ((dvb_audiosink || dvb_videosink) && !m_paused && !m_seeking_or_paused && !m_sourceinfo.is_hls)
+	bool got_decoder_time = false;
 	if ((dvb_audiosink || dvb_videosink) && !m_paused && !m_seeking_or_paused) {
 		// eDebug("[eServiceMP3] getPlayPosition Check dvb_audiosink or dvb_videosink");
-		if (m_sourceinfo.is_audio) {
+		if (m_sourceinfo.is_audio && dvb_audiosink) {
 			g_signal_emit_by_name(dvb_audiosink, "get-decoder-time", &pos);
-			if (!GST_CLOCK_TIME_IS_VALID(pos))
-				return -1;
-		} else {
-			/* most stb's work better when pts is taken by audio by some video must be taken cause
+			if (GST_CLOCK_TIME_IS_VALID(pos))
+				got_decoder_time = true;
+		} else if (!m_sourceinfo.is_audio) {
+			/* most stb's work better when pts is taken by audio but some video must be taken cause
 			 * audio is 0 or invalid */
 			/* avoid taking the audio play position if audio sink is in state NULL */
-			if (!m_audiosink_not_running) {
+			if (!m_audiosink_not_running && dvb_audiosink) {
 				g_signal_emit_by_name(dvb_audiosink, "get-decoder-time", &pos);
-				if (!GST_CLOCK_TIME_IS_VALID(pos) || 0)
+				if (!GST_CLOCK_TIME_IS_VALID(pos) && dvb_videosink)
 					g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
-				if (!GST_CLOCK_TIME_IS_VALID(pos))
-					return -1;
-			} else {
+				if (GST_CLOCK_TIME_IS_VALID(pos))
+					got_decoder_time = true;
+			} else if (dvb_videosink) {
 				g_signal_emit_by_name(dvb_videosink, "get-decoder-time", &pos);
-				if (!GST_CLOCK_TIME_IS_VALID(pos))
-					return -1;
+				if (GST_CLOCK_TIME_IS_VALID(pos))
+				got_decoder_time = true;
 			}
 		}
-	} else {
+	}
+
+	if (!got_decoder_time) {
+		/* Fallback: query playbin position directly. This is needed when dvb sinks
+		* exist but get-decoder-time returns invalid values (e.g. MP4 playback on
+		* some chipsets like HiSilicon), or when no dvb sinks are available at all. */
 		GstFormat fmt = GST_FORMAT_TIME;
 		if (!gst_element_query_position(m_gst_playbin, fmt, &pos)) {
 			// eDebug("[eServiceMP3] gst_element_query_position failed in getPlayPosition");
@@ -3120,6 +3126,8 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 					GstTagList* tags = NULL;
 					GstPad* pad = 0;
 					g_signal_emit_by_name(m_gst_playbin, "get-audio-pad", i, &pad);
+					if(!pad)
+						continue;
 					GstCaps* caps = gst_pad_get_current_caps(pad);
 					gst_object_unref(pad);
 					if (!caps)
@@ -3210,20 +3218,14 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 					subtitleStreams_temp.push_back(subs);
 				}
 
-				bool hasChanges = m_audioStreams.size() != audioStreams_temp.size() ||
-								  std::equal(m_audioStreams.begin(), m_audioStreams.end(), audioStreams_temp.begin());
+				bool hasChanges = m_audioStreams != audioStreams_temp;
 				if (!hasChanges)
-					hasChanges =
-						m_subtitleStreams.size() != subtitleStreams_temp.size() ||
-						std::equal(m_subtitleStreams.begin(), m_subtitleStreams.end(), subtitleStreams_temp.begin());
+					hasChanges = m_subtitleStreams != subtitleStreams_temp;
 
 				if (hasChanges) {
 					eTrace("[eServiceMP3] audio or subtitle stream difference -- re enumerating");
-					m_audioStreams.clear();
-					m_subtitleStreams.clear();
-					std::copy(audioStreams_temp.begin(), audioStreams_temp.end(), back_inserter(m_audioStreams));
-					std::copy(subtitleStreams_temp.begin(), subtitleStreams_temp.end(),
-							  back_inserter(m_subtitleStreams));
+					m_audioStreams.assign(audioStreams_temp.begin(), audioStreams_temp.end());
+					m_subtitleStreams.assign(subtitleStreams_temp.begin(), subtitleStreams_temp.end());
 					eDebug("[eServiceMP3] GST_MESSAGE_ASYNC_DONE before evUpdatedInfo");
 					m_event((iPlayableService*)this, evUpdatedInfo);
 				}
@@ -3712,13 +3714,10 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpo
 		return;
 	}
 
-	// Check array bounds
-	if (_this->m_currentSubtitleStream >= (int)_this->m_subtitleStreams.size()) {
-		if (buffer)
-			gst_buffer_unref(buffer);
-		return;
-	}
-
+	/* Note: No bounds check on m_subtitleStreams here - this callback runs on
+	 * the GStreamer thread and m_subtitleStreams can be modified by the main
+	 * thread during stream re-enumeration. The bounds check is done in
+	 * pullSubtitle() which runs on the main thread via the pump. */	
 	_this->m_pump.send(new GstMessageContainer(2, NULL, NULL, buffer));
 }
 
@@ -3953,6 +3952,9 @@ void eServiceMP3::pushSubtitles() {
 	int32_t next_timer = 0, decoder_ms = 0, start_ms, end_ms, diff_start_ms, diff_end_ms, delay_ms;
 	double convert_fps = 1.0;
 	subtitle_pages_map_t::iterator current;
+
+	if (m_currentSubtitleStream < 0 || m_currentSubtitleStream >= (int)m_subtitleStreams.size())
+		return;
 
 	// For live streams, get decoder time directly from videosink
 	if (m_vtt_live && dvb_videosink) {
