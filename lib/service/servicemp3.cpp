@@ -4621,7 +4621,7 @@ void eServiceMP3::loadCuesheet() {
 			where = be64toh(where);
 			what = ntohl(what);
 
-			if (what < 4)
+			if (what < 256)
 				m_cue_entries.insert(cueEntry(where, what));
 
 			// if (m_cuesheet_changed == 2)
@@ -4651,6 +4651,25 @@ void eServiceMP3::saveCuesheet() {
 		return;
 
 	filename.append(".cuts");
+
+	/* Update CUT_TYPE_LAST (type 3) with the last known play position,
+		* analogous to what eDVBServicePlay::stop() does for TV recordings.
+		* m_last_seek_pos holds the cached position from getPlayPosition().
+		* m_cutlist_enabled bit 2 is the "don't remember" flag, set by
+		* MovieSelection via setCutListEnable(2) for background playback.
+		* Don't save if position is < 10 seconds or within 10 seconds of end. */
+	for (auto i = m_cue_entries.begin(); i != m_cue_entries.end();) {
+		if (i->what == 3) /* remove old CUT_TYPE_LAST */
+			i = m_cue_entries.erase(i);
+		else
+			++i;
+	}
+	if ((m_cutlist_enabled & 2) == 0 && m_last_seek_pos > 900000) {
+		if (!m_media_lenght || m_last_seek_pos < (m_media_lenght - 900000)) {
+			m_cue_entries.insert(cueEntry(m_last_seek_pos, 3));
+			eDebug("[eServiceMP3] last play position saved: %" G_GINT64_FORMAT, (gint64)m_last_seek_pos);
+		}
+	}
 
 	struct stat s = {};
 	bool removefile = false;
