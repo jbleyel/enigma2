@@ -41,7 +41,7 @@ int replacechar(char *str, char orig, char rep)
 
 int main(int argc, char *argv[])
 {
-	const char *action = NULL, *devpath = NULL, *physdevpath = NULL, *mediastatus = NULL;
+	const char *action = NULL, *devpath = NULL, *physdevpath = NULL;
 	int sd = -1;
 	struct sockaddr_un serv_addr_un;
 
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 				{
 					if (strcmp(action, "add") == 0)
 					{
-						if (getenv("DEVNAME"))
+						if (getenv("DEVNAME") && getenv("ID_FS_UUID"))
 						{
 							char devsize[50];
 							if (getenv("ID_PART_ENTRY_SIZE"))
@@ -130,11 +130,12 @@ int main(int argc, char *argv[])
 							else
 							{
 								char devpathnorm[255];
-								snprintf(devpathnorm, sizeof(devpathnorm) - 1, "%s", getenv("DEVNAME"));
+								snprintf(devpathnorm, sizeof(devpathnorm), "%s", getenv("DEVNAME"));
+								devpathnorm[sizeof(devpathnorm) - 1] = '\0';
 								replacechar(devpathnorm, '/', '_');
 								FILE *f;
-								char fn[255];
-								snprintf(fn, sizeof(fn) - 1, "/tmp/hotplug%s", devpathnorm);
+								char fn[280];
+								snprintf(fn, sizeof(fn), "/tmp/hotplug%s", devpathnorm);
 								f = fopen(fn, "w");
 								if (f)
 								{
@@ -146,7 +147,7 @@ int main(int argc, char *argv[])
 					}
 					else if (strcmp(action, "remove") == 0)
 					{
-						if (getenv("DEVNAME"))
+						if (getenv("DEVNAME") && getenv("ID_FS_UUID"))
 						{
 							snprintf(data, sizeof(data) - 1, "ACTION=%s\nDEVPATH=%s\nID_TYPE=%s\nDEVTYPE=%s\nDEVNAME=%s\nID_FS_UUID=%s", action, devpath, getenv("ID_TYPE") ? getenv("ID_TYPE") : "disk", getenv("DEVTYPE"), getenv("DEVNAME"), getenv("ID_FS_UUID"));
 							data[sizeof(data) - 1] = 0;

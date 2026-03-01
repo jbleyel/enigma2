@@ -35,6 +35,8 @@
 #include <sys/types.h>
 #include <ctype.h>
 
+#define IGNORE_RESULT(x) { __attribute__((unused)) int _r = (x); }
+
 enum {
 	MEDIA_STATUS_UNKNOWN = 0,
 	MEDIA_STATUS_GOT_MEDIA = 1,
@@ -82,23 +84,50 @@ static int media_read_data ( const char device_file[], int seek, int len, char *
 	return ret;
 }
 
+int safe_exec(const char *path, char *const argv[]) {
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("safe_exec: fork failed");
+        return -1;
+    } else if (pid == 0) {
+        execv(path, argv);
+        perror("safe_exec: execv failed");
+        exit(127);
+    } else {
+        int status;
+        if (waitpid(pid, &status, 0) == -1) {
+            perror("safe_exec: waitpid failed");
+            return -1;
+        }
+        if (WIFEXITED(status)) {
+            return WEXITSTATUS(status);
+        } else {
+            return -1;
+        }
+    }
+}
+
 static void bdpoll_notify(const char devname[])
 {
 	char buf[1024];
+	char devpath1[64];
+	char devpath2[64];
 	struct stat file_check;
 	int i = 0;
 	FILE *f;
 	int fd = -1;
 	int media_type = 0, start_track = 0, end_track = 0; 
 	snprintf(buf, sizeof(buf), "/dev/%s", devname);
+	snprintf(devpath1, sizeof(devpath1), "/block/%s", devname);
+	snprintf(devpath2, sizeof(devpath2), "/block/%s/device", devname);
 	// create symlink cdrom to the device needed for audio cd's  gst-1.0
 	if (lstat("/dev/cdrom", &file_check) != 0) {
-		symlink(buf, "/dev/cdrom");
+		IGNORE_RESULT(symlink(buf, "/dev/cdrom"))
 	}
 	// recreate symlink to the actif device
 	else {
 		unlink("/dev/cdrom");
-		symlink(buf, "/dev/cdrom");
+		IGNORE_RESULT(symlink(buf, "/dev/cdrom"))
 	}
 	if (media_status == MEDIA_STATUS_GOT_MEDIA) {
 		fd = open(buf, O_RDONLY | O_NONBLOCK);
@@ -125,9 +154,12 @@ static void bdpoll_notify(const char devname[])
 					fprintf(f,"/media/audiocd/track-%d.cda\n", i);
 				fclose(f);
 			}
+			//snprintf(buf, sizeof(buf), "/dev/%s", devname);
 			setenv("X_E2_MEDIA_STATUS", "1", 1);
-			snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper audiocdadd /dev/%s /block/%s/device 1", devname, devname);
-			system(buf);
+			char *args[] = {"/usr/bin/hotplug_e2_helper", "audiocdadd", buf, devpath2, "1", NULL};
+			execv(args[0], args);
+			//snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper audiocdadd /dev/%s /block/%s/device 1", devname, devname);
+			//system(buf);
 			media_mounted = false;
 			audio_cd = true;
 		}
@@ -137,7 +169,7 @@ static void bdpoll_notify(const char devname[])
 			int len = 32;
 			char * out_buff = NULL;
 			out_buff = malloc( (sizeof (out_buff)) * (len+1));
-			snprintf(buf, sizeof(buf), "/dev/%s", devname);
+			//snprintf(buf, sizeof(buf), "/dev/%s", devname);
 			volume_name[0] = '\0';          // Set to empty string
 			if ( media_read_data ( buf, seek, len, out_buff) != -1) {
 				if (!strncmp(out_buff, "NO NAME", 7) || !strncmp (out_buff, " ",1)) {
@@ -155,27 +187,35 @@ static void bdpoll_notify(const char devname[])
 			}
 			free(out_buff);
 			out_buff = NULL;
-			snprintf(buf, sizeof(buf),"/media/%s", volume_name);
-			mkdir(buf, 0777);
-			snprintf(buf, sizeof(buf), "/bin/mount -t udf /dev/%s /media/%s", devname, volume_name);
-			printf("Mounting device /dev/%s to /media/%s\n", devname, volume_name);
-			if (system(buf) == 0) {
+			char mountpath[256];
+			snprintf(mountpath, sizeof(mountpath), "/media/%s", volume_name);
+			mkdir(mountpath, 0777);
+			//
+			//snprintf(buf, sizeof(buf), "/bin/mount -t udf /dev/%s /media/%s", devname, volume_name);
+			printf("Mounting device %s to %s\n", buf, mountpath);
+			if(safe_exec("/bin/mount", (char *[]){"/bin/mount", "-t", "udf", buf, mountpath, NULL}) == 0) {
+			//if (system(buf) == 0) {
 				setenv("X_E2_MEDIA_STATUS", (media_status == MEDIA_STATUS_GOT_MEDIA) ? "1" : "0", 1);
-				snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper add /block/%s /block/%s/device 1", devname, devname);
-				system(buf);
+				char *args[] = {"/usr/bin/hotplug_e2_helper", "add", devpath1, devpath2, "1", NULL};
+				execv(args[0], args);
+				//snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper add /block/%s /block/%s/device 1", devname, devname);
+				//system(buf);
 				media_mounted = true;
 			}
 			else {
-					// udf fails, try iso9660
-					snprintf(buf, sizeof(buf), "/bin/mount -t iso9660 /dev/%s /media/%s", devname, volume_name);
-					if(system(buf) == 0) {
-						setenv("X_E2_MEDIA_STATUS", (media_status == MEDIA_STATUS_GOT_MEDIA) ? "1" : "0", 1);
-						snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper add /block/%s /block/%s/device 1", devname, devname);
-						system(buf);
-						media_mounted = true;
-					}
-					else
-						printf("Unable to mount disc\n");
+				// udf fails, try iso9660
+				//snprintf(buf, sizeof(buf), "/bin/mount -t iso9660 /dev/%s /media/%s", devname, volume_name);
+				//if(system(buf) == 0) {
+				if(safe_exec("/bin/mount", (char *[]){"/bin/mount", "-t", "iso9660", buf, mountpoint, NULL}) == 0) {
+					setenv("X_E2_MEDIA_STATUS", (media_status == MEDIA_STATUS_GOT_MEDIA) ? "1" : "0", 1);
+					char *args[] = {"/usr/bin/hotplug_e2_helper", "add", devpath1, devpath2, "1", NULL};
+					execv(args[0], args);
+					//snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper add /block/%s /block/%s/device 1", devname, devname);
+					//system(buf);
+					media_mounted = true;
+				}
+				else
+					printf("Unable to mount disc\n");
 			}
 		}
 		else {
@@ -189,8 +229,10 @@ static void bdpoll_notify(const char devname[])
 		{
 			if (audio_cd)
 			{
-				snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper audiocdremove /dev/%s /block/%s/device 1", devname, devname);
-				system(buf);
+				char *args[] = {"/usr/bin/hotplug_e2_helper", "audiocdremove", buf, devpath2, "1", NULL};
+				safe_exec(args[0], args);
+				//snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper audiocdremove /dev/%s /block/%s/device 1", devname, devname);
+				//system(buf);
 				setenv("X_E2_MEDIA_STATUS", "0", 1);
 				audio_cd = false;
 				if (lstat("/media/audiocd/cdplaylist.cdpls", &file_check) == 0)
@@ -201,8 +243,9 @@ static void bdpoll_notify(const char devname[])
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), "/bin/umount /dev/%s -l", devname);
-				system(buf);
+				//snprintf(buf, sizeof(buf), "/bin/umount /dev/%s -l", devname);
+				//system(buf);
+				safe_exec("/bin/umount", (char *[]){"/bin/umount", buf, "-1", NULL});
 				snprintf(buf, sizeof(buf), "/media/%s", volume_name);
 				unlink(buf);
 				rmdir(buf);
@@ -210,17 +253,19 @@ static void bdpoll_notify(const char devname[])
 				memset(&volume_name[0], 0, sizeof(volume_name));
 				setenv("X_E2_MEDIA_STATUS", "0", 1);
 				// Removing device after cd/dvd is removed.
-				snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper remove /block/%s /block/%s/device 1", devname, devname);
-				system(buf);
+				char *args[] = {"/usr/bin/hotplug_e2_helper", "remove", devpath1, devpath2, "1", NULL};
+				execv(args[0], args);
+				//snprintf(buf, sizeof(buf), "/usr/bin/hotplug_e2_helper remove /block/%s /block/%s/device 1", devname, devname);
+				//system(buf);
 				media_mounted = false;
 			}
 		}
 		else
 		{
 			setenv("X_E2_MEDIA_STATUS", "0", 1);
-			setenv("DEVPATH", NULL, 1);
-			setenv("PHYSDEVPATH", NULL, 1);
-			setenv("ACTION", NULL, 1);
+			unsetenv("DEVPATH");
+			unsetenv("PHYSDEVPATH");
+			unsetenv("ACTION");
 		}
 	}
 }
@@ -409,7 +454,7 @@ int main(int argc, char *argv[], char *envp[])
 
 	devname = argv[optind];
 
-	if (run_as_daemon) daemon(0, 0);
+	if (run_as_daemon) IGNORE_RESULT(daemon(0, 0))
 
 	for (;;) {
 		if (poll_for_media(devname, is_cdrom, support_media_changed))
