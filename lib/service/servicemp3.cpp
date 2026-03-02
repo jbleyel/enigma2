@@ -742,7 +742,7 @@ int eStaticServiceMP3Info::getLength(const eServiceReference& ref) {
 	uint32_t what;
 
 	while (file.read(reinterpret_cast<char*>(&where), sizeof(where)) && file.read(reinterpret_cast<char*>(&what), sizeof(what))) {
-		if (ntohl(what) == CUT_TYPE_LENGTH)
+		if (ntohl(what) == 5) // CUT_TYPE_LENGTH
 			return static_cast<int>(be64toh(where) / MPEG_TIMEBASE);
 	}
 
