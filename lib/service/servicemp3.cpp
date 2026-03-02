@@ -1730,7 +1730,7 @@ RESULT eServiceMP3::getLength(pts_t& pts) {
  * @return RESULT Returns 0 on success, or an error code if the service fails to seek.
  */
 RESULT eServiceMP3::seekToImpl(pts_t to) {
-	// eDebug("[eServiceMP3] seekToImpl pts_t to %" G_GINT64_FORMAT, (gint64)to);
+	eDebug("[eServiceMP3] seekToImpl pts_t to %" G_GINT64_FORMAT, (gint64)to);
 	/* convert pts to nanoseconds */
 	m_last_seek_pos = to;
 	m_base_mpegts = -1;  // Reset when seeking to avoid stale base
@@ -1779,7 +1779,7 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
  */
 RESULT eServiceMP3::seekTo(pts_t to) {
 	RESULT ret = -1;
-	// eDebug("[eServiceMP3] seekTo pts_t to %" G_GINT64_FORMAT, (gint64)to);
+	eDebug("[eServiceMP3] seekTo pts_t to %" G_GINT64_FORMAT, (gint64)to);
 	if (m_gst_playbin) {
 		m_prev_decoder_time = -1;
 		m_decoder_time_valid_state = 0;

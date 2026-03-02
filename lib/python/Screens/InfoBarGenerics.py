@@ -93,6 +93,7 @@ def setResumePoint(session):
 		seek = service.seek()
 		if seek:
 			pos = seek.getPlayPosition()
+			print(f"[InfoBarGenerics] setResumePoint: ref='{ref.toString()}', pos='{pos}'")
 			if not pos[0]:
 				key = ref.toString()
 				lru = int(time())
@@ -101,6 +102,7 @@ def setResumePoint(session):
 					length = length[1]
 				else:
 					length = None
+				print(f"[InfoBarGenerics] setResumePoint: key='{key}', lru='{lru}', pos='{pos[1]}', length='{length}'")
 				resumePointCache[key] = [lru, pos[1], length]
 				for k, v in list(resumePointCache.items()):
 					if v[0] < lru:
@@ -1426,8 +1428,10 @@ class InfoBarSeek:
 				eDVBVolumecontrol.getInstance().volumeUnMute()
 
 	def doSeek(self, pts):
+		print(f"[InfoBarGenerics] InfoBarSeek: doSeek({pts})")
 		seekable = self.getSeek()
 		if seekable is None:
+			print(f"[InfoBarGenerics] InfoBarSeek: doSeek failed because seekable is None!")
 			return
 		seekable.seekTo(pts)
 
