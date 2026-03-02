@@ -698,7 +698,37 @@ RESULT eStaticServiceMP3Info::getName(const eServiceReference& ref, std::string&
 }
 
 int eStaticServiceMP3Info::getLength(const eServiceReference& ref) {
-	return -1;
+	if(!m_parser.parseMeta(ref.path)) {
+		return (int)(m_parser.m_length / 90000);
+	}
+	else {
+		std::string filename = ref.path + ".cuts";
+		FILE* f = fopen(filename.c_str(), "rb");
+		int len = -1;
+		if (f) {
+			while (1) {
+				unsigned long long where;
+				unsigned int what;
+
+				if (!fread(&where, sizeof(where), 1, f))
+					break;
+				if (!fread(&what, sizeof(what), 1, f))
+					break;
+
+				where = be64toh(where);
+				what = ntohl(what);
+
+				if (what == 5)
+				{
+					len = where / 90000;
+					break;
+				}
+
+			}
+			fclose(f);
+		}
+	}
+	return len;
 }
 
 /**

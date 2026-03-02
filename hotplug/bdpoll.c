@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <ctype.h>
+#include <sys/wait.h>
 
 #define IGNORE_RESULT(x) { __attribute__((unused)) int _r = (x); }
 
@@ -206,7 +207,7 @@ static void bdpoll_notify(const char devname[])
 				// udf fails, try iso9660
 				//snprintf(buf, sizeof(buf), "/bin/mount -t iso9660 /dev/%s /media/%s", devname, volume_name);
 				//if(system(buf) == 0) {
-				if(safe_exec("/bin/mount", (char *[]){"/bin/mount", "-t", "iso9660", buf, mountpoint, NULL}) == 0) {
+				if(safe_exec("/bin/mount", (char *[]){"/bin/mount", "-t", "iso9660", buf, mountpath, NULL}) == 0) {
 					setenv("X_E2_MEDIA_STATUS", (media_status == MEDIA_STATUS_GOT_MEDIA) ? "1" : "0", 1);
 					char *args[] = {"/usr/bin/hotplug_e2_helper", "add", devpath1, devpath2, "1", NULL};
 					execv(args[0], args);
