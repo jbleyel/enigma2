@@ -697,38 +697,56 @@ RESULT eStaticServiceMP3Info::getName(const eServiceReference& ref, std::string&
 	return 0;
 }
 
+/**
+ * @brief eStaticServiceMP3Info::getLength
+ *
+ * Retrieve the playback length (in whole seconds) for the given service reference.
+ *
+ * Operation:
+ *  - Attempts to parse metadata via m_parser.parseMeta(ref.path). If parsing
+ *    succeeds (parseMeta returns 0), uses m_parser.m_length (interpreted in
+ *    MPEG timebase units) and returns m_parser.m_length / MPEG_TIMEBASE.
+ *  - If parsing fails, falls back to reading a sidecar ".cuts" file at
+ *    ref.path + ".cuts". The file is read as a sequence of records:
+ *      [uint64_t where (big-endian)] [uint32_t what (network byte order)]
+ *    For each record, if ntohl(what) == CUT_TYPE_LENGTH, returns
+ *    be64toh(where) / MPEG_TIMEBASE.
+ *
+ * Parameters:
+ *  - ref: reference to the service whose length is requested (path used for
+ *         metadata parsing and .cuts filename).
+ *
+ * Return value:
+ *  - non-negative int: length in seconds (fractional part discarded).
+ *  - -1: if metadata cannot be obtained, the .cuts file cannot be opened, or
+ *         no CUT_TYPE_LENGTH entry is found.
+ *
+ * Notes:
+ *  - MPEG_TIMEBASE is 90000.
+ *  - The function performs file I/O and endian conversions (ntohl, be64toh).
+ */
 int eStaticServiceMP3Info::getLength(const eServiceReference& ref) {
-	if(!m_parser.parseMeta(ref.path)) {
-		return (int)(m_parser.m_length / 90000);
+	constexpr int MPEG_TIMEBASE = 90000;
+
+	if (m_parser.parseMeta(ref.path) == 0)
+		return static_cast<int>(m_parser.m_length / MPEG_TIMEBASE);
+
+	/* Fallback: read CUT_TYPE_LENGTH from .cuts file */
+	std::string filename = ref.path + ".cuts";
+	std::ifstream file(filename, std::ios::binary);
+
+	if (!file)
+		return -1;
+
+	uint64_t where;
+	uint32_t what;
+
+	while (file.read(reinterpret_cast<char*>(&where), sizeof(where)) && file.read(reinterpret_cast<char*>(&what), sizeof(what))) {
+		if (ntohl(what) == CUT_TYPE_LENGTH)
+			return static_cast<int>(be64toh(where) / MPEG_TIMEBASE);
 	}
-	else {
-		std::string filename = ref.path + ".cuts";
-		FILE* f = fopen(filename.c_str(), "rb");
-		int len = -1;
-		if (f) {
-			while (1) {
-				unsigned long long where;
-				unsigned int what;
 
-				if (!fread(&where, sizeof(where), 1, f))
-					break;
-				if (!fread(&what, sizeof(what), 1, f))
-					break;
-
-				where = be64toh(where);
-				what = ntohl(what);
-
-				if (what == 5)
-				{
-					len = where / 90000;
-					break;
-				}
-
-			}
-			fclose(f);
-		}
-	}
-	return len;
+	return -1;
 }
 
 /**
