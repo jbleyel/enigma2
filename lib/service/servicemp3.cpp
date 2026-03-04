@@ -932,6 +932,9 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	m_dvb_subtitle_parser = new eDVBSubtitleParser();
 	m_dvb_subtitle_parser->connectNewPage(sigc::mem_fun(*this, &eServiceMP3::newDVBSubtitlePage),
 										  m_new_dvb_subtitle_page_connection);
+	m_pgs_subtitle_parser = new ePGSSubtitleParser();
+	m_pgs_subtitle_parser->connectNewPage(sigc::mem_fun(*this, &eServiceMP3::newDVBSubtitlePage),
+										  m_new_pgs_subtitle_page_connection);
 #ifdef PASSTHROUGH_FIX
 	m_passthrough_fix_timer = eTimer::create(eApp);
 #endif
@@ -3926,6 +3929,10 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 				if (!parsed_subs.empty())
 					m_subtitle_sync_timer->start(250, true);
 			}
+		} else if (subType == stPGS) {
+			uint8_t* data = map.data;
+			int64_t buf_pos = GST_BUFFER_PTS(buffer);
+			m_pgs_subtitle_parser->processBuffer(data, map.size, buf_pos / 1000000ULL);
 		} else if (subType == stDVB) {
 			uint8_t* data = map.data;
 			int64_t buf_pos = GST_BUFFER_PTS(buffer);
@@ -3991,7 +3998,7 @@ void eServiceMP3::pushDVBSubtitles() {
 			m_subtitle_widget->setPage(dvb_page);
 			m_dvb_subtitle_pages.pop_front();
 		} else {
-			eDebug("[eServiceMP3] Delay early subtitle by %.03fs. Page stack size %lu", diff / 1000.0f,
+			eDebug("[eServiceMP3] Delay early subtitle by %.03fs. Page stack size %zu", diff / 1000.0f,
 				   m_dvb_subtitle_pages.size());
 			m_dvb_subtitle_sync_timer->start(diff, 1);
 			break;
@@ -4415,12 +4422,12 @@ RESULT eServiceMP3::getSubtitleList(std::vector<struct SubtitleTrack>& subtitlel
 		const subtitleStream& stream = m_subtitleStreams[i];
 
 		// Skip unsupported types
-		if (stream.type == stUnknown || stream.type == stVOB || stream.type == stPGS) {
+		if (stream.type == stUnknown || stream.type == stVOB) {
 			continue;
 		}
 
 		struct SubtitleTrack track;
-		track.type = (stream.type == stDVB) ? 0 : 2;
+		track.type = (stream.type == stDVB || stream.type == stPGS) ? 0 : 2;
 		track.pid = i;
 		track.page_number = int(stream.type);
 		track.magazine_number = 0;
