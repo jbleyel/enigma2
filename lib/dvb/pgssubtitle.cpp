@@ -8,7 +8,7 @@ DEFINE_REF(ePGSSubtitleParser);
 ePGSSubtitleParser::ePGSSubtitleParser()
 	: m_display_size(1920, 1080), m_palette_id(0), m_composition_state(0), m_pts(0)
 {
-	memset(m_palette, 0, sizeof(m_palette));
+	memset(static_cast<void*>(m_palette), 0, sizeof(m_palette));
 }
 
 ePGSSubtitleParser::~ePGSSubtitleParser()
@@ -19,7 +19,7 @@ void ePGSSubtitleParser::reset()
 {
 	m_objects.clear();
 	m_composition_objects.clear();
-	memset(m_palette, 0, sizeof(m_palette));
+	memset(static_cast<void*>(m_palette), 0, sizeof(m_palette));
 	m_composition_state = 0;
 }
 
@@ -254,7 +254,7 @@ bool ePGSSubtitleParser::decodeRLE(const PGSObject &obj, ePtr<gPixmap> &pixmap)
 	/* Set up the 256-entry palette on the pixmap */
 	pixmap->surface->clut.colors = 256;
 	pixmap->surface->clut.data = new gRGB[256];
-	memcpy(pixmap->surface->clut.data, m_palette, 256 * sizeof(gRGB));
+	memcpy(static_cast<void*>(pixmap->surface->clut.data), m_palette, 256 * sizeof(gRGB));
 
 	const uint8_t *rle = obj.rle_data.data();
 	size_t rle_size = obj.rle_data.size();
