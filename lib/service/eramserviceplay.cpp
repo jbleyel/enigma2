@@ -1,5 +1,6 @@
 #include "eramserviceplay.h"
 #include <lib/base/cfile.h>
+#include <lib/dvb/csasession.h>
 #include <algorithm>
 
 DEFINE_REF(eRamServicePlay);
@@ -44,7 +45,7 @@ RESULT eRamServicePlay::startTimeshift()
 	m_record->setTargetFD(-1);
 	m_record->enableAccessPoints(false);
 	m_record->connectEvent(
-		sigc::mem_fun(*this, &eDVBServicePlay::recordEvent),
+		sigc::mem_fun(*this, &eRamServicePlay::recordEvent),
 		m_con_record_event);
 
 	/* StreamRelay / CSA-ALT channels arrive scrambled - descramble in recorder.
