@@ -3,7 +3,7 @@
 
 #include <lib/service/servicedvb.h>
 #include <lib/dvb/eramtimeshift.h>
-#include <lib/base/etimer.h>
+#include <lib/base/ebase.h>
 #include <memory>
 
 /*
