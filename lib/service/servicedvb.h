@@ -362,6 +362,8 @@ protected:
 	// Audio cache helper
 	void updateAudioCache(int apid, int apidtype);
 
+	void resetRecoveryState(); // Resets all recovery state variables.
+
 private:
 	// -- START: Precise Recovery System --
 	// This system handles stream corruption during timeshift, with support for a custom recovery delay.
@@ -372,7 +374,6 @@ private:
 
 	void handleEofRecovery();
 	void startPreciseRecoveryCheck();
-	void resetRecoveryState(); // Resets all recovery state variables.
 	// -- END: Precise Recovery System --
 };
 

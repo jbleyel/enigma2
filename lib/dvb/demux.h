@@ -211,6 +211,7 @@ public:
 	// Wait for first data to be written (for SoftDecoder sync)
 	bool waitForFirstData(int timeout_ms);
 	void setMinWrite(size_t size) override;
+	void replaceThread(eDVBRecordFileThread *newThread);
 private:
 	RESULT startPID(int pid);
 	void stopPID(int pid);
@@ -228,6 +229,7 @@ private:
 	eDVBRecordFileThread *m_thread;
 	std::string m_target_filename;
 	int m_packetsize;
+	bool m_ram_mode;
 	friend class eRTSPStreamClient;
 };
 
