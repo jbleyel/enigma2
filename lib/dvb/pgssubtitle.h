@@ -56,6 +56,7 @@ private:
 
 	sigc::signal<void(const eDVBSubtitlePage&)> m_new_subtitle_page;
 
+	void processSegment(uint8_t segment_type, const uint8_t *data, int len);
 	void processPCS(const uint8_t *data, int len);
 	void processPDS(const uint8_t *data, int len);
 	void processODS(const uint8_t *data, int len);
