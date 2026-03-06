@@ -74,14 +74,18 @@ void ePGSSubtitleParser::processBuffer(uint8_t *data, size_t len, pts_t pts)
 			uint16_t segment_size = (data[pos + 1] << 8) | data[pos + 2];
 			pos += 3;
 
-		if (pos + segment_size > len)
-		{
-			eDebug("[ePGSSubtitleParser] segment overflows buffer (type=0x%02x, size=%d, remaining=%zd)",
-				segment_type, segment_size, len - pos);
-			break;
-		}
+			if (pos + segment_size > len)
+			{
+				eDebug("[ePGSSubtitleParser] segment overflows buffer (type=0x%02x, size=%d, remaining=%zd)",
+					segment_type, segment_size, len - pos);
+				break;
+			}
 
-		const uint8_t *segment_data = data + pos;
+			processSegment(segment_type, data + pos, segment_size);
+			pos += segment_size;
+		}
+	}
+}
 
 void ePGSSubtitleParser::processSegment(uint8_t segment_type, const uint8_t *data, int len)
 {
