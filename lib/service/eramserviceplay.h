@@ -34,6 +34,7 @@ public:
 	int	ramFillPercent() const;
 
 	RESULT	getLength(pts_t &len) override;
+	RESULT	getPlayPosition(pts_t &pos) override;
 
 protected:
 	RESULT	startTimeshift() override;

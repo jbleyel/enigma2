@@ -196,3 +196,28 @@ int eRamServicePlay::ramFillPercent() const
 	off_t filled = m_ram_ring->getWriteOffset() - m_ram_ring->getMinOffset();
 	return (int)(filled * 100 / (off_t)(m_capacity_bytes));
 }
+
+RESULT eRamServicePlay::getPlayPosition(pts_t &pos)
+{
+	/* For RAM timeshift there is no .sc (streaminfo) file, so the base
+	 * class fixupPTS() call inside getCurrentPosition() fails and returns
+	 * a raw decoder PTS that is not relative to the start of the buffer.
+	 * We fix it up ourselves using the first PCR seen by eRamRecorder. */
+	if (!m_timeshift_active || !m_record)
+		return eDVBServicePlay::getPlayPosition(pos);
+
+	RESULT r = eDVBServicePlay::getPlayPosition(pos);
+	if (r)
+		return r;
+
+	pts_t first = 0;
+	if (m_record->getFirstPTS(first) == 0 && first > 0)
+	{
+		if (pos >= first)
+			pos -= first;
+		else
+			pos = 0;  /* PTS wrap or very early probe — clamp to zero */
+	}
+
+	return 0;
+}
