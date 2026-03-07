@@ -95,12 +95,15 @@ class eDVBRecordFileThread: public eFilePushThreadRecorder
 {
 public:
 	eDVBRecordFileThread(int packetsize, int bufferCount, int buffersize = -1, bool sync_mode = false);
-	~eDVBRecordFileThread();
+	virtual ~eDVBRecordFileThread();
 	void setTimingPID(int pid, iDVBTSRecorder::timing_pid_type pidtype, int streamtype);
 	void startSaveMetaInformation(const std::string &filename);
 	void stopSaveMetaInformation();
 	int getLastPTS(pts_t &pts);
-	int getFirstPTS(pts_t &pts);
+	virtual int getFirstPTS(pts_t &pts);
+	/* Virtual so RAM-based subclasses can provide PCR from adaptation field
+	 * instead of relying on m_ts_parser which requires a valid timing PID. */
+	virtual int getCurrentPCR(pts_t &pcr) { return getLastPTS(pcr); }
 	void setTargetFD(int fd) { m_fd_dest = fd; }
 	void enableAccessPoints(bool enable) { m_ts_parser.enableAccessPoints(enable); }
 	void setDescrambler(ePtr<iServiceScrambled> serviceDescrambler) { m_serviceDescrambler = serviceDescrambler; };

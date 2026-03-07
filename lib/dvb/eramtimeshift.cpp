@@ -1,5 +1,6 @@
 #include "eramtimeshift.h"
 #include <lib/base/eerror.h>
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -220,7 +221,59 @@ off_t eRamTsSource::offset()
 eRamRecorder::eRamRecorder(eRamRingBuffer *buf, int packetsize)
 	: eDVBRecordScrambledThread(packetsize, 188 * 256, false, false)
 	, m_ring(buf)
+	, m_last_pcr(0)
+	, m_last_pcr_valid(false)
+	, m_first_pcr(0)
+	, m_first_pcr_valid(false)
 {
+	/* PCR scan loop in writeData() assumes 188-byte TS packets.
+	 * RAM timeshift always uses packetsize=188 (see startTimeshift()),
+	 * but assert here to catch any future misuse early. */
+	assert(packetsize == 188);
+	pthread_mutex_init(&m_pcr_mutex, nullptr);
+}
+
+void eRamRecorder::updatePCR(pts_t pcr)
+{
+	pthread_mutex_lock(&m_pcr_mutex);
+	m_last_pcr       = pcr;
+	m_last_pcr_valid = true;
+	if (!m_first_pcr_valid)
+	{
+		m_first_pcr       = pcr;
+		m_first_pcr_valid = true;
+	}
+	pthread_mutex_unlock(&m_pcr_mutex);
+}
+
+/*
+ * extractPCR()
+ *
+ * Reads PCR from the adaptation field of a single 188-byte TS packet.
+ * The adaptation field is ALWAYS unencrypted per the DVB standard,
+ * even for scrambled channels.
+ * Returns the 33-bit PCR base in 90 kHz units (same unit as PTS).
+ */
+bool eRamRecorder::extractPCR(const uint8_t *pkt, pts_t &pcr)
+{
+	if (pkt[0] != 0x47)
+		return false;
+	/* adaptation_field_control bits [5:4] must have 0x20 set */
+	if (!(pkt[3] & 0x20))
+		return false;
+	/* adaptation_field_length >= 7 for PCR */
+	if (pkt[4] < 7)
+		return false;
+	/* PCR_flag bit */
+	if (!(pkt[5] & 0x10))
+		return false;
+	/* PCR base (33 bits): (b6<<25)|(b7<<17)|(b8<<9)|(b9<<1)|(b10>>7) */
+	pcr = ((pts_t)pkt[6] << 25)
+	    | ((pts_t)pkt[7] << 17)
+	    | ((pts_t)pkt[8] <<  9)
+	    | ((pts_t)pkt[9] <<  1)
+	    | ((pts_t)(pkt[10] >> 7) & 1);
+	return true;
 }
 
 int eRamRecorder::writeData(int len)
@@ -230,6 +283,16 @@ int eRamRecorder::writeData(int len)
 
 	if (m_serviceDescrambler)
 		m_serviceDescrambler->descramble(m_buffer, len);
+
+	/* Scan adaptation fields for PCR — always unencrypted even on
+	 * scrambled channels, so this works after descramble() too. */
+	const uint8_t *data = reinterpret_cast<const uint8_t *>(m_buffer);
+	for (int i = 0; i + 188 <= len; i += 188)
+	{
+		pts_t pcr;
+		if (extractPCR(data + i, pcr))
+			updatePCR(pcr);
+	}
 
 	size_t ap_before = m_ts_parser.getAccessPointCount();
 	if (!getProtocol())
@@ -244,4 +307,41 @@ int eRamRecorder::writeData(int len)
 
 void eRamRecorder::flush()
 {
+}
+
+/*
+ * getCurrentPCR()
+ *
+ * Override of virtual eDVBRecordFileThread::getCurrentPCR().
+ * Called via virtual dispatch from eDVBTSRecorder::getCurrentPCR(),
+ * which is called by the Precise Recovery System.
+ */
+int eRamRecorder::getCurrentPCR(pts_t &pcr)
+{
+	pthread_mutex_lock(&m_pcr_mutex);
+	bool valid = m_last_pcr_valid;
+	pts_t val  = m_last_pcr;
+	pthread_mutex_unlock(&m_pcr_mutex);
+	if (!valid)
+		return -1;
+	pcr = val;
+	return 0;
+}
+
+/*
+ * getFirstPTS()
+ *
+ * Override of virtual eDVBRecordFileThread::getFirstPTS().
+ * Returns the first PCR seen, used for seek bar / getLength().
+ */
+int eRamRecorder::getFirstPTS(pts_t &pts)
+{
+	pthread_mutex_lock(&m_pcr_mutex);
+	bool valid = m_first_pcr_valid;
+	pts_t val  = m_first_pcr;
+	pthread_mutex_unlock(&m_pcr_mutex);
+	if (!valid)
+		return -1;
+	pts = val;
+	return 0;
 }

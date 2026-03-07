@@ -1318,8 +1318,12 @@ RESULT eDVBTSRecorder::getCurrentPCR(pts_t &pcr)
 		return 0;
 		/* XXX: we need a lock here */
 
-			/* we don't filter PCR data, so just use the last received PTS, which is not accurate, but better than nothing */
-	return m_thread->getLastPTS(pcr);
+			/* Use virtual getCurrentPCR() so RAM-based subclasses (eRamRecorder)
+			 * can provide PCR extracted directly from the TS adaptation field,
+			 * which is always unencrypted and more accurate than getLastPTS().
+			 * For normal disk-based threads the default falls back to getLastPTS()
+			 * preserving the original behaviour. */
+	return m_thread->getCurrentPCR(pcr);
 }
 
 RESULT eDVBTSRecorder::getFirstPTS(pts_t &pts)
