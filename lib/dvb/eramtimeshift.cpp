@@ -296,7 +296,14 @@ int eRamRecorder::writeData(int len)
 
 	size_t ap_before = m_ts_parser.getAccessPointCount();
 	if (!getProtocol())
-		m_ts_parser.parseData(m_current_offset, m_buffer, len);
+	{
+		int parse_result = m_ts_parser.parseData(m_current_offset, m_buffer, len);
+		/* Mirror the corruption detection that asyncWrite() performs for
+		 * disk-based recorders.  Without this, signal loss on RAM timeshift
+		 * never fires evtStreamCorrupt and Precise Recovery never starts. */
+		if (parse_result == -2)
+			m_event(eFilePushThreadRecorder::evtStreamCorrupt);
+	}
 	bool is_ap = (m_ts_parser.getAccessPointCount() > ap_before);
 
 	int written = m_ring->write(m_buffer, (size_t)len, is_ap);
