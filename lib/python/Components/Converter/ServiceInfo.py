@@ -70,7 +70,7 @@ class ServiceInfo(Converter):
 	VIDEO_INFO_GAMMA = 5
 
 	def __init__(self, argument):
-		def handleType(self, argument, keys=False):
+		def handleType(argument, keys=False):
 			tokens = {
 				"AudioPid": (self.APID, (iPlayableService.evUpdatedInfo,)),
 				"AudioTracksAvailable": (self.AUDIOTRACKS_AVAILABLE, (iPlayableService.evUpdatedInfo,)),
