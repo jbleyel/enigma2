@@ -267,6 +267,11 @@ eRamRecorder::eRamRecorder(eRamRingBuffer *buf, int packetsize)
 	pthread_mutex_init(&m_pcr_mutex, nullptr);
 }
 
+eRamRecorder::~eRamRecorder()
+{
+	pthread_mutex_destroy(&m_pcr_mutex);
+}
+
 void eRamRecorder::updatePCR(pts_t pcr)
 {
 	pthread_mutex_lock(&m_pcr_mutex);

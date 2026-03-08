@@ -64,6 +64,11 @@ private:
  * Implements read(offset, ...) so eFilePushThread can seek within
  * the recorded RAM data.  length() returns the current write offset
  * so the push thread knows how far it can read.
+ *
+ * Lap detection: when the ring buffer overwrites data that the decoder
+ * is still trying to read, read() sets m_lapped = true and stores the
+ * new safe aligned offset.  The watchdog in eRamServicePlay picks this
+ * up via getLappedOffset() and triggers doRealign().
  */
 class eRamTsSource : public iTsSource
 {
@@ -77,69 +82,58 @@ public:
 	int	valid()  override { return m_buf ? 1 : 0; }
 	off_t	offset() override;
 
-	/* Returns true (and consumes the flag) if the last read() found
-	 * offset < min_off.  out_offset is set ONLY on true return.
-	 * NOT const: clears m_lapped under m_offset_mutex. */
+	/* Returns true (once) when the ring has lapped the read position.
+	 * out_offset is set to the nearest safe aligned byte to resume from. */
 	bool getLappedOffset(off_t &out_offset);
 
 private:
 	std::shared_ptr<eRamRingBuffer>	m_buf;
-	mutable pthread_mutex_t		m_offset_mutex;
-	mutable bool			m_lapped;
-	mutable off_t			m_lapped_offset;
+
+	mutable pthread_mutex_t	m_offset_mutex;
+	bool			m_lapped;
+	off_t			m_lapped_offset;
 };
 
 /*
  * eRamRecorder
  *
  * Subclass of eDVBRecordScrambledThread that writes into eRamRingBuffer
- * instead of a disk file.
+ * instead of a disk file.  Descrambling (CI, SoftCAM, StreamRelay) and
+ * I-frame detection work identically to the disk path.
  *
- * PCR Fix for encrypted channels:
- * The adaptation field (which contains PCR) is ALWAYS unencrypted in
- * the TS standard, even for scrambled channels. We scan it in writeData()
- * and expose it via getCurrentPCR() so the precise recovery system works
- * correctly for encrypted channels.
+ * PCR is extracted directly from the adaptation field of each TS packet
+ * (always unencrypted per DVB spec) and cached for getCurrentPCR() /
+ * getFirstPTS(), which drive the seek bar and the Precise Recovery System.
  */
 class eRamRecorder : public eDVBRecordScrambledThread
 {
 public:
 	explicit eRamRecorder(eRamRingBuffer *buf, int packetsize = 188);
-	virtual ~eRamRecorder() { pthread_mutex_destroy(&m_pcr_mutex); }
+	virtual ~eRamRecorder();
 
 	eRamRingBuffer *getRingBuffer() { return m_ring; }
 
-	/* Override to provide live PCR from the recording side.
-	 * Required by the precise recovery system (handleEofRecovery /
-	 * startPreciseRecoveryCheck) which calls m_record->getCurrentPCR().
-	 * The base class returns m_last_pts which is never updated when we
-	 * bypass the parent writeData(), so we track PCR ourselves. */
+	/* Override virtual methods from eDVBRecordFileThread so the
+	 * Precise Recovery System and seek bar work correctly. */
 	int getCurrentPCR(pts_t &pcr) override;
-
-	/* Override to provide the first PTS seen (for seek bar). */
-	int getFirstPTS(pts_t &pts) override;
+	int getFirstPTS(pts_t &pts)   override;
 
 protected:
 	int  writeData(int len) override;
 	void flush() override;
 
 private:
-	/* Scan a single 188-byte TS packet for PCR.
-	 * Returns true and sets pcr if found. */
 	static bool extractPCR(const uint8_t *pkt, pts_t &pcr);
+	void        updatePCR(pts_t pcr);
 
-	/* PCR values are written by the recorder thread and read by the
-	 * recovery thread — protect with a dedicated mutex to avoid
-	 * torn/stale reads on 64-bit pts_t (critical on ARM 32-bit). */
-	void updatePCR(pts_t pcr);
-
-	mutable pthread_mutex_t m_pcr_mutex;
 	eRamRingBuffer *m_ring;
+
 	pts_t	m_last_pcr;
 	bool	m_last_pcr_valid;
-
 	pts_t	m_first_pcr;
 	bool	m_first_pcr_valid;
+
+	mutable pthread_mutex_t	m_pcr_mutex;
 };
 
 #endif /* __lib_dvb_eramtimeshift_h */
