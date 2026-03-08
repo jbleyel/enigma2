@@ -177,8 +177,7 @@ void eRamServicePlay::doRealign()
 
 	int recovery_ms   = eSimpleConfig::getInt(
 		"config.timeshift.recoveryBufferDelay", 300);
-	pts_t seek_target = -(pts_t)(m_original_timeshift_delay
-	                              + (pts_t)recovery_ms * 90);
+	pts_t seek_target = -(pts_t)((m_delay_ms + recovery_ms) * 90);
 	m_cue->seekTo(0, seek_target);
 
 	eServiceReferenceDVB r = (eServiceReferenceDVB &)m_reference;
@@ -264,7 +263,7 @@ ePtr<iTsSource> eRamServicePlay::createTsSource(eServiceReferenceDVB &ref,
 		return eDVBServicePlay::createTsSource(ref);
 	ePtr<eRamTsSource> src = new eRamTsSource(m_ram_ring);
 	m_ts_source = src;
-	return src;
+	return ePtr<iTsSource>(src);
 }
 
 bool eRamServicePlay::isRamBufferReady() const
