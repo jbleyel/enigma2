@@ -192,14 +192,48 @@ DEFINE_REF(eRamTsSource);
 
 eRamTsSource::eRamTsSource(std::shared_ptr<eRamRingBuffer> buf)
 	: m_buf(buf)
+	, m_lapped(false)
+	, m_lapped_offset(0)
 {
+	pthread_mutex_init(&m_offset_mutex, nullptr);
+}
+
+eRamTsSource::~eRamTsSource()
+{
+	pthread_mutex_destroy(&m_offset_mutex);
 }
 
 ssize_t eRamTsSource::read(off_t offset, void *buf, size_t count)
 {
 	if (!m_buf || !buf || count == 0)
 		return 0;
+
+	off_t min_off = m_buf->getMinOffset();
+	if (offset < min_off)
+	{
+		off_t aligned = min_off + (188 - min_off % 188) % 188;
+		pthread_mutex_lock(&m_offset_mutex);
+		m_lapped        = true;
+		m_lapped_offset = aligned;
+		pthread_mutex_unlock(&m_offset_mutex);
+		errno = EAGAIN;
+		return -1;
+	}
+
 	return (ssize_t)m_buf->read(offset, static_cast<uint8_t *>(buf), count);
+}
+
+bool eRamTsSource::getLappedOffset(off_t &out_offset)
+{
+	pthread_mutex_lock(&m_offset_mutex);
+	bool lapped = m_lapped;
+	if (lapped)
+	{
+		out_offset = m_lapped_offset;
+		m_lapped   = false;
+	}
+	pthread_mutex_unlock(&m_offset_mutex);
+	return lapped;
 }
 
 off_t eRamTsSource::length()

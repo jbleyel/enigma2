@@ -70,15 +70,23 @@ class eRamTsSource : public iTsSource
 	DECLARE_REF(eRamTsSource);
 public:
 	explicit eRamTsSource(std::shared_ptr<eRamRingBuffer> buf);
-	virtual ~eRamTsSource() {}
+	virtual ~eRamTsSource();
 
 	ssize_t	read(off_t offset, void *buf, size_t count) override;
 	off_t	length() override;
 	int	valid()  override { return m_buf ? 1 : 0; }
 	off_t	offset() override;
 
+	/* Returns true (and consumes the flag) if the last read() found
+	 * offset < min_off.  out_offset is set ONLY on true return.
+	 * NOT const: clears m_lapped under m_offset_mutex. */
+	bool getLappedOffset(off_t &out_offset);
+
 private:
 	std::shared_ptr<eRamRingBuffer>	m_buf;
+	mutable pthread_mutex_t		m_offset_mutex;
+	mutable bool			m_lapped;
+	mutable off_t			m_lapped_offset;
 };
 
 /*

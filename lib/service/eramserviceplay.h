@@ -45,11 +45,20 @@ protected:
 
 private:
 	void	checkDelayReached();
+	void	checkLapAndSeek();
+	void	doRealign();
+
+	static inline pts_t pts_delta(pts_t newer, pts_t older)
+	{ return (newer - older) & ((1LL << 33) - 1); }
 
 	std::shared_ptr<eRamRingBuffer>	m_ram_ring;
 	ePtr<eTimer>			m_activate_timer;
+	ePtr<eTimer>			m_watchdog_timer;
 	int64_t				m_delay_ms;
 	size_t				m_capacity_bytes;
+	ePtr<eRamTsSource>		m_ts_source;
+	bool				m_realign_in_progress;
+	int64_t				m_last_realign_ms;
 };
 
 #endif /* __lib_service_eramserviceplay_h */

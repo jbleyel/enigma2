@@ -1,6 +1,7 @@
 #include "eramserviceplay.h"
 #include <lib/base/cfile.h>
 #include <lib/dvb/csasession.h>
+#include <lib/base/esimpleconfig.h>
 #include <algorithm>
 
 DEFINE_REF(eRamServicePlay);
@@ -10,7 +11,10 @@ eRamServicePlay::eRamServicePlay(const eServiceReference &ref,
                                  int delay_seconds)
 	: eDVBServicePlay(ref, service, true)
 {
-	m_delay_ms = (int64_t)delay_seconds * 1000;
+	m_delay_ms            = (int64_t)delay_seconds * 1000;
+	m_ts_source           = nullptr;
+	m_realign_in_progress = false;
+	m_last_realign_ms     = 0;
 
 	int cap_mb       = std::max(32, delay_seconds * 4);
 	m_capacity_bytes = (size_t)cap_mb * 1024 * 1024;
@@ -118,6 +122,85 @@ void eRamServicePlay::checkDelayReached()
 	/* Switch decoder to read from RAM.  From this point pause/unpause/seek
 	 * all work via the normal e2 machinery. */
 	eDVBServicePlay::activateTimeshift();
+
+	m_watchdog_timer = eTimer::create(eApp);
+	m_watchdog_timer->timeout.connect(
+		sigc::mem_fun(*this, &eRamServicePlay::checkLapAndSeek));
+	m_watchdog_timer->start(200, false);
+}
+
+void eRamServicePlay::checkLapAndSeek()
+{
+	if (!m_timeshift_active)
+		return;
+
+	int64_t now_ms = eRamRingBuffer::nowMs();
+
+	ePtr<eRamTsSource> src = m_ts_source;
+	if (!src)
+	{
+		if (!m_realign_in_progress && (now_ms - m_last_realign_ms >= 2000))
+		{
+			eDebug("[eRamServicePlay] watchdog: no source, retrying doRealign()");
+			doRealign();
+		}
+		return;
+	}
+
+	off_t lapped_at = 0;
+	if (!src->getLappedOffset(lapped_at))
+		return;
+
+	eDebug("[eRamServicePlay] watchdog: lap detected (lapped_at=%lld)",
+	       (long long)lapped_at);
+
+	if (m_realign_in_progress)
+		return;
+
+	if (now_ms - m_last_realign_ms < 2000)
+		return;
+
+	doRealign();
+}
+
+void eRamServicePlay::doRealign()
+{
+	eDebug("[eRamServicePlay] doRealign: rebuilding push pipeline");
+
+	m_realign_in_progress = true;
+	m_last_realign_ms     = eRamRingBuffer::nowMs();
+
+	struct Guard { bool &f; Guard(bool&f):f(f){} ~Guard(){f=false;} }
+		guard(m_realign_in_progress);
+
+	resetRecoveryState();
+
+	int recovery_ms   = eSimpleConfig::getInt(
+		"config.timeshift.recoveryBufferDelay", 300);
+	pts_t seek_target = -(pts_t)(m_original_timeshift_delay
+	                              + (pts_t)recovery_ms * 90);
+	m_cue->seekTo(0, seek_target);
+
+	eServiceReferenceDVB r = (eServiceReferenceDVB &)m_reference;
+	r.path = m_timeshift_file;
+
+	ePtr<eRamTsSource> old_source = m_ts_source;
+	ePtr<iTsSource>    source     = createTsSource(r);
+
+	int ret = m_service_handler_timeshift.tuneExt(
+		r, source, m_timeshift_file.c_str(),
+		m_cue, 0, m_dvb_service,
+		eDVBServicePMTHandler::timeshift_playback, false);
+
+	if (ret != 0)
+	{
+		eWarning("[eRamServicePlay] doRealign: tuneExt failed (%d) -- "
+		         "restoring old source, watchdog will retry after cooldown", ret);
+		m_ts_source = old_source;
+		return;
+	}
+
+	eDebug("[eRamServicePlay] doRealign: done");
 }
 
 RESULT eRamServicePlay::stopTimeshift(bool swToLive)
@@ -125,8 +208,10 @@ RESULT eRamServicePlay::stopTimeshift(bool swToLive)
 	if (!m_timeshift_enabled)
 		return -1;
 
-	if (m_activate_timer)
-		m_activate_timer->stop();
+	if (m_watchdog_timer) { m_watchdog_timer->stop(); m_watchdog_timer = nullptr; }
+	if (m_activate_timer) { m_activate_timer->stop(); m_activate_timer = nullptr; }
+	m_ts_source           = nullptr;
+	m_realign_in_progress = false;
 
 	resetRecoveryState();
 
@@ -175,9 +260,11 @@ RESULT eRamServicePlay::getLength(pts_t &len)
 ePtr<iTsSource> eRamServicePlay::createTsSource(eServiceReferenceDVB &ref,
                                                 int /*packetsize*/)
 {
-	if (m_ram_ring)
-		return ePtr<iTsSource>(new eRamTsSource(m_ram_ring));
-	return eDVBServicePlay::createTsSource(ref);
+	if (!m_ram_ring)
+		return eDVBServicePlay::createTsSource(ref);
+	ePtr<eRamTsSource> src = new eRamTsSource(m_ram_ring);
+	m_ts_source = src;
+	return src;
 }
 
 bool eRamServicePlay::isRamBufferReady() const
@@ -199,24 +286,32 @@ int eRamServicePlay::ramFillPercent() const
 
 RESULT eRamServicePlay::getPlayPosition(pts_t &pos)
 {
-	/* For RAM timeshift there is no .sc (streaminfo) file, so the base
-	 * class fixupPTS() call inside getCurrentPosition() fails and returns
-	 * a raw decoder PTS that is not relative to the start of the buffer.
-	 * We fix it up ourselves using the first PCR seen by eRamRecorder. */
 	if (!m_timeshift_active || !m_record)
 		return eDVBServicePlay::getPlayPosition(pos);
+
+	pts_t first = 0, live = 0;
+	bool has_first = (m_record->getFirstPTS(first)  == 0 && first > 0);
+	bool has_live  = (m_record->getCurrentPCR(live) == 0 && live  > 0);
 
 	RESULT r = eDVBServicePlay::getPlayPosition(pos);
 	if (r)
 		return r;
 
-	pts_t first = 0;
-	if (m_record->getFirstPTS(first) == 0 && first > 0)
+	if (has_first)
 	{
 		if (pos >= first)
+		{
 			pos -= first;
+		}
+		else if (pos == 0 && has_live)
+		{
+			if (pts_delta(live, first) > 2 * 90000)
+				return -1;
+		}
 		else
-			pos = 0;  /* PTS wrap or very early probe — clamp to zero */
+		{
+			pos = 0;
+		}
 	}
 
 	return 0;
