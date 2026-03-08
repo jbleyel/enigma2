@@ -38,16 +38,14 @@ RESULT eRamServicePlay::startTimeshift()
 
 	m_ram_ring = std::make_shared<eRamRingBuffer>(m_capacity_bytes, 8192);
 
-	/* Use the interface factory method to avoid the type mismatch between
-	 * ePtr<iDVBDemux> and the eDVBDemux* that eDVBTSRecorder's constructor
-	 * requires.  After creation we cast to call replaceThread(). */
 	demux->createTSRecorder(m_record, 188, false);
 	eDVBTSRecorder *recorder =
 		static_cast<eDVBTSRecorder *>(static_cast<iDVBTSRecorder *>(m_record));
 	recorder->replaceThread(new eRamRecorder(m_ram_ring.get(), 188));
 
 	m_record->setTargetFD(-1);
-	m_record->enableAccessPoints(false);
+	/* FIX: enable access points so I-frame seek works correctly */
+	m_record->enableAccessPoints(true);
 	m_record->connectEvent(
 		sigc::mem_fun(*this, &eRamServicePlay::recordEvent),
 		m_con_record_event);
@@ -119,8 +117,6 @@ void eRamServicePlay::checkDelayReached()
 	m_activate_timer->stop();
 	eDebug("[eRamServicePlay] delay reached, activating timeshift");
 
-	/* Switch decoder to read from RAM.  From this point pause/unpause/seek
-	 * all work via the normal e2 machinery. */
 	eDVBServicePlay::activateTimeshift();
 
 	m_watchdog_timer = eTimer::create(eApp);
@@ -225,8 +221,6 @@ RESULT eRamServicePlay::stopTimeshift(bool swToLive)
 		m_record = 0;
 	}
 
-	/* shared_ptr reset: eRamTsSource may still hold a reference -
-	 * the buffer stays alive until the decoder releases it. */
 	m_ram_ring.reset();
 	m_timeshift_file.clear();
 	m_timeshift_enabled = 0;
@@ -252,7 +246,8 @@ RESULT eRamServicePlay::getLength(pts_t &len)
 	if (first == 0 || last <= first)
 		return -1;
 
-	len = last - first;
+	/* FIX: wrap-safe, same reason as getPlayPosition */
+	len = pts_delta(last, first);
 	return 0;
 }
 
@@ -261,7 +256,7 @@ ePtr<iTsSource> eRamServicePlay::createTsSource(eServiceReferenceDVB &ref,
 {
 	if (!m_ram_ring)
 		return eDVBServicePlay::createTsSource(ref);
-	ePtr<eRamTsSource> src = new eRamTsSource(m_ram_ring);
+	eRamTsSource *src = new eRamTsSource(m_ram_ring);
 	m_ts_source = src;
 	return ePtr<iTsSource>(src);
 }
@@ -296,21 +291,24 @@ RESULT eRamServicePlay::getPlayPosition(pts_t &pos)
 	if (r)
 		return r;
 
-	if (has_first)
+	if (!has_first)
 	{
-		if (pos >= first)
-		{
-			pos -= first;
-		}
-		else if (pos == 0 && has_live)
-		{
-			if (pts_delta(live, first) > 2 * 90000)
-				return -1;
-		}
-		else
-		{
-			pos = 0;
-		}
+		pos = 0;
+		return 0;
+	}
+
+	/* FIX: pts_delta is always wrap-safe (33-bit modular arithmetic).
+	 * pos and first are both absolute PCR values. Using plain subtraction
+	 * or a pos>=first guard both fail after a 33-bit PCR wrap (~26h).
+	 * pts_delta handles all cases correctly without any conditional. */
+	pos = pts_delta(pos, has_first ? first : (pts_t)0);
+
+	/* Clamp to buffer window so seekbar never overshoots live edge. */
+	if (has_live)
+	{
+		pts_t win = pts_delta(live, first);
+		if (pos > win)
+			pos = win;
 	}
 
 	return 0;
