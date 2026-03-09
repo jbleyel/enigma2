@@ -59,6 +59,9 @@ private:
 	ePtr<eRamTsSource>		m_ts_source;
 	bool				m_realign_in_progress;
 	int64_t				m_last_realign_ms;
+	/* Raw pointer to the RAM recorder thread - owned by m_record via
+	 * replaceThread(). Valid for the lifetime of m_record. */
+	eRamRecorder			*m_ram_recorder;
 };
 
 #endif /* __lib_service_eramserviceplay_h */

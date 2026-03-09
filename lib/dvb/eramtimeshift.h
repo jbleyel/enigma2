@@ -118,6 +118,12 @@ public:
 	int getCurrentPCR(pts_t &pcr) override;
 	int getFirstPTS(pts_t &pts)   override;
 
+	/* Returns the oldest and newest PCR still inside the ring buffer
+	 * window. Unlike getFirstPTS() which is fixed at recording start,
+	 * this tracks the sliding window correctly after ring wrap-around.
+	 * Returns 0 on success, -1 if not enough data yet. */
+	int getPTSWindow(pts_t &first, pts_t &last) const;
+
 protected:
 	int  writeData(int len) override;
 	void flush() override;
@@ -132,6 +138,14 @@ private:
 	bool	m_last_pcr_valid;
 	pts_t	m_first_pcr;
 	bool	m_first_pcr_valid;
+
+	/* Circular history of (offset, pcr) samples for sliding window.
+	 * 512 entries covers ~85s at one PCR per 188-byte packet @6Mbit/s. */
+	static const size_t PCR_HISTORY = 512;
+	struct PcrSample { off_t offset; pts_t pcr; };
+	PcrSample	m_pcr_history[PCR_HISTORY];
+	size_t		m_pcr_hist_write;
+	size_t		m_pcr_hist_count;
 
 	mutable pthread_mutex_t	m_pcr_mutex;
 };

@@ -259,7 +259,10 @@ eRamRecorder::eRamRecorder(eRamRingBuffer *buf, int packetsize)
 	, m_last_pcr_valid(false)
 	, m_first_pcr(0)
 	, m_first_pcr_valid(false)
+	, m_pcr_hist_write(0)
+	, m_pcr_hist_count(0)
 {
+	memset(m_pcr_history, 0, sizeof(m_pcr_history));
 	/* PCR scan loop in writeData() assumes 188-byte TS packets.
 	 * RAM timeshift always uses packetsize=188 (see startTimeshift()),
 	 * but assert here to catch any future misuse early. */
@@ -282,6 +285,14 @@ void eRamRecorder::updatePCR(pts_t pcr)
 		m_first_pcr       = pcr;
 		m_first_pcr_valid = true;
 	}
+
+	/* Store sample for sliding window (getPTSWindow). */
+	m_pcr_history[m_pcr_hist_write].offset = m_current_offset;
+	m_pcr_history[m_pcr_hist_write].pcr    = pcr;
+	m_pcr_hist_write = (m_pcr_hist_write + 1) % PCR_HISTORY;
+	if (m_pcr_hist_count < PCR_HISTORY)
+		m_pcr_hist_count++;
+
 	pthread_mutex_unlock(&m_pcr_mutex);
 }
 
@@ -389,5 +400,59 @@ int eRamRecorder::getFirstPTS(pts_t &pts)
 	if (!valid)
 		return -1;
 	pts = val;
+	return 0;
+}
+
+/*
+ * getPTSWindow()
+ *
+ * Returns the oldest and newest PCR currently inside the ring buffer window.
+ * Unlike getFirstPTS() which is frozen at recording start, this slides forward
+ * as the ring buffer wraps. Used by eRamServicePlay for seek bar and getLength
+ * so the bar always reflects the live buffer window, not the full recording.
+ */
+int eRamRecorder::getPTSWindow(pts_t &first, pts_t &last) const
+{
+	if (!m_ring)
+		return -1;
+
+	const off_t min_off = m_ring->getMinOffset();
+
+	pthread_mutex_lock(&m_pcr_mutex);
+
+	if (!m_last_pcr_valid || m_pcr_hist_count == 0)
+	{
+		pthread_mutex_unlock(&m_pcr_mutex);
+		return -1;
+	}
+
+	last = m_last_pcr;
+
+	/* Scan history for the oldest sample whose offset is still
+	 * inside the ring buffer (offset >= min_off). */
+	pts_t  oldest_pcr    = 0;
+	off_t  oldest_offset = -1;
+	bool   found         = false;
+
+	for (size_t i = 0; i < m_pcr_hist_count; i++)
+	{
+		const PcrSample &s = m_pcr_history[i];
+		if (s.offset >= min_off)
+		{
+			if (!found || s.offset < oldest_offset)
+			{
+				oldest_pcr    = s.pcr;
+				oldest_offset = s.offset;
+				found         = true;
+			}
+		}
+	}
+
+	pthread_mutex_unlock(&m_pcr_mutex);
+
+	if (!found)
+		return -1;
+
+	first = oldest_pcr;
 	return 0;
 }

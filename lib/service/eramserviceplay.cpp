@@ -13,6 +13,7 @@ eRamServicePlay::eRamServicePlay(const eServiceReference &ref,
 {
 	m_delay_ms            = (int64_t)delay_seconds * 1000;
 	m_ts_source           = nullptr;
+	m_ram_recorder        = nullptr;
 	m_realign_in_progress = false;
 	m_last_realign_ms     = 0;
 
@@ -41,7 +42,9 @@ RESULT eRamServicePlay::startTimeshift()
 	demux->createTSRecorder(m_record, 188, false);
 	eDVBTSRecorder *recorder =
 		static_cast<eDVBTSRecorder *>(static_cast<iDVBTSRecorder *>(m_record));
-	recorder->replaceThread(new eRamRecorder(m_ram_ring.get(), 188));
+	eRamRecorder *ram_rec = new eRamRecorder(m_ram_ring.get(), 188);
+	m_ram_recorder = ram_rec;
+	recorder->replaceThread(ram_rec);
 
 	m_record->setTargetFD(-1);
 	/* FIX: enable access points so I-frame seek works correctly */
@@ -212,6 +215,9 @@ RESULT eRamServicePlay::stopTimeshift(bool swToLive)
 
 	if (m_record)
 	{
+		/* Null m_ram_recorder BEFORE stop() so no caller can reach
+		 * it after the eDVBTSRecorder destructor deletes the thread. */
+		m_ram_recorder = nullptr;
 		m_record->stop();
 		if (m_timeshift_csa_session)
 		{
@@ -237,17 +243,18 @@ RESULT eRamServicePlay::stopTimeshift(bool swToLive)
 
 RESULT eRamServicePlay::getLength(pts_t &len)
 {
-	if (!m_timeshift_enabled || !m_record)
+	if (!m_ram_recorder)
 		return eDVBServicePlay::getLength(len);
 
 	pts_t first = 0, last = 0;
-	if (m_record->getFirstPTS(first) || m_record->getCurrentPCR(last))
-		return -1;
-	if (first == 0 || last <= first)
+	if (m_ram_recorder->getPTSWindow(first, last))
 		return -1;
 
-	/* FIX: wrap-safe, same reason as getPlayPosition */
-	len = pts_delta(last, first);
+	pts_t d = pts_delta(last, first);
+	if (d <= 0)
+		return -1;
+
+	len = d;
 	return 0;
 }
 
@@ -280,36 +287,31 @@ int eRamServicePlay::ramFillPercent() const
 
 RESULT eRamServicePlay::getPlayPosition(pts_t &pos)
 {
-	if (!m_timeshift_active || !m_record)
+	/* Only override in active RAM timeshift mode. */
+	if (!m_timeshift_active || !m_ram_recorder || !m_decoder)
 		return eDVBServicePlay::getPlayPosition(pos);
 
-	pts_t first = 0, live = 0;
-	bool has_first = (m_record->getFirstPTS(first)  == 0 && first > 0);
-	bool has_live  = (m_record->getCurrentPCR(live) == 0 && live  > 0);
+	pts_t first = 0, last = 0;
+	if (m_ram_recorder->getPTSWindow(first, last))
+		return -1;
 
-	RESULT r = eDVBServicePlay::getPlayPosition(pos);
-	if (r)
-		return r;
+	/* Read current decode position directly from the decoder.
+	 * Try video (0) first, fall back to audio (1).
+	 * This completely bypasses fixupPTS / .ap file logic. */
+	pts_t dec = 0;
+	if (m_decoder->getPTS(0, dec) != 0)
+		if (m_decoder->getPTS(1, dec) != 0)
+			return -1;
 
-	if (!has_first)
-	{
-		pos = 0;
-		return 0;
-	}
+	pts_t cur = pts_delta(dec,  first);
+	pts_t len = pts_delta(last, first);
 
-	/* FIX: pts_delta is always wrap-safe (33-bit modular arithmetic).
-	 * pos and first are both absolute PCR values. Using plain subtraction
-	 * or a pos>=first guard both fail after a 33-bit PCR wrap (~26h).
-	 * pts_delta handles all cases correctly without any conditional. */
-	pos = pts_delta(pos, has_first ? first : (pts_t)0);
+	if (len <= 0)
+		return -1;
 
-	/* Clamp to buffer window so seekbar never overshoots live edge. */
-	if (has_live)
-	{
-		pts_t win = pts_delta(live, first);
-		if (pos > win)
-			pos = win;
-	}
+	if (cur < 0)   cur = 0;
+	if (cur > len) cur = len;
 
+	pos = cur;
 	return 0;
 }
