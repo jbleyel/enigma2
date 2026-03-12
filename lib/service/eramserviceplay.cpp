@@ -111,6 +111,7 @@ RESULT eRamServicePlay::activateTimeshift()
 	m_watchdog_timer->timeout.connect(
 		sigc::mem_fun(*this, &eRamServicePlay::checkLapAndSeek));
 	m_watchdog_timer->start(200, false);
+	return 0;
 }
 
 /* ------------------------------------------------------------------ */
