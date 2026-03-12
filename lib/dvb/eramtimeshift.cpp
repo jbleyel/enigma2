@@ -1,9 +1,14 @@
 #include "eramtimeshift.h"
 #include <lib/base/eerror.h>
+#include <algorithm>
+#include <vector>
+#include <string>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 /* ------------------------------------------------------------------ */
 /* eRamRingBuffer                                                      */
@@ -194,6 +199,7 @@ eRamTsSource::eRamTsSource(std::shared_ptr<eRamRingBuffer> buf)
 	: m_buf(buf)
 	, m_lapped(false)
 	, m_lapped_offset(0)
+	, m_start_offset(-1)
 {
 	pthread_mutex_init(&m_offset_mutex, nullptr);
 }
@@ -243,9 +249,22 @@ off_t eRamTsSource::length()
 
 off_t eRamTsSource::offset()
 {
-	/* RAM source has no file descriptor -- return current write position
-	 * so callers see a sensible "current" offset. */
+	pthread_mutex_lock(&m_offset_mutex);
+	off_t o = m_start_offset;
+	if (o >= 0)
+		m_start_offset = -1;
+	pthread_mutex_unlock(&m_offset_mutex);
+
+	if (o >= 0)
+		return o;
 	return m_buf ? m_buf->getWriteOffset() : 0;
+}
+
+void eRamTsSource::setStartOffset(off_t o)
+{
+	pthread_mutex_lock(&m_offset_mutex);
+	m_start_offset = o;
+	pthread_mutex_unlock(&m_offset_mutex);
 }
 
 /* ------------------------------------------------------------------ */
@@ -257,6 +276,7 @@ eRamRecorder::eRamRecorder(eRamRingBuffer *buf, int packetsize)
 	, m_ring(buf)
 	, m_last_pcr(0)
 	, m_last_pcr_valid(false)
+	, m_last_pcr_ms(0)
 	, m_first_pcr(0)
 	, m_first_pcr_valid(false)
 	, m_pcr_hist_write(0)
@@ -369,19 +389,38 @@ void eRamRecorder::flush()
 /*
  * getCurrentPCR()
  *
- * Override of virtual eDVBRecordFileThread::getCurrentPCR().
- * Called via virtual dispatch from eDVBTSRecorder::getCurrentPCR(),
- * which is called by the Precise Recovery System.
+ * Returns the absolute live broadcast PCR, extrapolated forward using
+ * CLOCK_MONOTONIC during stream loss — identical semantics to the disk
+ * recorder's getCurrentPCR().
+ *
+ * The Precise Recovery System computes:
+ *   delay = getCurrentPCR() - getPlayPosition()
+ *
+ * On disk:  getPlayPosition() = decoder_pts - pts_begin  (pts_begin = fixed)
+ *   delay  = abs_pcr - (dec - pts_begin) = real_delay + pts_begin  (stable)
+ *
+ * On RAM:   getPlayPosition() = decoder_pts - m_first_pcr  (m_first_pcr = fixed)
+ *   delay  = abs_pcr - (dec - m_first_pcr) = real_delay + m_first_pcr  (stable)
+ *
+ * Both sides of the comparison in startPreciseRecoveryCheck() carry the
+ * same constant offset, so it cancels out → correct recovery timing.
+ * Ring wraps do NOT affect this because m_first_pcr never changes.
  */
 int eRamRecorder::getCurrentPCR(pts_t &pcr)
 {
 	pthread_mutex_lock(&m_pcr_mutex);
-	bool valid = m_last_pcr_valid;
-	pts_t val  = m_last_pcr;
+	bool    valid   = m_last_pcr_valid;
+	pts_t   val     = m_last_pcr;
+	int64_t seen_ms = m_last_pcr_ms;
 	pthread_mutex_unlock(&m_pcr_mutex);
+
 	if (!valid)
 		return -1;
-	pcr = val;
+
+	/* Extrapolate forward during stream loss (90 PTS ticks per ms) */
+	int64_t elapsed_ms = eRamRingBuffer::nowMs() - seen_ms;
+	if (elapsed_ms < 0) elapsed_ms = 0;
+	pcr = (val + (pts_t)(elapsed_ms * 90)) & ((1LL << 33) - 1);
 	return 0;
 }
 
@@ -411,6 +450,17 @@ int eRamRecorder::getFirstPTS(pts_t &pts)
  * as the ring buffer wraps. Used by eRamServicePlay for seek bar and getLength
  * so the bar always reflects the live buffer window, not the full recording.
  */
+int eRamRecorder::getFirstPCR(pts_t &pcr) const
+{
+	pthread_mutex_lock(&m_pcr_mutex);
+	bool valid = m_first_pcr_valid;
+	pts_t val  = m_first_pcr;
+	pthread_mutex_unlock(&m_pcr_mutex);
+	if (!valid) return -1;
+	pcr = val;
+	return 0;
+}
+
 int eRamRecorder::getPTSWindow(pts_t &first, pts_t &last) const
 {
 	if (!m_ring)
@@ -455,4 +505,63 @@ int eRamRecorder::getPTSWindow(pts_t &first, pts_t &last) const
 
 	first = oldest_pcr;
 	return 0;
+}
+
+/*
+ * findOffsetForPTS()
+ *
+ * Scans PCR history for the sample whose PCR is closest to `target`
+ * and whose byte offset is still inside the live ring buffer window.
+ * Returns the byte offset, or -1 if not found.
+ *
+ * Used by eRamServicePlay::seekTo() to bypass the .ap file mechanism.
+ */
+off_t eRamRecorder::findOffsetForPTS(pts_t target) const
+{
+	if (!m_ring)
+		return -1;
+
+	const off_t min_off = m_ring->getMinOffset();
+
+	pthread_mutex_lock(&m_pcr_mutex);
+
+	off_t  best_offset = -1;
+	pts_t  best_delta  = INT64_MAX;
+	bool   best_found  = false;
+
+	for (size_t i = 0; i < m_pcr_hist_count; i++)
+	{
+		const PcrSample &s = m_pcr_history[i];
+		if (s.offset < min_off)
+			continue;
+
+		/* Wrap-safe distance between sample PCR and target */
+		pts_t diff = (s.pcr >= target)
+		           ? ((s.pcr  - target) & ((1LL << 33) - 1))
+		           : ((target - s.pcr)  & ((1LL << 33) - 1));
+
+		if (!best_found || diff < best_delta)
+		{
+			best_delta  = diff;
+			best_offset = s.offset;
+			best_found  = true;
+		}
+	}
+
+	pthread_mutex_unlock(&m_pcr_mutex);
+
+	/* Align down to 188-byte TS packet boundary */
+	if (best_offset > 0)
+		best_offset -= best_offset % 188;
+
+	/* Snap forward to the nearest I-frame so the decoder gets a clean
+	 * picture immediately — identical behaviour to .ap file seeks. */
+	if (best_offset >= 0)
+	{
+		off_t ap = m_ring->findNearestAccessPoint(best_offset);
+		if (ap >= 0)
+			best_offset = ap;
+	}
+
+	return best_offset;
 }

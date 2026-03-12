@@ -13,9 +13,9 @@
  * disk.  Pause, unpause, and seek all work exactly as in the normal
  * disk timeshift.
  *
- * After startTimeshift() a 100ms polling timer fires until
- * bufferedMs() >= delay_ms, then calls activateTimeshift()
- * automatically so the viewer sees the delayed picture.
+ * Pause triggers startTimeshift() which records into RAM.  Unpause
+ * calls activateTimeshift() which starts playback from the RAM buffer
+ * at the accumulated delay — identical to disk timeshift behavior.
  *
  * Enabled via: config.timeshift.ram_mode = true
  * Instantiated by eServiceFactoryDVB::play() when that config is set.
@@ -35,6 +35,8 @@ public:
 
 	RESULT	getLength(pts_t &len) override;
 	RESULT	getPlayPosition(pts_t &pos) override;
+	RESULT	seekTo(pts_t to) override;
+	void	activateTimeshift() override;
 
 protected:
 	RESULT	startTimeshift() override;
@@ -44,22 +46,17 @@ protected:
 	                               int packetsize = 188) override;
 
 private:
-	void	checkDelayReached();
 	void	checkLapAndSeek();
-	void	doRealign();
 
 	static inline pts_t pts_delta(pts_t newer, pts_t older)
 	{ return (newer - older) & ((1LL << 33) - 1); }
 
 	std::shared_ptr<eRamRingBuffer>	m_ram_ring;
-	ePtr<eTimer>			m_activate_timer;
 	ePtr<eTimer>			m_watchdog_timer;
-	int64_t				m_delay_ms;
 	size_t				m_capacity_bytes;
 	ePtr<eRamTsSource>		m_ts_source;
-	bool				m_realign_in_progress;
-	int64_t				m_last_realign_ms;
-	/* Raw pointer to the RAM recorder thread - owned by m_record via
+
+	/* Raw pointer to the RAM recorder thread — owned by m_record via
 	 * replaceThread(). Valid for the lifetime of m_record. */
 	eRamRecorder			*m_ram_recorder;
 };

@@ -82,6 +82,11 @@ public:
 	int	valid()  override { return m_buf ? 1 : 0; }
 	off_t	offset() override;
 
+	/* Set the position the push thread will start reading from.
+	 * Called before the thread starts so offset() returns this value
+	 * instead of the live write position. -1 means "start from live". */
+	void	setStartOffset(off_t o);
+
 	/* Returns true (once) when the ring has lapped the read position.
 	 * out_offset is set to the nearest safe aligned byte to resume from. */
 	bool getLappedOffset(off_t &out_offset);
@@ -92,6 +97,7 @@ private:
 	mutable pthread_mutex_t	m_offset_mutex;
 	bool			m_lapped;
 	off_t			m_lapped_offset;
+	off_t			m_start_offset;   /* -1 = live edge */
 };
 
 /*
@@ -124,6 +130,16 @@ public:
 	 * Returns 0 on success, -1 if not enough data yet. */
 	int getPTSWindow(pts_t &first, pts_t &last) const;
 
+	/* Returns the very first PCR seen since recording started.
+	 * Stable across ring wraps — used as fixed reference by getPlayPosition()
+	 * to match the disk timeshift pts_begin semantics. */
+	int getFirstPCR(pts_t &pcr) const;
+
+	/* Find the byte offset inside the ring buffer that is closest to
+	 * the given absolute PCR value.  Returns -1 if not found.
+	 * Used by eRamServicePlay::seekTo() to bypass .ap file logic. */
+	off_t findOffsetForPTS(pts_t target) const;
+
 protected:
 	int  writeData(int len) override;
 	void flush() override;
@@ -136,12 +152,15 @@ private:
 
 	pts_t	m_last_pcr;
 	bool	m_last_pcr_valid;
+	int64_t	m_last_pcr_ms;      /* monotonic ms when m_last_pcr was seen */
 	pts_t	m_first_pcr;
 	bool	m_first_pcr_valid;
 
 	/* Circular history of (offset, pcr) samples for sliding window.
-	 * 512 entries covers ~85s at one PCR per 188-byte packet @6Mbit/s. */
-	static const size_t PCR_HISTORY = 512;
+	 * PCR arrives ~25 times/sec (every ~40ms on PCR PID).
+	 * 4096 entries ≈ 163s ≈ ~2.7 min — covers a typical 128MB ring
+	 * buffer at 6Mbit/s without losing seek resolution after wrap. */
+	static const size_t PCR_HISTORY = 4096;
 	struct PcrSample { off_t offset; pts_t pcr; };
 	PcrSample	m_pcr_history[PCR_HISTORY];
 	size_t		m_pcr_hist_write;
