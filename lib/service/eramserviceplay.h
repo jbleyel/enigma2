@@ -36,7 +36,7 @@ public:
 	RESULT	getLength(pts_t &len) override;
 	RESULT	getPlayPosition(pts_t &pos) override;
 	RESULT	seekTo(pts_t to) override;
-	void	activateTimeshift() override;
+	RESULT	activateTimeshift() override;
 
 protected:
 	RESULT	startTimeshift() override;

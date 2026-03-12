@@ -103,7 +103,7 @@ RESULT eRamServicePlay::startTimeshift()
 /* activateTimeshift — start watchdog after parent activates          */
 /* ------------------------------------------------------------------ */
 
-void eRamServicePlay::activateTimeshift()
+RESULT eRamServicePlay::activateTimeshift()
 {
 	eDVBServicePlay::activateTimeshift();
 
