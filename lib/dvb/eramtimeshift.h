@@ -158,15 +158,16 @@ private:
 
 	/* Circular history of (offset, pcr) samples for sliding window.
 	 * PCR arrives ~25 times/sec (every ~40ms on PCR PID).
-	 * 4096 entries ≈ 163s ≈ ~2.7 min — covers a typical 128MB ring
+	 * 8192 entries ≈ 328s ≈ ~5.5 min — covers a typical 128MB ring
 	 * buffer at 6Mbit/s without losing seek resolution after wrap. */
-	static const size_t PCR_HISTORY = 4096;
+	static const size_t PCR_HISTORY = 8192;
 	struct PcrSample { off_t offset; pts_t pcr; };
 	PcrSample	m_pcr_history[PCR_HISTORY];
 	size_t		m_pcr_hist_write;
 	size_t		m_pcr_hist_count;
 
 	mutable pthread_mutex_t	m_pcr_mutex;
+	int64_t			m_last_corrupt_ms = 0; /* rate-limit evtStreamCorrupt */
 };
 
 #endif /* __lib_dvb_eramtimeshift_h */

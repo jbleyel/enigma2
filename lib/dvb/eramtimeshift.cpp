@@ -300,6 +300,7 @@ void eRamRecorder::updatePCR(pts_t pcr)
 	pthread_mutex_lock(&m_pcr_mutex);
 	m_last_pcr       = pcr;
 	m_last_pcr_valid = true;
+	m_last_pcr_ms    = eRamRingBuffer::nowMs();
 	if (!m_first_pcr_valid)
 	{
 		m_first_pcr       = pcr;
@@ -370,9 +371,22 @@ int eRamRecorder::writeData(int len)
 		int parse_result = m_ts_parser.parseData(m_current_offset, m_buffer, len);
 		/* Mirror the corruption detection that asyncWrite() performs for
 		 * disk-based recorders.  Without this, signal loss on RAM timeshift
-		 * never fires evtStreamCorrupt and Precise Recovery never starts. */
+		 * never fires evtStreamCorrupt and Precise Recovery never starts.
+		 *
+		 * Rate-limit to once per second — on encrypted channels with OSCam
+		 * stopped, every packet triggers parse_result==-2 (encrypted payload
+		 * looks like broken startcode).  Without the limit, evtStreamCorrupt
+		 * fires every 100ms causing rapid pause/unpause loops that prevent
+		 * the decoder from displaying anything. */
 		if (parse_result == -2)
-			m_event(eFilePushThreadRecorder::evtStreamCorrupt);
+		{
+			int64_t now = eRamRingBuffer::nowMs();
+			if (now - m_last_corrupt_ms >= 1000)
+			{
+				m_last_corrupt_ms = now;
+				m_event(eFilePushThreadRecorder::evtStreamCorrupt);
+			}
+		}
 	}
 	bool is_ap = (m_ts_parser.getAccessPointCount() > ap_before);
 
@@ -420,6 +434,14 @@ int eRamRecorder::getCurrentPCR(pts_t &pcr)
 	/* Extrapolate forward during stream loss (90 PTS ticks per ms) */
 	int64_t elapsed_ms = eRamRingBuffer::nowMs() - seen_ms;
 	if (elapsed_ms < 0) elapsed_ms = 0;
+
+	/* Mirror disk-timeshift behaviour: getLastPTS() on disk returns the last
+	 * seen PTS with no extrapolation — it freezes immediately when data stops.
+	 * Cap extrapolation to 200 ms (covers normal PCR update jitter) so that
+	 * when the CA server goes down and no new PCR arrives, current_delay stops
+	 * growing and PRS stays in pause — preventing the pause/unpause loop. */
+	if (elapsed_ms > 200) elapsed_ms = 200;
+
 	pcr = (val + (pts_t)(elapsed_ms * 90)) & ((1LL << 33) - 1);
 	return 0;
 }
@@ -535,10 +557,12 @@ off_t eRamRecorder::findOffsetForPTS(pts_t target) const
 		if (s.offset < min_off)
 			continue;
 
-		/* Wrap-safe distance between sample PCR and target */
-		pts_t diff = (s.pcr >= target)
-		           ? ((s.pcr  - target) & ((1LL << 33) - 1))
-		           : ((target - s.pcr)  & ((1LL << 33) - 1));
+		/* Wrap-safe circular distance between sample PCR and target.
+		 * Use the shorter arc of the 33-bit circle to handle PCR wrap. */
+		pts_t mask = (1LL << 33) - 1;
+		pts_t fwd  = (s.pcr  - target) & mask;
+		pts_t bwd  = (target - s.pcr)  & mask;
+		pts_t diff = (fwd < bwd) ? fwd : bwd;
 
 		if (!best_found || diff < best_delta)
 		{
