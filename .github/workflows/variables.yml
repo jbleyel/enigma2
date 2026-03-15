@@ -25,6 +25,7 @@ jobs:
 
           snake_count = 0
           camel_count = 0
+          camel_locations = []
 
           def is_snake_case(name):
               return bool(re.fullmatch(r'[a-z_][a-z0-9_]*', name))
@@ -33,29 +34,43 @@ jobs:
               return bool(re.fullmatch(r'[a-z]+(?:[A-Z][a-z0-9]+)+', name))
 
           def analyze_file(filepath):
-              global snake_count, camel_count
+              global snake_count, camel_count, camel_locations
               with open(filepath, "r", encoding="utf-8") as f:
                   try:
                       tree = ast.parse(f.read())
                   except:
                       return
+                  lines = f.readlines()
               for node in ast.walk(tree):
                   if isinstance(node, ast.Assign):
                       for target in node.targets:
                           if isinstance(target, ast.Name):
                               name = target.id
-                              if is_snake_case(name): snake_count += 1
-                              elif is_camel_case(name): camel_count += 1
+                              if is_snake_case(name): 
+                                  snake_count += 1
+                              elif is_camel_case(name): 
+                                  camel_count += 1
+                                  # Zeile herausfinden
+                                  lineno = target.lineno - 1
+                                  camel_locations.append(f"{filepath}:{lineno+1}: {lines[lineno].strip()}")
                           elif isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name):
                               if target.value.id == "self":
                                   name = target.attr
-                                  if is_snake_case(name): snake_count += 1
-                                  elif is_camel_case(name): camel_count += 1
+                                  if is_snake_case(name): 
+                                      snake_count += 1
+                                  elif is_camel_case(name): 
+                                      camel_count += 1
+                                      lineno = target.lineno - 1
+                                      camel_locations.append(f"{filepath}:{lineno+1}: {lines[lineno].strip()}")
                   elif isinstance(node, ast.FunctionDef):
                       for arg in node.args.args:
                           name = arg.arg
-                          if is_snake_case(name): snake_count += 1
-                          elif is_camel_case(name): camel_count += 1
+                          if is_snake_case(name): 
+                              snake_count += 1
+                          elif is_camel_case(name): 
+                              camel_count += 1
+                              lineno = node.lineno - 1
+                              camel_locations.append(f"{filepath}:{lineno+1}: argument {name}")
 
           for root, dirs, files in os.walk("."):
               for file in files:
@@ -64,4 +79,9 @@ jobs:
 
           print(f"Snake_case: {snake_count}")
           print(f"CamelCase: {camel_count}")
+
+          if camel_locations:
+              print("\nCamelCase variable locations:")
+              for loc in camel_locations:
+                  print(loc)
           EOF
