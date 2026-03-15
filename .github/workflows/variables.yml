@@ -1,0 +1,67 @@
+name: Count Python Variables
+
+on:
+  workflow_dispatch:  # manuell auslösbar
+
+jobs:
+  count-vars:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install astpretty
+
+      - name: Count variables
+        run: |
+          python <<'EOF'
+          import os, re, ast
+
+          snake_count = 0
+          camel_count = 0
+
+          def is_snake_case(name):
+              return bool(re.fullmatch(r'[a-z_][a-z0-9_]*', name))
+
+          def is_camel_case(name):
+              return bool(re.fullmatch(r'[a-z]+(?:[A-Z][a-z0-9]+)+', name))
+
+          def analyze_file(filepath):
+              global snake_count, camel_count
+              with open(filepath, "r", encoding="utf-8") as f:
+                  try:
+                      tree = ast.parse(f.read())
+                  except:
+                      return
+              for node in ast.walk(tree):
+                  if isinstance(node, ast.Assign):
+                      for target in node.targets:
+                          if isinstance(target, ast.Name):
+                              name = target.id
+                              if is_snake_case(name): snake_count += 1
+                              elif is_camel_case(name): camel_count += 1
+                          elif isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name):
+                              if target.value.id == "self":
+                                  name = target.attr
+                                  if is_snake_case(name): snake_count += 1
+                                  elif is_camel_case(name): camel_count += 1
+                  elif isinstance(node, ast.FunctionDef):
+                      for arg in node.args.args:
+                          name = arg.arg
+                          if is_snake_case(name): snake_count += 1
+                          elif is_camel_case(name): camel_count += 1
+
+          for root, dirs, files in os.walk("."):
+              for file in files:
+                  if file.endswith(".py"):
+                      analyze_file(os.path.join(root, file))
+
+          print(f"Snake_case: {snake_count}")
+          print(f"CamelCase: {camel_count}")
+          EOF
