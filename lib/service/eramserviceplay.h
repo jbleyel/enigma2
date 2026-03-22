@@ -39,6 +39,7 @@ public:
 	RESULT	seekRelative(int direction, pts_t to) override;
 	RESULT	activateTimeshift() override;
 	RESULT	saveTimeshiftFile() override;
+	void	serviceEventTimeshift(int event) override;
 
 protected:
 	RESULT	startTimeshift() override;

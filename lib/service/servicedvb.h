@@ -253,7 +253,7 @@ protected:
 	void gotNewEvent(int error);
 
 	void serviceEvent(int event);
-	void serviceEventTimeshift(int event);
+	virtual void serviceEventTimeshift(int event);
 	sigc::signal<void(iPlayableService*, int)> m_event;
 
 	bool m_is_stream;

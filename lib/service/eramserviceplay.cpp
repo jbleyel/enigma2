@@ -55,7 +55,7 @@ RESULT eRamServicePlay::startTimeshift()
 	recorder->replaceThread(ram_rec);
 
 	m_record->setTargetFD(-1);
-	m_record->enableAccessPoints(true);
+	m_record->enableAccessPoints(false);
 	m_record->connectEvent(
 		sigc::mem_fun(*this, &eRamServicePlay::recordEvent),
 		m_con_record_event);
@@ -174,6 +174,33 @@ void eRamServicePlay::checkLapAndSeek()
 	ePtr<iDVBPVRChannel> pvr_channel;
 	if (m_service_handler_timeshift.getPVRChannel(pvr_channel) == 0)
 		pvr_channel->forceSourcePosition(safe);
+}
+
+/* ------------------------------------------------------------------ */
+/* serviceEventTimeshift — suppress EOF-triggered switchToLive        */
+/* ------------------------------------------------------------------ */
+/*
+ * On disk timeshift, eventEOF means the push thread reached the end of
+ * the timeshift file — the base class responds with switchToLive().
+ *
+ * On RAM timeshift there is no end-of-file: the ring buffer always has
+ * data up to the write offset.  An eventEOF from the push thread means
+ * one of two things:
+ *   1. The ring has lapped the read position (handled by checkLapAndSeek)
+ *   2. The push thread reached the live edge (normal — just wait for data)
+ *
+ * In both cases, ignoring the EOF and letting the watchdog handle recovery
+ * is the correct response.  Calling switchToLive() here would tear down
+ * the entire timeshift session.
+ */
+void eRamServicePlay::serviceEventTimeshift(int event)
+{
+	if (event == eDVBServicePMTHandler::eventEOF)
+	{
+		eTrace("[eRamServicePlay] ignoring eventEOF — watchdog handles lap/live-edge");
+		return;
+	}
+	eDVBServicePlay::serviceEventTimeshift(event);
 }
 
 /* ------------------------------------------------------------------ */

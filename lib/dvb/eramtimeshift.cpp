@@ -308,7 +308,6 @@ eRamRecorder::eRamRecorder(eRamRingBuffer *buf, int packetsize)
 	, m_ring(buf)
 	, m_last_pcr(0)
 	, m_last_pcr_valid(false)
-	, m_last_pcr_ms(0)
 	, m_first_pcr(0)
 	, m_first_pcr_valid(false)
 	, m_pcr_hist_write(0)
@@ -332,7 +331,6 @@ void eRamRecorder::updatePCR(pts_t pcr)
 	pthread_mutex_lock(&m_pcr_mutex);
 	m_last_pcr       = pcr;
 	m_last_pcr_valid = true;
-	m_last_pcr_ms    = eRamRingBuffer::nowMs();
 	if (!m_first_pcr_valid)
 	{
 		m_first_pcr       = pcr;
@@ -387,44 +385,54 @@ int eRamRecorder::writeData(int len)
 	if (m_serviceDescrambler)
 		m_serviceDescrambler->descramble(m_buffer, len);
 
-	/* Scan adaptation fields for PCR — always unencrypted even on
-	 * scrambled channels, so this works after descramble() too. */
-	const uint8_t *data = reinterpret_cast<const uint8_t *>(m_buffer);
-	for (int i = 0; i + 188 <= len; i += 188)
-	{
-		pts_t pcr;
-		if (extractPCR(data + i, pcr))
-			updatePCR(pcr);
-	}
-
+	/* Check corruption status FIRST before updating PCR.
+	 * PCR lives in the adaptation field which is never encrypted, so
+	 * extractPCR() succeeds even on scrambled/corrupt payloads.  If we
+	 * updated PCR unconditionally, getCurrentPCR() would keep returning
+	 * increasing values while the stream is corrupt → PRS current_delay
+	 * grows → premature unpause → black screen loop.
+	 *
+	 * servicedvb.cpp already handles event flooding via:
+	 *   if (m_stream_corruption_detected) return;
+	 *   if (m_is_paused) return;
+	 * so no rate-limiting is needed here. */
 	size_t ap_before = m_ts_parser.getAccessPointCount();
+	bool is_corrupt = false;
+
 	if (!getProtocol())
 	{
 		int parse_result = m_ts_parser.parseData(m_current_offset, m_buffer, len);
-		/* Mirror the corruption detection that asyncWrite() performs for
-		 * disk-based recorders.  Without this, signal loss on RAM timeshift
-		 * never fires evtStreamCorrupt and Precise Recovery never starts.
-		 *
-		 * Rate-limit to once per second — on encrypted channels with OSCam
-		 * stopped, every packet triggers parse_result==-2 (encrypted payload
-		 * looks like broken startcode).  Without the limit, evtStreamCorrupt
-		 * fires every 100ms causing rapid pause/unpause loops that prevent
-		 * the decoder from displaying anything. */
 		if (parse_result == -2)
 		{
-			int64_t now = eRamRingBuffer::nowMs();
-			if (now - m_last_corrupt_ms >= 1000)
-			{
-				m_last_corrupt_ms = now;
-				m_event(eFilePushThreadRecorder::evtStreamCorrupt);
-			}
+			is_corrupt = true;
+			m_event(eFilePushThreadRecorder::evtStreamCorrupt);
 		}
 	}
+
+	/* Mirror disk behavior — discard corrupt buffers entirely.
+	 * On disk, asyncWrite() returns early without aio_write() when
+	 * parseData() returns -2.  We do the same here so the ring buffer
+	 * never contains corrupt data and getCurrentPCR() freezes naturally. */
+	if (is_corrupt)
+		return len;
+
 	bool is_ap = (m_ts_parser.getAccessPointCount() > ap_before);
 
 	int written = m_ring->write(m_buffer, (size_t)len, is_ap);
 	if (written > 0)
+	{
 		m_current_offset += written;
+
+		/* Only update PCR after a successful write — guarantees that
+		 * getCurrentPCR() never advances past data not yet in the ring. */
+		const uint8_t *data = reinterpret_cast<const uint8_t *>(m_buffer);
+		for (int i = 0; i + 188 <= written; i += 188)
+		{
+			pts_t pcr;
+			if (extractPCR(data + i, pcr))
+				updatePCR(pcr);
+		}
+	}
 	return written;
 }
 
@@ -435,9 +443,13 @@ void eRamRecorder::flush()
 /*
  * getCurrentPCR()
  *
- * Returns the absolute live broadcast PCR, extrapolated forward using
- * CLOCK_MONOTONIC during stream loss — identical semantics to the disk
- * recorder's getCurrentPCR().
+ * Returns the last seen PCR from the live broadcast directly — no extrapolation.
+ * Mirrors disk-timeshift getLastPTS() which also returns the last seen value
+ * with no clock-based adjustment.
+ *
+ * When the stream is corrupt (OSCam/NCam down, signal loss), writeData() stops
+ * calling updatePCR() → m_last_pcr freezes → getCurrentPCR() freezes →
+ * current_delay stops growing → PRS stays in pause until real data resumes.
  *
  * The Precise Recovery System computes:
  *   delay = getCurrentPCR() - getPlayPosition()
@@ -455,26 +467,16 @@ void eRamRecorder::flush()
 int eRamRecorder::getCurrentPCR(pts_t &pcr)
 {
 	pthread_mutex_lock(&m_pcr_mutex);
-	bool    valid   = m_last_pcr_valid;
-	pts_t   val     = m_last_pcr;
-	int64_t seen_ms = m_last_pcr_ms;
+	bool  valid = m_last_pcr_valid;
+	pts_t val   = m_last_pcr;
 	pthread_mutex_unlock(&m_pcr_mutex);
 
 	if (!valid)
 		return -1;
 
-	/* Extrapolate forward during stream loss (90 PTS ticks per ms) */
-	int64_t elapsed_ms = eRamRingBuffer::nowMs() - seen_ms;
-	if (elapsed_ms < 0) elapsed_ms = 0;
-
-	/* Mirror disk-timeshift behaviour: getLastPTS() on disk returns the last
-	 * seen PTS with no extrapolation — it freezes immediately when data stops.
-	 * Cap extrapolation to 200 ms (covers normal PCR update jitter) so that
-	 * when the CA server goes down and no new PCR arrives, current_delay stops
-	 * growing and PRS stays in pause — preventing the pause/unpause loop. */
-	if (elapsed_ms > 200) elapsed_ms = 200;
-
-	pcr = (val + (pts_t)(elapsed_ms * 90)) & ((1LL << 33) - 1);
+	/* Return last seen PCR directly — no extrapolation.
+	 * Freezes immediately when stream stops, matching disk timeshift behavior. */
+	pcr = val;
 	return 0;
 }
 

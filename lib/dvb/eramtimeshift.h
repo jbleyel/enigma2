@@ -155,7 +155,6 @@ private:
 
 	pts_t	m_last_pcr;
 	bool	m_last_pcr_valid;
-	int64_t	m_last_pcr_ms;      /* monotonic ms when m_last_pcr was seen */
 	pts_t	m_first_pcr;
 	bool	m_first_pcr_valid;
 
@@ -170,7 +169,6 @@ private:
 	size_t		m_pcr_hist_count;
 
 	mutable pthread_mutex_t	m_pcr_mutex;
-	int64_t			m_last_corrupt_ms = 0; /* rate-limit evtStreamCorrupt */
 };
 
 #endif /* __lib_dvb_eramtimeshift_h */
