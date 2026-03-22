@@ -31,14 +31,20 @@ eRamRingBuffer::eRamRingBuffer(size_t capacity_bytes, size_t max_blocks)
 	m_capacity = capacity_bytes - (capacity_bytes % 188);
 
 	m_buf = static_cast<uint8_t *>(malloc(m_capacity));
-	if (!m_buf)
-		eFatal("[eRamRingBuffer] malloc failed (%zu MB)", m_capacity >> 20);
-
-	m_blocks = static_cast<eRamBlock *>(calloc(m_max_blocks, sizeof(eRamBlock)));
-	if (!m_blocks)
-		eFatal("[eRamRingBuffer] blocks calloc failed");
+	m_blocks = m_buf ? static_cast<eRamBlock *>(calloc(m_max_blocks, sizeof(eRamBlock))) : nullptr;
 
 	pthread_mutex_init(&m_mutex, nullptr);
+
+	if (!m_buf || !m_blocks)
+	{
+		eWarning("[eRamRingBuffer] allocation failed (%zu MB) — RAM timeshift disabled",
+			m_capacity >> 20);
+		free(m_buf);
+		free(m_blocks);
+		m_buf    = nullptr;
+		m_blocks = nullptr;
+		return;
+	}
 
 	eDebug("[eRamRingBuffer] ready: %zu MB, %zu blocks",
 		m_capacity >> 20, m_max_blocks);
@@ -218,6 +224,8 @@ ssize_t eRamTsSource::read(off_t offset, void *buf, size_t count)
 	if (offset < min_off)
 	{
 		off_t aligned = min_off + (188 - min_off % 188) % 188;
+		eDebug("[eRamTsSource] LAP pre-check: offset=%lld < min_off=%lld → lapped (aligned=%lld)",
+		       (long long)offset, (long long)min_off, (long long)aligned);
 		pthread_mutex_lock(&m_offset_mutex);
 		m_lapped        = true;
 		m_lapped_offset = aligned;
@@ -226,7 +234,31 @@ ssize_t eRamTsSource::read(off_t offset, void *buf, size_t count)
 		return -1;
 	}
 
-	return (ssize_t)m_buf->read(offset, static_cast<uint8_t *>(buf), count);
+	int rc = m_buf->read(offset, static_cast<uint8_t *>(buf), count);
+	if (rc < 0 && errno == EAGAIN)
+	{
+		/* EAGAIN has two causes:
+		 * 1. At write edge — push thread caught up, no new data yet (normal)
+		 * 2. Data overwritten — ring buffer lapped the read position (error)
+		 *
+		 * Only set the lap flag for case 2, detected by offset < current
+		 * min_off.  Case 1 returns 0 so eFilePushThread treats it as
+		 * "no data yet" and retries, rather than -1 which signals EOF. */
+		off_t cur_min = m_buf->getMinOffset();
+		if (offset < cur_min)
+		{
+			off_t aligned = cur_min + (188 - cur_min % 188) % 188;
+			eDebug("[eRamTsSource] LAP TOCTOU: offset=%lld < cur_min=%lld → lapped (aligned=%lld)",
+			       (long long)offset, (long long)cur_min, (long long)aligned);
+			pthread_mutex_lock(&m_offset_mutex);
+			m_lapped        = true;
+			m_lapped_offset = aligned;
+			pthread_mutex_unlock(&m_offset_mutex);
+			return -1; /* real lap — error */
+		}
+		return 0; /* at write edge — no new data yet, retry */
+	}
+	return (ssize_t)rc;
 }
 
 bool eRamTsSource::getLappedOffset(off_t &out_offset)
@@ -282,7 +314,7 @@ eRamRecorder::eRamRecorder(eRamRingBuffer *buf, int packetsize)
 	, m_pcr_hist_write(0)
 	, m_pcr_hist_count(0)
 {
-	memset(m_pcr_history, 0, sizeof(m_pcr_history));
+	m_pcr_history.resize(PCR_HISTORY);
 	/* PCR scan loop in writeData() assumes 188-byte TS packets.
 	 * RAM timeshift always uses packetsize=188 (see startTimeshift()),
 	 * but assert here to catch any future misuse early. */
@@ -569,6 +601,8 @@ off_t eRamRecorder::findOffsetForPTS(pts_t target) const
 			best_delta  = diff;
 			best_offset = s.offset;
 			best_found  = true;
+			if (diff == 0)
+				break; /* exact match */
 		}
 	}
 

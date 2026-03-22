@@ -4,6 +4,7 @@
 #include <lib/dvb/demux.h>
 #include <lib/base/itssource.h>
 #include <memory>
+#include <vector>
 #include <pthread.h>
 #include <stdint.h>
 
@@ -30,6 +31,8 @@ class eRamRingBuffer
 public:
 	eRamRingBuffer(size_t capacity_bytes, size_t max_blocks);
 	~eRamRingBuffer();
+
+	bool	isValid() const { return m_buf && m_blocks; }
 
 	int	write(const uint8_t *data, size_t len, bool is_access_point = false);
 	int	read(off_t offset, uint8_t *buf, size_t len);
@@ -162,7 +165,7 @@ private:
 	 * buffer at 6Mbit/s without losing seek resolution after wrap. */
 	static const size_t PCR_HISTORY = 8192;
 	struct PcrSample { off_t offset; pts_t pcr; };
-	PcrSample	m_pcr_history[PCR_HISTORY];
+	std::vector<PcrSample>	m_pcr_history;
 	size_t		m_pcr_hist_write;
 	size_t		m_pcr_hist_count;
 

@@ -730,21 +730,14 @@ int eStaticServiceMP3Info::getLength(const eServiceReference& ref) {
 
 	eDebug("[eStaticServiceMP3Info] getLength called for ref: %s", ref.path.c_str());
 	if (m_parser.parseMeta(ref.path) == 0)
-	{
-		int len = static_cast<int>(m_parser.m_length / MPEG_TIMEBASE);
-		eDebug("[eStaticServiceMP3Info] getLength from metadata: %d", len);
-		return len;
-	}
+		return static_cast<int>(m_parser.m_length / MPEG_TIMEBASE);
 
 	/* Fallback: read CUT_TYPE_LENGTH from .cuts file */
 	std::string filename = ref.path + ".cuts";
 	std::ifstream file(filename, std::ios::binary);
 
 	if (!file)
-	{
-		eDebug("[eStaticServiceMP3Info] getLength: failed to open cuts file: %s", filename.c_str());
 		return -1;
-	}
 
 	uint64_t where;
 	uint32_t what;
@@ -752,7 +745,6 @@ int eStaticServiceMP3Info::getLength(const eServiceReference& ref) {
 	while (file.read(reinterpret_cast<char*>(&where), sizeof(where)) && file.read(reinterpret_cast<char*>(&what), sizeof(what))) {
 		if (ntohl(what) == 5) // CUT_TYPE_LENGTH
 		{
-			eDebug("[eStaticServiceMP3Info] getLength from cuts file: %d", static_cast<int>(be64toh(where) / MPEG_TIMEBASE));
 			return static_cast<int>(be64toh(where) / MPEG_TIMEBASE);
 		}
 	}

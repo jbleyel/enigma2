@@ -126,7 +126,6 @@ void eDVBServicePMTHandler::channelStateChanged(iDVBChannel *channel)
 			(state == iDVBChannel::state_failed))
 	{
 		eDebug("[eDVBServicePMTHandler] tune failed.");
-		eDebug("[eDVBServicePMTHandler] tune failed. %s", m_reference.toString().c_str());
 		serviceEvent(eventTuneFailed);
 	}
 }

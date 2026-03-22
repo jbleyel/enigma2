@@ -36,7 +36,9 @@ public:
 	RESULT	getLength(pts_t &len) override;
 	RESULT	getPlayPosition(pts_t &pos) override;
 	RESULT	seekTo(pts_t to) override;
+	RESULT	seekRelative(int direction, pts_t to) override;
 	RESULT	activateTimeshift() override;
+	RESULT	saveTimeshiftFile() override;
 
 protected:
 	RESULT	startTimeshift() override;
