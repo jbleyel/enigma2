@@ -1483,6 +1483,14 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 
 		m_event((iPlayableService*)this, evSeekableStatusChanged);
 	} else {
+		/* Debug: log every 100ms poll so we can observe whether live_pts
+		 * or playback_pts is advancing during RAM-mode corruption recovery.
+		 * Only printed in RAM mode (m_timeshift_file == "/tmp/ram_ts"). */
+		if (m_timeshift_file == "/tmp/ram_ts")
+			eDebug("[RamPRS] waiting: live=%lld play=%lld current=%.2f target=%.2f",
+				live_pts, playback_pts,
+				(double)current_delay / 90000.0,
+				(double)final_target_delay / 90000.0);
 		m_precise_recovery_timer->start(100, false);
 	}
 }
