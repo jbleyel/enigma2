@@ -124,7 +124,6 @@ public:
 
 	/* Override virtual methods from eDVBRecordFileThread so the
 	 * Precise Recovery System and seek bar work correctly. */
-	int getCurrentPCR(pts_t &pcr) override;
 	int getFirstPTS(pts_t &pts)   override;
 
 	/* Returns the oldest and newest PCR still inside the ring buffer

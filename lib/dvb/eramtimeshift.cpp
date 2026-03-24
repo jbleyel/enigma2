@@ -441,46 +441,6 @@ void eRamRecorder::flush()
 }
 
 /*
- * getCurrentPCR()
- *
- * Returns the last seen PCR from the live broadcast directly — no extrapolation.
- * Mirrors disk-timeshift getLastPTS() which also returns the last seen value
- * with no clock-based adjustment.
- *
- * When the stream is corrupt (OSCam/NCam down, signal loss), writeData() stops
- * calling updatePCR() → m_last_pcr freezes → getCurrentPCR() freezes →
- * current_delay stops growing → PRS stays in pause until real data resumes.
- *
- * The Precise Recovery System computes:
- *   delay = getCurrentPCR() - getPlayPosition()
- *
- * On disk:  getPlayPosition() = decoder_pts - pts_begin  (pts_begin = fixed)
- *   delay  = abs_pcr - (dec - pts_begin) = real_delay + pts_begin  (stable)
- *
- * On RAM:   getPlayPosition() = decoder_pts - m_first_pcr  (m_first_pcr = fixed)
- *   delay  = abs_pcr - (dec - m_first_pcr) = real_delay + m_first_pcr  (stable)
- *
- * Both sides of the comparison in startPreciseRecoveryCheck() carry the
- * same constant offset, so it cancels out → correct recovery timing.
- * Ring wraps do NOT affect this because m_first_pcr never changes.
- */
-int eRamRecorder::getCurrentPCR(pts_t &pcr)
-{
-	pthread_mutex_lock(&m_pcr_mutex);
-	bool  valid = m_last_pcr_valid;
-	pts_t val   = m_last_pcr;
-	pthread_mutex_unlock(&m_pcr_mutex);
-
-	if (!valid)
-		return -1;
-
-	/* Return last seen PCR directly — no extrapolation.
-	 * Freezes immediately when stream stops, matching disk timeshift behavior. */
-	pcr = val;
-	return 0;
-}
-
-/*
  * getFirstPTS()
  *
  * Override of virtual eDVBRecordFileThread::getFirstPTS().

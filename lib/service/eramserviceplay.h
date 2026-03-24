@@ -50,6 +50,7 @@ protected:
 
 private:
 	void	checkLapAndSeek();
+	void	recordEvent(int event) override;
 
 	static inline pts_t pts_delta(pts_t newer, pts_t older)
 	{ return (newer - older) & ((1LL << 33) - 1); }
@@ -62,6 +63,7 @@ private:
 	/* Raw pointer to the RAM recorder thread — owned by m_record via
 	 * replaceThread(). Valid for the lifetime of m_record. */
 	eRamRecorder			*m_ram_recorder;
+	pts_t				m_frozen_play_position;
 };
 
 #endif /* __lib_service_eramserviceplay_h */

@@ -14,6 +14,7 @@ eRamServicePlay::eRamServicePlay(const eServiceReference &ref,
 {
 	m_ts_source           = nullptr;
 	m_ram_recorder        = nullptr;
+	m_frozen_play_position  = 0;
 
 	int cap_mb       = std::max(32, delay_seconds * 4);
 	m_capacity_bytes = (size_t)cap_mb * 1024 * 1024;
@@ -174,6 +175,20 @@ void eRamServicePlay::checkLapAndSeek()
 	ePtr<iDVBPVRChannel> pvr_channel;
 	if (m_service_handler_timeshift.getPVRChannel(pvr_channel) == 0)
 		pvr_channel->forceSourcePosition(safe);
+}
+
+void eRamServicePlay::recordEvent(int event)
+{
+	if (event == iDVBTSRecorder::eventStreamCorrupt)
+	{
+		/* Save play position NOW — before base class sets
+		 * m_stream_corruption_detected = true.
+		 * On Hisilicon, getPTS() advances even in pause(), so we must
+		 * freeze it at the exact moment corruption is detected. */
+		if (!m_stream_corruption_detected)
+			getPlayPosition(m_frozen_play_position);
+	}
+	eDVBServicePlay::recordEvent(event);
 }
 
 /* ------------------------------------------------------------------ */
@@ -404,30 +419,25 @@ RESULT eRamServicePlay::getPlayPosition(pts_t &pos)
 	if (!m_timeshift_active || !m_ram_recorder || !m_decoder)
 		return eDVBServicePlay::getPlayPosition(pos);
 
-	/* Use m_first_pcr as fixed reference — identical to how disk timeshift
-	 * uses pts_begin (first entry in .ap file).  This keeps the reference
-	 * frame stable across ring wraps so the Precise Recovery System's
-	 *   delay = getCurrentPCR() - getPlayPosition()
-	 * remains consistent regardless of how many times the buffer has wrapped.
-	 *
-	 * Ring wrap invariance:
-	 *   m_first_pcr is set once when the first PCR arrives and never changes.
-	 *   getPlayPosition() = pts_delta(dec, m_first_pcr) always grows with dec.
-	 *   getCurrentPCR()   = abs_pcr (absolute, also never shifted by wrap).
-	 *   delay = abs_pcr - (dec - m_first_pcr) = real_delay + m_first_pcr ✓
-	 *
-	 * getLength() still uses the sliding window (last - first) for the
-	 * seek bar — that's correct and unaffected. */
-	pts_t first_pcr = 0;
-	if (m_ram_recorder->getFirstPCR(first_pcr) != 0)
-		return -1;
+	/* During stream corruption, freeze play position.
+	 * On Hisilicon, m_decoder->getPTS() keeps advancing even in pause()
+	 * because the hardware decoder drains its internal buffer.
+	 * Freezing pos here prevents current_delay from shrinking → PRS waits. */
+	if (m_stream_corruption_detected)
+	{
+		pos = m_frozen_play_position;
+		return 0;
+	}
 
+	/* Return decoder PTS directly — same reference as getLastPTS().
+	 * getCurrentPCR() uses getLastPTS() (absolute PTS from PES headers).
+	 * delay = getLastPTS() - dec = real delay, identical to disk timeshift. */
 	pts_t dec = 0;
 	if (m_decoder->getPTS(0, dec) != 0)
 		if (m_decoder->getPTS(1, dec) != 0)
 			return -1;
 
-	pos = pts_delta(dec, first_pcr);
+	pos = dec;
 	return 0;
 }
 
