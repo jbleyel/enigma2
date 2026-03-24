@@ -350,7 +350,7 @@ protected:
 	virtual ePtr<iTsSource> createTsSource(eServiceReferenceDVB& ref, int packetsize = 188);
 
 	ePtr<eConnection> m_con_record_event;
-	void recordEvent(int event);
+	virtual void recordEvent(int event);
 
 	// Software descrambling
 	virtual void setupSpeculativeDescrambling();
