@@ -368,13 +368,15 @@ private:
 	// -- START: Precise Recovery System --
 	// This system handles stream corruption during timeshift, with support for a custom recovery delay.
 	ePtr<eTimer> m_precise_recovery_timer;
-	bool m_stream_corruption_detected;
 	pts_t m_original_timeshift_delay; // Stores the target timeshift delay.
 	bool m_delay_calculated = false; // Flag to ensure delay is calculated only once.
 
 	void handleEofRecovery();
 	void startPreciseRecoveryCheck();
 	// -- END: Precise Recovery System --
+
+protected:
+	bool m_stream_corruption_detected;
 };
 
 class eStaticServiceDVBBouquetInformation : public iStaticServiceInformation {
