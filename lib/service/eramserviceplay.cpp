@@ -53,9 +53,16 @@ RESULT eRamServicePlay::startTimeshift()
 
 	demux->createTSRecorder(m_record, 188, false);
 
+
+
 	/* SAFE CASTING: Prevent GSOD if FCC or another plugin wraps
 	 * the recorder in a different class.  dynamic_cast returns
 	 * nullptr instead of crashing on wrong type. */
+
+	eDVBTSRecorder *recorder = static_cast<eDVBTSRecorder *>(static_cast<iDVBTSRecorder *>(m_record));
+	 
+	// TODO
+	/*
 	eDVBTSRecorder *recorder = dynamic_cast<eDVBTSRecorder *>(m_record.operator->());
 	if (!recorder)
 	{
@@ -64,6 +71,7 @@ RESULT eRamServicePlay::startTimeshift()
 		m_record = 0;
 		return -3;
 	}
+	*/
 
 	eRamRecorder *ram_rec = new eRamRecorder(m_ram_ring.get(), 188);
 	m_ram_recorder = ram_rec;
