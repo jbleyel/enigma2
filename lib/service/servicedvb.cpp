@@ -1414,9 +1414,7 @@ void eDVBServicePlay::handleEofRecovery() {
 		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
 			m_original_timeshift_delay = live_pts - playback_pts;
 			m_delay_calculated = true;
-			eWarning("[PreciseRecovery] DELAY AT CORRUPTION: live=%lld play=%lld delay=%.2f sec",
-				live_pts, playback_pts, (double)m_original_timeshift_delay / 90000.0);
-			//eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
 		}
 	}
 
@@ -1471,11 +1469,6 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 	if (current_delay >= final_target_delay) {
 		m_precise_recovery_timer->stop();
 		m_stream_corruption_detected = false;
-
-		eWarning("[PreciseRecovery] DELAY AT RESUME: actual=%.2f sec | original=%.2f sec | diff=%.2f sec",
-			(double)current_delay / 90000.0,
-			(double)m_original_timeshift_delay / 90000.0,
-			(double)(current_delay - m_original_timeshift_delay) / 90000.0);
 
 		if (m_is_paused) {
 			unpause();

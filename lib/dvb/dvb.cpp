@@ -23,7 +23,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <fstream>
-#include <algorithm>
+
+#define MIN(a,b) (a < b ? a : b)
+#define MAX(a,b) (a > b ? a : b)
 
 DEFINE_REF(eDVBRegisteredFrontend);
 DEFINE_REF(eDVBRegisteredDemux);
@@ -348,7 +350,7 @@ eDVBUsbAdapter::eDVBUsbAdapter(int nr)
 	if (!name[0])
 	{
 		/* fallback to the dvb_frontend_info name */
-		int len = std::min(sizeof(fe_info.name), sizeof(name) - 1);
+		int len = MIN(sizeof(fe_info.name), sizeof(name) - 1);
 		strncpy(name, fe_info.name, len);
 		name[len] = 0;
 	}
