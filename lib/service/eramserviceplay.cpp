@@ -48,13 +48,12 @@ RESULT eRamServicePlay::startTimeshift()
 
 	demux->createTSRecorder(m_record, 188, false);
 
-	// SAFE CASTING: Prevent GSOD if FCC or another plugin wraps
-	// the recorder in a different class. dynamic_cast returns
-	// nullptr instead of crashing on wrong type.
-	eDVBTSRecorder *recorder = dynamic_cast<eDVBTSRecorder *>(m_record.operator->());
+	// RTTI is disabled (-fno-rtti), so we must use static_cast
+	// to access eDVBTSRecorder specific methods.
+	eDVBTSRecorder *recorder = static_cast<eDVBTSRecorder *>(m_record.operator->());
 	if (!recorder)
 	{
-		eWarning("[eRamServicePlay] Failed to cast to eDVBTSRecorder (FCC active?) - RAM timeshift aborted");
+		eWarning("[eRamServicePlay] Failed to get recorder - RAM timeshift aborted");
 		m_ram_ring.reset();
 		m_record = 0;
 		return -3;
@@ -363,7 +362,7 @@ ePtr<iTsSource> eRamServicePlay::createTsSource(eServiceReferenceDVB &ref, int /
 // seeking beyond what's buffered safely lands at the window edge.
 //
 // Uses m_record (iDVBTSRecorder interface) for getFirstPTS() and
-// getLastPTS() — these are on the interface, not eRamRecorder.
+// getCurrentPCR() — these are on the interface, not eRamRecorder.
 RESULT eRamServicePlay::getLength(pts_t &len)
 {
 	if (!m_ram_recorder)
@@ -372,7 +371,7 @@ RESULT eRamServicePlay::getLength(pts_t &len)
 	pts_t first_pts = 0, last_pts = 0;
 	if (m_record->getFirstPTS(first_pts) != 0)
 		return -1;
-	if (m_record->getLastPTS(last_pts) != 0)
+	if (m_record->getCurrentPCR(last_pts) != 0)
 		return -1;
 
 	pts_t d = pts_delta(last_pts, first_pts);
