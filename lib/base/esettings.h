@@ -109,7 +109,13 @@ public:
   static void setAudioDefaultDDP(bool value) { audio_defaultddp = value; }
   static void setAudioUseCache(bool value) { audio_usecache = value; }
   static void setHttpStartDelay(int value) { http_startdelay = value; }
-  static void setRamTimeshift(int delay) { ram_timeshift_delay_seconds = delay; }
+  static void setRamTimeshift(int delay) {
+      if (delay < 0)
+          delay = 0;
+      if (delay > 100)
+          delay = 100;
+      ram_timeshift_delay_seconds = delay; 
+  }
 
   static bool remote_fallback_enabled;
   static bool use_ci_assignment;
