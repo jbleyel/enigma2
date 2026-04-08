@@ -1,0 +1,34 @@
+name: updatepot2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'master'
+
+      - name: gettext
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext
+
+      - name: updatepot
+        run: |
+          git config --global user.email "bot@openatv.com"
+          git config --global user.name "atv enigma po Bot"
+          git config advice.addignoredfile false
+          git clean -fd
+          git checkout master
+          cd po
+          ./updatepot.sh
+          cd ..
+          git add -u
+          git add * || :
+          git commit -m "pot update"
+          git remote add upstream https://${GITHUB_TOKEN}@github.com/jbleyel/enigma2.git > /dev/null 2>&1
+          git push --quiet upstream master || echo "failed to push with error $?"
