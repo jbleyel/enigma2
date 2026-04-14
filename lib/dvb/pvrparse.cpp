@@ -1083,25 +1083,23 @@ inline int eMPEGStreamParserTS::wantPacket(const unsigned char *pkt) const
 	return m_streamtype == eDVBVideo::MPEG2; /* we need all packets for MPEG2, but only PUSI packets for H.264 */
 }
 
-int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int len)
-{
-	const unsigned char *packet = (const unsigned char*)data;
-	const unsigned char *packet_start = packet;
+int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int len) {
+	const unsigned char* packet = (const unsigned char*)data;
+	const unsigned char* packet_start = packet;
+	int result = 0;
 
-			/* sorry for the redundant code here, but there are too many special cases... */
-	while (len)
-	{
-			/* emergency resync. usually, this should not happen, because the data should
-			   be sync-aligned.
+	/* sorry for the redundant code here, but there are too many special cases... */
+	while (len) {
+		/* emergency resync. usually, this should not happen, because the data should
+		   be sync-aligned.
 
-			   to make this code work for non-strictly-sync-aligned data, (for example, bad
-			   files) we fix a possible resync here by skipping data until the next 0x47.
+		   to make this code work for non-strictly-sync-aligned data, (for example, bad
+		   files) we fix a possible resync here by skipping data until the next 0x47.
 
-			   if this is a false 0x47, the packet will be dropped by wantPacket, and the
-			   next time, sync will be re-established. */
+		   if this is a false 0x47, the packet will be dropped by wantPacket, and the
+		   next time, sync will be re-established. */
 		int skipped = 0;
-		while (!m_pktptr && len)
-		{
+		while (!m_pktptr && len) {
 			if (packet[m_header_offset] == 0x47)
 				break;
 			len--;
@@ -1115,11 +1113,9 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 		if (!len)
 			break;
 
-		if (m_pktptr)
-		{
-				/* skip last packet */
-			if (m_pktptr < 0)
-			{
+		if (m_pktptr) {
+			/* skip last packet */
+			if (m_pktptr < 0) {
 				unsigned int skiplen = -m_pktptr;
 				if (skiplen > len)
 					skiplen = len;
@@ -1127,60 +1123,55 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 				len -= skiplen;
 				m_pktptr += skiplen;
 				continue;
-			} else if (m_pktptr < m_header_offset + 4) /* header not complete, thus we don't know if we want this packet */
-			{
+			} else if (m_pktptr < m_header_offset + 4) { /* header not complete, thus we don't know if we want this packet */
 				unsigned int storelen = m_header_offset + 4 - m_pktptr;
 				if (storelen > len)
 					storelen = len;
-				memcpy(m_pkt + m_pktptr, packet,  storelen);
+				memcpy(m_pkt + m_pktptr, packet, storelen);
 
 				m_pktptr += storelen;
 				len -= storelen;
 				packet += storelen;
 
 				if (m_pktptr == m_header_offset + 4)
-					if (!wantPacket(m_pkt))
-					{
-							/* skip packet */
+					if (!wantPacket(m_pkt)) {
+						/* skip packet */
 						packet += 184 + m_header_offset;
 						len -= 184 + m_header_offset;
 						m_pktptr = 0;
 						continue;
 					}
 			}
-				/* otherwise we complete up to the full packet */
+			/* otherwise we complete up to the full packet */
 			unsigned int storelen = m_packetsize - m_pktptr;
 			if (storelen > len)
 				storelen = len;
-			memcpy(m_pkt + m_pktptr, packet,  storelen);
+			memcpy(m_pkt + m_pktptr, packet, storelen);
 			m_pktptr += storelen;
 			len -= storelen;
 			packet += storelen;
 
-			if (m_pktptr == m_packetsize)
-			{
+			if (m_pktptr == m_packetsize) {
 				int res = processPacket(m_pkt, offset + (packet - packet_start));
-				if (res != 0) return res;
-				m_need_next_packet = res;
+				if (res != 0)
+					result = res;
+				m_need_next_packet = 0;
 				m_pktptr = 0;
 			}
-		} else if (len >= (unsigned int)m_header_offset + 4)  /* if we have a full header... */
-		{
-			if (wantPacket(packet))  /* decide wheter we need it ... */
-			{
-				if (len >= (unsigned int)m_packetsize)          /* packet complete? */
-				{
+		} else if (len >= (unsigned int)m_header_offset + 4) { /* if we have a full header... */
+			if (wantPacket(packet)) { /* decide wheter we need it ... */
+				if (len >= (unsigned int)m_packetsize) { /* packet complete? */
 					int res = processPacket(packet, offset + (packet - packet_start));
-					if (res != 0) return res;
-					m_need_next_packet = res;
-				} else
-				{
-					memcpy(m_pkt, packet, len);  /* otherwise queue it up */
+					if (res != 0)
+						result = res;
+					m_need_next_packet = 0;
+				} else {
+					memcpy(m_pkt, packet, len); /* otherwise queue it up */
 					m_pktptr = len;
 				}
 			}
 
-				/* skip packet */
+			/* skip packet */
 			int sk = len;
 			if (sk >= m_packetsize)
 				sk = m_packetsize;
@@ -1189,16 +1180,15 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 
 			len -= sk;
 			packet += sk;
-		} else             /* if we don't have a complete header */
-		{
-			memcpy(m_pkt, packet, len);   /* complete header next time */
+		} else { /* if we don't have a complete header */
+			memcpy(m_pkt, packet, len); /* complete header next time */
 			m_pktptr = len;
 			packet += len;
 			len = 0;
 		}
 	}
 	commit();
-	return 0;
+	return result;
 }
 
 void eMPEGStreamParserTS::addAccessPoint(off_t offset, pts_t pts, bool streamtime)
