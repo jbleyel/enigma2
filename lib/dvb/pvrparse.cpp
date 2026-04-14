@@ -1153,18 +1153,22 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int 
 
 			if (m_pktptr == m_packetsize) {
 				int res = processPacket(m_pkt, offset + (packet - packet_start));
-				if (res != 0)
-					result = res;
-				m_need_next_packet = 0;
+				if (res == -2) {
+					result = -2;
+					res = 0;
+				}
+				m_need_next_packet = res;
 				m_pktptr = 0;
 			}
 		} else if (len >= (unsigned int)m_header_offset + 4) { /* if we have a full header... */
 			if (wantPacket(packet)) { /* decide wheter we need it ... */
 				if (len >= (unsigned int)m_packetsize) { /* packet complete? */
 					int res = processPacket(packet, offset + (packet - packet_start));
-					if (res != 0)
-						result = res;
-					m_need_next_packet = 0;
+					if (res == -2) {
+						result = -2;
+						res = 0;
+					}
+					m_need_next_packet = res;
 				} else {
 					memcpy(m_pkt, packet, len); /* otherwise queue it up */
 					m_pktptr = len;
