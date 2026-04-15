@@ -1087,6 +1087,7 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int 
 	const unsigned char* packet = (const unsigned char*)data;
 	const unsigned char* packet_start = packet;
 
+	int result = 0;
 	/* sorry for the redundant code here, but there are too many special cases... */
 	while (len) {
 		/* emergency resync. usually, this should not happen, because the data should
@@ -1113,10 +1114,10 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int 
             // transient glitch but a severe sync loss (e.g., signal drop).
             // Only here do we report stream corruption (-2) to trigger the precise
             // recovery mechanism (handleEofRecovery) in the service layer.
-            if (skipped > 376)
+            if (skipped > 3760)
             {
                 eWarning("[eMPEGStreamParserTS] Severe sync loss detected, reporting stream corruption.");
-                return -2;
+                result = -2;
             }
 		}
 
@@ -1192,7 +1193,7 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int 
 		}
 	}
 	commit();
-	return 0;
+	return result;
 }
 
 void eMPEGStreamParserTS::addAccessPoint(off_t offset, pts_t pts, bool streamtime)
