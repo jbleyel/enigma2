@@ -923,7 +923,7 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 			//}
 			//eDebugNoNewLine("\n");
 
-			return -2;
+			return 0;
 		}
 
 		if (pkt[7] & 0x80) // PTS present?
@@ -1086,7 +1086,6 @@ inline int eMPEGStreamParserTS::wantPacket(const unsigned char *pkt) const
 int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int len) {
 	const unsigned char* packet = (const unsigned char*)data;
 	const unsigned char* packet_start = packet;
-	int result = 0;
 
 	/* sorry for the redundant code here, but there are too many special cases... */
 	while (len) {
@@ -1108,7 +1107,18 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int 
 		}
 
 		if (skipped)
+		{
 			eDebug("[eMPEGStreamParserTS] SYNC LOST: skipped %d bytes.", skipped);
+            // If we skipped more than two TS packets (376 bytes), this is not a
+            // transient glitch but a severe sync loss (e.g., signal drop).
+            // Only here do we report stream corruption (-2) to trigger the precise
+            // recovery mechanism (handleEofRecovery) in the service layer.
+            if (skipped > 376)
+            {
+                eWarning("[eMPEGStreamParserTS] Severe sync loss detected, reporting stream corruption.");
+                return -2;
+            }
+		}
 
 		if (!len)
 			break;
@@ -1152,23 +1162,13 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int 
 			packet += storelen;
 
 			if (m_pktptr == m_packetsize) {
-				int res = processPacket(m_pkt, offset + (packet - packet_start));
-				if (res == -2) {
-					result = -2;
-					res = 0;
-				}
-				m_need_next_packet = res;
+				m_need_next_packet = processPacket(m_pkt, offset + (packet - packet_start));
 				m_pktptr = 0;
 			}
 		} else if (len >= (unsigned int)m_header_offset + 4) { /* if we have a full header... */
 			if (wantPacket(packet)) { /* decide wheter we need it ... */
 				if (len >= (unsigned int)m_packetsize) { /* packet complete? */
-					int res = processPacket(packet, offset + (packet - packet_start));
-					if (res == -2) {
-						result = -2;
-						res = 0;
-					}
-					m_need_next_packet = res;
+					m_need_next_packet = processPacket(packet, offset + (packet - packet_start));
 				} else {
 					memcpy(m_pkt, packet, len); /* otherwise queue it up */
 					m_pktptr = len;
@@ -1192,7 +1192,7 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int 
 		}
 	}
 	commit();
-	return result;
+	return 0;
 }
 
 void eMPEGStreamParserTS::addAccessPoint(off_t offset, pts_t pts, bool streamtime)
