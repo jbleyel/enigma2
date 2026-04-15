@@ -854,7 +854,8 @@ eMPEGStreamParserTS::eMPEGStreamParserTS(int packetsize):
 	m_header_offset(packetsize - 188),
 	m_enable_accesspoints(true),
 	m_pts_found(false),
-	m_has_accesspoints(false)
+	m_has_accesspoints(false),
+	m_consecutive_broken_pes(0)
 {
 }
 
@@ -916,33 +917,47 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 			// ok, we now have the start of the payload, aligned with the PES packet start.
 		if (pkt[0] || pkt[1] || (pkt[2] != 1))
 		{
-			eWarning("[eMPEGStreamParserTS] broken startcode");
+			m_consecutive_broken_pes++;
+			eDebug("[eMPEGStreamParserTS] broken PES startcode (%d consecutive)", m_consecutive_broken_pes);
+
 			//eDebugNoNewLineStart("[eMPEGStreamParserTS] ");
 			//for (int i = 0; i < 16; i++) {
 			//	eDebugNoNewLine(" %02X", pkt[i]);
 			//}
 			//eDebugNoNewLine("\n");
 
-			return 0;
+			// A single broken PES is usually a transient lost packet (FTA glitch).
+			// Multiple consecutive broken PES headers means descrambling failed (CW loss) or severe stream error.
+			if (m_consecutive_broken_pes >= 3)
+			{
+				eWarning("[eMPEGStreamParserTS] Consistent broken PES headers, reporting stream corruption.");
+				return -2; // Trigger stream corruption for recovery
+			}
+			return 0; // Ignore transient errors
 		}
-
-		if (pkt[7] & 0x80) // PTS present?
+		else
 		{
-			pts  = ((unsigned long long)(pkt[ 9]&0xE))  << 29;
-			pts |= ((unsigned long long)(pkt[10]&0xFF)) << 22;
-			pts |= ((unsigned long long)(pkt[11]&0xFE)) << 14;
-			pts |= ((unsigned long long)(pkt[12]&0xFF)) << 7;
-			pts |= ((unsigned long long)(pkt[13]&0xFE)) >> 1;
-			ptsvalid = 1;
+			// Valid PES header found, reset the counter
+			m_consecutive_broken_pes = 0;
 
-			m_last_pts = pts;
-			m_last_pts_valid = 1;
-			if (!m_pts_found) m_first_pts = pts;
-			m_pts_found = true;
+			if (pkt[7] & 0x80) // PTS present?
+			{
+				pts  = ((unsigned long long)(pkt[ 9]&0xE))  << 29;
+				pts |= ((unsigned long long)(pkt[10]&0xFF)) << 22;
+				pts |= ((unsigned long long)(pkt[11]&0xFE)) << 14;
+				pts |= ((unsigned long long)(pkt[12]&0xFF)) << 7;
+				pts |= ((unsigned long long)(pkt[13]&0xFE)) >> 1;
+				ptsvalid = 1;
+
+				m_last_pts = pts;
+				m_last_pts_valid = 1;
+				if (!m_pts_found) m_first_pts = pts;
+				m_pts_found = true;
+			}
+
+				/* advance to payload */
+			pkt += pkt[8] + 9;
 		}
-
-			/* advance to payload */
-		pkt += pkt[8] + 9;
 	}
 
 	for (; pkt < (end-4); ++pkt)
@@ -1086,8 +1101,8 @@ inline int eMPEGStreamParserTS::wantPacket(const unsigned char *pkt) const
 int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int len) {
 	const unsigned char* packet = (const unsigned char*)data;
 	const unsigned char* packet_start = packet;
-
 	int result = 0;
+
 	/* sorry for the redundant code here, but there are too many special cases... */
 	while (len) {
 		/* emergency resync. usually, this should not happen, because the data should
@@ -1107,18 +1122,16 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int 
 			skipped++;
 		}
 
-		if (skipped)
-		{
+		if (skipped) {
 			eDebug("[eMPEGStreamParserTS] SYNC LOST: skipped %d bytes.", skipped);
-            // If we skipped more than two TS packets (376 bytes), this is not a
-            // transient glitch but a severe sync loss (e.g., signal drop).
-            // Only here do we report stream corruption (-2) to trigger the precise
-            // recovery mechanism (handleEofRecovery) in the service layer.
-            if (skipped > 3760)
-            {
-                eWarning("[eMPEGStreamParserTS] Severe sync loss detected, reporting stream corruption.");
-                result = -2;
-            }
+			// If we skipped more than two TS packets (376 bytes), this is not a
+			// transient glitch but a severe sync loss (e.g., signal drop).
+			// Only here do we report stream corruption (-2) to trigger the precise
+			// recovery mechanism (handleEofRecovery) in the service layer.
+			if (skipped > 376) {
+				eWarning("[eMPEGStreamParserTS] Severe sync loss detected, reporting stream corruption.");
+				result = -2;
+			}
 		}
 
 		if (!len)
@@ -1163,13 +1176,29 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void* data, unsigned int 
 			packet += storelen;
 
 			if (m_pktptr == m_packetsize) {
-				m_need_next_packet = processPacket(m_pkt, offset + (packet - packet_start));
+				// FIX: Capture processPacket result and check for -2 (stream corruption)
+				// Previously, result was assigned directly to m_need_next_packet, which
+				// discarded the -2 signal and prevented CW loss recovery from triggering.
+				int pkt_result = processPacket(m_pkt, offset + (packet - packet_start));
+				if (pkt_result == -2) {
+					result = -2;
+					m_need_next_packet = 0;
+				} else {
+					m_need_next_packet = pkt_result;
+				}
 				m_pktptr = 0;
 			}
 		} else if (len >= (unsigned int)m_header_offset + 4) { /* if we have a full header... */
 			if (wantPacket(packet)) { /* decide wheter we need it ... */
 				if (len >= (unsigned int)m_packetsize) { /* packet complete? */
-					m_need_next_packet = processPacket(packet, offset + (packet - packet_start));
+					// FIX: Same as above - capture result and check for -2
+					int pkt_result = processPacket(packet, offset + (packet - packet_start));
+					if (pkt_result == -2) {
+						result = -2;
+						m_need_next_packet = 0;
+					} else {
+						m_need_next_packet = pkt_result;
+					}
 				} else {
 					memcpy(m_pkt, packet, len); /* otherwise queue it up */
 					m_pktptr = len;
