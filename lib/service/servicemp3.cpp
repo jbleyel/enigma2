@@ -4289,6 +4289,12 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		setCacheEntry(false, track.pid);
 		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
+		/* Configure subsink for PGS subtitles to avoid blocking on large bitmaps */
+		if (track.type == stPGS && dvb_subsink) {
+			eDebug("[eServiceMP3] PGS subtitles selected - disabling async mode on subsink");
+			g_object_set(dvb_subsink, "async", FALSE, NULL);
+		}
+
 		if (track.type != stDVB) {
 			m_clear_buffers = true;
 			clearBuffers();
