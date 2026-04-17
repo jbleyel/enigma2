@@ -3762,12 +3762,17 @@ eAutoInitPtr<eServiceFactoryMP3> init_eServiceFactoryMP3(eAutoInitNumbers::servi
  * @param[in] user_data User data passed to the callback (eServiceMP3 instance).
  */
 void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpointer user_data) {
+    eDebug("[gstCBsubtitleAvail] CALLED! buffer=%p", buffer);
+
 	eServiceMP3* _this = (eServiceMP3*)user_data;
 	if (!_this || !buffer || !_this->m_subtitle_widget || _this->m_currentSubtitleStream < 0) {
 		if (buffer)
 			gst_buffer_unref(buffer);
 		return;
 	}
+
+    eDebug("[SUB AVAIL] callback called, buffer=%p, stream=%d, widget=%p", 
+            buffer, _this->m_currentSubtitleStream, _this->m_subtitle_widget);
 
 	/* Note: No bounds check on m_subtitleStreams here - this callback runs on
 	 * the GStreamer thread and m_subtitleStreams can be modified by the main
@@ -3861,6 +3866,8 @@ void eServiceMP3::gstTextpadHasCAPS_synced(GstPad* pad) {
  * @param[in] buffer The GstBuffer containing subtitle data.
  */
 void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
+    eDebug("[SUB PULL] buffer=%p, stream=%d, type=%d", buffer, m_currentSubtitleStream, 
+            m_currentSubtitleStream >= 0 ? m_subtitleStreams[m_currentSubtitleStream].type : -1);
 	if (buffer && m_currentSubtitleStream >= 0 && m_currentSubtitleStream < (int)m_subtitleStreams.size()) {
 		GstMapInfo map;
 		if (!gst_buffer_map(buffer, &map, GST_MAP_READ))
