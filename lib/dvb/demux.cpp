@@ -665,7 +665,6 @@ int eDVBRecordFileThread::asyncWrite(int len)
 		if (parse_result == -2)
 		{
 			m_event(eFilePushThreadRecorder::evtStreamCorrupt);
-			return len;
 		}
 	}
 
@@ -774,7 +773,6 @@ int eDVBRecordFileThread::writeData(int len)
 			if (parse_result == -2)
 			{
 				m_event(eFilePushThreadRecorder::evtStreamCorrupt);
-				return len;
 			}
 		}
 
