@@ -480,9 +480,6 @@ static void create_gstreamer_sinks() {
 		gst_object_ref_sink(dvb_subsink);
 		eDebug("[eServiceFactoryMP3] **** dvb_subsink created ***");
 		dvb_subsink_ok = true;
-		// Disable synchronization on subsink to prevent Clock-Wait loop with large subtitle buffers
-		// This is critical for PGS subtitle tracks which can buffer many events rapidly
-		g_object_set(dvb_subsink, "sync", FALSE, NULL);
 	} else
 		eDebug("[eServiceFactoryMP3] **** dvb_subsink NOT created missing plugin subsink ****");
 }
@@ -4290,7 +4287,11 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		m_currentSubtitleStream = track.pid;
 		m_cachedSubtitleStream = m_currentSubtitleStream;
 		setCacheEntry(false, track.pid);
+		eDebug("[eServiceMP3] enableSubtitles: track.pid=%d, m_currentSubtitleStream=%d", track.pid, m_currentSubtitleStream);
+		gst_sleepms(1000);
+		eDebug("[eServiceMP3] enableSubtitles: setting current-text to %d", m_currentSubtitleStream);
 		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+		eDebug("[eServiceMP3] enableSubtitles: current-text set, now waiting for subtitle stream to start...");
 
 		if (track.type != stDVB) {
 			m_clear_buffers = true;
