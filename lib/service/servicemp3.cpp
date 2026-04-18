@@ -3965,6 +3965,32 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
  * @param[in] p The eDVBSubtitlePage to add.
  */
 void eServiceMP3::newDVBSubtitlePage(const eDVBSubtitlePage& p) {
+	eDebug("[eServiceMP3::newDVBSubtitlePage] called: stream=%d, regions=%zd, widget=%p, paused=%d", 
+		m_currentSubtitleStream, p.m_regions.size(), m_subtitle_widget, m_paused);
+	
+	/* For PGS subtitles: display immediately (they already have correct timing in the eDVBSubtitlePage)
+	 * For DVB subtitles: queue and sync with decoder time */
+	if (m_currentSubtitleStream >= 0 && 
+		m_currentSubtitleStream < (int)m_subtitleStreams.size()) {
+		int subType = m_subtitleStreams[m_currentSubtitleStream].type;
+		eDebug("[eServiceMP3::newDVBSubtitlePage] subType=%d, stPGS=%d, stDVB=%d", subType, stPGS, stDVB);
+		
+		if (subType == stPGS) {
+			/* PGS: show immediately - already correctly timed by the parser */
+			eDebug("[eServiceMP3] PGS Page received: %zd regions, show_time=%lld", 
+				p.m_regions.size(), (long long)p.m_show_time);
+			if (m_subtitle_widget) {
+				eDebug("[eServiceMP3] Setting PGS page directly on widget");
+				m_subtitle_widget->setPage(p);
+			} else {
+				eDebug("[eServiceMP3] ERROR: m_subtitle_widget is NULL!");
+			}
+			return;
+		}
+	}
+	
+	/* DVB or other: queue and sync with decoder time */
+	eDebug("[eServiceMP3::newDVBSubtitlePage] Queuing as DVB (not PGS)");
 	m_dvb_subtitle_pages.push_back(p);
 	pushDVBSubtitles();
 }
