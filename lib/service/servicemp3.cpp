@@ -485,6 +485,43 @@ static void create_gstreamer_sinks() {
 }
 
 /**
+ * @brief Callback function for filtering GAP events from PGS subtitle streams.
+ *
+ * This function is called as a Pad Probe on the subsink element to filter out
+ * GAP events before they reach the basesink. Filtering GAP events for PGS
+ * prevents basesink from entering a Clock synchronization loop that causes
+ * system freezes with Full PGS subtitle tracks (which have many buffered events).
+ *
+ * @param pad The GStreamer pad where the probe is installed.
+ * @param info The probe info containing the event/buffer information.
+ * @param user_data The user data (pointer to eServiceMP3 instance, unused).
+ * @return GST_PAD_PROBE_DROP if the event is a GAP event for PGS, GST_PAD_PROBE_PASS otherwise.
+ */
+static GstPadProbeReturn gstPgsGapEventFilterProbe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
+	GstEvent *event = GST_PAD_PROBE_INFO_EVENT(info);
+	
+	if (GST_EVENT_TYPE(event) == GST_EVENT_GAP) {
+		// For PGS streams: Filter GAP events to prevent basesink Clock-Wait infinite loop
+		// This is critical for Full PGS subtitle tracks with many buffered events
+		GstCaps *caps = gst_pad_get_current_caps(pad);
+		if (caps) {
+			GstStructure *structure = gst_caps_get_structure(caps, 0);
+			const gchar *media_type = gst_structure_get_name(structure);
+			
+			// Only filter GAP events for PGS streams - other subtitle types are unaffected
+			if (g_strcmp0(media_type, "subpicture/x-pgs") == 0) {
+				eDebug("[eServiceMP3] Dropping GAP event for PGS stream (basesink Clock-Wait freeze prevention)");
+				gst_caps_unref(caps);
+				return GST_PAD_PROBE_DROP;
+			}
+			gst_caps_unref(caps);
+		}
+	}
+	
+	return GST_PAD_PROBE_PASS;
+}
+
+/**
  * @brief Starts playback of a media service referenced by the given service reference.
  *
  * This method checks and manages resources required for playback. On the very first play,
@@ -1249,6 +1286,15 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 			gst_caps_unref(caps);
 
 			g_object_set(m_gst_playbin, "text-sink", dvb_subsink, NULL);
+			
+			// Add Pad Probe to filter GAP events for PGS streams (prevents basesink Clock-Wait freeze)
+			GstPad *subsink_sink_pad = gst_element_get_static_pad(dvb_subsink, "sink");
+			if (subsink_sink_pad) {
+				gst_pad_add_probe(subsink_sink_pad, GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
+					gstPgsGapEventFilterProbe, this, NULL);
+				gst_object_unref(subsink_sink_pad);
+			}
+			
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		}
 		GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(m_gst_playbin));
@@ -4287,13 +4333,6 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		m_currentSubtitleStream = track.pid;
 		m_cachedSubtitleStream = m_currentSubtitleStream;
 		setCacheEntry(false, track.pid);
-
-		// PGS
-		if (track.type == 0 && track.page_number == 6) {
-			eDebug("[eServiceMP3] PGS subtitles selected - disabling async mode on subsink");
-			g_object_set(dvb_subsink, "async", FALSE, NULL);
-		}
-
 		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
 		if (track.type != stDVB) {
