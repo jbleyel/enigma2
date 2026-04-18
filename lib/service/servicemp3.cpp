@@ -4311,10 +4311,12 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		// Seek to last position for non-initial subtitle changes
 		if (m_last_seek_pos > 0 && !starting_subtitle) {
 			seekTo(m_last_seek_pos);
+			eDebug("[eServiceMP3] seek to last position %lld after subtitle change", m_last_seek_pos);
 			gst_sleepms(50);
 		}
 	}
 
+	eDebug("[eServiceMP3] enableSubtitles END");
 	return 0;
 }
 
