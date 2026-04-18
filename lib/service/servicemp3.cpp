@@ -4287,14 +4287,13 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		m_currentSubtitleStream = track.pid;
 		m_cachedSubtitleStream = m_currentSubtitleStream;
 		setCacheEntry(false, track.pid);
-		eDebug("[eServiceMP3] enableSubtitles: track.pid=%d, m_currentSubtitleStream=%d", track.pid, m_currentSubtitleStream);
-		gst_sleepms(1000);
-		eDebug("[eServiceMP3] enableSubtitles: setting current-text to %d", m_currentSubtitleStream);
+		eDebug("[eServiceMP3] enableSubtitles: set current-text to %d", m_currentSubtitleStream);
 		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
-		eDebug("[eServiceMP3] enableSubtitles: current-text set, now waiting for subtitle stream to start...");
+		eDebug("[eServiceMP3] enableSubtitles: current-text set to %d", m_currentSubtitleStream);
 
-		if (track.type != stDVB) {
+		if (track.type != 0) {  // NON DVB or PGS
 			m_clear_buffers = true;
+			eDebug("[eServiceMP3] enableSubtitles: set current-text to %d with clear buffers", m_currentSubtitleStream);
 			clearBuffers();
 		}
 		m_subtitle_widget = user;
@@ -4402,9 +4401,10 @@ RESULT eServiceMP3::getCachedSubtitle(struct SubtitleTrack& track) {
 	}
 
 	if (m_cachedSubtitleStream >= 0 && m_cachedSubtitleStream < (int)m_subtitleStreams.size()) {
-		track.type = m_subtitleStreams[m_cachedSubtitleStream].type == stDVB ? 0 : 2;
+		subtype_t type = m_subtitleStreams[m_cachedSubtitleStream].type;
+		track.type = (type == stDVB || type == stPGS) ? 0 : 2;
 		track.pid = m_cachedSubtitleStream;
-		track.page_number = int(m_subtitleStreams[m_cachedSubtitleStream].type);
+		track.page_number = int(type);
 		track.magazine_number = 0;
 		track.language_code = m_subtitleStreams[m_cachedSubtitleStream].language_code;
 		track.title = m_subtitleStreams[m_cachedSubtitleStream].title;
