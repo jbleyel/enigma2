@@ -4336,6 +4336,7 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 #endif
 
 		if (track.type == 0 && track.magazine_number == 6) {  // PGS
+			eDebug("[eServiceMP3] enableSubtitles PGS END");
 			return 0; // PGS
 		}
 
