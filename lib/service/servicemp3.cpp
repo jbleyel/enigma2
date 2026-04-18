@@ -4315,32 +4315,6 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		setCacheEntry(false, track.pid);
 		eDebug("[eServiceMP3] enableSubtitles: set current-text to %d", m_currentSubtitleStream);
 		
-		/* BUGFIX: Race condition when switching subtitle tracks
-		 * When g_object_set("current-text", ...) is called, playbin sends a seek with FLUSH
-		 * but does NOT synchronously block the pads. This causes old subtitle events
-		 * from the previous track to still flow through the pipeline while the new track
-		 * is being activated, resulting in an endless loop with high event volumes (e.g. Full PGS).
-		 * 
-		 * Solution: Force a synchronous flush at current playback position BEFORE changing tracks.
-		 * This ensures all old buffers/events are completely cleared from the pipeline,
-		 * preventing the race condition where old and new track events mix.
-		 */
-		if (m_gst_playbin && GST_STATE(m_gst_playbin) >= GST_STATE_PLAYING) {
-			gint64 current_pos = 0;
-			if (gst_element_query_position(m_gst_playbin, GST_FORMAT_TIME, &current_pos)) {
-				GstEvent *flush_seek = gst_event_new_seek(
-					1.0, GST_FORMAT_TIME, 
-					(GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT),
-					GST_SEEK_TYPE_SET, current_pos,
-					GST_SEEK_TYPE_NONE, -1);
-				if (!gst_element_send_event(m_gst_playbin, flush_seek)) {
-					eDebug("[eServiceMP3] enableSubtitles: PreFlush seek failed, continuing anyway");
-				}
-				/* Wait for flush to complete - give pipeline time to process the flush */
-				gst_sleepms(50);
-			}
-		}
-		
 		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		eDebug("[eServiceMP3] enableSubtitles: current-text set to %d", m_currentSubtitleStream);
 
@@ -4360,6 +4334,10 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		 */
 		seekRelative(-1, 90000);
 #endif
+
+		if (track.type == 0 && track.magazine_number == 6) {  // PGS
+			return 0; // PGS
+		}
 
 		// Seek to last position for non-initial subtitle changes
 		if (m_last_seek_pos > 0 && !starting_subtitle) {
