@@ -1409,13 +1409,45 @@ void eDVBServicePlay::handleEofRecovery() {
 	// Logic: Maintain the user's current timeshift delay (Live - Playback)
 	if (m_record) {
 		pts_t live_pts = 0, playback_pts = 0;
+		if (m_record->getCurrentPCR(live_pts) == 0) {
+			bool got_playback_pts = false;
+
+			// ── HiSilicon Master Clock Fix ──
+			// When TV audio is muted, the audio decoder is killed (PID = -1).
+			// On HiSilicon, this freezes the STC. getPlayPosition() relies on the STC,
+			// so it returns drifting values. To ensure Precise Recovery calculates the
+			// correct delay, we bypass getPlayPosition() and read the Video PTS directly.
+			if (m_noaudio && m_decoder && m_have_video_pid) {
+				if (m_decoder->getPTS(1, playback_pts) == 0) { // 1 = Force Video PTS
+					got_playback_pts = true;
+					eTrace("[PreciseRecovery] Using direct Video PTS for calculation (Audio Muted)");
+				}
+			}
+
+			// Fallback to standard method if audio is not muted
+			if (!got_playback_pts) {
+				if (getPlayPosition(playback_pts) == 0) {
+					got_playback_pts = true;
+				}
+			}
+
+			if (got_playback_pts && live_pts > playback_pts) {
+				m_original_timeshift_delay = live_pts - playback_pts;
+				m_delay_calculated = true;
+				eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+			}
+		}
+	}
+	/*
+	if (m_record) {
+		pts_t live_pts = 0, playback_pts = 0;
 		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
 			m_original_timeshift_delay = live_pts - playback_pts;
 			m_delay_calculated = true;
 			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
 		}
 	}
-
+	*/
 	// Pause PLAYBACK only
 	if (m_decoder && !m_is_paused) {
 		m_decoder->pause();
