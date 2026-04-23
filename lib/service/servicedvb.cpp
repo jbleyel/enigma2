@@ -1400,109 +1400,164 @@ void eDVBServicePlay::resetRecoveryState() {
 }
 
 void eDVBServicePlay::handleEofRecovery() {
-	if (m_is_paused) {
+	if (m_is_paused)
 		return;
-	}
 
 	eTrace("[PreciseRecovery] Corruption detected. Pausing playback, recording continues.");
 
-	// Logic: Maintain the user's current timeshift delay (Live - Playback)
 	if (m_record) {
 		pts_t live_pts = 0, playback_pts = 0;
 		if (m_record->getCurrentPCR(live_pts) == 0) {
-			bool got_playback_pts = false;
-
-			// ── HiSilicon Master Clock Fix ──
-			// When TV audio is muted, the audio decoder is killed (PID = -1).
-			// On HiSilicon, this freezes the STC. getPlayPosition() relies on the STC,
-			// so it returns drifting values. To ensure Precise Recovery calculates the
-			// correct delay, we bypass getPlayPosition() and read the Video PTS directly.
-			if (m_noaudio && m_decoder && m_have_video_pid) {
-				if (m_decoder->getPTS(1, playback_pts) == 0) { // 1 = Force Video PTS
-					got_playback_pts = true;
-					eTrace("[PreciseRecovery] Using direct Video PTS for calculation (Audio Muted)");
-				}
-			}
-
-			// Fallback to standard method if audio is not muted
-			if (!got_playback_pts) {
-				if (getPlayPosition(playback_pts) == 0) {
-					got_playback_pts = true;
-				}
-			}
-
-			if (got_playback_pts && live_pts > playback_pts) {
-				m_original_timeshift_delay = live_pts - playback_pts;
+			if (m_noaudio && m_have_video_pid) {
+				// ── HiSilicon Muted Audio Fix ──
+				// When Audio PID = -1 (MixAudio), the STC freezes on HiSilicon.
+				// getPlayPosition() reads from DMX_GET_STC which returns wrong values.
+				// getCurrentPCR() reads from TS Parser (m_last_pts in eMPEGStreamParserTS)
+				// which is always correct and independent of STC.
+				//
+				// Since playback is paused, the delay grows at 1:1 real-time rate.
+				// We only need to measure elapsed time from getCurrentPCR() to know
+				// when enough new data has accumulated (safety_buffer).
+				// Store live_pts as reference point L₀; D₀ cancels out in the math.
+				m_original_timeshift_delay = live_pts;
 				m_delay_calculated = true;
-				eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+				eTrace("[PreciseRecovery] Muted audio: stored live_pts=%lld as reference (TS Parser based)", m_original_timeshift_delay);
+			} else {
+				// Normal mode: calculate delay the standard way
+				if (getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
+					m_original_timeshift_delay = live_pts - playback_pts;
+					m_delay_calculated = true;
+					eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+				}
 			}
 		}
+		// Note: if getCurrentPCR() fails here, m_delay_calculated stays false.
+		// The timer below will still start, and startPreciseRecoveryCheck()
+		// will retry the calculation every 100ms — no deadlock.
 	}
-	/*
-	if (m_record) {
-		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
-			m_original_timeshift_delay = live_pts - playback_pts;
-			m_delay_calculated = true;
-			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
-		}
-	}
-	*/
-	// Pause PLAYBACK only
+
 	if (m_decoder && !m_is_paused) {
 		m_decoder->pause();
 		m_is_paused = 1;
 	}
 
-	// Start the monitoring timer
+	// Always start timer — even if delay calculation failed initially.
+	// startPreciseRecoveryCheck will retry until getCurrentPCR() succeeds.
 	m_precise_recovery_timer->start(100, false);
 }
 
 void eDVBServicePlay::startPreciseRecoveryCheck() {
-	if (!m_stream_corruption_detected || !m_record || !m_delay_calculated) {
+	if (!m_stream_corruption_detected || !m_record) {
 		m_precise_recovery_timer->stop();
 		return;
 	}
 
-	pts_t live_pts = 0, playback_pts = 0;
+	// ── Retry delay calculation if it failed in handleEofRecovery ──
+	// This handles the rare case where getCurrentPCR() returned an error
+	// on the first attempt (e.g. TS parser not yet initialized).
+	if (!m_delay_calculated) {
+		pts_t live_pts = 0, playback_pts = 0;
+		if (m_record->getCurrentPCR(live_pts) == 0) {
+			if (m_noaudio && m_have_video_pid) {
+				m_original_timeshift_delay = live_pts;
+				m_delay_calculated = true;
+				eTrace("[PreciseRecovery] Muted audio: delayed reference set: %lld PTS", m_original_timeshift_delay);
+			} else if (getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
+				m_original_timeshift_delay = live_pts - playback_pts;
+				m_delay_calculated = true;
+				eTrace("[PreciseRecovery] Delayed fingerprint set: %lld PTS", m_original_timeshift_delay);
+			}
+		}
+		if (!m_delay_calculated) {
+			// Still failing — retry next timer tick (100ms)
+			m_precise_recovery_timer->start(100, false);
+			return;
+		}
+	}
 
-	if (m_record->getCurrentPCR(live_pts) != 0 || getPlayPosition(playback_pts) != 0 || live_pts == 0) {
+	pts_t live_pts = 0;
+
+	if (m_record->getCurrentPCR(live_pts) != 0 || live_pts == 0) {
 		m_precise_recovery_timer->start(100, false);
 		return;
 	}
 
-	pts_t current_delay;
-	if (live_pts >= playback_pts)
-		current_delay = live_pts - playback_pts;
-	else
-		current_delay = (live_pts + 0x200000000LL) - playback_pts;
-
 	int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recoveryBufferDelay", 300);
-
 	const pts_t safety_buffer_pts = recovery_delay_ms * 90;
-	pts_t final_target_delay = m_original_timeshift_delay + safety_buffer_pts;
+
+	bool recovery_complete = false;
+
+	if (m_noaudio && m_have_video_pid) {
+		// ── HiSilicon Muted Audio Fix ──
+		// m_original_timeshift_delay = L₀ (live_pts at pause moment, not the delay itself).
+		// We measure elapsed time using only getCurrentPCR() (TS Parser based).
+		// Since playback is paused, the buffer grows at exactly 1:1 rate with live_pts.
+		// Math: current_delay >= original_delay + safety_buffer
+		//   is equivalent to: elapsed >= safety_buffer  (D₀ cancels out)
+		pts_t elapsed_pts;
+		if (live_pts >= m_original_timeshift_delay)
+			elapsed_pts = live_pts - m_original_timeshift_delay;
+		else
+			elapsed_pts = (live_pts + 0x200000000LL) - m_original_timeshift_delay; // PTS wrap-around
+
+		pts_t target_elapsed = safety_buffer_pts;
 
 #ifdef ENABLE_TIMESHIFT_HW_LATENCY_FIX
-	int hw_latency_ms = eSimpleConfig::getInt("config.timeshift.hwLatencyCorrection", 2000);
-
-	if (hw_latency_ms < 0) hw_latency_ms = 0;
-	if (hw_latency_ms > 5000) hw_latency_ms = 5000;
-
-	const pts_t latency_correction = hw_latency_ms * 90;
-
-	if (final_target_delay > latency_correction)
-		final_target_delay -= latency_correction;
-	else
-		final_target_delay = 9000; 
+		int hw_latency_ms = eSimpleConfig::getInt("config.timeshift.hwLatencyCorrection", 2000);
+		if (hw_latency_ms < 0)
+			hw_latency_ms = 0;
+		if (hw_latency_ms > 5000)
+			hw_latency_ms = 5000;
+		const pts_t latency_correction = hw_latency_ms * 90;
+		if (target_elapsed > latency_correction)
+			target_elapsed -= latency_correction;
+		else
+			target_elapsed = 9000; // minimum 100ms
 #endif
 
-	if (current_delay >= final_target_delay) {
+		if (elapsed_pts >= target_elapsed) {
+			recovery_complete = true;
+			eTrace("[PreciseRecovery] Muted audio recovery: elapsed=%lld target=%lld", elapsed_pts, target_elapsed);
+		}
+	} else {
+		// Normal mode: standard delay comparison (getPlayPosition is reliable here)
+		pts_t playback_pts = 0;
+		if (getPlayPosition(playback_pts) != 0) {
+			m_precise_recovery_timer->start(100, false);
+			return;
+		}
+
+		pts_t current_delay;
+		if (live_pts >= playback_pts)
+			current_delay = live_pts - playback_pts;
+		else
+			current_delay = (live_pts + 0x200000000LL) - playback_pts; // PTS wrap-around
+
+		pts_t final_target_delay = m_original_timeshift_delay + safety_buffer_pts;
+
+#ifdef ENABLE_TIMESHIFT_HW_LATENCY_FIX
+		int hw_latency_ms = eSimpleConfig::getInt("config.timeshift.hwLatencyCorrection", 2000);
+		if (hw_latency_ms < 0)
+			hw_latency_ms = 0;
+		if (hw_latency_ms > 5000)
+			hw_latency_ms = 5000;
+		const pts_t latency_correction = hw_latency_ms * 90;
+		if (final_target_delay > latency_correction)
+			final_target_delay -= latency_correction;
+		else
+			final_target_delay = 9000; // minimum 100ms
+#endif
+
+		if (current_delay >= final_target_delay)
+			recovery_complete = true;
+	}
+
+	if (recovery_complete) {
 		m_precise_recovery_timer->stop();
 		m_stream_corruption_detected = false;
 
-		if (m_is_paused) {
+		if (m_is_paused)
 			unpause();
-		}
 
 		m_event((iPlayableService*)this, evSeekableStatusChanged);
 	} else {
