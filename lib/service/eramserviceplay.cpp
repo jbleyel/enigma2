@@ -11,6 +11,9 @@ eRamServicePlay::eRamServicePlay(const eServiceReference& ref, eDVBService* serv
 	m_ts_source = nullptr;
 	m_ram_recorder = nullptr;
 	m_frozen_play_position = 0;
+	m_wc_valid = false;
+	m_wc_ref_pts = 0;
+	m_wc_ref_ms = 0;
 
 	// Compute capacity: at least 32 MB or delay_seconds * 4 MB.
 	// The *4 factor assumes ~4 Mbit/s average bitrate — generous
@@ -119,12 +122,63 @@ RESULT eRamServicePlay::startTimeshift() {
 }
 
 // ------------------------------------------------------------------
-// activateTimeshift — start watchdog after parent activates
+// updateWallClockRef - capture wall-clock reference for muted audio
+// ------------------------------------------------------------------
+void eRamServicePlay::updateWallClockRef() {
+	if (!m_decoder || !m_ram_ring)
+		return;
+
+	pts_t dec = 0;
+	if (m_decoder->getPTS(1, dec) == 0 || m_decoder->getPTS(0, dec) == 0) {
+		m_wc_ref_pts = dec;
+		m_wc_ref_ms = m_ram_ring->nowMs();
+		m_wc_valid = true;
+		eTrace("[eRamServicePlay] WallClock ref: pts=%lld at ms=%lld", (long long)m_wc_ref_pts, (long long)m_wc_ref_ms);
+	}
+}
+
+// ------------------------------------------------------------------
+// pause - freeze wall-clock reference before playback stops
+// ------------------------------------------------------------------
+RESULT eRamServicePlay::pause() {
+	if (m_noaudio && m_have_video_pid && m_wc_valid && m_ram_ring) {
+		int64_t elapsed_ms = m_ram_ring->nowMs() - m_wc_ref_ms;
+		m_wc_ref_pts += (pts_t)(elapsed_ms * 90);
+		m_wc_ref_ms = m_ram_ring->nowMs();
+		eTrace("[eRamServicePlay] WallClock frozen at pts=%lld", (long long)m_wc_ref_pts);
+	}
+	return eDVBServicePlay::pause();
+}
+
+// ------------------------------------------------------------------
+// unpause - reset wall-clock elapsed time when resuming playback
+// ------------------------------------------------------------------
+RESULT eRamServicePlay::unpause() {
+	RESULT res = eDVBServicePlay::unpause();
+
+	if (m_noaudio && m_have_video_pid && m_ram_ring) {
+		if (m_wc_valid) {
+			// Since we froze m_wc_ref_pts in recordEvent (for PRS) or pause (for user),
+			// the PTS reference is already perfectly aligned with the resume point.
+			// We just need to reset the elapsed time counter so it starts from 0.
+			m_wc_ref_ms = m_ram_ring->nowMs();
+			eTrace("[eRamServicePlay] WallClock resumed: ref_pts=%lld", (long long)m_wc_ref_pts);
+		} else {
+			updateWallClockRef();
+		}
+	}
+	return res;
+}
+
+// ------------------------------------------------------------------
+// activateTimeshift
 // ------------------------------------------------------------------
 RESULT eRamServicePlay::activateTimeshift() {
 	RESULT r = eDVBServicePlay::activateTimeshift();
 	if (r != 0)
 		return r;
+
+	updateWallClockRef();
 
 	// Start 200ms watchdog to detect ring-buffer lap events and
 	// force the push thread to jump to a safe read position.
@@ -180,14 +234,30 @@ void eRamServicePlay::checkLapAndSeek() {
 		pvr_channel->forceSourcePosition(safe);
 }
 
+// ------------------------------------------------------------------
+// recordEvent - freeze play position and wall-clock at the moment of corruption
+// ------------------------------------------------------------------
 void eRamServicePlay::recordEvent(int event) {
 	if (event == iDVBTSRecorder::eventStreamCorrupt) {
-		// Save play position NOW — before base class sets
-		// m_stream_corruption_detected = true.
-		// On Hisilicon, getPTS() advances even in pause(), so we
-		// must freeze it at the exact moment corruption is detected.
-		if (!m_stream_corruption_detected)
-			getPlayPosition(m_frozen_play_position);
+		if (!m_stream_corruption_detected) {
+			if (m_noaudio && m_have_video_pid && m_wc_valid && m_ram_ring) {
+				// Freeze wall-clock EXACTLY at the corruption moment.
+				// This ensures m_wc_ref_pts matches m_frozen_play_position,
+				// regardless of when PRS or the user triggers unpause.
+				int64_t elapsed_ms = m_ram_ring->nowMs() - m_wc_ref_ms;
+				m_wc_ref_pts += (pts_t)(elapsed_ms * 90);
+				m_wc_ref_ms = m_ram_ring->nowMs();
+
+				pts_t first_pts = 0;
+				if (m_record && m_record->getFirstPTS(first_pts) == 0) {
+					m_frozen_play_position = pts_delta(m_wc_ref_pts, first_pts);
+				} else {
+					getPlayPosition(m_frozen_play_position);
+				}
+			} else {
+				getPlayPosition(m_frozen_play_position);
+			}
+		}
 	}
 	eDVBServicePlay::recordEvent(event);
 }
@@ -229,6 +299,7 @@ RESULT eRamServicePlay::stopTimeshift(bool swToLive) {
 		m_watchdog_timer->stop();
 		m_watchdog_timer = nullptr;
 	}
+	m_wc_valid = false;
 	resetRecoveryState();
 
 	if (m_record) {
@@ -386,9 +457,25 @@ RESULT eRamServicePlay::getPlayPosition(pts_t& pos) {
 	if (m_record->getFirstPTS(first_pts) != 0)
 		return -1;
 	pts_t dec = 0;
-	if (m_decoder->getPTS(0, dec) != 0)
-		if (m_decoder->getPTS(1, dec) != 0)
-			return -1;
+
+	if (m_noaudio && m_have_video_pid) {
+		if (!m_wc_valid && m_ram_ring)
+			updateWallClockRef();
+
+		if (m_wc_valid && m_ram_ring) {
+			int64_t elapsed_ms = m_ram_ring->nowMs() - m_wc_ref_ms;
+			dec = m_wc_ref_pts + (m_is_paused ? 0 : (pts_t)(elapsed_ms * 90));
+		} else {
+			if (m_decoder->getPTS(1, dec) != 0)
+				if (m_decoder->getPTS(0, dec) != 0)
+					return -1;
+		}
+	} else {
+		if (m_decoder->getPTS(0, dec) != 0)
+			if (m_decoder->getPTS(1, dec) != 0)
+				return -1;
+		m_wc_valid = false;
+	}
 	pos = pts_delta(dec, first_pts);
 	return 0;
 }

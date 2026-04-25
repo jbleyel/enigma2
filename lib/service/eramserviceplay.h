@@ -45,9 +45,14 @@ protected:
 
 	ePtr<iTsSource> createTsSource(eServiceReferenceDVB& ref, int packetsize = 188) override;
 
+	// Override pause/unpause to maintain wall‑clock reference for muted audio
+	RESULT pause() override;
+	RESULT unpause() override;
+
 private:
 	void checkLapAndSeek();
 	void recordEvent(int event) override;
+	void updateWallClockRef(); // (re)captures wall‑clock reference for muted audio
 
 	/* PTS delta with 33-bit wrap-around (standard DVB/MPEG behavior). */
 	static inline pts_t pts_delta(pts_t newer, pts_t older) { return (newer - older) & ((1LL << 33) - 1); }
@@ -78,6 +83,9 @@ private:
 	 * shrinking, which would cause the Precise Recovery System to
 	 * loop forever waiting for a stable PTS. */
 	pts_t m_frozen_play_position;
+	bool m_wc_valid; // true after a successful reference capture
+	pts_t m_wc_ref_pts; // PTS at the reference moment
+	int64_t m_wc_ref_ms; // monotonic time (ms) at the reference moment
 };
 
 #endif /* __lib_service_eramserviceplay_h */
