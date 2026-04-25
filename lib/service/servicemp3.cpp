@@ -4315,14 +4315,52 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		setCacheEntry(false, track.pid);
 		eDebug("[eServiceMP3] enableSubtitles: set current-text to %d", m_currentSubtitleStream);
 		
-		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		eDebug("[eServiceMP3] enableSubtitles: current-text set to %d", m_currentSubtitleStream);
 
-		if (track.type != 0) {  // NON DVB or PGS
-			m_clear_buffers = true;
-			eDebug("[eServiceMP3] enableSubtitles: set current-text to %d with clear buffers", m_currentSubtitleStream);
-			clearBuffers();
+		if (track.page_number == 6 && track.type == 0) { // PGS
+			eDebug("[eServiceMP3] enableSubtitles: PGS");
+
+			GstState state, pending;
+			gst_element_get_state(m_gst_playbin, &state, &pending, 0);
+			bool wasPlaying = (state == GST_STATE_PLAYING);
+			if (wasPlaying)
+				gst_element_set_state(m_gst_playbin, GST_STATE_PAUSED);
+
+			gst_element_get_state(m_gst_playbin, NULL, NULL, GST_CLOCK_TIME_NONE);
+			gst_element_send_event(m_gst_playbin, gst_event_new_flush_start());
+			gst_element_send_event(m_gst_playbin, gst_event_new_flush_stop(TRUE));
+			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+
+			gint64 pos = GST_CLOCK_TIME_NONE;
+			if (gst_element_query_position(m_gst_playbin, GST_FORMAT_TIME, &pos)) {
+				gint64 back = 2 * GST_SECOND;
+
+				if (pos > back) {
+					gst_element_seek_simple(
+						m_gst_playbin,
+						GST_FORMAT_TIME,
+						(GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT),
+						pos - back
+					);
+				}
+			}
+
+			if (wasPlaying)
+				gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
+
+			m_subtitle_widget = user;
+			return 0;
 		}
+		else
+		{
+			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+			if (track.type != 0) {  // NON DVB
+				m_clear_buffers = true;
+				eDebug("[eServiceMP3] enableSubtitles: set current-text to %d with clear buffers", m_currentSubtitleStream);
+				clearBuffers();
+			}
+		}
+
 		m_subtitle_widget = user;
 
 		eDebug("[eServiceMP3] switched to subtitle stream %i", m_currentSubtitleStream);
@@ -4334,11 +4372,6 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		 */
 		seekRelative(-1, 90000);
 #endif
-
-		if (track.type == 0 && track.magazine_number == 6) {  // PGS
-			eDebug("[eServiceMP3] enableSubtitles PGS END");
-			return 0; // PGS
-		}
 
 		// Seek to last position for non-initial subtitle changes
 		if (m_last_seek_pos > 0 && !starting_subtitle) {
