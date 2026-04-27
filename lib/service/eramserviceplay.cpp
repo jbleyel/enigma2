@@ -125,15 +125,32 @@ RESULT eRamServicePlay::startTimeshift() {
 // updateWallClockRef - capture wall-clock reference for muted audio
 // ------------------------------------------------------------------
 void eRamServicePlay::updateWallClockRef() {
-	if (!m_decoder || !m_ram_ring)
+	if (!m_ram_ring || !m_record)
 		return;
 
-	pts_t dec = 0;
-	if (m_decoder->getPTS(1, dec) == 0 || m_decoder->getPTS(0, dec) == 0) {
-		m_wc_ref_pts = dec;
+	if (m_noaudio && m_have_video_pid) {
+		// Do NOT call getPTS() — unreliable in muted audio mode.
+		// Anchor wall clock at (live_pts - configured_delay).
+		pts_t live_pts = 0;
+		if (m_record->getCurrentPCR(live_pts) != 0)
+			return;
+		pts_t delay_pts = (pts_t)(eSettings::ram_timeshift_delay_seconds * 90000LL);
+		m_wc_ref_pts = (live_pts - delay_pts) & 0x1FFFFFFFF;
 		m_wc_ref_ms = m_ram_ring->nowMs();
 		m_wc_valid = true;
-		eTrace("[eRamServicePlay] WallClock ref: pts=%lld at ms=%lld", (long long)m_wc_ref_pts, (long long)m_wc_ref_ms);
+		eTrace("[eRamServicePlay] WallClock ref (muted): ref_pts=%lld (live=%lld - delay=%ds)", (long long)m_wc_ref_pts, (long long)live_pts, eSettings::ram_timeshift_delay_seconds);
+		return;
+	}
+
+	// Normal audio: getPTS() is reliable
+	if (!m_decoder)
+		return;
+	pts_t dec = 0;
+	if (m_decoder->getPTS(1, dec) == 0 || m_decoder->getPTS(0, dec) == 0) {
+		m_wc_ref_pts = dec & 0x1FFFFFFFF;
+		m_wc_ref_ms = m_ram_ring->nowMs();
+		m_wc_valid = true;
+		eTrace("[eRamServicePlay] WallClock ref (normal): pts=%lld", (long long)m_wc_ref_pts);
 	}
 }
 
@@ -143,7 +160,8 @@ void eRamServicePlay::updateWallClockRef() {
 RESULT eRamServicePlay::pause() {
 	if (m_noaudio && m_have_video_pid && m_wc_valid && m_ram_ring) {
 		int64_t elapsed_ms = m_ram_ring->nowMs() - m_wc_ref_ms;
-		m_wc_ref_pts += (pts_t)(elapsed_ms * 90);
+		// Freeze the PTS at the exact pause moment, apply 33-bit mask
+		m_wc_ref_pts = (m_wc_ref_pts + (pts_t)(elapsed_ms * 90)) & 0x1FFFFFFFF;
 		m_wc_ref_ms = m_ram_ring->nowMs();
 		eTrace("[eRamServicePlay] WallClock frozen at pts=%lld", (long long)m_wc_ref_pts);
 	}
@@ -245,12 +263,11 @@ void eRamServicePlay::recordEvent(int event) {
 				// This ensures m_wc_ref_pts matches m_frozen_play_position,
 				// regardless of when PRS or the user triggers unpause.
 				int64_t elapsed_ms = m_ram_ring->nowMs() - m_wc_ref_ms;
-				m_wc_ref_pts += (pts_t)(elapsed_ms * 90);
-				m_wc_ref_ms = m_ram_ring->nowMs();
+				pts_t current_pts = (m_wc_ref_pts + (pts_t)(elapsed_ms * 90)) & 0x1FFFFFFFF;
 
 				pts_t first_pts = 0;
 				if (m_record && m_record->getFirstPTS(first_pts) == 0) {
-					m_frozen_play_position = pts_delta(m_wc_ref_pts, first_pts);
+					m_frozen_play_position = pts_delta(current_pts, first_pts);
 				} else {
 					getPlayPosition(m_frozen_play_position);
 				}
@@ -462,19 +479,28 @@ RESULT eRamServicePlay::getPlayPosition(pts_t& pos) {
 		if (!m_wc_valid && m_ram_ring)
 			updateWallClockRef();
 
+		// Strictly rely on System Monotonic Clock.
+		// DO NOT read getPTS() to avoid importing free-running hardware PTS.
 		if (m_wc_valid && m_ram_ring) {
 			int64_t elapsed_ms = m_ram_ring->nowMs() - m_wc_ref_ms;
-			dec = m_wc_ref_pts + (m_is_paused ? 0 : (pts_t)(elapsed_ms * 90));
+			pts_t delta_pts = (m_is_paused ? 0 : (pts_t)(elapsed_ms * 90));
+
+			// Calculate PTS using pure WallClock delta, enforce 33-bit wrap-around
+			dec = (m_wc_ref_pts + delta_pts) & 0x1FFFFFFFF;
 		} else {
+			// Fallback if WallClock initialization failed
 			if (m_decoder->getPTS(1, dec) != 0)
 				if (m_decoder->getPTS(0, dec) != 0)
 					return -1;
+			dec &= 0x1FFFFFFFF;
 		}
 	} else {
+		// Normal path (Audio active): Use hardware Audio/Video PTS directly
 		if (m_decoder->getPTS(0, dec) != 0)
 			if (m_decoder->getPTS(1, dec) != 0)
 				return -1;
-		m_wc_valid = false;
+		dec &= 0x1FFFFFFFF; // Enforce 33-bit wrap-around
+		m_wc_valid = false; // Invalidate WallClock when audio is active
 	}
 	pos = pts_delta(dec, first_pts);
 	return 0;
