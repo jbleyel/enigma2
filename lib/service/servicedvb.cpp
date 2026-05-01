@@ -1511,9 +1511,7 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 
 		if (current_delay >= final_target_delay) {
 			recovery_complete = true;
-			eTrace("[PreciseRecovery] Muted audio recovery complete: "
-				   "current_delay=%lld target=%lld",
-				   current_delay, final_target_delay);
+			eTrace("[PreciseRecovery] Muted audio recovery complete: current_delay=%lld target=%lld", current_delay, final_target_delay);
 		}
 	} else {
 		pts_t playback_pts = 0;
@@ -1550,21 +1548,6 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 	if (recovery_complete) {
 		m_precise_recovery_timer->stop();
 		m_stream_corruption_detected = false;
-
-		/* Jump push thread to the correct read offset so the decoder
-		 * does not replay stale DVR buffer data after recovery. */
-		if (m_original_timeshift_delay > 0) {
-			pts_t target_pts = live_pts - m_original_timeshift_delay;
-			if (target_pts < 0)
-				target_pts += 0x200000000LL;
-
-			ePtr<iDVBPVRChannel> pvr_channel;
-			eDVBServicePMTHandler& h = m_timeshift_active ? m_service_handler_timeshift : m_service_handler;
-			if (h.getPVRChannel(pvr_channel) == 0) {
-				eTrace("[PreciseRecovery] ForceSourcePosition to PTS %lld (live=%lld delay=%lld)", (long long)target_pts, (long long)live_pts, (long long)m_original_timeshift_delay);
-				pvr_channel->forceSourcePosition(target_pts);
-			}
-		}
 
 		if (m_is_paused)
 			unpause();
