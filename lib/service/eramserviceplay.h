@@ -19,44 +19,39 @@ public:
 	~eRamServicePlay() override;
 
 	// Status helpers
-	bool isRamBufferReady() const; // ring buffer has received at least one write
-	float ramBufferedSeconds() const; // seconds elapsed since first data
-	int ramFillPercent() const; // percentage of ring buffer currently used
+	bool  isRamBufferReady()    const; // ring buffer has received at least one write
+	float ramBufferedSeconds()  const; // seconds elapsed since first data
+	int   ramFillPercent()      const; // percentage of ring buffer currently used
 
 	// Position / length (PTS-based)
-	RESULT getLength(pts_t& len) override;
+	RESULT getLength(pts_t& len)      override;
 	RESULT getPlayPosition(pts_t& pos) override;
 
 	// Seek disabled for RAM timeshift
-	RESULT seekTo(pts_t to) override;
-	RESULT seekRelative(int direction, pts_t to) override;
+	RESULT seekTo(pts_t to)                        override;
+	RESULT seekRelative(int direction, pts_t to)   override;
 
 	// Timeshift management
-	RESULT activateTimeshift() override;
-	RESULT saveTimeshiftFile() override; // no-op: nothing on disk
-	void serviceEventTimeshift(int event) override;
+	RESULT activateTimeshift()              override;
+	RESULT saveTimeshiftFile()              override; // no-op: nothing on disk
+	void   serviceEventTimeshift(int event) override;
 
 protected:
-	RESULT startTimeshift() override;
-	RESULT stopTimeshift(bool swToLive = false) override;
+	RESULT startTimeshift()                                              override;
+	RESULT stopTimeshift(bool swToLive = false)                         override;
 	ePtr<iTsSource> createTsSource(eServiceReferenceDVB& ref, int packetsize = 188) override;
 
-	// Maintain wall-clock reference for muted-audio position tracking
-	RESULT pause() override;
-	RESULT unpause() override;
-
 private:
-	void checkLapAndSeek(); // watchdog: detect ring-buffer lap and recover
-	void recordEvent(int event) override; // freeze position on stream corruption
-	void updateWallClockRef(); // (re)capture wall-clock reference for muted audio
+	void checkLapAndSeek();       // watchdog: detect ring-buffer lap and recover
+	void recordEvent(int event)   override; // freeze position on stream corruption
 
 	// Safe PTS delta with 33-bit wrap-around (DVB/MPEG standard).
 	static inline pts_t pts_delta(pts_t newer, pts_t older) { return (newer - older) & ((1LL << 33) - 1); }
 
-	std::shared_ptr<eRamRingBuffer> m_ram_ring; // shared with eRamTsSource
-	ePtr<eTimer> m_watchdog_timer; // 200 ms lap-detection watchdog
-	size_t m_capacity_bytes; // total ring buffer size
-	ePtr<eRamTsSource> m_ts_source; // iTsSource wrapper for eFilePushThread
+	std::shared_ptr<eRamRingBuffer> m_ram_ring;   // shared with eRamTsSource
+	ePtr<eTimer>      m_watchdog_timer;            // 200 ms lap-detection watchdog
+	size_t            m_capacity_bytes;            // total ring buffer size
+	ePtr<eRamTsSource> m_ts_source;               // iTsSource wrapper for eFilePushThread
 
 	// Owned by m_record via replaceThread(); must NOT be deleted directly.
 	eRamRecorder* m_ram_recorder;
@@ -64,12 +59,6 @@ private:
 	// Frozen play position (PTS delta) captured at stream-corruption onset.
 	// Prevents PRS from seeing a spuriously advancing getPTS() during pause.
 	pts_t m_frozen_play_position;
-
-	// Wall-clock reference for muted-audio mode (HiSilicon free-running video clock).
-	// Substitutes a monotonic clock so playback position advances at a steady 90 kHz.
-	bool m_wc_valid; // true after a successful reference capture
-	pts_t m_wc_ref_pts; // PTS at the reference moment
-	int64_t m_wc_ref_ms; // monotonic time (ms) at the reference moment
 };
 
 #endif // __lib_service_eramserviceplay_h
