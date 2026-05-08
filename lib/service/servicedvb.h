@@ -372,7 +372,7 @@ private:
 	bool m_delay_calculated = false; // Flag to ensure delay is calculated only once.
 
 	void handleEofRecovery();
-	void startPreciseRecoveryCheck();
+	virtual void startPreciseRecoveryCheck();
 	// -- END: Precise Recovery System --
 
 protected:
