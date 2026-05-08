@@ -145,10 +145,119 @@ void eRamServicePlay::checkLapAndSeek() {
 void eRamServicePlay::recordEvent(int event) {
 	if (event == iDVBTSRecorder::eventStreamCorrupt) {
 		if (!m_stream_corruption_detected) {
+			eWarning("[eRamServicePlay] Stream corrupt: letting decoder play through valid buffer.");
+
+			// Capture delay fingerprint immediately — PTS is still valid here.
+			// The base class would call pause() and set m_stream_corruption_detected,
+			// but we intercept to allow the decoder to consume remaining good data.
+			if (m_record) {
+				pts_t live_pts = 0, playback_pts = 0;
+				if (m_record->getCurrentPCR(live_pts) == 0 &&
+				    getPlayPosition(playback_pts) == 0) {
+					pts_t first_pts = 0;
+					if (m_record->getFirstPTS(first_pts) == 0) {
+						pts_t abs_play = (first_pts + playback_pts) & 0x1FFFFFFFF;
+						m_original_timeshift_delay = pts_delta(live_pts, abs_play);
+						m_delay_calculated = true;
+						eTrace("[eRamServicePlay] Delay fingerprint: %lld PTS",
+						       (long long)m_original_timeshift_delay);
+					}
+				}
+			}
+
+			// Freeze position for UI (not for PRS — decoder still moving).
 			getPlayPosition(m_frozen_play_position);
+
+			// Mark corruption and start PRS timer — do NOT call base class
+			// (which would issue m_decoder->pause() immediately).
+			m_stream_corruption_detected = true;
+			if (!m_precise_recovery_timer->isActive())
+				m_precise_recovery_timer->start(100, false);
 		}
+		// Do NOT forward eventStreamCorrupt to base class — that would trigger
+		// the immediate pause() in eDVBServicePlay::recordEvent().
+		return;
 	}
+
+	// All other events (evtWriteError, etc.) pass through normally.
 	eDVBServicePlay::recordEvent(event);
+}
+
+// RAM-specific PRS override with two states:
+//
+// State 1 (decoder paused): wait until delay >= original_delay + safety,
+//         then unpause.
+//
+// State 2 (decoder still playing): after a short corruption the stream may
+//         recover before the decoder reaches the live edge. In this case the
+//         delay stays constant (both live and decoder advance at 1x). We must
+//         issue a Soft Pause explicitly so delay can grow again.
+void eRamServicePlay::startPreciseRecoveryCheck() {
+	if (!m_stream_corruption_detected || !m_record || !m_delay_calculated) {
+		m_precise_recovery_timer->stop();
+		return;
+	}
+
+	pts_t live_pts = 0;
+	if (m_record->getCurrentPCR(live_pts) != 0 || live_pts == 0) {
+		m_precise_recovery_timer->start(100, false);
+		return;
+	}
+
+	pts_t first_pts = 0;
+	if (m_record->getFirstPTS(first_pts) != 0) {
+		m_precise_recovery_timer->start(100, false);
+		return;
+	}
+
+	pts_t playback_pts = 0;
+	if (getPlayPosition(playback_pts) != 0) {
+		m_precise_recovery_timer->start(100, false);
+		return;
+	}
+
+	pts_t abs_play     = (first_pts + playback_pts) & 0x1FFFFFFFF;
+	pts_t current_delay = pts_delta(live_pts, abs_play);
+
+	int recovery_ms = eSimpleConfig::getInt("config.timeshift.recoveryBufferDelay", 300);
+	const pts_t safety_pts       = (pts_t)(recovery_ms * 90);
+	const pts_t final_target_pts = m_original_timeshift_delay + safety_pts;
+
+	bool recovery_complete = false;
+
+	if (m_is_paused) {
+		// ── State 1: decoder paused, wait for buffer to rebuild ──
+		if (current_delay >= final_target_pts)
+			recovery_complete = true;
+	} else {
+		// ── State 2: decoder still playing ──
+		// Soft-pause in two sub-cases:
+		// A) Stream recovered but delay is stuck constant (both sides advancing at 1x):
+		//    current_delay >= safety_pts — pause so delay can grow to target.
+		// B) Decoder approaching live edge on long corruption (starvation risk):
+		//    current_delay < 1 second — pause before decoder hits the wall.
+		const pts_t STARVATION_THRESHOLD = 90000LL; // 1 second
+		if (current_delay >= safety_pts || current_delay < STARVATION_THRESHOLD) {
+			eWarning("[eRamServicePlay] PRS State 2: soft-pausing decoder (delay=%lld PTS).",
+			         (long long)current_delay);
+			getPlayPosition(m_frozen_play_position);
+			if (m_decoder && !m_is_paused) {
+				m_decoder->pause();
+				m_is_paused = 1;
+			}
+		}
+		// Stay in timer loop — will hit State 1 on next tick.
+	}
+
+	if (recovery_complete) {
+		m_precise_recovery_timer->stop();
+		m_stream_corruption_detected = false;
+		if (m_is_paused)
+			unpause();
+		m_event((iPlayableService*)this, evSeekableStatusChanged);
+	} else {
+		m_precise_recovery_timer->start(100, false);
+	}
 }
 
 // On RAM timeshift there is no end-of-file: eventEOF from the push thread means
@@ -262,9 +371,10 @@ RESULT eRamServicePlay::getPlayPosition(pts_t& pos) {
 	if (!m_timeshift_active || !m_ram_recorder || !m_decoder || !m_record)
 		return eDVBServicePlay::getPlayPosition(pos);
 
-	// Freeze play position during stream corruption so the PRS delay
-	// calculation remains stable while waiting for recovery.
-	if (m_stream_corruption_detected) {
+	// Freeze play position only when decoder is actually paused during recovery.
+	// While the decoder is still consuming valid buffer data (m_is_paused == 0),
+	// let getPlayPosition() advance normally so the seekbar tracks the video.
+	if (m_stream_corruption_detected && m_is_paused) {
 		pos = m_frozen_play_position;
 		return 0;
 	}

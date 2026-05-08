@@ -112,8 +112,8 @@ public:
   static void setRamTimeshift(int delay) {
       if (delay < 0)
           delay = 0;
-      if (delay > 100)
-          delay = 100;
+      if (delay > 30)
+          delay = 30;
       ram_timeshift_delay_seconds = delay; 
   }
 

@@ -566,6 +566,7 @@ extern void addFont(const char *filename, const char *alias, int scale_factor, i
 extern const char *getEnigmaVersionString();
 extern const char *getE2Rev();
 extern const char *getOARev();
+extern int getImageFingerprint();
 extern const char *getGStreamerVersionString();
 extern void dump_malloc_stats(void);
 #ifndef HAVE_OSDANIMATION
@@ -592,6 +593,7 @@ extern eApplication *getApplication();
 extern const char *getEnigmaVersionString();
 extern const char *getE2Rev();
 extern const char *getOARev();
+extern int getImageFingerprint();
 extern const char *getGStreamerVersionString();
 extern void dump_malloc_stats(void);
 #ifndef HAVE_OSDANIMATION
