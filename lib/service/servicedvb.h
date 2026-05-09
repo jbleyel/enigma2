@@ -9,6 +9,7 @@
 #include <lib/dvb/radiotext.h>
 #include <lib/dvb/subtitle.h>
 #include <lib/dvb/teletext.h>
+#include <atomic> // FIXED: Added for thread-safe stream corruption flag
 
 class eStaticServiceDVBInformation;
 class eStaticServiceDVBBouquetInformation;
@@ -362,17 +363,19 @@ protected:
 	// Audio cache helper
 	void updateAudioCache(int apid, int apidtype);
 
-	void resetRecoveryState(); // Resets all recovery state variables.
-
-private:
-	void handleEofRecovery();
-	virtual void startPreciseRecoveryCheck();
-
-protected:
-	bool m_stream_corruption_detected;
+	// -- START: Precise Recovery System --
+	// This system handles stream corruption during timeshift, with support for a custom recovery delay.
+	ePtr<eTimer> m_precise_recovery_timer;
+	
+	std::atomic<bool> m_stream_corruption_detected; // FIXED: Changed to std::atomic<bool> to prevent Race Conditions
+	
 	pts_t m_original_timeshift_delay; // Stores the target timeshift delay.
 	bool m_delay_calculated = false; // Flag to ensure delay is calculated only once.
-	ePtr<eTimer> m_precise_recovery_timer;
+
+	virtual void handleEofRecovery();
+	virtual void startPreciseRecoveryCheck();
+	void resetRecoveryState(); // Resets all recovery state variables.
+	// -- END: Precise Recovery System --
 };
 
 class eStaticServiceDVBBouquetInformation : public iStaticServiceInformation {

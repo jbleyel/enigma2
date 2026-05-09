@@ -142,6 +142,60 @@ void eRamServicePlay::checkLapAndSeek() {
 		pvr_channel->forceSourcePosition(safe);
 }
 
+
+// ------------------------------------------------------------------
+// handleEofRecovery — intercept signal loss / eventNoPMT triggered pause
+// ------------------------------------------------------------------
+//
+// The base class handleEofRecovery() is called by serviceEvent() when
+// eventNoPMT or eventTuneFailed fires (~50ms after signal loss) — long
+// BEFORE eventStreamCorrupt reaches recordEvent() (~2000ms later).
+// Without this override, eDVBServicePlay::handleEofRecovery() would
+// issue m_decoder->pause() immediately, freezing the picture before
+// we get a chance to let the decoder consume the valid buffer data.
+//
+// This override captures the delay fingerprint and starts the PRS timer
+// without pausing the decoder, exactly like recordEvent() does for
+// eventStreamCorrupt. The decoder is allowed to keep playing valid
+// buffered data until State 2 of startPreciseRecoveryCheck() issues
+// a Soft Pause when appropriate.
+void eRamServicePlay::handleEofRecovery() {
+	if (m_is_paused)
+		return;
+
+	if (m_stream_corruption_detected)
+		return;
+
+	eWarning("[eRamServicePlay] Signal loss (eventNoPMT/eventTuneFailed): "
+	         "letting decoder play through valid buffer.");
+
+	// Capture delay fingerprint — PTS is still valid at this moment.
+	if (m_record) {
+		pts_t live_pts = 0, playback_pts = 0;
+		if (m_record->getCurrentPCR(live_pts) == 0 &&
+		    getPlayPosition(playback_pts) == 0) {
+			pts_t first_pts = 0;
+			if (m_record->getFirstPTS(first_pts) == 0) {
+				pts_t abs_play = (first_pts + playback_pts) & 0x1FFFFFFFF;
+				m_original_timeshift_delay = pts_delta(live_pts, abs_play);
+				m_delay_calculated = true;
+				eTrace("[eRamServicePlay] handleEofRecovery delay fingerprint: %lld PTS",
+				       (long long)m_original_timeshift_delay);
+			}
+		}
+	}
+
+	// Freeze UI position (decoder still moving — not frozen for PRS).
+	getPlayPosition(m_frozen_play_position);
+
+	// Mark corruption and start PRS timer.
+	// Do NOT call eDVBServicePlay::handleEofRecovery() — that issues
+	// m_decoder->pause() which would freeze the picture immediately.
+	m_stream_corruption_detected = true;
+	if (!m_precise_recovery_timer->isActive())
+		m_precise_recovery_timer->start(100, false);
+}
+
 void eRamServicePlay::recordEvent(int event) {
 	if (event == iDVBTSRecorder::eventStreamCorrupt) {
 		if (!m_stream_corruption_detected) {
