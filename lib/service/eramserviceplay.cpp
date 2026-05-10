@@ -163,24 +163,26 @@ void eRamServicePlay::handleEofRecovery() {
 	if (m_is_paused)
 		return;
 
-	if (m_stream_corruption_detected)
-		return;
+	/* Do NOT check m_stream_corruption_detected here.
+	 * The base class (eDVBServicePlay::serviceEvent) sets it to true
+	 * BEFORE calling this function, so the check would always be true
+	 * and we would return immediately without doing anything.
+	 * For recordEvent path, m_stream_corruption_detected is checked
+	 * there before calling the base class. */
 
 	eWarning("[eRamServicePlay] Signal loss (eventNoPMT/eventTuneFailed): "
-	         "letting decoder play through valid buffer.");
+			 "letting decoder play through valid buffer.");
 
 	// Capture delay fingerprint — PTS is still valid at this moment.
 	if (m_record) {
 		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0 &&
-		    getPlayPosition(playback_pts) == 0) {
+		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
 			pts_t first_pts = 0;
 			if (m_record->getFirstPTS(first_pts) == 0) {
 				pts_t abs_play = (first_pts + playback_pts) & 0x1FFFFFFFF;
 				m_original_timeshift_delay = pts_delta(live_pts, abs_play);
 				m_delay_calculated = true;
-				eTrace("[eRamServicePlay] handleEofRecovery delay fingerprint: %lld PTS",
-				       (long long)m_original_timeshift_delay);
+				eTrace("[eRamServicePlay] handleEofRecovery delay fingerprint: %lld PTS", (long long)m_original_timeshift_delay);
 			}
 		}
 	}
@@ -206,15 +208,13 @@ void eRamServicePlay::recordEvent(int event) {
 			// but we intercept to allow the decoder to consume remaining good data.
 			if (m_record) {
 				pts_t live_pts = 0, playback_pts = 0;
-				if (m_record->getCurrentPCR(live_pts) == 0 &&
-				    getPlayPosition(playback_pts) == 0) {
+				if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
 					pts_t first_pts = 0;
 					if (m_record->getFirstPTS(first_pts) == 0) {
 						pts_t abs_play = (first_pts + playback_pts) & 0x1FFFFFFFF;
 						m_original_timeshift_delay = pts_delta(live_pts, abs_play);
 						m_delay_calculated = true;
-						eTrace("[eRamServicePlay] Delay fingerprint: %lld PTS",
-						       (long long)m_original_timeshift_delay);
+						eTrace("[eRamServicePlay] Delay fingerprint: %lld PTS", (long long)m_original_timeshift_delay);
 					}
 				}
 			}
@@ -270,11 +270,11 @@ void eRamServicePlay::startPreciseRecoveryCheck() {
 		return;
 	}
 
-	pts_t abs_play     = (first_pts + playback_pts) & 0x1FFFFFFFF;
+	pts_t abs_play = (first_pts + playback_pts) & 0x1FFFFFFFF;
 	pts_t current_delay = pts_delta(live_pts, abs_play);
 
 	int recovery_ms = eSimpleConfig::getInt("config.timeshift.recoveryBufferDelay", 300);
-	const pts_t safety_pts       = (pts_t)(recovery_ms * 90);
+	const pts_t safety_pts = (pts_t)(recovery_ms * 90);
 	const pts_t final_target_pts = m_original_timeshift_delay + safety_pts;
 
 	bool recovery_complete = false;
@@ -292,8 +292,7 @@ void eRamServicePlay::startPreciseRecoveryCheck() {
 		//    current_delay < 1 second — pause before decoder hits the wall.
 		const pts_t STARVATION_THRESHOLD = 90000LL; // 1 second
 		if (current_delay >= safety_pts || current_delay < STARVATION_THRESHOLD) {
-			eWarning("[eRamServicePlay] PRS State 2: soft-pausing decoder (delay=%lld PTS).",
-			         (long long)current_delay);
+			eWarning("[eRamServicePlay] PRS State 2: soft-pausing decoder (delay=%lld PTS).", (long long)current_delay);
 			getPlayPosition(m_frozen_play_position);
 			if (m_decoder && !m_is_paused) {
 				m_decoder->pause();
@@ -436,13 +435,13 @@ RESULT eRamServicePlay::getPlayPosition(pts_t& pos) {
 	pts_t first_pts = 0;
 	if (m_record->getFirstPTS(first_pts) != 0)
 		return -1;
-	
+
 	pts_t dec = 0;
 	if (m_decoder->getPTS(0, dec) != 0)
 		if (m_decoder->getPTS(1, dec) != 0)
 			return -1;
-	
-	dec &= 0x1FFFFFFFF;          // Enforce 33-bit wrap-around
+
+	dec &= 0x1FFFFFFFF; // Enforce 33-bit wrap-around
 	pos = pts_delta(dec, first_pts);
 	return 0;
 }
