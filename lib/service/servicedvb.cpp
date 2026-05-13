@@ -1405,30 +1405,27 @@ void eDVBServicePlay::handleEofRecovery() {
 
 	eTrace("[PreciseRecovery] Corruption detected. Pausing playback, recording continues.");
 
-	if (m_record) {
-		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0) {
-			if (m_noaudio && m_have_video_pid) {
-				/* Muted audio: VIDEO PTS runs in Free-Run mode before pause,
-				 * so defer delay calculation to startPreciseRecoveryCheck()
-				 * after 100ms when VIDEO PTS has stabilised. */
-				eTrace("[PreciseRecovery] Muted audio: deferring delay calculation until decoder is stable.");
-			} else {
-				if (getPlayPosition(playback_pts) == 0) {
-					if (live_pts >= playback_pts)
-						m_original_timeshift_delay = live_pts - playback_pts;
-					else
-						m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
-					m_delay_calculated = true;
-					eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
-				}
-			}
-		}
-	}
-
-	if (m_decoder && !m_is_paused) {
+	if (m_decoder) {
 		m_decoder->pause();
 		m_is_paused = 1;
+	}
+
+	if (m_noaudio && m_have_video_pid) {
+		m_delay_calculated = false;
+		m_precise_recovery_timer->start(100, true);
+		return;
+	}
+
+	if (m_record) {
+		pts_t live_pts = 0, playback_pts = 0;
+		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
+			if (live_pts >= playback_pts)
+				m_original_timeshift_delay = live_pts - playback_pts;
+			else
+				m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
+			m_delay_calculated = true;
+			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+		}
 	}
 
 	m_precise_recovery_timer->start(100, false);
@@ -1442,26 +1439,13 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 
 	if (!m_delay_calculated) {
 		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0) {
-			if (m_noaudio && m_have_video_pid) {
-				/* Decoder paused ≥100ms — VIDEO PTS is now stable.
-				 * Read it directly (bypassing getPlayPosition). */
-				if (m_decoder && m_decoder->getPTS(1, playback_pts) == 0) {
-					if (live_pts >= playback_pts)
-						m_original_timeshift_delay = live_pts - playback_pts;
-					else
-						m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
-					m_delay_calculated = true;
-					eTrace("[PreciseRecovery] Muted audio delay snapshot: %lld PTS", m_original_timeshift_delay);
-				}
-			} else if (getPlayPosition(playback_pts) == 0) {
-				if (live_pts >= playback_pts)
-					m_original_timeshift_delay = live_pts - playback_pts;
-				else
-					m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
-				m_delay_calculated = true;
-				eTrace("[PreciseRecovery] Delayed fingerprint set: %lld PTS", m_original_timeshift_delay);
-			}
+		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
+			if (live_pts >= playback_pts)
+				m_original_timeshift_delay = live_pts - playback_pts;
+			else
+				m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
+			m_delay_calculated = true;
+			eTrace("[PreciseRecovery] Muted audio delay snapshot (post-drain): %lld PTS", m_original_timeshift_delay);
 		}
 		if (!m_delay_calculated) {
 			m_precise_recovery_timer->start(100, false);
