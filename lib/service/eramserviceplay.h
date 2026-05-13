@@ -38,6 +38,9 @@ public:
 	void startPreciseRecoveryCheck() override; // RAM-specific PRS with Soft Pause
 	void handleEofRecovery() override; // Prevent immediate pause on signal loss
 
+	RESULT timeshift(ePtr<iTimeshiftService>& ptr) override { ptr = this; return 0; }
+
+
 protected:
 	RESULT startTimeshift() override;
 	RESULT stopTimeshift(bool swToLive = false) override;

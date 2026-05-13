@@ -124,7 +124,7 @@ public:
 	RESULT audioTracks(ePtr<iAudioTrackSelection>& ptr);
 	RESULT frontendInfo(ePtr<iFrontendInformation>& ptr);
 	RESULT subServices(ePtr<iSubserviceList>& ptr);
-	RESULT timeshift(ePtr<iTimeshiftService>& ptr);
+	virtual RESULT timeshift(ePtr<iTimeshiftService>& ptr);
 	RESULT tap(ePtr<iTapService>& ptr);
 	RESULT cueSheet(ePtr<iCueSheet>& ptr);
 	RESULT subtitle(ePtr<iSubtitleOutput>& ptr);
