@@ -35,8 +35,6 @@ public:
 	RESULT activateTimeshift() override;
 	RESULT saveTimeshiftFile() override; // no-op: nothing on disk
 	void serviceEventTimeshift(int event) override;
-	void startPreciseRecoveryCheck() override; // RAM-specific PRS with Soft Pause
-	void handleEofRecovery() override; // Prevent immediate pause on signal loss
 
 	RESULT timeshift(ePtr<iTimeshiftService>& ptr) override { ptr = this; return 0; }
 
