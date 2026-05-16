@@ -1415,12 +1415,6 @@ void eDVBServicePlay::handleEofRecovery() {
 		m_is_paused = 1;
 	}
 
-	if (m_noaudio && m_have_video_pid) {
-		m_delay_calculated = false;
-		m_precise_recovery_timer->start(100, true);
-		return;
-	}
-
 	if (m_record) {
 		pts_t live_pts = 0, playback_pts = 0;
 		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
@@ -1450,7 +1444,7 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 			else
 				m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
 			m_delay_calculated = true;
-			eTrace("[PreciseRecovery] Muted audio delay snapshot (post-drain): %lld PTS", m_original_timeshift_delay);
+			eTrace("[PreciseRecovery] Delayed fingerprint set: %lld PTS", m_original_timeshift_delay);
 		}
 		if (!m_delay_calculated) {
 			m_precise_recovery_timer->start(100, false);
@@ -1470,39 +1464,7 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 
 	bool recovery_complete = false;
 
-	if (m_noaudio && m_have_video_pid) {
-		pts_t playback_pts = 0;
-		if (!m_decoder || m_decoder->getPTS(1, playback_pts) != 0) {
-			m_precise_recovery_timer->start(100, false);
-			return;
-		}
-
-		pts_t current_delay;
-		if (live_pts >= playback_pts)
-			current_delay = live_pts - playback_pts;
-		else
-			current_delay = (live_pts + 0x200000000LL) - playback_pts;
-
-		pts_t final_target_delay = m_original_timeshift_delay + safety_buffer_pts;
-
-#ifdef ENABLE_TIMESHIFT_HW_LATENCY_FIX
-		int hw_latency_ms = eSimpleConfig::getInt("config.timeshift.hwLatencyCorrection", 2000);
-		if (hw_latency_ms < 0)
-			hw_latency_ms = 0;
-		if (hw_latency_ms > 5000)
-			hw_latency_ms = 5000;
-		const pts_t latency_correction = hw_latency_ms * 90;
-		if (final_target_delay > latency_correction)
-			final_target_delay -= latency_correction;
-		else
-			final_target_delay = 9000;
-#endif
-
-		if (current_delay >= final_target_delay) {
-			recovery_complete = true;
-			eTrace("[PreciseRecovery] Muted audio recovery complete: current_delay=%lld target=%lld", current_delay, final_target_delay);
-		}
-	} else {
+	{
 		pts_t playback_pts = 0;
 		if (getPlayPosition(playback_pts) != 0) {
 			m_precise_recovery_timer->start(100, false);
