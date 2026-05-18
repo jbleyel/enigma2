@@ -34,7 +34,7 @@ except ImportError:
 from Screens.ButtonSetup import ButtonSetupActionMap, InfoBarButtonSetup, getButtonSetupFunctions
 from Screens.ChoiceBox import ChoiceBox
 from Screens.EpgSelection import EPGSelection
-from Screens.EventView import EventViewEPGSelect
+from Screens.EventView import showEventViewCallback
 import Screens.InfoBar
 from Screens.InputBox import PinInput
 from Screens.MessageBox import MessageBox
@@ -2249,7 +2249,7 @@ class ChannelSelectionEPG(InfoBarButtonSetup):
 					epglist.append(ptr)
 				if epglist:
 					self.epglist = epglist
-					self.session.open(EventViewEPGSelect, epglist[0], ServiceReference(ref), self.eventViewCallback, similarEPGCB=self.eventViewSimilarCallback)
+					showEventViewCallback(None, self.session, False, epglist[0], ServiceReference(ref), callback=self.eventViewCallback, similarEPGCB=self.eventViewSimilarCallback)
 
 	def eventViewCallback(self, setEvent, setService, val):
 		epglist = self.epglist
@@ -2551,7 +2551,7 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 					self["key_green"].setText(_("Reception Lists"))
 					self.close(ref)
 
-	def bouquetParentalControlCallback(self, ref):
+	def bouquetParentalControlCallback(self, ref, forceRestart=False):  # 'forceRestart' is used in ParentalControl
 		self.enterPath(ref)
 		self.gotoCurrentServiceOrProvider(ref)
 
