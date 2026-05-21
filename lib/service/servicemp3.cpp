@@ -4376,17 +4376,34 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		}
 		else
 		{
+
+			GstState state, pending;
+			gst_element_get_state(m_gst_playbin, &state, &pending, 0);
+			bool wasPlaying = (state == GST_STATE_PLAYING);
+			if (wasPlaying)
+				gst_element_set_state(m_gst_playbin, GST_STATE_PAUSED);
+
+			gst_element_get_state(m_gst_playbin, NULL, NULL, GST_CLOCK_TIME_NONE);
+
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+
+			if (wasPlaying)
+				gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
+
+			/*
 			if (track.type != 0) {  // NON DVB
 				m_clear_buffers = true;
 				eDebug("[eServiceMP3] enableSubtitles: set current-text to %d with clear buffers", m_currentSubtitleStream);
 				clearBuffers();
 			}
+			*/
 		}
 
 		m_subtitle_widget = user;
 
 		eDebug("[eServiceMP3] switched to subtitle stream %i", m_currentSubtitleStream);
+
+		return 0;
 
 #ifdef GSTREAMER_SUBTITLE_SYNC_MODE_BUG
 		/*
@@ -4397,11 +4414,13 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 #endif
 
 		// Seek to last position for non-initial subtitle changes
+		/*
 		if (track.type == 0 && m_last_seek_pos > 0 && !starting_subtitle) {
 			seekTo(m_last_seek_pos);
 			eDebug("[eServiceMP3] seek to last position %lld after subtitle change", m_last_seek_pos);
 			gst_sleepms(50);
 		}
+		*/
 	}
 
 	eDebug("[eServiceMP3] enableSubtitles END");
