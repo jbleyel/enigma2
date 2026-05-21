@@ -4371,8 +4371,6 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 			if (wasPlaying)
 				gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
 
-			m_subtitle_widget = user;
-			return 0;
 		}
 		else
 		{
