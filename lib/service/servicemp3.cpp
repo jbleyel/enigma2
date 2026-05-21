@@ -2624,6 +2624,9 @@ void eServiceMP3::clearBuffers(bool force) {
 		return;
 #endif
 	bool validposition = false;
+
+	eDebug("[eServiceMP3] clearBuffers m_last_seek_pos %lld", m_last_seek_pos);
+
 	pts_t ppos = 0;
 	if (getPlayPosition(ppos) >= 0) {
 		validposition = true;
@@ -2634,12 +2637,15 @@ void eServiceMP3::clearBuffers(bool force) {
 	if (validposition) {
 		eDebug("[eServiceMP3] clearBuffers call seek");
 		/* flush */
+
+		eDebug("[eServiceMP3] clearBuffers ppos %lld", ppos);
+
 		int res = seekTo(ppos);
 		eDebug("[eServiceMP3] clearBuffers seek returned %d", res);
 
-		//gst_sleepms(50);
+		gst_sleepms(50);
 
-		//eDebug("[eServiceMP3] clearBuffers after sleep");
+		eDebug("[eServiceMP3] clearBuffers after sleep");
 
 		if (res == -1) {
 			m_clear_buffers = false;
