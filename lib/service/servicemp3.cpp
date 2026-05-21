@@ -2632,8 +2632,15 @@ void eServiceMP3::clearBuffers(bool force) {
 			ppos = 0;
 	}
 	if (validposition) {
+		eDebug("[eServiceMP3] clearBuffers call seek");
 		/* flush */
 		int res = seekTo(ppos);
+		eDebug("[eServiceMP3] clearBuffers seek returned %d", res);
+
+		//gst_sleepms(50);
+
+		//eDebug("[eServiceMP3] clearBuffers after sleep");
+
 		if (res == -1) {
 			m_clear_buffers = false;
 			m_send_ev_start = false;
