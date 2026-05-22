@@ -152,9 +152,20 @@ void eSubtitleWidget::setPage(const eDVBSubtitlePage &p)
 	m_dvb_page_ok = 1;
 	eDebug("[eSubtitleWidget::setPage DVB] DONE! Set m_dvb_page_ok=1, visible_region has %d rects",
 		(int)m_visible_region.rects.size());
+	eDebug("[eSubtitleWidget::setPage DVB] Widget info: size=%dx%d, visible=%d",
+		size().width(), size().height(), isVisible());
 	m_hide_subtitles_timer->start(7500, true);
+	eDebug("[eSubtitleWidget::setPage DVB] DEBUG: About to invalidate region with %d rects", (int)m_visible_region.rects.size());
+	if (!m_visible_region.rects.empty()) {
+		eDebug("[eSubtitleWidget::setPage DVB] First rect: (%d,%d,%dx%d)", 
+			m_visible_region.rects[0].left(), m_visible_region.rects[0].top(),
+			m_visible_region.rects[0].width(), m_visible_region.rects[0].height());
+	}
 	invalidate(m_visible_region); // invalidate new regions
-	eDebug("[eSubtitleWidget::setPage DVB] invalidate() called");
+	eDebug("[eSubtitleWidget::setPage DVB] invalidate() called - should trigger paint now");
+	/* Force full widget repaint as fallback */
+	eDebug("[eSubtitleWidget::setPage DVB] FALLBACK: Force full widget invalidate");
+	invalidate();
 }
 
 void eSubtitleWidget::setPage(const ePangoSubtitlePage &p)
@@ -247,12 +258,14 @@ void eSubtitleWidget::setPage(const eVobSubtitlePage &p)
 
 void eSubtitleWidget::clearPage()
 {
+	eDebug("[eSubtitleWidget::clearPage] CALLED! m_dvb_page_ok WAS %d, setting to 0", m_dvb_page_ok);
 	m_page_ok = 0;
 	m_dvb_page_ok = 0;
 	m_pango_page_ok = 0;
 	m_pixmap = 0;
 	invalidate(m_visible_region);
 	m_visible_region.rects.clear();
+	eDebug("[eSubtitleWidget::clearPage] DONE!");
 }
 
 void eSubtitleWidget::setPixmap(ePtr<gPixmap> &pixmap, gRegion changed, eRect pixmap_dest)
@@ -276,6 +289,8 @@ int eSubtitleWidget::event(int event, void *data, void *data2)
 	{
 	case evtPaint:
 	{
+		eDebug("[eSubtitleWidget::event] ===== PAINT EVENT FIRED! m_dvb_page_ok=%d, m_page_ok=%d, m_pango_page_ok=%d =====", 
+			m_dvb_page_ok, m_page_ok, m_pango_page_ok);
 		ePtr<eWindowStyle> style;
 		gPainter &painter = *(gPainter *)data2;
 
