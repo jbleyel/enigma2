@@ -144,14 +144,19 @@ void eSubtitleWidget::setPage(const eDVBSubtitlePage &p)
 		eTrace("[eSubtitleWidget] add %d %d %d %d", it->m_position.x(), it->m_position.y(), it->m_pixmap->size().width(), it->m_pixmap->size().height());
 		eTrace("[eSubtitleWidget] disp width %d, disp height %d", p.m_display_size.width(), p.m_display_size.height());
 		eRect r = eRect(it->m_position, it->m_pixmap->size());
+		eDebug("[eSubtitleWidget::setPage DVB] Before scale: rect=(%d,%d,%dx%d)", r.left(), r.top(), r.width(), r.height());
 		r.scale(size().width(), p.m_display_size.width(), size().height(), p.m_display_size.height());
+		eDebug("[eSubtitleWidget::setPage DVB] After scale: rect=(%d,%d,%dx%d)", r.left(), r.top(), r.width(), r.height());
 		m_visible_region |= r;
 	}
 	m_dvb_page_ok = 1;
-	eDebug("[eSubtitleWidget::setPage DVB] DONE! Set m_dvb_page_ok=1, visible_region has %d rects",
-		(int)m_visible_region.rects.size());
+	eDebug("[eSubtitleWidget::setPage DVB] DONE! Set m_dvb_page_ok=1, visible_region has %d rects, bounds=(%d,%d,%dx%d)",
+		(int)m_visible_region.rects.size(),
+		m_visible_region.extends().left(), m_visible_region.extends().top(),
+		m_visible_region.extends().width(), m_visible_region.extends().height());
 	m_hide_subtitles_timer->start(7500, true);
 	invalidate(m_visible_region); // invalidate new regions
+	eDebug("[eSubtitleWidget::setPage DVB] invalidate() called");
 }
 
 void eSubtitleWidget::setPage(const ePangoSubtitlePage &p)
@@ -430,11 +435,15 @@ int eSubtitleWidget::event(int event, void *data, void *data2)
 		}
 		else if (m_dvb_page_ok)
 		{
+			eDebug("[eSubtitleWidget::paint DVB] RENDERING! %d regions", (int)m_dvb_page.m_regions.size());
 			for (std::list<eDVBSubtitleRegion>::iterator it(m_dvb_page.m_regions.begin()); it != m_dvb_page.m_regions.end(); ++it)
 			{
 				eRect r = eRect(it->m_position, it->m_pixmap->size());
+				eDebug("[eSubtitleWidget::paint DVB] Before scale: rect=(%d,%d,%dx%d)", r.left(), r.top(), r.width(), r.height());
 				r.scale(size().width(), m_dvb_page.m_display_size.width(), size().height(), m_dvb_page.m_display_size.height());
+				eDebug("[eSubtitleWidget::paint DVB] After scale: rect=(%d,%d,%dx%d)", r.left(), r.top(), r.width(), r.height());
 				painter.blitScale(it->m_pixmap, r);
+				eDebug("[eSubtitleWidget::paint DVB] blitScale() called");
 			}
 		}
 		return 0;
