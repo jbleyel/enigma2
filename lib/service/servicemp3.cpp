@@ -3988,6 +3988,11 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
  * @param[in] p The eDVBSubtitlePage to add.
  */
 void eServiceMP3::newDVBSubtitlePage(const eDVBSubtitlePage& p) {
+
+	if (m_subtitle_paused) {
+		return;
+	}
+
 	eDebug("[eServiceMP3::newDVBSubtitlePage] called: stream=%d, regions=%zd, widget=%p, paused=%d", 
 		m_currentSubtitleStream, p.m_regions.size(), m_subtitle_widget, m_paused);
 	
@@ -4322,7 +4327,9 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon) {
 		// if (m_currentSubtitleStream == -1)
 		//	starting_subtitle = true;
-		g_object_set(m_gst_playbin, "current-text", -1, NULL);
+		m_subtitles_paused = true;
+		m_subtitle_widget = 0;
+		// g_object_set(m_gst_playbin, "current-text", -1, NULL);
 		// m_cachedSubtitleStream = -1;
 		m_subtitle_sync_timer->stop();
 		m_dvb_subtitle_sync_timer->stop();
@@ -4342,51 +4349,11 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 
 		if (track.page_number == 6 && track.type == 0) { // PGS
 			eDebug("[eServiceMP3] enableSubtitles: PGS");
-
-			GstState state, pending;
-			gst_element_get_state(m_gst_playbin, &state, &pending, 0);
-			bool wasPlaying = (state == GST_STATE_PLAYING);
-			if (wasPlaying)
-				gst_element_set_state(m_gst_playbin, GST_STATE_PAUSED);
-
-			gst_element_get_state(m_gst_playbin, NULL, NULL, GST_CLOCK_TIME_NONE);
-			gst_element_send_event(m_gst_playbin, gst_event_new_flush_start());
-			gst_element_send_event(m_gst_playbin, gst_event_new_flush_stop(TRUE));
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
-
-			gint64 pos = GST_CLOCK_TIME_NONE;
-			if (gst_element_query_position(m_gst_playbin, GST_FORMAT_TIME, &pos)) {
-				gint64 back = 2 * GST_SECOND;
-
-				if (pos > back) {
-					gst_element_seek_simple(
-						m_gst_playbin,
-						GST_FORMAT_TIME,
-						(GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT),
-						pos - back
-					);
-				}
-			}
-
-			if (wasPlaying)
-				gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
-
 		}
 		else
 		{
-
-			GstState state, pending;
-			gst_element_get_state(m_gst_playbin, &state, &pending, 0);
-			bool wasPlaying = (state == GST_STATE_PLAYING);
-			if (wasPlaying)
-				gst_element_set_state(m_gst_playbin, GST_STATE_PAUSED);
-
-			gst_element_get_state(m_gst_playbin, NULL, NULL, GST_CLOCK_TIME_NONE);
-
 			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
-
-			if (wasPlaying)
-				gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
 
 			/*
 			if (track.type != 0) {  // NON DVB
@@ -4398,6 +4365,8 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		}
 
 		m_subtitle_widget = user;
+
+		m_subtitles_paused = false;
 
 		eDebug("[eServiceMP3] switched to subtitle stream %i", m_currentSubtitleStream);
 
