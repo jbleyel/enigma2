@@ -120,7 +120,8 @@ void eSubtitleWidget::setPage(const eDVBTeletextSubtitlePage &p)
 
 void eSubtitleWidget::setPage(const eDVBSubtitlePage &p)
 {
-	eTrace("[eSubtitleWidget] setPage");
+	eDebug("[eSubtitleWidget::setPage DVB] CALLED! regions=%d, display=%dx%d, widget=%dx%d",
+		(int)p.m_regions.size(), p.m_display_size.width(), p.m_display_size.height(), size().width(), size().height());
 	m_dvb_page = p;
 	invalidate(m_visible_region); // invalidate old visible regions
 	m_visible_region.rects.clear();
@@ -147,6 +148,8 @@ void eSubtitleWidget::setPage(const eDVBSubtitlePage &p)
 		m_visible_region |= r;
 	}
 	m_dvb_page_ok = 1;
+	eDebug("[eSubtitleWidget::setPage DVB] DONE! Set m_dvb_page_ok=1, visible_region has %d rects",
+		(int)m_visible_region.rects.size());
 	m_hide_subtitles_timer->start(7500, true);
 	invalidate(m_visible_region); // invalidate new regions
 }
