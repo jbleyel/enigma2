@@ -150,10 +150,8 @@ void eSubtitleWidget::setPage(const eDVBSubtitlePage &p)
 		m_visible_region |= r;
 	}
 	m_dvb_page_ok = 1;
-	eDebug("[eSubtitleWidget::setPage DVB] DONE! Set m_dvb_page_ok=1, visible_region has %d rects, bounds=(%d,%d,%dx%d)",
-		(int)m_visible_region.rects.size(),
-		m_visible_region.extends().left(), m_visible_region.extends().top(),
-		m_visible_region.extends().width(), m_visible_region.extends().height());
+	eDebug("[eSubtitleWidget::setPage DVB] DONE! Set m_dvb_page_ok=1, visible_region has %d rects",
+		(int)m_visible_region.rects.size());
 	m_hide_subtitles_timer->start(7500, true);
 	invalidate(m_visible_region); // invalidate new regions
 	eDebug("[eSubtitleWidget::setPage DVB] invalidate() called");
