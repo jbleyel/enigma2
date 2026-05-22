@@ -1,4 +1,4 @@
-from Screens.MessageBox import MessageBox
+from Screens.MessageBox import MessageBox, NotificationMessageBox
 
 notifications = []
 
@@ -64,11 +64,39 @@ def RemovePopup(id):
 			x[1].close()
 
 
+newNotifications = []
+
+
+def RemovePopupNew(id):
+	for x in newNotifications:
+		if x[0] and x[0] == id:
+			print("[Notifications] RemovePopup id = %s" % id)
+			newNotifications.remove(x)
+
+	NotificationMessageBox.instance().hide()
+
+
+def AddNotificationNewCallback(*retVal):
+	if newNotifications:
+		newNotification = newNotifications.pop(0)
+		NotificationMessageBox.instance().showMessageBox(**newNotification[2])
+
+
+def AddNotificationNew(id, *args, **kwargs):
+	newNotifications.append((id, args, kwargs))
+
+	if not NotificationMessageBox.instance().shown and newNotifications:
+		newNotification = newNotifications.pop(0)
+		NotificationMessageBox.instance().showMessageBox(**newNotification[2])
+
+
 def AddPopup(text, type, timeout, id=None):
 	if id is not None:
-		RemovePopup(id)
+		RemovePopupNew(id)
+		# RemovePopup(id)
 	print("[Notifications] AddPopup id = %s" % id)
-	AddNotificationWithID(id, MessageBox, text=text, type=type, timeout=timeout, close_on_any_key=True)
+	# AddNotificationWithID(id, MessageBox, text=text, type=type, timeout=timeout, close_on_any_key=True)
+	AddNotificationNew(id, text=text, type=type, timeout=timeout, close_on_any_key=True, callback=AddNotificationNewCallback)
 
 
 def AddPopupWithCallback(fnc, text, type, timeout, id=None):

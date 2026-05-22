@@ -4007,7 +4007,14 @@ void eServiceMP3::newDVBSubtitlePage(const eDVBSubtitlePage& p) {
 				p.m_regions.size(), (long long)p.m_show_time);
 			if (m_subtitle_widget) {
 				eDebug("[eServiceMP3] Setting PGS page directly on widget");
+				if (!p.m_regions.empty()) {
+					eDebug("[eServiceMP3] Region 0: pos=%d,%d, pixmap=%p", 
+						p.m_regions.front().m_position.x(), p.m_regions.front().m_position.y(),
+						p.m_regions.front().m_pixmap.operator->());
+				}
+				eDebug("[eServiceMP3] Calling setPage NOW!");
 				m_subtitle_widget->setPage(p);
+				eDebug("[eServiceMP3] setPage returned!");
 			} else {
 				eDebug("[eServiceMP3] ERROR: m_subtitle_widget is NULL!");
 			}

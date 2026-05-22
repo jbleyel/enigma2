@@ -285,3 +285,46 @@ class ModalMessageBox:
 		if self.dialog.enableInput:
 			self.dialog["actions"].execEnd()
 		self.dialog.hide()
+
+
+class NotificationMessageBox:
+	instance = None
+
+	def __init__(self, session):
+		if NotificationMessageBox.instance:
+			print("[NotificationMessageBox] Error: Only one NotificationMessageBox instance is allowed!")
+		else:
+			NotificationMessageBox.instance = self
+			self.dialog = session.instantiateDialog(MessageBox, "", enableInput=False, skinName="NotificationMessageBox")
+			self.dialog.setAnimationMode(0)
+
+	def showMessageBox(self, text=None, timeout=-1, closeOnAnyKey=False, timeoutDefault=None, windowTitle=None, msgBoxID=None, typeIcon=MessageBox.TYPE_NOICON, enableInput=True, callback=None):
+		self.dialog.text = text
+		self.dialog["text"].setText(text)
+		self.dialog.typeIcon = typeIcon
+		self.dialog.type = typeIcon
+		self.dialog.picon = (typeIcon != MessageBox.TYPE_NOICON)  # Legacy picon argument to support old skins.
+		self.dialog["list"].hide()
+		self.dialog.list = None
+		self.dialog.timeout = timeout
+		self.dialog.msgBoxID = msgBoxID
+		self.dialog.enableInput = enableInput
+		if enableInput:
+			self.dialog.createActionMap(-20)
+			self.dialog["actions"].execBegin()
+		self.dialog.closeOnAnyKey = closeOnAnyKey
+		self.dialog.timeoutDefault = timeoutDefault
+		self.dialog.windowTitle = windowTitle or self.dialog.TYPE_PREFIX.get(type, _("Message"))
+		self.dialog.baseTitle = self.dialog.windowTitle
+		self.dialog.activeTitle = self.dialog.windowTitle
+		self.dialog.reloadLayout()
+		self.dialog.close = self.close
+		self.dialog.callback = callback
+		self.dialog.show()
+
+	def close(self, *retVal):
+		if self.dialog.enableInput:
+			self.dialog["actions"].execEnd()
+		self.dialog.hide()
+		if self.dialog.callback and callable(self.dialog.callback):
+			self.dialog.callback(*retVal)
