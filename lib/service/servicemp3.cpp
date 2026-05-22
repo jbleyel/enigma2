@@ -2619,10 +2619,8 @@ RESULT eServiceMP3::selectTrack(unsigned int i) {
  * @param[in] force If true, forces the clearing of buffers even if not initially started.
  */
 void eServiceMP3::clearBuffers(bool force) {
-#ifdef PASSTHROUGH_FIX
 	if ((!m_initial_start || !m_clear_buffers) && !force)
 		return;
-#endif
 	bool validposition = false;
 
 	eDebug("[eServiceMP3] clearBuffers m_last_seek_pos %lld", m_last_seek_pos);
@@ -3989,12 +3987,12 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
  */
 void eServiceMP3::newDVBSubtitlePage(const eDVBSubtitlePage& p) {
 
-	if (m_subtitle_paused) {
+	if (m_subtitles_paused) {
 		return;
 	}
 
 	eDebug("[eServiceMP3::newDVBSubtitlePage] called: stream=%d, regions=%zd, widget=%p, paused=%d", 
-		m_currentSubtitleStream, p.m_regions.size(), m_subtitle_widget, m_paused);
+		m_currentSubtitleStream, p.m_regions.size(), m_subtitle_widget, m_subtitles_paused);
 	
 	/* For PGS subtitles: display immediately (they already have correct timing in the eDVBSubtitlePage)
 	 * For DVB subtitles: queue and sync with decoder time */
@@ -4323,7 +4321,7 @@ exit:
  * @return RESULT indicating success or failure.
  */
 RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& track) {
-	bool starting_subtitle = false;
+	//bool starting_subtitle = false;
 	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon) {
 		// if (m_currentSubtitleStream == -1)
 		//	starting_subtitle = true;
