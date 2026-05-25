@@ -59,15 +59,10 @@ void eWindowStyleSkinned::paintWindowDecoration(eWindow *wnd, gPainter &painter,
 
 	if (m_fnt)
 	{
-		int title_x = m_border[bsWindow].m_border_left + m_title_offset.width();
-		int title_y = m_border[bsWindow].m_border_top + m_title_offset.height();
-		int title_width = wnd->size().width() - m_border[bsWindow].m_border_left - m_border[bsWindow].m_border_right - m_title_offset.width();
-		int title_height = m_border[bsWindow].m_border_top - m_title_offset.height();
-		
 		painter.setBackgroundColor(m_color[colWindowTitleBackground]);
 		painter.setForegroundColor(m_color[colWindowTitleForeground]);
 		painter.setFont(m_fnt);
-		painter.renderText(eRect(title_x, title_y, title_width, title_height), title);
+		painter.renderText(eRect(m_title_offset.width(), m_title_offset.height(), wnd->size().width() - m_title_offset.width(), m_border[bsWindow].m_border_top - m_title_offset.height()), title);
 	}
 }
 
