@@ -35,8 +35,13 @@ void eStack::invalidateChilds() {
 
 
 int eStack::event(int event, void* data, void* data2) {
-	if (event == evtPaint)
+	if (event == evtPaint) {
+		if (!m_initialized) {
+			eWidget::event(event, data, data2);
+			m_initialized = true;
+		}
 		return 0;
+	}
 
 	return eWidget::event(event, data, data2);
 }
