@@ -26,7 +26,10 @@ eWindowStyleSkinned::eWindowStyleSkinned()
 
 void eWindowStyleSkinned::handleNewSize(eWindow *wnd, eSize &size, eSize &offset)
 {
-//	eDebug("[eWindowStyleSkinned] handle new size: %d x %d", size.width(), size.height());
+	eDebug("[eWindowStyleSkinned] handle new size: input size: %d x %d", size.width(), size.height());
+	eDebug("[eWindowStyleSkinned] Border: left=%d, right=%d, top=%d, bottom=%d", 
+		m_border[bsWindow].m_border_left, m_border[bsWindow].m_border_right,
+		m_border[bsWindow].m_border_top, m_border[bsWindow].m_border_bottom);
 
 	size = eSize(
 			size.width() + m_border[bsWindow].m_border_left + m_border[bsWindow].m_border_right,
@@ -34,6 +37,9 @@ void eWindowStyleSkinned::handleNewSize(eWindow *wnd, eSize &size, eSize &offset
 		);
 
 	offset = eSize(-m_border[bsWindow].m_border_left, -m_border[bsWindow].m_border_top);
+	
+	eDebug("[eWindowStyleSkinned] After border: size: %d x %d, offset: %d x %d", 
+		size.width(), size.height(), offset.width(), offset.height());
 
 	eWidget *child = wnd->child();
 
