@@ -36,10 +36,8 @@ void eStack::invalidateChilds() {
 
 int eStack::event(int event, void* data, void* data2) {
 	if (event == evtPaint) {
-		if (!m_initialized) {
-			eWidget::event(event, data, data2);
-			m_initialized = true;
-		}
+		// Always clear the background for eStack on every paint
+		eWidget::event(event, data, data2);
 		return 0;
 	}
 
