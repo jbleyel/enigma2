@@ -2622,19 +2622,6 @@ void eServiceMP3::clearBuffers(bool force) {
 	if ((!m_initial_start || !m_clear_buffers) && !force)
 		return;
 	bool validposition = false;
-
-	eDebug("[eServiceMP3] clearBuffers m_last_seek_pos %lld", m_last_seek_pos);
-
-	seekTo(m_last_seek_pos);
-
-	eDebug("[eServiceMP3] clearBuffers after seek %lld", m_last_seek_pos);
-
-	gst_sleepms(50);
-
-	eDebug("[eServiceMP3] clearBuffers after sleep");
-
-	return;
-
 	pts_t ppos = 0;
 	if (getPlayPosition(ppos) >= 0) {
 		validposition = true;
@@ -2643,18 +2630,8 @@ void eServiceMP3::clearBuffers(bool force) {
 			ppos = 0;
 	}
 	if (validposition) {
-		eDebug("[eServiceMP3] clearBuffers call seek");
 		/* flush */
-
-		eDebug("[eServiceMP3] clearBuffers ppos %lld", ppos);
-
 		int res = seekTo(ppos);
-		eDebug("[eServiceMP3] clearBuffers seek returned %d", res);
-
-		gst_sleepms(50);
-
-		eDebug("[eServiceMP3] clearBuffers after sleep");
-
 		if (res == -1) {
 			m_clear_buffers = false;
 			m_send_ev_start = false;
@@ -3316,7 +3293,7 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 				}
 
 				if (m_pending_seek_pos > 0) {
-					eDebug("[eServiceMP3] Performing deferred seek to %llds", m_pending_seek_pos);
+					eDebug("[eServiceMP3] Performing deferred seek to %llds", (long long)m_pending_seek_pos);
 					seekTo(m_pending_seek_pos);
 					m_pending_seek_pos = -1;
 				}
@@ -3783,17 +3760,12 @@ eAutoInitPtr<eServiceFactoryMP3> init_eServiceFactoryMP3(eAutoInitNumbers::servi
  * @param[in] user_data User data passed to the callback (eServiceMP3 instance).
  */
 void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpointer user_data) {
-    eDebug("[gstCBsubtitleAvail] CALLED! buffer=%p", buffer);
-
 	eServiceMP3* _this = (eServiceMP3*)user_data;
 	if (!_this || !buffer || !_this->m_subtitle_widget || _this->m_currentSubtitleStream < 0) {
 		if (buffer)
 			gst_buffer_unref(buffer);
 		return;
 	}
-
-    eDebug("[SUB AVAIL] callback called, buffer=%p, stream=%d, widget=%p", 
-            buffer, _this->m_currentSubtitleStream, _this->m_subtitle_widget);
 
 	/* Note: No bounds check on m_subtitleStreams here - this callback runs on
 	 * the GStreamer thread and m_subtitleStreams can be modified by the main
@@ -4007,14 +3979,7 @@ void eServiceMP3::newDVBSubtitlePage(const eDVBSubtitlePage& p) {
 				p.m_regions.size(), (long long)p.m_show_time);
 			if (m_subtitle_widget) {
 				eDebug("[eServiceMP3] Setting PGS page directly on widget");
-				if (!p.m_regions.empty()) {
-					eDebug("[eServiceMP3] Region 0: pos=%d,%d, pixmap=%p", 
-						p.m_regions.front().m_position.x(), p.m_regions.front().m_position.y(),
-						p.m_regions.front().m_pixmap.operator->());
-				}
-				eDebug("[eServiceMP3] Calling setPage NOW!");
 				m_subtitle_widget->setPage(p);
-				eDebug("[eServiceMP3] setPage returned!");
 			} else {
 				eDebug("[eServiceMP3] ERROR: m_subtitle_widget is NULL!");
 			}
