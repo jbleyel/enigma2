@@ -31,7 +31,7 @@ int eLabel::event(int event, void* data, void* data2) {
 			// get style and allow base class to paint background etc.
 			gPainter& painter = *(gPainter*)data2;
 
-			if (m_scroll_text && m_textPixmap && m_paint_pixmap) {
+			if (m_scroll_text && m_textPixmap && m_paint_pixmap && m_scroll_config.cached) {
 				// ensure timer is started with initial delay if not active
 				if (!scrollTimer->isActive()) {
 					scrollTimer->start(m_scroll_config.startDelay);
@@ -52,10 +52,6 @@ int eLabel::event(int event, void* data, void* data2) {
 				eSize s = eSize(visibleW, visibleH);
 				eRect rec = eRect(ePoint(m_padding.x(), m_padding.y()), s);
 				
-				eDebug("[eLabel] SCROLL: size=%dx%d, padding=(x=%d, y=%d, w=%d, h=%d), visibleW=%d, visibleH=%d, srcX=%d, srcY=%d",
-					size().width(), size().height(), 
-					m_padding.x(), m_padding.y(), m_padding.width(), m_padding.height(),
-					visibleW, visibleH, srcX, srcY);
 				
 				painter.blit(m_textPixmap, eRect(ePoint(-srcX + m_padding.x(), -srcY + m_padding.y()), s), rec, 0);
 

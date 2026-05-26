@@ -2,6 +2,7 @@
 
 eStack::eStack(eWidget* parent, LayoutDirection dir) : eWidget(parent), m_direction(dir) {
 	m_spacing = 0;
+	setTransparent(1);
 }
 
 void eStack::setLayoutDirection(LayoutDirection dir) {
@@ -35,11 +36,8 @@ void eStack::invalidateChilds() {
 
 
 int eStack::event(int event, void* data, void* data2) {
-	if (event == evtPaint) {
-		// Always clear the background for eStack on every paint
-		eWidget::event(event, data, data2);
+	if (event == evtPaint)
 		return 0;
-	}
 
 	return eWidget::event(event, data, data2);
 }
