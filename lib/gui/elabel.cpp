@@ -51,8 +51,6 @@ int eLabel::event(int event, void* data, void* data2) {
 				int visibleH = size().height() - m_padding.y() - m_padding.height();
 				eSize s = eSize(visibleW, visibleH);
 				eRect rec = eRect(ePoint(m_padding.x(), m_padding.y()), s);
-				
-				
 				painter.blit(m_textPixmap, eRect(ePoint(-srcX + m_padding.x(), -srcY + m_padding.y()), s), rec, 0);
 
 				m_paint_pixmap = false;

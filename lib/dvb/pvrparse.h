@@ -145,7 +145,6 @@ private:
 	bool m_enable_accesspoints; /* set to false to prevent saving .ap files (e.g. timeshift) */
 	bool m_pts_found; /* 'real' mpeg pts has been found, no longer measuring streamtime */
 	bool m_has_accesspoints;
-	int m_consecutive_broken_pes;
 };
 
 #endif

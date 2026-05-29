@@ -665,6 +665,7 @@ int eDVBRecordFileThread::asyncWrite(int len)
 		if (parse_result == -2)
 		{
 			m_event(eFilePushThreadRecorder::evtStreamCorrupt);
+			return len;
 		}
 	}
 
@@ -769,11 +770,7 @@ int eDVBRecordFileThread::writeData(int len)
 		// calls parseData AFTER descrambling to ensure we parse clear data.
 		if (!getProtocol() && !m_serviceDescrambler)
 		{
-			int parse_result = m_ts_parser.parseData(m_current_offset, m_buffer, len);
-			if (parse_result == -2)
-			{
-				m_event(eFilePushThreadRecorder::evtStreamCorrupt);
-			}
+			m_ts_parser.parseData(m_current_offset, m_buffer, len);
 		}
 
 		int written = 0;
@@ -1084,16 +1081,8 @@ int eDVBRecordScrambledThread::writeData(int len)
 		m_serviceDescrambler->descramble(m_buffer, len);
 
 		// Parse AFTER descrambling for correct Access Points (.ap files)
-		// FIX: Capture parseData result and handle stream corruption (-2)
 		if (!getProtocol())
-		{
-			int parse_result = m_ts_parser.parseData(m_current_offset, m_buffer, len);
-			if (parse_result == -2)
-			{
-				eWarning("[eDVBRecordScrambledThread] Stream corruption detected after descramble, emitting evtStreamCorrupt");
-				m_event(eFilePushThreadRecorder::evtStreamCorrupt);
-			}
-		}
+			m_ts_parser.parseData(m_current_offset, m_buffer, len);
 	}
 
 	// Call the appropriate parent writeData based on target type:

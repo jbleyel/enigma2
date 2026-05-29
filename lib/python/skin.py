@@ -1860,7 +1860,8 @@ class SkinContextVertical(SkinContext):
 				self.h -= (height + self.spacing)
 				self.y += (height + self.spacing)
 			elif pos == "center":
-				pos = (left, (self.h - height) / 2)
+				originY = self.by - self.bh
+				pos = (left, originY + (self.bh - height) / 2)
 				size = (width, height)
 			else:
 				if pos in variables:
@@ -1912,7 +1913,8 @@ class SkinContextHorizontal(SkinContext):
 				size = (width, height)
 				self.w -= (width + self.spacing)
 			elif pos == "center":
-				pos = ((self.w - width) / 2, top)
+				originX = self.rx - self.rw
+				pos = (originX + (self.rw - width) / 2, top)
 				size = (width, height)
 			else:
 				if pos in variables:
@@ -2473,14 +2475,25 @@ def readSkin(screen, skin, names, desktop):
 
 	def processPanel(widget, context, stack=None):
 		name = widget.attrib.get("name")
+		panelPosition = widget.attrib.get("position")
+		panelSize = widget.attrib.get("size")
+		panelFont = widget.attrib.get("font")
+		panelLayout = widget.attrib.get("layout")
 		if name:
 			try:
 				screen = domScreens[name]
 			except KeyError:
 				print(f"[Skin] Error: Unable to find screen '{name}' referred in screen '{myName}'!")
 			else:
-				processScreen(screen[0], context)
-		layout = widget.attrib.get("layout")
+				if panelPosition is not None and panelSize is not None:
+					try:
+						includeContext = SkinContext(context, panelPosition, panelSize, panelFont)
+					except Exception as err:
+						raise SkinError(f"Failed to create include context (position='{panelPosition}', size='{panelSize}', font='{panelFont}') in context '{context}': {err}")
+				else:
+					includeContext = context
+				processScreen(screen[0], includeContext)
+		layout = panelLayout
 		classes = {
 			"stack": SkinContextStack,
 			"vertical": SkinContextVertical,
@@ -2488,12 +2501,12 @@ def readSkin(screen, skin, names, desktop):
 		}
 		contextClass = classes.get(layout, SkinContext)
 		try:
-			contextScreen = contextClass(context, widget.attrib.get("position"), widget.attrib.get("size"), widget.attrib.get("font"))
+			contextScreen = contextClass(context, panelPosition, panelSize, panelFont)
 			spacing = widget.attrib.get("spacing")
 			if spacing:
 				contextScreen.spacing = int(spacing)
 		except Exception as err:
-			raise SkinError(f"Failed to create skin context (position='{widget.attrib.get('position')}', size='{widget.attrib.get('size')}', font='{widget.attrib.get('font')}') in context '{context}': {err}")
+			raise SkinError(f"Failed to create skin context (position='{panelPosition}', size='{panelSize}', font='{panelFont}') in context '{context}': {err}")
 		processScreen(widget, contextScreen)
 
 	def processStack(widget, context, stack=None):

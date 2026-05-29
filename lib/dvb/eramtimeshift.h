@@ -1,17 +1,22 @@
 #ifndef __lib_dvb_eramtimeshift_h
 #define __lib_dvb_eramtimeshift_h
 
+#include <atomic>
 #include <lib/base/itssource.h>
 #include <lib/dvb/demux.h>
 #include <memory>
 #include <pthread.h>
 #include <stdint.h>
 
+// ---------------------------------------------------------------------------
+// eRamBlock — metadata for one write into the ring buffer
+// ---------------------------------------------------------------------------
 struct eRamBlock {
 	off_t offset; // absolute write offset at this block
-	bool is_access_point;
+	bool is_access_point; // true if block starts with an I-frame
 };
 
+// ---------------------------------------------------------------------------
 // eRamRingBuffer
 //
 // Seekable circular RAM buffer for DVB TS data.
@@ -25,6 +30,7 @@ struct eRamBlock {
 //
 // Thread safety: all public methods lock m_mutex internally.
 // The caller does NOT need external synchronization.
+// ---------------------------------------------------------------------------
 class eRamRingBuffer {
 public:
 	eRamRingBuffer(size_t capacity_bytes, size_t max_blocks);
@@ -54,18 +60,16 @@ public:
 private:
 	uint8_t* m_buf;
 	size_t m_capacity;
-
 	size_t m_max_blocks;
 	off_t m_write_offset;
 	int64_t m_first_write_ms;
-
 	eRamBlock* m_blocks;
 	size_t m_block_write_idx;
 	size_t m_total_blocks;
-
 	mutable pthread_mutex_t m_mutex;
 };
 
+// ---------------------------------------------------------------------------
 // eRamTsSource
 //
 // iTsSource backed by eRamRingBuffer.
@@ -77,6 +81,16 @@ private:
 // is still trying to read, read() sets m_lapped = true and stores the
 // new safe aligned offset. The watchdog in eRamServicePlay picks this
 // up via getLappedOffset() and triggers a source position jump.
+//
+// Gate mechanism: setGateClosed(true) makes read() return 0 (stall)
+// instead of data. Used by the drain-first state machine to freeze
+// the push thread without touching the decoder directly.
+//
+// Exhaustion detection: m_exhausted is set atomically when read()
+// reaches the live edge (EAGAIN at write edge, not a lap). This is
+// more reliable than comparing write/read offsets from different
+// threads, which is inherently racy.
+// ---------------------------------------------------------------------------
 class eRamTsSource : public iTsSource {
 	DECLARE_REF(eRamTsSource);
 
@@ -99,24 +113,49 @@ public:
 	// Thread-safe: uses m_offset_mutex internally.
 	bool getLappedOffset(off_t& out_offset);
 
+	// ---- Gate mechanism (lock-free, atomic) ----
+	//
+	// When closed, read() returns 0 to stall the push thread gently.
+	// Used during STARVED/DRAINING to freeze playback without seekTo.
+	void setGateClosed(bool closed) { m_gate_closed.store(closed, std::memory_order_release); }
+	bool isGateClosed() const { return m_gate_closed.load(std::memory_order_acquire); }
+
+	// ---- Deterministic exhaustion detection ----
+	//
+	// Set atomically by read() when it hits the live edge (EAGAIN
+	// at write edge, not a lap). Cleared when read() returns data.
+	// More reliable than offset math between threads.
+	bool isExhausted() const { return m_exhausted.load(std::memory_order_acquire); }
+	void clearExhausted() { m_exhausted.store(false, std::memory_order_release); }
+
+	// Last absolute offset the push thread tried to read.
+	// Used by the watchdog for diagnostics.
+	off_t getLastReadOffset() const { return m_last_read_offset.load(std::memory_order_relaxed); }
+
 private:
 	std::shared_ptr<eRamRingBuffer> m_buf;
-
 	mutable pthread_mutex_t m_offset_mutex;
 	bool m_lapped;
 	off_t m_lapped_offset;
 	off_t m_start_offset; // -1 = live edge
+
+	// Atomic variables: avoid mutex overhead in the push-thread read path.
+	std::atomic<bool> m_gate_closed;
+	std::atomic<bool> m_exhausted;
+	std::atomic<off_t> m_last_read_offset;
 };
 
+// ---------------------------------------------------------------------------
 // eRamRecorder
 //
 // Subclass of eDVBRecordScrambledThread that writes into eRamRingBuffer
 // instead of a disk file. Descrambling (CI, SoftCAM, StreamRelay) and
 // I-frame detection work identically to the disk path.
 //
-// relies entirely on the base class eDVBRecordFileThread for PTS
+// Relies entirely on the base class eDVBRecordFileThread for PTS
 // extraction (via eMPEGStreamParserTS) to drive the seek bar and
-// the Precise Recovery System, matching the standard master branch behavior.
+// the Precise Recovery System, matching the standard master branch.
+// ---------------------------------------------------------------------------
 class eRamRecorder : public eDVBRecordScrambledThread {
 public:
 	explicit eRamRecorder(eRamRingBuffer* buf, int packetsize = 188);

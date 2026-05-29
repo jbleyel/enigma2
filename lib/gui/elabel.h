@@ -119,7 +119,6 @@ private:
 		else if (halign == alignBlock)
 			flags |= gPainter::RT_HALIGN_BLOCK;
 
-
 		if (m_wrap == 1)
 			flags |= gPainter::RT_WRAP;
 		else if (m_wrap == 2)
