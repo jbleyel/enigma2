@@ -213,7 +213,13 @@ void eRamServicePlay::checkLapAndSeek() {
 	if (state == RamDelayState::STARVED) {
 		bool gate_is_closed = src->isGateClosed();
 
+		if (src->isExhausted())
+		{
+			eWarning("[RAM] WATCHDOG SEES EXHAUSTED");
+		}
+
 		if (!gate_is_closed && src->isExhausted()) {
+			eWarning("[RAM] GATE CLOSED");
 			eTrace("[eRamServicePlay] Source reports exhaustion (live edge). "
 				   "Closing gate + pausing decoder (late freeze).");
 			src->setGateClosed(true);
@@ -275,8 +281,7 @@ void eRamServicePlay::checkLapAndSeek() {
 
 		if (gate_is_closed) {
 			if (signal_ok && m_recovery_captured.load(std::memory_order_relaxed)) {
-				eTrace("[eRamServicePlay] Signal recovered while gate "
-					   "CLOSED -> DRAINING.");
+				eWarning("[RAM] STARVED -> DRAINING");
 				// Stamp DRAINING entry time for 30s timeout safety.
 				m_drain_start_ms.store((uint64_t)eRamRingBuffer::nowMs(), std::memory_order_relaxed);
 				m_delay_state.store(RamDelayState::DRAINING, std::memory_order_release);
@@ -398,6 +403,7 @@ void eRamServicePlay::checkLapAndSeek() {
 				   (long long)current_delay, (long long)new_buffer_duration, (long long)missing_gap, (long long)required_refill);
 
 			if (current_delay >= m_original_timeshift_delay.load(std::memory_order_relaxed) && new_buffer_duration >= required_refill) {
+				eWarning("[RAM] DRAINING -> NORMAL RESUME");
 				eTrace("[eRamServicePlay] Delay restored via incremental "
 					   "phase compensation: gap=%.2fs refilled=%.2fs. "
 					   "Resuming playback.",
@@ -429,7 +435,7 @@ void eRamServicePlay::checkLapAndSeek() {
 // ============================================================================
 
 void eRamServicePlay::onRamCorrupt() {
-	eDebug("[eRamServicePlay] onRamCorrupt: RAM corruption detected, entering STARVED");
+	eWarning("[RAM] CORRUPT -> STARVED");
 
 	// CAS: only allow NORMAL → STARVED. During a prolonged outage
 	// ramCorrupt can fire multiple times. Without this guard each

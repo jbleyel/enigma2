@@ -210,6 +210,9 @@ ssize_t eRamTsSource::read(off_t offset, void* buf, size_t count) {
 		off_t cur_min = m_buf->getMinOffset();
 		if (offset < cur_min) {
 			off_t aligned = cur_min + (188 - cur_min % 188) % 188;
+				eWarning("[RAM] LAP offset=%lld min=%lld",
+						   (long long)offset,
+						   (long long)cur_min);
 			eDebug("[eRamTsSource] LAP TOCTOU: offset=%lld < cur_min=%lld "
 				   "-> lapped (aligned=%lld)",
 				   (long long)offset, (long long)cur_min, (long long)aligned);
@@ -222,11 +225,20 @@ ssize_t eRamTsSource::read(off_t offset, void* buf, size_t count) {
 
 		// At live edge: no new data yet. Mark as exhausted so the
 		// watchdog knows the buffer is fully drained.
+		off_t cur_min = m_buf->getMinOffset();
 		m_exhausted.store(true, std::memory_order_release);
+		eWarning("[RAM] EXHAUSTED offset=%lld min=%lld write=%lld",
+			   (long long)offset,
+			   (long long)cur_min,
+			   (long long)m_buf->getWriteOffset());
 		return 0; // at write edge - no new data yet, retry
 	}
 
 	// Successfully read data: clear exhausted flag.
+	if (m_exhausted.load(std::memory_order_relaxed))
+	{
+		eWarning("[RAM] EXHAUSTED CLEARED");
+	}
 	m_exhausted.store(false, std::memory_order_release);
 	return (ssize_t)rc;
 }
