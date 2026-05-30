@@ -12,7 +12,7 @@
 // NORMAL:   Standard streaming. Push thread reads from ring buffer,
 //           decoder plays normally.
 //
-// STARVED:  Corruption detected (eventStreamCorrupt or TuneFailed).
+// STARVED:  Corruption detected (ramCorrupt signal or TuneFailed).
 //           The decoder continues playing until the buffer is fully
 //           drained (drain-first). Only then is the gate closed and
 //           the decoder paused (late freeze). This preserves the
@@ -80,7 +80,6 @@ protected:
 	RESULT stopTimeshift(bool swToLive = false) override;
 	ePtr<iTsSource> createTsSource(eServiceReferenceDVB& ref, int packetsize = 188) override;
 
-
 	// Centralized drain-first recovery entry with CAS idempotency.
 	void handleEofRecovery() override;
 
@@ -89,7 +88,14 @@ private:
 	void checkLapAndSeek();
 
 	// Intercept eventStreamCorrupt for early fingerprint capture.
+	// BLOCKS the event from reaching eDVBServicePlay to prevent
+	// immediate decoder pause. Only non-corrupt events are delegated.
 	void recordEvent(int event) override;
+
+	// RAM-specific corruption handler — connected to eRamRecorder::ramCorrupt.
+	// Bypasses eDVBServicePlay::recordEvent() completely. Enters STARVED
+	// state for drain-first recovery without pausing the decoder.
+	void onRamCorrupt();
 
 	// 33-bit PTS delta with wrap-around handling.
 	static inline pts_t pts_delta(pts_t newer, pts_t older) { return (newer - older) & ((1LL << 33) - 1); }

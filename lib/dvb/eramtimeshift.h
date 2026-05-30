@@ -155,6 +155,12 @@ private:
 // Relies entirely on the base class eDVBRecordFileThread for PTS
 // extraction (via eMPEGStreamParserTS) to drive the seek bar and
 // the Precise Recovery System, matching the standard master branch.
+//
+// RAM-specific corruption signal (ramCorrupt):
+//   Bypasses the base-class signal path (evtStreamCorrupt → filepushEvent →
+//   eventStreamCorrupt) which triggers immediate decoder pause in
+//   eDVBServicePlay::recordEvent(). Connected directly to
+//   eRamServicePlay::onRamCorrupt() for drain-first handling.
 // ---------------------------------------------------------------------------
 class eRamRecorder : public eDVBRecordScrambledThread {
 public:
@@ -162,6 +168,11 @@ public:
 	~eRamRecorder() override;
 
 	eRamRingBuffer* getRingBuffer() { return m_ring; }
+
+	// Signal emitted when corruption is detected in RAM mode.
+	// Bypasses eDVBServicePlay::recordEvent() immediate pause.
+	// Connected to eRamServicePlay::onRamCorrupt() for drain-first.
+	sigc::signal<void()> ramCorrupt;
 
 protected:
 	int writeData(int len) override;

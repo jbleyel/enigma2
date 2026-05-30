@@ -291,7 +291,13 @@ int eRamRecorder::writeData(int len) {
 		int parse_result = m_ts_parser.parseData(m_current_offset, m_buffer, len);
 		if (parse_result == -2) {
 			is_corrupt = true;
-			m_event(eFilePushThreadRecorder::evtStreamCorrupt);
+			// CRITICAL: Do NOT use m_event(evtStreamCorrupt) here.
+			// The base-class signal path (evtStreamCorrupt -> filepushEvent ->
+			// eventStreamCorrupt) triggers eDVBServicePlay::recordEvent()
+			// which pauses the decoder IMMEDIATELY, bypassing our drain-first
+			// state machine. Instead emit ramCorrupt() which is connected
+			// directly to eRamServicePlay::onRamCorrupt() for late-freeze.
+			ramCorrupt();
 		}
 	}
 

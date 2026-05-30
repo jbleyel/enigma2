@@ -61,6 +61,15 @@ RESULT eRamServicePlay::startTimeshift() {
 	recorder->replaceThread(ram_rec);
 	m_record->setTargetFD(-1);
 
+	// Connect RAM-specific corruption signal for drain-first handling.
+	// This bypasses the base-class signal path (evtStreamCorrupt ->
+	// filepushEvent -> eventStreamCorrupt) which triggers immediate
+	// decoder pause in eDVBServicePlay::recordEvent().
+	ram_rec->ramCorrupt.connect(
+		sigc::mem_fun(*this, &eRamServicePlay::onRamCorrupt));
+
+	// Still connect m_record events for non-corrupt events (write errors, etc.)
+	// BUT eventStreamCorrupt is BLOCKED in recordEvent() override below.
 	m_record->connectEvent(sigc::mem_fun(*this, &eRamServicePlay::recordEvent), m_con_record_event);
 
 	if (m_csa_session && m_csa_session->isActive()) {
@@ -416,68 +425,92 @@ void eRamServicePlay::checkLapAndSeek() {
 }
 
 // ============================================================================
-// recordEvent — EARLY FINGERPRINTING at corruption onset (RELATIVE MODEL)
+// onRamCorrupt — RAM-specific corruption handler (bypasses base class)
+// ============================================================================
+
+void eRamServicePlay::onRamCorrupt() {
+	eDebug("[eRamServicePlay] onRamCorrupt: RAM corruption detected, entering STARVED");
+
+	// CAS: only allow NORMAL → STARVED. During a prolonged outage
+	// ramCorrupt can fire multiple times. Without this guard each
+	// subsequent call overwrites m_original_timeshift_delay with a
+	// stale measurement (decoder already paused → delay is growing),
+	// destroying the original fingerprint.
+	RamDelayState expected = RamDelayState::NORMAL;
+	if (!m_delay_state.compare_exchange_strong(expected, RamDelayState::STARVED,
+			std::memory_order_release, std::memory_order_relaxed)) {
+		eTrace("[eRamServicePlay] onRamCorrupt: already in state %d, skipping",
+			   (int)expected);
+		return;
+	}
+
+	// Clear stale m_exhausted: live-edge EAGAIN in NORMAL state can
+	// set this flag during a normal live-edge stall. If corruption
+	// fires immediately after, the first STARVED watchdog tick sees
+	// isExhausted()=true and closes the gate instantly — bypassing
+	// the entire drain-first design.
+	ePtr<eRamTsSource> src = m_ts_source;
+	if (src)
+		src->clearExhausted();
+
+	// Stamp recovery start time used by the fingerprint bailout (5s)
+	// in checkLapAndSeek.
+	m_drain_start_ms.store((uint64_t)eRamRingBuffer::nowMs(), std::memory_order_relaxed);
+
+	m_signal_present.store(false, std::memory_order_relaxed);
+	m_recovery_captured.store(false, std::memory_order_relaxed);
+
+	pts_t live_pts = 0;
+	pts_t dec_pts = 0;
+	pts_t first_pts = 0;
+
+	if (m_record && m_record->getCurrentPCR(live_pts) == 0 &&
+		m_decoder && m_decoder->getPTS(0, dec_pts) == 0 &&
+		m_record && m_record->getFirstPTS(first_pts) == 0) {
+
+		dec_pts &= 0x1FFFFFFFF;
+		pts_t live_relative = pts_delta(live_pts, first_pts);
+		pts_t dec_relative = pts_delta(dec_pts, first_pts);
+		pts_t delay = pts_delta(live_relative, dec_relative);
+
+		m_original_timeshift_delay.store(delay, std::memory_order_relaxed);
+		m_fingerprint_pending.store(false, std::memory_order_relaxed);
+
+		eTrace("[eRamServicePlay] onRamCorrupt: Captured delay fingerprint: %lld PTS (%.2fs). "
+			   "Transitioning to STARVED (drain-first).",
+			   (long long)delay, delay / 90000.0);
+	} else {
+		m_fingerprint_pending.store(true, std::memory_order_relaxed);
+		eTrace("[eRamServicePlay] onRamCorrupt: fingerprint not ready. Will retry in watchdog...");
+	}
+}
+
+// ============================================================================
+// recordEvent — BLOCK eventStreamCorrupt from reaching base class
 // ============================================================================
 
 void eRamServicePlay::recordEvent(int event) {
 	if (event == iDVBTSRecorder::eventStreamCorrupt) {
-		// CAS: only allow NORMAL → STARVED.  During a prolonged outage
-		// eventStreamCorrupt can fire multiple times.  Without this guard
-		// each subsequent call overwrites m_original_timeshift_delay with
-		// a stale measurement (decoder already paused → delay is growing),
-		// destroying the original fingerprint.
-		RamDelayState expected = RamDelayState::NORMAL;
-		if (!m_delay_state.compare_exchange_strong(expected, RamDelayState::STARVED, std::memory_order_release, std::memory_order_relaxed)) {
-			eTrace("[eRamServicePlay] recordEvent: already in state %d, "
-				   "skipping.",
-				   (int)expected);
+		// BLOCK: In RAM mode, eventStreamCorrupt must NOT reach
+		// eDVBServicePlay::recordEvent() which pauses the decoder
+		// IMMEDIATELY, destroying our drain-first design.
+		//
+		// Corruption is handled exclusively by onRamCorrupt() via
+		// eRamRecorder::ramCorrupt signal, connected in startTimeshift().
+		if (m_ram_recorder) {
+			eTrace("[eRamServicePlay] recordEvent: BLOCKING eventStreamCorrupt "
+				   "in RAM mode (handled by onRamCorrupt)");
 			return;
 		}
 
-		// Clear stale m_exhausted: live-edge EAGAIN in NORMAL state can
-		// set this flag during a normal live-edge stall.  If corruption
-		// fires immediately after, the first STARVED watchdog tick sees
-		// isExhausted()=true and closes the gate instantly — bypassing
-		// the entire drain-first design.
-		ePtr<eRamTsSource> src = m_ts_source;
-		if (src)
-			src->clearExhausted();
-
-		// Stamp recovery start time used by the fingerprint bailout (5s)
-		// in checkLapAndSeek.
-		m_drain_start_ms.store((uint64_t)eRamRingBuffer::nowMs(), std::memory_order_relaxed);
-
-		m_signal_present.store(false, std::memory_order_relaxed);
-		m_recovery_captured.store(false, std::memory_order_relaxed);
-
-		pts_t live_pts = 0;
-		pts_t dec_pts = 0;
-		pts_t first_pts = 0;
-
-		if (m_record && m_record->getCurrentPCR(live_pts) == 0 && m_decoder && m_decoder->getPTS(0, dec_pts) == 0 && m_record && m_record->getFirstPTS(first_pts) == 0) {
-			dec_pts &= 0x1FFFFFFFF;
-			pts_t live_relative = pts_delta(live_pts, first_pts);
-			pts_t dec_relative = pts_delta(dec_pts, first_pts);
-			pts_t delay = pts_delta(live_relative, dec_relative);
-
-			m_original_timeshift_delay.store(delay, std::memory_order_relaxed);
-
-			m_fingerprint_pending.store(false, std::memory_order_relaxed);
-
-			eTrace("[eRamServicePlay] Stream corruption detected (relative). "
-				   "Captured delay fingerprint: %lld PTS (%.2fs). "
-				   "Transitioning to STARVED (drain-first).",
-				   (long long)delay, delay / 90000.0);
-		} else {
-			m_fingerprint_pending.store(true, std::memory_order_relaxed);
-			eTrace("[eRamServicePlay] Stream corruption detected but "
-				   "fingerprint not ready. Will retry...");
-		}
-	} else {
+		// Non-RAM mode (should never reach here): delegate to base class
 		eDVBServicePlay::recordEvent(event);
+		return;
 	}
-}
 
+	// All other events (write errors, etc.): delegate to base class normally
+	eDVBServicePlay::recordEvent(event);
+}
 
 // ============================================================================
 // handleEofRecovery — centralized drain-first entry with CAS idempotency
