@@ -226,10 +226,11 @@ ssize_t eRamTsSource::read(off_t offset, void* buf, size_t count) {
 		// At live edge: no new data yet. Mark as exhausted so the
 		// watchdog knows the buffer is fully drained.
 		m_exhausted.store(true, std::memory_order_release);
-		eWarning("[RAM] EXHAUSTED offset=%lld min=%lld write=%lld",
+		eWarning("[RAM] EXHAUSTED read_offset=%lld write_offset=%lld buffered_bytes=%lld bufferedMs=%lld",
 			   (long long)offset,
-			   (long long)cur_min,
-			   (long long)m_buf->getWriteOffset());
+			   (long long)m_buf->getWriteOffset(),
+			   (long long)(m_buf->getWriteOffset() - cur_min),
+			   (long long)m_buf->bufferedMs());
 		return 0; // at write edge - no new data yet, retry
 	}
 

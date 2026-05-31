@@ -437,6 +437,18 @@ void eRamServicePlay::checkLapAndSeek() {
 void eRamServicePlay::onRamCorrupt() {
 	eWarning("[RAM] CORRUPT -> STARVED");
 
+	if (m_ts_source && m_ram_ring) {
+		off_t read_off = m_ts_source->getLastReadOffset();
+		off_t write_off = m_ram_ring->getWriteOffset();
+		off_t min_off = m_ram_ring->getMinOffset();
+		int64_t buf_ms = m_ram_ring->bufferedMs();
+		eWarning("[RAM] CORRUPT read_offset=%lld write_offset=%lld buffered_bytes=%lld bufferedMs=%lld",
+				 (long long)read_off,
+				 (long long)write_off,
+				 (long long)(write_off - min_off),
+				 (long long)buf_ms);
+	}
+
 	// CAS: only allow NORMAL → STARVED. During a prolonged outage
 	// ramCorrupt can fire multiple times. Without this guard each
 	// subsequent call overwrites m_original_timeshift_delay with a
