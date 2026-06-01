@@ -82,10 +82,6 @@ private:
 // new safe aligned offset. The watchdog in eRamServicePlay picks this
 // up via getLappedOffset() and triggers a source position jump.
 //
-// Gate mechanism: setGateClosed(true) makes read() return 0 (stall)
-// instead of data. Used by the drain-first state machine to freeze
-// the push thread without touching the decoder directly.
-//
 // Exhaustion detection: m_exhausted is set atomically when read()
 // reaches the live edge (EAGAIN at write edge, not a lap). This is
 // more reliable than comparing write/read offsets from different
@@ -113,13 +109,6 @@ public:
 	// Thread-safe: uses m_offset_mutex internally.
 	bool getLappedOffset(off_t& out_offset);
 
-	// ---- Gate mechanism (lock-free, atomic) ----
-	//
-	// When closed, read() returns 0 to stall the push thread gently.
-	// Used during STARVED/DRAINING to freeze playback without seekTo.
-	void setGateClosed(bool closed) { m_gate_closed.store(closed, std::memory_order_release); }
-	bool isGateClosed() const { return m_gate_closed.load(std::memory_order_acquire); }
-
 	// ---- Deterministic exhaustion detection ----
 	//
 	// Set atomically by read() when it hits the live edge (EAGAIN
@@ -140,7 +129,6 @@ private:
 	off_t m_start_offset; // -1 = live edge
 
 	// Atomic variables: avoid mutex overhead in the push-thread read path.
-	std::atomic<bool> m_gate_closed;
 	std::atomic<bool> m_exhausted;
 	std::atomic<off_t> m_last_read_offset;
 };

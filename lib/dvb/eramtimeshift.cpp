@@ -162,7 +162,7 @@ off_t eRamRingBuffer::findNearestAccessPoint(off_t from_offset) const {
 
 DEFINE_REF(eRamTsSource);
 
-eRamTsSource::eRamTsSource(std::shared_ptr<eRamRingBuffer> buf) : m_buf(buf), m_lapped(false), m_lapped_offset(0), m_start_offset(-1), m_gate_closed(false), m_exhausted(false), m_last_read_offset(0) {
+eRamTsSource::eRamTsSource(std::shared_ptr<eRamRingBuffer> buf) : m_buf(buf), m_lapped(false), m_lapped_offset(0), m_start_offset(-1), m_exhausted(false), m_last_read_offset(0) {
 	pthread_mutex_init(&m_offset_mutex, nullptr);
 }
 
@@ -176,13 +176,6 @@ ssize_t eRamTsSource::read(off_t offset, void* buf, size_t count) {
 
 	// Atomically store the current read offset for starvation analysis.
 	m_last_read_offset.store(offset, std::memory_order_relaxed);
-
-	// Gate mechanism: if closed, stall the push thread gently by
-	// returning 0 (no data, try again). This freezes playback without
-	// killing the thread or using seekTo().
-	if (m_gate_closed.load(std::memory_order_acquire)) {
-		return 0;
-	}
 
 	off_t min_off = m_buf->getMinOffset();
 	if (offset < min_off) {
