@@ -8,9 +8,7 @@
 
 DEFINE_REF(eRamServicePlay);
 
-eRamServicePlay::eRamServicePlay(const eServiceReference& ref, eDVBService* service, int delay_seconds)
-	: eDVBServicePlay(ref, service, true)
-{
+eRamServicePlay::eRamServicePlay(const eServiceReference& ref, eDVBService* service, int delay_seconds) : eDVBServicePlay(ref, service, true) {
 	m_ts_source = nullptr;
 	m_ram_recorder = nullptr;
 	m_frozen_play_position = 0;
@@ -57,8 +55,7 @@ RESULT eRamServicePlay::startTimeshift() {
 	m_record->setTargetFD(-1);
 
 	// Connect ramCorrupt for drain-first handling
-	ram_rec->ramCorrupt.connect(
-		sigc::mem_fun(*this, &eRamServicePlay::onRamCorrupt));
+	ram_rec->ramCorrupt.connect(sigc::mem_fun(*this, &eRamServicePlay::onRamCorrupt));
 
 	// Connect record events (eventStreamCorrupt blocked in recordEvent override)
 	m_record->connectEvent(sigc::mem_fun(*this, &eRamServicePlay::recordEvent), m_con_record_event);
@@ -114,7 +111,6 @@ RESULT eRamServicePlay::activateTimeshift() {
 // ============================================================================
 // Watchdog — lap detection + late-pause (drain-first)
 // ============================================================================
-
 void eRamServicePlay::checkLapAndSeek() {
 	if (!m_timeshift_active)
 		return;
@@ -165,8 +161,7 @@ void eRamServicePlay::checkLapAndSeek() {
 
 	off_t min_off = m_ram_ring->getMinOffset();
 	off_t safe = min_off + (188 - min_off % 188) % 188;
-	eDebug("[eRamServicePlay] watchdog: lap at %lld, jumping to min_off=%lld",
-		   (long long)lapped_at, (long long)safe);
+	eDebug("[eRamServicePlay] watchdog: lap at %lld, jumping to min_off=%lld", (long long)lapped_at, (long long)safe);
 
 	ePtr<iDVBPVRChannel> pvr_channel;
 	if (m_service_handler_timeshift.getPVRChannel(pvr_channel) == 0)
@@ -176,7 +171,6 @@ void eRamServicePlay::checkLapAndSeek() {
 // ============================================================================
 // onRamCorrupt — fingerprint only, NO pause
 // ============================================================================
-
 void eRamServicePlay::onRamCorrupt() {
 	eWarning("[RAM] CORRUPT detected");
 
@@ -184,9 +178,7 @@ void eRamServicePlay::onRamCorrupt() {
 		off_t read_off = m_ts_source->getLastReadOffset();
 		off_t write_off = m_ram_ring->getWriteOffset();
 		off_t min_off = m_ram_ring->getMinOffset();
-		eWarning("[RAM] CORRUPT read_offset=%lld write_offset=%lld buffered_bytes=%lld",
-				 (long long)read_off, (long long)write_off,
-				 (long long)(write_off - min_off));
+		eWarning("[RAM] CORRUPT read_offset=%lld write_offset=%lld buffered_bytes=%lld", (long long)read_off, (long long)write_off, (long long)(write_off - min_off));
 	}
 
 	// Set flag — watchdog will do late-pause
@@ -210,7 +202,6 @@ void eRamServicePlay::onRamCorrupt() {
 // ============================================================================
 // handleEofRecovery — override: fingerprint only, NO pause
 // ============================================================================
-
 void eRamServicePlay::handleEofRecovery() {
 	eWarning("[eRamServicePlay] handleEofRecovery: fingerprint only (no pause)");
 
@@ -237,7 +228,6 @@ void eRamServicePlay::handleEofRecovery() {
 // ============================================================================
 // recordEvent — BLOCK eventStreamCorrupt from reaching base class
 // ============================================================================
-
 void eRamServicePlay::recordEvent(int event) {
 	if (event == iDVBTSRecorder::eventStreamCorrupt) {
 		// BLOCK: Don't let base class do immediate pause
@@ -254,7 +244,6 @@ void eRamServicePlay::recordEvent(int event) {
 // ============================================================================
 // serviceEventTimeshift — block EOF during recovery
 // ============================================================================
-
 void eRamServicePlay::serviceEventTimeshift(int event) {
 	if (event == eDVBServicePMTHandler::eventEOF) {
 		if (m_stream_corruption_detected) {
@@ -270,7 +259,6 @@ void eRamServicePlay::serviceEventTimeshift(int event) {
 // ============================================================================
 // Stop Timeshift
 // ============================================================================
-
 RESULT eRamServicePlay::stopTimeshift(bool swToLive) {
 	if (!m_timeshift_enabled)
 		return -1;
@@ -312,7 +300,6 @@ RESULT eRamServicePlay::stopTimeshift(bool swToLive) {
 // ============================================================================
 // Seek — disabled for RAM timeshift
 // ============================================================================
-
 RESULT eRamServicePlay::seekTo(pts_t to) {
 	if (m_timeshift_active && m_ram_recorder) {
 		eTrace("[eRamServicePlay] seekTo: disabled on RAM timeshift");
@@ -332,7 +319,6 @@ RESULT eRamServicePlay::seekRelative(int direction, pts_t to) {
 // ============================================================================
 // Unpause — abort recovery
 // ============================================================================
-
 RESULT eRamServicePlay::unpause() {
 	if (m_stream_corruption_detected) {
 		eWarning("[eRamServicePlay] User unpaused during recovery. Aborting.");
@@ -349,7 +335,6 @@ RESULT eRamServicePlay::saveTimeshiftFile() {
 // ============================================================================
 // Source creation
 // ============================================================================
-
 ePtr<iTsSource> eRamServicePlay::createTsSource(eServiceReferenceDVB& ref, int /*packetsize*/) {
 	if (!m_ram_ring)
 		return eDVBServicePlay::createTsSource(ref);
@@ -362,7 +347,6 @@ ePtr<iTsSource> eRamServicePlay::createTsSource(eServiceReferenceDVB& ref, int /
 // ============================================================================
 // Length / Position
 // ============================================================================
-
 RESULT eRamServicePlay::getLength(pts_t& len) {
 	if (!m_ram_recorder || !m_record)
 		return eDVBServicePlay::getLength(len);
@@ -407,7 +391,6 @@ RESULT eRamServicePlay::getPlayPosition(pts_t& pos) {
 // ============================================================================
 // Status helpers
 // ============================================================================
-
 bool eRamServicePlay::isRamBufferReady() const {
 	return m_ram_ring && m_ram_ring->getWriteOffset() > 0;
 }

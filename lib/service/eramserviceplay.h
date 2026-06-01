@@ -41,6 +41,8 @@ public:
 		return 0;
 	}
 
+	RESULT unpause() override;
+
 protected:
 	RESULT startTimeshift() override;
 	RESULT stopTimeshift(bool swToLive = false) override;
@@ -60,9 +62,7 @@ private:
 	void onRamCorrupt();
 
 	// 33-bit PTS delta with wrap-around handling
-	static inline pts_t pts_delta(pts_t newer, pts_t older) {
-		return (newer - older) & ((1LL << 33) - 1);
-	}
+	static inline pts_t pts_delta(pts_t newer, pts_t older) { return (newer - older) & ((1LL << 33) - 1); }
 
 	std::shared_ptr<eRamRingBuffer> m_ram_ring;
 	ePtr<eTimer> m_watchdog_timer;

@@ -143,15 +143,15 @@ public:
 
 	// iPauseableService
 	RESULT pause();
-	RESULT unpause();
+	virtual RESULT unpause();
 	RESULT setSlowMotion(int ratio);
 	RESULT setFastForward(int ratio);
 
 	// iSeekableService
-	RESULT getLength(pts_t& len);
-	RESULT seekTo(pts_t to);
-	RESULT seekRelative(int direction, pts_t to);
-	RESULT getPlayPosition(pts_t& pos);
+	virtual RESULT getLength(pts_t& len);
+	virtual RESULT seekTo(pts_t to);
+	virtual RESULT seekRelative(int direction, pts_t to);
+	virtual RESULT getPlayPosition(pts_t& pos);
 	RESULT setTrickmode(int trick = 0);
 	RESULT isCurrentlySeekable();
 
@@ -186,13 +186,13 @@ public:
 	RESULT getSubservice(eServiceReference& subservice, unsigned int n);
 
 	// iTimeshiftService
-	RESULT startTimeshift();
-	RESULT stopTimeshift(bool swToLive = true);
+	virtual RESULT startTimeshift();
+	virtual RESULT stopTimeshift(bool swToLive = true);
 	int isTimeshiftActive();
 	int isTimeshiftEnabled();
-	RESULT activateTimeshift();
+	virtual RESULT activateTimeshift();
 	RESULT setNextPlaybackFile(const char* fn);
-	RESULT saveTimeshiftFile();
+	virtual RESULT saveTimeshiftFile();
 	std::string getTimeshiftFilename();
 	virtual void switchToLive();
 

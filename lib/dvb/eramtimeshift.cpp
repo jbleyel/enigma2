@@ -13,7 +13,6 @@
 // ===========================================================================
 // eRamRingBuffer Implementation
 // ===========================================================================
-
 int64_t eRamRingBuffer::nowMs() {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -159,7 +158,6 @@ off_t eRamRingBuffer::findNearestAccessPoint(off_t from_offset) const {
 // ===========================================================================
 // eRamTsSource Implementation
 // ===========================================================================
-
 DEFINE_REF(eRamTsSource);
 
 eRamTsSource::eRamTsSource(std::shared_ptr<eRamRingBuffer> buf) : m_buf(buf), m_lapped(false), m_lapped_offset(0), m_start_offset(-1), m_exhausted(false), m_last_read_offset(0) {
@@ -272,7 +270,6 @@ void eRamTsSource::setStartOffset(off_t o) {
 // ===========================================================================
 // eRamRecorder Implementation
 // ===========================================================================
-
 eRamRecorder::eRamRecorder(eRamRingBuffer* buf, int packetsize) : eDVBRecordScrambledThread(packetsize, 188 * 256, false, false), m_ring(buf) {
 	// PCR scan loop in writeData() assumes 188-byte TS packets.
 	// RAM timeshift always uses packetsize=188 (see startTimeshift()),
