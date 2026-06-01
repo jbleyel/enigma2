@@ -1,15 +1,14 @@
 #ifndef __servicedvb_h
 #define __servicedvb_h
 
-#include <lib/dvb/idvb.h>
-#include <lib/service/iservice.h>
-
+#include <atomic>
 #include <lib/dvb/eit.h>
+#include <lib/dvb/idvb.h>
 #include <lib/dvb/pmt.h>
 #include <lib/dvb/radiotext.h>
 #include <lib/dvb/subtitle.h>
 #include <lib/dvb/teletext.h>
-#include <atomic> // FIXED: Added for thread-safe stream corruption flag
+#include <lib/service/iservice.h>
 
 class eStaticServiceDVBInformation;
 class eStaticServiceDVBBouquetInformation;
@@ -234,7 +233,7 @@ protected:
 	ePtr<eDVBCSASession> m_csa_session;
 	ePtr<eConnection> m_csa_activated_conn;
 	ePtr<eDVBSoftDecoder> m_soft_decoder;
-	bool m_soft_decoder_video_info_valid = false;  // Track if video info is available from SoftDecoder
+	bool m_soft_decoder_video_info_valid = false; // Track if video info is available from SoftDecoder
 
 	int m_is_primary;
 	int m_decoder_index;
@@ -370,10 +369,11 @@ protected:
 	// -- START: Precise Recovery System --
 	// This system handles stream corruption during timeshift, with support for a custom recovery delay.
 	ePtr<eTimer> m_precise_recovery_timer;
-	
-	std::atomic<bool> m_stream_corruption_detected; // FIXED: Changed to std::atomic<bool> to prevent Race Conditions
-	
+
 	pts_t m_original_timeshift_delay; // Stores the target timeshift delay.
+
+	std::atomic<bool> m_stream_corruption_detected;
+
 	bool m_delay_calculated = false; // Flag to ensure delay is calculated only once.
 
 	virtual void handleEofRecovery();
