@@ -176,6 +176,9 @@ void eRamServicePlay::checkLapAndSeek() {
 // onRamCorrupt — fingerprint only, NO pause
 // ============================================================================
 void eRamServicePlay::onRamCorrupt() {
+	if (m_stream_corruption_detected) {
+		return;
+	}
 	eWarning("[RAM] CORRUPT detected");
 
 	if (m_ts_source && m_ram_ring) {
@@ -192,14 +195,17 @@ void eRamServicePlay::onRamCorrupt() {
 	// them relative to the start of the recording, then take the difference.
 	if (m_decoder && m_record) {
 		pts_t dec_pts = 0, first_pts = 0, live_pts = 0;
-		if (m_decoder->getPTS(0, dec_pts) == 0 && m_record->getFirstPTS(first_pts) == 0 && m_record->getCurrentPCR(live_pts) == 0) {
-			pts_t dec_rel = pts_delta(dec_pts, first_pts);
+		if (m_decoder->getPTS(0, dec_pts) == 0 &&
+			m_record->getFirstPTS(first_pts) == 0 &&
+			m_record->getCurrentPCR(live_pts) == 0) {
+			pts_t dec_rel  = pts_delta(dec_pts,  first_pts);
 			pts_t live_rel = pts_delta(live_pts, first_pts);
 			if (live_rel > dec_rel) {
 				m_original_timeshift_delay = pts_delta(live_rel, dec_rel);
 				m_delay_calculated = true;
 				m_frozen_play_position = dec_rel; // relative — matches getPlayPosition() format
-				eWarning("[eRamServicePlay] onRamCorrupt fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
+				eWarning("[eRamServicePlay] onRamCorrupt fingerprint: delay=%.2fs",
+						 m_original_timeshift_delay / 90000.0);
 			}
 		}
 	}
@@ -221,14 +227,17 @@ void eRamServicePlay::handleEofRecovery() {
 	// Capture fingerprint — same relative calculation as checkLapAndSeek
 	if (m_decoder && m_record) {
 		pts_t dec_pts = 0, first_pts = 0, live_pts = 0;
-		if (m_decoder->getPTS(0, dec_pts) == 0 && m_record->getFirstPTS(first_pts) == 0 && m_record->getCurrentPCR(live_pts) == 0) {
-			pts_t dec_rel = pts_delta(dec_pts, first_pts);
+		if (m_decoder->getPTS(0, dec_pts) == 0 &&
+			m_record->getFirstPTS(first_pts) == 0 &&
+			m_record->getCurrentPCR(live_pts) == 0) {
+			pts_t dec_rel  = pts_delta(dec_pts,  first_pts);
 			pts_t live_rel = pts_delta(live_pts, first_pts);
 			if (live_rel > dec_rel) {
 				m_original_timeshift_delay = pts_delta(live_rel, dec_rel);
 				m_delay_calculated = true;
 				m_frozen_play_position = dec_rel; // relative — matches getPlayPosition() format
-				eWarning("[eRamServicePlay] handleEofRecovery fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
+				eWarning("[eRamServicePlay] handleEofRecovery fingerprint: delay=%.2fs",
+						 m_original_timeshift_delay / 90000.0);
 			}
 		}
 	}
@@ -276,13 +285,14 @@ void eRamServicePlay::startPreciseRecoveryCheck() {
 			pts_t dec_pts = 0;
 			if (m_decoder->getPTS(0, dec_pts) == 0) {
 				dec_pts &= 0x1FFFFFFFF;
-				pts_t dec_rel = pts_delta(dec_pts, first_pts);
+				pts_t dec_rel  = pts_delta(dec_pts,  first_pts);
 				pts_t live_rel = pts_delta(live_pts, first_pts);
 				if (live_rel > dec_rel) {
 					m_original_timeshift_delay = pts_delta(live_rel, dec_rel);
-					m_frozen_play_position = dec_rel;
-					m_delay_calculated = true;
-					eWarning("[eRamServicePlay] PRS late fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
+					m_frozen_play_position     = dec_rel;
+					m_delay_calculated         = true;
+					eWarning("[eRamServicePlay] PRS late fingerprint: delay=%.2fs",
+							 m_original_timeshift_delay / 90000.0);
 				}
 			}
 		}
@@ -295,18 +305,20 @@ void eRamServicePlay::startPreciseRecoveryCheck() {
 	// Both values relative to first_pts — consistent with getPlayPosition().
 	// m_frozen_play_position was updated at late-pause time in checkLapAndSeek,
 	// so it reflects where the decoder stopped after draining.
-	pts_t live_rel = pts_delta(live_pts, first_pts);
+	pts_t live_rel      = pts_delta(live_pts, first_pts);
 	pts_t current_delay = pts_delta(live_rel, m_frozen_play_position);
 
-	int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recoveryBufferDelay", 300);
+	int recovery_delay_ms = eSimpleConfig::getInt(
+		"config.timeshift.recoveryBufferDelay", 300);
 	pts_t target = m_original_timeshift_delay + (pts_t)(recovery_delay_ms * 90);
 
-	eTrace("[eRamServicePlay] PRS: current=%.2fs target=%.2fs", current_delay / 90000.0, target / 90000.0);
+	eDebug("[eRamServicePlay] PRS: current=%.2fs target=%.2fs",
+		   current_delay / 90000.0, target / 90000.0);
 
 	if (current_delay >= target) {
 		m_precise_recovery_timer->stop();
-		resetRecoveryState(); // clean all base-class recovery state
-		m_late_pause_logged = false; // clean our own flag
+		resetRecoveryState();          // clean all base-class recovery state
+		m_late_pause_logged = false;   // clean our own flag
 		if (m_is_paused)
 			unpause();
 		m_event((iPlayableService*)this, evSeekableStatusChanged);
@@ -320,7 +332,7 @@ void eRamServicePlay::recordEvent(int event) {
 	if (event == iDVBTSRecorder::eventStreamCorrupt) {
 		// BLOCK: Don't let base class do immediate pause
 		if (m_ram_recorder) {
-			eTrace("[eRamServicePlay] BLOCKING eventStreamCorrupt (RAM mode)");
+			eDebug("[eRamServicePlay] BLOCKING eventStreamCorrupt (RAM mode)");
 			return;
 		}
 		eDVBServicePlay::recordEvent(event);
@@ -335,10 +347,10 @@ void eRamServicePlay::recordEvent(int event) {
 void eRamServicePlay::serviceEventTimeshift(int event) {
 	if (event == eDVBServicePMTHandler::eventEOF) {
 		if (m_stream_corruption_detected) {
-			eTrace("[eRamServicePlay] Blocking EOF during recovery");
+			eDebug("[eRamServicePlay] Blocking EOF during recovery");
 			return;
 		}
-		eTrace("[eRamServicePlay] Ignoring EOF — live edge");
+		eDebug("[eRamServicePlay] Ignoring EOF — live edge");
 		return;
 	}
 	eDVBServicePlay::serviceEventTimeshift(event);
@@ -390,7 +402,7 @@ RESULT eRamServicePlay::stopTimeshift(bool swToLive) {
 // ============================================================================
 RESULT eRamServicePlay::seekTo(pts_t to) {
 	if (m_timeshift_active && m_ram_recorder) {
-		eTrace("[eRamServicePlay] seekTo: disabled on RAM timeshift");
+		eDebug("[eRamServicePlay] seekTo: disabled on RAM timeshift");
 		return -1;
 	}
 	return eDVBServicePlay::seekTo(to);
@@ -398,7 +410,7 @@ RESULT eRamServicePlay::seekTo(pts_t to) {
 
 RESULT eRamServicePlay::seekRelative(int direction, pts_t to) {
 	if (m_timeshift_active && m_ram_recorder) {
-		eTrace("[eRamServicePlay] seekRelative: disabled on RAM timeshift");
+		eDebug("[eRamServicePlay] seekRelative: disabled on RAM timeshift");
 		return -1;
 	}
 	return eDVBServicePlay::seekRelative(direction, to);
