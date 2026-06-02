@@ -137,9 +137,13 @@ void eRamServicePlay::checkLapAndSeek() {
 					m_late_pause_logged = true;
 				}
 
-				// When delay < 500ms → decoder at live edge → pause now
+				// When delay < 500ms → decoder drained to live edge → pause now.
+				// Update m_frozen_play_position to the actual drain endpoint
+				// so startPreciseRecoveryCheck waits from this position,
+				// not from the pre-drain position captured at corruption start.
 				if (current_delay <= 500 * 90) {
 					eWarning("[eRamServicePlay] LATE PAUSE: delay=%.2fs", current_delay / 90000.0);
+					m_frozen_play_position = dec_relative;
 					m_decoder->pause();
 					m_is_paused = 1;
 				}
@@ -181,19 +185,28 @@ void eRamServicePlay::onRamCorrupt() {
 		eWarning("[RAM] CORRUPT read_offset=%lld write_offset=%lld buffered_bytes=%lld", (long long)read_off, (long long)write_off, (long long)(write_off - min_off));
 	}
 
-	// Set flag — watchdog will do late-pause
-	m_stream_corruption_detected = true;
-	m_late_pause_logged = false;
-
-	// Capture fingerprint for PRS
-	if (m_record) {
-		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
-			m_original_timeshift_delay = live_pts - playback_pts;
-			m_delay_calculated = true;
-			eWarning("[eRamServicePlay] Fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
+	// Capture fingerprint BEFORE setting the flag — getPlayPosition() returns
+	// m_frozen_play_position (=0) once the flag is set, so order matters.
+	// Use same relative calculation as checkLapAndSeek: both dec_pts and
+	// live_pts are absolute stream timestamps, subtract first_pts to make
+	// them relative to the start of the recording, then take the difference.
+	if (m_decoder && m_record) {
+		pts_t dec_pts = 0, first_pts = 0, live_pts = 0;
+		if (m_decoder->getPTS(0, dec_pts) == 0 && m_record->getFirstPTS(first_pts) == 0 && m_record->getCurrentPCR(live_pts) == 0) {
+			pts_t dec_rel = pts_delta(dec_pts, first_pts);
+			pts_t live_rel = pts_delta(live_pts, first_pts);
+			if (live_rel > dec_rel) {
+				m_original_timeshift_delay = pts_delta(live_rel, dec_rel);
+				m_delay_calculated = true;
+				m_frozen_play_position = dec_rel; // relative — matches getPlayPosition() format
+				eWarning("[eRamServicePlay] onRamCorrupt fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
+			}
 		}
 	}
+
+	// Set flag AFTER captures — watchdog will do late-pause
+	m_stream_corruption_detected = true;
+	m_late_pause_logged = false;
 
 	// Start PRS timer — base class will call startPreciseRecoveryCheck()
 	m_precise_recovery_timer->start(100, false);
@@ -205,13 +218,18 @@ void eRamServicePlay::onRamCorrupt() {
 void eRamServicePlay::handleEofRecovery() {
 	eWarning("[eRamServicePlay] handleEofRecovery: fingerprint only (no pause)");
 
-	// Capture fingerprint
-	if (m_record) {
-		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
-			m_original_timeshift_delay = live_pts - playback_pts;
-			m_delay_calculated = true;
-			eWarning("[eRamServicePlay] Fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
+	// Capture fingerprint — same relative calculation as checkLapAndSeek
+	if (m_decoder && m_record) {
+		pts_t dec_pts = 0, first_pts = 0, live_pts = 0;
+		if (m_decoder->getPTS(0, dec_pts) == 0 && m_record->getFirstPTS(first_pts) == 0 && m_record->getCurrentPCR(live_pts) == 0) {
+			pts_t dec_rel = pts_delta(dec_pts, first_pts);
+			pts_t live_rel = pts_delta(live_pts, first_pts);
+			if (live_rel > dec_rel) {
+				m_original_timeshift_delay = pts_delta(live_rel, dec_rel);
+				m_delay_calculated = true;
+				m_frozen_play_position = dec_rel; // relative — matches getPlayPosition() format
+				eWarning("[eRamServicePlay] handleEofRecovery fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
+			}
 		}
 	}
 
@@ -226,8 +244,78 @@ void eRamServicePlay::handleEofRecovery() {
 }
 
 // ============================================================================
-// recordEvent — BLOCK eventStreamCorrupt from reaching base class
+// startPreciseRecoveryCheck — override: relative formula
 // ============================================================================
+// Base class uses live_pts(absolute) - getPlayPosition()(relative) which gives
+// a huge wrong value. We override to use consistent relative values so the
+// recovery fires exactly when the ring buffer has accumulated original_delay
+// worth of content after the decoder's paused position.
+void eRamServicePlay::startPreciseRecoveryCheck() {
+	if (!m_stream_corruption_detected || !m_record) {
+		m_precise_recovery_timer->stop();
+		return;
+	}
+
+	pts_t live_pts = 0;
+	if (m_record->getCurrentPCR(live_pts) != 0 || live_pts == 0) {
+		// Signal not yet recovered — keep waiting
+		m_precise_recovery_timer->start(100, false);
+		return;
+	}
+
+	pts_t first_pts = 0;
+	if (m_record->getFirstPTS(first_pts) != 0) {
+		m_precise_recovery_timer->start(100, false);
+		return;
+	}
+
+	if (!m_delay_calculated) {
+		// Fingerprint not captured yet (e.g. signal was dead at corruption time)
+		// Try now using the same relative formula
+		if (m_decoder) {
+			pts_t dec_pts = 0;
+			if (m_decoder->getPTS(0, dec_pts) == 0) {
+				dec_pts &= 0x1FFFFFFFF;
+				pts_t dec_rel = pts_delta(dec_pts, first_pts);
+				pts_t live_rel = pts_delta(live_pts, first_pts);
+				if (live_rel > dec_rel) {
+					m_original_timeshift_delay = pts_delta(live_rel, dec_rel);
+					m_frozen_play_position = dec_rel;
+					m_delay_calculated = true;
+					eWarning("[eRamServicePlay] PRS late fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
+				}
+			}
+		}
+		if (!m_delay_calculated) {
+			m_precise_recovery_timer->start(100, false);
+			return;
+		}
+	}
+
+	// Both values relative to first_pts — consistent with getPlayPosition().
+	// m_frozen_play_position was updated at late-pause time in checkLapAndSeek,
+	// so it reflects where the decoder stopped after draining.
+	pts_t live_rel = pts_delta(live_pts, first_pts);
+	pts_t current_delay = pts_delta(live_rel, m_frozen_play_position);
+
+	int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recoveryBufferDelay", 300);
+	pts_t target = m_original_timeshift_delay + (pts_t)(recovery_delay_ms * 90);
+
+	eTrace("[eRamServicePlay] PRS: current=%.2fs target=%.2fs", current_delay / 90000.0, target / 90000.0);
+
+	if (current_delay >= target) {
+		m_precise_recovery_timer->stop();
+		resetRecoveryState(); // clean all base-class recovery state
+		m_late_pause_logged = false; // clean our own flag
+		if (m_is_paused)
+			unpause();
+		m_event((iPlayableService*)this, evSeekableStatusChanged);
+	} else {
+		m_precise_recovery_timer->start(100, false);
+	}
+}
+
+
 void eRamServicePlay::recordEvent(int event) {
 	if (event == iDVBTSRecorder::eventStreamCorrupt) {
 		// BLOCK: Don't let base class do immediate pause

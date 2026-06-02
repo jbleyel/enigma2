@@ -50,6 +50,7 @@ protected:
 
 	// Override base class PRS — fingerprint only, no immediate pause
 	void handleEofRecovery() override;
+	void startPreciseRecoveryCheck() override;
 
 private:
 	// 200ms watchdog: lap detection + late-pause (drain-first)
