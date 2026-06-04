@@ -273,6 +273,7 @@ class OpkgComponent:
 		if "lineMode" in self.args and self.args["lineMode"] and exists(PACKAGER_LINEBUFFER):  # Use stdbuf to disable output buffering for upgrade commands to allow line buffering.
 			opkgArgs = [
 				PACKAGER_LINEBUFFER,
+				PACKAGER_LINEBUFFER,
 				"-oL",
 				"-eL",
 			] + opkgArgs[1:]
