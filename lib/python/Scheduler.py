@@ -5,6 +5,7 @@ from os.path import exists
 from subprocess import call
 from sys import maxsize
 from time import ctime, localtime, mktime, strftime, time
+from uuid import uuid4
 
 from enigma import eActionMap, quitMainloop
 
@@ -179,6 +180,7 @@ class Scheduler(Timer):
 			if timer.dontSave:
 				continue
 			timerEntry = ["\t<timer"]
+			timerEntry.append(f"timerid=\"{timer.timerId}\"")
 			timerEntry.append("timertype=\"%s\"" % stringToXML({
 				TIMERTYPE.NONE: "nothing",
 				TIMERTYPE.WAKEUP: "wakeup",
@@ -270,6 +272,8 @@ class Scheduler(Timer):
 		autosleepend = int(timerDom.get("autosleepend") or end)
 		entry = SchedulerEntry(begin, end, disabled, afterevent, timertype)
 		entry.repeated = int(repeated)
+		if timerDom.get("timerid"):
+			entry.timerId = timerDom.get("timerid")
 		entry.autosleepinstandbyonly = timerDom.get("autosleepinstandbyonly", "no")
 		entry.autosleepdelay = int(timerDom.get("autosleepdelay", "0"))
 		entry.autosleeprepeat = timerDom.get("autosleeprepeat", "once")
@@ -533,6 +537,7 @@ class SchedulerEntry(TimerEntry):
 		self.netip = False
 		self.ipadress = "0.0.0.0"
 		self.log_entries = []
+		self.timerId = str(uuid4())
 		self.resetState()
 		self.messageBoxAnswerPending = False
 		self.keyPressHooked = False

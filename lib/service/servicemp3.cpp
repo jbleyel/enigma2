@@ -3925,11 +3925,11 @@ void eServiceMP3::pullSubtitle(GstBuffer* buffer) {
 		} else if (subType == stPGS) {
 			uint8_t* data = map.data;
 			int64_t buf_pos = GST_BUFFER_PTS(buffer);
-			eDebug("[ePGS] processBuffer called with size=%zu, buf_pos=%lld", map.size, buf_pos);
+			// eDebug("[ePGS] processBuffer called with size=%zu, buf_pos=%lld", map.size, buf_pos);
 			auto start = std::chrono::high_resolution_clock::now();
 			m_pgs_subtitle_parser->processBuffer(data, map.size, buf_pos / 1000000ULL);
 			auto duration = std::chrono::high_resolution_clock::now() - start;
-			eDebug("[ePGS] processBuffer DONE - took %lld ms", std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
+			// eDebug("[ePGS] processBuffer DONE - took %lld ms", std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 		} else if (subType == stDVB) {
 			uint8_t* data = map.data;
 			int64_t buf_pos = GST_BUFFER_PTS(buffer);
@@ -4293,14 +4293,9 @@ exit:
  * @return RESULT indicating success or failure.
  */
 RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& track) {
-	//bool starting_subtitle = false;
 	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon) {
-		// if (m_currentSubtitleStream == -1)
-		//	starting_subtitle = true;
 		m_subtitles_paused = true;
 		m_subtitle_widget = 0;
-		// g_object_set(m_gst_playbin, "current-text", -1, NULL);
-		// m_cachedSubtitleStream = -1;
 		m_subtitle_sync_timer->stop();
 		m_dvb_subtitle_sync_timer->stop();
 		m_dvb_subtitle_pages.clear();
@@ -4314,53 +4309,10 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		m_cachedSubtitleStream = m_currentSubtitleStream;
 		setCacheEntry(false, track.pid);
 		eDebug("[eServiceMP3] enableSubtitles: set current-text to %d", m_currentSubtitleStream);
-		
-		eDebug("[eServiceMP3] enableSubtitles: current-text set to %d", m_currentSubtitleStream);
-
-		if (track.page_number == 6 && track.type == 0) { // PGS
-			eDebug("[eServiceMP3] enableSubtitles: PGS");
-			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
-		}
-		else
-		{
-			g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
-
-			/*
-			if (track.type != 0) {  // NON DVB
-				m_clear_buffers = true;
-				eDebug("[eServiceMP3] enableSubtitles: set current-text to %d with clear buffers", m_currentSubtitleStream);
-				clearBuffers();
-			}
-			*/
-		}
-
+		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		m_subtitle_widget = user;
-
 		m_subtitles_paused = false;
-
-		eDebug("[eServiceMP3] switched to subtitle stream %i", m_currentSubtitleStream);
-
-		return 0;
-
-#ifdef GSTREAMER_SUBTITLE_SYNC_MODE_BUG
-		/*
-		 * when we're running the subsink in sync=false mode,
-		 * we have to force a seek, before the new subtitle stream will start
-		 */
-		seekRelative(-1, 90000);
-#endif
-
-		// Seek to last position for non-initial subtitle changes
-		/*
-		if (track.type == 0 && m_last_seek_pos > 0 && !starting_subtitle) {
-			seekTo(m_last_seek_pos);
-			eDebug("[eServiceMP3] seek to last position %lld after subtitle change", m_last_seek_pos);
-			gst_sleepms(50);
-		}
-		*/
 	}
-
-	eDebug("[eServiceMP3] enableSubtitles END");
 	return 0;
 }
 

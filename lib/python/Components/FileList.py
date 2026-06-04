@@ -494,12 +494,12 @@ class FileListBase(MenuList):
 		return f"{self.sortDirectories},{self.sortFiles}"
 
 	def sortList(self, items, sortBy):
-		transTable = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
+		transTable = str.maketrans({"\u00E4": "ae", "\u00F6": "oe", "\u00FC": "ue", "\u00DF": "ss"})  # ä ö ü ß.
 		sort, reverse = (int(x) for x in sortBy.split("."))
-
 		if config.usage.fileSortCaseMode.value == 0 and sort == 0:
 			def textSort(text):
 				return text.casefold().translate(transTable)
+
 		else:
 			def textSort(text):
 				return text.translate(transTable)
@@ -516,7 +516,7 @@ class FileListBase(MenuList):
 			itemList.append((textSort(name), date, size, path, isDir, isLink, name))
 		itemList = sorted(itemList, key=lambda x: x[sort], reverse=reverse)
 		items = []
-		for _, date, size, path, isDir, isLink, name in itemList:
+		for _, date, size, path, isDir, isLink, name in itemList:  # The "_" here is the text used for sorting but not needed in the final list.
 			items.append((name, path, isDir, isLink))
 		return items
 
