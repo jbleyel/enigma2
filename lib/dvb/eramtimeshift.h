@@ -117,6 +117,15 @@ public:
 	bool isExhausted() const { return m_exhausted.load(std::memory_order_acquire); }
 	void clearExhausted() { m_exhausted.store(false, std::memory_order_release); }
 
+	// Freeze the push thread at its current ring offset.
+	// While frozen, read() returns 0 immediately (no data, no side effects).
+	// The push thread loops with 15ms sleep via the filepush timeshift path.
+	// Call unfreeze() before unpausing the decoder so the push thread
+	// resumes from exactly the frozen offset, preserving the delay.
+	void freeze() { m_frozen.store(true, std::memory_order_release); }
+	void unfreeze() { m_frozen.store(false, std::memory_order_release); }
+	bool isFrozen() const { return m_frozen.load(std::memory_order_acquire); }
+
 	// Last absolute offset the push thread tried to read.
 	// Used by the watchdog for diagnostics.
 	off_t getLastReadOffset() const { return m_last_read_offset.load(std::memory_order_relaxed); }
@@ -130,6 +139,7 @@ private:
 
 	// Atomic variables: avoid mutex overhead in the push-thread read path.
 	std::atomic<bool> m_exhausted;
+	std::atomic<bool> m_frozen;
 	std::atomic<off_t> m_last_read_offset;
 };
 

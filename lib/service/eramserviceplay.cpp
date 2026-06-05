@@ -11,8 +11,8 @@ DEFINE_REF(eRamServicePlay);
 eRamServicePlay::eRamServicePlay(const eServiceReference& ref, eDVBService* service, int delay_seconds) : eDVBServicePlay(ref, service, true) {
 	m_ts_source = nullptr;
 	m_ram_recorder = nullptr;
-	m_frozen_play_position = 0;
-	m_late_pause_logged = false;
+	m_frozen_play_position.store(0, std::memory_order_relaxed);
+	m_late_pause_logged.store(false, std::memory_order_relaxed);
 
 	int cap_mb = std::max(32, (int)(delay_seconds * 2.5));
 	m_capacity_bytes = (size_t)cap_mb * 1024 * 1024;
@@ -132,9 +132,9 @@ void eRamServicePlay::checkLapAndSeek() {
 				pts_t current_delay = pts_delta(live_relative, dec_relative);
 
 				// Log once
-				if (!m_late_pause_logged) {
+				if (!m_late_pause_logged.load(std::memory_order_relaxed)) {
 					eWarning("[eRamServicePlay] DRAINING: delay=%.2fs", current_delay / 90000.0);
-					m_late_pause_logged = true;
+					m_late_pause_logged.store(true, std::memory_order_relaxed);
 				}
 
 				// When delay < 500ms → decoder drained to live edge → pause now.
@@ -142,8 +142,17 @@ void eRamServicePlay::checkLapAndSeek() {
 				// so startPreciseRecoveryCheck waits from this position,
 				// not from the pre-drain position captured at corruption start.
 				if (current_delay <= 500 * 90) {
+					// Freeze the push thread BEFORE pausing the decoder so
+					// its ring read offset stays at the drain endpoint.
+					// unfreeze() is called in startPreciseRecoveryCheck just
+					// before unpause(), letting the push thread resume from
+					// exactly this offset and restoring the original delay.
+					src->freeze();
 					eWarning("[eRamServicePlay] LATE PAUSE: delay=%.2fs", current_delay / 90000.0);
-					m_frozen_play_position = dec_relative;
+					eWarning("[DIAG-2] late_pause: current=%.2fs dec_rel=%.2fs live_rel=%.2fs frozen_before=%.2fs", current_delay / 90000.0, dec_relative / 90000.0, live_relative / 90000.0,
+							 m_frozen_play_position.load(std::memory_order_relaxed) / 90000.0);
+					m_frozen_play_position.store(dec_relative, std::memory_order_relaxed);
+					eWarning("[DIAG-2] frozen_pos updated to=%.2fs", m_frozen_play_position.load(std::memory_order_relaxed) / 90000.0);
 					m_decoder->pause();
 					m_is_paused = 1;
 				}
@@ -176,9 +185,11 @@ void eRamServicePlay::checkLapAndSeek() {
 // onRamCorrupt — fingerprint only, NO pause
 // ============================================================================
 void eRamServicePlay::onRamCorrupt() {
+	// Guard: ignore repeated calls
 	if (m_stream_corruption_detected) {
 		return;
 	}
+
 	eWarning("[RAM] CORRUPT detected");
 
 	if (m_ts_source && m_ram_ring) {
@@ -195,24 +206,22 @@ void eRamServicePlay::onRamCorrupt() {
 	// them relative to the start of the recording, then take the difference.
 	if (m_decoder && m_record) {
 		pts_t dec_pts = 0, first_pts = 0, live_pts = 0;
-		if (m_decoder->getPTS(0, dec_pts) == 0 &&
-			m_record->getFirstPTS(first_pts) == 0 &&
-			m_record->getCurrentPCR(live_pts) == 0) {
-			pts_t dec_rel  = pts_delta(dec_pts,  first_pts);
+		if (m_decoder->getPTS(0, dec_pts) == 0 && m_record->getFirstPTS(first_pts) == 0 && m_record->getCurrentPCR(live_pts) == 0) {
+			pts_t dec_rel = pts_delta(dec_pts, first_pts);
 			pts_t live_rel = pts_delta(live_pts, first_pts);
 			if (live_rel > dec_rel) {
 				m_original_timeshift_delay = pts_delta(live_rel, dec_rel);
 				m_delay_calculated = true;
-				m_frozen_play_position = dec_rel; // relative — matches getPlayPosition() format
-				eWarning("[eRamServicePlay] onRamCorrupt fingerprint: delay=%.2fs",
-						 m_original_timeshift_delay / 90000.0);
+				m_frozen_play_position.store(dec_rel, std::memory_order_relaxed); // relative — matches getPlayPosition() format
+				eWarning("[eRamServicePlay] onRamCorrupt fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
+				eWarning("[DIAG-1] corruption: original_delay=%.2fs frozen_pos=%.2fs", m_original_timeshift_delay / 90000.0, m_frozen_play_position.load(std::memory_order_relaxed) / 90000.0);
 			}
 		}
 	}
 
 	// Set flag AFTER captures — watchdog will do late-pause
 	m_stream_corruption_detected = true;
-	m_late_pause_logged = false;
+	m_late_pause_logged.store(false, std::memory_order_relaxed);
 
 	// Start PRS timer — base class will call startPreciseRecoveryCheck()
 	m_precise_recovery_timer->start(100, false);
@@ -227,24 +236,21 @@ void eRamServicePlay::handleEofRecovery() {
 	// Capture fingerprint — same relative calculation as checkLapAndSeek
 	if (m_decoder && m_record) {
 		pts_t dec_pts = 0, first_pts = 0, live_pts = 0;
-		if (m_decoder->getPTS(0, dec_pts) == 0 &&
-			m_record->getFirstPTS(first_pts) == 0 &&
-			m_record->getCurrentPCR(live_pts) == 0) {
-			pts_t dec_rel  = pts_delta(dec_pts,  first_pts);
+		if (m_decoder->getPTS(0, dec_pts) == 0 && m_record->getFirstPTS(first_pts) == 0 && m_record->getCurrentPCR(live_pts) == 0) {
+			pts_t dec_rel = pts_delta(dec_pts, first_pts);
 			pts_t live_rel = pts_delta(live_pts, first_pts);
 			if (live_rel > dec_rel) {
 				m_original_timeshift_delay = pts_delta(live_rel, dec_rel);
 				m_delay_calculated = true;
-				m_frozen_play_position = dec_rel; // relative — matches getPlayPosition() format
-				eWarning("[eRamServicePlay] handleEofRecovery fingerprint: delay=%.2fs",
-						 m_original_timeshift_delay / 90000.0);
+				m_frozen_play_position.store(dec_rel, std::memory_order_relaxed); // relative — matches getPlayPosition() format
+				eWarning("[eRamServicePlay] handleEofRecovery fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
 			}
 		}
 	}
 
 	// Set flag — watchdog will do late-pause
 	m_stream_corruption_detected = true;
-	m_late_pause_logged = false;
+	m_late_pause_logged.store(false, std::memory_order_relaxed);
 
 	// Start PRS timer
 	m_precise_recovery_timer->start(100, false);
@@ -285,14 +291,13 @@ void eRamServicePlay::startPreciseRecoveryCheck() {
 			pts_t dec_pts = 0;
 			if (m_decoder->getPTS(0, dec_pts) == 0) {
 				dec_pts &= 0x1FFFFFFFF;
-				pts_t dec_rel  = pts_delta(dec_pts,  first_pts);
+				pts_t dec_rel = pts_delta(dec_pts, first_pts);
 				pts_t live_rel = pts_delta(live_pts, first_pts);
 				if (live_rel > dec_rel) {
 					m_original_timeshift_delay = pts_delta(live_rel, dec_rel);
-					m_frozen_play_position     = dec_rel;
-					m_delay_calculated         = true;
-					eWarning("[eRamServicePlay] PRS late fingerprint: delay=%.2fs",
-							 m_original_timeshift_delay / 90000.0);
+					m_frozen_play_position.store(dec_rel, std::memory_order_relaxed);
+					m_delay_calculated = true;
+					eWarning("[eRamServicePlay] PRS late fingerprint: delay=%.2fs", m_original_timeshift_delay / 90000.0);
 				}
 			}
 		}
@@ -305,22 +310,34 @@ void eRamServicePlay::startPreciseRecoveryCheck() {
 	// Both values relative to first_pts — consistent with getPlayPosition().
 	// m_frozen_play_position was updated at late-pause time in checkLapAndSeek,
 	// so it reflects where the decoder stopped after draining.
-	pts_t live_rel      = pts_delta(live_pts, first_pts);
-	pts_t current_delay = pts_delta(live_rel, m_frozen_play_position);
+	pts_t live_rel = pts_delta(live_pts, first_pts);
+	pts_t current_delay = pts_delta(live_rel, m_frozen_play_position.load(std::memory_order_relaxed));
 
-	int recovery_delay_ms = eSimpleConfig::getInt(
-		"config.timeshift.recoveryBufferDelay", 300);
+	int recovery_delay_ms = eSimpleConfig::getInt("config.timeshift.recoveryBufferDelay", 300);
 	pts_t target = m_original_timeshift_delay + (pts_t)(recovery_delay_ms * 90);
 
-	eDebug("[eRamServicePlay] PRS: current=%.2fs target=%.2fs",
-		   current_delay / 90000.0, target / 90000.0);
+	eDebug("[eRamServicePlay] PRS: current=%.2fs target=%.2fs", current_delay / 90000.0, target / 90000.0);
+	eWarning("[DIAG-3] PRS: current=%.2fs target=%.2fs frozen=%.2fs original=%.2fs", current_delay / 90000.0, target / 90000.0, m_frozen_play_position.load(std::memory_order_relaxed) / 90000.0,
+			 m_original_timeshift_delay / 90000.0);
 
 	if (current_delay >= target) {
 		m_precise_recovery_timer->stop();
-		resetRecoveryState();          // clean all base-class recovery state
-		m_late_pause_logged = false;   // clean our own flag
-		if (m_is_paused)
+		// Unfreeze before resetRecoveryState / unpause so the push
+		// thread resumes from the frozen offset, not the live edge.
+		ePtr<eRamTsSource> src = m_ts_source;
+		if (src)
+			src->unfreeze();
+		resetRecoveryState();
+		m_late_pause_logged.store(false, std::memory_order_relaxed);
+		if (m_is_paused) {
+			pts_t d2 = 0, f2 = 0;
+			if (m_decoder && m_decoder->getPTS(0, d2) == 0 && m_record->getFirstPTS(f2) == 0) {
+				pts_t dec_rel_now = pts_delta(d2 & 0x1FFFFFFFF, f2);
+				pts_t eff_delay = pts_delta(live_rel, dec_rel_now);
+				eWarning("[DIAG-4] unpause: live=%.2fs dec=%.2fs eff_delay=%.2fs", live_rel / 90000.0, dec_rel_now / 90000.0, eff_delay / 90000.0);
+			}
 			unpause();
+		}
 		m_event((iPlayableService*)this, evSeekableStatusChanged);
 	} else {
 		m_precise_recovery_timer->start(100, false);
@@ -368,8 +385,13 @@ RESULT eRamServicePlay::stopTimeshift(bool swToLive) {
 		m_watchdog_timer = nullptr;
 	}
 
+	// Ensure push thread is not frozen before teardown.
+	ePtr<eRamTsSource> src = m_ts_source;
+	if (src)
+		src->unfreeze();
+
 	resetRecoveryState();
-	m_late_pause_logged = false;
+	m_late_pause_logged.store(false, std::memory_order_relaxed);
 
 	if (m_record) {
 		m_record->stop();
@@ -422,8 +444,11 @@ RESULT eRamServicePlay::seekRelative(int direction, pts_t to) {
 RESULT eRamServicePlay::unpause() {
 	if (m_stream_corruption_detected) {
 		eWarning("[eRamServicePlay] User unpaused during recovery. Aborting.");
+		ePtr<eRamTsSource> src = m_ts_source;
+		if (src)
+			src->unfreeze();
 		resetRecoveryState();
-		m_late_pause_logged = false;
+		m_late_pause_logged.store(false, std::memory_order_relaxed);
 	}
 	return eDVBServicePlay::unpause();
 }
@@ -470,7 +495,7 @@ RESULT eRamServicePlay::getPlayPosition(pts_t& pos) {
 
 	// During corruption, return frozen position
 	if (m_stream_corruption_detected) {
-		pos = m_frozen_play_position;
+		pos = m_frozen_play_position.load(std::memory_order_relaxed);
 		return 0;
 	}
 

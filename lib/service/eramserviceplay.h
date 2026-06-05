@@ -1,6 +1,7 @@
 #ifndef __lib_service_eramserviceplay_h
 #define __lib_service_eramserviceplay_h
 
+#include <atomic>
 #include <lib/base/ebase.h>
 #include <lib/dvb/eramtimeshift.h>
 #include <lib/service/servicedvb.h>
@@ -71,11 +72,16 @@ private:
 	ePtr<eRamTsSource> m_ts_source;
 	eRamRecorder* m_ram_recorder;
 
-	// Frozen play position for seekbar during corruption
-	pts_t m_frozen_play_position;
+	// Frozen play position for seekbar during corruption.
+	// Written by onRamCorrupt() (recorder thread) and checkLapAndSeek()
+	// (main thread). Read by getPlayPosition() (main thread).
+	// pts_t = int64_t: torn read possible on ARM32 without atomic.
+	std::atomic<pts_t> m_frozen_play_position{0};
 
-	// One-shot log flag for late-pause to avoid log spam
-	bool m_late_pause_logged;
+	// One-shot log flag for late-pause to avoid log spam.
+	// Written by onRamCorrupt() (recorder thread), read/written by
+	// checkLapAndSeek() and startPreciseRecoveryCheck() (main thread).
+	std::atomic<bool> m_late_pause_logged{false};
 };
 
 #endif // __lib_service_eramserviceplay_h

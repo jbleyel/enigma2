@@ -160,7 +160,7 @@ off_t eRamRingBuffer::findNearestAccessPoint(off_t from_offset) const {
 // ===========================================================================
 DEFINE_REF(eRamTsSource);
 
-eRamTsSource::eRamTsSource(std::shared_ptr<eRamRingBuffer> buf) : m_buf(buf), m_lapped(false), m_lapped_offset(0), m_start_offset(-1), m_exhausted(false), m_last_read_offset(0) {
+eRamTsSource::eRamTsSource(std::shared_ptr<eRamRingBuffer> buf) : m_buf(buf), m_lapped(false), m_lapped_offset(0), m_start_offset(-1), m_exhausted(false), m_frozen(false), m_last_read_offset(0) {
 	pthread_mutex_init(&m_offset_mutex, nullptr);
 }
 
@@ -170,6 +170,13 @@ eRamTsSource::~eRamTsSource() {
 
 ssize_t eRamTsSource::read(off_t offset, void* buf, size_t count) {
 	if (!m_buf || !buf || count == 0)
+		return 0;
+
+	// When frozen, the push thread must not advance its ring offset.
+	// Return 0 immediately (no lap detection, no exhaustion update).
+	// filepush treats 0 as "live edge, no data yet" and sleeps 15ms
+	// before retrying, so there is no CPU spin.
+	if (m_frozen.load(std::memory_order_acquire))
 		return 0;
 
 	// Atomically store the current read offset for starvation analysis.
