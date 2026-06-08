@@ -1,4 +1,4 @@
-from Screens.MessageBox import MessageBox, NotificationMessageBox
+from Screens.MessageBox import MessageBox, NotificationMessageBox, ToastMessage
 
 notifications = []
 
@@ -73,21 +73,21 @@ def RemovePopupNew(id):
 			print("[Notifications] RemovePopup id = %s" % id)
 			newNotifications.remove(x)
 
-	NotificationMessageBox.instance().hide()
+	NotificationMessageBox.instance.hide()
 
 
 def AddNotificationNewCallback(*retVal):
 	if newNotifications:
 		newNotification = newNotifications.pop(0)
-		NotificationMessageBox.instance().showMessageBox(**newNotification[2])
+		NotificationMessageBox.instance.showMessageBox(**newNotification[2])
 
 
 def AddNotificationNew(id, *args, **kwargs):
 	newNotifications.append((id, args, kwargs))
 
-	if not NotificationMessageBox.instance().shown and newNotifications:
+	if not NotificationMessageBox.instance.shown and newNotifications:
 		newNotification = newNotifications.pop(0)
-		NotificationMessageBox.instance().showMessageBox(**newNotification[2])
+		NotificationMessageBox.instance.showMessageBox(**newNotification[2])
 
 
 def AddPopup(text, type, timeout, id=None):
@@ -104,3 +104,13 @@ def AddPopupWithCallback(fnc, text, type, timeout, id=None):
 		RemovePopup(id)
 	print("[Notifications] AddPopupWithCallback id = %s" % id)
 	AddNotificationWithIDCallback(fnc, id, MessageBox, text=text, type=type, timeout=timeout, close_on_any_key=False)
+
+
+toats = []
+
+
+def ShowToast(text, timeout=5, id=None):
+	toats.append((text, timeout, id))
+	if not ToastMessage.instance.shown and toats:
+		toast = toats.pop(0)
+		ToastMessage.instance.showToast(text=toast[0], timeout=toast[1])

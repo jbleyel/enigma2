@@ -443,6 +443,7 @@ def runScreenTest():
 	enigma.eProfileWrite("Global MessageBox Screen")
 	modalMessagebox = ModalMessageBox(session)  # noqa F841
 	notificationMessagebox = NotificationMessageBox(session)  # noqa F841
+	toastMessage = ToastMessage(session)  # noqa F841
 	enigma.eProfileWrite("PowerKey")
 	power = PowerKey(session)  # noqa F841
 	if enigma.getVFDSymbolsPoll():
@@ -854,7 +855,7 @@ enigma.eProfileWrite("Processing")
 from Screens.Processing import Processing
 
 enigma.eProfileWrite("ModalMessageBox")
-from Screens.MessageBox import ModalMessageBox, NotificationMessageBox
+from Screens.MessageBox import ModalMessageBox, NotificationMessageBox, ToastMessage
 
 enigma.eProfileWrite("StackTracePrinter")
 from Components.StackTrace import StackTracePrinter

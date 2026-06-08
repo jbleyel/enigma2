@@ -1,4 +1,4 @@
-from enigma import eTimer
+from enigma import ePoint, eTimer, getDesktop
 
 from Components.ActionMap import HelpableActionMap
 from Components.Label import Label
@@ -328,3 +328,65 @@ class NotificationMessageBox:
 		self.dialog.hide()
 		if self.dialog.callback and callable(self.dialog.callback):
 			self.dialog.callback(*retVal)
+
+
+class ToastMessageBox(Screen):
+	skin = """
+	<screen name="ToastMessageBox" position="center,e" size="500,80" resolution="1280,720" backgroundColor="#55000000" flags="wfNoBorder" >
+		<widget name="text" position="10,10" size="e-20,e-20" conditional="text" font="Regular;25" transparent="1" horizontalAlignment="center" verticalAlignment="center" />
+	</screen>"""
+
+	def __init__(self, session):
+		Screen.__init__(self, session)
+		self["text"] = Label()
+		self.timer = eTimer()
+		self.timer.callback.append(self.dohide)
+		self.fadeTimer = eTimer()
+		self.fadeTimer.callback.append(self.fade)
+
+	def showMessageBox(self, text, timeout):
+		self["text"].setText(text)
+		self.timer.start(timeout * 1000)
+		self.show()
+		self.fadeIn = True
+		self.pos = 0
+		self.orgwidth = self.instance.size().width()
+		self.deskheight = getDesktop(0).size().height()
+		self.fadeTimer.start(50)
+
+	def fade(self):
+		if self.fadeIn:
+			self.pos += 5
+			if self.pos >= self.orgwidth:
+				self.pos = self.orgwidth
+				self.fadeTimer.stop()
+				self.fadeIn = False
+		else:
+			self.pos -= 5
+			if self.pos <= 0:
+				self.pos = 0
+				self.fadeTimer.stop()
+				self.hide()
+		self.instance.move(ePoint(self.orgwidth, self.deskheight - self.pos))
+
+	def dohide(self):
+		self.timer.stop()
+		self.fadeIn = False
+		self.fadeTimer.start(500)
+
+
+class ToastMessage:
+	instance = None
+
+	def __init__(self, session):
+		if ToastMessage.instance:
+			print("[ToastMessage] Error: Only one ToastMessage instance is allowed!")
+		else:
+			ToastMessage.instance = self
+			self.dialog = session.instantiateDialog(ToastMessageBox)
+			self.dialog.hide()
+
+	def showToast(self, text, timeout):
+		self.dialog.showMessageBox(text, timeout=timeout)
+
+	shown = property(lambda self: self.dialog.shown)

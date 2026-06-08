@@ -310,6 +310,7 @@ def getButtonSetupFunctions():
 	if isPluginInstalled("Chromium"):
 		ButtonSetupFunctions.append((_("Youtube TV"), "YoutubeTV/", textPlugins))
 	ButtonSetupFunctions.append((_("Reload Skin"), "ReloadSkin/", textSetup))
+	ButtonSetupFunctions.append((_("TOAST"), "TOAST/", textSetup))
 	return ButtonSetupFunctions
 
 
@@ -715,6 +716,8 @@ class InfoBarButtonSetup():
 				from skin import reloadSkins
 				reloadSkins()
 				self.session.reloadDialogs()
+			elif selected[0] == "TOAST":
+				toast()
 
 	def showServiceListOrMovies(self):
 		if hasattr(self, "openServiceList"):
@@ -724,3 +727,9 @@ class InfoBarButtonSetup():
 
 	def ToggleLCDLiveTV(self):
 		config.lcd.showTv.value = not config.lcd.showTv.value
+
+
+def toast():
+	from Tools.Notifications import ShowToast
+	ShowToast(_("This is a toast message!"))
+
