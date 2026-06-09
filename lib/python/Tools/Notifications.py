@@ -1,4 +1,4 @@
-from Screens.MessageBox import MessageBox, NotificationMessageBox, ToastMessage
+from Screens.MessageBox import MessageBox, NotificationMessageBox
 
 notifications = []
 
@@ -104,13 +104,3 @@ def AddPopupWithCallback(fnc, text, type, timeout, id=None):
 		RemovePopup(id)
 	print("[Notifications] AddPopupWithCallback id = %s" % id)
 	AddNotificationWithIDCallback(fnc, id, MessageBox, text=text, type=type, timeout=timeout, close_on_any_key=False)
-
-
-toats = []
-
-
-def ShowToast(text, timeout=5, id=None):
-	toats.append((text, timeout, id))
-	if not ToastMessage.instance.shown and toats:
-		toast = toats.pop(0)
-		ToastMessage.instance.showToast(text=toast[0], timeout=toast[1])

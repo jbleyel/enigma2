@@ -1,4 +1,4 @@
-from enigma import ePoint, eTimer, getDesktop
+from enigma import ePoint, gRGB, eSize, eTimer, getDesktop
 
 from Components.ActionMap import HelpableActionMap
 from Components.Label import Label
@@ -332,8 +332,8 @@ class NotificationMessageBox:
 
 class ToastMessageBox(Screen):
 	skin = """
-	<screen name="ToastMessageBox" position="center,e" size="500,80" resolution="1280,720" backgroundColor="#55000000" flags="wfNoBorder" >
-		<widget name="text" position="10,10" size="e-20,e-20" conditional="text" font="Regular;25" transparent="1" horizontalAlignment="center" verticalAlignment="center" />
+	<screen name="ToastMessageBox" position="0,640" size="1280,80" resolution="1280,720" backgroundColor="#FE000000" flags="wfNoBorder">
+		<widget name="text" position="0,0" size="e,e" padding="10" conditional="text" font="Regular;25" horizontalAlignment="center" verticalAlignment="center" backgroundColor="#00000000" />
 	</screen>"""
 
 	def __init__(self, session):
@@ -347,32 +347,38 @@ class ToastMessageBox(Screen):
 	def showMessageBox(self, text, timeout):
 		self["text"].setText(text)
 		self.timer.start(timeout * 1000)
-		self.show()
+		self.textSize = self["text"].instance.calculateSize()
+		newsize = (self.textSize.width() + 20, self.textSize.height() + 20)
+		self["text"].instance.resize(eSize(*newsize))
+		newPos = ePoint((self.instance.size().width() - self.textSize.width()) // 2, self.instance.size().height() - self.textSize.height() - 40)
+		self["text"].instance.move(newPos)
 		self.fadeIn = True
-		self.pos = 0
-		self.orgwidth = self.instance.size().width()
-		self.deskheight = getDesktop(0).size().height()
+		self.alpha = 255
+		self["text"].instance.setBackgroundColor(gRGB(*(0, 0, 0, self.alpha)))
+		self["text"].instance.setForegroundColor(gRGB(*(255, 255, 255, self.alpha)))
 		self.fadeTimer.start(50)
+		self.show()
 
 	def fade(self):
 		if self.fadeIn:
-			self.pos += 5
-			if self.pos >= self.orgwidth:
-				self.pos = self.orgwidth
+			self.alpha -= 5
+			if self.alpha <= 0:
+				self.alpha = 0
 				self.fadeTimer.stop()
 				self.fadeIn = False
 		else:
-			self.pos -= 5
-			if self.pos <= 0:
-				self.pos = 0
+			self.alpha += 5
+			if self.alpha >= 255:
+				self.alpha = 255
 				self.fadeTimer.stop()
 				self.hide()
-		self.instance.move(ePoint(self.orgwidth, self.deskheight - self.pos))
+		self["text"].instance.setBackgroundColor(gRGB(*(0, 0, 0, self.alpha)))
+		self["text"].instance.setForegroundColor(gRGB(*(255, 255, 255, self.alpha)))
 
 	def dohide(self):
 		self.timer.stop()
 		self.fadeIn = False
-		self.fadeTimer.start(500)
+		self.fadeTimer.start(50)
 
 
 class ToastMessage:
@@ -387,6 +393,7 @@ class ToastMessage:
 			self.dialog.hide()
 
 	def showToast(self, text, timeout):
+		print(f"[ToastMessage] Showing toast: '{text}' for {timeout} seconds.")
 		self.dialog.showMessageBox(text, timeout=timeout)
 
 	shown = property(lambda self: self.dialog.shown)

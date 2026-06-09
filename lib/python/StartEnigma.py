@@ -63,14 +63,12 @@ class Session:
 		from Components.FrontPanelLed import frontPanelLed
 		frontPanelLed.setSession(self)
 		self.allDialogs = []
-
+		self.toats = []
 		for plugin in plugins.getPlugins(PluginDescriptor.WHERE_SESSIONSTART):
 			try:
 				plugin.__call__(reason=0, session=self)
 			except Exception:
-				print("[StartEnigma] Error: Plugin raised exception at WHERE_SESSIONSTART!")
-				from traceback import print_exc
-				print_exc()
+				dumpPythonCrash("Plugin raised exception at WHERE_SESSIONSTART.", includeThreads=False)
 
 	def processDelay(self):
 		callback = self.current_dialog.callback
@@ -231,6 +229,12 @@ class Session:
 				oldDesktop = dialog.desktop
 				readSkin(dialog, None, dialog.skinName, oldDesktop)
 				dialog.applySkin()
+
+	def showToast(self, text, timeout=5, id=None):
+		self.toats.append((text, timeout, id))
+		if not ToastMessage.instance.shown and self.toats:
+			toast = self.toats.pop(0)
+			ToastMessage.instance.showToast(text=toast[0], timeout=toast[1])
 
 
 class PowerKey:

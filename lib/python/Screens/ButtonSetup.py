@@ -717,7 +717,7 @@ class InfoBarButtonSetup():
 				reloadSkins()
 				self.session.reloadDialogs()
 			elif selected[0] == "TOAST":
-				toast()
+				toast(self.session)
 
 	def showServiceListOrMovies(self):
 		if hasattr(self, "openServiceList"):
@@ -729,7 +729,6 @@ class InfoBarButtonSetup():
 		config.lcd.showTv.value = not config.lcd.showTv.value
 
 
-def toast():
-	from Tools.Notifications import ShowToast
-	ShowToast(_("This is a toast message!"))
+def toast(session=None):
+	session.showToast(_("This is a toast message!"))
 
