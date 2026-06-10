@@ -332,7 +332,7 @@ class NotificationMessageBox:
 
 class ToastMessageBox(Screen):
 	skin = """
-	<screen name="ToastMessageBox" position="0,640" size="1280,80" resolution="1280,720" backgroundColor="#FE000000" flags="wfNoBorder">
+	<screen name="ToastMessageBox" position="0,640" size="1280,80" resolution="1280,720" backgroundColor="#FE000000" flags="wfNoBorder" zPosition="101">
 		<widget name="text" position="0,0" size="e,e" padding="10" conditional="text" font="Regular;25" horizontalAlignment="center" verticalAlignment="center" backgroundColor="#00000000" />
 	</screen>"""
 
