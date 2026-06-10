@@ -232,9 +232,9 @@ class Session:
 
 	def showToast(self, text, timeout=5, id=None):
 		self.toats.append((text, timeout, id))
-		if not ToastMessage.instance.shown and self.toats:
+		if not Toast.instance.shown and self.toats:
 			toast = self.toats.pop(0)
-			ToastMessage.instance.showToast(text=toast[0], timeout=toast[1])
+			Toast.instance.showToast(text=toast[0], timeout=toast[1])
 
 
 class PowerKey:
@@ -447,7 +447,7 @@ def runScreenTest():
 	enigma.eProfileWrite("Global MessageBox Screen")
 	modalMessagebox = ModalMessageBox(session)  # noqa F841
 	notificationMessagebox = NotificationMessageBox(session)  # noqa F841
-	toastMessage = ToastMessage(session)  # noqa F841
+	toast = Toast(session)  # noqa F841
 	enigma.eProfileWrite("PowerKey")
 	power = PowerKey(session)  # noqa F841
 	if enigma.getVFDSymbolsPoll():
@@ -859,7 +859,8 @@ enigma.eProfileWrite("Processing")
 from Screens.Processing import Processing
 
 enigma.eProfileWrite("ModalMessageBox")
-from Screens.MessageBox import ModalMessageBox, NotificationMessageBox, ToastMessage
+from Screens.MessageBox import ModalMessageBox, NotificationMessageBox
+from Screens.Toast import Toast
 
 enigma.eProfileWrite("StackTracePrinter")
 from Components.StackTrace import StackTracePrinter
