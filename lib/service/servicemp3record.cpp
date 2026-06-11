@@ -8,10 +8,31 @@
 
 #include <gst/gst.h>
 #include <gst/pbutils/missing-plugins.h>
+#include <string>
 
 #define HTTP_TIMEOUT 120
 
 DEFINE_REF(eServiceMP3Record);
+
+
+static bool isDashRecordingUri(const std::string &uri)
+{
+	return uri.find(".mpd") != std::string::npos || uri.find("manifest.mpd") != std::string::npos;
+}
+
+static std::string gstSingleQuote(const std::string &value)
+{
+	std::string out = "'";
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		if (value[i] == '\\' || value[i] == '\'')
+			out += '\\';
+		out += value[i];
+	}
+	out += "'";
+	return out;
+}
+
 
 eServiceMP3Record::eServiceMP3Record(const eServiceReference &ref):
 	m_ref(ref),
@@ -156,6 +177,40 @@ int eServiceMP3Record::doPrepare()
 
 		eDebug("[eMP3ServiceRecord] doPrepare uri=%s", stream_uri.c_str());
 		uri = g_strdup_printf ("%s", stream_uri.c_str());
+
+		if (isDashRecordingUri(stream_uri))
+		{
+			eDebug("[eMP3ServiceRecord][DASH] creating DASH remux recording pipeline");
+			std::string pipe =
+				"souphttpsrc location=" + gstSingleQuote(stream_uri) +
+				" ! dashdemux connection-speed=4000 max-bitrate=3200000 max-video-width=1280 max-video-height=720 name=d "
+				"d.video_00 ! queue max-size-buffers=0 max-size-bytes=4194304 max-size-time=5000000000 "
+				"! qtdemux ! h264parse config-interval=-1 ! video/x-h264,stream-format=byte-stream,alignment=au ! mux. "
+				"d.audio_00 ! queue max-size-buffers=0 max-size-bytes=1048576 max-size-time=5000000000 "
+				"! qtdemux ! aacparse ! audio/mpeg,mpegversion=4,framed=true,stream-format=adts ! mux. "
+				"mpegtsmux name=mux ! filesink location=" + gstSingleQuote(m_filename);
+
+			GError *error = NULL;
+			m_recording_pipeline = gst_parse_launch(pipe.c_str(), &error);
+			if (error)
+			{
+				eDebug("[eMP3ServiceRecord][DASH] gst_parse_launch failed: %s", error->message);
+				g_error_free(error);
+				g_free(uri);
+				m_recording_pipeline = 0;
+				return -1;
+			}
+			m_source = 0;
+			g_free(uri);
+			if (m_recording_pipeline)
+			{
+				GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_recording_pipeline));
+				gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
+				gst_object_unref(bus);
+				return 0;
+			}
+			return -1;
+		}
 
 		m_recording_pipeline = gst_pipeline_new ("recording-pipeline");
 		m_source = gst_element_factory_make("uridecodebin", "uridec");

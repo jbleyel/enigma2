@@ -12,6 +12,7 @@
 /* for subtitles */
 #include <lib/gui/esubtitle.h>
 #include <mutex>
+#include <vector>
 
 class eStaticServiceMP3Info;
 
@@ -299,9 +300,10 @@ public:
 		gboolean is_video;
 		gboolean is_streaming;
 		gboolean is_hls;
+		gboolean is_dash;
 		sourceStream()
 			: audiotype(atUnknown), containertype(ctNone), is_audio(FALSE), is_video(FALSE), is_streaming(FALSE),
-			  is_hls(FALSE) {}
+			  is_hls(FALSE), is_dash(FALSE) {}
 	};
 	struct bufferInfo {
 		gint bufferPercent;
@@ -386,12 +388,27 @@ private:
 	int m_state;
 	bool m_gstdot;
 	GstElement* m_gst_playbin;
+	bool m_is_dash_pipeline;
+	GstElement* m_dash_demux;
+	GstElement* m_dash_audio_selector;
+	GstElement* m_dash_subtitle_selector;
+	std::vector<GstPad*> m_dash_audio_selector_pads;
+	std::vector<GstPad*> m_dash_subtitle_selector_pads;
 	GstTagList* m_stream_tags;
 	bool m_coverart;
 	std::list<eDVBSubtitlePage> m_dvb_subtitle_pages;
 
 	eFixedMessagePump<ePtr<GstMessageContainer>> m_pump;
 
+	bool createDashPipeline(const gchar* uri);
+	void dashClearTrackState();
+	int dashSelectAudioStream(int i, bool skipAudioFix = false);
+	RESULT dashEnableSubtitles(iSubtitleUser* user, SubtitleTrack& track);
+	RESULT dashDisableSubtitles();
+	void dashRegisterAudioTrack(GstPad* selectorPad, GstCaps* caps);
+	void dashRegisterSubtitleTrack(GstPad* selectorPad, GstCaps* caps);
+	static void dashDemuxPadAdded(GstElement* element, GstPad* pad, gpointer user_data);
+	static void dashQtDemuxPadAdded(GstElement* element, GstPad* pad, gpointer user_data);
 	audiotype_t gstCheckAudioPad(GstStructure* structure);
 	void gstBusCall(GstMessage* msg);
 	void handleMessage(GstMessage* msg);

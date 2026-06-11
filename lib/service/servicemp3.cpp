@@ -37,6 +37,7 @@ Licensed under GPLv2.
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -202,6 +203,546 @@ std::vector<audioMeta> parse_hls_audio_meta(const std::string& filename) {
 
 	return tracks;
 }
+
+subtype_t getSubtitleType(GstPad* pad, gchar* g_codec);
+
+/* DASH playback helper code for eServiceMP3.
+ *
+ * The normal 4097 path uses playbin. For MPEG-DASH playbin can autoplug a
+ * software decode path or stall on adaptive buffering. The DASH path below
+ * keeps video encoded for dvbvideosink, keeps audio encoded for dvbaudiosink,
+ * and uses input-selector elements so audio and subtitle tracks can be changed
+ * without restarting the video branch.
+ */
+static bool gst_object_has_property(GObject *object, const gchar *name)
+{
+	return object && name && g_object_class_find_property(G_OBJECT_GET_CLASS(object), name);
+}
+
+static void gst_set_int64_if_exists(GObject *object, const gchar *name, gint64 value)
+{
+	if (!object || !name)
+		return;
+	GParamSpec *pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(object), name);
+	if (!pspec)
+		return;
+	GValue src = G_VALUE_INIT;
+	GValue dst = G_VALUE_INIT;
+	g_value_init(&src, G_TYPE_INT64);
+	g_value_set_int64(&src, value);
+	g_value_init(&dst, G_PARAM_SPEC_VALUE_TYPE(pspec));
+	if (g_value_transform(&src, &dst))
+		g_object_set_property(object, name, &dst);
+	g_value_unset(&src);
+	g_value_unset(&dst);
+}
+
+static bool gst_element_factory_exists(const gchar *name)
+{
+	GstElementFactory *factory = gst_element_factory_find(name);
+	if (factory) {
+		gst_object_unref(factory);
+		return true;
+	}
+	return false;
+}
+
+static bool gst_add_existing_sink_to_bin(GstElement *bin, GstElement *element)
+{
+	if (!bin || !element)
+		return false;
+	if (GST_OBJECT_PARENT(element))
+		return true;
+	gst_object_ref(element);
+	return gst_bin_add(GST_BIN(bin), element);
+}
+
+static GstCaps *gst_caps_from_string_or_null(const gchar *caps)
+{
+	if (!caps)
+		return NULL;
+	return gst_caps_from_string(caps);
+}
+
+static std::string caps_to_codec_description(GstCaps *caps)
+{
+	if (!caps || gst_caps_is_empty(caps))
+		return "unknown";
+	GstStructure *structure = gst_caps_get_structure(caps, 0);
+	if (!structure)
+		return "unknown";
+	const gchar *name = gst_structure_get_name(structure);
+	if (!name)
+		return "unknown";
+	if (!strcmp(name, "video/x-h264"))
+		return "H.264";
+	if (!strcmp(name, "video/x-h265"))
+		return "H.265";
+	if (!strcmp(name, "video/x-vp9"))
+		return "VP9";
+	if (!strcmp(name, "audio/mpeg")) {
+		gint mpegversion = 0;
+		if (gst_structure_get_int(structure, "mpegversion", &mpegversion) && mpegversion == 4)
+			return "AAC";
+		return "MPEG audio";
+	}
+	if (!strcmp(name, "audio/x-ac3"))
+		return "AC3";
+	if (!strcmp(name, "audio/x-eac3"))
+		return "AC3+";
+	if (!strcmp(name, "subpicture/x-pgs"))
+		return "PGS";
+	if (!strcmp(name, "subpicture/x-dvb"))
+		return "DVB subtitle";
+	if (!strcmp(name, "text/vtt") || !strcmp(name, "text/x-webvtt") || !strcmp(name, "application/x-subtitle-vtt"))
+		return "WebVTT";
+	return name;
+}
+
+static void gst_sync_branch_with_parent(GstElement *element)
+{
+	if (element)
+		gst_element_sync_state_with_parent(element);
+}
+
+bool eServiceMP3::createDashPipeline(const gchar *uri)
+{
+	if (!uri || !dvb_videosink || !dvb_audiosink) {
+		eDebug("[eServiceMP3][DASH] missing uri or DVB sinks");
+		return false;
+	}
+
+	GstElement *pipeline = gst_pipeline_new("e2-dash-pipeline");
+	GstElement *source = gst_element_factory_make("souphttpsrc", "dash-source");
+	GstElement *demux = gst_element_factory_make("dashdemux", "dashdemux");
+	GstElement *audioSelector = gst_element_factory_make("input-selector", "dash-audio-selector");
+	GstElement *subtitleSelector = gst_element_factory_make("input-selector", "dash-subtitle-selector");
+
+	if (!pipeline || !source || !demux || !audioSelector) {
+		eDebug("[eServiceMP3][DASH] failed to create base DASH elements");
+		if (pipeline)
+			gst_object_unref(pipeline);
+		else {
+			if (source)
+				gst_object_unref(source);
+			if (demux)
+				gst_object_unref(demux);
+			if (audioSelector)
+				gst_object_unref(audioSelector);
+			if (subtitleSelector)
+				gst_object_unref(subtitleSelector);
+		}
+		return false;
+	}
+
+	m_is_dash_pipeline = true;
+	m_dash_demux = demux;
+	m_dash_audio_selector = audioSelector;
+	m_dash_subtitle_selector = subtitleSelector;
+	m_audioStreams.clear();
+	m_subtitleStreams.clear();
+	m_dash_audio_selector_pads.clear();
+	m_dash_subtitle_selector_pads.clear();
+	m_currentAudioStream = -1;
+	m_currentSubtitleStream = -1;
+
+	g_object_set(source, "location", uri, NULL);
+	if (!m_useragent.empty() && gst_object_has_property(G_OBJECT(source), "user-agent"))
+		g_object_set(source, "user-agent", m_useragent.c_str(), NULL);
+	gst_set_int64_if_exists(G_OBJECT(source), "timeout", HTTP_TIMEOUT);
+
+	/* Keep the first implementation conservative and deterministic. These
+	 * properties exist on current dashdemux builds used in OpenATV/Vu tests. They
+	 * are set only if present so older images still start. */
+	gst_set_int64_if_exists(G_OBJECT(demux), "connection-speed", 4000);
+	gst_set_int64_if_exists(G_OBJECT(demux), "max-bitrate", 3200000);
+	gst_set_int64_if_exists(G_OBJECT(demux), "max-video-width", 1280);
+	gst_set_int64_if_exists(G_OBJECT(demux), "max-video-height", 720);
+
+	gst_bin_add_many(GST_BIN(pipeline), source, demux, audioSelector, NULL);
+	if (!gst_add_existing_sink_to_bin(pipeline, dvb_audiosink)) {
+		eDebug("[eServiceMP3][DASH] failed to add dvbaudiosink");
+		gst_object_unref(pipeline);
+		return false;
+	}
+	if (!gst_add_existing_sink_to_bin(pipeline, dvb_videosink)) {
+		eDebug("[eServiceMP3][DASH] failed to add dvbvideosink");
+		gst_object_unref(pipeline);
+		return false;
+	}
+	if (subtitleSelector && dvb_subsink) {
+		gst_bin_add(GST_BIN(pipeline), subtitleSelector);
+		gst_add_existing_sink_to_bin(pipeline, dvb_subsink);
+		m_subs_to_pull_handler_id = g_signal_connect(dvb_subsink, "new-buffer", G_CALLBACK(gstCBsubtitleAvail), this);
+		GstCaps *caps = gst_caps_from_string("text/plain; text/x-plain; text/x-raw; text/x-pango-markup; "
+										 "subpicture/x-dvd; subpicture/x-dvb; subpicture/x-pgs; "
+										 "text/vtt; text/x-webvtt; application/x-subtitle-vtt; "
+										 "text/x-ssa; text/x-ass; application/x-ass; application/x-ssa; "
+										 "video/x-dvd-subpicture; subpicture/x-xsub");
+		if (caps) {
+			g_object_set(dvb_subsink, "caps", caps, NULL);
+			gst_caps_unref(caps);
+		}
+		gst_element_link(subtitleSelector, dvb_subsink);
+	} else if (subtitleSelector) {
+		gst_object_unref(subtitleSelector);
+		m_dash_subtitle_selector = NULL;
+	}
+
+	g_object_set(dvb_audiosink, "e2-sync", FALSE, NULL);
+	g_object_set(dvb_audiosink, "e2-async", FALSE, NULL);
+	g_object_set(dvb_videosink, "e2-sync", FALSE, NULL);
+	g_object_set(dvb_videosink, "e2-async", FALSE, NULL);
+
+	if (!gst_element_link(source, demux)) {
+		eDebug("[eServiceMP3][DASH] failed to link source -> dashdemux");
+		gst_object_unref(pipeline);
+		return false;
+	}
+	if (!gst_element_link(audioSelector, dvb_audiosink)) {
+		eDebug("[eServiceMP3][DASH] failed to link audio selector -> dvbaudiosink");
+		gst_object_unref(pipeline);
+		return false;
+	}
+
+	g_signal_connect(demux, "pad-added", G_CALLBACK(dashDemuxPadAdded), this);
+
+	GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
+	gst_bus_set_sync_handler(bus, gstBusSyncHandler, this, NULL);
+	gst_object_unref(bus);
+
+	m_gst_playbin = pipeline;
+	eDebug("[eServiceMP3][DASH] custom DASH pipeline created for %s", uri);
+	return true;
+}
+
+void eServiceMP3::dashClearTrackState()
+{
+	if (m_dash_audio_selector) {
+		for (std::vector<GstPad*>::iterator it = m_dash_audio_selector_pads.begin(); it != m_dash_audio_selector_pads.end(); ++it) {
+			if (*it) {
+				gst_element_release_request_pad(m_dash_audio_selector, *it);
+				gst_object_unref(*it);
+			}
+		}
+	}
+	if (m_dash_subtitle_selector) {
+		for (std::vector<GstPad*>::iterator it = m_dash_subtitle_selector_pads.begin(); it != m_dash_subtitle_selector_pads.end(); ++it) {
+			if (*it) {
+				gst_element_release_request_pad(m_dash_subtitle_selector, *it);
+				gst_object_unref(*it);
+			}
+		}
+	}
+	m_dash_audio_selector_pads.clear();
+	m_dash_subtitle_selector_pads.clear();
+	m_dash_demux = NULL;
+	m_dash_audio_selector = NULL;
+	m_dash_subtitle_selector = NULL;
+}
+
+void eServiceMP3::dashRegisterAudioTrack(GstPad *selectorPad, GstCaps *caps)
+{
+	if (!selectorPad)
+		return;
+	audioStream audio;
+	audio.pad = selectorPad;
+	audio.language_code = "und";
+	audio.codec = caps_to_codec_description(caps);
+	audio.title = "DASH audio " + std::to_string((int)m_audioStreams.size() + 1);
+	if (caps && !gst_caps_is_empty(caps)) {
+		GstStructure *structure = gst_caps_get_structure(caps, 0);
+		if (structure)
+			audio.type = gstCheckAudioPad(structure);
+	}
+	m_dash_audio_selector_pads.push_back(selectorPad);
+	m_audioStreams.push_back(audio);
+	if (m_currentAudioStream < 0) {
+		m_currentAudioStream = 0;
+		g_object_set(m_dash_audio_selector, "active-pad", selectorPad, NULL);
+	}
+	eDebug("[eServiceMP3][DASH] registered audio track %u codec=%s", (unsigned)m_audioStreams.size() - 1,
+		   audio.codec.c_str());
+	m_event((iPlayableService*)this, evUpdatedInfo);
+}
+
+void eServiceMP3::dashRegisterSubtitleTrack(GstPad *selectorPad, GstCaps *caps)
+{
+	if (!selectorPad)
+		return;
+	subtitleStream subs;
+	subs.pad = selectorPad;
+	subs.language_code = "und";
+	subs.title = "DASH subtitle " + std::to_string((int)m_subtitleStreams.size() + 1) + " (" + caps_to_codec_description(caps) + ")";
+	subs.type = stUnknown;
+	if (caps && !gst_caps_is_empty(caps)) {
+		GstPad *tmpPad = gst_pad_new("tmp", GST_PAD_SRC);
+		if (tmpPad) {
+			gst_pad_set_caps(tmpPad, caps);
+			subs.type = getSubtitleType(tmpPad, NULL);
+			gst_object_unref(tmpPad);
+		}
+	}
+	m_dash_subtitle_selector_pads.push_back(selectorPad);
+	m_subtitleStreams.push_back(subs);
+	eDebug("[eServiceMP3][DASH] registered subtitle track %u title=%s type=%d",
+		   (unsigned)m_subtitleStreams.size() - 1, subs.title.c_str(), subs.type);
+	m_event((iPlayableService*)this, evUpdatedInfo);
+}
+
+int eServiceMP3::dashSelectAudioStream(int i, bool skipAudioFix)
+{
+	if (!m_is_dash_pipeline || !m_dash_audio_selector || i < 0 || i >= (int)m_dash_audio_selector_pads.size())
+		return -1;
+	GstPad *pad = m_dash_audio_selector_pads[i];
+	if (!pad)
+		return -1;
+	g_object_set(m_dash_audio_selector, "active-pad", pad, NULL);
+	m_currentAudioStream = i;
+	setCacheEntry(true, i);
+	if (!skipAudioFix) {
+		m_clear_buffers = false;
+		/* Audio selector switching keeps the video branch running. A full seek or
+		 * service restart would be visible to the user, so do not call clearBuffers()
+		 * for DASH track changes. */
+	}
+	eDebug("[eServiceMP3][DASH] switched to audio track %d", i);
+	return 0;
+}
+
+RESULT eServiceMP3::dashEnableSubtitles(iSubtitleUser *user, SubtitleTrack &track)
+{
+	if (!m_is_dash_pipeline || track.pid < 0 || track.pid >= (int)m_dash_subtitle_selector_pads.size())
+		return -1;
+	m_subtitles_paused = true;
+	m_subtitle_sync_timer->stop();
+	m_dvb_subtitle_sync_timer->stop();
+	m_dvb_subtitle_pages.clear();
+	m_subtitle_pages.clear();
+	m_initial_vtt_mpegts = 0;
+	m_vtt_live = true;
+	m_vtt_live_base_time = -1;
+	m_prev_decoder_time = -1;
+	m_decoder_time_valid_state = 0;
+	m_currentSubtitleStream = track.pid;
+	m_cachedSubtitleStream = m_currentSubtitleStream;
+	m_subtitle_widget = user;
+	setCacheEntry(false, track.pid);
+	if (m_pgs_subtitle_parser)
+		m_pgs_subtitle_parser->reset();
+	if (m_dash_subtitle_selector && m_dash_subtitle_selector_pads[track.pid])
+		g_object_set(m_dash_subtitle_selector, "active-pad", m_dash_subtitle_selector_pads[track.pid], NULL);
+	m_subtitles_paused = false;
+	eDebug("[eServiceMP3][DASH] enabled subtitle track %d", m_currentSubtitleStream);
+	return 0;
+}
+
+RESULT eServiceMP3::dashDisableSubtitles()
+{
+	m_currentSubtitleStream = -1;
+	m_cachedSubtitleStream = -1;
+	setCacheEntry(false, -1);
+	if (m_dash_subtitle_selector)
+		g_object_set(m_dash_subtitle_selector, "active-pad", NULL, NULL);
+	m_subtitle_sync_timer->stop();
+	m_dvb_subtitle_sync_timer->stop();
+	m_dvb_subtitle_pages.clear();
+	m_subtitle_pages.clear();
+	m_initial_vtt_mpegts = 0;
+	m_vtt_live = false;
+	m_vtt_live_base_time = -1;
+	m_prev_decoder_time = -1;
+	m_decoder_time_valid_state = 0;
+	if (m_subtitle_widget)
+		m_subtitle_widget->destroy();
+	m_subtitle_widget = nullptr;
+	eDebug("[eServiceMP3][DASH] disabled subtitles");
+	return 0;
+}
+
+void eServiceMP3::dashDemuxPadAdded(GstElement *element, GstPad *pad, gpointer user_data)
+{
+	eServiceMP3 *_this = (eServiceMP3*)user_data;
+	if (!_this || !_this->m_gst_playbin || !pad)
+		return;
+
+	gchar *padName = gst_pad_get_name(pad);
+	GstElement *queue = gst_element_factory_make("queue", NULL);
+	GstElement *qtdemux = gst_element_factory_make("qtdemux", NULL);
+	if (!queue || !qtdemux) {
+		eDebug("[eServiceMP3][DASH] failed to create queue/qtdemux for %s", padName ? padName : "pad");
+		if (queue)
+			gst_object_unref(queue);
+		if (qtdemux)
+			gst_object_unref(qtdemux);
+		g_free(padName);
+		return;
+	}
+	g_object_set(queue, "max-size-buffers", 0, "max-size-bytes", 4194304, "max-size-time", (guint64)5000000000ULL, NULL);
+	gst_bin_add_many(GST_BIN(_this->m_gst_playbin), queue, qtdemux, NULL);
+	gst_element_link(queue, qtdemux);
+	GstPad *queueSink = gst_element_get_static_pad(queue, "sink");
+	GstPadLinkReturn link = gst_pad_link(pad, queueSink);
+	gst_object_unref(queueSink);
+	if (link != GST_PAD_LINK_OK)
+		eDebug("[eServiceMP3][DASH] failed to link dashdemux pad %s to queue (%d)", padName ? padName : "pad", link);
+	g_signal_connect(qtdemux, "pad-added", G_CALLBACK(dashQtDemuxPadAdded), _this);
+	gst_sync_branch_with_parent(queue);
+	gst_sync_branch_with_parent(qtdemux);
+	eDebug("[eServiceMP3][DASH] added DASH demux branch for %s", padName ? padName : "pad");
+	g_free(padName);
+}
+
+void eServiceMP3::dashQtDemuxPadAdded(GstElement *element, GstPad *pad, gpointer user_data)
+{
+	eServiceMP3 *_this = (eServiceMP3*)user_data;
+	if (!_this || !_this->m_gst_playbin || !pad)
+		return;
+
+	GstCaps *caps = gst_pad_get_current_caps(pad);
+	if (!caps)
+		caps = gst_pad_query_caps(pad, NULL);
+	if (!caps || gst_caps_is_empty(caps)) {
+		if (caps)
+			gst_caps_unref(caps);
+		return;
+	}
+	GstStructure *structure = gst_caps_get_structure(caps, 0);
+	const gchar *type = structure ? gst_structure_get_name(structure) : NULL;
+	if (!type) {
+		gst_caps_unref(caps);
+		return;
+	}
+
+	GstElement *parser = NULL;
+	GstElement *capsfilter = NULL;
+	GstElement *sinkOrSelector = NULL;
+	GstPad *targetPad = NULL;
+	GstCaps *forcedCaps = NULL;
+	bool isAudio = false;
+	bool isSubtitle = false;
+
+	if (!strcmp(type, "video/x-h264")) {
+		parser = gst_element_factory_make("h264parse", NULL);
+		capsfilter = gst_element_factory_make("capsfilter", NULL);
+		forcedCaps = gst_caps_from_string_or_null("video/x-h264,stream-format=avc,alignment=au");
+		sinkOrSelector = dvb_videosink;
+	} else if (!strcmp(type, "video/x-h265")) {
+		parser = gst_element_factory_make("h265parse", NULL);
+		sinkOrSelector = dvb_videosink;
+	} else if (!strcmp(type, "video/x-vp9")) {
+		if (gst_element_factory_exists("vp9parse"))
+			parser = gst_element_factory_make("vp9parse", NULL);
+		sinkOrSelector = dvb_videosink;
+	} else if (!strcmp(type, "audio/mpeg")) {
+		gint mpegversion = 0;
+		gst_structure_get_int(structure, "mpegversion", &mpegversion);
+		if (mpegversion == 4) {
+			parser = gst_element_factory_make("aacparse", NULL);
+			capsfilter = gst_element_factory_make("capsfilter", NULL);
+			forcedCaps = gst_caps_from_string_or_null("audio/mpeg,mpegversion=4,framed=true,stream-format=raw");
+			isAudio = true;
+			sinkOrSelector = _this->m_dash_audio_selector;
+		}
+	} else if (!strcmp(type, "audio/x-ac3")) {
+		parser = gst_element_factory_make("ac3parse", NULL);
+		isAudio = true;
+		sinkOrSelector = _this->m_dash_audio_selector;
+	} else if (!strcmp(type, "audio/x-eac3")) {
+		if (gst_element_factory_exists("eac3parse"))
+			parser = gst_element_factory_make("eac3parse", NULL);
+		else
+			parser = gst_element_factory_make("ac3parse", NULL);
+		isAudio = true;
+		sinkOrSelector = _this->m_dash_audio_selector;
+	} else if (!strcmp(type, "text/vtt") || !strcmp(type, "text/x-webvtt") ||
+			   !strcmp(type, "application/x-subtitle-vtt") || !strcmp(type, "subpicture/x-pgs") ||
+			   !strcmp(type, "subpicture/x-dvb") || !strcmp(type, "text/plain") ||
+			   !strcmp(type, "text/x-raw")) {
+		isSubtitle = true;
+		sinkOrSelector = _this->m_dash_subtitle_selector;
+	}
+
+	if (!sinkOrSelector) {
+		eDebug("[eServiceMP3][DASH] unsupported qtdemux pad caps %s", type);
+		if (caps)
+			gst_caps_unref(caps);
+		return;
+	}
+
+	/* Only one video branch is currently active. Additional video representations
+	 * are ignored; dashdemux already chooses the representation. */
+	if (!isAudio && !isSubtitle) {
+		GstPad *videoSinkPad = gst_element_get_static_pad(dvb_videosink, "sink");
+		bool alreadyLinked = videoSinkPad && gst_pad_is_linked(videoSinkPad);
+		if (videoSinkPad)
+			gst_object_unref(videoSinkPad);
+		if (alreadyLinked) {
+			gst_caps_unref(caps);
+			return;
+		}
+	}
+
+	GstElement *queue = gst_element_factory_make("queue", NULL);
+	if (!queue) {
+		gst_caps_unref(caps);
+		return;
+	}
+	g_object_set(queue, "max-size-buffers", 0, "max-size-bytes", isAudio ? 1048576 : 4194304,
+			 "max-size-time", (guint64)5000000000ULL, NULL);
+	gst_bin_add(GST_BIN(_this->m_gst_playbin), queue);
+
+	GstPad *queueSink = gst_element_get_static_pad(queue, "sink");
+	GstPadLinkReturn link = gst_pad_link(pad, queueSink);
+	gst_object_unref(queueSink);
+	if (link != GST_PAD_LINK_OK) {
+		eDebug("[eServiceMP3][DASH] failed to link qtdemux pad %s (%d)", type, link);
+		gst_caps_unref(caps);
+		return;
+	}
+
+	GstElement *last = queue;
+	if (parser) {
+		gst_bin_add(GST_BIN(_this->m_gst_playbin), parser);
+		gst_element_link(last, parser);
+		last = parser;
+	}
+	if (capsfilter && forcedCaps) {
+		g_object_set(capsfilter, "caps", forcedCaps, NULL);
+		gst_bin_add(GST_BIN(_this->m_gst_playbin), capsfilter);
+		gst_element_link(last, capsfilter);
+		last = capsfilter;
+		gst_caps_unref(forcedCaps);
+	}
+
+	if (isAudio || isSubtitle) {
+		targetPad = gst_element_get_request_pad(sinkOrSelector, "sink_%u");
+		GstPad *srcPad = gst_element_get_static_pad(last, "src");
+		if (srcPad && targetPad && gst_pad_link(srcPad, targetPad) == GST_PAD_LINK_OK) {
+			if (isAudio)
+				_this->dashRegisterAudioTrack(targetPad, caps);
+			else
+				_this->dashRegisterSubtitleTrack(targetPad, caps);
+		} else {
+			eDebug("[eServiceMP3][DASH] failed to link %s branch to selector", isAudio ? "audio" : "subtitle");
+			if (targetPad)
+				gst_element_release_request_pad(sinkOrSelector, targetPad);
+		}
+		if (srcPad)
+			gst_object_unref(srcPad);
+	} else {
+		if (!gst_element_link(last, sinkOrSelector))
+			eDebug("[eServiceMP3][DASH] failed to link video branch to dvbvideosink");
+		else
+			eDebug("[eServiceMP3][DASH] linked video branch caps=%s", type);
+	}
+
+	gst_sync_branch_with_parent(queue);
+	gst_sync_branch_with_parent(parser);
+	gst_sync_branch_with_parent(capsfilter);
+	gst_caps_unref(caps);
+}
+
 
 /**
  * @struct SubtitleEntry
@@ -935,7 +1476,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	m_currentAudioStream = -1;
 	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = -2; /* report the first subtitle stream to be 'cached'. TODO: use an actual cache. */
-	m_subtitle_widget = 0;
+	m_subtitle_widget = nullptr;
 	m_currentTrickRatio = 1.0;
 	m_buffer_size = 5LL * 1024LL * 1024LL;
 	m_ignore_buffering_messages = 0;
@@ -1000,6 +1541,10 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 
 	m_state = stIdle;
 	m_gstdot = eSimpleConfig::getBool("config.crash.gstdot", false);
+	m_is_dash_pipeline = false;
+	m_dash_demux = NULL;
+	m_dash_audio_selector = NULL;
+	m_dash_subtitle_selector = NULL;
 	m_coverart = false;
 	m_subtitles_paused = false;
 	// eDebug("[eServiceMP3] construct!");
@@ -1110,6 +1655,10 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 		m_sourceinfo.audiotype = atDRA;
 	} else if (strcasecmp(ext, ".m3u8") == 0)
 		m_sourceinfo.is_hls = TRUE;
+	else if (strcasecmp(ext, ".mpd") == 0) {
+		m_sourceinfo.is_dash = TRUE;
+		m_sourceinfo.is_video = TRUE;
+	}
 	else if (strcasecmp(ext, ".mp3") == 0) {
 		m_sourceinfo.audiotype = atMP3;
 		m_sourceinfo.is_audio = TRUE;
@@ -1133,6 +1682,10 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	}
 	if (strstr(filename, "://"))
 		m_sourceinfo.is_streaming = TRUE;
+	if (strstr(filename, ".mpd") || strstr(filename, "manifest.mpd")) {
+		m_sourceinfo.is_dash = TRUE;
+		m_sourceinfo.is_video = TRUE;
+	}
 
 	gchar* uri;
 
@@ -1174,12 +1727,26 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	eDebug("[eServiceMP3] playbin uri=%s", uri);
 	if (suburi != NULL)
 		eDebug("[eServiceMP3] playbin suburi=%s", suburi);
+
+	if (m_sourceinfo.is_dash) {
+		eDebug("[eServiceMP3][DASH] trying custom DASH pipeline for %s", uri);
+		if (!createDashPipeline(uri)) {
+			eDebug("[eServiceMP3][DASH] custom DASH pipeline failed, falling back to playbin");
+			m_is_dash_pipeline = false;
+			m_gst_playbin = NULL;
+		}
+	}
+
 	bool useplaybin3 = eSimpleConfig::getBool("config.misc.usegstplaybin3", false);
-	if (useplaybin3)
-		m_gst_playbin = gst_element_factory_make("playbin3", "playbin3");
-	else
-		m_gst_playbin = gst_element_factory_make("playbin", "playbin");
-	if (m_gst_playbin) {
+	if (!m_gst_playbin) {
+		if (useplaybin3)
+			m_gst_playbin = gst_element_factory_make("playbin3", "playbin3");
+		else
+			m_gst_playbin = gst_element_factory_make("playbin", "playbin");
+	}
+	if (m_gst_playbin && m_is_dash_pipeline) {
+		/* Custom DASH pipeline is already fully configured by createDashPipeline(). */
+	} else if (m_gst_playbin) {
 		if (dvb_audiosink) {
 			if (m_sourceinfo.is_audio) {
 				g_object_set(dvb_audiosink, "e2-sync", TRUE, NULL);
@@ -1337,6 +1904,7 @@ eServiceMP3::~eServiceMP3() {
 		gst_tag_list_free(m_stream_tags);
 
 	if (m_gst_playbin) {
+		dashClearTrackState();
 		gst_object_unref(GST_OBJECT(m_gst_playbin));
 		m_ref.path.clear();
 		m_ref.name.clear();
@@ -2583,6 +3151,8 @@ int eServiceMP3::getNumberOfTracks() {
  * @return int Returns the index of the current audio track, or -1 if no audio stream is set.
  */
 int eServiceMP3::getCurrentTrack() {
+	if (m_is_dash_pipeline)
+		return m_currentAudioStream;
 	if (m_currentAudioStream == -1)
 		g_object_get(m_gst_playbin, "current-audio", &m_currentAudioStream, NULL);
 	return m_currentAudioStream;
@@ -2654,6 +3224,8 @@ void eServiceMP3::clearBuffers(bool force) {
  * @return int Returns 0 on success, or -1 if the selection fails.
  */
 int eServiceMP3::selectAudioStream(int i, bool skipAudioFix) {
+	if (m_is_dash_pipeline)
+		return dashSelectAudioStream(i, skipAudioFix);
 	int current_audio, current_audio_orig;
 	g_object_get(m_gst_playbin, "current-audio", &current_audio_orig, NULL);
 	g_object_set(m_gst_playbin, "current-audio", i, NULL);
@@ -3152,6 +3724,14 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 		case GST_MESSAGE_ASYNC_DONE: {
 			if (GST_MESSAGE_SRC(msg) != GST_OBJECT(m_gst_playbin))
 				break;
+
+			if (m_is_dash_pipeline) {
+				if (m_send_ev_start)
+					m_event((iPlayableService*)this, evUpdatedInfo);
+				else
+					m_send_ev_start = true;
+				break;
+			}
 
 			if (m_send_ev_start) {
 				gint i, n_video = 0, n_audio = 0, n_text = 0;
@@ -4293,9 +4873,11 @@ exit:
  * @return RESULT indicating success or failure.
  */
 RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& track) {
+	if (m_is_dash_pipeline)
+		return dashEnableSubtitles(user, track);
 	if (m_currentSubtitleStream != track.pid || eSubtitleSettings::pango_autoturnon) {
 		m_subtitles_paused = true;
-		m_subtitle_widget = 0;
+		m_subtitle_widget = nullptr;
 		m_subtitle_sync_timer->stop();
 		m_dvb_subtitle_sync_timer->stop();
 		m_dvb_subtitle_pages.clear();
@@ -4309,6 +4891,8 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		m_cachedSubtitleStream = m_currentSubtitleStream;
 		setCacheEntry(false, track.pid);
 		eDebug("[eServiceMP3] enableSubtitles: set current-text to %d", m_currentSubtitleStream);
+		if(m_pgs_subtitle_parser)
+			m_pgs_subtitle_parser->reset(); // Reset PGS parser state when switching streams
 		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 		m_subtitle_widget = user;
 		m_subtitles_paused = false;
@@ -4325,6 +4909,8 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
  * @return RESULT indicating success or failure.
  */
 RESULT eServiceMP3::disableSubtitles() {
+	if (m_is_dash_pipeline)
+		return dashDisableSubtitles();
 	eDebug("[eServiceMP3] disableSubtitles");
 	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = m_currentSubtitleStream;
@@ -4341,7 +4927,7 @@ RESULT eServiceMP3::disableSubtitles() {
 	m_decoder_time_valid_state = 0;
 	if (m_subtitle_widget)
 		m_subtitle_widget->destroy();
-	m_subtitle_widget = 0;
+	m_subtitle_widget = nullptr;
 	return 0;
 }
 
@@ -4562,7 +5148,8 @@ void eServiceMP3::setCutListEnable(int enable) {
  */
 int eServiceMP3::setBufferSize(int size) {
 	m_buffer_size = size;
-	g_object_set(m_gst_playbin, "buffer-size", m_buffer_size, NULL);
+	if (m_gst_playbin && !m_is_dash_pipeline)
+		g_object_set(m_gst_playbin, "buffer-size", m_buffer_size, NULL);
 	return 0;
 }
 
