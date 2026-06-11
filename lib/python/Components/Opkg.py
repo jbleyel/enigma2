@@ -577,7 +577,7 @@ class OpkgComponent:
 			self.nextCommand = (self.CMD_UPGRADE_EXCLUDE, args)
 		elif cmd in (self.CMD_UPGRADE_EXCLUDE, self.CMD_UPGRADE):
 			command = extra + ["upgrade"]
-			if "testMode" in args and args["testMode"]:
+			if args and "testMode" in args and args["testMode"]:
 				command.insert(0, "--noaction")
 			argv = command
 			if cmd == self.CMD_UPGRADE_EXCLUDE:
@@ -620,7 +620,7 @@ class OpkgComponent:
 		self.console.setBufferSize(consoleBuffer)
 		self.console.dataAvail.append(self.cmdData)
 		self.console.appClosed.append(self.cmdFinished)
-		if "lineMode" in args and args["lineMode"] and exists(PACKAGER_LINEBUFFER):  # Use stdbuf to disable output buffering for upgrade commands to allow line buffering.
+		if args and "lineMode" in args and args["lineMode"] and exists(PACKAGER_LINEBUFFER):  # Use stdbuf to disable output buffering for upgrade commands to allow line buffering.
 			argv = [
 				PACKAGER_LINEBUFFER,
 				"-oL",
