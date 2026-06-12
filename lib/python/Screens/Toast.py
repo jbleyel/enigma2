@@ -7,7 +7,7 @@ from Screens.Screen import Screen
 class ToastScreen(Screen):
 	skin = """
 	<screen name="ToastScreen" position="0,640" size="1280,80" resolution="1280,720" backgroundColor="#FE000000" flags="wfNoBorder" zPosition="101">
-		<widget name="text" position="0,0" size="e,e" padding="10" conditional="text" font="Regular;25" horizontalAlignment="center" verticalAlignment="center" backgroundColor="#00000000" />
+		<widget name="text" position="0,0" size="e,e" padding="10" conditional="text" font="Regular;25" horizontalAlignment="center" verticalAlignment="center" backgroundColor="#00000000" borderColor="#FFFFFF" borderWidth="2" />
 	</screen>"""
 
 	def __init__(self, session):
@@ -18,7 +18,19 @@ class ToastScreen(Screen):
 		self.fadeTimer = eTimer()
 		self.fadeTimer.callback.append(self.fade)
 
-	def showToast(self, text, timeout):
+	def showToast(self, text, toasttype, timeout):
+		self.foregroundColor = {
+			Toast.TYPE_INFO: (255, 255, 255),  # white
+			Toast.TYPE_WARNING: (0, 0, 0),  # black
+			Toast.TYPE_ERROR: (255, 255, 255)  # white
+		}.get(toasttype, (255, 255, 255))
+
+		self.backgroundColor = {
+			Toast.TYPE_INFO: (0, 0, 0),  # black
+			Toast.TYPE_WARNING: (255, 165, 0),  # orange
+			Toast.TYPE_ERROR: (255, 0, 0)  # red
+		}.get(toasttype, (0, 0, 0))
+
 		self["text"].setText(text)
 		self.timer.start(timeout * 1000)
 		self.textSize = self["text"].instance.calculateSize()
@@ -28,8 +40,9 @@ class ToastScreen(Screen):
 		self["text"].instance.move(newPos)
 		self.fadeIn = True
 		self.alpha = 255
-		self["text"].instance.setBackgroundColor(gRGB(*(0, 0, 0, self.alpha)))
-		self["text"].instance.setForegroundColor(gRGB(*(255, 255, 255, self.alpha)))
+		self["text"].instance.setBackgroundColor(gRGB(*(self.backgroundColor[0], self.backgroundColor[1], self.backgroundColor[2], self.alpha)))
+		self["text"].instance.setForegroundColor(gRGB(*(self.foregroundColor[0], self.foregroundColor[1], self.foregroundColor[2], self.alpha)))
+		self["text"].instance.setBorderColor(gRGB(*(self.foregroundColor[0], self.foregroundColor[1], self.foregroundColor[2], self.alpha)))
 		self.fadeTimer.start(50)
 		self.show()
 
@@ -46,8 +59,9 @@ class ToastScreen(Screen):
 				self.alpha = 255
 				self.fadeTimer.stop()
 				self.hide()
-		self["text"].instance.setBackgroundColor(gRGB(*(0, 0, 0, self.alpha)))
-		self["text"].instance.setForegroundColor(gRGB(*(255, 255, 255, self.alpha)))
+		self["text"].instance.setBackgroundColor(gRGB(*(self.backgroundColor[0], self.backgroundColor[1], self.backgroundColor[2], self.alpha)))
+		self["text"].instance.setForegroundColor(gRGB(*(self.foregroundColor[0], self.foregroundColor[1], self.foregroundColor[2], self.alpha)))
+		self["text"].instance.setBorderColor(gRGB(*(self.foregroundColor[0], self.foregroundColor[1], self.foregroundColor[2], self.alpha)))
 
 	def dohide(self):
 		self.timer.stop()
@@ -56,27 +70,25 @@ class ToastScreen(Screen):
 
 
 class Toast:
+	TYPE_INFO = 0
+	TYPE_WARNING = 1
+	TYPE_ERROR = 2
 	instance = None
 
 	def __init__(self, session):
 		if Toast.instance:
 			print("[Toast] Error: Only one Toast instance is allowed!")
-			return
+		else:
+			Toast.instance = self
+			self.dialog = session.instantiateDialog(ToastScreen)
+			self.dialog.hide()
+			self.queue = []
+			self.nextTimer = eTimer()
+			self.nextTimer.callback.append(self._showNext)
+			self.dialog.onHide.append(self._scheduleNext)
 
-		Toast.instance = self
-		self.dialog = session.instantiateDialog(ToastScreen)
-		self.dialog.hide()
-
-		self.queue = []
-
-		self.nextTimer = eTimer()
-		self.nextTimer.callback.append(self._showNext)
-
-		self.dialog.onHide.append(self._scheduleNext)
-
-	def showToast(self, text, timeout):
-		self.queue.append((text, timeout))
-
+	def showToast(self, text, toasttype, timeout):
+		self.queue.append((text, toasttype, timeout))
 		if not self.dialog.shown and not self.nextTimer.isActive():
 			self._showNext()
 
@@ -86,9 +98,6 @@ class Toast:
 
 	def _showNext(self):
 		self.nextTimer.stop()
-
-		if self.dialog.shown or not self.queue:
-			return
-
-		text, timeout = self.queue.pop(0)
-		self.dialog.showToast(text, timeout)
+		if not self.dialog.shown and self.queue:
+			text, toasttype, timeout = self.queue.pop(0)
+			self.dialog.showToast(text, toasttype, timeout)

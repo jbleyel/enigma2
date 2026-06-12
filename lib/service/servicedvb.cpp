@@ -1411,11 +1411,6 @@ void eDVBServicePlay::handleEofRecovery() {
 
 	eTrace("[PreciseRecovery] Corruption detected. Pausing playback, recording continues.");
 
-	if (m_decoder) {
-		m_decoder->pause();
-		m_is_paused = 1;
-	}
-
 	if (m_record) {
 		pts_t live_pts = 0, playback_pts = 0;
 		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
@@ -1426,6 +1421,11 @@ void eDVBServicePlay::handleEofRecovery() {
 			m_delay_calculated = true;
 			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
 		}
+	}
+
+	if (m_decoder && !m_is_paused) {
+		m_decoder->pause();
+		m_is_paused = 1;
 	}
 
 	m_precise_recovery_timer->start(100, false);
@@ -4355,6 +4355,9 @@ void eDVBServicePlay::setQpipMode(bool value, bool audio)
 
 		m_decoder->set();
 	}
+
+	if (m_soft_decoder)
+		m_soft_decoder->setNoAudio(m_noaudio, m_current_audio_pid);
 }
 
 // ==================== Software Descrambling ====================
