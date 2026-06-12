@@ -229,8 +229,8 @@ class Session:
 				readSkin(dialog, None, dialog.skinName, oldDesktop)
 				dialog.applySkin()
 
-	def showToast(self, text, toasttype=Toast.TYPE_INFO, timeout=5):
-		Toast.instance.showToast(text=text, toasttype=toasttype, timeout=timeout)
+	def showToast(self, text, toasttype=None, timeout=5):
+		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_INFO if toasttype is None else toasttype, timeout=timeout)
 
 
 class PowerKey:
