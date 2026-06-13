@@ -297,6 +297,36 @@ class NotificationMessageBox:
 			NotificationMessageBox.instance = self
 			self.dialog = session.instantiateDialog(MessageBox, "", enableInput=False, skinName="NotificationMessageBox")
 			self.dialog.setAnimationMode(0)
+			self.dialog.hide()
+			self._queue = []
+			self._currentId = None
+			self.useNotifications = True  # Flag to allow disabling of the notification system if needed, e.g. if the dialog is used for non-notification purposes.
+
+	def addNotification(self, id, **kwargs):
+		print(f"[NotificationMessageBox] addNotification called with id: {id}, kwargs: {kwargs}")
+		self._queue.append((id, kwargs))
+		if not self.dialog.shown:
+			self._showNext()
+
+	def removeNotification(self, id):
+		print(f"[NotificationMessageBox] removeNotification called with id: {id}")
+		for x in list(self._queue):
+			if x[0] == id:
+				self._queue.remove(x)
+		if self._currentId == id and self.dialog.shown:
+			self._currentId = None
+			self.close(None)
+
+	def _showNext(self):
+		print(f"[NotificationMessageBox] _showNext called, queue length: {len(self._queue)}")
+		if self._queue:
+			notification = self._queue.pop(0)
+			self._currentId = notification[0]
+			self.showMessageBox(callback=self._onClose, **notification[1])
+
+	def _onClose(self, *retVal):
+		self._currentId = None
+		self._showNext()
 
 	def showMessageBox(self, text=None, timeout=-1, closeOnAnyKey=False, timeoutDefault=None, windowTitle=None, msgBoxID=None, typeIcon=MessageBox.TYPE_NOICON, enableInput=True, callback=None):
 		self.dialog.text = text
@@ -321,8 +351,10 @@ class NotificationMessageBox:
 		self.dialog.close = self.close
 		self.dialog.callback = callback
 		self.dialog.show()
+		print(f"[NotificationMessageBox] showMessageBox called with id: {msgBoxID}, text: {text}, timeout: {timeout}")
 
 	def close(self, *retVal):
+		print(f"[NotificationMessageBox] close called with id: {self._currentId}")
 		if self.dialog.enableInput:
 			self.dialog["actions"].execEnd()
 		self.dialog.hide()
