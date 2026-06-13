@@ -730,9 +730,11 @@ class InfoBarButtonSetup():
 
 
 def toast(session=None):
-	from Screens.Toast import Toast
-	session.showToast(_("This is a toast info message! But Very long! This is a toast info message! But Very long! This is a toast info message! But Very long!"), toasttype=Toast.TYPE_INFO)
-	session.showToast(_("This is a toast warning message!"), toasttype=Toast.TYPE_WARNING)
-	session.showToast(_("This is a toast error message!"), toasttype=Toast.TYPE_ERROR)
+	#from Tools.Notifications import AddPopup
+	#AddPopup("AAAAAAA AAAAAA AAAAAA", type=MessageBox.TYPE_INFO, timeout=5)
+
+	session.showInfo(_("This is a toast info message! But Very long! This is a toast info message! But Very long! This is a toast info message! But Very long! Even longer! This is a toast info message! But Very long! This is a toast info message! But Very long! This is a toast info message! But Very long! Even longer! "))
+	session.showWarning(_("This is a toast warning message!"))
+	session.showError(_("This is a toast error message!"))
 
 

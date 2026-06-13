@@ -110,6 +110,11 @@ class ToastScreen(Screen):
 		self.fadeIn = False
 		self.fadeTimer.start(50)
 
+	def forceHide(self):
+		self.fadeTimer.stop()
+		self.timer.stop()
+		self.hide()
+
 
 class Toast:
 	TYPE_INFO = 0
@@ -130,6 +135,7 @@ class Toast:
 			self.dialog.onHide.append(self._scheduleNext)
 
 	def showToast(self, text, toasttype, timeout):
+		timeout = max(3, min(timeout, 10))  # Minimum 3 maximum 10
 		self.queue.append((text, toasttype, timeout))
 		if not self.dialog.shown and not self.nextTimer.isActive():
 			self._showNext()
@@ -143,3 +149,10 @@ class Toast:
 		if not self.dialog.shown and self.queue:
 			text, toasttype, timeout = self.queue.pop(0)
 			self.dialog.showToast(text, toasttype, timeout)
+
+	def doShutdown(self):
+		self.nextTimer.stop()
+		if self.queue:
+			self.queue = None
+		if self.dialog.shown:
+			self.dialog.forceHide()
