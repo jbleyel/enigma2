@@ -473,9 +473,6 @@ class XMLHelp(Screen):
 	<screen name="XMLHelp" title="XML Help" position="center,center" size="900,600" resolution="1280,720">
 		<widget name="heading" position="0,0" size="e,25" font="Regular;20" transparent="1" verticalAlignment="center" />
 		<widget name="detailtext" position="0,35" size="e,e-85" font="Regular;20" transparent="1" verticalAlignment="top" />
-		<!--
-		<widget name="text" position="0,35" size="e,e-85" font="Regular;20" transparent="1" verticalAlignment="top" />
-		-->
 		<widget source="key_red" render="Label" position="0,e-40" size="180,40" backgroundColor="key_red" conditional="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
@@ -501,7 +498,7 @@ class XMLHelp(Screen):
 		self["key_yellow"] = StaticText("")
 		self["key_blue"] = StaticText(">>" if pages else "")
 		self["heading"] = Label()
-		self["detailtext"] = ScrollLabel()  # self["text"] = ScrollLabel()
+		self["detailtext"] = ScrollLabel()
 		self["actions"] = HelpableActionMap(self, ["CancelActions", "ColorActions", "NavigationActions"], {
 			"cancel": (self.close, _("Close the documentation screen")),
 			"top": (self["detailtext"].goTop, _("Move to first line / screen")),
@@ -511,18 +508,12 @@ class XMLHelp(Screen):
 			"last": (self.lastPage, _("Go to the last page of documentation")),
 			"down": (self["detailtext"].goLineDown, _("Move down a line")),
 			"pageDown": (self["detailtext"].goPageDown, _("Move down a screen")),
-			"bottom": (self["detailtext"].goBottom, _("Move to last line / screen"))
-		}, prio=0, description=_("XML Help Actions"))
-		self["prevActions"] = HelpableActionMap(self, ["ColorActions", "NavigationActions"], {
+			"bottom": (self["detailtext"].goBottom, _("Move to last line / screen")),
 			"yellow": (self.prevPage, _("Go to the previous page of documentation")),
-			"left": (self.prevPage, _("Go to the previous page of documentation"))
-		}, prio=0, description=_("XML Help Actions"))
-		self["prevActions"].setEnabled(False)
-		self["nextActions"] = HelpableActionMap(self, ["ColorActions", "NavigationActions"], {
+			"left": (self.prevPage, _("Go to the previous page of documentation")),
 			"blue": (self.nextPage, _("Go to the next page of documentation")),
 			"right": (self.nextPage, _("Go to the next page of documentation"))
 		}, prio=0, description=_("XML Help Actions"))
-		self["nextActions"].setEnabled(len(pages) > 1)
 		self.curPage = 0
 		self.numPages = len(pages) - 1
 		self.onLayoutFinish.append(self.layoutFinished)
@@ -550,9 +541,11 @@ class XMLHelp(Screen):
 				yellowText = ""
 			blueText = ""
 		self["key_yellow"].setText(yellowText)
-		self["prevActions"].setEnabled(yellowText != "")
+		self["actions"].setEnabledAction("yellow", yellowText != "")
+		self["actions"].setEnabledAction("left", yellowText != "")
 		self["key_blue"].setText(blueText)
-		self["nextActions"].setEnabled(blueText != "")
+		self["actions"].setEnabledAction("blue", blueText != "")
+		self["actions"].setEnabledAction("right", blueText != "")
 
 	def firstPage(self):
 		self.setPage(0)
