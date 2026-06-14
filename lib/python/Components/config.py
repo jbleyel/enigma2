@@ -2009,6 +2009,12 @@ class ConfigSearchText(ConfigText):
 		NumericalTextInput.setMode(self, "Search")
 
 
+class ConfigLocation(ConfigText):
+	def __init__(self, default="", fixed_size=False, visible_width=False, locationType=None):
+		self.locationType = locationType
+		ConfigText.__init__(self, default=default, fixed_size=fixed_size, visible_width=visible_width)
+
+
 # Until here, "saved_value" always had to be a *string*.  Now, in
 # ConfigSubsection, and only there, "saved_value" is a dict, essentially
 # forming a tree:

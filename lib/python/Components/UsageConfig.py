@@ -9,7 +9,7 @@ from enigma import Misc_Options, RT_HALIGN_CENTER, RT_HALIGN_LEFT, RT_HALIGN_RIG
 
 from keyids import KEYIDS
 from skin import getcomponentTemplateNames, parameters, domScreens
-from Components.config import ConfigBoolean, ConfigClock, ConfigDictionarySet, ConfigDirectory, ConfigFloat, ConfigInteger, ConfigIP, ConfigLocations, ConfigNumber, ConfigPassword, ConfigSelection, ConfigSelectionNumber, ConfigSequence, ConfigSet, ConfigSubDict, ConfigSubsection, ConfigText, ConfigYesNo, NoSave, config, configfile
+from Components.config import ConfigBoolean, ConfigClock, ConfigDictionarySet, ConfigDirectory, ConfigFloat, ConfigInteger, ConfigIP, ConfigLocation, ConfigLocations, ConfigNumber, ConfigPassword, ConfigSelection, ConfigSelectionNumber, ConfigSequence, ConfigSet, ConfigSubDict, ConfigSubsection, ConfigText, ConfigYesNo, NoSave, config, configfile
 from Components.Harddisk import harddiskmanager
 from Components.International import international
 from Components.NimManager import nimmanager
@@ -2496,6 +2496,24 @@ def InitUsageConfig():
 		config.plugins.softwaremanager.backuptarget.setChoices([("", _("Ask user"))] + hddchoises)
 
 	harddiskmanager.on_partition_list_change.append(partitionListChanged)
+
+	# Picon
+	config.picon = ConfigSubsection()
+	config.picon.mode = ConfigSelection(default=0, choices=[
+		(0, _("Legacy")),
+		(1, _("New mode"))
+	])
+
+	choices = [(x, _("Set Path %s") % x + 1) for x in range(5)]
+	config.picon.infobar = ConfigSelection(default=0, choices=choices)
+	config.picon.channelselection = ConfigSelection(default=0, choices=choices)
+	config.picon.display = ConfigSelection(default=0, choices=choices)
+	config.picon.openwebif = ConfigSelection(default=0, choices=choices)
+
+	for i in range(5):
+		section = ConfigSubsection()
+		section.path = ConfigLocation(default="/usr/share/enigma2/picon/" if i == 0 else "", fixed_size=False, locationType="picon")
+		setattr(config.picon, f"set{i}", section)
 
 	#
 	# Time shift settings.
