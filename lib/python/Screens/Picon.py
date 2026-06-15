@@ -23,7 +23,8 @@ class PiconSettings(Setup):
 				LocationBox,
 				windowTitle=_("Select Picon Directory"),
 				text=_("What do you want to set as the picon location?"),
-				currDir=current.value,
+				currDir=current.value or "/",
+				bookmarks=config.picon.allowedPaths,
 				minFree=0,
 				editDir=True,
 				inhibitDirs=tuple(d for d in DEFAULT_INHIBIT_DIRECTORIES if d not in ("/picon", "/piconlcd", "/usr"))
