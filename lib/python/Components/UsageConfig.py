@@ -2504,7 +2504,7 @@ def InitUsageConfig():
 		(1, _("Picon set mode"))
 	])
 
-	choices = [(x, _("Set Path %s") % x + 1) for x in range(5)]
+	choices = [(x, _("Set Path %s") % (x + 1)) for x in range(5)]
 	config.picon.infobar = ConfigSelection(default=0, choices=choices)
 	config.picon.channelselection = ConfigSelection(default=0, choices=choices)
 	config.picon.display = ConfigSelection(default=0, choices=choices)

@@ -49,8 +49,6 @@ class PiconSettings(Setup):
 			else:
 				footnote = ""
 			self.setFootnote(footnote)
-			choices = [(x, _("Set %d") % (x + 1)) for x in range(5) if getattr(config.picon, f"set{x}").path.value]
-			if not choices:
-				choices = [(0, _("Set Path %s") % 1)]
+			choices = [(x, _("Set Path %s") % (x + 1)) for x in range(5) if x == 0 or getattr(config.picon, f"set{x}").path.value]
 			for cfg in (config.picon.infobar, config.picon.channelselection, config.picon.display, config.picon.openwebif):
 				cfg.setChoices(choices)
