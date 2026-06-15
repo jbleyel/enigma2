@@ -161,7 +161,7 @@ void eFilePushThread::thread()
 #ifdef DREAMNEXTGEN
 					/* Shorter poll timeout for timeshift to reduce
 					 * latency when resuming playback. */
-					int poll_timeout = (m_flags == 1) ? 100 : 250;
+					int poll_timeout = (m_flags & FLAGBIT_TIMESHIFT) ? 100 : 250;
 					switch (poll(&pfd, 1, poll_timeout))
 #else
 					switch (poll(&pfd, 1, 250)) /* wait for 250ms */
@@ -188,19 +188,23 @@ void eFilePushThread::thread()
 				if (m_stop)
 					break;
 
-/*
-
-				if (m_flags == 1) { // timeshift — at live edge, wait for more data 
+				if (m_flags & FLAGBIT_TIMESHIFT) {
+					if (!(m_flags & FLAGBIT_RAM_MODE) || eofcount == 0) {
+						if (m_sof == 0)
+							sendEvent(evtEOF);
+						else
+							sendEvent(evtUser);
+					}
+					++eofcount;
 #ifdef DREAMNEXTGEN
-					usleep(15000);  // 15ms — balance between responsiveness and CPU 
+					usleep(15000);  /* 15ms — balance between responsiveness and CPU */
 #else
-					usleep(200000);  // 200ms 
+					usleep(200000);  /* 200ms */
 #endif
 					continue;
 				}
-*/
-			 	// In stream_mode, we send EOF events repeatedly until
-				// somebody responds.  Think of evtEOF as "buffer underrun".
+				/* In stream_mode, we send EOF events repeatedly until
+				 * somebody responds.  Think of evtEOF as "buffer underrun". */
 				if (m_sof == 0)
 					sendEvent(evtEOF);
 				else
@@ -209,14 +213,6 @@ void eFilePushThread::thread()
 				if (m_stream_mode) {
 					eDebug("[eFilePushThread] reached EOF, but we are in stream mode. delaying 1 second.");
 					sleep(1);
-					continue;
-				}
-				else if (m_flags == 1) {
-#ifdef DREAMNEXTGEN
-					usleep(15000);  // 15ms — balance between responsiveness and CPU 
-#else
-					usleep(200000);  // 200ms 
-#endif
 					continue;
 				} else if (++eofcount < 10) {
 					eDebug("[eFilePushThread] reached EOF, but the file may grow. delaying 1 second.");
