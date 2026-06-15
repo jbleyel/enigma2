@@ -1,7 +1,6 @@
 #ifndef __lib_service_eramserviceplay_h
 #define __lib_service_eramserviceplay_h
 
-#include <atomic>
 #include <lib/base/ebase.h>
 #include <lib/dvb/eramtimeshift.h>
 #include <lib/service/servicedvb.h>
@@ -20,9 +19,9 @@ public:
 	~eRamServicePlay() override;
 
 	// Status helpers
-	bool isRamBufferReady() const;
-	float ramBufferedSeconds() const;
-	int ramFillPercent() const;
+	bool isRamBufferReady() const; // ring buffer has received at least one write
+	float ramBufferedSeconds() const; // seconds elapsed since first data
+	int ramFillPercent() const; // percentage of ring buffer currently used
 
 	// Position / length (PTS-based)
 	RESULT getLength(pts_t& len) override;
@@ -34,54 +33,35 @@ public:
 
 	// Timeshift management
 	RESULT activateTimeshift() override;
-	RESULT saveTimeshiftFile() override;
+	RESULT saveTimeshiftFile() override; // no-op: nothing on disk
 	void serviceEventTimeshift(int event) override;
 
-	RESULT timeshift(ePtr<iTimeshiftService>& ptr) override {
-		ptr = this;
-		return 0;
-	}
+	RESULT timeshift(ePtr<iTimeshiftService>& ptr) override { ptr = this; return 0; }
 
-	RESULT unpause() override;
 
 protected:
 	RESULT startTimeshift() override;
 	RESULT stopTimeshift(bool swToLive = false) override;
 	ePtr<iTsSource> createTsSource(eServiceReferenceDVB& ref, int packetsize = 188) override;
 
-	// Override base class PRS — fingerprint only, no immediate pause
-	void handleEofRecovery() override;
-	void startPreciseRecoveryCheck() override;
-
 private:
-	// 200ms watchdog: lap detection + late-pause (drain-first)
-	void checkLapAndSeek();
+	void checkLapAndSeek(); // watchdog: detect ring-buffer lap and recover
+	void recordEvent(int event) override; // freeze position on stream corruption
 
-	// Block eventStreamCorrupt from reaching base class (prevents immediate pause)
-	void recordEvent(int event) override;
-
-	// RAM-specific corruption handler — connected to eRamRecorder::ramCorrupt
-	void onRamCorrupt();
-
-	// 33-bit PTS delta with wrap-around handling
+	// Safe PTS delta with 33-bit wrap-around (DVB/MPEG standard).
 	static inline pts_t pts_delta(pts_t newer, pts_t older) { return (newer - older) & ((1LL << 33) - 1); }
 
-	std::shared_ptr<eRamRingBuffer> m_ram_ring;
-	ePtr<eTimer> m_watchdog_timer;
-	size_t m_capacity_bytes;
-	ePtr<eRamTsSource> m_ts_source;
+	std::shared_ptr<eRamRingBuffer> m_ram_ring; // shared with eRamTsSource
+	ePtr<eTimer> m_watchdog_timer; // 200 ms lap-detection watchdog
+	size_t m_capacity_bytes; // total ring buffer size
+	ePtr<eRamTsSource> m_ts_source; // iTsSource wrapper for eFilePushThread
+
+	// Owned by m_record via replaceThread(); must NOT be deleted directly.
 	eRamRecorder* m_ram_recorder;
 
-	// Frozen play position for seekbar during corruption.
-	// Written by onRamCorrupt() (recorder thread) and checkLapAndSeek()
-	// (main thread). Read by getPlayPosition() (main thread).
-	// pts_t = int64_t: torn read possible on ARM32 without atomic.
-	std::atomic<pts_t> m_frozen_play_position{0};
-
-	// One-shot log flag for late-pause to avoid log spam.
-	// Written by onRamCorrupt() (recorder thread), read/written by
-	// checkLapAndSeek() and startPreciseRecoveryCheck() (main thread).
-	std::atomic<bool> m_late_pause_logged{false};
+	// Frozen play position (PTS delta) captured at stream-corruption onset.
+	// Prevents PRS from seeing a spuriously advancing getPTS() during pause.
+	pts_t m_frozen_play_position;
 };
 
 #endif // __lib_service_eramserviceplay_h

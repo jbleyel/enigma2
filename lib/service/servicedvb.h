@@ -1,14 +1,15 @@
 #ifndef __servicedvb_h
 #define __servicedvb_h
 
-#include <atomic>
-#include <lib/dvb/eit.h>
 #include <lib/dvb/idvb.h>
+#include <lib/service/iservice.h>
+
+#include <lib/dvb/eit.h>
 #include <lib/dvb/pmt.h>
 #include <lib/dvb/radiotext.h>
 #include <lib/dvb/subtitle.h>
 #include <lib/dvb/teletext.h>
-#include <lib/service/iservice.h>
+#include <atomic> // FIXED: Added for thread-safe stream corruption flag
 
 class eStaticServiceDVBInformation;
 class eStaticServiceDVBBouquetInformation;
@@ -142,15 +143,15 @@ public:
 
 	// iPauseableService
 	RESULT pause();
-	virtual RESULT unpause();
+	RESULT unpause();
 	RESULT setSlowMotion(int ratio);
 	RESULT setFastForward(int ratio);
 
 	// iSeekableService
-	virtual RESULT getLength(pts_t& len);
-	virtual RESULT seekTo(pts_t to);
-	virtual RESULT seekRelative(int direction, pts_t to);
-	virtual RESULT getPlayPosition(pts_t& pos);
+	RESULT getLength(pts_t& len);
+	RESULT seekTo(pts_t to);
+	RESULT seekRelative(int direction, pts_t to);
+	RESULT getPlayPosition(pts_t& pos);
 	RESULT setTrickmode(int trick = 0);
 	RESULT isCurrentlySeekable();
 
@@ -185,13 +186,13 @@ public:
 	RESULT getSubservice(eServiceReference& subservice, unsigned int n);
 
 	// iTimeshiftService
-	virtual RESULT startTimeshift();
-	virtual RESULT stopTimeshift(bool swToLive = true);
+	RESULT startTimeshift();
+	RESULT stopTimeshift(bool swToLive = true);
 	int isTimeshiftActive();
 	int isTimeshiftEnabled();
-	virtual RESULT activateTimeshift();
+	RESULT activateTimeshift();
 	RESULT setNextPlaybackFile(const char* fn);
-	virtual RESULT saveTimeshiftFile();
+	RESULT saveTimeshiftFile();
 	std::string getTimeshiftFilename();
 	virtual void switchToLive();
 
@@ -233,7 +234,7 @@ protected:
 	ePtr<eDVBCSASession> m_csa_session;
 	ePtr<eConnection> m_csa_activated_conn;
 	ePtr<eDVBSoftDecoder> m_soft_decoder;
-	bool m_soft_decoder_video_info_valid = false; // Track if video info is available from SoftDecoder
+	bool m_soft_decoder_video_info_valid = false;  // Track if video info is available from SoftDecoder
 
 	int m_is_primary;
 	int m_decoder_index;
@@ -369,11 +370,10 @@ protected:
 	// -- START: Precise Recovery System --
 	// This system handles stream corruption during timeshift, with support for a custom recovery delay.
 	ePtr<eTimer> m_precise_recovery_timer;
-
+	
+	std::atomic<bool> m_stream_corruption_detected; // FIXED: Changed to std::atomic<bool> to prevent Race Conditions
+	
 	pts_t m_original_timeshift_delay; // Stores the target timeshift delay.
-
-	std::atomic<bool> m_stream_corruption_detected;
-
 	bool m_delay_calculated = false; // Flag to ensure delay is calculated only once.
 
 	virtual void handleEofRecovery();
