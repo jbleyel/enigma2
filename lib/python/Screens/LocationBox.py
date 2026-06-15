@@ -510,22 +510,6 @@ class MovieLocationBox(LocationBox):
 		self.skinName = ["MovieLocationBox", "LocationBox"]
 
 
-class PiconLocationBox(LocationBox):
-	def __init__(self, session, currDir=None):
-		LocationBox.__init__(
-			self,
-			session,
-			text=_("What do you want to set as the picon location?"),
-			currDir=currDir,
-			bookmarks=config.picon.bookmarks,
-			windowTitle=_("Select Picon Directory"),
-			autoAdd=True,
-			editDir=True,
-			inhibitDirs=tuple(x for x in DEFAULT_INHIBIT_DIRECTORIES if x not in ("/picon", "/piconlcd", "/usr")),
-		)
-		self.skinName = ["PiconLocationBox", "LocationBox"]
-
-
 class PlaybackLocationBox(LocationBox):
 	def __init__(self, session):
 		LocationBox.__init__(

@@ -1,5 +1,6 @@
 from enigma import ePoint, gRGB, eSize, eTimer
 
+from Components.config import config, ConfigSelection
 from Components.Label import Label
 from Screens.Screen import Screen
 
@@ -44,6 +45,7 @@ class ToastScreen(Screen):
 		self["icon"].setText(self.ICON_CHARS.get(toasttype, chr(59658)))
 		self["text"].setText(text)
 		self.timer.start(timeout * 1000)
+		self.fade = config.usage.toastFade.value
 
 		BORDER_PAD = 18
 		GAP = 14
@@ -75,9 +77,13 @@ class ToastScreen(Screen):
 		self["text"].instance.move(ePoint(startX + BORDER_PAD + iconW + GAP, posY + BORDER_PAD + (contentH - textH) // 2))
 
 		self.fadeIn = True
-		self.alpha = 255
-		self._applyColors()
-		self.fadeTimer.start(50)
+		if self.fade > 0:
+			self.alpha = 255
+			self._applyColors()
+			self.fadeTimer.start(50 * self.fade)
+		else:
+			self.alpha = 0
+			self._applyColors()
 		self.show()
 
 	def _applyColors(self):
@@ -108,7 +114,10 @@ class ToastScreen(Screen):
 	def dohide(self):
 		self.timer.stop()
 		self.fadeIn = False
-		self.fadeTimer.start(50)
+		if self.fade > 0:
+			self.fadeTimer.start(50 * self.fade)
+		else:
+			self.hide()
 
 	def forceHide(self):
 		self.fadeTimer.stop()
@@ -133,6 +142,11 @@ class Toast:
 			self.nextTimer = eTimer()
 			self.nextTimer.callback.append(self._showNext)
 			self.dialog.onHide.append(self._scheduleNext)
+			config.usage.toastFade = ConfigSelection(default=0, choices=[
+				(0, _("Off")),
+				(1, _("Fast")),
+				(2, _("Slow"))
+			])
 
 	def showToast(self, text, toasttype, timeout):
 		timeout = max(3, min(timeout, 10))  # Minimum 3 maximum 10

@@ -2,14 +2,13 @@ from enigma import eListbox, eListboxPythonConfigContent, ePoint, eRCInput, eTim
 
 from skin import parameters
 from Components.ActionMap import HelpableActionMap, HelpableNumberActionMap
-from Components.config import ACTIONKEY_0, ACTIONKEY_ASCII, ACTIONKEY_BACKSPACE, ACTIONKEY_DELETE, ACTIONKEY_ERASE, ACTIONKEY_FIRST, ACTIONKEY_LAST, ACTIONKEY_LEFT, ACTIONKEY_NUMBERS, ACTIONKEY_RIGHT, ACTIONKEY_SELECT, ACTIONKEY_TIMEOUT, ACTIONKEY_TOGGLE, ConfigBoolean, ConfigElement, ConfigInteger, ConfigLocation, ConfigMACText, ConfigNumber, ConfigSelection, ConfigSequence, ConfigText, config, configfile
+from Components.config import ACTIONKEY_0, ACTIONKEY_ASCII, ACTIONKEY_BACKSPACE, ACTIONKEY_DELETE, ACTIONKEY_ERASE, ACTIONKEY_FIRST, ACTIONKEY_LAST, ACTIONKEY_LEFT, ACTIONKEY_NUMBERS, ACTIONKEY_RIGHT, ACTIONKEY_SELECT, ACTIONKEY_TIMEOUT, ACTIONKEY_TOGGLE, ConfigBoolean, ConfigElement, ConfigInteger, ConfigMACText, ConfigNumber, ConfigSelection, ConfigSequence, ConfigText, config, configfile
 from Components.GUIComponent import GUIComponent
 from Components.Pixmap import Pixmap
 from Components.Sources.Boolean import Boolean
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import getBoxDisplayName
 from Screens.ChoiceBox import ChoiceBox
-from Screens.LocationBox import LocationBox, PiconLocationBox, DEFAULT_INHIBIT_DIRECTORIES
 from Screens.MessageBox import MessageBox
 from Screens.Standby import QUIT_REBOOT, QUIT_RESTART, TryQuitMainloop
 from Screens.VirtualKeyBoard import VirtualKeyBoard
@@ -362,25 +361,12 @@ class ConfigListScreen:
 				else:
 					currConf.help_window.hide()
 
-	def selectLocation(self, current):
-		def selectLocationCallback(path):
-			if path is not None:
-				current.value = path
-			self["config"].invalidateCurrent()
-
-		if current.locationType == "picon":
-			self.session.openWithCallback(selectLocationCallback, PiconLocationBox, currDir=current.value)
-		else:
-			self.session.openWithCallback(selectLocationCallback, LocationBox, currDir=current.value)
-
 	def keySelect(self):
 		current = self.getCurrentItem()
 		if isinstance(current, ConfigBoolean):
 			self.keyToggle()
 		elif isinstance(current, ConfigSelection):
 			self.keyMenu()
-		elif isinstance(current, ConfigLocation):
-			self.selectLocation(current)
 		elif isinstance(current, ConfigText) and not isinstance(current, (ConfigMACText, ConfigNumber)):
 			self.keyText()
 		else:
