@@ -1,6 +1,6 @@
 from datetime import datetime
 from os import remove, statvfs, uname
-from os.path import isfile, join as pathjoin
+from os.path import isfile, join, exists
 from struct import pack
 from sys import maxsize
 from time import time
@@ -10,7 +10,6 @@ from enigma import eActionMap, eHdmiCEC, eTimer
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigSubsection, ConfigText, NoSave
 from Components.Console import Console
 import Screens.Standby
-from Tools.Directories import fileExists, pathExists
 
 config.hdmicec = ConfigSubsection()
 config.hdmicec.enabled = ConfigYesNo(default=False)  # Query from this value in hdmi_cec.cpp
@@ -77,11 +76,12 @@ config.hdmicec.default_settings = NoSave(ConfigYesNo(default=False))
 config.hdmicec.debug = ConfigYesNo(default=False)
 config.hdmicec.commandline = ConfigYesNo(default=False)
 
-cmdfile = "/tmp/hdmicec_cmd"
-msgfile = "/tmp/hdmicec_msg"
-errfile = "/tmp/hdmicec_cmd_err.log"
-hlpfile = "/tmp/hdmicec_cmd_hlp.txt"
-cecinfo = "http://www.cec-o-matic.com"
+VOLUME_FORWARDING_STATE_FILE = "/var/run/cec_volume_forwarding_dest"
+CMDFILE = "/tmp/hdmicec_cmd"
+MSGFILE = "/tmp/hdmicec_msg"
+ERRFILE = "/tmp/hdmicec_cmd_err.log"
+HLPFILE = "/tmp/hdmicec_cmd_hlp.txt"
+CECINFO = "http://www.cec-o-matic.com"
 
 WRONG_DATA_LENGTH = "<wrong data length>"
 UNKNOWN = "<unknown>"
@@ -523,6 +523,12 @@ class HdmiCec:
 
 			self.volumeForwardingEnabled = False
 			self.volumeForwardingDestination = 0
+			# Restore volume forwarding state after GUI restart.
+			# /var/run is a tmpfs and gets cleared on full reboot, so on a real
+			# reboot CEC negotiates fresh. On GUI-restart the file survives and
+			# we avoid waiting for a Set System Audio Mode that never comes.
+			if config.hdmicec.volume_forwarding.value:
+				self._restoreVolumeForwardingState()
 			eActionMap.getInstance().bindAction("", -maxsize - 1, self.keyEvent)
 			config.hdmicec.volume_forwarding.addNotifier(self.configVolumeForwarding, initial_call=False)
 			config.hdmicec.enabled.addNotifier(self.configVolumeForwarding)
@@ -539,6 +545,44 @@ class HdmiCec:
 			config.hdmicec.commandline.addNotifier(self.CECcmdstart)
 
 			self.checkTVstate("firstrun")
+
+	def _saveVolumeForwardingState(self):
+		"""Persist the volume forwarding destination to /var/run so it
+		survives a GUI restart. The file lives in a tmpfs and is therefore
+		automatically removed on a full system reboot."""
+		try:
+			with open(VOLUME_FORWARDING_STATE_FILE, "w") as f:
+				f.write(str(self.volumeForwardingDestination))
+			# print(f"[hdmiCEC] volume forwarding state saved: dest={self.volumeForwardingDestination:02x}")
+		except OSError as e:
+			print(f"[hdmiCEC] could not save volume forwarding state: {e}")
+
+	def _restoreVolumeForwardingState(self):
+		"""Restore volume forwarding destination from /var/run after a
+		GUI restart. Does nothing if the file does not exist (e.g. first
+		boot or after a full reboot)."""
+		try:
+			if exists(VOLUME_FORWARDING_STATE_FILE):
+				with open(VOLUME_FORWARDING_STATE_FILE) as f:
+					dest = int(f.read().strip())
+				self.volumeForwardingDestination = dest
+				self.volumeForwardingEnabled = True
+				self.CECwritedebug(
+					f"[HdmiCec] volume forwarding state restored from file: dest={dest:02x}", True
+				)
+				# print(f"[hdmiCEC] volume forwarding restored after GUI restart: dest={dest:02x}")
+		except (OSError, ValueError) as e:
+			print(f"[hdmiCEC] could not restore volume forwarding state: {e}")
+
+	def _clearVolumeForwardingState(self):
+		"""Remove the state file when the audio device reports that
+		volume forwarding is not supported (Feature Abort)."""
+		try:
+			if exists(VOLUME_FORWARDING_STATE_FILE):
+				remove(VOLUME_FORWARDING_STATE_FILE)
+				# print("[hdmiCEC] volume forwarding state file cleared (feature abort)")
+		except OSError as e:
+			print(f"[hdmiCEC] could not clear volume forwarding state: {e}")
 
 	def getPhysicalAddress(self):
 		physicaladdress = eHdmiCEC.getInstance().getPhysicalAddress()
@@ -586,6 +630,7 @@ class HdmiCec:
 						print(f"[hdmiCEC][messageReceived]: volume forwarding not supported by device {address:02x}")
 					# self.CECwritedebug("[HdmiCec] volume forwarding not supported by device %02x" % (address), True)
 						self.volumeForwardingEnabled = False
+						self._clearVolumeForwardingState()
 			elif cmd == 0x46:  # request name
 				self.sendMessage(address, "osdname")
 			elif cmd in (0x7e, 0x72):  # system audio mode status
@@ -597,6 +642,7 @@ class HdmiCec:
 				if config.hdmicec.volume_forwarding.value:
 					self.CECwritedebug(f"[HdmiCec] volume forwarding to device {self.volumeForwardingDestination:02x} enabled", True)
 					self.volumeForwardingEnabled = True
+					self._saveVolumeForwardingState()
 			elif cmd == 0x8f:  # request power status
 				if Screens.Standby.inStandby:
 					self.sendMessage(address, "powerinactive")
@@ -1062,6 +1108,7 @@ class HdmiCec:
 			self.sendMessage(5, "givesystemaudiostatus")
 		else:
 			self.volumeForwardingEnabled = False
+			self._clearVolumeForwardingState()
 
 	def configReportActiveMenu(self, configElement):
 		if self.old_configReportActiveMenu == config.hdmicec.report_active_menu.value:
@@ -1157,7 +1204,7 @@ class HdmiCec:
 
 	def sethdmipreemphasis(self):
 		f = "/proc/stb/hdmi/preemphasis"
-		if fileExists(f):
+		if exists(f):
 			if config.hdmicec.preemphasis.value:
 				self.CECwritefile(f, "w", "on")
 			else:
@@ -1166,7 +1213,7 @@ class HdmiCec:
 	def checkifPowerupWithoutWakingTv(self):
 		f = "/tmp/powerup_without_waking_tv.txt"
 		# Returns "True" if openWebif function "Power on without TV" has written "True" to this file:
-		powerupWithoutWakingTv = (self.CECreadfile(f) or "False") if fileExists(f) else "False"
+		powerupWithoutWakingTv = (self.CECreadfile(f) or "False") if exists(f) else "False"
 		# Write "False" to the file so that turning on the TV is only suppressed once
 		# (and initially, so that openWebif knows that the image supports this feature).
 		self.CECwritefile(f, "w", "False")
@@ -1244,7 +1291,7 @@ class HdmiCec:
 			print(debugtext)
 			return
 		log_path = config.crash.debug_path.value
-		if pathExists(log_path):
+		if exists(log_path):
 			stat = statvfs(log_path)
 			disk_free = stat.f_bavail * stat.f_bsize / 1024
 			if self.disk_full:
@@ -1260,7 +1307,7 @@ class HdmiCec:
 			else:
 				return
 			now = datetime.now()
-			debugfile = pathjoin(log_path, now.strftime("Enigma2-hdmicec-%Y%m%d.log"))
+			debugfile = join(log_path, now.strftime("Enigma2-hdmicec-%Y%m%d.log"))
 			timestamp = now.strftime("%H:%M:%S.%f")[:-2]
 			debugtext = f"{timestamp} {'[   ] ' if debugprint else ''}{debugtext.replace('[HdmiCec] ', '')}\n"
 			if self.start_log:
@@ -1285,28 +1332,28 @@ class HdmiCec:
 		if self.cmdPollTimer.isActive():
 			self.cmdPollTimer.stop()
 		if not config.hdmicec.enabled.value or received in ("start", "stop"):
-			self.CECremovefiles((cmdfile, msgfile, errfile))
+			self.CECremovefiles((CMDFILE, MSGFILE, ERRFILE))
 			if received == "start":
 				self.cmdPollTimer.startLongTimer(polltime)
 			return
 		if received:
-			self.CECwritefile(msgfile, "w", received.rstrip().replace(" ", ":") + "\n")
+			self.CECwritefile(MSGFILE, "w", received.rstrip().replace(" ", ":") + "\n")
 			if self.cmdWaitTimer.isActive():
 				self.cmdWaitTimer.stop()
 		if self.firstrun or self.sendMessagesIsActive():
 			self.cmdPollTimer.startLongTimer(polltime)
 			return
-		if fileExists(cmdfile):
-			files = [cmdfile, errfile]
+		if exists(CMDFILE):
+			files = [CMDFILE, ERRFILE]
 			if received is None and not self.cmdWaitTimer.isActive():
-				files.append(msgfile)
-			ceccmd = self.CECreadfile(cmdfile).strip().split(":")
+				files.append(MSGFILE)
+			ceccmd = self.CECreadfile(CMDFILE).strip().split(":")
 			self.CECremovefiles(files)
 			if len(ceccmd) == 1 and not ceccmd[0]:
 				e = "Empty input file!"
 				self.CECwritedebug(f"[HdmiCec] CECcmdline - error: {e}", True)
 				txt = f"{e}\n"
-				self.CECwritefile(errfile, "w", txt)
+				self.CECwritefile(ERRFILE, "w", txt)
 			elif ceccmd[0] in ("help", "?"):
 				internaltxt = "  Available internal commands: "
 				space = len(internaltxt) * " "
@@ -1317,24 +1364,24 @@ class HdmiCec:
 				txt = "Help for the hdmi-cec command line function\n"
 				txt += "-------------------------------------------\n\n"
 				txt += "Files:\n"
-				txt += f"- Input file to send the hdmi-cec command line: '{cmdfile}'\n"
-				txt += f"- Output file for received hdmi-cec messages:   '{msgfile}'\n"
-				txt += f"- Error file for hdmi-cec command line errors:  '{errfile}'\n"
-				txt += f"- This help file:                               '{hlpfile}'\n\n"
+				txt += f"- Input file to send the hdmi-cec command line: '{CMDFILE}'\n"
+				txt += f"- Output file for received hdmi-cec messages:   '{MSGFILE}'\n"
+				txt += f"- Error file for hdmi-cec command line errors:  '{ERRFILE}'\n"
+				txt += f"- This help file:                               '{HLPFILE}'\n\n"
 				txt += "Functions:\n"
-				txt += f"- Help: Type 'echo help > {cmdfile}' to create this file.\n\n"
-				txt += f"- Send internal commands: address:command (e.g. Type 'echo 00:wakeup > {cmdfile}' for wakeup the TV device.)\n"
+				txt += f"- Help: Type 'echo help > {CMDFILE}' to create this file.\n\n"
+				txt += f"- Send internal commands: address:command (e.g. Type 'echo 00:wakeup > {CMDFILE}' for wakeup the TV device.)\n"
 				txt += f"{internaltxt}\n"
-				txt += f"- Send individual commands: address:command:data (e.g. Type 'echo 00:04 > {cmdfile}' for wakeup the TV device.)\n"
-				txt += f"  Available individual commands: {cecinfo}\n\n"
+				txt += f"- Send individual commands: address:command:data (e.g. Type 'echo 00:04 > {CMDFILE}' for wakeup the TV device.)\n"
+				txt += f"  Available individual commands: {CECINFO}\n\n"
 				txt += "Info:\n"
 				txt += "- Input and error file will removed with send a new command line. Output file will removed if not waiting for a message.\n"
 				txt += "  (If the command was accepted successfully, the input file is deleted and no error file exist.)\n"
 				txt += f"- Poll time for new command line is {polltime} second. Maximum wait time for one received message is {waittime} seconds after send the hdmi-cec command.\n"
-				txt += f"  (After the first incoming message and outside this waiting time no more received messages will be write to '{msgfile}'.)\n"
+				txt += f"  (After the first incoming message and outside this waiting time no more received messages will be write to '{MSGFILE}'.)\n"
 				txt += "- Address, command and optional data must write as hex values and text for internal command must write exactly!\n\n"
 				txt += "End\n"
-				self.CECwritefile(hlpfile, "w", txt)
+				self.CECwritefile(HLPFILE, "w", txt)
 			else:
 				try:
 					if not ceccmd[0] or (ceccmd[0] and len(ceccmd[0].strip()) > 2):
@@ -1368,7 +1415,7 @@ class HdmiCec:
 				except Exception as e:
 					self.CECwritedebug(f"[HdmiCec] CECcmdline - error: {e}", True)
 					txt = f"{e}\n"
-					self.CECwritefile(errfile, "w", txt)
+					self.CECwritefile(ERRFILE, "w", txt)
 		self.cmdPollTimer.startLongTimer(polltime)
 
 	def CECreadfile(self, FILE):
@@ -1389,7 +1436,7 @@ class HdmiCec:
 
 	def CECremovefiles(self, FILES):
 		for f in FILES:
-			if fileExists(f):
+			if exists(f):
 				try:
 					remove(f)
 				except Exception as e:
