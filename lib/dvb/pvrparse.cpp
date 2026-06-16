@@ -38,12 +38,12 @@ void eMPEGStreamInformation::close()
 {
 	if (m_structure_read_fd >= 0)
 	{
-		if (m_structure_cache != NULL)
+		if (m_structure_cache != NULL && m_structure_cache != MAP_FAILED)
 		{
 			//eDebug("[eMPEGStreamInformation] {%d} close - unmap %p size %d", gettid(), m_structure_cache, m_structure_cache_entries * 16);
 			::munmap(m_structure_cache, m_structure_cache_entries * 16);
-			m_structure_cache = NULL;
 		}
+		m_structure_cache = NULL;
 		::close(m_structure_read_fd);
 		m_structure_cache_entries = 0;
 		m_cache_index = -1;
@@ -226,11 +226,21 @@ pts_t eMPEGStreamInformation::getInterpolated(off_t offset)
 off_t eMPEGStreamInformation::getAccessPoint(pts_t ts, int marg)
 {
 	//eDebug("[eMPEGStreamInformation::getAccessPoint] ts=%llu, marg=%d", ts, marg);
-		/* FIXME: more efficient implementation */
 	off_t last = 0;
 	off_t last2 = 0;
 	ts += 1; // Add rounding error margin
-	for (std::map<off_t, pts_t>::const_iterator i(m_access_points.begin()); i != m_access_points.end(); ++i)
+
+	/* narrow search window using sorted pts->offset index */
+	std::map<off_t, pts_t>::const_iterator start = m_access_points.begin();
+	if (!m_pts_to_offset.empty())
+	{
+		std::multimap<pts_t, off_t>::const_iterator candidate = m_pts_to_offset.lower_bound(ts);
+		if (candidate != m_pts_to_offset.begin())
+			--candidate;
+		start = m_access_points.lower_bound(candidate->second);
+	}
+
+	for (std::map<off_t, pts_t>::const_iterator i(start); i != m_access_points.end(); ++i)
 	{
 		pts_t delta = getDelta(i->first);
 		pts_t c = i->second - delta;
@@ -273,9 +283,13 @@ int eMPEGStreamInformation::getNextAccessPoint(pts_t &ts, const pts_t &start, in
 			if (i == m_access_points.end())
 				return -1;
 			++i;
+			if (i == m_access_points.end())
+				return -1;
 			pts_t c2 = i->second - getDelta(i->first);
 			if (c1 == c2) { // Discontinuity
 				++i;
+				if (i == m_access_points.end())
+					return -1;
 				c2 = i->second - getDelta(i->first);
 			}
 			c1 = c2;
@@ -341,14 +355,14 @@ int eMPEGStreamInformation::moveCache(int index)
 int eMPEGStreamInformation::loadCache(int index)
 {
 	//eDebug("[eMPEGStreamInformation::loadCache] index=%d", index);
-	if (m_structure_cache != NULL)
+	if (m_structure_cache != NULL && m_structure_cache != MAP_FAILED)
 	{
 		//eDebug("[eMPEGStreamInformation] munmap %p size %d index %d", m_structure_cache, m_structure_cache_entries * entry_size, m_cache_index);
 		::munmap(m_structure_cache, m_structure_cache_entries * entry_size);
-		m_structure_cache = NULL;
-		m_structure_cache_entries = 0;
-		m_cache_index = -1;
 	}
+	m_structure_cache = NULL;
+	m_structure_cache_entries = 0;
+	m_cache_index = -1;
 	off_t where = ROUND_TO_PAGESIZE(index * entry_size);
 	off_t until = ::lseek(m_structure_read_fd, 0, SEEK_END);
 	size_t bytes;
@@ -372,7 +386,7 @@ int eMPEGStreamInformation::loadCache(int index)
 	}
 	//eDebug("[eMPEGStreamInformation] mmap offset=%lld size %d", where, bytes);
 	m_structure_cache = (unsigned long long*) ::mmap(NULL, bytes, PROT_READ, MAP_SHARED, m_structure_read_fd, where);
-	if (m_structure_cache == NULL)
+	if (m_structure_cache == MAP_FAILED)
 	{
 		eDebug("[eMPEGStreamInformation] failed to mmap cache: %m");
 		m_cache_index = -1;
@@ -1140,7 +1154,12 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 					eDebug("[eMPEGStreamParserTS] - detected H264 stream");
 					m_streamtype =  eDVBVideo::MPEG4_H264;
 				}
-				else /* TODO: detect H265 */
+				else if (sc > 0x09 && sc < 0x80)
+				{
+					eDebug("[eMPEGStreamParserTS] - detected H265 stream");
+					m_streamtype = eDVBVideo::H265_HEVC;
+				}
+				else
 					continue;
 			}
 

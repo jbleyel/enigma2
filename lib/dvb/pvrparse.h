@@ -125,7 +125,6 @@ public:
 	int getLastPTS(pts_t &last_pts);
 	int getFirstPTS(pts_t &first_pts);
 	void enableAccessPoints(bool enable) { m_enable_accesspoints = enable; }
-	unsigned int getCCErrors() const { return m_cc_errors; }
 private:
 	unsigned char m_pkt[192];
 	int m_pktptr;

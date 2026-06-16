@@ -1849,7 +1849,7 @@ RESULT eDVBServicePlay::setFastForward_internal(int ratio, bool final_seek)
 		if (m_cue)
 		{
 			long long _skipmode = skipmode;
-			if (!m_timeshift_active && (m_current_video_pid_type == eDVBServicePMTHandler::videoStream::vtH265_HEVC))
+			if ((m_current_video_pid_type == eDVBServicePMTHandler::videoStream::vtH265_HEVC))
 			{
 				if (ratio < 0)
 					_skipmode = skipmode * 3;
@@ -3198,6 +3198,7 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 		eDebug("[eDVBServicePlay] remove time shift files");
 		eBackgroundFileEraser::getInstance()->erase(m_timeshift_file);
 		eBackgroundFileEraser::getInstance()->erase(m_timeshift_file + ".sc");
+		eBackgroundFileEraser::getInstance()->erase(m_timeshift_file + ".ap");
 		eBackgroundFileEraser::getInstance()->erase(m_timeshift_file + ".cuts");
 	}
 	else
