@@ -13,7 +13,7 @@ from enigma import eDVBSatelliteEquipmentControl as secClass, \
 from Components.config import config, ConfigSubsection, ConfigSelection, ConfigFloat, ConfigSatlist, ConfigYesNo, ConfigInteger, ConfigSubList, ConfigNothing, ConfigSubDict, ConfigOnOff, ConfigDateTime, ConfigText
 from Components.SystemInfo import BoxInfo
 from Tools.BoundFunction import boundFunction
-from Tools.Directories import fileReadLines, fileWriteLine
+from Tools.Directories import fileWriteLine
 
 MODULE_NAME = __name__.split(".")[-1]
 

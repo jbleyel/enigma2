@@ -19,10 +19,10 @@ typedef FTC_SBitCache FTC_SBit_Cache;
 #include <lib/gdi/epoint.h>
 #include <lib/gdi/erect.h>
 #include <string>
-#include <list>
 #include <lib/base/object.h>
 
 #include <set>
+#include <unordered_map>
 
 class FontRenderClass;
 class Font;
@@ -57,6 +57,12 @@ class fontRenderClass
 	FT_Error getGlyphBitmap(FTC_Image_Desc *font, FT_UInt glyph_index, FTC_SBit *sbit);
 	FT_Error getGlyphImage(FTC_Image_Desc *font, FT_UInt glyph_index, FT_Glyph *glyph, FT_Glyph *borderglyph, int bordersize);
 	static fontRenderClass *instance;
+	std::unordered_map<std::string, fontListEntry*> fontMap;
+	std::vector<std::string> fontFacesCache;
+	bool fontFacesCacheValid;
+
+	FTC_CMapCache cmapCache;
+	inline FT_UInt getCharIndex(Font *font, unsigned long chr, int rflags);
 #else
 	fontRenderClass();
 	~fontRenderClass();
@@ -130,8 +136,8 @@ class eTextPara : public iObject
 	eSize maximum;
 	int left;
 	glyphString glyphs;
-	std::list<int> lineOffsets;
-	std::list<int> lineChars;
+	std::vector<int> lineOffsets;
+	std::vector<int> lineChars;
 	int charCount;
 	int lineCount;
 	int totalheight;
@@ -140,6 +146,8 @@ class eTextPara : public iObject
 	bool doTopBottomReordering;
 	int m_offset;
 	bool m_blend;
+
+	int cachedLineHeight;
 
 	int appendGlyph(Font *current_font, FT_Face current_face, FT_UInt glyphIndex, int flags, int rflags, int border, bool last,
 					bool activate_newcolor, unsigned long newcolor);
@@ -152,7 +160,8 @@ public:
 		: current_font(0), replacement_font(0), fallback_font(0),
 		  current_face(0), replacement_face(0), fallback_face(0),
 		  area(area), cursor(start), maximum(0, 0), left(start.x()), charCount(0), totalheight(0),
-		  bboxValid(0), doTopBottomReordering(false), m_offset(0), m_blend(false)
+		  bboxValid(0), doTopBottomReordering(false), m_offset(0), m_blend(false),
+		  cachedLineHeight(0)
 	{
 	}
 	virtual ~eTextPara();
@@ -223,7 +232,7 @@ public:
 	{
 		ASSERT(g >= 0);
 		ASSERT(g < (int)glyphs.size());
-		glyphs[g].flags |= f;
+		glyphs[g].flags &= ~f;
 	}
 };
 

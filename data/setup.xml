@@ -14,6 +14,7 @@
 		<item level="1" text="AC3 plus transcoding" description="Select whether AC3 Plus audio tracks should be transcoded to AC3." requires="CanAC3plusTranscode">config.av.transcodeac3plus</item>
 		<item level="1" text="DTS downmix" description="Select whether DTS channel audio tracks should be downmixed to stereo." requires="CanDownmixDTS">config.av.downmix_dts</item>
 		<item level="1" text="DTS/DTS-HD HR/DTS-HD MA/DTS:X" description="Select whether DTS channel audio tracks should be downmixed or transcoded." requires="CanDTSHD">config.av.dtshd</item>
+		<item level="1" text="Dolby TrueHD" description="Select whether Dolby TrueHD audio tracks should be passed through or decoded." requires="CanTrueHD">config.av.truehd</item>
 		<item level="1" text="WMA Pro" description="Select whether WMA Pro channel audio tracks should be downmixed or transcoded." requires="CanWMAPRO">config.av.wmapro</item>
 		<item level="1" text="AAC downmix" description="Select whether multichannel audio tracks should be downmixed to stereo." requires="CanDownmixAAC">config.av.downmix_aac</item>
 		<item level="1" text="AAC plus downmix" description="Select whether multichannel audio tracks should be downmixed to stereo." requires="CanDownmixAACPlus">config.av.downmix_aacplus</item>
@@ -122,7 +123,7 @@
 			<item level="1" text="Show record indicator" description="Configure if and how the record indicator will be shown in the channel selection list.">config.channelSelection.recordIndicatorMode</item>
 		</if>
 		<item level="1" text="Zap mode" description="Setup how to control the channel changing." requires="ZapMode">config.misc.zapmode</item>
-		<item level="2" text="Number of digits in service number" description="This allows you to set the maximum number of digits in a service number, up to 5.">config.usage.numberZapDigits</item>
+		<item level="2" text="Number of digits in service number" description="This allows you to set the maximum number of digits in a service number, up to 6.">config.usage.numberZapDigits</item>
 		<item level="2" text="Service zap screen contents" description="Select the preferred service information to display, in addition to the service number, for the service selection pop up screen.">config.usage.numberZapDisplay</item>
 		<item level="2" text="Service zap delay mode" description="Select if data entry timeouts are to be applied when entering digits into the service selection pop up screen. When a timeout is exceeded the currently entered number will be used for the service selection. The default timeouts are first digit 3 seconds, other digits 1 second.">config.usage.numberZapTimeouts</item>
 		<if conditional="config.usage.numberZapTimeouts.value == 'user'">
