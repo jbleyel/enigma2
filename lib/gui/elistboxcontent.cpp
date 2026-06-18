@@ -29,8 +29,6 @@ static constexpr int MAX_SCROLL_PIXMAP_PIXELS = 1'000'000;
 // Extra buffer factor added to roll-mode pixmap width/height
 static constexpr float SCROLL_ROLL_EXTRA_FACTOR = 1.5f;
 
-RESULT SwigFromPython(ePtr<gPixmap> &res, PyObject *obj);
-
 using namespace std;
 
 /*
@@ -805,6 +803,8 @@ void eListboxPythonStringContent::updateScrollPosition() {
 
 //////////////////////////////////////
 
+RESULT SwigFromPython(ePtr<gPixmap> &res, PyObject *obj);
+
 void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected)
 {
 	ePtr<gFont> fnt;
@@ -1290,6 +1290,9 @@ int eListboxPythonConfigContent::getIndentSize()
 
 
 //////////////////////////////////////
+
+/* todo: make a real infrastructure here! */
+RESULT SwigFromPython(ePtr<gPixmap> &res, PyObject *obj);
 
 eListboxPythonMultiContent::eListboxPythonMultiContent()
 	: m_clip(gRegion::invalidRegion()), m_old_clip(gRegion::invalidRegion())
