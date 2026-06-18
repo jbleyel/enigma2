@@ -292,15 +292,19 @@ int eMPEGStreamInformation::getNextAccessPoint(pts_t &ts, const pts_t &start, in
 	{
 		while (direction > 0)
 		{
-			if (std::next(i) == m_access_points.end())
+			std::map<off_t, pts_t>::const_iterator next = i;
+			++next;
+			if (next == m_access_points.end())
 				return -1;
-			++i;
+			i = next;
 			pts_t c2 = i->second - getDelta(i->first);
 			if (c1 == c2) // Discontinuity
 			{
-				if (std::next(i) == m_access_points.end())
+				next = i;
+				++next;
+				if (next == m_access_points.end())
 					return -1;
-				++i;
+				i = next;
 				c2 = i->second - getDelta(i->first);
 			}
 			c1 = c2;
@@ -477,6 +481,8 @@ int eMPEGStreamInformation::getStructureEntryFirst(off_t &offset, unsigned long 
 		if (i < 0)
 			i = 0;
 		int num = moveCache(i);
+		if (num <= 0)
+			return -1;
 		if ((num < structure_cache_size) && (structureCacheOffset(num - 1) <= offset))
 		{
 			eDebug("[eMPEGStreamInformation] offset %jd is past EOF of structure file", (intmax_t)offset);
@@ -588,6 +594,7 @@ int eMPEGStreamInformation::getFirstFrame(off_t &offset, pts_t& pts)
 	}
 	return -1;
 }
+
 int eMPEGStreamInformation::getLastFrame(off_t &offset, pts_t& pts)
 {
 	//eDebug("[eMPEGStreamInformation::getLastFrame]", gettid());
@@ -859,7 +866,6 @@ void eMPEGStreamInformationWriter::commit()
 	}
 }
 
-
 void eMPEGStreamInformationWriter::close()
 {
 	if (m_structure_write_fd != -1)
@@ -975,7 +981,17 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 
 	const int payload_size = (int)(end - data);
 
-	/* Stack buffer: tail (≤7) + current packet payload (≤188) */
+	/* Stack buffer: tail (≤7) + current packet payload (≤188).
+	 * Defensive guard: callers must never pass a payload larger than a
+	 * single TS packet. If they ever do, bail out instead of overflowing
+	 * the stack buffers below. */
+	if (payload_size > 188)
+	{
+		eDebug("[eMPEGStreamParserTS] scanHEVCNalUnits: payload_size %d exceeds 188, dropping packet", payload_size);
+		resetHEVCTail();
+		return;
+	}
+
 	unsigned char  buffer[188 + 7];
 	off_t          byte_offsets[188 + 7];
 	off_t          packet_offsets[188 + 7];
@@ -1020,11 +1036,15 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 		if (nal_pos + 1 >= total)
 			break;
 
-		/* Skip NALs whose first byte came from the tail (already processed) */
-		if (byte_offsets[nal_pos] < data_offset)
-			continue;
-
 		int nal_type = hevcNalType(buffer + nal_pos);
+
+		/* Only skip complete NALs already processed in a previous packet. */
+		if (byte_offsets[i] < data_offset && byte_offsets[nal_pos + 1] < data_offset)
+		{
+			if (nal_type != 35 || (nal_pos + 2 < total && byte_offsets[nal_pos + 2] < data_offset))
+				continue;
+		}
+
 		if (!isHEVCStructureNal(nal_type))
 			continue;
 
@@ -1040,8 +1060,18 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 			structure_data |= ((unsigned long long)buffer[nal_pos + 1] << 8);
 		}
 		if (ptsvalid)
-			structure_data |= (pts << 31) | 0x1000000;
+			structure_data |= ((pts & 0x1ffffffffULL) << 31) | 0x1000000;
 		writeStructureEntry(byte_offsets[i], structure_data);
+
+		if (nal_type == 35 && ((buffer[nal_pos + 2] >> 5) == 0) && ptsvalid && m_enable_accesspoints)
+		{
+			if (!m_hevc_last_ap_pts_valid || m_hevc_last_ap_pts != pts)
+			{
+				addAccessPoint(packet_offsets[i], pts);
+				m_hevc_last_ap_pts       = pts;
+				m_hevc_last_ap_pts_valid = true;
+			}
+		}
 
 		if (isHEVCAccessPointNal(nal_type) && ptsvalid && m_enable_accesspoints)
 		{
@@ -1148,21 +1178,15 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 		return 0;
 	}
 
-	pts_t pts = 0;
+	pts_t pts    = 0;
 	int ptsvalid = 0;
 
 	if (pusi)
 	{
-			// ok, we now have the start of the payload, aligned with the PES packet start.
+		/* start of payload, aligned with PES packet start */
 		if (pkt[0] || pkt[1] || (pkt[2] != 1))
 		{
 			eWarning("[eMPEGStreamParserTS] broken startcode");
-			//eDebugNoNewLineStart("[eMPEGStreamParserTS] ");
-			//for (int i = 0; i < 16; i++) {
-			//	eDebugNoNewLine(" %02X", pkt[i]);
-			//}
-			//eDebugNoNewLine("\n");
-
 			return -2;
 		}
 
@@ -1261,7 +1285,7 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 					{
 						unsigned long long data = sc | ((unsigned)pkt[4] << 8) | ((unsigned)pkt[5] << 16);
 						if (ptsvalid)
-							data |= (pts << 31) | 0x1000000;
+							data |= ((pts & 0x1ffffffffULL) << 31) | 0x1000000;
 						writeStructureEntry(offset + pkt_offset, data);
 					}
 					else
@@ -1278,7 +1302,7 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 				{
 					unsigned long long data = sc | (pkt[4] << 8);
 					if (ptsvalid)
-						data |= (pts << 31) | 0x1000000;
+						data |= ((pts & 0x1ffffffffULL) << 31) | 0x1000000;
 					writeStructureEntry(offset + pkt_offset, data);
 					if ((pkt[4] >> 5) == 0) /* I-frame */
 					{
@@ -1473,6 +1497,8 @@ void eMPEGStreamParserTS::setPid(int _pid, iDVBTSRecorder::timing_pid_type pidty
 	{
 		m_pid = _pid;
 		m_streamtype = streamtype;
+		m_last_cc_valid = false;
+		m_cc_errors     = 0;
 	}
 	else
 	{

@@ -148,9 +148,6 @@ private:
 	bool m_enable_accesspoints; /* set to false to prevent saving .ap files (e.g. timeshift) */
 	bool m_pts_found; /* 'real' mpeg pts has been found, no longer measuring streamtime */
 	bool m_has_accesspoints;
-	int m_last_cc;
-	bool m_last_cc_valid;
-	unsigned int m_cc_errors;
 	bool m_hevc_current_pts_valid;
 	pts_t m_hevc_current_pts;
 	bool m_hevc_last_ap_pts_valid;
@@ -159,6 +156,9 @@ private:
 	off_t m_hevc_tail_offsets[7];
 	off_t m_hevc_tail_packet_offsets[7];
 	int m_hevc_tail_size;
+	int m_last_cc;
+	bool m_last_cc_valid;
+	unsigned int m_cc_errors;
 };
 
 #endif
