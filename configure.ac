@@ -1,4 +1,4 @@
-AC_INIT([enigma2],[7.6],[https://www.opena.tv])
+AC_INIT([enigma2],[8.0],[https://www.opena.tv])
 AM_INIT_AUTOMAKE([dist-bzip2 no-define tar-pax -Wno-portability])
 AC_CONFIG_HEADERS([enigma2_config.h])
 
@@ -626,6 +626,10 @@ AC_DEFINE_UNQUOTED(SUBT_TXT_ABNORMAL_PTS_DIFFS, $with_subttxtabnormalptsdiffs,[C
 
 if test "$BOXTYPE" == "dm7080" -o "$BOXTYPE" == "dm820" -o "$BOXTYPE" == "dm800se" -o "$BOXTYPE" == "dm800sev2" -o "$BOXTYPE" == "dm7020hd" -o "$BOXTYPE" == "dm7020hdv2" -o "$BOXTYPE" == "dreamone" -o "$BOXTYPE" == "dreamtwo" -o "$BOXTYPE" == "dm900" -o "$BOXTYPE" == "dm920"; then
 	AC_DEFINE(DREAMBOX_DUAL_TUNER, 1,[define BOXTYPE DM7080])
+fi
+
+if test "$BOXTYPE" == "dreamtwo"; then
+	AC_DEFINE(LCD_COLOR_BYTESWAP_16, 1, [LCD 16-bit Byte-Swap])
 fi
 
 if test "$BOXTYPE" == "dm7080" -o "$BOXTYPE" == "dm820" -o "$BOXTYPE" == "dm900" -o "$BOXTYPE" == "dm920" -o "$BOXTYPE" == "dm520"; then

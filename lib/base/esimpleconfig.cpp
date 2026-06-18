@@ -13,15 +13,18 @@
 
 namespace eSimpleConfig
 {
+	static std::map<std::string, std::string>* configValues = nullptr; // NOSONAR
+	static time_t lastModified = 0; // NOSONAR
+
 	static std::map<std::string, std::string>& getConfigValues()
 	{
-		static std::map<std::string, std::string>* configValues = new std::map<std::string, std::string>(); // NOSONAR
+		if (!configValues)
+			configValues = new std::map<std::string, std::string>();
 		return *configValues;
 	}
 
 	static void load()
 	{
-		static time_t lastModified = 0; // NOSONAR
 		std::string file = eEnv::resolve("${sysconfdir}/enigma2/settings");
 
 		struct stat settings_stat = {};
