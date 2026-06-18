@@ -1,5 +1,5 @@
 from os import sync
-from os.path import join, exists
+from os.path import join
 from time import sleep
 
 from enigma import eConsoleAppContainer
@@ -15,7 +15,6 @@ PACKAGER_CONFIG_DIR = "/etc/opkg/"
 PACKAGER_CONFIG_FILE = join(PACKAGER_CONFIG_DIR, "opkg.conf")
 PACKAGER_LISTS_DIR = "/var/lib/opkg/lists/"
 PACKAGER_STATUS_FILE = "/var/lib/opkg/status"
-PACKAGER_LINEBUFFER = "/usr/bin/stdbuf"
 
 
 class OpkgComponent:
@@ -270,15 +269,8 @@ class OpkgComponent:
 		self.console.setBufferSize(dataBuffer)
 		self.console.dataAvail.append(self.consoleDataAvail)
 		self.console.appClosed.append(self.consoleAppClosed)
-		if "lineMode" in self.args and self.args["lineMode"] and exists(PACKAGER_LINEBUFFER):  # Use stdbuf to disable output buffering for upgrade commands to allow line buffering.
-			opkgArgs = [
-				PACKAGER_LINEBUFFER,
-				PACKAGER_LINEBUFFER,
-				"-oL",
-				"-eL",
-			] + opkgArgs[1:]
-		else:
-			status = self.console.execute(*opkgArgs)
+		self.console.setLineMode("lineMode" in self.args and self.args["lineMode"])
+		status = self.console.execute(*opkgArgs)
 		if status:
 			print(f"[Opkg] Note: Opkg execute returned a value of {status}.")
 			# self.consoleAppClosed(-1)
@@ -557,7 +549,9 @@ class OpkgComponent:
 	def getEventText(self, event):
 		return self.EVENT_NAMES.get(event, "None")
 
+
 # The following code is a deprecated and due to be removed soon.
+
 
 	def startCmd(self, cmd, args=None):
 		self.nextCommand = None
@@ -620,19 +614,10 @@ class OpkgComponent:
 		self.console.setBufferSize(consoleBuffer)
 		self.console.dataAvail.append(self.cmdData)
 		self.console.appClosed.append(self.cmdFinished)
-		if args and "lineMode" in args and args["lineMode"] and exists(PACKAGER_LINEBUFFER):  # Use stdbuf to disable output buffering for upgrade commands to allow line buffering.
-			argv = [
-				PACKAGER_LINEBUFFER,
-				"-oL",
-				"-eL",
-				self.opkg,
-			] + argv
-			if self.console.execute(argv[0], *argv):
-				self.cmdFinished(-1)
-		else:
-			argv.insert(0, self.opkg)
-			if self.console.execute(self.opkg, *argv):
-				self.cmdFinished(-1)
+		self.console.setLineMode(bool(args and "lineMode" in args and self.args["lineMode"]))
+		argv.insert(0, self.opkg)
+		if self.console.execute(self.opkg, *argv):
+			self.scmdFinished(-1)
 
 	def cmdData(self, data):
 		data = data.decode("UTF-8", "ignore") if isinstance(data, bytes) else data
