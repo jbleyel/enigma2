@@ -75,7 +75,7 @@ int iListboxContent::currentCursorSelectable() {
 
 DEFINE_REF(eListboxPythonStringContent);
 
-eListboxPythonStringContent::eListboxPythonStringContent() {}
+eListboxPythonStringContent::eListboxPythonStringContent() {} // NOSONAR
 
 eListboxPythonStringContent::~eListboxPythonStringContent() {
 	Py_XDECREF(m_list);
