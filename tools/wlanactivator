@@ -1,0 +1,74 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          wlanactivator
+# Required-Start:
+# Required-Stop:
+# Default-Start:
+# Default-Stop:
+# Short-Description: Bring a WLAN interface up or down
+### END INIT INFO
+
+set -eu
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+
+IFACE="${2:-}"
+
+validate_iface() {
+  case "$IFACE" in
+    wlan[0-9]*) ;;
+    *)
+      echo "Invalid interface '$IFACE' (must be wlanX)" >&2
+      exit 2
+      ;;
+  esac
+}
+
+do_start() {
+  validate_iface
+  WPA_CONF="/etc/wpa_supplicant/wpa_supplicant-${IFACE}.conf"
+  WPA_PID="/var/run/wpa_supplicant-${IFACE}.pid"
+
+  # tear down any existing state
+  wpa_cli -i"${IFACE}" terminate 2>/dev/null || true
+  if [ -f "$WPA_PID" ]; then
+    pid="$(cat "$WPA_PID" 2>/dev/null || true)"
+    case "$pid" in ''|*[!0-9]*) ;; *) kill "$pid" 2>/dev/null || true ;; esac
+    rm -f "$WPA_PID"
+  fi
+  ifdown "${IFACE}" 2>/dev/null || true
+  ip addr flush dev "${IFACE}" scope global 2>/dev/null || true
+
+  # start wpa_supplicant only if a config file was written
+  if [ -f "$WPA_CONF" ]; then
+    wpa_supplicant -B -D nl80211,wext -i"${IFACE}" -c"${WPA_CONF}" -P"${WPA_PID}"
+    # give wpa_supplicant a moment to associate before ifup
+    sleep 1
+  fi
+
+  ifup "${IFACE}"
+}
+
+do_stop() {
+  validate_iface
+  wpa_cli -i"${IFACE}" terminate 2>/dev/null || true
+  WPA_PID="/var/run/wpa_supplicant-${IFACE}.pid"
+  if [ -f "$WPA_PID" ]; then
+    pid="$(cat "$WPA_PID" 2>/dev/null || true)"
+    case "$pid" in ''|*[!0-9]*) ;; *) kill "$pid" 2>/dev/null || true ;; esac
+    rm -f "$WPA_PID"
+  fi
+  ifdown "${IFACE}" 2>/dev/null || true
+  ip addr flush dev "${IFACE}" scope global 2>/dev/null || true
+}
+
+case "${1:-}" in
+  start) do_start ;;
+  stop)  do_stop  ;;
+  *)
+    echo "Usage: $0 start|stop wlanX" >&2
+    exit 2
+    ;;
+esac
+
+exit 0

@@ -41,4 +41,4 @@ class NetlinkReader():
 		return 'NetlinkReader'
 
 
-reader = NetlinkReader()
+#reader = NetlinkReader()
