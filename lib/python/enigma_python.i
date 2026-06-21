@@ -49,7 +49,7 @@ is usually caused by not marking PSignals as immutable.
 #include <lib/base/e2avahi.h>
 #include <lib/base/internetcheck.h>
 #include <lib/base/profile.h>
-#include <lib/network/ServiceActionClient.h>
+#include <lib/network/serviceactionclient.h>
 #include <lib/driver/rc.h>
 #include <lib/driver/rcinput_swig.h>
 #include <lib/driver/ehotplug_socket.h>
@@ -237,7 +237,7 @@ class iDVBChannelList   { protected: iDVBChannelList() {}   virtual ~iDVBChannel
 %immutable eStreamServer::streamStatusChanged;
 %include <lib/base/message.h>
 %include <lib/base/internetcheck.h>
-%include <lib/network/ServiceActionClient.h>
+%include <lib/network/serviceactionclient.h>
 %include <lib/base/etpm.h>
 %include <lib/driver/rc.h>
 %include <lib/driver/rcinput_swig.h>
