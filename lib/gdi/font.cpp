@@ -416,30 +416,12 @@ int eTextPara::appendGlyph(Font *current_font, FT_Face current_face, FT_UInt gly
 	{
 		FTC_SBit glyph;
 		if (current_font->getGlyphBitmap(glyphIndex, &glyph))
-		{
-			/* SBit cache rejects glyphs larger than FTC_MAX_BITS_SIZE (127 px).
-			 * Fall back to the image cache so large icon-font glyphs render. */
-			if (current_font->getGlyphImage(glyphIndex, &ng.image, nullptr, 0))
-				return 1;
-			if (ng.image && ng.image->format != FT_GLYPH_FORMAT_BITMAP)
-			{
-				FT_Glyph_To_Bitmap(&ng.image, FT_RENDER_MODE_NORMAL, NULL, 1);
-				if (ng.image->format != FT_GLYPH_FORMAT_BITMAP)
-					return 1;
-			}
-			FT_BitmapGlyph bglyph = (FT_BitmapGlyph)ng.image;
-			xadvance = ng.image->advance.x >> 16;
-			top = bglyph->top;
-			left = bglyph->left;
-			height = bglyph->bitmap.rows;
-		}
-		else
-		{
-			xadvance = glyph->xadvance;
-			top = glyph->top;
-			left = glyph->left;
-			height = glyph->height;
-		}
+			return 1;
+
+		xadvance = glyph->xadvance;
+		top = glyph->top;
+		left = glyph->left;
+		height = glyph->height;
 	}
 
 	if (int nx = cursor.x() + xadvance; (rflags & RS_WRAP) && (nx > area.right()))
@@ -1165,7 +1147,7 @@ void eTextPara::blit(gDC &dc, const ePoint &offset, const gRGB &cbackground, con
 		if (i->image)
 		{
 			FT_BitmapGlyph glyph = border ? (FT_BitmapGlyph)i->borderimage : (FT_BitmapGlyph)i->image;
-			if (!glyph || !glyph->bitmap.buffer) continue;
+			if (!glyph->bitmap.buffer) continue;
 			rxbase = i->x + glyph->left + offset.x();
 			rybase = i->y - glyph->top + offset.y();
 			rybase=(doTopBottomReordering ? line_offs : i->y) - glyph->top + offset.y();
