@@ -3,29 +3,28 @@ from Components.Network import iNetwork
 from Components.Sources.StaticText import StaticText
 from Screens.Screen import Screen
 from Screens.Processing import Processing
-from Tools.ServiceHelper import ServiceHelper
+from Tools.ServiceAction import ServiceAction
 
 
 class RestartNetworkNew:
 	@staticmethod
 	def start(callback):
-		helper = ServiceHelper("netrestarter")
 		Processing.instance.setDescription(_("Please wait while your network is restarting..."))
 		Processing.instance.showProgress(endless=True)
 
-		def restartCallback():
+		def _done(exitCode):
 			iNetwork.getInterfaces()
 			Processing.instance.hideProgress()
 			if callback and callable(callback):
 				callback()
-		helper.restart(callback=restartCallback, timeout=10000)
+
+		ServiceAction.netrestart(_done, timeout=10000)
 
 
 class RestartNetwork(Screen):
 	def __init__(self, session):
 		Screen.__init__(self, session)
 		self.setTitle(_("Restart Network Adapter"))
-		self.helper = ServiceHelper("netrestarter")
 		skin = """
 			<screen name="RestartNetwork" position="center,center" size="600,100" title="Restart Network Adapter" resolution="1280,720">
 			<widget name="label" position="10,30" size="500,50" halign="center" font="Regular;20" transparent="1" foregroundColor="white" />

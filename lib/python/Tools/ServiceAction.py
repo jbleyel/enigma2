@@ -1,175 +1,116 @@
 
 # ===========================================================================
-# ServiceAction – Enigma2-native socketdaemon client
+# ServiceAction – Python wrapper around eServiceActionClient (C++)
 #
-# Follows the ServiceHelper pattern used throughout OpenATV:
-#   - Socket I/O in a Twisted thread (callInThread) → never blocks main loop
-#   - eTimer provides timeout fallback
-#   - callback(retval: int) called exactly once (on reply or timeout)
-#     retval == 0  → success
-#     retval != 0  → failure (shell exit code, or 127 on timeout/unknown cmd)
+# Keeps the same public API as before but delegates all I/O to the C++
+# singleton which uses eSocketNotifier (non-blocking, no Twisted thread).
 #
-# socketdaemon protocol:
-#   Client sends:  "<COMMAND>[,<data>]\0"
-#   Daemon replies: "RC:<exitcode>"
+# Protocol sent to socketdaemon:
+#   "ACTION <id> <TYPE> [<data>]\n"
+# Response:
+#   "DONE <id> <exitcode>\n"  or  "ERROR <id> <exitcode>\n"
 #
-# Commands:
-#   RESTART,<service>        → /etc/init.d/<service> restart
-#   START,<service>          → /etc/init.d/<service> start
-#   STOP,<service>           → /etc/init.d/<service> stop
-#   SWITCH_SOFTCAM,<name>    → stop + re-link + start softcam
-#   SWITCH_CARDSERVER,<name> → stop + re-link + start cardserver
-#   NETRESTART               → netrestarter restart
-#   NETRESTART,<iface>       → netrestarter restart <iface>
-#   IFUP,<iface>             → /sbin/ifup <iface>
-#   IFDOWN,<iface>           → /sbin/ifdown <iface>
-#   WLANUP,<iface>           → wlanactivator start <iface>
-#   WLANDOWN,<iface>         → wlanactivator stop <iface>
+# callback(exitCode: int) is called exactly once (on reply or timeout).
+# exitCode == 0  → success,  exitCode != 0  → failure/timeout.
 # ===========================================================================
-from socket import socket, AF_UNIX, SOCK_STREAM
-from twisted.internet.reactor import callInThread
-
-from enigma import eTimer
-
-socketDaemonPath = "/tmp/deamon.socket"    # typo preserved from socketdaemon main.c
+from enigma import eServiceActionClient as _C
 
 
 class ServiceAction:
-	"""Single fire-and-forget operation against the socketdaemon.
+    """Thin Python wrapper around eServiceActionClient.
 
-	The callback receives one int argument: the shell exit code (0 = success).
-	Always keep a reference to the returned instance to prevent GC mid-flight.
-	"""
+    Usage is identical to the old Twisted-based version – the callback
+    receives one int: the daemon's shell exit code (0 = success).
 
-	def __init__(self, serviceName: str):
-		self.serviceName = serviceName
-		self._socket = None
-		self._callback = None
-		self._timer = None
-		self._timeout = 15000
+    Instance methods (restart/start/stop) use self.serviceName.
+    Class methods (ifup, ifdown, …) create and return a new instance.
+    """
 
-	def restart(self, callback, timeout: int = 15000) -> None:
-		"""RESTART,<serviceName> → callback(retval)"""
-		self._callback = callback
-		self._timeout = timeout
-		self._send("RESTART")
+    _cbs: dict[int, object] = {}
+    _hooked: bool = False
 
-	def start(self, callback, timeout: int = 15000) -> None:
-		"""START,<serviceName> → callback(retval)"""
-		self._callback = callback
-		self._timeout = timeout
-		self._send("START")
+    def __init__(self, serviceName: str):
+        self.serviceName = serviceName
+        ServiceAction._ensure_hooked()
 
-	def stop(self, callback, timeout: int = 15000) -> None:
-		"""STOP,<serviceName> → callback(retval)"""
-		self._callback = callback
-		self._timeout = timeout
-		self._send("STOP")
+    @classmethod
+    def _ensure_hooked(cls) -> None:
+        if not cls._hooked:
+            _C.getInstance().actionResult.get().append(cls._on_result)
+            cls._hooked = True
 
-	@classmethod
-	def netrestart(cls, callback, iface: str = "", timeout: int = 15000):
-		"""NETRESTART or NETRESTART,<iface> → callback(retval)"""
-		obj = cls.__new__(cls)
-		obj.serviceName = iface if (iface and iface != "all") else ""
-		obj._callback = callback
-		obj._timeout = timeout
-		obj._socket = None
-		obj._timer = None
-		obj._send("NETRESTART")
-		return obj
+    @classmethod
+    def _on_result(cls, reqId: int, exitCode: int) -> None:
+        cb = cls._cbs.pop(reqId, None)
+        if cb and callable(cb):
+            cb(exitCode)
 
-	@classmethod
-	def ifup(cls, iface: str, callback, timeout: int = 15000):
-		"""IFUP,<iface> → /sbin/ifup <iface> → callback(retval)"""
-		obj = cls(iface)
-		obj._callback = callback
-		obj._timeout = timeout
-		obj._send("IFUP")
-		return obj
+    @classmethod
+    def _dispatch(cls, action: str, data: str, callback, timeout: int) -> int:
+        cls._ensure_hooked()
+        reqId = int(_C.getInstance().sendAction(action, data, timeout))
+        if callback and callable(callback):
+            cls._cbs[reqId] = callback
+        return reqId
 
-	@classmethod
-	def ifdown(cls, ifaces: str | list[str], callback, timeout: int = 15000):
-		"""IFDOWN,<iface[,iface…]> → /sbin/ifdown for each → callback(retval)"""
-		data = ",".join(ifaces) if isinstance(ifaces, list) else ifaces
-		obj = cls(data)
-		obj._callback = callback
-		obj._timeout = timeout
-		obj._send("IFDOWN")
-		return obj
+    # ---- instance methods ------------------------------------------------
 
-	@classmethod
-	def wlanActivate(cls, iface: str, callback, timeout: int = 30000):
-		"""WLANUP,<iface> → wlanactivator start <iface> → callback(retval)"""
-		obj = cls(iface)
-		obj._callback = callback
-		obj._timeout = timeout
-		obj._send("WLANUP")
-		return obj
+    def restart(self, callback, timeout: int = 15000) -> None:
+        """RESTART,<serviceName> → callback(exitCode)"""
+        ServiceAction._dispatch("RESTART", self.serviceName, callback, timeout)
 
-	@classmethod
-	def wlanDeactivate(cls, iface: str, callback, timeout: int = 15000):
-		"""WLANDOWN,<iface> → wlanactivator stop <iface> → callback(retval)"""
-		obj = cls(iface)
-		obj._callback = callback
-		obj._timeout = timeout
-		obj._send("WLANDOWN")
-		return obj
+    def start(self, callback, timeout: int = 15000) -> None:
+        """START,<serviceName> → callback(exitCode)"""
+        ServiceAction._dispatch("START", self.serviceName, callback, timeout)
 
-	@classmethod
-	def switchSoftcam(cls, camName: str, callback, timeout: int = 15000):
-		"""SWITCH_SOFTCAM,<camName> → callback(retval)"""
-		obj = cls(camName)
-		obj._callback = callback
-		obj._timeout = timeout
-		obj._send("SWITCH_SOFTCAM")
-		return obj
+    def stop(self, callback, timeout: int = 15000) -> None:
+        """STOP,<serviceName> → callback(exitCode)"""
+        ServiceAction._dispatch("STOP", self.serviceName, callback, timeout)
 
-	@classmethod
-	def switchCardserver(cls, serverName: str, callback, timeout: int = 15000):
-		"""SWITCH_CARDSERVER,<serverName> → callback(retval)"""
-		obj = cls(serverName)
-		obj._callback = callback
-		obj._timeout = timeout
-		obj._send("SWITCH_CARDSERVER")
-		return obj
+    # ---- class-method factories ------------------------------------------
 
-	def _send(self, action: str) -> None:
-		self._socket = socket(AF_UNIX, SOCK_STREAM)
-		self._socket.connect(socketDaemonPath)
-		msg = f"{action},{self.serviceName}" if self.serviceName else action
-		self._socket.send(msg.encode())
-		self._wait()
+    @classmethod
+    def netrestart(cls, callback, iface: str = "", timeout: int = 15000) -> "ServiceAction":
+        """NETRESTART or NETRESTART,<iface> → callback(exitCode)"""
+        data = iface if (iface and iface != "all") else ""
+        cls._dispatch("NETRESTART", data, callback, timeout)
+        obj = cls.__new__(cls)
+        obj.serviceName = data
+        return obj
 
-	def _wait(self) -> None:
-		self._timer = eTimer()
-		self._timer.timeout.get().append(self._onTimeout)
-		self._timer.start(self._timeout, True)
-		callInThread(self._listen)
+    @classmethod
+    def ifup(cls, iface: str, callback, timeout: int = 15000) -> "ServiceAction":
+        """IFUP,<iface> → /sbin/ifup <iface> → callback(exitCode)"""
+        cls._dispatch("IFUP", iface, callback, timeout)
+        return cls(iface)
 
-	def _listen(self) -> None:
-		data = b""
-		while not data:
-			data = self._socket.recv(256)
-		retval = 0
-		try:
-			text = data.decode().strip("\x00").strip()
-			retval = int(text[3:]) if text.startswith("RC:") else int(text)
-		except (ValueError, UnicodeDecodeError):
-			pass
-		self._close(retval)
+    @classmethod
+    def ifdown(cls, ifaces: "str | list[str]", callback, timeout: int = 15000) -> "ServiceAction":
+        """IFDOWN,<iface[,iface…]> → /sbin/ifdown for each → callback(exitCode)"""
+        data = ",".join(ifaces) if isinstance(ifaces, list) else ifaces
+        cls._dispatch("IFDOWN", data, callback, timeout)
+        return cls(data)
 
-	def _onTimeout(self) -> None:
-		print("[ServiceAction] timeout waiting for daemon reply")
-		self._close(127)
+    @classmethod
+    def wlanActivate(cls, iface: str, callback, timeout: int = 30000) -> "ServiceAction":
+        """WLANUP,<iface> → wlanactivator start <iface> → callback(exitCode)"""
+        cls._dispatch("WLANUP", iface, callback, timeout)
+        return cls(iface)
 
-	def _close(self, retval: int = 0) -> None:
-		if self._timer:
-			self._timer.stop()
-			self._timer = None
-		if self._socket:
-			self._socket.close()
-			self._socket = None
-		if self._callback and callable(self._callback):
-			callback = self._callback
-			self._callback = None
-			callback(retval)
+    @classmethod
+    def wlanDeactivate(cls, iface: str, callback, timeout: int = 15000) -> "ServiceAction":
+        """WLANDOWN,<iface> → wlanactivator stop <iface> → callback(exitCode)"""
+        cls._dispatch("WLANDOWN", iface, callback, timeout)
+        return cls(iface)
+
+    @classmethod
+    def switchSoftcam(cls, camName: str, callback, timeout: int = 15000) -> "ServiceAction":
+        """SWITCH_SOFTCAM,<camName> → callback(exitCode)"""
+        cls._dispatch("SWITCH_SOFTCAM", camName, callback, timeout)
+        return cls(camName)
+
+    @classmethod
+    def switchCardserver(cls, serverName: str, callback, timeout: int = 15000) -> "ServiceAction":
+        """SWITCH_CARDSERVER,<serverName> → callback(exitCode)"""
+        cls._dispatch("SWITCH_CARDSERVER", serverName, callback, timeout)
+        return cls(serverName)
