@@ -1,4 +1,51 @@
 <setupxml>
+
+
+	<setup key="NetworkConnection" title="Connection Settings">
+		<item level="0" text="Connection name" description="A human-readable label for this connection.">self.cfgName</item>
+		<item level="0" text="Enabled" description="Enable this connection at boot (adds 'auto' to /etc/network/interfaces).">self.cfgEnabled</item>
+		<item level="1" text="Priority" description="Higher value means this connection is preferred when multiple connections are available.">self.cfgPriority</item>
+		<item level="0" text="Use DHCP" description="Obtain IP address, gateway and DNS automatically via DHCP.">self.cfgDhcp</item>
+		<if conditional="not self.cfgDhcp.value">
+			<item level="0" text="IP address" description="Static IPv4 address for this interface.">self.cfgIp</item>
+			<item level="0" text="Subnet mask" description="The subnet mask, e.g. 255.255.255.0">self.cfgNetmask</item>
+			<item level="0" text="Default gateway" description="The IP address of your router.">self.cfgGateway</item>
+		</if>
+		<item level="1" text="Enable IPv6" description="Request an IPv6 address via DHCPv6 / SLAAC on this connection.">self.cfgIpv6</item>
+		<item level="1" text="Wake-on-LAN" description="Enable Wake-on-LAN so this box can be powered on remotely via a Magic Packet." conditional="self._adapter.canWakeOnLan">self.cfgWakeOnLan</item>
+		<item level="1" text="DNS override" description="This connection has custom DNS servers. Press BLUE to change." conditional="bool(self._conn.dnsServers)">self.cfgDnsHint</item>
+	</setup>
+
+	<setup key="NetworkConnectionWlan" title="WLAN Connection Settings">
+		<item level="0" text="Connection name" description="A human-readable label for this connection (e.g. 'Home WiFi').">self.cfgName</item>
+		<item level="0" text="Enabled" description="Enable this connection at boot.">self.cfgEnabled</item>
+		<item level="0" text="Priority" description="Higher value means this WLAN connection is preferred. wpa_supplicant uses this for automatic network selection.">self.cfgPriority</item>
+		<item level="0" text="Network name (SSID)" description="The name (SSID) of the wireless network.">self.cfgSsid</item>
+		<item level="1" text="Hidden network" description="Enable if the access point does not broadcast its SSID.">self.cfgHidden</item>
+		<item level="0" text="Encryption" description="The security method used by the wireless network.">self.cfgEncryption</item>
+		<if conditional="self.cfgEncryption.value not in ('none', 'wpa2-enterprise')">
+			<item level="0" text="Password / Key" description="The passphrase or pre-shared key for the wireless network.">self.cfgKey</item>
+		</if>
+		<if conditional="self.cfgEncryption.value == 'wpa2-enterprise'">
+			<item level="0" text="EAP method" description="The EAP protocol to use for WPA2 Enterprise authentication.">self.cfgEapMethod</item>
+			<item level="0" text="EAP identity" description="The username sent during EAP negotiation.">self.cfgEapIdentity</item>
+			<item level="0" text="EAP password" description="The password for EAP authentication.">self.cfgEapPassword</item>
+			<item level="1" text="CA certificate" description="Full path to the CA certificate file (optional).">self.cfgEapCaCert</item>
+		</if>
+		<item level="0" text="Use DHCP" description="Obtain IP address automatically. Recommended for most WLAN connections.">self.cfgDhcp</item>
+		<if conditional="not self.cfgDhcp.value">
+			<item level="0" text="IP address" description="Static IPv4 address (only used when DHCP is disabled).">self.cfgIp</item>
+			<item level="0" text="Subnet mask" description="Subnet mask, e.g. 255.255.255.0">self.cfgNetmask</item>
+			<item level="0" text="Default gateway" description="IP address of the router / access point.">self.cfgGateway</item>
+		</if>
+		<item level="1" text="Enable IPv6" description="Request an IPv6 address via DHCPv6 / SLAAC.">self.cfgIpv6</item>
+		<item level="1" text="Wake-on-WiFi" description="Keep the WLAN adapter in low-power scan mode during standby. Broadcom only." conditional="self._adapter.canWakeOnWifi">self.cfgWakeOnWifi</item>
+		<item level="1" text="DNS override" description="This connection has custom DNS servers. Press BLUE to change." conditional="bool(self._conn.dnsServers)">self.cfgDnsHint</item>
+	</setup>
+
+
+
+
 	<setup key="Audio" title="Audio Settings" level="1" showOpenWebif="1">
 		<item level="1" text="Volume steps" description="Select the size of the volume step when the VOLUME buttons are pressed.">config.volumeControl.pressStep</item>
 		<item level="1" text="Long press volume steps" description="Select the size of the volume steps when the VOLUME buttons are held down.">config.volumeControl.longStep</item>
@@ -197,6 +244,17 @@
 		<item level="0" text="Date style" description="Choose the front panel display formatting style for dates. 'D'/'DD' is the date and 'M'/'MM' is the month in digits. ('DD' and 'MM' have leading zeros for single digit values.) The screen display will be based on your choice but can be influenced by the skin." requires="config.usage.date.enabled_display">config.usage.date.display</item>
 		<item level="0" text="Time style" description="Choose the front panel display formatting style for times. 'H'/'HH' is the hour for a 24 hour clock, 'h'/'hh' is the hour for a 12 hour clock, 'mm' is the minutes. ('HH' and 'hh' have leading zeros for single digit values.) The front panel display will be based on your choice but can be influenced any applicable skin." requires="config.usage.time.enabled_display">config.usage.time.display</item>
 	</setup>
+
+	<setup key="DNSNetworkConnection" title="Connection DNS Settings">
+		<item level="0" text="Use global DNS" description="When enabled this connection uses the system-wide DNS settings. Disable to enter custom DNS servers for this connection only.">self.cfgUseGlobal</item>
+		<if conditional="not self.cfgUseGlobal.value">
+			<item level="0" text="Primary DNS (IPv4)" description="Primary IPv4 DNS server for this connection.">self.cfgDns1v4</item>
+			<item level="0" text="Secondary DNS (IPv4)" description="Secondary IPv4 DNS server (optional).">self.cfgDns2v4</item>
+			<item level="1" text="Primary DNS (IPv6)" description="Primary IPv6 DNS server for this connection (optional).">self.cfgDns1v6</item>
+			<item level="1" text="Secondary DNS (IPv6)" description="Secondary IPv6 DNS server (optional).">self.cfgDns2v6</item>
+		</if>
+	</setup>
+
 	<setup key="DNS" title="DNS Settings">
 		<item level="0" text="DNS protocol mode" description="Select whether IPv4, IPv6, or both protocols should be used. If both are enabled then which should be preferred.">config.usage.dnsMode</item>
 		<item level="0" text="DNS suffix" description="Specify the network DNS suffix to be applied when only the host name is provided. This helps the DNS resolver find the requested host.">config.usage.dnsSuffix</item>
