@@ -4,11 +4,11 @@ network_libenigma_network_a_SOURCES = \
 	network/serversocket.cpp \
 	network/socket.cpp \
 	network/uri.cpp \
-	network/ServiceActionClient.cpp
+	network/serviceactionclient.cpp
 
 networkincludedir = $(pkgincludedir)/lib/network
 networkinclude_HEADERS = \
 	network/serversocket.h \
 	network/socket.h \
 	network/uri.h \
-	network/ServiceActionClient.h
+	network/serviceactionclient.h
