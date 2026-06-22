@@ -2321,11 +2321,11 @@ def readSkin(screen, skin, names, desktop):
 					raise SkinError(f"For source '{widgetSource}' a renderer must be defined with a 'render=' attribute")
 				elif widgetConnection:
 					raise SkinError(f"For connection '{widgetConnection}' a renderer must be defined with a 'render=' attribute")
-			# Support both <templates><template .../></templates> and bare <template .../>
-			widgetTemplatesDom = widget.find("templates")
-			if widgetTemplatesDom is None and widget.find("template") is not None:
-				widgetTemplatesDom = widget  # shorthand: widget itself contains <template> children directly
-			if widgetTemplatesDom is not None:
+			# Support both <templates><template .../></templates> and bare <template .../>.
+			widgetTemplates = widget.find("templates")
+			if widgetTemplates is None and widget.find("template") is not None:
+				widgetTemplates = widget  # Shorthand, widget itself contains <template> children directly.
+			if widgetTemplates is not None:
 				try:
 					converterClass = my_import(".".join(("Components", "Converter", "XmlMultiContent"))).__dict__.get("XmlMultiContent")
 				except ImportError:
@@ -2337,7 +2337,7 @@ def readSkin(screen, skin, names, desktop):
 				if connection is None:
 					args = {
 						"scale": context.scale,
-						"dom": widgetTemplatesDom,
+						"dom": widgetTemplates,
 						"itemHeight": int(widget.attrib.get("itemHeight", 0)),
 						"itemWidth": int(widget.attrib.get("itemWidth", 0))
 					}
