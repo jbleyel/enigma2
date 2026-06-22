@@ -614,10 +614,10 @@ class OpkgComponent:
 		self.console.setBufferSize(consoleBuffer)
 		self.console.dataAvail.append(self.cmdData)
 		self.console.appClosed.append(self.cmdFinished)
-		self.console.setLineMode(bool(args and "lineMode" in args and self.args["lineMode"]))
+		self.console.setLineMode(bool(args and "lineMode" in args and args["lineMode"]))
 		argv.insert(0, self.opkg)
 		if self.console.execute(self.opkg, *argv):
-			self.scmdFinished(-1)
+			self.cmdFinished(-1)
 
 	def cmdData(self, data):
 		data = data.decode("UTF-8", "ignore") if isinstance(data, bytes) else data
