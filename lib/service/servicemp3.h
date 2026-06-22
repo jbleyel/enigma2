@@ -300,6 +300,7 @@ public:
 		gboolean is_video = FALSE;
 		gboolean is_streaming = FALSE;
 		gboolean is_hls = FALSE;
+		gboolean is_dash = FALSE;
 		sourceStream() {}
 	};
 	struct bufferInfo {
