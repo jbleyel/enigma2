@@ -72,6 +72,9 @@ public:
 	gRGB getForegroundColor(int styleID = 0);
 	eSize calculateSize();
 	static eSize calculateTextSize(gFont* font, const std::string& string, eSize targetSize, bool nowrap = false);
+	
+	/* Set minimum font size for auto-scaling */
+	void setMinFontSize(int minSize);
 
 protected:
 	ePtr<gFont> m_font;
@@ -84,6 +87,10 @@ protected:
 	std::string getClassName() const override { return std::string("eLabel"); }
 
 private:
+	/* Font auto-scaling */
+	int m_minFontSize = 0;
+	int m_originalFontSize = 0;
+	
 	int buildFlags() const {
 		int flags = 0;
 

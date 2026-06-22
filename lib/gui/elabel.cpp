@@ -170,8 +170,28 @@ int eLabel::event(int event, void* data, void* data2) {
 }
 
 void eLabel::updateTextSize() {
-	if (m_scroll_config.direction == eScrollConfig::scrollNone)
+	if (m_scroll_config.direction == eScrollConfig::scrollNone) {
+		if (m_minFontSize) {
+			if (m_font && m_originalFontSize == 0)
+				m_originalFontSize = m_font->pointSize;
+
+			int visibleW = std::max(1, size().width() - m_padding.x() - m_padding.width());
+			int visibleH = std::max(1, size().height() - m_padding.y() - m_padding.height());
+			eSize s = eSize(visibleW, visibleH);
+			m_font->pointSize = m_originalFontSize;
+			eSize text_size = calculateTextSize(m_font, m_text, s, true); // nowrap at original size
+			int newFontSize = m_originalFontSize;
+			if (text_size.width() > visibleW || text_size.height() > visibleH) {
+				int scaleW = text_size.width() > 0 ? m_originalFontSize * visibleW / text_size.width() : m_originalFontSize;
+				int scaleH = text_size.height() > 0 ? m_originalFontSize * visibleH / text_size.height() : m_originalFontSize;
+				newFontSize = std::max(std::min(scaleW, scaleH), m_minFontSize);
+			}
+
+			if (m_font->pointSize != newFontSize)
+				m_font->pointSize = newFontSize;
+		}
 		return;
+	}
 
 	stopScroll();
 
@@ -422,6 +442,14 @@ eSize eLabel::calculateTextSize(gFont* font, const std::string& string, eSize ta
 	para.setFont(font);
 	para.renderString(string.empty() ? 0 : string.c_str(), nowrap ? 0 : RS_WRAP);
 	return para.getBoundBox().size();
+}
+
+void eLabel::setMinFontSize(int minSize) {
+	if (m_minFontSize != minSize) {
+		m_minFontSize = minSize;
+		if (m_originalFontSize != 0)
+			invalidate();
+	}
 }
 
 void eLabel::setScrollText(int direction, long delay, long startDelay, long endDelay, int repeat, int stepSize, int mode) {
