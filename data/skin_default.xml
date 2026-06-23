@@ -14,7 +14,7 @@
 		<font filename="valis_enigma.ttf" name="Enigma" scale="100"/>
 	</fonts>
 	<colors>
-		<color name="background" value="#21090909"/>
+		<color name="background" value="#21090909"/
 		<color name="transBG" value="#5A090909"/>
 		<color name="foreground" value="#00f0f0f0"/>
 		<color name="white" value="#f0f0f0"/>
