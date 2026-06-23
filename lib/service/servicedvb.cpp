@@ -1294,6 +1294,10 @@ void eDVBServicePlay::serviceEvent(int event)
 	case eDVBServicePMTHandler::eventNoPAT:
 	case eDVBServicePMTHandler::eventNoPMT:
 	{
+		// Do not re-trigger if a recovery is already in progress.
+		if (m_stream_corruption_detected)
+			break;
+
 		bool recovery_enabled = true;
 		// Check if timeshift is active and we are not already in a recovery state
 		if (recovery_enabled && m_timeshift_enabled && !m_stream_corruption_detected)
@@ -1314,6 +1318,11 @@ void eDVBServicePlay::serviceEvent(int event)
 		eDebug("[eDVBServicePlay] eventNewProgramInfo timeshift_enabled=%d timeshift_active=%d", m_timeshift_enabled, m_timeshift_active);
 		if (m_timeshift_enabled)
 			updateTimeshiftPids();
+
+		// Re-tuned during an active recovery: let the recovery state machine keep control
+		// and resume playback at the preserved delay. Do not resync the decoder here.
+		if (m_stream_corruption_detected)
+			break;
 
 		if (m_csa_session && !m_csa_session->isEcmAnalyzed())
 		{
