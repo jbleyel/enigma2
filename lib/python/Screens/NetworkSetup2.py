@@ -55,7 +55,7 @@ try:
 	from Components.NetworkManager import (
 		Adapter, Connection, WlanConfig,
 		iNetworkManager as nm,
-		encNone, encWep, encWpa, encWpa2, encWpa3, encWpa2Ent,
+		encNone, encWep, encWpa, encWpa2, encWpa3,
 	)
 except ImportError:
 	nm = None  # type: ignore
@@ -77,21 +77,14 @@ encryptionChoices = [
 	(encWpa, _("WPA")),
 	(encWpa2, _("WPA2")),
 	(encWpa3, _("WPA3 (SAE)")),
-	(encWpa2Ent, _("WPA2 Enterprise (EAP)")),
 ]
 
-eapMethodChoices = [
-	("PEAP", "PEAP"),
-	("TLS", "TLS"),
-	("TTLS", "TTLS"),
-	("PWD", "PWD"),
-]
 
 # ---------------------------------------------------------------------------
 # Display helpers
 # ---------------------------------------------------------------------------
 
-_ENC_SHORT = {encNone: "open", encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2", encWpa3: "WPA3", encWpa2Ent: "EAP"}
+_ENC_SHORT = {encNone: "open", encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2", encWpa3: "WPA3"}
 _ICON_LAN = chr(0xEA5A)   # settings_ethernet
 _ICON_WLAN = chr(0xE9FE)  # wifi
 _ICON_INET = chr(0xEA5B)  # globe
@@ -661,6 +654,9 @@ class NetworkConnections(Screen):
 		self._internetChecked = False
 		self._internetResult = None
 		self.onShown.append(self.checkInternet)
+		if nm:
+			nm.onAdaptersChanged.append(self._buildList)
+			self.onClose.append(lambda: nm.onAdaptersChanged.remove(self._buildList) if self._buildList in nm.onAdaptersChanged else None)
 
 	def checkInternet(self):
 		def checkInternetCallback(result):
@@ -959,19 +955,11 @@ class NetworkConnectionSetup(Setup):
 			self.cfgHidden = NoSave(ConfigYesNo(default=w.hidden))
 			self.cfgEncryption = NoSave(ConfigSelection(choices=encryptionChoices, default=w.encryption))
 			self.cfgKey = NoSave(ConfigPassword(default=w.key, fixed_size=False))
-			self.cfgEapMethod = NoSave(ConfigSelection(choices=eapMethodChoices, default=w.eapMethod or "PEAP"))
-			self.cfgEapIdentity = NoSave(ConfigText(default=w.eapIdentity, fixed_size=False))
-			self.cfgEapPassword = NoSave(ConfigPassword(default=w.eapPassword, fixed_size=False))
-			self.cfgEapCaCert = NoSave(ConfigText(default=w.eapCaCert, fixed_size=False))
 		else:
 			self.cfgSsid = NoSave(ConfigText(default="", fixed_size=False))
 			self.cfgHidden = NoSave(ConfigYesNo(default=False))
 			self.cfgEncryption = NoSave(ConfigSelection(choices=encryptionChoices, default=encNone))
 			self.cfgKey = NoSave(ConfigPassword(default="", fixed_size=False))
-			self.cfgEapMethod = NoSave(ConfigSelection(choices=eapMethodChoices, default="PEAP"))
-			self.cfgEapIdentity = NoSave(ConfigText(default="", fixed_size=False))
-			self.cfgEapPassword = NoSave(ConfigPassword(default="", fixed_size=False))
-			self.cfgEapCaCert = NoSave(ConfigText(default="", fixed_size=False))
 
 		# Wake-on-LAN (LAN adapters only, when hardware supports it)
 		wolChoices = [
@@ -1022,13 +1010,7 @@ class NetworkConnectionSetup(Setup):
 			w.ssid = self.cfgSsid.value.strip()
 			w.hidden = self.cfgHidden.value
 			w.encryption = self.cfgEncryption.value
-			if w.encryption == encWpa2Ent:
-				w.eapMethod = self.cfgEapMethod.value
-				w.eapIdentity = self.cfgEapIdentity.value.strip()
-				w.eapPassword = self.cfgEapPassword.value
-				w.eapCaCert = self.cfgEapCaCert.value.strip()
-				w.key = ""
-			elif w.encryption != encNone:
+			if w.encryption != encNone:
 				w.key = self.cfgKey.value
 
 		# Apply Wake-on-LAN via ethtool + optional /proc path
@@ -1090,7 +1072,6 @@ class ScanResult:
 			encWpa: "WPA",
 			encWpa2: "WPA2",
 			encWpa3: "WPA3",
-			encWpa2Ent: "WPA2-EAP",
 		}.get(self.encryption, self.encryption.upper())
 
 
@@ -1116,7 +1097,6 @@ def _parseIwlist(raw: str) -> list[ScanResult]:
 	reIeWpa1 = re.compile(r"IE:.*WPA Version 1", re.IGNORECASE)
 	reIeWpa2 = re.compile(r"IE:.*WPA2|IE:.*RSN", re.IGNORECASE)
 	reIeWpa3 = re.compile(r"IE:.*SAE|IE:.*WPA3", re.IGNORECASE)
-	reIeEap = re.compile(r"IE:.*EAP|Authentication Suites.*EAP", re.IGNORECASE)
 
 	for line in raw.splitlines():
 		line = line.strip()
@@ -1143,11 +1123,8 @@ def _parseIwlist(raw: str) -> list[ScanResult]:
 		if reIeWpa3.search(line):
 			current.encryption = encWpa3
 			current.encDetails = line
-		elif reIeEap.search(line):
-			current.encryption = encWpa2Ent
-			current.encDetails = line
 		elif reIeWpa2.search(line):
-			if current.encryption not in (encWpa3, encWpa2Ent):
+			if current.encryption != encWpa3:
 				current.encryption = encWpa2
 				current.encDetails = line
 		elif reIeWpa1.search(line):

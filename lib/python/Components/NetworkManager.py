@@ -45,7 +45,7 @@ from Tools.ServiceAction import ServiceAction
 # Set to True to write config to safe test-paths instead of the live files.
 # /etc/network/interfaces  →  /etc/network/interfaces2
 # wpa_supplicant-<x>.conf  →  wpa_supplicant-<x>.conf.test
-NETWORKMANAGER_TESTMODE = False
+NETWORKMANAGER_TESTMODE = True
 
 interfacesFile = "/etc/network/interfaces"
 resolvFile = "/etc/resolv.conf"
@@ -87,7 +87,6 @@ encWpa = "wpa"
 encWpa2 = "wpa2"
 encWpaWpa2 = "wpa+wpa2"   # legacy combined mode → stored as wpa2 in wpa_supplicant
 encWpa3 = "wpa3"
-encWpa2Ent = "wpa2-enterprise"
 
 # Driver-API identifiers
 apiNl80211 = "nl80211"
@@ -105,7 +104,6 @@ _legacyEncMap: dict[str, str] = {
 	"wpa/wpa2": encWpaWpa2,
 	"wpa2": encWpa2,
 	"wpa3": encWpa3,
-	"wpa2-enterprise": encWpa2Ent,
 }
 
 _wpaDefaultHeader = [
@@ -128,14 +126,9 @@ class WlanConfig:
 	encryption: str = encNone
 	key: str = ""
 	wepKeyType: str = "ASCII"    # "ASCII" | "HEX"
-	eapMethod: str = ""
-	eapIdentity: str = ""
-	eapPassword: str = ""
-	eapCaCert: str = ""
-	eapClientCert: str = ""
-	eapPrivateKey: str = ""
 	wpaId: int | None = None
 	idStr: str = ""      # wpa_supplicant id_str – persists the user-defined profile name
+	disabled: bool = False  # wpa_supplicant disabled=1
 	# Background scan – enables auto-roaming between known networks.
 	# Format: "simple:<shortInterval>:<signalThreshold>:<longInterval>"
 	# Set to "" to disable.
@@ -144,10 +137,6 @@ class WlanConfig:
 	@property
 	def needsKey(self) -> bool:
 		return self.encryption != encNone
-
-	@property
-	def isEnterprise(self) -> bool:
-		return self.encryption == encWpa2Ent
 
 
 @dataclass
@@ -338,6 +327,7 @@ class InterfacesFile:
 		autoIfaces: set = set()
 		current: Connection | None = None
 		disabled = False
+		inetSet: set[int] = set()  # id(conn) for connections that have had inet (IPv4) stanza set
 
 		for raw in self._raw:
 			line = raw.strip()
@@ -398,24 +388,26 @@ class InterfacesFile:
 
 				# inet (IPv4) stanza – this is the primary Connection record.
 				existing = result.get(iface, [])
-				if existing:
-					# Update the placeholder that was created from an inet6 stanza
+				if existing and id(existing[-1]) not in inetSet:
+					# Update the inet6-only placeholder with IPv4 data
 					conn = existing[-1]
-					conn.dhcp = mode == "dhcp"
-					conn.enabled = not disabled
-					current = conn
 				else:
+					# No existing connection, or existing one already has inet data
+					# (second block for the same iface) → create a new Connection.
 					conn = Connection(
 						adapter=iface,
 						name=iface,
-						dhcp=mode == "dhcp",
+						dhcp=True,
 						ipv6=False,
 						ipv6Dhcp=False,
 						enabled=not disabled,
 						wlan=WlanConfig() if _isWirelessName(iface) else None,
 					)
 					result.setdefault(iface, []).append(conn)
-					current = conn
+				conn.dhcp = mode == "dhcp"
+				conn.enabled = not disabled
+				inetSet.add(id(conn))
+				current = conn
 				continue
 
 			if current is None:
@@ -436,8 +428,6 @@ class InterfacesFile:
 				current.extraLines.append(raw.strip())
 
 		return result, autoIfaces
-
-		return result
 
 	def serialise(self, connectionsByAdapter: dict[str, list[Connection]], adapterEnabledMap: dict[str, bool] | None = None) -> list[str]:
 		lines: list[str] = list(self._header)
@@ -550,7 +540,9 @@ class WpaSupplicantFile:
 				k, _, v = s.partition("=")
 				current[k.strip()] = v.strip().strip('"')
 			if depth <= 0 and current is not None:
-				configs.append(_wpaDictToWlanConfig(current, blockId))
+				wlan = _wpaDictToWlanConfig(current, blockId)
+				if wlan.ssid:
+					configs.append(wlan)
 				blockId += 1
 				current = None
 				depth = 0
@@ -583,8 +575,6 @@ def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WlanConfig:
 		enc = encNone if not d.get("wep_key0") else encWep
 	elif "SAE" in keyMgmt:
 		enc = encWpa3
-	elif "EAP" in keyMgmt:
-		enc = encWpa2Ent
 	elif "WPA" in keyMgmt:
 		enc = encWpa2 if ("CCMP" in pairwise or "WPA2" in proto or "RSN" in proto) else encWpa
 	else:
@@ -595,15 +585,10 @@ def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WlanConfig:
 		hidden=d.get("scan_ssid", "0") == "1",
 		encryption=enc,
 		key=d.get("psk", d.get("wep_key0", "")),
-		eapMethod=d.get("eap", ""),
-		eapIdentity=d.get("identity", ""),
-		eapPassword=d.get("password", ""),
-		eapCaCert=d.get("ca_cert", ""),
-		eapClientCert=d.get("client_cert", ""),
-		eapPrivateKey=d.get("private_key", ""),
 		bgscan=d.get("bgscan", "simple:30:-70:3600"),
 		wpaId=blockId,
 		idStr=d.get("id_str", ""),
+		disabled=d.get("disabled", "0") == "1",
 	)
 
 
@@ -638,24 +623,11 @@ def _wlanConfigToWpaBlock(wlan: WlanConfig, blockId: int) -> list[str]:
 		L.append("\tkey_mgmt=SAE")
 		L.append("\tproto=RSN")
 		L.append(f'\tpsk="{wlan.key}"')
-	elif enc == encWpa2Ent:
-		L.append("\tkey_mgmt=WPA-EAP")
-		L.append("\tproto=RSN")
-		if wlan.eapMethod:
-			L.append(f"\teap={wlan.eapMethod}")
-		if wlan.eapIdentity:
-			L.append(f'\tidentity="{wlan.eapIdentity}"')
-		if wlan.eapPassword:
-			L.append(f'\tpassword="{wlan.eapPassword}"')
-		if wlan.eapCaCert:
-			L.append(f'\tca_cert="{wlan.eapCaCert}"')
-		if wlan.eapClientCert:
-			L.append(f'\tclient_cert="{wlan.eapClientCert}"')
-		if wlan.eapPrivateKey:
-			L.append(f'\tprivate_key="{wlan.eapPrivateKey}"')
 
 	if wlan.idStr:
 		L.append(f'\tid_str="{wlan.idStr}"')
+	if wlan.disabled:
+		L.append("\tdisabled=1")
 	L.append("}")
 	return L
 
@@ -1109,6 +1081,7 @@ class NetworkManager:
 		self._loadInterfacesFile()
 		self._loadWpaSupplicantFiles()
 		self._nsFiles.load(self.nameserverConfig)
+		self._applyNetinfo()
 
 	def _discoverAdapters(self) -> None:
 		try:
@@ -1203,6 +1176,7 @@ class NetworkManager:
 		if wlan.ssid in bySsid:
 			conn = bySsid[wlan.ssid]
 			conn.wlan = wlan
+			conn.enabled = not wlan.disabled
 			if wlan.idStr:
 				conn.name = profileName
 		else:
@@ -1210,7 +1184,7 @@ class NetworkManager:
 				adapter=adapter.name,
 				name=profileName,
 				dhcp=True,
-				enabled=False,
+				enabled=not wlan.disabled,
 				priority=wlan.wpaId or 0,
 				wlan=wlan,
 			))
@@ -1229,8 +1203,34 @@ class NetworkManager:
 					cs = _buildWlanConfigStrings(adapter, conn)
 					conn.extraLines = [l for l in cs.splitlines() if l] if cs else []
 
-		connMap = {iface: adapter.connections for iface, adapter in self.adapters.items()}
-		adapterEnabledMap = {iface: adapter.adapterEnabled for iface, adapter in self.adapters.items()}
+		# For WLAN: write exactly ONE base block to interfaces (IP config + pre-up/pre-down).
+		# SSID connections are managed exclusively via wpa_supplicant.conf.
+		# Multiple base connections can accumulate from legacy files — collapse to one.
+		connMap = {}
+		for iface, adapter in self.adapters.items():
+			if adapter.isWlan:
+				baseConns = [c for c in adapter.connections if not (c.wlan and c.wlan.ssid)]
+				if baseConns:
+					enabled = [c for c in baseConns if c.enabled]
+					baseConn = enabled[0] if enabled else baseConns[0]
+					# Sync base connection enabled with active SSID state.
+					wpaConns = [c for c in adapter.connections if c.wlan and c.wlan.ssid]
+					if wpaConns:
+						baseConn.enabled = any(c.enabled for c in wpaConns)
+					connMap[iface] = [baseConn]
+				else:
+					connMap[iface] = []
+			else:
+				connMap[iface] = adapter.connections
+		adapterEnabledMap = {}
+		for iface, adapter in self.adapters.items():
+			enabled = adapter.adapterEnabled
+			if adapter.isWlan and enabled:
+				# In wpa_supplicant mode: only mark adapter enabled if an SSID is active.
+				wpaConns = [c for c in adapter.connections if c.wlan and c.wlan.ssid]
+				if wpaConns and not any(c.enabled for c in wpaConns):
+					enabled = False
+			adapterEnabledMap[iface] = enabled
 		ok = self._ifacesFile.save(connMap, adapterEnabledMap) and ok
 
 		for iface, adapter in self.adapters.items():
@@ -1239,7 +1239,9 @@ class NetworkManager:
 			for conn in adapter.connections:
 				if conn.wlan is not None and conn.name and conn.name != conn.wlan.ssid:
 					conn.wlan.idStr = conn.name
-			wlanConfigs = [c.wlan for c in adapter.connections if c.wlan is not None]
+				if conn.wlan is not None and conn.wlan.ssid:
+					conn.wlan.disabled = not conn.enabled
+			wlanConfigs = [c.wlan for c in adapter.connections if c.wlan is not None and c.wlan.ssid]
 			if not wlanConfigs:
 				continue
 			if adapter.driverApi == apiBrcmWl:
