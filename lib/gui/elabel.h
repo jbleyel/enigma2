@@ -73,8 +73,8 @@ public:
 	eSize calculateSize();
 	static eSize calculateTextSize(gFont* font, const std::string& string, eSize targetSize, bool nowrap = false);
 	
-	/* Set minimum font size for auto-scaling */
-	void setMinFontSize(int minSize);
+	/* Set minimum font size or width for auto-scaling depending on scaleType */
+	void setFontScale(int scaleType, int size);
 
 protected:
 	ePtr<gFont> m_font;
@@ -88,7 +88,8 @@ protected:
 
 private:
 	/* Font auto-scaling */
-	int m_minFontSize = 0;
+	int m_fontScaleType = 0;
+	int m_fontScaleSize = 0;
 	int m_originalFontSize = 0;
 	
 	int buildFlags() const {

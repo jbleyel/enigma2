@@ -1,6 +1,8 @@
 <setupxml>
 
 
+	<!--  NEW NETWORK -->
+
 	<setup key="NetworkConnection" title="Connection Settings">
 		<item level="0" text="Connection name" description="A human-readable label for this connection.">self.cfgName</item>
 		<item level="0" text="Enabled" description="Enable this connection at boot (adds 'auto' to /etc/network/interfaces).">self.cfgEnabled</item>
@@ -43,8 +45,17 @@
 		<item level="1" text="DNS override" description="This connection has custom DNS servers. Press BLUE to change." conditional="bool(self._conn.dnsServers)">self.cfgDnsHint</item>
 	</setup>
 
+	<setup key="DNSNetworkConnection" title="Connection DNS Settings">
+		<item level="0" text="Use global DNS" description="When enabled this connection uses the system-wide DNS settings. Disable to enter custom DNS servers for this connection only.">self.cfgUseGlobal</item>
+		<if conditional="not self.cfgUseGlobal.value">
+			<item level="0" text="Primary DNS (IPv4)" description="Primary IPv4 DNS server for this connection.">self.cfgDns1v4</item>
+			<item level="0" text="Secondary DNS (IPv4)" description="Secondary IPv4 DNS server (optional).">self.cfgDns2v4</item>
+			<item level="1" text="Primary DNS (IPv6)" description="Primary IPv6 DNS server for this connection (optional).">self.cfgDns1v6</item>
+			<item level="1" text="Secondary DNS (IPv6)" description="Secondary IPv6 DNS server (optional).">self.cfgDns2v6</item>
+		</if>
+	</setup>
 
-
+	<!--  NEW NETWORK -->
 
 	<setup key="Audio" title="Audio Settings" level="1" showOpenWebif="1">
 		<item level="1" text="Volume steps" description="Select the size of the volume step when the VOLUME buttons are pressed.">config.volumeControl.pressStep</item>
@@ -244,17 +255,6 @@
 		<item level="0" text="Date style" description="Choose the front panel display formatting style for dates. 'D'/'DD' is the date and 'M'/'MM' is the month in digits. ('DD' and 'MM' have leading zeros for single digit values.) The screen display will be based on your choice but can be influenced by the skin." requires="config.usage.date.enabled_display">config.usage.date.display</item>
 		<item level="0" text="Time style" description="Choose the front panel display formatting style for times. 'H'/'HH' is the hour for a 24 hour clock, 'h'/'hh' is the hour for a 12 hour clock, 'mm' is the minutes. ('HH' and 'hh' have leading zeros for single digit values.) The front panel display will be based on your choice but can be influenced any applicable skin." requires="config.usage.time.enabled_display">config.usage.time.display</item>
 	</setup>
-
-	<setup key="DNSNetworkConnection" title="Connection DNS Settings">
-		<item level="0" text="Use global DNS" description="When enabled this connection uses the system-wide DNS settings. Disable to enter custom DNS servers for this connection only.">self.cfgUseGlobal</item>
-		<if conditional="not self.cfgUseGlobal.value">
-			<item level="0" text="Primary DNS (IPv4)" description="Primary IPv4 DNS server for this connection.">self.cfgDns1v4</item>
-			<item level="0" text="Secondary DNS (IPv4)" description="Secondary IPv4 DNS server (optional).">self.cfgDns2v4</item>
-			<item level="1" text="Primary DNS (IPv6)" description="Primary IPv6 DNS server for this connection (optional).">self.cfgDns1v6</item>
-			<item level="1" text="Secondary DNS (IPv6)" description="Secondary IPv6 DNS server (optional).">self.cfgDns2v6</item>
-		</if>
-	</setup>
-
 	<setup key="DNS" title="DNS Settings">
 		<item level="0" text="DNS protocol mode" description="Select whether IPv4, IPv6, or both protocols should be used. If both are enabled then which should be preferred.">config.usage.dnsMode</item>
 		<item level="0" text="DNS suffix" description="Specify the network DNS suffix to be applied when only the host name is provided. This helps the DNS resolver find the requested host.">config.usage.dnsSuffix</item>
@@ -519,8 +519,7 @@
 				<item level="0" text="Even if a 'Wakeup' scheduled task starting?" description="Select 'Yes' if you want to wake the TV when a 'Wakeup' scheduled task is starting.">config.hdmicec.tv_wakeup_wakeuppowertimer</item>
 			</if>
 			<item level="0" text="TV input and receiver wakeup"></item>
-			<item level="0" text="Switch TV to correct input" description="When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver.">config.hdmicec.report_active_source</item>
-			<item level="0" text="Force TV input to this receiver" description="When the receiver wakes from Standby, send stream path and routing commands so the TV switches from another HDMI input back to this receiver." conditional="config.hdmicec.report_active_source.value">config.hdmicec.force_tv_input</item>
+			<item level="0" text="Switch TV to correct input" description="When the receiver wakes from Standby, send active source, stream path and routing commands so the TV switches to the HDMI input connected to the receiver.">config.hdmicec.report_active_source</item>
 			<item level="0" text="Switch off the TV to correct input" description="Some TVs can't switch to the correct input if another HDMI port is active. This setting puts the TV into Standby before switching. If the TV does not turn back on, a slower transmission interval or repeating the wake-up command may be required." conditional="config.hdmicec.advanced_settings.value and config.hdmicec.report_active_source.value">config.hdmicec.workaround_activesource</item>
 			<item level="0" text="Handle wake up from TV" description="When enabled, the receiver will automatically wake from Standby when the TV is turned on.">config.hdmicec.handle_tv_wakeup</item>
 			<item level="0" text="Handle Standby from TV" description="When enabled, the receiver will automatically return to Standby when the TV is turned off.">config.hdmicec.handle_tv_standby</item>
@@ -710,19 +709,19 @@
 		<item level="0" text="New password" description="Setting a password is strongly advised if your receiver is open to the Internet. You must set a password in order to be able to use network services like FTP, Telnet or SSH.">config.network.password</item>
 	</setup>
 	<setup key="Picon" title="Picon Settings" showOpenWebif="1">
-        <item level="0" text="Picon mode" description="Define the mode for picon path selection and resolution.">config.picon.mode</item>
-        <if conditional="config.picon.mode.value == 1">
-            <item level="0" text="Picon path %s" description="Path for picon set %s." data="1">config.picon.set0.path</item>
-            <item level="0" text="Picon path %s" description="Path for picon set %s." data="2" conditional="config.picon.set0.path.value">config.picon.set1.path</item>
-            <item level="0" text="Picon path %s" description="Path for picon set %s." data="3" conditional="config.picon.set1.path.value">config.picon.set2.path</item>
-            <item level="0" text="Picon path %s" description="Path for picon set %s." data="4" conditional="config.picon.set2.path.value">config.picon.set3.path</item>
-            <item level="0" text="Picon path %s" description="Path for picon set %s." data="5" conditional="config.picon.set3.path.value">config.picon.set4.path</item>
-            <item level="0" text="InfoBar picon set" description="Picon set to be used for InfoBar picons.">config.picon.infobar</item>
-            <item level="0" text="Channel Selection picon set" description="Picon set to be used in Channel Selection picons.">config.picon.channelselection</item>
-            <item level="0" text="Front panel/Display picon set" description="Picon set to be used in Front panel/Display picons.">config.picon.display</item>
-            <item level="0" text="OpenWebif picon set" description="Picon set to be used in OpenWebif picons.">config.picon.openwebif</item>
-        </if>
-    </setup>
+		<item level="0" text="Picon mode" description="Define the mode for picon path selection and resolution.">config.picon.mode</item>
+		<if conditional="config.picon.mode.value == 1">
+			<item level="0" text="Picon path %s" description="Path for picon set %s." data="1">config.picon.set0.path</item>
+			<item level="0" text="Picon path %s" description="Path for picon set %s." data="2" conditional="config.picon.set0.path.value">config.picon.set1.path</item>
+			<item level="0" text="Picon path %s" description="Path for picon set %s." data="3" conditional="config.picon.set1.path.value">config.picon.set2.path</item>
+			<item level="0" text="Picon path %s" description="Path for picon set %s." data="4" conditional="config.picon.set2.path.value">config.picon.set3.path</item>
+			<item level="0" text="Picon path %s" description="Path for picon set %s." data="5" conditional="config.picon.set3.path.value">config.picon.set4.path</item>
+			<item level="0" text="InfoBar picon set" description="Picon set to be used for InfoBar picons.">config.picon.infobar</item>
+			<item level="0" text="Channel Selection picon set" description="Picon set to be used in Channel Selection picons.">config.picon.channelselection</item>
+			<item level="0" text="Front panel/Display picon set" description="Picon set to be used in Front panel/Display picons.">config.picon.display</item>
+			<item level="0" text="OpenWebif picon set" description="Picon set to be used in OpenWebif picons.">config.picon.openwebif</item>
+		</if>
+	</setup>
 	<setup key="Playback" title="Playback Settings">
 		<item level="0" text="Default movie selection location" description="Set the default movie selection location for your media files. Press 'OK' to add new locations, press 'LEFT'/'RIGHT' to select from previously defined locations.">config.usage.default_path</item>
 		<item level="2" text="Show movie lengths in movie list" description="When enabled, the length of each recording will be shown in the movie list (this might cause some additional loading time).">config.usage.load_length_of_movies_in_moviellist</item>
@@ -1177,7 +1176,7 @@
 	</setup>
 	<setup key="UserInterface" title="OSD Settings" showOpenWebif="1">
 		<item level="0" text="Menu style" description="Select the display design for menus.">config.usage.menuType</item>
-		<item level="0" text="Menu entry style" description="Select the display options for each menu entry item. If menu numbers are available then the number buttons can be used to select the numbered menu entries directly." requires="config.usage.menuType" value="standard">config.usage.menuEntryStyle</item>
+		<item level="0" text="Menu entry style" description="Select the display options for each menu entry item. If menu numbers are available then the number buttons can be used to select the numbered menu entries directly.">config.usage.menuEntryStyle</item>
 		<item level="0" text="Menu entry sort order" description="Select the sort order of the menu entries. User defined also allows the menu entries to be hidden.">config.usage.menuSortOrder</item>
 		<item level="1" text="Show screen menu path" description="Select if the screen menu path history is displayed and, if so, how it is to be displayed.">config.usage.showScreenPath</item>
 		<item level="1" text="Sort Extension Menu" description="Select the sort order of the Extension Menu entries.">config.usage.sortExtensionslist</item>

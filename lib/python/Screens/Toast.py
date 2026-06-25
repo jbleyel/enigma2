@@ -3,6 +3,9 @@ from enigma import ePoint, gRGB, eSize, eTimer
 from Components.Label import Label
 from Screens.Screen import Screen
 
+FADESPEED = 50
+FADESTEPS = 10
+
 
 class ToastScreen(Screen):
 	skin = """
@@ -27,7 +30,6 @@ class ToastScreen(Screen):
 		self._timer.callback.append(self._dohide)
 		self._fadeTimer = eTimer()
 		self._fadeTimer.callback.append(self._doFade)
-		self._fadeSpeed = 1  # 2
 
 	def showToast(self, text, toasttype, timeout):
 		self._foregroundColor = {
@@ -78,7 +80,7 @@ class ToastScreen(Screen):
 		self._fadeIn = True
 		self._alpha = 255
 		self._applyColors()
-		self._fadeTimer.start(50 * self._fadeSpeed)
+		self._fadeTimer.start(FADESPEED)
 		self.show()
 
 	def _applyColors(self):
@@ -93,13 +95,13 @@ class ToastScreen(Screen):
 
 	def _doFade(self):
 		if self._fadeIn:
-			self._alpha -= 5
+			self._alpha -= FADESTEPS
 			if self._alpha <= 0:
 				self._alpha = 0
 				self._fadeTimer.stop()
 				self._fadeIn = False
 		else:
-			self._alpha += 5
+			self._alpha += FADESTEPS
 			if self._alpha >= 255:
 				self._alpha = 255
 				self._fadeTimer.stop()
@@ -109,7 +111,7 @@ class ToastScreen(Screen):
 	def _dohide(self):
 		self._timer.stop()
 		self._fadeIn = False
-		self._fadeTimer.start(50 * self._fadeSpeed)
+		self._fadeTimer.start(FADESPEED)
 
 	def forceHide(self):
 		self._fadeTimer.stop()

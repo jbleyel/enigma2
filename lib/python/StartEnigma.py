@@ -234,13 +234,13 @@ class Session:
 				readSkin(dialog, None, dialog.skinName, oldDesktop)
 				dialog.applySkin()
 
-	def showInfo(self, text, timeout=5):
+	def showInfo(self, text, timeout=4):
 		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_INFO, timeout=timeout)
 
-	def showWarning(self, text, timeout=5):
+	def showWarning(self, text, timeout=4):
 		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_WARNING, timeout=timeout)
 
-	def showError(self, text, timeout=5):
+	def showError(self, text, timeout=4):
 		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_ERROR, timeout=timeout)
 
 
