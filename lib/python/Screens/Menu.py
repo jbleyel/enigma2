@@ -595,13 +595,13 @@ class Menu(Screen, ProtectedScreen):
 
 	def keyUp(self):
 		self.currentIndex = self["menu"].getSelectedIndex()
-		self["menu"].goUp()
+		self["menu"].goLineUp()
 		if self.sortMode and self.selectedEntry is not None:
 			self.moveAction()
 
 	def keyDown(self):
 		self.currentIndex = self["menu"].getSelectedIndex()
-		self["menu"].goDown()
+		self["menu"].goLineDown()
 		if self.sortMode and self.selectedEntry is not None:
 			self.moveAction()
 
@@ -761,7 +761,6 @@ class MenuHorizontal(Menu):
 		self["menu"].goLast()
 		if self.sortMode and self.selectedEntry is not None:
 			self.moveAction()
-
 
 
 class MenuSummary(ScreenSummary):
