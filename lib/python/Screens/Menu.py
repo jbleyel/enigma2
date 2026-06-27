@@ -686,7 +686,7 @@ class Menu(Screen, ProtectedScreen):
 
 class MenuHorizontal(Menu):
 	skin = """
-	<screen name="HorizontalMenu" title="Menu" position="center,400" size="1170,265" ignoreWidgets="menuimage" resolution="1280,720">
+	<screen name="MenuHorizontal" title="Menu" position="center,400" size="1170,265" ignoreWidgets="menuimage" resolution="1280,720">
 		<widget source="menu" render="Listbox" position="10,10" size="e-20,115" listOrientation="horizontal">
 			<template name="Default" fonts="Regular;25" itemHeight="105" itemWidth="230">
 				<mode name="default">
@@ -737,6 +737,7 @@ class MenuHorizontal(Menu):
 			"right": (self.keyRight, _("Move right a item")),
 			"last": (self.keyLast, _("Move to last item / screen"))
 		}, prio=0, description=_("Menu Navigation Actions"))
+		self.skinName.append("MenuHorizontal")
 
 	def keyFirst(self):
 		self.currentIndex = self["menu"].getSelectedIndex()

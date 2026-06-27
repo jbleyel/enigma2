@@ -193,16 +193,16 @@ class Screen(dict):
 	def checkImage(self, image, source=None):
 		screenImage = None
 		if image and not isinstance(self, ScreenSummary):  # Ignore Summary Screens:
-			if len(image) > 1:  # Use pixmap image.
-				self.screenImageGlyph = False
-				images = {
-					# "screen": screens,
-					"menu": menus,
-					"setup": setups
-				}.get(source, screens)
-				defaultImage = images.get("default")
-				screenImage = images.get(image, defaultImage)
-				if screenImage is not None:
+			self.screenImageGlyph = False
+			images = {
+				# "screen": screens,
+				"menu": menus,
+				"setup": setups
+			}.get(source, screens)
+			defaultImage = images.get("default")
+			screenImage = images.get(image, defaultImage)
+			if screenImage is not None:
+				if len(screenImage) > 1:  # Use pixmap image.
 					screenImage = resolveFilename(SCOPE_GUISKIN, screenImage)
 					msg = f"{'Default' if screenImage == defaultImage and image != 'default' else 'Specified'} {source if source else 'screen'} image for '{image}' is '{screenImage}'"
 					if isfile(screenImage):
@@ -210,9 +210,8 @@ class Screen(dict):
 					else:
 						print(f"[Screen] Error: {msg} but this is not a file!")
 						screenImage = None
-			else:  # Use glyph image.
-				self.screenImageGlyph = True
-				screenImage = image
+				else:  # Use glyph image.
+					self.screenImageGlyph = True
 		return screenImage
 
 	def setImage(self, image, source=None):

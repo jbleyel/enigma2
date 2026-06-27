@@ -1167,7 +1167,7 @@ class WlanScanScreen(Screen):
 
 	skin = """
 	<screen name="WlanScanScreen" title="WLAN Scan" position="center,center" size="980,600" resolution="1280,720">
-		<widget name="status" position="10,10" size="960,40" font="Regular;22" halign="left" valign="center" />
+		<widget name="description" position="10,10" size="960,40" font="Regular;22" halign="left" valign="center" />
 		<widget source="list" render="Listbox" position="0,60" size="980,450" scrollbarMode="showOnDemand">
 			<template name="Default" fonts="Regular;26,Regular;20" itemHeight="50">
 				<mode name="default">
@@ -1202,7 +1202,7 @@ class WlanScanScreen(Screen):
 		self["key_green"] = StaticText(_("Select"))
 		self["key_yellow"] = StaticText(_("Rescan"))
 		self["key_blue"] = StaticText("")
-		self["status"] = Label(_("Scanning…"))
+		self["description"] = Label(_("Scanning…"))
 		self["list"] = List([])
 		self["actions"] = HelpableActionMap(
 			self,
@@ -1223,7 +1223,7 @@ class WlanScanScreen(Screen):
 		if self._scanning:
 			return
 		self._scanning = True
-		self["status"].setText(_("Scanning…"))
+		self["description"].setText(_("Scanning…"))
 		self["list"].setList([])
 		self._console.ePopen(f"ifconfig {self._adapter.name} up", lambda *_: self._runIwlist())
 
@@ -1236,9 +1236,9 @@ class WlanScanScreen(Screen):
 			result = result.decode("utf-8", errors="replace")
 		self._results = _parseIwlist(result)
 		if not self._results:
-			self["status"].setText(_("No networks found.  Press YELLOW to scan again."))
+			self["description"].setText(_("No networks found.  Press YELLOW to scan again."))
 			return
-		self["status"].setText(_("%d network(s) found.  Press OK to select.") % len(self._results))
+		self["description"].setText(_("%d network(s) found.  Press OK to select.") % len(self._results))
 		self._populateList()
 
 	def _populateList(self):

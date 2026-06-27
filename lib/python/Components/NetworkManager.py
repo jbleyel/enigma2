@@ -1201,7 +1201,7 @@ class NetworkManager:
 			for conn in adapter.connections:
 				if conn.isWlan:
 					cs = _buildWlanConfigStrings(adapter, conn)
-					conn.extraLines = [l for l in cs.splitlines() if l] if cs else []
+					conn.extraLines = [x for x in cs.splitlines() if x] if cs else []
 
 		# For WLAN: write exactly ONE base block to interfaces (IP config + pre-up/pre-down).
 		# SSID connections are managed exclusively via wpa_supplicant.conf.
@@ -1341,7 +1341,7 @@ class NetworkManager:
 	def getNameservers(self) -> list:
 		return list(self.nameserverConfig.servers)
 
-	def setNameservers(self, servers: List) -> None:
+	def setNameservers(self, servers: list) -> None:
 		self.nameserverConfig.servers = list(servers)
 
 	def getAdapterAttribute(self, iface: str, attr: str):
@@ -1723,7 +1723,7 @@ class NetworkManager:
 		if conn is None:
 			return
 		tag = f"pre-up {ethtoolBin} -s {adapter.name} wol "
-		conn.extraLines = [l for l in conn.extraLines if not l.startswith(tag)]
+		conn.extraLines = [x for x in conn.extraLines if not x.startswith(tag)]
 		if mode != "off":
 			conn.extraLines.insert(0, f"{tag}{mode} || true")
 
