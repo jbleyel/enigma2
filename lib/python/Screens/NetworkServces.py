@@ -155,7 +155,6 @@ class NetworkServicesSetup(Setup, NetworkDaemons):
 					if isRunning:
 						commands.append("killall nmbd")
 						commands.append("killall smbd")
-				self.showProgress()
 				self.console.eBatch(commands, toggleStartStopCallback, debug=True)
 
 	def showLog(self):
@@ -386,13 +385,13 @@ class NetworkuShareSetup(Setup):
 				elif line.startswith("USHARE_DIR="):
 					line = ("USHARE_DIR=%s" % ", ".join(self.selectedFiles))
 				elif line.startswith("ENABLE_WEB="):
-					line = f"ENABLE_WEB={getYesNo(self.ushare_web.value)}"
+					line = f"ENABLE_WEB={getYesNo(self.ushare_web)}"
 				elif line.startswith("ENABLE_TELNET="):
-					line = f"ENABLE_TELNET={getYesNo(self.ushare_telnet.value)}"
+					line = f"ENABLE_TELNET={getYesNo(self.ushare_telnet)}"
 				elif line.startswith("ENABLE_XBOX="):
-					line = f"ENABLE_XBOX={getYesNo(self.ushare_xbox.value)}"
+					line = f"ENABLE_XBOX={getYesNo(self.ushare_xbox)}"
 				elif line.startswith("ENABLE_DLNA="):
-					line = f"ENABLE_DLNA={getYesNo(self.ushare_ps3.value)}"
+					line = f"ENABLE_DLNA={getYesNo(self.ushare_ps3)}"
 				newLines.append(line)
 			fileWriteLines("/etc/ushare.conf.tmp", newLines)
 		else:
@@ -523,7 +522,7 @@ class NetworkMiniDLNASetup(Setup):
 					minidlna_strictdlna1 = getConfigListEntry("%s:" % _("Strict DLNA"), self.minidlna_strictdlna)
 					minidlnaItems.append(minidlna_strictdlna1)
 				elif line.startswith("media_dir="):
-					line = line[11:]
+					line = line[10:]
 					self.selectedFiles = [str(n) for n in line.split(", ")]
 
 		Setup.createSetup(self, appendItems=minidlnaItems)
@@ -788,6 +787,7 @@ class NetworkZeroTierSetup(Setup):
 		if not nwid:
 			self.lastInfo = None
 			Setup.createSetup(self, appendItems=[])
+			return
 
 		items = []
 		serviceOnline = False
