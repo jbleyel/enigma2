@@ -50,15 +50,11 @@ from Screens.Screen import Screen
 from Screens.Setup import Setup
 from Tools.Directories import SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 from Tools.ServiceAction import ServiceAction
-
-try:
-	from Components.NetworkManager import (
-		Adapter, Connection, WlanConfig,
-		iNetworkManager as nm,
-		encNone, encWep, encWpa, encWpa2, encWpa3,
-	)
-except ImportError:
-	nm = None  # type: ignore
+from Components.NetworkManager import (
+	Adapter, Connection, WlanConfig,
+	iNetworkManager as nm,
+	encNone, encWep, encWpa, encWpa2, encWpa3, pingAsync
+)
 
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -207,6 +203,12 @@ class DnsSettings(Setup):
 					pass
 
 		Setup.__init__(self, session=session, setup="DNS")
+		self["key_yellow"] = StaticText()
+		self["key_blue"] = StaticText()
+		self["moveActions"] = HelpableActionMap(self, ["ColorActions"], {
+			"yellow": (self.moveItemUp, _("Move item up")),
+			"blue": (self.moveItemDown, _("Move item down")),
+		}, prio=0, description=_("DNS Settings Actions"))
 
 	def _defaultGw(self) -> list[int]:
 		if nm is None:
@@ -260,7 +262,34 @@ class DnsSettings(Setup):
 				if config.usage.dnsMode.value == 3:
 					idx += 2
 				self.dnsServers[idx] = current[1].value
-		return Setup.changedEntry(self)
+		result = Setup.changedEntry(self)
+		self._updateMoveActions()
+		return result
+
+	def _updateMoveActions(self):
+		current = self["config"].getCurrent()
+		canMove = current in self.dnsServerItems and config.usage.dns.value not in ("dnscrypt", "dhcp-router")
+		self["moveActions"].setEnabled(canMove)
+		self["key_yellow"].setText(_("Move Up") if canMove else "")
+		self["key_blue"].setText(_("Move Down") if canMove else "")
+
+	def moveItemUp(self):
+		current = self["config"].getCurrent()
+		if current in self.dnsServerItems:
+			idx = self.dnsServerItems.index(current)
+			if idx > 0:
+				servers = self.dnsOptions[config.usage.dns.value]
+				servers[idx], servers[idx - 1] = servers[idx - 1], servers[idx]
+				self.createSetup()
+
+	def moveItemDown(self):
+		current = self["config"].getCurrent()
+		if current in self.dnsServerItems:
+			idx = self.dnsServerItems.index(current)
+			if idx < len(self.dnsServerItems) - 1:
+				servers = self.dnsOptions[config.usage.dns.value]
+				servers[idx], servers[idx + 1] = servers[idx + 1], servers[idx]
+				self.createSetup()
 
 	def keySave(self):
 		if nm is not None:
@@ -432,16 +461,7 @@ class DnsSettings(Setup):
 # ===========================================================================
 
 class NetworkConnectionDnsSetup(Setup):
-	"""
-	Per-connection DNS override.
-
-	The user can either:
-		a) Leave DNS to the global settings (cfgUseGlobal = True, default)
-		b) Enter custom DNS servers that apply only to this connection
-
-	When custom servers are entered they are stored in conn.dnsServers.
-	When "Use global DNS" is re-enabled, conn.dnsServers is cleared.
-	"""
+	"""Per-connection DNS override."""
 
 	def __init__(self, session, conn: Connection):
 		self._conn = conn
@@ -571,12 +591,7 @@ class InformationNetworkConnection(InformationBase):
 # ===========================================================================
 
 class NetworkConnections(Screen):
-	"""
-	Lists every Connection from every Adapter.
-	Row top: WLAN/LAN | SSID or adapter name.
-	Row bottom: DHCP Yes/No and IP address.
-	RED=Close  GREEN=Add  MENU/OK=Context menu  BLUE=Global DNS
-	"""
+	"""Lists every Connection from every Adapter."""
 
 	# Tuple indices:
 	#   0=mainIcon   adapter: WLAN/LAN iconfont;  connection: ""
@@ -905,11 +920,7 @@ class NetworkConnections(Screen):
 # ===========================================================================
 
 class NetworkConnectionSetup(Setup):
-	"""
-	Setup screen for one Connection.
-	YELLOW → per-connection DNS  |  BLUE → connection info MessageBox
-	Includes Wake-on-LAN (LAN adapters) and Wake-on-WiFi (Broadcom) settings.
-	"""
+	"""Setup screen for one Connection."""
 
 	def __init__(self, session, conn: Connection, adapter: Adapter):
 		self._conn = conn
@@ -1397,3 +1408,179 @@ class WlanAddFlow:
 class NameserverSetup(DnsSettings):
 	def __init__(self, session):
 		DnsSettings.__init__(self, session=session)
+
+
+# ===========================================================================
+# NetworkAdapterTest2 – list-based adapter test (replaces NetworkAdapterTest)
+# ===========================================================================
+
+
+class NetworkAdapterTest2(Screen):
+	"""Sequential network adapter tests displayed as a simple list."""
+
+	skin = """
+	<screen name="NetworkAdapterTest2" title="Network Test" position="center,center" size="900,510" resolution="1280,720">
+		<widget source="list" render="Listbox" position="0,0" size="900,420" scrollbarMode="showNever">
+			<template name="Default" fonts="Regular;24,Regular;22,Regular;18" itemHeight="60" itemWidth="900">
+				<mode name="default">
+					<text index="0" position="10,10" size="40,40" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=4" foregroundColorSelected="=4" />
+					<text index="1" position="60,10" size="280,40" font="0" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="2" position="350,10" size="210,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=4" foregroundColorSelected="=4" />
+					<text index="3" position="570,10" size="320,40" font="2" horizontalAlignment="left" verticalAlignment="center" />
+				</mode>
+			</template>
+		</widget>
+		<widget source="key_red" render="Label" position="10,e-50" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_green" render="Label" position="200,e-50" size="180,40" backgroundColor="key_green" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+	</screen>"""
+
+	_ROW_ADAPTER = 0
+	_ROW_LINK    = 1
+	_ROW_IP      = 2
+	_ROW_GATEWAY = 3
+	_ROW_INTERNET = 4
+	_ROW_DNS     = 5
+
+	_COL_PENDING = gRGB(0x00808080).argb()
+	_COL_OK      = gRGB(0x0000CC00).argb()
+	_COL_FAIL    = gRGB(0x00CC0000).argb()
+
+	_ICON_OK   = "✓"
+	_ICON_FAIL = "✗"
+	_ICON_SKIP = "—"
+	_ICON_BUSY = "…"
+
+	_T_NOT_FOUND    = _("not found")
+	_T_NA           = _("n/a")
+	_T_ASSOCIATED   = _("associated")
+	_T_NOT_ASSOC    = _("not associated")
+	_T_CONNECTED    = _("connected")
+	_T_DISCONNECTED = _("disconnected")
+	_T_NO_ADDRESS   = _("no address")
+	_T_NO_GATEWAY   = _("no gateway")
+	_T_PINGING      = _("pinging…")
+	_T_REACHABLE    = _("reachable")
+	_T_UNREACHABLE  = _("unreachable")
+	_T_RESOLVING    = _("resolving…")
+	_T_CONFIRMED    = _("confirmed")
+	_T_UNCONFIRMED  = _("unconfirmed")
+	_T_STATIC       = _("Static")
+
+	def __init__(self, session, iface: str):
+		Screen.__init__(self, session)
+		self._iface = iface
+		self._rows: list[tuple] = []
+		self._generation = 0
+		self["key_red"] = StaticText(_("Close"))
+		self["key_green"] = StaticText(_("Restart"))
+		self["list"] = List([])
+		self["actions"] = HelpableActionMap(
+			self,
+			["OkCancelActions", "ColorActions"],
+			{
+				"cancel": (self.close, _("Close network test")),
+				"red": (self.close, _("Close network test")),
+				"green": (self._restart, _("Restart test")),
+			},
+			prio=0,
+			description=_("Network Test Actions"),
+		)
+		self.onLayoutFinish.append(self._start)
+
+	def _restart(self):
+		self._generation += 1
+		self._start()
+
+	def _start(self):
+		adapterName = nm.getFriendlyAdapterName(self._iface) if nm else self._iface
+		self.setTitle(_("Network Test – %s") % adapterName)
+		adapter = nm.adapters.get(self._iface) if nm else None
+		isWlan = adapter.isWlan if adapter else False
+		labels = [
+			_("Adapter"),
+			_("Wireless link") if isWlan else _("LAN link"),
+			_("IP address"),
+			_("Gateway"),
+			_("Internet"),
+			"DNS",
+		]
+		self._rows = [(self._ICON_BUSY, label, "", "", self._COL_PENDING) for label in labels]
+		self["list"].setList(list(self._rows))
+		self._testAdapter()
+
+	def _setRow(self, idx: int, icon: str, result: str, detail: str, color: int):
+		r = list(self._rows[idx])
+		r[0], r[2], r[3], r[4] = icon, result, detail, color
+		self._rows[idx] = tuple(r)
+		self["list"].setList(list(self._rows))
+
+	def _pingRow(self, row: int, host: str, okText: str, failText: str, detail: str, nextFn):
+		self._setRow(row, self._ICON_BUSY, self._T_PINGING, detail, self._COL_PENDING)
+		gen = self._generation
+		def _done(ok: bool):
+			if self._generation != gen:
+				return
+			self._setRow(row, self._ICON_OK if ok else self._ICON_FAIL, okText if ok else failText, detail, self._COL_OK if ok else self._COL_FAIL)
+			nextFn()
+		pingAsync(host, self._iface, _done)
+
+	def _testAdapter(self):
+		adapter = nm.adapters.get(self._iface) if nm else None
+		if adapter is None:
+			self._setRow(self._ROW_ADAPTER, self._ICON_FAIL, self._T_NOT_FOUND, "", self._COL_FAIL)
+			self._setRow(self._ROW_LINK,    self._ICON_SKIP, self._T_NA,        "", self._COL_PENDING)
+			self._setRow(self._ROW_IP,      self._ICON_SKIP, self._T_NA,        "", self._COL_PENDING)
+			self._testGateway()
+			return
+		self._setRow(self._ROW_ADAPTER, self._ICON_OK, nm.getFriendlyAdapterName(self._iface), adapter.kernelDriver or "", self._COL_OK)
+		self._testLink(adapter)
+
+	def _testLink(self, adapter):
+		if adapter.isWlan:
+			ssid = adapter.kernelSsid or ""
+			if ssid:
+				sig = f"{adapter.kernelSignal} dBm" if adapter.kernelSignal else ""
+				self._setRow(self._ROW_LINK, self._ICON_OK, self._T_ASSOCIATED, f"{ssid}  {sig}".strip(), self._COL_OK)
+			else:
+				self._setRow(self._ROW_LINK, self._ICON_FAIL, self._T_NOT_ASSOC, "", self._COL_FAIL)
+		else:
+			if adapter.kernelLink:
+				speed = f"{adapter.kernelSpeed} Mbit/s" if adapter.kernelSpeed > 0 else ""
+				self._setRow(self._ROW_LINK, self._ICON_OK, self._T_CONNECTED, speed, self._COL_OK)
+			else:
+				self._setRow(self._ROW_LINK, self._ICON_FAIL, self._T_DISCONNECTED, "", self._COL_FAIL)
+		self._testIp(adapter)
+
+	def _testIp(self, adapter):
+		ip = adapter.kernelIp or []
+		ipStr = ".".join(str(b) for b in ip) if ip else ""
+		if ipStr and ipStr != "0.0.0.0":
+			conn = adapter.activeConnection()
+			hint = "DHCP" if (conn and conn.dhcp) else self._T_STATIC
+			self._setRow(self._ROW_IP, self._ICON_OK, ipStr, hint, self._COL_OK)
+		else:
+			self._setRow(self._ROW_IP, self._ICON_FAIL, self._T_NO_ADDRESS, "", self._COL_FAIL)
+		self._testGateway()
+
+	def _testGateway(self):
+		adapter = nm.adapters.get(self._iface) if nm else None
+		gw = ""
+		if adapter:
+			conn = adapter.activeConnection()
+			if conn:
+				gw = _ip4Str(conn.gateway)
+		if not gw:
+			self._setRow(self._ROW_GATEWAY, self._ICON_SKIP, self._T_NO_GATEWAY, "", self._COL_PENDING)
+			self._testInternet()
+			return
+		self._pingRow(self._ROW_GATEWAY, gw, self._T_REACHABLE, self._T_UNREACHABLE, gw, self._testInternet)
+
+	def _testInternet(self):
+		self._pingRow(self._ROW_INTERNET, "1.1.1.1", self._T_REACHABLE, self._T_UNREACHABLE, "1.1.1.1", self._testDns)
+
+	def _testDns(self):
+		self._pingRow(self._ROW_DNS, "google.com", self._T_CONFIRMED, self._T_UNCONFIRMED, "google.com", lambda: None)

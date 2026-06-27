@@ -348,23 +348,17 @@ class QuickMenu(Screen, ProtectedScreen):
 		def networkInterface():
 			self.openScreen("NetworkSetup", screenName="AdapterSetup", networkinfo=activeInterface)
 
-		def networkWizard():
-			from Plugins.SystemPlugins.NetworkWizard.NetworkWizard import NetworkWizard
-			self.session.open(NetworkWizard)
-
 		adapters, activeInterface = getNetworkInterfaces()
 		self.subList = []
-		if isPluginInstalled("NetworkWizard"):
-			self.subList.append(self.quickSubMenuEntryComponent(_("Network Wizard"), _("Configure your Network"), _("Use the Networkwizard to configure your Network. The wizard will help you to setup your network"), callback=networkWizard))
 		if len(adapters) > 1:  # Show only adapter selection if more as 1 adapter is installed.
 			self.subList.append(self.quickSubMenuEntryComponent(_("Network Adapter Selection"), _("Select Lan/Wlan"), _("Setup your network interface. If no Wlan stick is used, you only can select Lan"), screen="NetworkSetup", screenName="NetworkAdapterSelection"))
 		if activeInterface is not None:  # Show only if there is already a adapter up.
 			self.subList.append(self.quickSubMenuEntryComponent(_("Network Interface"), _("Setup interface"), _("Setup network. Here you can setup DHCP, IP, DNS"), callback=networkInterface))
 		self.subList.append(self.quickSubMenuEntryComponent(_("Network Restart"), _("Restart network to with current setup"), _("Restart network and remount connections"), screen="RestartNetwork"))
-		self.subList.append(self.quickSubMenuEntryComponent(_("Network Services"), _("Setup Network Services"), _("Setup Network Services (Samba, Ftp, NFS, ...)"), screen="NetworkSetup", screenName="NetworkServicesSetup"))
-		self.subList.append(self.quickSubMenuEntryComponent(_("MiniDLNA"), _("Setup MiniDLNA"), _("Setup MiniDLNA"), screen="NetworkSetup", screenName="NetworkMiniDLNASetup"))
-		self.subList.append(self.quickSubMenuEntryComponent(_("Inadyn"), _("Setup Inadyn"), _("Setup Inadyn"), screen="NetworkSetup", screenName="NetworkInadynSetup"))
-		self.subList.append(self.quickSubMenuEntryComponent(_("uShare"), _("Setup uShare"), _("Setup uShare"), screen="NetworkSetup", screenName="NetworkuShareSetup"))
+		self.subList.append(self.quickSubMenuEntryComponent(_("Network Services"), _("Setup Network Services"), _("Setup Network Services (Samba, Ftp, NFS, ...)"), screen="NetworkServces", screenName="NetworkServicesSetup"))
+		self.subList.append(self.quickSubMenuEntryComponent(_("MiniDLNA"), _("Setup MiniDLNA"), _("Setup MiniDLNA"), screen="NetworkServces", screenName="NetworkMiniDLNASetup"))
+		self.subList.append(self.quickSubMenuEntryComponent(_("Inadyn"), _("Setup Inadyn"), _("Setup Inadyn"), screen="NetworkServces", screenName="NetworkInadynSetup"))
+		self.subList.append(self.quickSubMenuEntryComponent(_("uShare"), _("Setup uShare"), _("Setup uShare"), screen="NetworkServces", screenName="NetworkuShareSetup"))
 		self.setSubList()
 
 	def subMenuAVSetup(self):  # A/V Settings Menu.

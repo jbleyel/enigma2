@@ -28,6 +28,9 @@ config.misc.wizardLanguageEnabled = ConfigBoolean(default=True)
 
 
 class StartWizard(Wizard, ShowRemoteControl):
+	_nwPollIntervalMs = 1500
+	_nwPollMaxAttempts = 12  # 18 s total
+
 	def __init__(self, session, silent=True, showSteps=False, neededTag=None):
 		self.xmlfile = ["startwizard.xml"]
 		Wizard.__init__(self, session, showSteps=False)
@@ -45,6 +48,10 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self["HelpWindow"] = Pixmap()
 		self["HelpWindow"].hide()
 		self.setTitle(_("Start Wizard"))
+		self.nwSelectedIface = None
+		self.nwIpFound = ""
+		self._nwPollTimer = None
+		self._nwPollCount = 0
 
 	def markDone(self):
 		# Setup remote control, all STBs have same settings except dm8000 which uses a different setting.
@@ -221,6 +228,113 @@ class StartWizard(Wizard, ShowRemoteControl):
 				self.session.openWithCallback(formatCallback, HarddiskSelection)
 		else:
 			Wizard.keyYellow(self)
+
+	# ------------------------------------------------------------------
+	# Network setup steps (nwifaceselect → nwconfig → nwstatus)
+	# ------------------------------------------------------------------
+
+	def nwListInterfaces(self):
+		result = []
+		try:
+			from Components.NetworkManager import iNetworkManager as _nm
+			for iface, adapter in _nm.adapters.items():
+				typeLabel = _("WLAN") if adapter.isWlan else _("LAN")
+				name = _nm.getFriendlyAdapterName(iface)
+				desc = _nm.getFriendlyAdapterDescription(iface)
+				result.append(("%s  %s  (%s)  –  %s" % (typeLabel, name, iface, desc), iface))
+		except Exception:
+			pass
+		result.append((_("Skip network setup"), "skip"))
+		return result
+
+	def nwIfaceSelected(self, value):
+		self.nwSelectedIface = None if value == "skip" else value
+
+	def nwIfaceMoved(self):
+		pass
+
+	def nwAdvanceFromSelect(self):
+		if self.nwSelectedIface is None:
+			self.currStep = self.getStepWithID("network")
+		else:
+			self.currStep = self.getStepWithID("nwconfig")
+		self.afterAsyncCode()
+
+	def nwOpenSetup(self):
+		try:
+			from Components.NetworkManager import iNetworkManager as _nm, Connection
+			adapter = _nm.adapters.get(self.nwSelectedIface) if self.nwSelectedIface else None
+			if adapter is None:
+				self._nwDone()
+				return
+			if adapter.isWlan:
+				from Screens.NetworkSetup2 import WlanAddFlow
+				WlanAddFlow.start(self.session, adapter=adapter, callback=self._nwWlanDone)
+			else:
+				from Screens.NetworkSetup2 import NetworkConnectionSetup
+				if adapter.connections:
+					conn = adapter.connections[0]
+				else:
+					conn = Connection(adapter=adapter.name, name=_("LAN"), enabled=True, dhcp=True)
+					adapter.connections.append(conn)
+				self.session.openWithCallback(self._nwLanSetupDone, NetworkConnectionSetup, conn, adapter)
+		except Exception:
+			self._nwDone()
+
+	def _nwLanSetupDone(self, saved=False):
+		if not saved:
+			self._nwDone()
+			return
+		try:
+			from Components.NetworkManager import iNetworkManager as _nm
+			_nm.activateInterface(self.nwSelectedIface, lambda ok: self._nwStartIpPoll())
+		except Exception:
+			self._nwStartIpPoll()
+
+	def _nwWlanDone(self):
+		self._nwStartIpPoll()
+
+	def _nwStartIpPoll(self):
+		self._nwPollCount = 0
+		self.nwIpFound = ""
+		if self._nwPollTimer:
+			self._nwPollTimer.stop()
+		self._nwPollTimer = eTimer()
+		self._nwPollTimer.callback.append(self._nwPollIp)
+		self._nwPollTimer.start(self._nwPollIntervalMs, True)
+
+	def _nwPollIp(self):
+		try:
+			import netifaces
+			addrs = netifaces.ifaddresses(self.nwSelectedIface or "")
+			ip = addrs.get(netifaces.AF_INET, [{}])[0].get("addr", "")
+			if ip and ip != "0.0.0.0":
+				self.nwIpFound = ip
+				self._nwDone()
+				return
+		except Exception:
+			pass
+		self._nwPollCount += 1
+		if self._nwPollCount >= self._nwPollMaxAttempts:
+			self._nwDone()
+			return
+		self._nwPollTimer.start(self._nwPollIntervalMs, True)
+
+	def _nwDone(self):
+		if self._nwPollTimer:
+			self._nwPollTimer.stop()
+			self._nwPollTimer = None
+		self.currStep = self.getStepWithID("nwstatus") + 1
+		self.updateValues()
+
+	def nwShowStatus(self):
+		if self._nwPollTimer:
+			self._nwPollTimer.stop()
+			self._nwPollTimer = None
+		if self.nwIpFound:
+			self["text"].setText(_("Network connected successfully.\n\nInterface: %s\nIP address: %s") % (self.nwSelectedIface or "", self.nwIpFound))
+		else:
+			self["text"].setText(_("No IP address was received.\n\nThe network connection could not be established."))
 
 
 class WizardLanguage(Wizard, ShowRemoteControl):
