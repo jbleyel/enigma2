@@ -1,4 +1,3 @@
-import codecs
 from re import sub
 from os.path import isfile
 from time import localtime
@@ -67,7 +66,6 @@ class Console(Screen):
 		self.cancelMessageBox = None
 		self.errorOcurred = False
 		self.run = 0
-		self._utf8decoder = codecs.getincrementaldecoder("utf-8")("replace")
 		self.onLayoutFinish.append(self.layoutFinished)
 
 	def layoutFinished(self):
