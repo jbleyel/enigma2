@@ -180,7 +180,7 @@ class Console(Screen):
 
 	def dataAvail(self, data):
 		if isinstance(data, bytes):
-			data = self._utf8decoder.decode(data)
+			data = data.decode("utf-8", errors="replace")
 		self["text"].appendText(data)
 
 	def runFinished(self, retVal):
