@@ -19,7 +19,7 @@ from Components.Console import Console
 from Components.Harddisk import harddiskmanager
 from Components.InputDevice import remoteControl
 from Components.Label import Label
-from Components.Network import iNetwork
+from Components.NetworkManager import iNetworkManager as nm
 from Components.NimManager import nimmanager
 from Components.Pixmap import Pixmap
 from Components.ScrollLabel import ScrollLabel
@@ -1078,7 +1078,8 @@ class NetworkInformation(InformationBase):
 		for interface in sorted([x for x in listdir("/sys/class/net") if not self.isBlacklisted(x)]):
 			self.interfaceData[interface] = {}
 			self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", interface), self.ifconfigInfoFinished, extra_args=interface)
-			if iNetwork.isWirelessInterface(interface):
+			_adapter = nm.adapters.get(interface) if nm is not None else None
+			if _adapter.isWlan if _adapter else isdir(f"/sys/class/net/{interface}/wireless"):
 				self.console.ePopen(("/sbin/iwconfig", "/sbin/iwconfig", interface), self.iwconfigInfoFinished, extra_args=interface)
 			else:
 				self.console.ePopen(("/usr/sbin/ethtool", "/usr/sbin/ethtool", interface), self.ethtoolInfoFinished, extra_args=interface)
@@ -1216,7 +1217,9 @@ class NetworkInformation(InformationBase):
 		info.append(formatLine("S0S", _("Hostname"), hostname))
 		for interface in sorted(self.interfaceData.keys()):
 			info.append("")
-			info.append(formatLine("S", _("Interface '%s'") % interface, iNetwork.getFriendlyAdapterName(interface)))
+			_adapter = nm.adapters.get(interface) if nm is not None else None
+			_isWlan = _adapter.isWlan if _adapter else isdir(f"/sys/class/net/{interface}/wireless")
+			info.append(formatLine("S", _("Interface '%s'") % interface, _("WLAN") if _isWlan else _("LAN")))
 			if "up" in self.interfaceData[interface]:
 				info.append(formatLine("P1", _("Status"), (_("Up / Active") if self.interfaceData[interface]["up"] else _("Down / Inactive"))))
 				if self.interfaceData[interface]["up"]:

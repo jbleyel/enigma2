@@ -661,9 +661,20 @@
 		<item text="Nameserver" description="Configure the name server (DNS).">config.network.dns</item>
 		<item text="Activate network settings" description="Activate the configured network settings.">config.network.activate</item>
 	</setup>
+	<setup key="NetworkNFS" title="NFS Settings" allowDefault="1">
+		<item text="NFS threads" description="Number of NFS server threads. Higher values improve performance with multiple clients.">self.nfsThreads</item>
+		<item text="Enable NFSv3" description="Select 'Yes' to enable NFS version 3 support.">self.nfsVers3</item>
+		<item text="Enable NFSv4" description="Select 'Yes' to enable NFS version 4 support.">self.nfsVers4</item>
+		<item text="Access mode" description="Read/Write or Read Only access for all exported directories.">self.nfsAccessMode</item>
+		<item text="Allowed clients" description="IP address, subnet (e.g. 192.168.1.0/24) or * for all hosts.">self.nfsClients</item>
+		<item text="Root squash" description="Select 'Yes' to map root to nobody (more secure). Select 'No' for full root access.">self.nfsRootSquash</item>
+	</setup>
 	<setup key="NetworkSamba" title="Samba Settings" allowDefault="1">
 		<item text="Enable automatic shares" description="Select 'Yes' to allow each storage device detected to be automatically exported as samba share.">config.samba.enableAutoShare</item>
 		<item text="Automatic shares access" description="Select the access mode for the automatically exported samba shares." conditional="config.samba.enableAutoShare.value">config.samba.autoShareAccess</item>
+		<item text="Allow guest access" description="Select 'Yes' to allow access without a password.">self.guestAccess</item>
+		<item text="Workgroup" description="Windows workgroup name (default: WORKGROUP).">self.workgroup</item>
+		<item text="Server name" description="Name this box appears as in the network (NetBIOS name).">self.netbiosName</item>
 	</setup>
 	<setup key="NetworkZeroTier" title="ZeroTier Settings">
 		<item text="Network-ID" description="Enter the ZeroTier Network ID. The ID should be exactly 16 characters in length.">config.network.ZeroTierNetworkId</item>

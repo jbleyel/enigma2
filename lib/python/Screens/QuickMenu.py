@@ -6,7 +6,7 @@ import NavigationInstance
 from Components.ActionMap import HelpableActionMap, HelpableNumberActionMap
 from Components.config import config
 from Components.Label import Label
-from Components.Network import iNetwork
+from Components.NetworkManager import iNetworkManager as nm
 from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
@@ -333,25 +333,33 @@ class QuickMenu(Screen, ProtectedScreen):
 
 	def subMenuNetwork(self):  # Network Menu.
 		def getNetworkInterfaces():
-			adapters = [(iNetwork.getFriendlyAdapterName(x), x) for x in iNetwork.getAdapterList()]
-			if not adapters:
-				adapters = [(iNetwork.getFriendlyAdapterName(x), x) for x in iNetwork.getConfiguredAdapters()]
-			if not adapters:
-				adapters = [(iNetwork.getFriendlyAdapterName(x), x) for x in iNetwork.getInstalledAdapters()]
-			activeInterface = None
-			for adapter in adapters:
-				if iNetwork.getAdapterAttribute(adapter[1], "up") is True:
-					activeInterface = adapter[1]
-					break
+			if nm is None:
+				return [], None
+			adapters = [
+				(f"{'WLAN' if a.isWlan else 'LAN'} ({name})", name)
+				for name, a in nm.adapters.items()
+			]
+			activeInterface = next(
+				(name for name, a in nm.adapters.items() if a.kernelUp),
+				None
+			)
 			return adapters, activeInterface
 
 		def networkInterface():
-			self.openScreen("NetworkSetup", screenName="AdapterSetup", networkinfo=activeInterface)
+			from Screens.NetworkSetup2 import NetworkConnectionSetup
+			adapter = nm.adapters.get(activeInterface)
+			if adapter and adapter.connections:
+				conn = adapter.activeConnection() or adapter.connections[0]
+				self.session.open(NetworkConnectionSetup, conn, adapter)
+
+		def networkAdapterSelection():
+			from Screens.NetworkSetup2 import NetworkConnections
+			self.session.open(NetworkConnections)
 
 		adapters, activeInterface = getNetworkInterfaces()
 		self.subList = []
 		if len(adapters) > 1:  # Show only adapter selection if more as 1 adapter is installed.
-			self.subList.append(self.quickSubMenuEntryComponent(_("Network Adapter Selection"), _("Select Lan/Wlan"), _("Setup your network interface. If no Wlan stick is used, you only can select Lan"), screen="NetworkSetup", screenName="NetworkAdapterSelection"))
+			self.subList.append(self.quickSubMenuEntryComponent(_("Network Adapter Selection"), _("Select Lan/Wlan"), _("Setup your network interface. If no Wlan stick is used, you only can select Lan"), callback=networkAdapterSelection))
 		if activeInterface is not None:  # Show only if there is already a adapter up.
 			self.subList.append(self.quickSubMenuEntryComponent(_("Network Interface"), _("Setup interface"), _("Setup network. Here you can setup DHCP, IP, DNS"), callback=networkInterface))
 		self.subList.append(self.quickSubMenuEntryComponent(_("Network Restart"), _("Restart network to with current setup"), _("Restart network and remount connections"), screen="RestartNetwork"))

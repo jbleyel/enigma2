@@ -152,7 +152,6 @@ def _ip4Str(addr: list) -> str:
 # ===========================================================================
 # DnsSettings – global system DNS (drop-in replacement for DNSSettings)
 # ===========================================================================
-
 class DnsSettings(Setup):
 	"""Global system DNS configuration. Uses iNetworkManager (NetworkManager.py)."""
 
@@ -1439,36 +1438,36 @@ class NetworkAdapterTest2(Screen):
 	</screen>"""
 
 	_ROW_ADAPTER = 0
-	_ROW_LINK    = 1
-	_ROW_IP      = 2
+	_ROW_LINK = 1
+	_ROW_IP = 2
 	_ROW_GATEWAY = 3
 	_ROW_INTERNET = 4
-	_ROW_DNS     = 5
+	_ROW_DNS = 5
 
 	_COL_PENDING = gRGB(0x00808080).argb()
-	_COL_OK      = gRGB(0x0000CC00).argb()
-	_COL_FAIL    = gRGB(0x00CC0000).argb()
+	_COL_OK = gRGB(0x0000CC00).argb()
+	_COL_FAIL = gRGB(0x00CC0000).argb()
 
-	_ICON_OK   = "✓"
+	_ICON_OK = "✓"
 	_ICON_FAIL = "✗"
 	_ICON_SKIP = "—"
 	_ICON_BUSY = "…"
 
-	_T_NOT_FOUND    = _("not found")
-	_T_NA           = _("n/a")
-	_T_ASSOCIATED   = _("associated")
-	_T_NOT_ASSOC    = _("not associated")
-	_T_CONNECTED    = _("connected")
+	_T_NOT_FOUND = _("not found")
+	_T_NA = _("n/a")
+	_T_ASSOCIATED = _("associated")
+	_T_NOT_ASSOC = _("not associated")
+	_T_CONNECTED = _("connected")
 	_T_DISCONNECTED = _("disconnected")
-	_T_NO_ADDRESS   = _("no address")
-	_T_NO_GATEWAY   = _("no gateway")
-	_T_PINGING      = _("pinging…")
-	_T_REACHABLE    = _("reachable")
-	_T_UNREACHABLE  = _("unreachable")
-	_T_RESOLVING    = _("resolving…")
-	_T_CONFIRMED    = _("confirmed")
-	_T_UNCONFIRMED  = _("unconfirmed")
-	_T_STATIC       = _("Static")
+	_T_NO_ADDRESS = _("no address")
+	_T_NO_GATEWAY = _("no gateway")
+	_T_PINGING = _("pinging…")
+	_T_REACHABLE = _("reachable")
+	_T_UNREACHABLE = _("unreachable")
+	_T_RESOLVING = _("resolving…")
+	_T_CONFIRMED = _("confirmed")
+	_T_UNCONFIRMED = _("unconfirmed")
+	_T_STATIC = _("Static")
 
 	def __init__(self, session, iface: str):
 		Screen.__init__(self, session)
@@ -1521,6 +1520,7 @@ class NetworkAdapterTest2(Screen):
 	def _pingRow(self, row: int, host: str, okText: str, failText: str, detail: str, nextFn):
 		self._setRow(row, self._ICON_BUSY, self._T_PINGING, detail, self._COL_PENDING)
 		gen = self._generation
+
 		def _done(ok: bool):
 			if self._generation != gen:
 				return
@@ -1532,8 +1532,8 @@ class NetworkAdapterTest2(Screen):
 		adapter = nm.adapters.get(self._iface) if nm else None
 		if adapter is None:
 			self._setRow(self._ROW_ADAPTER, self._ICON_FAIL, self._T_NOT_FOUND, "", self._COL_FAIL)
-			self._setRow(self._ROW_LINK,    self._ICON_SKIP, self._T_NA,        "", self._COL_PENDING)
-			self._setRow(self._ROW_IP,      self._ICON_SKIP, self._T_NA,        "", self._COL_PENDING)
+			self._setRow(self._ROW_LINK, self._ICON_SKIP, self._T_NA, "", self._COL_PENDING)
+			self._setRow(self._ROW_IP, self._ICON_SKIP, self._T_NA, "", self._COL_PENDING)
 			self._testGateway()
 			return
 		self._setRow(self._ROW_ADAPTER, self._ICON_OK, nm.getFriendlyAdapterName(self._iface), adapter.kernelDriver or "", self._COL_OK)

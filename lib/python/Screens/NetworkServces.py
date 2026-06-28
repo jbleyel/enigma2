@@ -568,9 +568,219 @@ class NetworkMiniDLNASetup(Setup):
 		self.session.openWithCallback(selectSharesCallBack, uShareSelection, self.selectedFiles)
 
 
-class NetworkSambaSetup(Setup):
+class NetworkNFSSetup(Setup):
+	NFSCONF = "/etc/nfs.conf"
+	EXPORTSFILE = "/etc/exports"
+	_MARKER = "# OpenATV managed exports"
+
 	def __init__(self, session):
+		self.nfsThreads = NoSave(ConfigNumber(default=8))
+		self.nfsVers3 = NoSave(ConfigYesNo(default=True))
+		self.nfsVers4 = NoSave(ConfigYesNo(default=True))
+		self.nfsAccessMode = NoSave(ConfigSelection(default="rw", choices=[
+			("rw", _("Read/Write")),
+			("ro", _("Read Only")),
+		]))
+		self.nfsClients = NoSave(ConfigText(default="*", fixed_size=False))
+		self.nfsRootSquash = NoSave(ConfigYesNo(default=False))
+		self.selectedPaths = []
+		self._readConf()
+		Setup.__init__(self, session=session, setup="NetworkNFS")
+		self["key_yellow"] = StaticText(_("Exports"))
+		self["exportsActions"] = HelpableActionMap(self, ["ColorActions"], {
+			"yellow": (self.selectExports, _("Select exported directories")),
+		}, prio=0, description=_("NFS Setup Actions"))
+
+	def _readConf(self):
+		inNfsd = False
+		for line in (fileReadLines(self.NFSCONF, source=MODULE_NAME) or []):
+			ls = line.lstrip()
+			if ls.startswith("[") and ls.rstrip().endswith("]"):
+				inNfsd = ls.strip()[1:-1].strip().lower() == "nfsd"
+				continue
+			if not inNfsd or ls.startswith("#") or "=" not in ls:
+				continue
+			key, _, val = ls.partition("=")
+			key = key.strip().lower()
+			val = val.strip()
+			if key == "threads":
+				try:
+					self.nfsThreads.value = int(val)
+				except ValueError:
+					pass
+			elif key == "vers3":
+				self.nfsVers3.value = val.lower() in ("y", "yes", "1", "true")
+			elif key == "vers4":
+				self.nfsVers4.value = val.lower() in ("y", "yes", "1", "true")
+		inManaged = False
+		parsedOpts = False
+		for line in (fileReadLines(self.EXPORTSFILE, source=MODULE_NAME) or []):
+			if line.strip() == self._MARKER:
+				inManaged = True
+				continue
+			if not inManaged or not line.strip() or line.strip().startswith("#"):
+				continue
+			parts = line.split()
+			if parts and parts[0] not in self.selectedPaths:
+				self.selectedPaths.append(parts[0])
+			if not parsedOpts and len(parts) >= 2 and "(" in parts[1]:
+				client, _, rest = parts[1].partition("(")
+				if client:
+					self.nfsClients.value = client
+				opts = [o.strip() for o in rest.rstrip(")").split(",")]
+				if "ro" in opts:
+					self.nfsAccessMode.value = "ro"
+				if "root_squash" in opts and "no_root_squash" not in opts:
+					self.nfsRootSquash.value = True
+				parsedOpts = True
+
+	def keySave(self):
+		self._writeNfsConf()
+		self._writeExports()
+		Setup.keySave(self)
+
+	def _writeNfsConf(self):
+		updates = {
+			"threads": str(self.nfsThreads.value),
+			"vers3": "y" if self.nfsVers3.value else "n",
+			"vers4": "y" if self.nfsVers4.value else "n",
+		}
+		lines = fileReadLines(self.NFSCONF, source=MODULE_NAME) or []
+		inNfsd = False
+		found = set()
+		newLines = []
+		for line in lines:
+			ls = line.lstrip()
+			if ls.startswith("[") and ls.rstrip().endswith("]"):
+				if inNfsd:
+					for key, val in updates.items():
+						if key not in found:
+							newLines.append(f"{key} = {val}")
+				inNfsd = ls.strip()[1:-1].strip().lower() == "nfsd"
+				newLines.append(line)
+				continue
+			if not inNfsd:
+				newLines.append(line)
+				continue
+			content = ls.lstrip("#").strip()
+			if "=" in content:
+				key, _, _ = content.partition("=")
+				key = key.strip().lower()
+				if key in updates and key not in found:
+					newLines.append(f"{key} = {updates[key]}")
+					found.add(key)
+					continue
+			newLines.append(line)
+		if inNfsd:
+			for key, val in updates.items():
+				if key not in found:
+					newLines.append(f"{key} = {val}")
+		tmpPath = f"{self.NFSCONF}.tmp"
+		fileWriteLines(tmpPath, newLines, source=MODULE_NAME)
+		if exists(tmpPath):
+			rename(tmpPath, self.NFSCONF)
+
+	def _writeExports(self):
+		squash = "root_squash" if self.nfsRootSquash.value else "no_root_squash"
+		opts = f"{self.nfsAccessMode.value},sync,no_subtree_check,{squash}"
+		client = self.nfsClients.value.strip() or "*"
+		oldLines = fileReadLines(self.EXPORTSFILE, source=MODULE_NAME) or []
+		baseLines = []
+		for line in oldLines:
+			if line.strip() == self._MARKER:
+				break
+			baseLines.append(line)
+		while baseLines and not baseLines[-1].strip():
+			baseLines.pop()
+		newLines = baseLines + ([""] if baseLines else [])
+		newLines.append(self._MARKER)
+		for path in self.selectedPaths:
+			newLines.append(f"{path}\t{client}({opts})")
+		tmpPath = f"{self.EXPORTSFILE}.tmp"
+		fileWriteLines(tmpPath, newLines, source=MODULE_NAME)
+		if exists(tmpPath):
+			rename(tmpPath, self.EXPORTSFILE)
+
+	def selectExports(self):
+		def callback(selectedFiles):
+			if selectedFiles is not None:
+				self.selectedPaths = selectedFiles
+		self.session.openWithCallback(callback, uShareSelection, self.selectedPaths)
+
+
+class NetworkSambaSetup(Setup):
+	SMBCONF = "/etc/samba/smb-user.conf"
+
+	def __init__(self, session):
+		self.workgroup = NoSave(ConfigText(default="WORKGROUP", fixed_size=False))
+		self.netbiosName = NoSave(ConfigText(default="", fixed_size=False))
+		self.guestAccess = NoSave(ConfigYesNo(default=True))
+		self._readConf()
 		Setup.__init__(self, session=session, setup="NetworkSamba")
+
+	def _readConf(self):
+		inGlobal = False
+		for line in (fileReadLines(self.SMBCONF, source=MODULE_NAME) or []):
+			ls = line.lstrip()
+			if ls.startswith("[") and ls.rstrip().endswith("]"):
+				inGlobal = ls.strip()[1:-1].strip().lower() == "global"
+				continue
+			if not inGlobal or ls.startswith("#") or "=" not in ls:
+				continue
+			key, _, val = ls.partition("=")
+			key = key.strip().lower()
+			val = val.strip()
+			if key == "workgroup":
+				self.workgroup.value = val
+			elif key == "netbios name":
+				self.netbiosName.value = val
+			elif key == "guest ok":
+				self.guestAccess.value = val.lower() in ("yes", "true", "1")
+
+	def keySave(self):
+		self._writeConf()
+		Setup.keySave(self)
+
+	def _writeConf(self):
+		updates = {
+			"workgroup": self.workgroup.value.strip(),
+			"netbios name": self.netbiosName.value.strip(),
+			"guest ok": "yes" if self.guestAccess.value else "no",
+		}
+		lines = fileReadLines(self.SMBCONF, source=MODULE_NAME) or []
+		inGlobal = False
+		found = set()
+		newLines = []
+		for line in lines:
+			ls = line.lstrip()
+			if ls.startswith("[") and ls.rstrip().endswith("]"):
+				if inGlobal:
+					for key, val in updates.items():
+						if key not in found:
+							newLines.append(f"\t{key} = {val}")
+				inGlobal = ls.strip()[1:-1].strip().lower() == "global"
+				newLines.append(line)
+				continue
+			if not inGlobal:
+				newLines.append(line)
+				continue
+			content = ls.lstrip("#").strip()
+			if "=" in content:
+				key, _, _ = content.partition("=")
+				key = key.strip().lower()
+				if key in updates and key not in found:
+					newLines.append(f"\t{key} = {updates[key]}")
+					found.add(key)
+					continue
+			newLines.append(line)
+		if inGlobal:
+			for key, val in updates.items():
+				if key not in found:
+					newLines.append(f"\t{key} = {val}")
+		tmpPath = f"{self.SMBCONF}.tmp"
+		fileWriteLines(tmpPath, newLines, source=MODULE_NAME)
+		if exists(tmpPath):
+			rename(tmpPath, self.SMBCONF)
 
 
 class NetworkPassword(Setup):

@@ -5,7 +5,8 @@ from enigma import eDVBDB
 from Components.ActionMap import HelpableActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.config import ConfigBoolean, ConfigIP, ConfigSelection, ConfigSubsection, ConfigYesNo, config
-from Components.Network import iNetwork
+from Components.NetworkManager import iNetworkManager as nm
+from Tools.ServiceAction import ServiceAction
 from Components.Opkg import OpkgComponent
 from Components.Sources.StaticText import StaticText
 from Screens.Screen import Screen
@@ -22,16 +23,13 @@ class InstallWizard(ConfigListScreen, Screen):
 	STATE_SOFTCAM = 2
 
 	def __init__(self, session, args=None):
-		def checkNetworkCallback(data):
-			if data < 3:
+		def checkNetworkCallback(results):
+			if any(results.values()):
 				config.misc.installwizard.hasnetwork.value = True
 			self.createMenu()
 
-		def checkNetworkLinkCallback(retVal):
-			if retVal:
-				iNetwork.checkNetworkState(checkNetworkCallback)
-			else:
-				self.createMenu()
+		def checkNetworkLinkCallback(exitCode=None):
+			nm.checkConnectionInternet(checkNetworkCallback)
 
 		Screen.__init__(self, session)
 		ConfigListScreen.__init__(self, [])
@@ -43,14 +41,14 @@ class InstallWizard(ConfigListScreen, Screen):
 				self.enabled = ConfigSelection(default=0, choices={0: " "})
 				self.configUpdate = ConfigSelection(default=0, choices={0: "Press OK to install"})
 				isFound = False
-				for adapter in [(iNetwork.getFriendlyAdapterName(x), x) for x in iNetwork.getAdapterList()]:
-					if adapter[1] in ("eth0", "eth1"):
-						if iNetwork.getAdapterAttribute(adapter[1], "up"):
-							self.ipConfigEntry = ConfigIP(default=iNetwork.getAdapterAttribute(adapter[1], "ip"))
-							iNetwork.checkNetworkState(checkNetworkCallback)
+				for name, adapter in (nm.adapters.items() if nm is not None else {}.items()):
+					if not adapter.isWlan:
+						if adapter.kernelUp:
+							self.ipConfigEntry = ConfigIP(default=list(adapter.kernelIp))
+							nm.checkConnectionInternet(checkNetworkCallback)
 							isFound = True
 						else:
-							iNetwork.restartNetwork(checkNetworkLinkCallback)
+							ServiceAction.netrestart(checkNetworkLinkCallback, timeout=10000)
 						break
 				if isFound is False:
 					self.createMenu()

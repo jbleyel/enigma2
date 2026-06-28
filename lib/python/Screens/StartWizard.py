@@ -52,6 +52,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self.nwIpFound = ""
 		self._nwPollTimer = None
 		self._nwPollCount = 0
+		self._nwSetupSaved = False
 
 	def markDone(self):
 		# Setup remote control, all STBs have same settings except dm8000 which uses a different setting.
@@ -278,21 +279,34 @@ class StartWizard(Wizard, ShowRemoteControl):
 					conn = Connection(adapter=adapter.name, name=_("LAN"), enabled=True, dhcp=True)
 					adapter.connections.append(conn)
 				self.session.openWithCallback(self._nwLanSetupDone, NetworkConnectionSetup, conn, adapter)
-		except Exception:
+			print("[NW-WIZ] nwOpenSetup: openWithCallback returned, updateValues_in_onShown=%s" % (self.updateValues in self.onShown))
+		except Exception as e:
+			print("[NW-WIZ] nwOpenSetup: EXCEPTION %s -> _nwDone" % e)
 			self._nwDone()
 
 	def _nwLanSetupDone(self, saved=False):
-		if not saved:
-			self._nwDone()
-			return
-		try:
-			from Components.NetworkManager import iNetworkManager as _nm
-			_nm.activateInterface(self.nwSelectedIface, lambda ok: self._nwStartIpPoll())
-		except Exception:
-			self._nwStartIpPoll()
+		print("[NW-WIZ] _nwLanSetupDone: saved=%s currStep=%s codeAfter=%s updateValues_in_onShown=%s" % (saved, self.currStep, self.codeAfter, self.updateValues in self.onShown))
+		self._nwSetupSaved = saved
+		self._nwGoToDns()
 
 	def _nwWlanDone(self):
-		self._nwStartIpPoll()
+		print("[NW-WIZ] _nwWlanDone called")
+		self._nwSetupSaved = True
+		self._nwGoToDns()
+
+	def _nwGoToDns(self):
+		self.currStep = self.getStepWithID("nwdns") + 1
+		self.updateValues()
+
+	def nwActivateAndPoll(self):
+		if self._nwSetupSaved:
+			try:
+				from Components.NetworkManager import iNetworkManager as _nm
+				_nm.activateInterface(self.nwSelectedIface, lambda ok: self._nwStartIpPoll())
+			except Exception:
+				self._nwStartIpPoll()
+		else:
+			self._nwStartIpPoll()
 
 	def _nwStartIpPoll(self):
 		self._nwPollCount = 0
