@@ -1045,13 +1045,8 @@ class RecordTimerEntry(TimerEntry):
 			elif self.afterEvent == AFTEREVENT.AUTO and wasRecTimerWakeup:
 				if not Screens.Standby.inTryQuitMainloop:  # No shutdown message box is open.
 					if Screens.Standby.inStandby:  # In standby.
-						shutdown_delay = config.recording.shutdown_delay.value
-						if shutdown_delay > 0:
-							message = _("A finished record timer wants to shut down\nyour %s %s. Shutdown now?") % getBoxDisplayName()
-							AddModalNotification(text=message, timeout=shutdown_delay * 60, default=True, windowTitle=_("Shutdown"), callback=self.sendTryQuitMainloopNotification)
-						else:
-							print("[RecordTimer] quitMainloop #2.")
-							quitMainloop(1)
+						print("[RecordTimer] quitMainloop #2.")
+						quitMainloop(1)
 			self.wasInStandby = False
 			self.resetTimerWakeup()
 			return True
