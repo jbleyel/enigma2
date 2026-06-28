@@ -64,7 +64,7 @@ def RemovePopup(id):
 			x[1].close()
 
 
-def AddPopup(text, type, timeout, id=None):
+def _AddPopup(text, type, timeout, id=None):
 	if NotificationMessageBox.instance:
 		print("[Notifications] AddPopup id = %s" % id)
 		if id is not None:
@@ -75,6 +75,12 @@ def AddPopup(text, type, timeout, id=None):
 			RemovePopup(id)
 		print("[Notifications] AddPopup id = %s" % id)
 		AddNotificationWithID(id, MessageBox, text=text, type=type, timeout=timeout, close_on_any_key=True)
+
+def AddPopup(text, type, timeout, id=None):
+	if id is not None:
+		RemovePopup(id)
+	print("[Notifications] AddPopup id = %s" % id)
+	AddNotificationWithID(id, MessageBox, text=text, type=type, timeout=timeout, close_on_any_key=True)
 
 
 def AddPopupWithCallback(fnc, text, type, timeout, id=None):
