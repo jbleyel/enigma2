@@ -51,7 +51,7 @@ NETWORKMANAGER_TESTMODE = True
 interfacesFile = "/etc/network/interfaces"
 resolvFile = "/etc/resolv.conf"
 nameserverFile = "/etc/enigma2/nameserversdns.conf"
-wpaSupplicantDir = "/etc/wpa_supplicant"
+wpaSupplicantDir = "/etc"
 sysfsNet = "/sys/class/net"
 procNetWireless = "/proc/net/wireless"
 wlConfigScript = "/usr/sbin/wl-config.sh"
@@ -152,7 +152,7 @@ class Connection:
 	ip: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
 	netmask: list[int] = field(default_factory=lambda: [255, 255, 255, 0])
 	gateway: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
-	ipv6: bool = False
+	ipMode: int = 0          # 0=IPv4 only, 1=IPv6 only, 2=IPv4+IPv6
 	ipv6Dhcp: bool = True
 	dnsServers: list = field(default_factory=list)   # [int,int,int,int] | "::addr"
 	extraLines: list[str] = field(default_factory=list)
@@ -348,7 +348,8 @@ class InterfacesFile:
 					# do NOT create a second one.
 					existing = result.get(iface, [])
 					if existing:
-						existing[-1].ipv6 = True
+						# 0 (IPv4 only) → 2 (both); 1 (IPv6 placeholder) stays 1
+						existing[-1].ipMode = 2 if existing[-1].ipMode == 0 else existing[-1].ipMode
 						existing[-1].ipv6Dhcp = mode == "dhcp"
 						current = existing[-1]
 					# If no inet stanza seen yet, create a placeholder Connection
@@ -358,7 +359,7 @@ class InterfacesFile:
 							adapter=iface,
 							name=iface,
 							dhcp=True,
-							ipv6=True,
+							ipMode=1,
 							ipv6Dhcp=mode == "dhcp",
 							enabled=not disabled,
 							wlan=WlanConfig() if _isWirelessName(iface) else None,
@@ -370,8 +371,9 @@ class InterfacesFile:
 				# inet (IPv4) stanza – this is the primary Connection record.
 				existing = result.get(iface, [])
 				if existing and id(existing[-1]) not in inetSet:
-					# Update the inet6-only placeholder with IPv4 data
+					# Update the inet6-only placeholder with IPv4 data → now both
 					conn = existing[-1]
+					conn.ipMode = 2
 				else:
 					# No existing connection, or existing one already has inet data
 					# (second block for the same iface) → create a new Connection.
@@ -379,7 +381,7 @@ class InterfacesFile:
 						adapter=iface,
 						name=iface,
 						dhcp=True,
-						ipv6=False,
+						ipMode=0,
 						ipv6Dhcp=False,
 						enabled=not disabled,
 						wlan=WlanConfig() if _isWirelessName(iface) else None,
@@ -442,20 +444,26 @@ def _serialiseConnection(conn: Connection, adapterEnabled: bool) -> list[str]:
 	else:
 		lines.append(f"{autoPfx}auto {conn.adapter}")
 
-	if conn.ipv6 and conn.enabled:
+	hasIpv4 = conn.ipMode in (0, 2)
+	hasIpv6 = conn.ipMode in (1, 2)
+
+	if hasIpv6 and conn.enabled:
 		lines.append(f"iface {conn.adapter} inet6 dhcp")
 	else:
 		lines.append(f"# iface {conn.adapter} inet6 dhcp")
 
-	if conn.dhcp:
-		lines.append(f"{connPfx}iface {conn.adapter} inet dhcp")
+	if hasIpv4:
+		if conn.dhcp:
+			lines.append(f"{connPfx}iface {conn.adapter} inet dhcp")
+		else:
+			lines.append(f"{connPfx}iface {conn.adapter} inet static")
+			lines.append(f"{connPfx}  hostname $(hostname)")
+			lines.append(f"{connPfx}  address {conn.ipStr()}")
+			lines.append(f"{connPfx}  netmask {conn.netmaskStr()}")
+			if conn.gateway != [0, 0, 0, 0]:
+				lines.append(f"{connPfx}  gateway {conn.gatewayStr()}")
 	else:
-		lines.append(f"{connPfx}iface {conn.adapter} inet static")
-		lines.append(f"{connPfx}  hostname $(hostname)")
-		lines.append(f"{connPfx}  address {conn.ipStr()}")
-		lines.append(f"{connPfx}  netmask {conn.netmaskStr()}")
-		if conn.gateway != [0, 0, 0, 0]:
-			lines.append(f"{connPfx}  gateway {conn.gatewayStr()}")
+		lines.append(f"# iface {conn.adapter} inet dhcp")
 
 	if conn.dnsServers:
 		serversStr = " ".join(
@@ -1317,7 +1325,7 @@ class NetworkManager:
 			"dhcp": lambda: (conn.dhcp if conn else True),
 			"preup": lambda: (conn.extraLines[0] if conn and conn.extraLines else False),
 			"predown": lambda: (conn.extraLines[-1] if conn and len(conn.extraLines) > 1 else False),
-			"ipv6": lambda: (conn.ipv6 if conn else False),
+			"ipv6": lambda: (conn.ipMode in (1, 2) if conn else False),
 		}
 		getter = attrMap.get(attr)
 		return getter() if getter else None
@@ -1341,7 +1349,7 @@ class NetworkManager:
 		elif attr == "up":
 			conn.enabled = value
 		elif attr == "ipv6":
-			conn.ipv6 = value
+			conn.ipMode = 2 if value else 0
 
 	# Compatibility shim for old iNetwork.removeAdapterAttribute() callers.
 	def removeAdapterAttribute(self, iface: str, attr: str):
@@ -1705,7 +1713,6 @@ class NetworkManager:
 			if adapter is None:
 				continue
 			adapter.kernelUp = data.get("up", False)
-			adapter.kernelLink = data.get("link", False)
 			ip4 = data.get("ip4", "")
 			if ip4:
 				adapter.kernelIp = _parseIp4(ip4)
@@ -1720,12 +1727,14 @@ class NetworkManager:
 			adapter.kernelIp6 = data.get("ip6", [])
 			if adapter.isWlan:
 				adapter.kernelSsid = data.get("ssid", "")
+				adapter.kernelLink = bool(adapter.kernelSsid)  # link = associated to AP
 				adapter.kernelBssid = data.get("bssid", "")
 				adapter.kernelFreqMhz = data.get("freq_mhz", 0)
 				adapter.kernelChannel = data.get("channel", 0)
 				adapter.kernelBitrateBps = data.get("bitrate_bps", 0)
 				adapter.kernelSignal = data.get("signal_dbm", 0)
 			else:
+				adapter.kernelLink = data.get("link", False)
 				adapter.kernelSpeed = data.get("speed", -1)
 				adapter.kernelDuplex = data.get("duplex", "")
 				adapter.kernelPort = data.get("port", "")
@@ -1744,7 +1753,13 @@ class NetworkManager:
 		adapter = self.adapters.get(iface)
 		if adapter:
 			adapter.kernelUp = up
-			adapter.kernelLink = up
+			if adapter.isWlan:
+				# WLAN link = AP association; only clear on down — set on netinfo update
+				if not up:
+					adapter.kernelLink = False
+					adapter.kernelSsid = ""
+			else:
+				adapter.kernelLink = up
 		self._notifyAdaptersChanged()
 
 	def _onIpChange(self, iface: str, ipPrefix: str):

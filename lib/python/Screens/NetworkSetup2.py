@@ -48,7 +48,10 @@ from Screens.MessageBox import MessageBox
 from Screens.RestartNetwork import RestartNetworkNew
 from Screens.Screen import Screen
 from Screens.Setup import Setup
-from Tools.Directories import SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
+from skin import parseColor
+from Tools.Conversions import formatNetworkSpeed
+from Tools.Directories import SCOPE_GUISKIN, SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
+from Tools.LoadPixmap import LoadPixmap
 from Tools.ServiceAction import ServiceAction
 from Components.NetworkManager import (
 	Adapter, Connection, WlanConfig,
@@ -62,6 +65,8 @@ MODULE_NAME = __name__.split(".")[-1]
 _COLOR_LINK = gRGB(0x0000CC00).argb()  # green  – physical link up
 _COLOR_ENABLED = gRGB(0x00FFFFFF).argb()  # white  – enabled, no link
 _COLOR_GRAY = gRGB(0x00808080).argb()  # gray   – disabled
+
+_DUPLEX_LABELS = {"full": lambda: _("Full duplex"), "half": lambda: _("Half duplex")}
 
 # ---------------------------------------------------------------------------
 # Encryption choices
@@ -84,8 +89,12 @@ _ENC_SHORT = {encNone: "open", encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2", en
 _ICON_LAN = chr(0xEA5A)   # settings_ethernet
 _ICON_WLAN = chr(0xE9FE)  # wifi
 _ICON_INET = chr(0xEA5B)  # globe
-_ICON_CHECKBOX_ON = chr(0xE91B)  # check_box
+_ICON_CHECKBOX_ON = chr(0xE91B)   # check_box
 _ICON_CHECKBOX_OFF = chr(0xE91F)  # check_box_outline_blank
+_ICON_LINK_ACTIVE = chr(0xEA62)    # arrow_circle_up
+_ICON_LINK_INACTIVE = chr(0xEA5C)  # arrow_circle_down
+_ICON_BRANCH = chr(0xF001)         # branch (tree connector)
+_ICON_LAST_CHILD = chr(0xF002)     # last_child (tree connector)
 
 
 def _connLabel(conn: Connection, adapter: Adapter) -> str:
@@ -128,8 +137,8 @@ def _connLine2(conn: Connection, adapter: Adapter) -> str:
 		if adapter.kernelSignal:
 			parts.append(f"{adapter.kernelSignal} dBm")
 	else:
-		if adapter.kernelSpeed >= 0:
-			parts.append(f"{adapter.kernelSpeed} Mbit/s")
+		if adapter.kernelSpeed > 0:
+			parts.append(formatNetworkSpeed(adapter.kernelSpeed))
 	mask = _ip4Str(adapter.kernelNetmask)
 	gw = _ip4Str(adapter.kernelGateway)
 	if adapter.adapterEnabled:
@@ -138,10 +147,6 @@ def _connLine2(conn: Connection, adapter: Adapter) -> str:
 		if gw and _connLiveIp(adapter):
 			parts.append(f"GW: {gw}")
 	return "   ".join(parts)
-
-
-def _connSymbol(isLast: bool) -> str:
-	return "└" if isLast else "├"
 
 
 def _ip4Str(addr: list) -> str:
@@ -513,7 +518,8 @@ class InformationNetworkConnection(InformationBase):
 		InformationBase.__init__(self, session)
 		self._conn = conn
 		self._adapter = adapter
-		self.setTitle(_("Network Connection Information"))
+		title = _("Network Connection Information") if conn is not None else _("Network Adapter Information")
+		self.setTitle(title)
 		self.skinName.insert(0, "InformationNetworkConnection")
 		self["key_green"] = StaticText(_("Refresh"))
 
@@ -522,24 +528,28 @@ class InformationNetworkConnection(InformationBase):
 		adapter = self._adapter
 		info = []
 
-		info.append(formatLine("S", _("Network Connection")))
-		info.append(formatLine("P1", _("Name"), conn.name))
-		info.append(formatLine("P1", _("Interface"), adapter.name))
-		info.append(formatLine("P1", _("Enabled"), _("Yes") if conn.enabled else _("No")))
-		info.append(formatLine("P1", _("Priority"), str(conn.priority)))
+		if conn is not None:
+			info.append(formatLine("S", _("Network Connection")))
+			info.append(formatLine("P1", _("Interface"), adapter.name))
+			if conn.isWlan:
+				info.append(formatLine("P1", _("Profile name"), conn.name))
+			info.append(formatLine("P1", _("Enabled"), _("Yes") if conn.enabled else _("No")))
+			if conn.isWlan:
+				info.append(formatLine("P1", _("Priority"), str(conn.priority)))
 
-		info.append("")
-		info.append(formatLine("S", _("Configuration")))
-		if conn.isWlan and conn.wlan:
-			info.append(formatLine("P1", _("SSID"), conn.wlan.ssid or "-"))
-			info.append(formatLine("P1", _("Encryption"), conn.wlan.encryption or "-"))
-		info.append(formatLine("P1", "DHCP", _("Yes") if conn.dhcp else _("No")))
-		if not conn.dhcp:
-			info.append(formatLine("P1", _("IP address"), ".".join(str(x) for x in conn.ip)))
-			info.append(formatLine("P1", _("Netmask"), ".".join(str(x) for x in conn.netmask)))
-			info.append(formatLine("P1", _("Gateway"), ".".join(str(x) for x in conn.gateway)))
-		if conn.dnsServers:
-			info.append(formatLine("P1", "DNS", ", ".join(conn.dnsServers)))
+			info.append("")
+			info.append(formatLine("S", _("Configuration")))
+			if conn.isWlan and conn.wlan:
+				info.append(formatLine("P1", _("SSID"), conn.wlan.ssid or "-"))
+				encLabel = _ENC_SHORT.get(conn.wlan.encryption, conn.wlan.encryption) if conn.wlan.encryption else _("None")
+				info.append(formatLine("P1", _("Encryption"), encLabel))
+			info.append(formatLine("P1", "DHCP", _("Yes") if conn.dhcp else _("No")))
+			if not conn.dhcp:
+				info.append(formatLine("P1", _("IP address"), ".".join(str(x) for x in conn.ip)))
+				info.append(formatLine("P1", _("Netmask"), ".".join(str(x) for x in conn.netmask)))
+				info.append(formatLine("P1", _("Gateway"), ".".join(str(x) for x in conn.gateway)))
+			if conn.dnsServers:
+				info.append(formatLine("P1", "DNS", ", ".join(conn.dnsServers)))
 
 		info.append("")
 		info.append(formatLine("S", _("Live Status")))
@@ -557,7 +567,8 @@ class InformationNetworkConnection(InformationBase):
 		else:
 			info.append(formatLine("P1", _("Link"), _("Yes") if adapter.kernelLink else _("No")))
 			if adapter.kernelSpeed > 0:
-				info.append(formatLine("P1", _("Speed"), f"{adapter.kernelSpeed} Mbit/s {adapter.kernelDuplex}"))
+				duplexStr = _DUPLEX_LABELS.get(adapter.kernelDuplex, lambda: adapter.kernelDuplex)()
+				info.append(formatLine("P1", _("Speed"), f"{formatNetworkSpeed(adapter.kernelSpeed)} {duplexStr}"))
 			if adapter.kernelPort:
 				info.append(formatLine("P1", _("Port"), adapter.kernelPort))
 			if adapter.kernelTransceiver:
@@ -592,21 +603,23 @@ class InformationNetworkConnection(InformationBase):
 class NetworkConnections(Screen):
 	"""Lists every Connection from every Adapter."""
 
-	# Tuple indices:
-	#   0=mainIcon   adapter: WLAN/LAN iconfont;  connection: ""
-	#   1=checkbox   adapter: enabled indicator;  connection: ""
-	#   2=label      adapter: "eth0 / Intern";    connection: ""
-	#   3=connector  adapter: "";                 connection: "├" or "└"
-	#   4=line1      adapter: "";                 connection: "Profile: SSID  IP: ..."
-	#   5=line2      adapter: "";                 connection: "speed / mask / gw"
-	#   6=color      color int (both rows)
-	#   7=inetIcon   adapter: "";                 connection: globe char if internet
-	#   8=conn       None for adapter row, Connection for connection row
-	#   9=adapter    always the Adapter object
+	INDEX_ADAPTER_ICON = 0
+	INDEX_ENABLED_ICON = 1
+	INDEX_LABEL = 2
+	INDEX_CONNECTOR = 3
+	INDEX_LINE1 = 4
+	INDEX_LINE2 = 5
+	INDEX_STATE_COLOR = 6
+	INDEX_INET_ICON = 7
+	INDEX_ADAPTER_PIXMAP = 8
+	INDEX_ENABLED_PIXMAP = 9
+	INDEX_LINK_ICON = 10
+	INDEX_ADAPTER = 11
+	INDEX_CONN = 12
 	skin = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,600" resolution="1280,720">
 		<widget source="list" render="Listbox" position="0,0" size="980,520" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30" itemHeight="80" itemWidth="980">
+			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30" itemHeight="80" itemWidth="980" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080">
 				<mode name="default">
 					<!-- adapter icon (large, left) -->
 					<text index="0" position="5,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
@@ -614,8 +627,8 @@ class NetworkConnections(Screen):
 					<text index="1" position="66,26" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
 					<!-- adapter label "eth0 / Intern" -->
 					<text index="2" position="104,15" size="780,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
-					<!-- tree connector ├ / └ -->
-					<text index="3" position="5,4" size="58,72" font="4" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
+					<!-- tree connector branch/last_child (enigma2icons) -->
+					<text index="3" position="5,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
 					<!-- connection line 1: profile/LAN + IP -->
 					<text index="4" position="104,8" size="780,34" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
 					<!-- connection line 2: speed / mask / gw -->
@@ -646,26 +659,58 @@ class NetworkConnections(Screen):
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Network Connections"))
 		self["key_red"] = StaticText(_("Close"))
-		self["key_green"] = StaticText(_("Add"))
+		self["key_green"] = StaticText(_("Add Wi-Fi"))
 		self["key_yellow"] = StaticText("")
 		self["key_blue"] = StaticText("")
-		self["list"] = List([])
+		# Tuple indices (see class INDEX_* constants):
+		#   0=adapterIcon    adapter: WLAN/LAN iconfont;  connection: ""
+		#   1=enabledIcon    adapter: enabled indicator;  connection: ""
+		#   2=label          adapter: "eth0 / Intern";    connection: ""
+		#   3=connector      adapter: "";                 connection: "├" or "└"
+		#   4=line1          adapter: "";                 connection: "Profile: SSID  IP: ..."
+		#   5=line2          adapter: "";                 connection: "speed / mask / gw"
+		#   6=stateColor     color int (both rows)
+		#   7=inetIcon       adapter: "";                 connection: globe char if internet
+		#   8=adapterPixmap  adapter: wired/wireless-active/inactive;  connection: None
+		#   9=enabledPixmap  adapter: None;               connection: lock_on/lock_error (checkbox as image)
+		#  10=linkIcon       adapter: "";                 connection: link active/inactive glyph
+		#  11=adapter        always the Adapter object
+		#  12=conn           None for adapter row, Connection for connection row
+		indexNames = {
+			"adapterIcon": self.INDEX_ADAPTER_ICON,
+			"enabledIcon": self.INDEX_ENABLED_ICON,
+			"label": self.INDEX_LABEL,
+			"connector": self.INDEX_CONNECTOR,
+			"line1": self.INDEX_LINE1,
+			"line2": self.INDEX_LINE2,
+			"stateColor": self.INDEX_STATE_COLOR,
+			"inetIcon": self.INDEX_INET_ICON,
+			"adapterPixmap": self.INDEX_ADAPTER_PIXMAP,
+			"enabledPixmap": self.INDEX_ENABLED_PIXMAP,
+			"linkIcon": self.INDEX_LINK_ICON,
+		}
+		self["list"] = List([], indexNames=indexNames)
 		self["list"].onSelectionChanged.append(self._updateYellowKey)
 		self["actions"] = HelpableActionMap(
 			self,
-			["OkCancelActions", "ColorActions", "MenuActions"],
+			["OkCancelActions", "ColorActions", "MenuActions", "InfoActions"],
 			{
 				"ok": (self._keyOK, _("Open settings for selected network connection")),
 				"cancel": (self.close, _("Close network connection list")),
 				"red": (self.close, _("Close network connection list")),
 				"green": (self._keyGreen, _("Add a new network connection")),
 				"yellow": (self._keyYellow, _("Activate/Deactivate adapter")),
+				"info": (self._showInfo, _("Show network connection info")),
 				# "blue": (self._keyBlue, _("Open global DNS settings")),
 				"menu": (self._keyMenu, _("Open context menu for selected network connection")),
 			},
 			prio=0,
 			description=_("Network Connection Actions"),
 		)
+		self._colorLink = _COLOR_LINK
+		self._colorEnabled = _COLOR_ENABLED
+		self._colorDisabled = _COLOR_GRAY
+		self.onLayoutFinish.append(self._readSkinColors)
 		self.onLayoutFinish.append(self._buildList)
 		self._internetChecked = False
 		self._internetResult = None
@@ -673,6 +718,12 @@ class NetworkConnections(Screen):
 		if nm:
 			nm.onAdaptersChanged.append(self._buildList)
 			self.onClose.append(lambda: nm.onAdaptersChanged.remove(self._buildList) if self._buildList in nm.onAdaptersChanged else None)
+
+	def _readSkinColors(self):
+		attrs = self["list"].additionalTemplateAttributes
+		self._colorLink = parseColor(attrs["colorStateLink"]).argb() if "colorStateLink" in attrs else _COLOR_LINK
+		self._colorEnabled = parseColor(attrs["colorStateEnabled"]).argb() if "colorStateEnabled" in attrs else _COLOR_ENABLED
+		self._colorDisabled = parseColor(attrs["colorStateDisabled"]).argb() if "colorStateDisabled" in attrs else _COLOR_GRAY
 
 	def checkInternet(self):
 		def checkInternetCallback(result):
@@ -683,6 +734,19 @@ class NetworkConnections(Screen):
 
 		if not self._internetChecked:
 			nm.checkConnectionInternet(callback=checkInternetCallback)
+
+	@staticmethod
+	def _adapterPixmap(adapter: Adapter):
+		if adapter.isWlan:
+			name = "network_wireless-active.png" if adapter.kernelLink else "network_wireless-inactive.png" if adapter.adapterEnabled else "network_wireless.png"
+		else:
+			name = "network_wired-active.png" if adapter.kernelLink else "network_wired-inactive.png" if adapter.adapterEnabled else "network_wired.png"
+		return LoadPixmap(resolveFilename(SCOPE_GUISKIN, f"icons/{name}"))
+
+	@staticmethod
+	def _connPixmap(conn: Connection):
+		name = "lock_on.png" if conn.enabled else "lock_error.png"
+		return LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, f"icons/{name}"))
 
 	def _buildList(self):
 		if nm is None:
@@ -695,8 +759,8 @@ class NetworkConnections(Screen):
 			checkBox = _ICON_CHECKBOX_ON if adapter.adapterEnabled else _ICON_CHECKBOX_OFF
 			loc = _adapterLocation(adapter)
 			adapterLabel = f"Adapter {iface}   /   {loc}" if loc else f"Adapter {iface}"
-			adapterColor = _COLOR_LINK if adapter.kernelLink else _COLOR_ENABLED if adapter.adapterEnabled else _COLOR_GRAY
-			entries.append((adapterIcon, checkBox, adapterLabel, "", "", "", adapterColor, "", None, adapter))
+			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.adapterEnabled else self._colorDisabled
+			entries.append((adapterIcon, checkBox, adapterLabel, "", "", "", adapterColor, "", self._adapterPixmap(adapter), None, "", adapter, None))
 			# For WLAN: skip the base connection (no SSID) when wpa_supplicant
 			# connections with SSIDs are present — the base only carries IP config.
 			conns = adapter.connections
@@ -704,9 +768,10 @@ class NetworkConnections(Screen):
 				conns = [c for c in conns if c.wlan and c.wlan.ssid]
 			for idx, conn in enumerate(conns):
 				isLast = idx == len(conns) - 1
-				connColor = _COLOR_ENABLED if conn.enabled else _COLOR_GRAY
+				connColor = self._colorEnabled if conn.enabled else self._colorDisabled
 				inetIcon = _ICON_INET if (internet and conn.enabled) else ""
-				entries.append(("", "", "", _connSymbol(isLast), _connLine1(conn, adapter), _connLine2(conn, adapter), connColor, inetIcon, conn, adapter))
+				linkIcon = _ICON_LINK_ACTIVE if adapter.kernelLink else _ICON_LINK_INACTIVE
+				entries.append(("", "", "", _ICON_LAST_CHILD if isLast else _ICON_BRANCH, _connLine1(conn, adapter), _connLine2(conn, adapter), connColor, inetIcon, None, self._connPixmap(conn), linkIcon, adapter, conn))
 		self["list"].setList(entries)
 		self._updateYellowKey()
 
@@ -717,7 +782,7 @@ class NetworkConnections(Screen):
 		entry = self._current()
 		if entry is None:
 			return
-		conn, adapter = entry[8], entry[9]
+		conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
 		if conn is None:
 			return
 		self._openSetup(conn, adapter)
@@ -726,23 +791,30 @@ class NetworkConnections(Screen):
 		entry = self._current()
 		if entry is None:
 			return
-		conn, adapter = entry[8], entry[9]
+		conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
 		if conn is None:
 			self._toggleAdapter(adapter)
 
+	def _showInfo(self):
+		entry = self._current()
+		if entry is None:
+			return
+		conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
+		self.session.open(InformationNetworkConnection, conn, adapter)
+
 	def _updateYellowKey(self):
 		entry = self._current()
-		if entry is None or entry[8] is not None:
+		if entry is None or entry[self.INDEX_CONN] is not None:
 			self["key_yellow"].setText("")
 		else:
-			adapter = entry[9]
+			adapter = entry[self.INDEX_ADAPTER]
 			self["key_yellow"].setText(_("Deactivate") if adapter.adapterEnabled else _("Activate"))
 
 	def _keyMenu(self):
 		entry = self._current()
 		if entry is None:
 			return
-		conn, adapter = entry[8], entry[9]
+		conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
 		if conn is None:
 			self._showAdapterMenu(adapter)
 		else:
@@ -973,12 +1045,33 @@ class NetworkConnectionSetup(Setup):
 
 		self.cfgName = NoSave(ConfigText(default=conn.name, fixed_size=False))
 		self.cfgEnabled = NoSave(ConfigYesNo(default=conn.enabled))
-		self.cfgPriority = NoSave(ConfigNumber(default=conn.priority))
+		if conn.isWlan:
+			wlanConns = [c for c in adapter.connections if c.isWlan and c.wlan and c.wlan.ssid]
+			self._hasMultiplePriorities = len(wlanConns) > 1
+			if self._hasMultiplePriorities:
+				self._wlanConnsSorted = sorted(wlanConns, key=lambda c: c.priority, reverse=True)
+				currentRank = next((i + 1 for i, c in enumerate(self._wlanConnsSorted) if c is conn), 1)
+				rankChoices = [(i + 1, _("1st (highest)") if i == 0 else _("%d.") % (i + 1)) for i in range(len(wlanConns))]
+				self.cfgPriority = NoSave(ConfigSelection(choices=rankChoices, default=currentRank))
+			else:
+				self._wlanConnsSorted = []
+				self.cfgPriority = NoSave(ConfigNumber(default=conn.priority))
+		else:
+			self._hasMultiplePriorities = False
+			self._wlanConnsSorted = []
+			self.cfgPriority = NoSave(ConfigNumber(default=conn.priority))
 		self.cfgDhcp = NoSave(ConfigYesNo(default=conn.dhcp))
 		self.cfgIp = NoSave(ConfigIP(default=conn.ip))
 		self.cfgNetmask = NoSave(ConfigIP(default=conn.netmask))
 		self.cfgGateway = NoSave(ConfigIP(default=conn.gateway))
-		self.cfgIpv6 = NoSave(ConfigYesNo(default=conn.ipv6))
+		self.cfgIpMode = NoSave(ConfigSelection(
+			default=conn.ipMode,
+			choices=[
+				(0, _("IPv4 only")),
+				(1, _("IPv6 only")),
+				(2, _("IPv4 and IPv6")),
+			]
+		))
 
 		if conn.isWlan and conn.wlan:
 			w = conn.wlan
@@ -1026,9 +1119,16 @@ class NetworkConnectionSetup(Setup):
 
 		conn.name = self.cfgName.value
 		conn.enabled = self.cfgEnabled.value
-		conn.priority = int(self.cfgPriority.value)
+		if self._hasMultiplePriorities:
+			chosenRank = self.cfgPriority.value
+			others = [c for c in self._wlanConnsSorted if c is not conn]
+			newOrder = others[:chosenRank - 1] + [conn] + others[chosenRank - 1:]
+			for i, c in enumerate(newOrder):
+				c.priority = (len(newOrder) - i) * 10
+		else:
+			conn.priority = int(self.cfgPriority.value)
 		conn.dhcp = self.cfgDhcp.value
-		conn.ipv6 = self.cfgIpv6.value
+		conn.ipMode = self.cfgIpMode.value
 
 		if not conn.dhcp:
 			conn.ip = list(self.cfgIp.value)
