@@ -1290,6 +1290,22 @@ void eDVBServicePlay::serviceEvent(int event)
 		m_event((iPlayableService*)this, evTuneFailed);
 		break;
 	}
+	case eDVBServicePMTHandler::eventSignalLost:
+	{
+		// Signal loss is an early recovery trigger for timeshift only.
+		// Non-timeshift services keep the old tune-failed workflow.
+		if (m_stream_corruption_detected)
+			break;
+
+		if (m_timeshift_enabled)
+		{
+			eTrace("[PreciseRecovery] Signal lost during timeshift. Initiating recovery.");
+			onPreRecovery(); // Allow subclass (eRamServicePlay) to freeze playback position
+			m_stream_corruption_detected = true;
+			handleEofRecovery();
+		}
+		break;
+	}
 	case eDVBServicePMTHandler::eventTuneFailed:
 	case eDVBServicePMTHandler::eventNoPAT:
 	case eDVBServicePMTHandler::eventNoPMT:
@@ -1302,7 +1318,8 @@ void eDVBServicePlay::serviceEvent(int event)
 		// Check if timeshift is active and we are not already in a recovery state
 		if (recovery_enabled && m_timeshift_enabled && !m_stream_corruption_detected)
 		{
-			eTrace("[PreciseRecovery] Tune Failed/Signal Loss during timeshift. Initiating recovery.");
+			eTrace("[PreciseRecovery] Tune failed/PAT/PMT loss during timeshift. Initiating recovery.");
+			onPreRecovery(); // Allow subclass (eRamServicePlay) to freeze playback position
 			m_stream_corruption_detected = true;
 			handleEofRecovery();
 		}

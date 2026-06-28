@@ -142,6 +142,12 @@ void eRamServicePlay::checkLapAndSeek() {
 		pvr_channel->forceSourcePosition(safe);
 }
 
+void eRamServicePlay::onPreRecovery() {
+	if (!m_stream_corruption_detected) {
+		getPlayPosition(m_frozen_play_position);
+	}
+}
+
 void eRamServicePlay::recordEvent(int event) {
 	if (event == iDVBTSRecorder::eventStreamCorrupt) {
 		if (!m_stream_corruption_detected) {

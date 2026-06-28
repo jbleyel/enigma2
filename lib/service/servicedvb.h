@@ -379,6 +379,7 @@ protected:
 	virtual void handleEofRecovery();
 	virtual void startPreciseRecoveryCheck();
 	void resetRecoveryState(); // Resets all recovery state variables.
+	virtual void onPreRecovery() {} // Hook before recovery flag is set (subclass may freeze position)
 	// -- END: Precise Recovery System --
 };
 
