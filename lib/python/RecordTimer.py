@@ -945,20 +945,30 @@ class RecordTimerEntry(TimerEntry):
 			if self.justplay:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 				if Screens.Standby.inStandby:
+					zapWakeup = config.recording.zap_wakeup.value
+					if zapWakeup == "nothing":
+						self.log(11, "In standby, zap timer ignored.")
+					elif zapWakeup == "zap_no_wakeup":
+						self.wasInStandby = True
+						self.log(11, "In standby, zap without wakeup.")
+						Screens.Standby.inStandby.prev_running_service = self.service_ref.ref
+						Screens.Standby.inStandby.paused_service = None
+					else:
+						self.wasInStandby = True
+						self.log(11, "Wake up and zap.")
+						Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
+						Screens.Standby.inStandby.prev_running_service = self.service_ref.ref
+						Screens.Standby.inStandby.paused_service = None
+						Screens.Standby.inStandby.Power()
 					self.wasInStandby = True
-					# eActionMap.getInstance().bindAction("", -maxsize - 1, self.keypress)
-					self.log(11, "Wake up and zap.")
-					# Set service to zap after standby.
-					Screens.Standby.inStandby.prev_running_service = self.service_ref.ref
-					Screens.Standby.inStandby.paused_service = None
-					# Wakeup standby.
-					Screens.Standby.inStandby.Power()
 				elif config.recording.ask_before_zap.value:
+					Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 					self.log(11, "Asking user before zapping.")
 					message = _("A zap timer wants to switch the channel.\nDo you want to zap now?\n")
 					AddModalNotification(text=message, timeout=30, default=True, windowTitle=_("Shutdown"), callback=self.zapTimerCB)
 				else:
 					self.log(11, "Zapping.")
+					Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 					NavigationInstance.instance.isMovieplayerActive()
 					if InfoBar and InfoBar.instance and InfoBar.instance.servicelist:
 						InfoBar.instance.servicelist.performZap(self.service_ref.ref)
