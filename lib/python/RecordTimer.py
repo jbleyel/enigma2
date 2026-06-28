@@ -953,6 +953,10 @@ class RecordTimerEntry(TimerEntry):
 					Screens.Standby.inStandby.paused_service = None
 					# Wakeup standby.
 					Screens.Standby.inStandby.Power()
+				elif config.recording.ask_before_zap.value:
+					self.log(11, "Asking user before zapping.")
+					message = _("A zap timer wants to switch the channel.\nDo you want to zap now?\n")
+					AddModalNotification(text=message, timeout=30, default=True, windowTitle=_("Shutdown"), callback=self.zapTimerCB)
 				else:
 					self.log(11, "Zapping.")
 					NavigationInstance.instance.isMovieplayerActive()
@@ -1417,6 +1421,17 @@ class RecordTimerEntry(TimerEntry):
 		else:
 			self.log(14, "User didn't want to zap away, recording will probably fail!")
 		self.messageBoxAnswerPending = False
+
+	def zapTimerCB(self, answer):
+		if answer:
+			self.log(11, "User confirmed zap timer.")
+			NavigationInstance.instance.isMovieplayerActive()
+			if InfoBar and InfoBar.instance and InfoBar.instance.servicelist:
+				InfoBar.instance.servicelist.performZap(self.service_ref.ref)
+			else:
+				NavigationInstance.instance.playService(self.service_ref.ref)
+		else:
+			self.log(11, "User cancelled zap timer.")
 
 	def check_justplay(self):
 		if self.justplay:
