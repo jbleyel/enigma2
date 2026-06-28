@@ -3,9 +3,14 @@ from os.path import exists, isdir, isfile, join, split
 
 from enigma import ePicLoad
 
-from Components.config import ConfigSelection, NoSave, config
+from Components.config import ConfigSelection, NoSave, config, configfile
+from Components.PluginComponent import plugins
 from Components.Pixmap import Pixmap
+from Plugins.Plugin import PluginDescriptor
+from Screens.MessageBox import MessageBox
+from Screens.Processing import Processing
 from Screens.Setup import Setup
+from Screens.Standby import TryQuitMainloop, QUIT_RESTART
 from Tools.Directories import SCOPE_GUISKIN, SCOPE_SKINS, resolveFilename
 
 
@@ -84,7 +89,8 @@ class SkinSelection(Setup):
 		self.loadPreview()
 
 	def keySave(self):
-		if config.skin.guiSkin.value != config.skin.primary_skin.value:
+		guiSkinChanged = config.skin.guiSkin.value != config.skin.primary_skin.value
+		if guiSkinChanged:
 			if config.skin.primary_skin.value == "MetrixHD/skin.MySkin.xml":
 				try:
 					from Plugins.Extensions.MyMetrixLite.ActivateSkinSettings import ActivateSkinSettings
@@ -101,7 +107,29 @@ class SkinSelection(Setup):
 			from Screens.ChannelSelection import ChannelSelectionSetup
 			ChannelSelectionSetup.updateSettings(self.session)
 
-		Setup.keySave(self)
+		if guiSkinChanged and config.usage.fastSkinReload.value:
+			Processing.instance.setDescription(_("Loading skin..."))
+			Processing.instance.showProgress(endless=True)
+			configfile.save()
+			open("/etc/.restore_skins", "w").close()
+			from skin import reloadSkins
+			reloadSkins()
+			for plugin in plugins.getPlugins(PluginDescriptor.WHERE_SKINCHANGE):
+				plugin(session=self.session)
+			self.session.reloadDialogs()
+			Processing.instance.hideProgress()
+			self.close(True)
+		elif guiSkinChanged:
+			configfile.save()
+			self.session.openWithCallback(self.restartGUICallback, MessageBox, _("The GUI skin has been changed. Restart the GUI now to apply it?"), MessageBox.TYPE_YESNO)
+		else:
+			Setup.keySave(self)
+
+	def restartGUICallback(self, answer):
+		if answer:
+			self.session.open(TryQuitMainloop, QUIT_RESTART)
+		else:
+			self.close(True)
 
 	def loadPreview(self):
 		def loadImage(root):
