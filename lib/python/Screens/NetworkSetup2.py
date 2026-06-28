@@ -648,8 +648,9 @@ class NetworkConnections(Screen):
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Add"))
 		self["key_yellow"] = StaticText("")
-		self["key_blue"] = StaticText("DNS")
+		self["key_blue"] = StaticText("")
 		self["list"] = List([])
+		self["list"].onSelectionChanged.append(self._updateYellowKey)
 		self["actions"] = HelpableActionMap(
 			self,
 			["OkCancelActions", "ColorActions", "MenuActions"],
@@ -658,7 +659,8 @@ class NetworkConnections(Screen):
 				"cancel": (self.close, _("Close network connection list")),
 				"red": (self.close, _("Close network connection list")),
 				"green": (self._keyGreen, _("Add a new network connection")),
-				"blue": (self._keyBlue, _("Open global DNS settings")),
+				"yellow": (self._keyYellow, _("Activate/Deactivate adapter")),
+				# "blue": (self._keyBlue, _("Open global DNS settings")),
 				"menu": (self._keyMenu, _("Open context menu for selected network connection")),
 			},
 			prio=0,
@@ -706,6 +708,7 @@ class NetworkConnections(Screen):
 				inetIcon = _ICON_INET if (internet and conn.enabled) else ""
 				entries.append(("", "", "", _connSymbol(isLast), _connLine1(conn, adapter), _connLine2(conn, adapter), connColor, inetIcon, conn, adapter))
 		self["list"].setList(entries)
+		self._updateYellowKey()
 
 	def _current(self) -> tuple | None:
 		return self["list"].getCurrent()
@@ -716,9 +719,24 @@ class NetworkConnections(Screen):
 			return
 		conn, adapter = entry[8], entry[9]
 		if conn is None:
+			return
+		self._openSetup(conn, adapter)
+
+	def _keyYellow(self):
+		entry = self._current()
+		if entry is None:
+			return
+		conn, adapter = entry[8], entry[9]
+		if conn is None:
 			self._toggleAdapter(adapter)
+
+	def _updateYellowKey(self):
+		entry = self._current()
+		if entry is None or entry[8] is not None:
+			self["key_yellow"].setText("")
 		else:
-			self._openSetup(conn, adapter)
+			adapter = entry[9]
+			self["key_yellow"].setText(_("Deactivate") if adapter.adapterEnabled else _("Activate"))
 
 	def _keyMenu(self):
 		entry = self._current()
@@ -751,6 +769,7 @@ class NetworkConnections(Screen):
 			(_("Settings"), "setup"),
 			(_("Enable connection") if not conn.enabled else _("Disable connection"), "toggle"),
 			(_("Network connection DNS"), "connDns"),
+			(_("Network test"), "test"),
 			(_("Delete network connection"), "delete"),
 		]
 		if conn.isWlan:
@@ -773,6 +792,8 @@ class NetworkConnections(Screen):
 			self._toggleConnection(conn, adapter)
 		elif action == "connDns":
 			self._openConnectionDns(conn)
+		elif action == "test":
+			self.session.open(NetworkAdapterTest2, adapter.name)
 		elif action == "delete":
 			self._confirmDelete(conn, adapter)
 		elif action == "scan":
@@ -796,7 +817,7 @@ class NetworkConnections(Screen):
 		)
 
 	def _keyBlue(self):
-		self.session.open(DnsSettings)
+		pass
 
 	def _toggleAdapter(self, adapter: Adapter):
 		adapter.adapterEnabled = not adapter.adapterEnabled

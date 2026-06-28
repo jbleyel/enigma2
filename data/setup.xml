@@ -4,7 +4,6 @@
 	<!--  NEW NETWORK -->
 
 	<setup key="NetworkConnection" title="Connection Settings">
-		<item level="0" text="Connection name" description="A human-readable label for this connection.">self.cfgName</item>
 		<item level="0" text="Enabled" description="Enable this connection at boot (adds 'auto' to /etc/network/interfaces).">self.cfgEnabled</item>
 		<item level="1" text="Priority" description="Higher value means this connection is preferred when multiple connections are available.">self.cfgPriority</item>
 		<item level="0" text="Use DHCP" description="Obtain IP address, gateway and DNS automatically via DHCP.">self.cfgDhcp</item>
@@ -19,7 +18,7 @@
 	</setup>
 
 	<setup key="NetworkConnectionWlan" title="WLAN Connection Settings">
-		<item level="0" text="Connection name" description="A human-readable label for this connection (e.g. 'Home WiFi').">self.cfgName</item>
+		<item level="0" text="Profile name" description="A human-readable label for this connection (e.g. 'Home WiFi').">self.cfgName</item>
 		<item level="0" text="Enabled" description="Enable this connection at boot.">self.cfgEnabled</item>
 		<item level="0" text="Priority" description="Higher value means this WLAN connection is preferred. wpa_supplicant uses this for automatic network selection.">self.cfgPriority</item>
 		<item level="0" text="Network name (SSID)" description="The name (SSID) of the wireless network.">self.cfgSsid</item>
