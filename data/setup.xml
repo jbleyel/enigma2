@@ -529,7 +529,7 @@
 			<item level="0" text="Put your AV Receiver or Soundbar in Standby" description="When enabled, the connected AV receiver or soundbar will automatically be switched off.">config.hdmicec.control_receiver_standby</item>
 			<item level="0" text="Wake up your AV Receiver or Soundbar from Standby" description="When enabled, the connected AV receiver or soundbar will automatically be switched on.">config.hdmicec.control_receiver_wakeup</item>
 			<item level="0" text="Timing and diagnostics"></item>
-			<item level="0" text="Minimum send interval" description="Delay between CEC commands when sending a series of commands. Some devices require this delay for correct functioning, usually between 50-150ms.">config.hdmicec.minimum_send_interval</item>
+			<item level="0" text="Minimum send interval" description="Optional delay between CEC commands when sending a series of commands. Leave disabled unless a device requires slower transmission.">config.hdmicec.minimum_send_interval</item>
 			<if conditional="config.hdmicec.advanced_settings.value">
 				<item level="0" text="Repeat the sent standby and wake up commands" description="Try to send repeated commands if not all commands were executed (e.g. TV wake up, but not switched to correct input).">config.hdmicec.messages_repeat</item>
 				<if conditional="int(config.hdmicec.messages_repeat.value)">
@@ -862,6 +862,7 @@
 		<item level="2" text="Show recording symbol" description="Configure whether the 'recording' symbol (in the display skin and LCD skin) is visible for real recordings only or also for streaming and pseudo recordings (like in EPGrefresh).">config.recording.show_rec_symbol_for_rec_types</item>
 		<item level="2" text="Show warning before restart" description="Configure for which types of recordings a warning about active recordings is shown when attempting to restart the receiver or the GUI.">config.recording.warn_box_restart_rec_types</item>
 		<item level="2" text="Show free space in timer view" description="When 'Enabled', the timer view will show the free space on the target device. This will wake the device from sleep mode.">config.recording.timerviewshowfreespace</item>
+		<item level="1" text="Delay shutdown after recording" description="When the receiver wakes up from deep standby for a recording, it will show a countdown before shutting down again. Set to 'Disabled' to shut down immediately.">config.recording.shutdown_delay</item>
 		<if requires="CanDescrambleInStandby">
 			<item level="2" text="Descramble in Standby" description="Set to 'Enabled' to descramble queued scrambled recordings in Standby.">config.recording.standbyDescramble</item>
 			<if conditional="config.recording.standbyDescramble.value" indent="1">
@@ -1168,7 +1169,6 @@
 		<item level="2" text="Unscramble receiving http streams" description="Enable to always unscramble received HTTP streams. Uses more resources due to demuxers. Streams with 0x100 in the service type are always unscrambled, regardless of this setting.">config.streaming.descramble_client</item>
 		<item level="2" text="Require authentication for http streams" description="When enabled, authentication is required to watch http streams.">config.streaming.authentication</item>
 		<item level="2" text="Http(s) stream start delay" description="Define additional delay in milliseconds before start of http(s) streams.">config.usage.http_startdelay</item>
-		<item level="2" text="Load unlinked user bouquets" description="Select 'Yes' to enable the loading of unlinked user bouquets. That is, user bouquets that are not included in the bouquets.tv or bouquets.radio files will be loaded. This allows you to, for example, create bouquets that do not conflict with, or get replaced by, bouquets that came from settings packages.">config.misc.load_unlinked_userbouquets</item>
 		<!--item level="2" text="Enable Startup Bootvideo" description="You can Enable or Disable the Startup Bootvideo.">config.misc.bootvideo</item-->
 		<item level="1" text="After PowerLost" description="Select what should be done when the %s %s was shutdown incorrectly, or after the Power was lost.">config.usage.shutdownNOK_action</item>
 		<item level="1" text="Boot-up action" description="Select what should be done when the %s %s was boot-up, normal playing or goto Standby.">config.usage.boot_action</item>

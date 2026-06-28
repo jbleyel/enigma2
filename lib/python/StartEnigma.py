@@ -63,7 +63,7 @@ class Session:
 		from Components.FrontPanelLed import frontPanelLed
 		frontPanelLed.setSession(self)
 		from Tools.Notifications import notificationCenter
-		notificationCenter.session = self
+		notificationCenter.setup(self)
 		self.allDialogs = []
 		for plugin in plugins.getPlugins(PluginDescriptor.WHERE_SESSIONSTART):
 			try:
@@ -453,7 +453,6 @@ def runScreenTest():
 	processing = Processing(session)  # noqa F841
 	enigma.eProfileWrite("Global MessageBox Screen")
 	modalMessagebox = ModalMessageBox(session)  # noqa F841
-	notificationMessagebox = NotificationMessageBox(session)  # noqa F841
 	toast = Toast(session)  # noqa F841
 	enigma.eProfileWrite("PowerKey")
 	power = PowerKey(session)  # noqa F841
@@ -866,7 +865,7 @@ enigma.eProfileWrite("Processing")
 from Screens.Processing import Processing
 
 enigma.eProfileWrite("ModalMessageBox")
-from Screens.MessageBox import ModalMessageBox, NotificationMessageBox
+from Screens.MessageBox import ModalMessageBox
 from Screens.Toast import Toast
 
 enigma.eProfileWrite("StackTracePrinter")

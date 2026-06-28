@@ -72,6 +72,7 @@ def InitRecordingConfig():
 	config.recording.ask_to_abort_pip = ConfigSelection(default="abort_msg", choices=choices)
 	config.recording.prepare_time = ConfigSelection(default=20, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(20, 121, 10)])
 	config.recording.timerviewshowfreespace = ConfigYesNo(default=True)
+	config.recording.shutdown_delay = ConfigSelection(default=0, choices=[(0, _("Disabled"))] + [(x, ngettext("%d Minute", "%d Minutes", x) % x) for x in range(1, 31)])
 
 	if BoxInfo.getItem("CanDescrambleInStandby"):
 		config.recording.standbyDescramble = ConfigEnableDisable(default=True)

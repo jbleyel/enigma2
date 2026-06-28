@@ -24,7 +24,7 @@ from ServiceReference import ServiceReference
 from Tools.ASCIItranslit import legacyEncode
 from Tools.CIHelper import cihelper
 from Tools.Directories import SCOPE_CONFIG, fileReadXML, getRecordingFilename, resolveFilename
-from Tools.Notifications import AddNotification, AddNotificationWithCallback, AddPopup
+from Tools.Notifications import AddModalNotification, AddNotification, AddNotificationWithCallback, AddPopup
 from Tools import Trashcan
 from Tools.XMLTools import stringToXML
 
@@ -1035,13 +1035,23 @@ class RecordTimerEntry(TimerEntry):
 							else:
 								AddNotificationWithCallback(self.sendTryQuitMainloopNotification, MessageBox, message, MessageBox.TYPE_YESNO, timeout=timeout, default=True)
 					else:
-						print("[RecordTimer] quitMainloop #1.")
-						quitMainloop(1)
+						shutdown_delay = config.recording.shutdown_delay.value
+						if shutdown_delay > 0:
+							message = _("A finished record timer wants to shut down\nyour %s %s. Shutdown now?") % getBoxDisplayName()
+							AddModalNotification(text=message, timeout=shutdown_delay * 60, default=True, windowTitle=_("Shutdown"), callback=self.sendTryQuitMainloopNotification)
+						else:
+							print("[RecordTimer] quitMainloop #1.")
+							quitMainloop(1)
 			elif self.afterEvent == AFTEREVENT.AUTO and wasRecTimerWakeup:
 				if not Screens.Standby.inTryQuitMainloop:  # No shutdown message box is open.
 					if Screens.Standby.inStandby:  # In standby.
-						print("[RecordTimer] quitMainloop #2.")
-						quitMainloop(1)
+						shutdown_delay = config.recording.shutdown_delay.value
+						if shutdown_delay > 0:
+							message = _("A finished record timer wants to shut down\nyour %s %s. Shutdown now?") % getBoxDisplayName()
+							AddModalNotification(text=message, timeout=shutdown_delay * 60, default=True, windowTitle=_("Shutdown"), callback=self.sendTryQuitMainloopNotification)
+						else:
+							print("[RecordTimer] quitMainloop #2.")
+							quitMainloop(1)
 			self.wasInStandby = False
 			self.resetTimerWakeup()
 			return True
