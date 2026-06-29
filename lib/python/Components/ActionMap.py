@@ -327,6 +327,8 @@ class NumberActionMap(ActionMap):
 # be picked up by the "Screen".
 #
 class HelpableActionMap(ActionMap):
+	string = globalStrings
+
 	def __init__(self, parent, contexts, actions=None, prio=0, description=None):
 		if isinstance(contexts, str):
 			contexts = [contexts]
