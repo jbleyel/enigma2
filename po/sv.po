@@ -2,20 +2,21 @@
 #
 # Allan Nordhøy <epost@anotheragency.no>, 2024.
 # Daniel Nylander <daniel@danielnylander.se>, 2025.
+# Kristoffer Grundström <swedishsailfishosuser@tutanota.com>, 2026.
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenATV\n"
+"Project-Id-Version: OpenATV Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-11 10:12+0000\n"
-"PO-Revision-Date: 2025-11-11 20:51+0000\n"
-"Last-Translator: Daniel Nylander <daniel@danielnylander.se>\n"
+"POT-Creation-Date: 2026-06-22 11:12+0000\n"
+"PO-Revision-Date: 2026-04-20 04:59+0000\n"
+"Last-Translator: Kristoffer Grundström <swedishsailfishosuser@tutanota.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.15-dev\n"
+"X-Generator: Weblate 5.17.1-dev\n"
 "X-Poedit-SourceCharset: utf-8\n"
 
 msgid ""
@@ -31,9 +32,6 @@ msgid ""
 msgstr ""
 "\n"
 "Inspelning pågår."
-
-msgid " "
-msgstr " "
 
 msgid "  Menu key : Select quad channel"
 msgstr "  Menyknapp : Välj fyrkanal"
@@ -932,7 +930,7 @@ msgstr[1] "%d paket hittades."
 #, python-format
 msgid "%d package has an update."
 msgid_plural "%d packages have updates."
-msgstr[0] "%d paketet har en uppdatering"
+msgstr[0] "%d paketet har en uppdatering."
 msgstr[1] "%d paket har uppdateringar."
 
 #, python-format
@@ -1770,6 +1768,9 @@ msgstr "ATSC-leverantör"
 msgid "AV Setup"
 msgstr "AV-inställning"
 
+msgid "AV receiver, soundbar and remote"
+msgstr ""
+
 msgid "Abkhazian"
 msgstr "Abchaziska"
 
@@ -1849,7 +1850,7 @@ msgid "Activate Picture in Picture"
 msgstr "Aktivera bild i bild"
 
 msgid "Activate UP/DOWN buttons for the 'all up/down' functions at the beginning/end of the column."
-msgstr "Aktivera upp/ner-knappar för funktionerna \"alla upp/ner\" (i början/slutet av kolumnen)?"
+msgstr "Aktivera UPP/NER-knappar för 'allt upp/ner'-funktionerna i början/slutet av kolumnen."
 
 msgid "Activate a way to send individual or specific internal HDMI-CEC commands from the command line."
 msgstr "Aktivera ett sätt att skicka enskilda eller specifika interna HDMI-CEC-kommandon från kommandoraden."
@@ -2035,7 +2036,7 @@ msgstr "Lägg till markerad katalog i bokmärken"
 msgid "Add legacy LEFT/RIGHT actions"
 msgstr "Lägg till äldre vänster/höger-åtgärder"
 
-msgid "Add more slots"
+msgid "Add slots"
 msgstr "Lägg till fler slots"
 
 msgid "Add new CCcam line"
@@ -2128,10 +2129,10 @@ msgid "Adjust the color settings so that all the color shades are distinguishabl
 msgstr "Justera färginställningarna så att alla färgnyanser är urskiljbara, men så mättade som möjligt. Om du är nöjd med resultatet trycker du på OK för att stänga finjusteringen av videon eller använder siffertangenterna för att välja andra testskärmar."
 
 msgid "Adjust the horizontal position of the letters used for teletext."
-msgstr "Justera den horisontella positionen för de bokstäver som används för text-TV."
+msgstr "Justera den horisontella positionen för de bokstäver som används för text-tv."
 
 msgid "Adjust the vertical position of the letters used for teletext."
-msgstr "Justera den vertikala positionen för de bokstäver som används för text-TV."
+msgstr "Justera den vertikala positionen för de bokstäver som används för text-tv."
 
 msgid "Adjusts compensation for hardware buffer latency for DM9x0."
 msgstr ""
@@ -2204,6 +2205,9 @@ msgid "After zap"
 msgstr "Efter zapp"
 
 msgid "Aggregate data only"
+msgstr ""
+
+msgid "Aggressive"
 msgstr ""
 
 msgid "Akan"
@@ -2585,7 +2589,7 @@ msgstr "Är du säker på att du vill radera den här loggen?\n"
 msgid "Are you sure you want to delete this?"
 msgstr "Är du säker på att du vill ta bort detta?"
 
-msgid "Are you sure you want to disable Chkroot Multiboot?"
+msgid "Disable Chkroot Multiboot?"
 msgstr "Är du säker på att du vill inaktivera Chkroot Multiboot?"
 
 #
@@ -2793,6 +2797,9 @@ msgstr "Läge för författande"
 msgid "Auto"
 msgstr "Auto"
 
+msgid "Auto (not available)"
+msgstr "Auto(ej tillgänglig)"
+
 msgid "Auto Language"
 msgstr "Auto Språk"
 
@@ -2856,9 +2863,6 @@ msgstr "Auto-videoläge valt"
 
 msgid "Auto video mode selected for the TV."
 msgstr "Auto-videoläge valt för TV:n."
-
-msgid "Auto (not available)"
-msgstr "Auto(ej tillgänglig)"
 
 msgid "AutoCam Settings"
 msgstr "AutoCam-inställningar"
@@ -3138,7 +3142,7 @@ msgid "Base transparency for OpenOpera web browser."
 msgstr "Grundtransparens för webbläsaren OpenOpera."
 
 msgid "Base transparency for teletext, more options are available within teletext screen."
-msgstr "Base transparency för text-TV, fler alternativ finns tillgängliga på text-TV-skärmen."
+msgstr "Grundläggande transparens för text-tv, fler alternativ finns tillgängliga på text-tv-skärmen."
 
 msgid "Baseball"
 msgstr "Baseboll"
@@ -3384,6 +3388,12 @@ msgstr "Ljusstyrka Video"
 
 msgid "Brightness Video & OSD"
 msgstr "Ljusstyrka Video & OSD"
+
+msgid "Brightness applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr ""
+
+msgid "Brightness applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr ""
 
 msgid "British Indian Ocean Territory"
 msgstr "British Indian Oceanterritoriet"
@@ -3926,6 +3936,12 @@ msgstr "tecknad film/marionetter"
 
 msgid "Cascade PiP"
 msgstr "Cascade PiP"
+
+msgid "Case insensitive"
+msgstr ""
+
+msgid "Case sensitive"
+msgstr ""
 
 msgid "Catalan / Valencian"
 msgstr "Katalanska / Valencianska"
@@ -4538,12 +4554,6 @@ msgstr "Colombia"
 msgid "Color"
 msgstr "Färg"
 
-msgid "Color Bottom"
-msgstr "Färg botten"
-
-msgid "Color Top"
-msgstr "Färg topp"
-
 msgid "Color format"
 msgstr "Färgformat"
 
@@ -4694,7 +4704,7 @@ msgid "Configure front panel LEDs"
 msgstr "Konfigurera LED-lampor på frontpanelen"
 
 msgid "Configure how recording filenames are constructed. Standard: Date Time - Channel - Title Very very short: Title Very short: Title - Date Time Short with time: Date Time - Title Short: Date - Title Long: Date Time - Channel - Title - Info."
-msgstr "Konfigurera hur filnamn för inspelning konstrueras. Standard: Datum Tid - Kanal - Titel Mycket mycket kort: Titel Mycket kort: Titel - Datum Tid Kort med tid: Datum Tid - Titel Kort: Datum - Titel Lång: Datum Tid - Kanal - Titel - Info"
+msgstr "Konfigurera hur filnamnen för inspelning konstrueras. Standard: Datum Tid - Kanal - Titel Mycket mycket kort: Titel Mycket kort: Titel - Datum Tid Kort med tid: Datum Tid - Titel Kort: Datum - Titel Lång: Datum Tid - Kanal - Titel - Info."
 
 msgid "Configure if 'epg.dat' should be saved at all."
 msgstr "Ställ in om epg.dat ska sparas överhuvudtaget."
@@ -4812,7 +4822,7 @@ msgid "Configure the color of the external subtitles, alternative (normal in whi
 msgstr "Konfigurera färgen på den externa undertexten, alternativ (normal i vitt, kursiv i gult, fet i cyan, understrykning i grönt), vit eller gul."
 
 msgid "Configure the color of the teletext subtitles."
-msgstr "Konfigurera färgen på text-TV-undertexterna."
+msgstr "Konfigurera färgen på undertexterna i text-tv."
 
 msgid "Configure the contrast level of the front panel display."
 msgstr "Konfigurera kontrastnivån för displayen på frontpanelen."
@@ -4824,7 +4834,7 @@ msgid "Configure the cursor behavior in the channel selection list. When opening
 msgstr "Konfigurera markörens beteende i kanalvalslistan. När du öppnar kanalvalslistan kan du stanna kvar på den aktuella tjänsten eller redan välja upp/ner och du kan återgå med B+/B- knapparna."
 
 msgid "Configure the display resolution and the font used for teletext."
-msgstr "Konfigurera skärmupplösningen och det teckensnitt som används för text-TV."
+msgstr "Konfigurera skärmupplösningen och de teckensnitt som används för text-tv."
 
 msgid "Configure the duration, in minutes, before the EnergySaver timer activates."
 msgstr "Konfigurera varaktigheten, i minuter, innan EnergySaver-timern aktiveras."
@@ -4833,10 +4843,10 @@ msgid "Configure the duration, in minutes, before the SleepTimer activates."
 msgstr "Konfigurera varaktigheten, i minuter, innan SleepTimer aktiveras."
 
 msgid "Configure the end coordinate in x of the teletext display area."
-msgstr "Konfigurera slutkoordinaten i x för text-TV-visningens område."
+msgstr "Konfigurera slutkoordinaten i x-led för text-tv-ytan."
 
 msgid "Configure the end coordinate in y of the teletext display area."
-msgstr "Konfigurera slutkoordinaten i y för text-TV-bildytan."
+msgstr "Konfigurera slutkoordinaten i y-led för text-tv-ytan."
 
 msgid "Configure the first audio language (highest priority)."
 msgstr "Konfigurera det första ljudspråket (högsta prioritet)."
@@ -4878,7 +4888,7 @@ msgid "Configure the hard disk drive to go to Standby after the specified idle t
 msgstr "Konfigurera hårddiskenheten så att den går till standby efter den angivna inaktivitetstiden."
 
 msgid "Configure the height of the TrueType font letters used for teletext."
-msgstr "Konfigurera höjden på bokstäverna i TrueType-teckensnittet som används för text-TV."
+msgstr "Konfigurera höjden på bokstäverna i TrueType-typsnittet som används för text-tv."
 
 msgid "Configure the horizontal alignment of the subtitles."
 msgstr "Konfigurera den horisontella inriktningen av undertexterna."
@@ -4963,10 +4973,10 @@ msgid "Configure the speed of the background deletion process. Lower speed will 
 msgstr "Konfigurera hastigheten för raderingsprocessen i bakgrunden. Lägre hastighet förbrukar mindre prestanda på hårddisken."
 
 msgid "Configure the start coordinate in x of the teletext display area."
-msgstr "Konfigurera startkoordinaten i x för text-TV-bildytan."
+msgstr "Ställ in startkoordinaten på x-axeln för text-tv-visningsområdet."
 
 msgid "Configure the start coordinate in y of the teletext display area."
-msgstr "Konfigurera startkoordinaten i y för text-TV-områdets visningsområde."
+msgstr "Konfigurera startkoordinaten på y-axeln för text-tv-visningsområdet."
 
 msgid "Configure the subtitle delay when timing information is not available."
 msgstr "Konfigurera fördröjning av undertexter när tidsinformation inte är tillgänglig."
@@ -5002,7 +5012,7 @@ msgid "Configure the width allocated to the service name."
 msgstr "Konfigurera den bredd som tilldelats tjänstenamnet."
 
 msgid "Configure the width of the TrueType font letters used for teletext."
-msgstr "Konfigurera bredden på bokstäverna i TrueType-teckensnittet som används för text-TV."
+msgstr "Konfigurera bredden på bokstäverna i TrueType-typsnittet som används för text-tv."
 
 msgid "Configure this tuner using Simple or Advanced options, loop it through to another tuner, copy a configuration from another tuner or disable it."
 msgstr "Konfigurera den här tunern med hjälp av enkla eller avancerade alternativ, loopa den till en annan tuner, kopiera en konfiguration från en annan tuner eller inaktivera den."
@@ -5014,10 +5024,10 @@ msgid "Configure to show the channel names, picons, or both in the EPG."
 msgstr "Konfigurera för att visa kanalnamn, picons eller båda i EPG."
 
 msgid "Configure whether a bold TrueType font is used for teletext."
-msgstr "Konfigurera om ett fetstilt TrueType-teckensnitt ska användas för text-TV."
+msgstr "Ange om ett fetstilt TrueType-teckensnitt ska användas för text-tv."
 
 msgid "Configure whether a fixed font or a scalable TrueType font is used for teletext."
-msgstr "Konfigurera om ett fast typsnitt eller ett skalbart TrueType-typsnitt ska användas för text-TV."
+msgstr "Ange om ett fast teckensnitt eller ett skalbart TrueType-teckensnitt ska användas för text-tv."
 
 msgid "Configure whether another tuner from the preferred list is allocated for recordings instead of sharing a tuner that is already active receiving the same live TV channel."
 msgstr "Ställ in om en annan tuner från listan över föredragna tuners ska tilldelas för inspelningar i stället för att dela en tuner som redan är aktiv och tar emot samma live-TV-kanal."
@@ -5210,17 +5220,32 @@ msgstr "Kontrast Video"
 msgid "Contrast Video & OSD"
 msgstr "Kontrast Video & OSD"
 
+msgid "Contrast applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr ""
+
+msgid "Contrast applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr ""
+
 msgid "Control LED can be turned on or off here."
 msgstr "Kontroll-LED kan sättas på eller stängas av här."
 
 msgid "Control files:"
 msgstr "Kontrollera filer:"
 
+msgid "Control how files will be sorted in screens that show a file list. Case sensitive will group uppercase files first followed by lowercase files. Case insensitive will sort files alphabetically, ignoring case."
+msgstr ""
+
 msgid "Control of the position how finished timer are shown in the Timer List."
 msgstr "Kontroll av positionen hur färdig timern är visas i Timer List."
 
 msgid "Control the InfoBar fading speed."
 msgstr "Styr hastigheten för nedtoningen av InfoBar."
+
+msgid "Control the smoothing filter used for the dithering process."
+msgstr "Med det här alternativet kan du aktivera ett utjämningsfilter för att styra ditheringprocessen."
+
+msgid "Control the use of vertical scaler anti-aliasing."
+msgstr "Med det här alternativet kan du aktivera den vertikala skalarens dejagging."
 
 msgid "Control your Softcams"
 msgstr "Kontrollera dina mjukvarukameror"
@@ -5390,9 +5415,6 @@ msgstr "Skapa dumpning av applikationsladdare."
 msgid "Create backup image zip file."
 msgstr "Skapa zip-fil med säkerhetskopia."
 
-msgid "Create boot dump."
-msgstr "Skapa startdump."
-
 msgid "Create boot image dump."
 msgstr "Skapa boot image dump."
 
@@ -5448,6 +5470,13 @@ msgstr "Skapa filsystem"
 
 msgid "Creating hard link to time shift file failed!"
 msgstr "Skapande av hård länk till tidsskiftfil misslyckades!"
+
+#, python-format
+msgid ""
+"Creating or activating the swap file failed.\n"
+"\n"
+"%s"
+msgstr ""
 
 msgid "Creating partition"
 msgstr "Skapa partition"
@@ -5730,11 +5759,17 @@ msgstr "DVB-undertexter färg"
 msgid "DVB-C"
 msgstr "DVB-C"
 
+msgid "DVB-C / Cable only"
+msgstr ""
+
 msgid "DVB-C ANNEX B"
 msgstr "DVB-C BILAGA B"
 
 msgid "DVB-C ANNEX C"
 msgstr "DVB-C BILAGA C"
+
+msgid "DVB-C and DVB-T/T2 via external 5V controlled coax switch"
+msgstr ""
 
 #
 msgid "DVB-S"
@@ -5746,6 +5781,9 @@ msgstr "DVB-S2"
 
 msgid "DVB-T"
 msgstr "DVB-T"
+
+msgid "DVB-T/T2 / Terrestrial only"
+msgstr ""
 
 msgid "DVB-T2"
 msgstr "DVB-T2"
@@ -5987,6 +6025,9 @@ msgid "Debug log time format *"
 msgstr "Tidsformat för debugglogg *"
 
 msgid "Decoder release strategy"
+msgstr ""
+
+msgid "Decoder start delay"
 msgstr ""
 
 msgid "Decoder start timeout"
@@ -6289,7 +6330,7 @@ msgstr "Ta bort logg"
 msgid "Delete only highlighted file"
 msgstr "Radera endast markerad fil"
 
-msgid "Delete or Wipe the highlighted slot"
+msgid "Empty or Wipe the highlighted slot"
 msgstr "Ta bort eller radera den markerade platsen"
 
 #
@@ -6987,6 +7028,9 @@ msgstr "Dokumentärer"
 msgid "Dolby Digital downmix is now"
 msgstr "Dolby Digital nedmixning är nu"
 
+msgid "Dolby TrueHD"
+msgstr ""
+
 msgid "Domain"
 msgstr "Domän"
 
@@ -7555,6 +7599,12 @@ msgstr "Aktivera felsökningslogg *"
 msgid "Enable digital downmix"
 msgstr "Aktivera digital nedmixning"
 
+msgid "Enable extended cut file support"
+msgstr ""
+
+msgid "Enable extended cut file support. This will write cut with more information and not only marker."
+msgstr ""
+
 msgid "Enable fallback remote receiver"
 msgstr "Aktivera reservfjärrmottagare"
 
@@ -7590,7 +7640,7 @@ msgid "Enable remote receiver to be tried to tune into services that can't be tu
 msgstr "Gör det möjligt att försöka lyssna på tjänster som inte kan lyssnas på lokalt (t.ex. om tunern är upptagen eller om tjänstetypen inte är tillgänglig på den lokala tunern) med en fjärrstyrd enigma2-mottagare. Ange fullständig URL inklusive http:// och portnummer (normalt ...:8001), t.ex. http://second_box:8001."
 
 msgid "Enable teletext caching"
-msgstr "Aktivera cachelagring av text-TV"
+msgstr "Aktivera cachelagring av text-tv"
 
 msgid "Enable the advanced HDMI-CEC setting options."
 msgstr "Aktivera de avancerade inställningsalternativen för HDMI-CEC."
@@ -7617,7 +7667,7 @@ msgid "Enable this option to add extra EPG data to the debug log file."
 msgstr "Aktivera detta alternativ om du vill lägga till extra EPG-data i felsökningsloggfilen."
 
 msgid "Enable this option to add extra teletext details to the debug log file."
-msgstr "Aktivera detta alternativ för att lägga till extra text-TV-detaljer i felsökningsloggfilen."
+msgstr "Aktivera det här alternativet för att lägga till extra text-tv-detaljer i logg-filen för felsökning."
 
 msgid "Enable this option to add international language and country load information detected during system boot to the debug log file."
 msgstr "Aktivera det här alternativet om du vill lägga till information om internationellt språk och land som upptäcks vid systemstart i felsökningsloggfilen."
@@ -7636,6 +7686,9 @@ msgstr "Aktivera det här alternativet för att lägga till skärmnamn och uppl�
 
 msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
 msgstr "Aktivera det här alternativet för att lägga till information om lagringsenheter som upptäcks under systemstart och hot plug-händelser i debug-loggfilen."
+
+msgid "Enable this option to add text encoding information to the debug log file."
+msgstr ""
 
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Aktivera det här alternativet för att lägga till felsökningsdata för timern i felsökningsloggfilen."
@@ -8604,8 +8657,8 @@ msgstr "Falklandsöarna"
 msgid "Fallback API did not return a valid result."
 msgstr "Fallback API returnerade inte ett giltigt resultat."
 
-msgid "Fallback Font *"
-msgstr "Reservteckensnitt *"
+msgid "Fallback Font"
+msgstr "Reservteckensnitt"
 
 msgid "Fallback Remote Receiver Settings"
 msgstr "Inställningar för reservfjärrmottagare"
@@ -8831,6 +8884,9 @@ msgstr "File ser ut att vara upptagen!\n"
 
 msgid "File compression"
 msgstr "Komprimering av filer"
+
+msgid "File sorting mode"
+msgstr ""
 
 msgid "File system"
 msgstr "Filsystem"
@@ -9195,6 +9251,9 @@ msgstr "Full stretch"
 msgid "Full factory reset"
 msgstr "Fullständig fabriksåterställning"
 
+msgid "Full range (no clipping)"
+msgstr ""
+
 msgid "Full screen"
 msgstr "Fullskärm"
 
@@ -9226,8 +9285,8 @@ msgstr "GStreamer felsökningslogg kategori *"
 msgid "GStreamer debug log level *"
 msgstr "GStreamer felsökningsloggnivå *"
 
-msgid "GUI Skin *"
-msgstr "GUI Skin *"
+msgid "GUI Skin"
+msgstr "GUI Skin"
 
 msgid "Gabon"
 msgstr "Gabon"
@@ -9330,7 +9389,7 @@ msgid "Gibraltar"
 msgstr "Gibraltar"
 
 msgid "Given device id"
-msgstr "Givet enhets-ID"
+msgstr "Angivet enhets-ID"
 
 msgid "Go back to the previous step"
 msgstr "Gå tillbaka till föregående steg"
@@ -9525,6 +9584,9 @@ msgstr "Guyana"
 msgid "H"
 msgstr "H"
 
+msgid "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+msgstr ""
+
 msgid "H: = Hourly / D: = Daily / W: = Weekly / M: = Monthly"
 msgstr "H: = timvis / D: = dagligen / W: = veckovis / M: = månadsvis"
 
@@ -9645,6 +9707,9 @@ msgid "Hardware information"
 msgstr "Information om hårdvara"
 
 msgid "Hardware latency correction"
+msgstr ""
+
+msgid "Hardware revision"
 msgstr ""
 
 msgid "Hardware serial"
@@ -9918,7 +9983,7 @@ msgstr "Timmar Minuter"
 msgid "Hours Minutes Seconds"
 msgstr "Timmar Minuter Sekunder"
 
-msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
+msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels."
 msgstr ""
 
 msgid "Http(s) stream start delay"
@@ -9939,6 +10004,9 @@ msgstr "Ungern"
 msgid "Hybrid Tuner"
 msgstr "Hybrid Tuner"
 
+msgid "Hybrid tuner mode"
+msgstr ""
+
 msgid "Hz"
 msgstr "Hz"
 
@@ -9948,9 +10016,6 @@ msgstr "I"
 
 msgid "I/O priority for scripts"
 msgstr "I/O-prioritet för skript"
-
-msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
-msgstr "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 ny modell"
 
 msgid "IMDb Details"
 msgstr "IMDb-detaljer"
@@ -10356,7 +10421,10 @@ msgid "Include storage device data"
 msgstr "Inkludera data för lagringsenhet"
 
 msgid "Include teletext details"
-msgstr "Inkludera text-TV-detaljer"
+msgstr "Inkludera text-tv-detaljer"
+
+msgid "Include text encoding data"
+msgstr ""
 
 msgid "Include timer data"
 msgstr "Inkludera timerdata"
@@ -10980,7 +11048,7 @@ msgstr "LAN-anslutning"
 msgid "LCD scroll speed"
 msgstr "LCD-skrollhastighet"
 
-msgid "LCD/Front panel *"
+msgid "LCD/Front panel"
 msgstr "LCD/Frontpanel"
 
 msgid "LCN Scanner"
@@ -11251,6 +11319,9 @@ msgstr "Begränsa västerut"
 
 msgid "Limited memory size, swap file required"
 msgstr "Begränsad minnesstorlek, swap-fil krävs"
+
+msgid "Limited range (64..940)"
+msgstr ""
 
 #
 msgid "Limits cancelled"
@@ -11527,6 +11598,9 @@ msgstr "Loopa vidare till"
 
 msgid "Lower Framerate saves CPU Time."
 msgstr "Lägre framerate sparar CPU-tid."
+
+msgid "Lower RGB output clipping limit. 'Full range' = no lower clipping, 'Limited range' clips RGB outputs to 64 (broadcast safe)."
+msgstr ""
 
 msgid "Lower USB"
 msgstr "Lägre USB"
@@ -11821,7 +11895,7 @@ msgstr "Maximalt antal dagar i EPG"
 msgid "Maximum space used (MB)"
 msgstr "Maximalt använt utrymme (MB)"
 
-msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
+msgid "Maximum time to wait for the first descrambling key (CW) before starting the decoder. 'Disabled' starts the decoder immediately without waiting."
 msgstr ""
 
 msgid "Mayotte"
@@ -15025,10 +15099,10 @@ msgstr "Tryck på OK för att använda detta språk.  [%s]"
 msgid "Press OK to use this locale.  [%s]"
 msgstr "Tryck på OK för att använda denna lokal.  [%s]"
 
-msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that image. If available, YELLOW will either delete or wipe the image. A deleted image can be restored with the BLUE button. A wiped image is completely removed and cannot be restored!"
+msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that slot. If available, YELLOW will either delete or wipe the slot. A deleted slot can be restored with the BLUE button. A wiped slot is completely removed and cannot be restored!"
 msgstr "Tryck på knapparna UPP/NED för att välja en plats och tryck på OK eller GRÖN för att starta om till den bilden. Om tillgängligt kommer YELLOW antingen att radera eller torka bilden. En raderad bild kan återställas med den BLÅ knappen. En raderad bild är helt borttagen och kan inte återställas!"
 
-msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that image. If available, YELLOW will disable Multiboot, delete, or wipe the selected image. Press BLUE to add more slots."
+msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that slot. If available, YELLOW will disable MultiBoot, delete, or wipe the selected slot. Press BLUE to add more slots."
 msgstr "Tryck på knapparna UP/DOWN för att välja en slot och tryck sedan på OK eller GREEN för att starta om till den image. Om tillgängligt inaktiverar GUL Multiboot, tar bort eller rensar den valda bilden. Tryck på BLÅ för att lägga till fler platser."
 
 msgid "Press this button to emulate a long press on a button pressed afterwards (this also overrides any other actions assigned to emulation button)."
@@ -15274,8 +15348,8 @@ msgstr "Pushto / Pashto"
 msgid "Put TV in Standby"
 msgstr "Sätt TV:n i standby-läge"
 
-msgid "Put your AV Receiver in Standby"
-msgstr "Sätt din AV-receiver i standby-läge"
+msgid "Put your AV Receiver or Soundbar in Standby"
+msgstr ""
 
 msgid "Python"
 msgstr "Python"
@@ -15405,6 +15479,12 @@ msgstr "RED lång"
 #
 msgid "RF Output Settings"
 msgstr "Inställningar för RF-utgång"
+
+msgid "RGB clamp (lower)"
+msgstr ""
+
+msgid "RGB clamp (upper)"
+msgstr ""
 
 msgid "Racing"
 msgstr ""
@@ -16006,11 +16086,18 @@ msgstr "Byt namn och beskrivning för nya evenemang"
 msgid "Rename only highlighted file"
 msgstr "Byt namn på endast markerad fil"
 
+#, python-format
+msgid "Rename slot '%s' (leave empty to reset):"
+msgstr ""
+
 msgid "Rename the proposed file to be created"
 msgstr "Byt namn på den föreslagna filen som ska skapas"
 
 msgid "Rename the selected service"
 msgstr "Byt namn på den valda tjänsten"
+
+msgid "Rename the highlighted slot"
+msgstr ""
 
 msgid "Rename this tag"
 msgstr "Byt namn på denna tagg"
@@ -16063,7 +16150,7 @@ msgid "Repeats"
 msgstr "Upprepningar"
 
 msgid "Replace `- ` in dialogs with colored text per speaker (like teletext subtitles for the hearing impaired)."
-msgstr "Ersätt `-` i dialoger med färgad text per talare (som text-TV-undertexter för hörselskadade)."
+msgstr "Ersätt `- ` i dialogrutor med färgad text per talare (liknande undertexter för hörselskadade till text-tv)."
 
 #, python-format
 msgid ""
@@ -16755,7 +16842,7 @@ msgstr "Spara filer för tidsförskjutning"
 msgid "Scaler sharpness"
 msgstr "Skalarens skärpa"
 
-msgid "Scaler vertical dejagging"
+msgid "Scaler vertical anti-aliasing"
 msgstr "Fininnstill vertikal dejagging"
 
 #
@@ -17531,6 +17618,9 @@ msgstr "Välj hur parabolantennen ska installeras, t.ex. fast parabol, enkel LNB
 msgid "Select how the schedule is handled with respect to Standby."
 msgstr ""
 
+msgid "Select how this DVB-C/T tuner is connected. Use the external coax switch option only with a 5V controlled coax switch."
+msgstr ""
+
 msgid "Select how to activate the Quick EPG mode."
 msgstr "Välj hur Quick EPG-läget ska aktiveras."
 
@@ -17759,6 +17849,9 @@ msgstr "Välj den standardkatalog som ska användas om katalogen för högerkolu
 msgid "Select the delay before the timer activates."
 msgstr "Välj fördröjning innan timern aktiveras."
 
+msgid "Select the delay to buffer descrambled data before starting playback. This can reduce AC3 audio dropouts by ensuring enough data is available when the decoder starts. Higher values are more stable but increase channel switch time."
+msgstr ""
+
 msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for receivers with multiple satellite tuners."
 msgstr "Välj den fördröjning som ska användas när en Stream Relay-tjänst stängs innan tunern omfördelas till en annan tjänst. Användning av '0' rekommenderas endast för boxar med flera satellitmottagare."
 
@@ -17850,7 +17943,7 @@ msgid "Select the manufacturer of your SCR device. If the manufacturer is not li
 msgstr "Välj tillverkare av din SCR-enhet. Om tillverkaren inte finns med i listan ställer du in \"SCR\" på \"User defined\" och anger enhetens parametrar manuellt enligt specifikationerna."
 
 msgid "Select the method of restoring screen resolution and framebuffer when leaving teletext."
-msgstr "Välj metod för att återställa skärmupplösning och framebuffer när du lämnar text-TV."
+msgstr "Välj metoden för att återställa skärmupplösningen och bildbuffer när du lämnar text-tv."
 
 msgid "Select the model number of your Unicable device. If the model number is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
 msgstr "Välj modellnummer för din Unicable-enhet. Om modellnumret inte finns med i listan, ställ in \"SCR\" på \"User defined\" och ange enhetens parametrar manuellt enligt specifikationerna."
@@ -18104,6 +18197,9 @@ msgstr "Välj om ljudspår från DTS-kanaler ska nedmixas eller omkodas."
 
 msgid "Select whether DTS channel audio tracks should be downmixed to stereo."
 msgstr "Välj om ljudspår från DTS-kanaler ska nedmixas till stereo."
+
+msgid "Select whether Dolby TrueHD audio tracks should be passed through or decoded."
+msgstr ""
 
 msgid "Select whether IPv4, IPv6, or both protocols should be used. If both are enabled then which should be preferred."
 msgstr "Välj läge för DNS."
@@ -19211,7 +19307,7 @@ msgid "Show channel selection"
 msgstr "Visa kanalval"
 
 msgid "Show chapter positions for supported video files."
-msgstr "Visa kapitelpositioner för videofiler som stöds. (gstreamer-versionen måste vara större än 1)"
+msgstr "Visa kapitel-positioner för video-filer som stöds."
 
 msgid "Show columns"
 msgstr "Visa kolumner"
@@ -20440,7 +20536,7 @@ msgstr ""
 
 #
 msgid "Start teletext"
-msgstr "Starta text-TV"
+msgstr "Starta text-tv"
 
 #
 msgid "Start test"
@@ -21100,8 +21196,14 @@ msgstr "TV"
 msgid "TV button mode"
 msgstr "TV-knappens läge"
 
+msgid "TV input and receiver wakeup"
+msgstr ""
+
 msgid "TV physical address report"
 msgstr "Rapport om fysisk adress för TV"
+
+msgid "TV power"
+msgstr ""
 
 msgid "TXT PID"
 msgstr "TXT PID"
@@ -21188,26 +21290,26 @@ msgstr "teknik/naturvetenskap"
 
 #
 msgid "Teletext"
-msgstr "Text-TV"
+msgstr "Text-tv"
 
 #
 msgid "Teletext Actions"
-msgstr "Åtgärder för text-TV"
+msgstr "Åtgärder för text-tv"
 
 msgid "Teletext CleanAlgo (resolution reset algorithm)"
 msgstr "Teletext CleanAlgo (algoritm för återställning av upplösning)"
 
 msgid "Teletext EndX (right border)"
-msgstr "Text-TV EndX (höger kant)"
+msgstr "Text-tv EndX (höger kant)"
 
 msgid "Teletext EndY (upper border)"
-msgstr "Text-TV EndY (övre gränsen)"
+msgstr "Text-tv EndY (övre gränsen)"
 
 msgid "Teletext StartX (left border)"
-msgstr "Text-TV StartX (vänster kant)"
+msgstr "Text-tv StartX (vänster kant)"
 
 msgid "Teletext StartY (lower border)"
-msgstr "Text-TV StartY (nedre gränsen)"
+msgstr "Text-tv StartY (nedre gränsen)"
 
 msgid "Teletext TTFBold (0=normal, 1=bold)"
 msgstr "Teletext TTFBold (0=normal, 1=fet)"
@@ -21234,10 +21336,10 @@ msgid "Teletext base visibility"
 msgstr "Teletextbasens synlighet"
 
 msgid "Teletext font and resolution"
-msgstr "Text-TV-teckensnitt och upplösning"
+msgstr "Teckensnitt och upplösning för text-tv"
 
 msgid "Teletext subtitle color"
-msgstr "Färg för text-TV-undertexter"
+msgstr "Färg för undertext till text-tv"
 
 msgid "Telnet"
 msgstr "Telnet"
@@ -21784,8 +21886,8 @@ msgstr "Detta gör att du kan ändra teckenstorleken i förhållande till hudsto
 msgid "This allows you to change the number of rows shown."
 msgstr "Detta gör att du kan ändra antalet rader som visas."
 
-msgid "This allows you to set the maximum number of digits in a service number, up to 5."
-msgstr "Detta gör att du kan ställa in det maximala antalet siffror i ett servicenummer, upp till 5."
+msgid "This allows you to set the maximum number of digits in a service number, up to 6."
+msgstr "Detta gör att du kan ställa in det maximala antalet siffror i ett servicenummer, upp till 6."
 
 #
 msgid "This bouquet is protected by a parental control PIN!"
@@ -21829,36 +21931,6 @@ msgstr "Detta alternativ gör det möjligt att minska blockbruset i bilden. Sjä
 
 msgid "This option allows to set the level of dynamic contrast of the picture."
 msgstr "Med detta alternativ kan du ställa in nivån på bildens dynamiska kontrast."
-
-msgid "This option allows you to config the Colordepth for UHD."
-msgstr "Med det här alternativet kan du konfigurera färgdjupet för UHD"
-
-msgid "This option allows you to config the Colorimetry for HDR."
-msgstr "Med det här alternativet kan du konfigurera kolorimetri för HDR"
-
-msgid "This option allows you to config the Colorspace from Auto to RGB."
-msgstr "Med det här alternativet kan du konfigurera färgrymden från Auto till RGB"
-
-msgid "This option allows you to enable or disable the 10 Bit Color Mode."
-msgstr "Med det här alternativet kan du aktivera eller inaktivera 10-bitars färgläge"
-
-msgid "This option allows you to enable or disable the 12 Bit Color Mode."
-msgstr "Med det här alternativet kan du aktivera eller inaktivera 12-bitars färgläge"
-
-msgid "This option allows you to force the HDR Modes for UHD."
-msgstr "Med detta alternativ kan du tvinga fram HDR-lägena för UHD"
-
-msgid "This option allows you to force the HDR10 Modes for UHD."
-msgstr "Med detta alternativ kan du tvinga fram HDR10-lägena för UHD"
-
-msgid "This option allows you to force the HLG Modes for UHD."
-msgstr "Med detta alternativ kan du tvinga fram HLG-lägena för UHD"
-
-msgid "This option allows you enable smoothing filter to control the dithering process."
-msgstr "Med det här alternativet kan du aktivera ett utjämningsfilter för att styra ditheringprocessen."
-
-msgid "This option allows you enable the vertical scaler dejagging."
-msgstr "Med det här alternativet kan du aktivera den vertikala skalarens dejagging."
 
 msgid "This option allows you to Power Off the display."
 msgstr "Med detta alternativ kan du stänga av displayen."
@@ -21938,8 +22010,32 @@ msgstr "Med det här alternativet kan du välja vad den första knapptryckningen
 msgid "This option allows you to choose whether or not to display genre information for the event."
 msgstr "Med det här alternativet kan du välja om du vill visa genreinformation för evenemanget eller inte."
 
+msgid "This option allows you to config the Colordepth for UHD."
+msgstr "Med det här alternativet kan du konfigurera färgdjupet för UHD"
+
+msgid "This option allows you to config the Colorimetry for HDR."
+msgstr "Med det här alternativet kan du konfigurera kolorimetri för HDR"
+
+msgid "This option allows you to config the Colorspace from Auto to RGB."
+msgstr "Med det här alternativet kan du konfigurera färgrymden från Auto till RGB"
+
 msgid "This option allows you to enable 3D Surround Sound."
 msgstr "Med det här alternativet kan du aktivera 3D Surround Sound."
+
+msgid "This option allows you to enable or disable the 10 Bit Color Mode."
+msgstr "Med det här alternativet kan du aktivera eller inaktivera 10-bitars färgläge"
+
+msgid "This option allows you to enable or disable the 12 Bit Color Mode."
+msgstr "Med det här alternativet kan du aktivera eller inaktivera 12-bitars färgläge"
+
+msgid "This option allows you to force the HDR Modes for UHD."
+msgstr "Med detta alternativ kan du tvinga fram HDR-lägena för UHD"
+
+msgid "This option allows you to force the HDR10 Modes for UHD."
+msgstr "Med detta alternativ kan du tvinga fram HDR10-lägena för UHD"
+
+msgid "This option allows you to force the HLG Modes for UHD."
+msgstr "Med detta alternativ kan du tvinga fram HLG-lägena för UHD"
 
 msgid "This option allows you to set offset values for different Letterbox resolutions."
 msgstr "Med det här alternativet kan du ställa in offsetvärden för olika Letterbox-upplösningar."
@@ -21951,7 +22047,7 @@ msgid "This option allows you to set the layout view (Text or Graphics)."
 msgstr "Med det här alternativet kan du ställa in layoutvyn (Text eller Grafik)."
 
 msgid "This option allows you to switch Audio to Bluetooth speakers."
-msgstr "Med detta alternativ kan du växla ljud till BT-högtalare."
+msgstr "Det här alternativet tillåter dig att växla Ljud till Bluetooth-högtalare."
 
 msgid "This option allows you to the SNR as a percentage (not all receivers support this)."
 msgstr "Med detta alternativ kan du ange SNR i procent (detta stöds inte av alla mottagare)."
@@ -21963,7 +22059,7 @@ msgid "This option allows you to view the old and new settings side by side."
 msgstr "Med det här alternativet kan du visa de gamla och nya inställningarna sida vid sida."
 
 msgid "This option configures the audio delay value for Bluetooth speakers."
-msgstr "Det här alternativet konfigurerar den allmänna ljudfördröjningen för BT-högtalare."
+msgstr "Det här alternativet konfigurerar ljudfördröjningen för Bluetooth-högtalare."
 
 msgid "This option configures the picture sharpness."
 msgstr "Detta alternativ konfigurerar bildens skärpa."
@@ -22021,18 +22117,6 @@ msgstr "Detta alternativ ställer in skärpan för skalaren, som används när b
 
 msgid "This option sets the suppression of false digital contours, that are the result of a limited number of discrete values."
 msgstr "Det här alternativet anger hur falska digitala konturer, som är resultatet av ett begränsat antal diskreta värden, ska undertryckas."
-
-msgid "This option sets the video & osd picture brightness."
-msgstr "Detta alternativ ställer in ljusstyrkan för video & osd-bilden."
-
-msgid "This option sets the video & osd picture contrast."
-msgstr "Detta alternativ ställer in kontrasten för video- och osd-bilder."
-
-msgid "This option sets the video picture brightness."
-msgstr "Detta alternativ ställer in ljusstyrkan för videobilden."
-
-msgid "This option sets the video picture contrast."
-msgstr "Detta alternativ ställer in kontrasten för videobilden."
 
 msgid "This option sets up the picture sharpness, used when the picture is being upscaled."
 msgstr "Detta alternativ ställer in bildskärpan, som används när bilden skalas upp."
@@ -22365,6 +22449,9 @@ msgstr "Tidsförskjutning"
 
 msgid "Timezone"
 msgstr "Tidszon"
+
+msgid "Timing and diagnostics"
+msgstr ""
 
 msgid "Timor-Leste / East Timor"
 msgstr "Östtimor"
@@ -22874,7 +22961,7 @@ msgid "UP/DOWN button mode"
 msgstr "Läge för upp/ner-knapp"
 
 msgid "UP/DOWN buttons also for 'all up/down'"
-msgstr "Upp/ned-knapparna kan även användas för \"allt upp/ned\"."
+msgstr "UPP/NER-knappar också för 'allt upp/ner'"
 
 msgid "UP80  (keymap.u80)"
 msgstr "UP80 (keymap.u80)"
@@ -22986,7 +23073,7 @@ msgid "United States Minor Outlying Islands"
 msgstr "Förenta staternas mindre öar"
 
 msgid "United States of America"
-msgstr "USA"
+msgstr "Amerikanska Förenta Staterna"
 
 #
 msgid "Universal LNB"
@@ -23172,6 +23259,9 @@ msgstr "Uphops -"
 
 msgid "Uphops: "
 msgstr "Uphops: "
+
+msgid "Upper RGB output clipping limit. 'Full range' = no upper clipping, 'Limited range' clips RGB outputs to 940 (broadcast safe)."
+msgstr ""
 
 msgid "Upper USB"
 msgstr "Övre USB"
@@ -23368,7 +23458,7 @@ msgid "Use original DVB subtitle position"
 msgstr "Använd original DVB-undertextens position"
 
 msgid "Use original teletext position"
-msgstr "Använd originalposition för text-TV"
+msgstr "Använd originalposition för text-tv"
 
 msgid "Use per directory settings"
 msgstr "Använd per kataloginställningar"
@@ -23823,7 +23913,7 @@ msgstr "Visa Rass interaktivt"
 
 #
 msgid "View Teletext"
-msgstr "Visa text-TV"
+msgstr "Visa text-tv"
 
 msgid "View as grid"
 msgstr "Visa som rutnät"
@@ -23917,8 +24007,8 @@ msgstr "Läge för volymjustering"
 msgid "Volume down"
 msgstr "Volym nedåt"
 
-msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
-msgstr "Volymknapparna på mottagarens fjärrkontroll styr TV:ns volym. Om den här funktionen inte stöds har volymknapparna ingen funktion!"
+msgid "Volume keys on the receiver remote will control the TV, AV receiver or soundbar volume over HDMI-CEC. If this feature is not supported the volume keys have no function!"
+msgstr ""
 
 msgid "Volume steps"
 msgstr "Volymsteg"
@@ -24009,8 +24099,8 @@ msgstr "Uppvakningstid innan en timer startar [min]"
 msgid "Wake up to standby"
 msgstr "Vakna till standby"
 
-msgid "Wake up your AV Receiver from Standby"
-msgstr "Väck din AV-receiver från standby"
+msgid "Wake up your AV Receiver or Soundbar from Standby"
+msgstr ""
 
 msgid "Wallis and Futuna"
 msgstr "Wallis och Futuna"
@@ -24266,10 +24356,10 @@ msgid "When enabled, subtitles for the hearing impaired will be preferred over n
 msgstr "När den är aktiverad kommer undertexter för hörselskadade att föredras framför normala undertexter när båda typerna finns tillgängliga."
 
 msgid "When enabled, teletext pages will be cached, allowing faster access."
-msgstr "När detta är aktiverat kommer text-TV-sidorna att cachas, vilket ger snabbare åtkomst."
+msgstr "När detta är aktiverat så kommer text-tv-sidorna att cachas vilket ger snabbare åtkomst."
 
 msgid "When enabled, teletext subtitles will be displayed at their original position."
-msgstr "När den är aktiverad visas text-TV-undertexter på sin ursprungliga plats."
+msgstr "När den är aktiverad så visas undertexterna i text-tv på deras ursprungliga plats."
 
 msgid "When enabled, the PiP can be closed by pressing the EXIT button."
 msgstr "När den är aktiverad kan PiP stängas med exit-knappen."
@@ -24277,14 +24367,14 @@ msgstr "När den är aktiverad kan PiP stängas med exit-knappen."
 msgid "When enabled, the VCR SCART option will be shown on the main menu."
 msgstr "När den är aktiverad visas alternativet VCR SCART på huvudmenyn."
 
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched off."
+msgstr ""
+
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched on."
+msgstr ""
+
 msgid "When enabled, the length of each recording will be shown in the movie list (this might cause some additional loading time)."
 msgstr "När den är aktiverad visas längden på varje inspelning i filmlistan (detta kan orsaka en viss extra laddningstid)."
-
-msgid "When enabled, the receiver will automatically be switched off."
-msgstr "När den är aktiverad stängs mottagaren av automatiskt."
-
-msgid "When enabled, the receiver will automatically be switched on."
-msgstr "När den är aktiverad kommer mottagaren automatiskt att slås på."
 
 msgid "When enabled, the receiver will automatically return to Standby when the TV is turned off."
 msgstr "När denna funktion är aktiverad återgår mottagaren automatiskt till standby när TV:n stängs av."
@@ -24361,8 +24451,8 @@ msgstr "När inmatningsmarkören når denna punkt (procent av bredden, från bå
 msgid "When the receiver wakes from Standby or Deep Standby it will send a command to the TV to bring it out of Standby."
 msgstr "När mottagaren vaknar från standby eller djup standby skickar den ett kommando till TV:n för att få den att gå ur standby."
 
-msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
-msgstr "När mottagaren vaknar från standby kommer den att beordra TV:n att växla till den HDMI-ingång som mottagaren är ansluten till."
+msgid "When the receiver wakes from Standby, send active source, stream path and routing commands so the TV switches to the HDMI input connected to the receiver."
+msgstr ""
 
 msgid "When the red box is correctly visible press the GREEN button to save the settings and exit."
 msgstr "När den röda rutan är korrekt synlig trycker du på den GRÖNA knappen för att spara inställningarna och avsluta."
@@ -25742,6 +25832,51 @@ msgstr "ja (behåller flöden)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
+#~ msgstr "När mottagaren vaknar från standby kommer den att beordra TV:n att växla till den HDMI-ingång som mottagaren är ansluten till."
+
+#~ msgid "Put your AV Receiver in Standby"
+#~ msgstr "Sätt din AV-receiver i standby-läge"
+
+#~ msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
+#~ msgstr "Volymknapparna på mottagarens fjärrkontroll styr TV:ns volym. Om den här funktionen inte stöds har volymknapparna ingen funktion!"
+
+#~ msgid "Wake up your AV Receiver from Standby"
+#~ msgstr "Väck din AV-receiver från standby"
+
+#~ msgid "When enabled, the receiver will automatically be switched off."
+#~ msgstr "När den är aktiverad stängs mottagaren av automatiskt."
+
+#~ msgid "When enabled, the receiver will automatically be switched on."
+#~ msgstr "När den är aktiverad kommer mottagaren automatiskt att slås på."
+
+#~ msgid "Color Bottom"
+#~ msgstr "Färg botten"
+
+#~ msgid "Color Top"
+#~ msgstr "Färg topp"
+
+#~ msgid "Create boot dump."
+#~ msgstr "Skapa startdump."
+
+#~ msgid "This option sets the video & osd picture brightness."
+#~ msgstr "Detta alternativ ställer in ljusstyrkan för video & osd-bilden."
+
+#~ msgid "This option sets the video & osd picture contrast."
+#~ msgstr "Detta alternativ ställer in kontrasten för video- och osd-bilder."
+
+#~ msgid "This option sets the video picture brightness."
+#~ msgstr "Detta alternativ ställer in ljusstyrkan för videobilden."
+
+#~ msgid "This option sets the video picture contrast."
+#~ msgstr "Detta alternativ ställer in kontrasten för videobilden."
+
+#~ msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+#~ msgstr "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 ny modell"
+
+#~ msgid " "
+#~ msgstr " "
 
 #~ msgid "Error retrieving location of 'epg.dat' on the remote receiver!"
 #~ msgstr "Fel vid hämtning av platsen för 'epg.dat' på fjärrmottagaren!"

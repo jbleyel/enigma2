@@ -6,10 +6,10 @@
 # Milan Koljanin <lane58@gmail.com>, 2026.
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenATV 7.6.1 Devel\n"
+"Project-Id-Version: OpenATV Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-11 10:12+0000\n"
-"PO-Revision-Date: 2026-02-13 00:17+0000\n"
+"POT-Creation-Date: 2026-06-22 11:12+0000\n"
+"PO-Revision-Date: 2026-06-22 23:42+0000\n"
 "Last-Translator: Milan Koljanin <lane58@gmail.com>\n"
 "Language-Team: Serbian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/sr/>\n"
 "Language: sr\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 msgid ""
 "\n"
@@ -32,9 +32,6 @@ msgid ""
 msgstr ""
 "\n"
 "Snimanje u toku."
-
-msgid " "
-msgstr " ."
 
 msgid "  Menu key : Select quad channel"
 msgstr "  Taster menija: Izaberite 4x kanal"
@@ -942,9 +939,9 @@ msgstr[2] "%d paketi pronađeni."
 #, python-format
 msgid "%d package has an update."
 msgid_plural "%d packages have updates."
-msgstr[0] "%d paket ima ažuriranje"
-msgstr[1] "%d paketi imaju ažuriranja."
-msgstr[2] "%d paketi imaju ažuriranja."
+msgstr[0] "%d paket ima ažuriranje."
+msgstr[1] "%d paketa imaju ažuriranja."
+msgstr[2] "%d paketa imaju ažuriranja."
 
 #, python-format
 msgid "%d package installable."
@@ -1756,6 +1753,9 @@ msgstr "ATSC provajder"
 msgid "AV Setup"
 msgstr "AV Postavke"
 
+msgid "AV receiver, soundbar and remote"
+msgstr "AV risiver, zvučna traka i daljinski"
+
 msgid "Abkhazian"
 msgstr "Abhazijski"
 
@@ -1993,7 +1993,7 @@ msgstr "Dodaj izabranu fasciklu u označivač"
 msgid "Add legacy LEFT/RIGHT actions"
 msgstr "Dodavanje zastarelih radnji LEVO/DESNO"
 
-msgid "Add more slots"
+msgid "Add slots"
 msgstr "Dodaj još slotova"
 
 msgid "Add new CCcam line"
@@ -2151,6 +2151,9 @@ msgstr "Posle zap"
 
 msgid "Aggregate data only"
 msgstr "Samo zbirni podaci"
+
+msgid "Aggressive"
+msgstr "Agresivan"
 
 msgid "Akan"
 msgstr "Akan"
@@ -2512,7 +2515,7 @@ msgstr "Sigurno hoćete izbrisati ovaj log:\n"
 msgid "Are you sure you want to delete this?"
 msgstr "Želite li izbrisati to?"
 
-msgid "Are you sure you want to disable Chkroot Multiboot?"
+msgid "Disable Chkroot Multiboot?"
 msgstr "Da li ste sigurni da želite da onemogućite Chkroot Multiboot?"
 
 msgid "Are you sure you want to exit this wizard?"
@@ -2710,6 +2713,9 @@ msgstr "Autorski režim"
 msgid "Auto"
 msgstr "Auto"
 
+msgid "Auto (not available)"
+msgstr "Auto(nije dostupno)"
+
 msgid "Auto Language"
 msgstr "Auto Jezik"
 
@@ -2766,9 +2772,6 @@ msgstr "Izabran automatski video režim"
 
 msgid "Auto video mode selected for the TV."
 msgstr "Automatski režim videa je izabran za TV."
-
-msgid "Auto (not available)"
-msgstr "Auto(nije dostupno)"
 
 msgid "AutoCam Settings"
 msgstr "AutoCam Postavke"
@@ -3266,6 +3269,12 @@ msgstr "Osvetljenje Videa"
 
 msgid "Brightness Video & OSD"
 msgstr "Osvetljenje Videa & OSD"
+
+msgid "Brightness applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr "Osvetljenje primenjeno na kombinovani video + OSD izlaz. Utiče na sve na ekranu uključujući i ovaj meni."
+
+msgid "Brightness applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr "Osvetljenje primenjeno samo na sloj videa. Ne utiče na enigma2 menije ili OSD."
 
 msgid "British Indian Ocean Territory"
 msgstr "British Indian Ocean Territory"
@@ -3794,6 +3803,12 @@ msgstr "Crtaći/ Lutke"
 
 msgid "Cascade PiP"
 msgstr "Kaskadni PiP"
+
+msgid "Case insensitive"
+msgstr "Nezavisno od velikih i malih slova"
+
+msgid "Case sensitive"
+msgstr "Osetljivo na velika i mala slova"
 
 msgid "Catalan / Valencian"
 msgstr "Catalan / Valencian"
@@ -4373,12 +4388,6 @@ msgstr "Colombia"
 
 msgid "Color"
 msgstr "Boja"
-
-msgid "Color Bottom"
-msgstr "Boja Dole"
-
-msgid "Color Top"
-msgstr "Boja Gore"
 
 msgid "Color format"
 msgstr "Format Boje"
@@ -5022,17 +5031,32 @@ msgstr "Kontrast Videa"
 msgid "Contrast Video & OSD"
 msgstr "Kontrast Videa & OSD"
 
+msgid "Contrast applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr "Kontrast primenjen na kombinovani video + OSD izlaz. Uticaće na sve na ekranu, uključujući ovaj meni."
+
+msgid "Contrast applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr "Kontrast se primenjuje samo na video sloj. Ne utiče na enigma2 menije ili OSD."
+
 msgid "Control LED can be turned on or off here."
 msgstr "Kontrolni LED se ovde može uključiti ili isključiti."
 
 msgid "Control files:"
 msgstr "Kontrolni fajlovi:"
 
+msgid "Control how files will be sorted in screens that show a file list. Case sensitive will group uppercase files first followed by lowercase files. Case insensitive will sort files alphabetically, ignoring case."
+msgstr "Kontrolišite kako će fajlovi biti sortirani na ekranima koji prikazuju listu fajlova. Osetljivo na velika i mala slova će grupisati fajlove sa velikim slovima prvo, a zatim fajlove sa malim slovima. Neosetljivo na velika i mala slova će sortirati fajlove alfabetski, ignorišući razliku u slovima."
+
 msgid "Control of the position how finished timer are shown in the Timer List."
 msgstr "Kontrolna pozicija završenih tajmera na spisku tajmera."
 
 msgid "Control the InfoBar fading speed."
 msgstr "Kontrolisanje brzine isčezavanja info trake."
+
+msgid "Control the smoothing filter used for the dithering process."
+msgstr "Оva opcija omogućava da omogućite filter za uglačavanje kontroliše proces zatamnjavanja."
+
+msgid "Control the use of vertical scaler anti-aliasing."
+msgstr "Оva opcija omogućava da omogućite vertikalno pomeranje razmere."
 
 msgid "Control your Softcams"
 msgstr "Kontroliši svoj Softcam"
@@ -5197,9 +5221,6 @@ msgstr "Kreirajte deponiju utovarivača aplikacija."
 msgid "Create backup image zip file."
 msgstr "Kreirajte rezervnu sliku zip datoteku."
 
-msgid "Create boot dump."
-msgstr "Kreiraj boot dump."
-
 msgid "Create boot image dump."
 msgstr "Kreirajte boot imidž dump."
 
@@ -5254,6 +5275,16 @@ msgstr "Kreiranje fajl sistema"
 
 msgid "Creating hard link to time shift file failed!"
 msgstr "Kreiranje čvrste veze tajmšifta nije uspelo!"
+
+#, python-format
+msgid ""
+"Creating or activating the swap file failed.\n"
+"\n"
+"%s"
+msgstr ""
+"Kreiranje ili aktiviranje zamene datoteke nije uspelo.\n"
+"\n"
+"%s"
 
 msgid "Creating partition"
 msgstr "Kreiranje particije"
@@ -5520,11 +5551,17 @@ msgstr "DVB subtitl boja"
 msgid "DVB-C"
 msgstr "DVB-C"
 
+msgid "DVB-C / Cable only"
+msgstr "DVB-C / Cable samo"
+
 msgid "DVB-C ANNEX B"
 msgstr "DVB-C ANNEX B"
 
 msgid "DVB-C ANNEX C"
 msgstr "DVB-C ANNEX C"
+
+msgid "DVB-C and DVB-T/T2 via external 5V controlled coax switch"
+msgstr "DVB-C i DVB-T/T2 preko spoljnog koaksijalnog prekidača kontrolisanog na 5V"
 
 msgid "DVB-S"
 msgstr "DVB-S"
@@ -5534,6 +5571,9 @@ msgstr "DVB-S2"
 
 msgid "DVB-T"
 msgstr "DVB-T"
+
+msgid "DVB-T/T2 / Terrestrial only"
+msgstr "DVB-T/T2 / Samo zemaljski"
 
 msgid "DVB-T2"
 msgstr "DVB-T2"
@@ -5768,6 +5808,9 @@ msgstr "Format vremena otklanjanja grešaka *"
 msgid "Decoder release strategy"
 msgstr "Strategija puštanja dekodera"
 
+msgid "Decoder start delay"
+msgstr "Kašnjenje pokretanja dekodera"
+
 msgid "Decoder start timeout"
 msgstr "Vreme čekanja za pokretanje dekodera"
 
@@ -5824,7 +5867,7 @@ msgid "Default right column directory"
 msgstr "Podrazumevani direktorijum desne kolone"
 
 msgid "Default sort order for directories in the left column."
-msgstr "Podrazumevani redosled sortiranja za direktorijume u levoj koloni"
+msgstr "Podrazumevani redosled sortiranja za direktorijume u levoj koloni."
 
 msgid "Default sort order for directories in the right column."
 msgstr "Podrazumevani redosled sortiranja za direktorijume u desnoj koloni."
@@ -6054,7 +6097,7 @@ msgstr "Izbriši log"
 msgid "Delete only highlighted file"
 msgstr "Izbriši samo istaknuti fajl"
 
-msgid "Delete or Wipe the highlighted slot"
+msgid "Empty or Wipe the highlighted slot"
 msgstr "Izbriši ili ukloni istaknuti slot"
 
 msgid "Delete play list entry"
@@ -6706,6 +6749,9 @@ msgstr "Dokumentarac"
 msgid "Dolby Digital downmix is now"
 msgstr "Dolby Digital downmix je sada"
 
+msgid "Dolby TrueHD"
+msgstr "Dolby TrueHD"
+
 msgid "Domain"
 msgstr "Domena"
 
@@ -7239,6 +7285,12 @@ msgstr "Omogući log otklanjanja greške *"
 msgid "Enable digital downmix"
 msgstr "Omogući digital downmix"
 
+msgid "Enable extended cut file support"
+msgstr "Omogući podršku za fajlove sa proširenim isečkom"
+
+msgid "Enable extended cut file support. This will write cut with more information and not only marker."
+msgstr "Omogući podršku za fajlove sa proširenim rezom. Ovo će zapisivati rez sa više informacija, a ne samo marker."
+
 msgid "Enable fallback remote receiver"
 msgstr "Omogući povrati udaljeni resiver"
 
@@ -7319,6 +7371,9 @@ msgstr "Omogući opciju dodavanja imena ekrana i podatke rezolucije u fajl evide
 
 msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
 msgstr "Omogućite ovu opciju da dodate informacije o uređaju za skladištenje otkrivene tokom pokretanja sistema i hot plug događaja u datoteku dnevnika za otklanjanje grešaka."
+
+msgid "Enable this option to add text encoding information to the debug log file."
+msgstr "Omogućite ovu opciju da dodate informacije o kodiranju teksta u datoteku dnevnika za otklanjanje grešaka."
 
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Omogući opciju dodavanja tajmera i podatke u fajl evidencije otklanjanja greške."
@@ -8241,8 +8296,8 @@ msgstr "Falkland Islands (Malvinas)"
 msgid "Fallback API did not return a valid result."
 msgstr "Rezervni API nije vratio važeći rezultat."
 
-msgid "Fallback Font *"
-msgstr "Rezervni font *"
+msgid "Fallback Font"
+msgstr "Rezervni font"
 
 msgid "Fallback Remote Receiver Settings"
 msgstr "Rezervni daljinski prijemnik Podešavanja"
@@ -8461,6 +8516,9 @@ msgstr "Izgleda da je fajl zauzet.\n"
 
 msgid "File compression"
 msgstr "Fajl kompresija"
+
+msgid "File sorting mode"
+msgstr "Režim sortiranja datoteka"
 
 msgid "File system"
 msgstr "Sistem fajla"
@@ -8802,6 +8860,9 @@ msgstr "Puno Razvlačenje"
 msgid "Full factory reset"
 msgstr "Fabrički reset"
 
+msgid "Full range (no clipping)"
+msgstr "Puni opseg (bez sečenja)"
+
 msgid "Full screen"
 msgstr "Ceo ekran"
 
@@ -8832,8 +8893,8 @@ msgstr "GStreamer evidencija otklanjanja grešaka *"
 msgid "GStreamer debug log level *"
 msgstr "GStreamer nivo otklanjanja grešaka *"
 
-msgid "GUI Skin *"
-msgstr "GUI Skin *"
+msgid "GUI Skin"
+msgstr "GUI Skin"
 
 msgid "Gabon"
 msgstr "Gabon"
@@ -9115,6 +9176,9 @@ msgstr "Guyana"
 msgid "H"
 msgstr "H"
 
+msgid "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+msgstr "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 novi Model"
+
 msgid "H: = Hourly / D: = Daily / W: = Weekly / M: = Monthly"
 msgstr "H: = Časovno / D: = Svakodnevno / W: = Nedeljno / M: = Mesečno"
 
@@ -9231,6 +9295,9 @@ msgstr "Hardver info"
 
 msgid "Hardware latency correction"
 msgstr "Ispravka kašnjenja hardvera"
+
+msgid "Hardware revision"
+msgstr "Revizija hardvera"
 
 msgid "Hardware serial"
 msgstr "Hardver serijski broj"
@@ -9496,8 +9563,8 @@ msgstr "Sat Minute"
 msgid "Hours Minutes Seconds"
 msgstr "Čas Minute Sekunde"
 
-msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
-msgstr "Kako osloboditi hardverski dekoder prilikom prelaska na softversko dešifrovanje. 'Brzo' ga odmah oslobađa (brže prebacivanje kanala). 'Normalno' prvo vrši pravilno gašenje (stabilnije na nekim uređajima)."
+msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels."
+msgstr "Kako osloboditi hardverski dekoder prilikom prelaska na softversko dekodiranje. 'Brzo' oslobađa odmah (brže prebacivanje kanala). 'Normalno' prvo izvršava čisto gašenje (stabilnije na nekim uređajima). 'Agresivno' vrši potpuno pokretanje dekodera između šifrovanih kanala."
 
 msgid "Http(s) stream start delay"
 msgstr "Kašnjenje početka http strima"
@@ -9514,6 +9581,9 @@ msgstr "Hungary"
 msgid "Hybrid Tuner"
 msgstr "Hibridni Tjuner"
 
+msgid "Hybrid tuner mode"
+msgstr "Hibridni režim tjunera"
+
 msgid "Hz"
 msgstr "Hz"
 
@@ -9522,9 +9592,6 @@ msgstr "I"
 
 msgid "I/O priority for scripts"
 msgstr "I/O prioritet za skripte"
-
-msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
-msgstr "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 novi Model"
 
 msgid "IMDb Details"
 msgstr "IMDb Detalji"
@@ -9919,6 +9986,9 @@ msgstr "Uključite podatke o uređaju za skladištenje"
 
 msgid "Include teletext details"
 msgstr "Uključite detalje teleteksta"
+
+msgid "Include text encoding data"
+msgstr "Uključi podatke o kodiranju teksta"
 
 msgid "Include timer data"
 msgstr "Uključiti tajmer podatke"
@@ -10500,8 +10570,8 @@ msgstr "LAN veza"
 msgid "LCD scroll speed"
 msgstr "LCD brzina pomeranja"
 
-msgid "LCD/Front panel *"
-msgstr "LCD/Prednji panel *"
+msgid "LCD/Front panel"
+msgstr "LCD/Prednji panel"
 
 msgid "LCN Scanner"
 msgstr "LCN Skener"
@@ -10752,6 +10822,9 @@ msgstr "Limit zapad"
 
 msgid "Limited memory size, swap file required"
 msgstr "Ograničena veličina memorije, potrebna je zamena fajla"
+
+msgid "Limited range (64..940)"
+msgstr "Ograničen opseg (64..940)"
 
 msgid "Limits cancelled"
 msgstr "Limit otkazan"
@@ -11007,6 +11080,9 @@ msgstr "Petlja kroz"
 
 msgid "Lower Framerate saves CPU Time."
 msgstr "Niža brzina frejma štedi CPU vreme."
+
+msgid "Lower RGB output clipping limit. 'Full range' = no lower clipping, 'Limited range' clips RGB outputs to 64 (broadcast safe)."
+msgstr "Donja granica isecanja RGB izlaza. 'Puni opseg' = nema donjeg isecanja, 'Ograničeni opseg' seče RGB izlaze na 64 (bezbedno za emitovanje)."
 
 msgid "Lower USB"
 msgstr "Donji USB"
@@ -11286,8 +11362,8 @@ msgstr "Maksimalni broj dana u EPG"
 msgid "Maximum space used (MB)"
 msgstr "Maksimalno iskorišćen prostor (MB)"
 
-msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
-msgstr "Maksimalno vreme čekanja na dolazne podatke i ključeve za dešifrovanje (CW) pre pokretanja dekodera. Obično oba stignu mnogo brže i ovo je samo za posebne slučajeve."
+msgid "Maximum time to wait for the first descrambling key (CW) before starting the decoder. 'Disabled' starts the decoder immediately without waiting."
+msgstr "Maksimalno vreme čekanja za prvi ključ za dešifrovanje (CW) pre nego što se pokrene dekoder. 'Isključeno' pokreće dekoder odmah bez čekanja."
 
 msgid "Mayotte"
 msgstr "Mayotte"
@@ -14276,10 +14352,10 @@ msgstr "Pritisni ОК da bi koristili ovaj jezik.  [%s]"
 msgid "Press OK to use this locale.  [%s]"
 msgstr "Pritisni OK da bi koristili ovaj lokalni standard.  [%s]"
 
-msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that image. If available, YELLOW will either delete or wipe the image. A deleted image can be restored with the BLUE button. A wiped image is completely removed and cannot be restored!"
+msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that slot. If available, YELLOW will either delete or wipe the slot. A deleted slot can be restored with the BLUE button. A wiped slot is completely removed and cannot be restored!"
 msgstr "Pritisni GORE/DOLE da bi izabrali slot i pritisni OK ili ZELENA da bi ponovo pokrenuli resiver sa tim imidžom. ŽUTA briše izabrani imidž. Izbrisani imidž se može vratiti pomoću PLAVOG tastera. Obrisani imidž je potpuno uklonjen i nemože se vratiti u predhodno stanje!"
 
-msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that image. If available, YELLOW will disable Multiboot, delete, or wipe the selected image. Press BLUE to add more slots."
+msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that slot. If available, YELLOW will disable MultiBoot, delete, or wipe the selected slot. Press BLUE to add more slots."
 msgstr "Pritisnite dugmad GORE/DOLE da izaberete slot, zatim pritisnite OK ili ZELENO da restartujete u tu sliku. Ako je dostupno, ŽUTO će onemogućiti Multiboot, izbrisati ili obrisati izabranu sliku. Pritisnite PLAVO da dodate više slotova."
 
 msgid "Press this button to emulate a long press on a button pressed afterwards (this also overrides any other actions assigned to emulation button)."
@@ -14517,8 +14593,8 @@ msgstr "Pushto / Pashto"
 msgid "Put TV in Standby"
 msgstr "Stavi TV na čekanje"
 
-msgid "Put your AV Receiver in Standby"
-msgstr "Stavite svoj AV prijemnik u režim čekanja"
+msgid "Put your AV Receiver or Soundbar in Standby"
+msgstr "Stavi svoj AV risiver ili zvučnu tablu na čekanje"
 
 msgid "Python"
 msgstr "Python"
@@ -14639,6 +14715,12 @@ msgstr "CRVENO dugo"
 
 msgid "RF Output Settings"
 msgstr "RF Izlaz Postavke"
+
+msgid "RGB clamp (lower)"
+msgstr "RGB ograničenje (donje)"
+
+msgid "RGB clamp (upper)"
+msgstr "RGB ograničenje (gornje)"
 
 msgid "Racing"
 msgstr "Trkanje"
@@ -15197,11 +15279,18 @@ msgstr "Preimenovanje imena i opisa za nove događaje"
 msgid "Rename only highlighted file"
 msgstr "Preimenuj samo istaknuti fajl"
 
+#, python-format
+msgid "Rename slot '%s' (leave empty to reset):"
+msgstr "Preimenuj slot '%s' (ostavi prazno da resetuješ):"
+
 msgid "Rename the proposed file to be created"
 msgstr "Preimenuj predloženi fajl za kreiranje"
 
 msgid "Rename the selected service"
 msgstr "Preimenujte izabrani servis"
+
+msgid "Rename the highlighted slot"
+msgstr "Preimenuj izabrani slot"
 
 msgid "Rename this tag"
 msgstr "Preimenuj ovu oznaku"
@@ -15889,7 +15978,7 @@ msgstr "Sačuvati tajmšift fajl"
 msgid "Scaler sharpness"
 msgstr "Oštrina skale"
 
-msgid "Scaler vertical dejagging"
+msgid "Scaler vertical anti-aliasing"
 msgstr "Razmera vertikalnog dejagginga"
 
 msgid "Scaling mode"
@@ -16640,6 +16729,9 @@ msgstr "Izaberi kako je satelitska antena podešena. npr. fiksna antena, jedan L
 msgid "Select how the schedule is handled with respect to Standby."
 msgstr "Izaberite kako se raspored upravlja u vezi sa režimom čekanja."
 
+msgid "Select how this DVB-C/T tuner is connected. Use the external coax switch option only with a 5V controlled coax switch."
+msgstr "Izaberi kako je ovaj DVB-C/T tjuner povezan. Opcija za spoljni kabel prekidač koristi samo 5V kontrolisanim kabel prekidačem."
+
 msgid "Select how to activate the Quick EPG mode."
 msgstr "Izaberi kako da aktivirate brzi EPG režim."
 
@@ -16861,6 +16953,9 @@ msgstr "Izaberi default direktorijum koji će se koristiti ako direktorijum desn
 
 msgid "Select the delay before the timer activates."
 msgstr "Izaberi odlaganje pre nego što se tajmer aktivira."
+
+msgid "Select the delay to buffer descrambled data before starting playback. This can reduce AC3 audio dropouts by ensuring enough data is available when the decoder starts. Higher values are more stable but increase channel switch time."
+msgstr "Izaberite kašnjenje za keširanje dešifrovanih podataka pre nego što počne reprodukcija. Ovo može smanjiti prekide AC3 zvuka tako što osigurava dovoljno podataka kada dekoder počne. Veće vrednosti su stabilnije, ali povećavaju vreme promene kanala."
 
 msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for receivers with multiple satellite tuners."
 msgstr "Izaberite vremensko kašnjenje koje će se koristiti prilikom zatvaranja Stream Relay servisa pre nego što se tjuner ponovo dodeli za drugi servis. Korišćenje '0' se preporučuje samo za prijemnike sa više satelitskih tjunera."
@@ -17203,6 +17298,9 @@ msgstr "Izaberi da li DTS kanal treba da bude downmixed ili transkodiran."
 
 msgid "Select whether DTS channel audio tracks should be downmixed to stereo."
 msgstr "Izaberi da li DTS kanal treba da bude downmixed u stereo."
+
+msgid "Select whether Dolby TrueHD audio tracks should be passed through or decoded."
+msgstr "Odaberite da li Dolby TrueHD audio zapisi treba da se proslede ili dekodiraju."
 
 msgid "Select whether IPv4, IPv6, or both protocols should be used. If both are enabled then which should be preferred."
 msgstr "Odaberite da li treba koristiti IPv4, IPv6 ili oba protokola. Ako su oba omogućena, navedite koji treba imati prednost."
@@ -20042,8 +20140,14 @@ msgstr "TV"
 msgid "TV button mode"
 msgstr "TV dugme režim"
 
+msgid "TV input and receiver wakeup"
+msgstr "Ulaz na TV-u i buđenje prijemnika"
+
 msgid "TV physical address report"
 msgstr "TV izveštaj fizičke adrese"
+
+msgid "TV power"
+msgstr "Struja za TV"
 
 msgid "TXT PID"
 msgstr "TXT PID"
@@ -20707,8 +20811,8 @@ msgstr "Ovo vam omogućava da promenite veličinu fonta u odnosu na veličinu sk
 msgid "This allows you to change the number of rows shown."
 msgstr "Ovo vam omogućava da promenite broj prikazanih redova."
 
-msgid "This allows you to set the maximum number of digits in a service number, up to 5."
-msgstr "Ovo vam omogućava da postavite maksimalan broj cifara u servis broju, do 5."
+msgid "This allows you to set the maximum number of digits in a service number, up to 6."
+msgstr "Ovo vam omogućava da postavite maksimalan broj cifara u servis broju, do 6."
 
 msgid "This bouquet is protected by a parental control PIN!"
 msgstr "Ovaj buket je zaštićen pinom roditeljske kontrole!"
@@ -20752,36 +20856,6 @@ msgstr "Ova opcija omogućava da se smanji blok-buka na slici. Očigledno je to 
 msgid "This option allows to set the level of dynamic contrast of the picture."
 msgstr "Ova opcija omogućava postavljanje nivoa dinamičkog kontrasta slike."
 
-msgid "This option allows you to config the Colordepth for UHD."
-msgstr "Ova opcija omogućava da proverite dubinu boje za UHD"
-
-msgid "This option allows you to config the Colorimetry for HDR."
-msgstr "Ova opcija omogućava da proverite Colorimetry za HDR"
-
-msgid "This option allows you to config the Colorspace from Auto to RGB."
-msgstr "Ova opcija omogućava da proverite Colorspace sa Auto na RGB"
-
-msgid "This option allows you to enable or disable the 10 Bit Color Mode."
-msgstr "Ova opcija omogućava da omogućite ili onemogućite 10 Bit režim boja"
-
-msgid "This option allows you to enable or disable the 12 Bit Color Mode."
-msgstr "Ova opcija omogućava da omogućite ili onemogućite 12 Bit režim boja"
-
-msgid "This option allows you to force the HDR Modes for UHD."
-msgstr "Ova opcija omogućava da prisilite HDR režim za UHD"
-
-msgid "This option allows you to force the HDR10 Modes for UHD."
-msgstr "Ova opcija omogućava da prisilite HDR10 režim za UHD"
-
-msgid "This option allows you to force the HLG Modes for UHD."
-msgstr "Оva opcija omogućava da prisilite HLG režim za UHD"
-
-msgid "This option allows you enable smoothing filter to control the dithering process."
-msgstr "Оva opcija omogućava da omogućite filter za uglačavanje kontroliše proces zatamnjavanja."
-
-msgid "This option allows you enable the vertical scaler dejagging."
-msgstr "Оva opcija omogućava da omogućite vertikalno pomeranje razmere."
-
 msgid "This option allows you to Power Off the display."
 msgstr "Оva opcija omogućava da isključite ekran."
 
@@ -20795,7 +20869,7 @@ msgid "This option allows you to boost the green tones in the picture."
 msgstr "Оva opcija omogućava da pojačate zelene tonove na slici."
 
 msgid "This option allows you to bypass HDMI EDID check."
-msgstr "Оva opcija omogućava da zaobiđete HDMI EDID proveru"
+msgstr "Оva opcija omogućava da zaobiđete HDMI EDID proveru."
 
 msgid "This option allows you to change the virtual loudspeaker position."
 msgstr "Оva opcija omogućava da promenite položaj virtuelnog zvučnika."
@@ -20860,8 +20934,32 @@ msgstr "Ova opcija vam omogućava da izaberete na šta prvi pritisak dugmeta pre
 msgid "This option allows you to choose whether or not to display genre information for the event."
 msgstr "Оva opcija omogućava da odaberete da li želite prikazati info o žanru za događaj."
 
+msgid "This option allows you to config the Colordepth for UHD."
+msgstr "Ova opcija omogućava da proverite dubinu boje za UHD."
+
+msgid "This option allows you to config the Colorimetry for HDR."
+msgstr "Ova opcija omogućava da proverite Colorimetry za HDR."
+
+msgid "This option allows you to config the Colorspace from Auto to RGB."
+msgstr "Ova opcija omogućava da proverite Colorspace sa Auto na RGB."
+
 msgid "This option allows you to enable 3D Surround Sound."
 msgstr "Оva opcija omogućava da omogućite 3D Surround Zvuk."
+
+msgid "This option allows you to enable or disable the 10 Bit Color Mode."
+msgstr "Ova opcija omogućava da omogućite ili onemogućite 10 Bit režim boja."
+
+msgid "This option allows you to enable or disable the 12 Bit Color Mode."
+msgstr "Ova opcija omogućava da omogućite ili onemogućite 12 Bit režim boja."
+
+msgid "This option allows you to force the HDR Modes for UHD."
+msgstr "Ova opcija omogućava da prisilite HDR režim za UHD."
+
+msgid "This option allows you to force the HDR10 Modes for UHD."
+msgstr "Ova opcija omogućava da prisilite HDR10 režim za UHD."
+
+msgid "This option allows you to force the HLG Modes for UHD."
+msgstr "Оva opcija omogućava da prisilite HLG režim za UHD."
 
 msgid "This option allows you to set offset values for different Letterbox resolutions."
 msgstr "Ova opcija vam omogućava da postavite pomak vrednosti razlike Letterbox rezolucije."
@@ -20879,7 +20977,7 @@ msgid "This option allows you to the SNR as a percentage (not all receivers supp
 msgstr "Оva opcija omogućava SNR u procentima (to ne podržavaju svi resiveri)."
 
 msgid "This option allows you to use all HDMI Modes."
-msgstr "Оva opcija omogućava da koristite sve HDMI režime"
+msgstr "Оva opcija omogućava da koristite sve HDMI režime."
 
 msgid "This option allows you to view the old and new settings side by side."
 msgstr "Оva opcija omogućava da stare i nove postavke prikažete jednu do druge."
@@ -20943,18 +21041,6 @@ msgstr "Оva opcija postavlja oštrinu skale koja se koristi prilikom rastezanja
 
 msgid "This option sets the suppression of false digital contours, that are the result of a limited number of discrete values."
 msgstr "Оva opcija postavlja suzbijanje lažnih digitalnih kontura, koje su rezultat ograničenog broja diskretnih vrednosti."
-
-msgid "This option sets the video & osd picture brightness."
-msgstr "Ova opcija postavlja video i osvetljenje slike."
-
-msgid "This option sets the video & osd picture contrast."
-msgstr "Ova opcija postavlja video & osd kontrast slike."
-
-msgid "This option sets the video picture brightness."
-msgstr "Ova opcija postavlja video svetlinu slike."
-
-msgid "This option sets the video picture contrast."
-msgstr "Ova opcija postavlja video kontrast slike."
 
 msgid "This option sets up the picture sharpness, used when the picture is being upscaled."
 msgstr "Оva opcija podešava oštrinu slike koja se koristi prilikom upscaled slike."
@@ -21263,6 +21349,9 @@ msgstr "Tajmšift"
 
 msgid "Timezone"
 msgstr "Vremenska zona"
+
+msgid "Timing and diagnostics"
+msgstr "Vreme i dijagnostika"
 
 msgid "Timor-Leste / East Timor"
 msgstr "Timor-Leste / East Timor"
@@ -22018,6 +22107,9 @@ msgstr "Uphops -"
 msgid "Uphops: "
 msgstr "Uphops: "
 
+msgid "Upper RGB output clipping limit. 'Full range' = no upper clipping, 'Limited range' clips RGB outputs to 940 (broadcast safe)."
+msgstr "Gornja granica ograničenje senčanja RGB izlaza. 'Puni opseg' = bez gornjeg ograničenja senčanja, 'Ograničeni opseg' ograničava RGB izlaze na 940 (sigurno za emitovanje)."
+
 msgid "Upper USB"
 msgstr "Gornji USB"
 
@@ -22734,8 +22826,8 @@ msgstr "Režim podešavanja zvuka"
 msgid "Volume down"
 msgstr "Smanji jačinu zvuka"
 
-msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
-msgstr "Tasteri jačine zvuka na DU resivera će kontrolisati TV jačinu zvuka. Ako ova funkcija nije podržana tasteri za zvuk nemaju funkciju!"
+msgid "Volume keys on the receiver remote will control the TV, AV receiver or soundbar volume over HDMI-CEC. If this feature is not supported the volume keys have no function!"
+msgstr "Tasteri za jačinu zvuka na daljinskom upravljaču prijemnika će kontrolisati jačinu zvuka na TV-u, AV prijemniku ili zvučnoj traci preko HDMI-CEC. Ako ova funkcija nije podržana, tasteri za jačinu zvuka neće imati funkciju!"
 
 msgid "Volume steps"
 msgstr "Korak zvuka"
@@ -22818,8 +22910,8 @@ msgstr "Vreme buđenja pre početka tajmera[min]"
 msgid "Wake up to standby"
 msgstr "Buđenje iz pripravnosti"
 
-msgid "Wake up your AV Receiver from Standby"
-msgstr "Probudi svoj AV prijemnik iz režima čekanja"
+msgid "Wake up your AV Receiver or Soundbar from Standby"
+msgstr "Probudite svoj AV resiver ili zvučnu traku iz režima čekanja"
 
 msgid "Wallis and Futuna"
 msgstr "Wallis and Futuna"
@@ -23077,14 +23169,14 @@ msgstr "Kada je omogućeno, PiP se može zatvoriti pritiskom na dugme EXIT."
 msgid "When enabled, the VCR SCART option will be shown on the main menu."
 msgstr "Kada je omogućeno, opcija VCR SCART biće prikazana u glavnom meniju."
 
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched off."
+msgstr "Kada je omogućeno, povezani AV prijemnik ili zvučna traka će se automatski isključiti."
+
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched on."
+msgstr "Kada je omogućeno, povezani AV prijemnik ili zvučna traka će se automatski uključiti."
+
 msgid "When enabled, the length of each recording will be shown in the movie list (this might cause some additional loading time)."
 msgstr "Kada je omogućeno, dužina svakog snimanja će biti prikazana na listi filmova (to može dovesti do nekog dodatnog vremena učitavanja)."
-
-msgid "When enabled, the receiver will automatically be switched off."
-msgstr "Kada je omogućeno, prijemnik će se automatski isključiti."
-
-msgid "When enabled, the receiver will automatically be switched on."
-msgstr "Kada je omogućeno, prijemnik će se automatski uključiti."
 
 msgid "When enabled, the receiver will automatically return to Standby when the TV is turned off."
 msgstr "Kada je omogućeno, prijemnik će se automatski vratiti u režim čekanja kada se TV isključi."
@@ -23161,8 +23253,8 @@ msgstr "Kada kursor unosa dostigne ovu tačku (procenat širine, sa obe strane) 
 msgid "When the receiver wakes from Standby or Deep Standby it will send a command to the TV to bring it out of Standby."
 msgstr "Kada prijemnik izađe iz režima čekanja ili dubokog čekanja, poslaće komandu televizoru da ga izvuče iz režima čekanja."
 
-msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
-msgstr "Kada prijemnik izađe iz režima čekanja, preći će TV na HDMI ulaz koji je povezan sa prijemnikom."
+msgid "When the receiver wakes from Standby, send active source, stream path and routing commands so the TV switches to the HDMI input connected to the receiver."
+msgstr "Kada se risiver probudi iz Pripravnog režima, pošalji aktivan izvor, putanju strima i komande za usmeravanje kako bi TV prešao na HDMI ulaz povezan sa risiverom."
 
 msgid "When the red box is correctly visible press the GREEN button to save the settings and exit."
 msgstr "Kada je crven box pravilno vidljiv, pritisnite ZELENU dugmad da sačuvate podešavanja i izađete."
@@ -24418,6 +24510,63 @@ msgstr "da (zadrži fidove)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Force TV input to this receiver"
+#~ msgstr "Primoraj ovaj prijemnik da koristi TV ulaz"
+
+#~ msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
+#~ msgstr "Kada prijemnik izađe iz režima čekanja, preći će TV na HDMI ulaz koji je povezan sa prijemnikom."
+
+#~ msgid "When the receiver wakes from Standby, send stream path and routing commands so the TV switches from another HDMI input back to this receiver."
+#~ msgstr "Kada risiver izađe iz režima čekanja, pošalji putanju strima i komande za rutiranje da TV prebaci sa drugog HDMI ulaza nazad na ovaj risiver."
+
+#~ msgid "Put your AV Receiver in Standby"
+#~ msgstr "Stavite svoj AV prijemnik u režim čekanja"
+
+#~ msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
+#~ msgstr "Tasteri jačine zvuka na DU resivera će kontrolisati TV jačinu zvuka. Ako ova funkcija nije podržana tasteri za zvuk nemaju funkciju!"
+
+#~ msgid "Wake up your AV Receiver from Standby"
+#~ msgstr "Probudi svoj AV prijemnik iz režima čekanja"
+
+#~ msgid "When enabled, the receiver will automatically be switched off."
+#~ msgstr "Kada je omogućeno, prijemnik će se automatski isključiti."
+
+#~ msgid "When enabled, the receiver will automatically be switched on."
+#~ msgstr "Kada je omogućeno, prijemnik će se automatski uključiti."
+
+#~ msgid "Color Bottom"
+#~ msgstr "Boja Dole"
+
+#~ msgid "Color Top"
+#~ msgstr "Boja Gore"
+
+#~ msgid "Create boot dump."
+#~ msgstr "Kreiraj boot dump."
+
+#~ msgid "This option sets the video & osd picture brightness."
+#~ msgstr "Ova opcija postavlja video i osvetljenje slike."
+
+#~ msgid "This option sets the video & osd picture contrast."
+#~ msgstr "Ova opcija postavlja video & osd kontrast slike."
+
+#~ msgid "This option sets the video picture brightness."
+#~ msgstr "Ova opcija postavlja video svetlinu slike."
+
+#~ msgid "This option sets the video picture contrast."
+#~ msgstr "Ova opcija postavlja video kontrast slike."
+
+#~ msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
+#~ msgstr "Kako osloboditi hardverski dekoder prilikom prelaska na softversko dešifrovanje. 'Brzo' ga odmah oslobađa (brže prebacivanje kanala). 'Normalno' prvo vrši pravilno gašenje (stabilnije na nekim uređajima)."
+
+#~ msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+#~ msgstr "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 novi Model"
+
+#~ msgid " "
+#~ msgstr " ."
+
+#~ msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
+#~ msgstr "Maksimalno vreme čekanja na dolazne podatke i ključeve za dešifrovanje (CW) pre pokretanja dekodera. Obično oba stignu mnogo brže i ovo je samo za posebne slučajeve."
 
 #~ msgid "Error retrieving location of 'epg.dat' on the remote receiver!"
 #~ msgstr "Greška pri preuzimanju lokacije 'epg.dat' na daljinskom prijemniku!"

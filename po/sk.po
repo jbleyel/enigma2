@@ -9,10 +9,10 @@
 # Warder <ciksa@seznam.cz>, 2025.
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenATV\n"
+"Project-Id-Version: OpenATV Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-11 10:12+0000\n"
-"PO-Revision-Date: 2026-02-12 11:09+0000\n"
+"POT-Creation-Date: 2026-06-22 11:12+0000\n"
+"PO-Revision-Date: 2026-06-24 14:09+0000\n"
 "Last-Translator: Marián Hikaník <podnety@mojepreklady.net>\n"
 "Language-Team: Slovak <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/sk/>\n"
 "Language: sk\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 msgid ""
 "\n"
@@ -35,9 +35,6 @@ msgid ""
 msgstr ""
 "\n"
 "Prebieha nahrávanie."
-
-msgid " "
-msgstr " "
 
 msgid "  Menu key : Select quad channel"
 msgstr "  Tlačidlo Menu: Výber quad kanála"
@@ -945,7 +942,7 @@ msgstr[2] "Našlo sa %d balíčkov."
 #, python-format
 msgid "%d package has an update."
 msgid_plural "%d packages have updates."
-msgstr[0] "Je dostupná aktualizácia pre %d balíček"
+msgstr[0] "Je dostupná aktualizácia pre %d balíček."
 msgstr[1] "Je dostupná aktualizácia pre %d balíčky."
 msgstr[2] "Je dostupná aktualizácia pre %d balíčkov."
 
@@ -1759,6 +1756,9 @@ msgstr "Poskytovateľ ATSC"
 msgid "AV Setup"
 msgstr "Nastavenie A/V"
 
+msgid "AV receiver, soundbar and remote"
+msgstr "AV prijímač, soundbar a diaľkové"
+
 msgid "Abkhazian"
 msgstr "abcházština"
 
@@ -1996,8 +1996,8 @@ msgstr "Pridať zvýraznený priečinok do záložiek"
 msgid "Add legacy LEFT/RIGHT actions"
 msgstr "Pridať staršie akcie pre DOĽAVA/DOPRAVA"
 
-msgid "Add more slots"
-msgstr "Pridať viac slotov"
+msgid "Add slots"
+msgstr "Pridať sloty"
 
 msgid "Add new CCcam line"
 msgstr "Pridať nový riadok CCcam"
@@ -2154,6 +2154,9 @@ msgstr "Po prepnutí"
 
 msgid "Aggregate data only"
 msgstr "Len zoskupiť údaje"
+
+msgid "Aggressive"
+msgstr "Agresívne"
 
 msgid "Akan"
 msgstr "akančina"
@@ -2515,8 +2518,8 @@ msgstr "Naozaj chcete vymazať tento záznam:\n"
 msgid "Are you sure you want to delete this?"
 msgstr "Naozaj to chcete vymazať?"
 
-msgid "Are you sure you want to disable Chkroot Multiboot?"
-msgstr "Naozaj chcete deaktivovať Chkroot Multiboot?"
+msgid "Disable Chkroot Multiboot?"
+msgstr "Chcete deaktivovať Chkroot Multiboot?"
 
 msgid "Are you sure you want to exit this wizard?"
 msgstr "Naozaj chcete ukončiť tohto sprievodcu?"
@@ -2713,6 +2716,9 @@ msgstr "Režim authoringu"
 msgid "Auto"
 msgstr "Auto"
 
+msgid "Auto (not available)"
+msgstr "Auto (nedostupné)"
+
 msgid "Auto Language"
 msgstr "Automatický jazyk"
 
@@ -2769,9 +2775,6 @@ msgstr "Automatický režim videa vybraný"
 
 msgid "Auto video mode selected for the TV."
 msgstr "Automatický režim videa zvolený pre TV."
-
-msgid "Auto (not available)"
-msgstr "Auto (nedostupné)"
 
 msgid "AutoCam Settings"
 msgstr "Nastavenie Autocamu"
@@ -3269,6 +3272,12 @@ msgstr "Jas videa"
 
 msgid "Brightness Video & OSD"
 msgstr "Jas videa a OSD"
+
+msgid "Brightness applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr "Jas aplikovaný na kombinovaný výstup videa + OSD. Týka sa všetkého na obrazovke, aj tohto menu."
+
+msgid "Brightness applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr "Jas aplikovaný iba na vrstvu s videom. Netýka sa nemu systému Enigma2 a ani OSD."
 
 msgid "British Indian Ocean Territory"
 msgstr "Britské indickooceánske územie"
@@ -3797,6 +3806,12 @@ msgstr "rozprávka/bábky"
 
 msgid "Cascade PiP"
 msgstr "Kaskádový PiP"
+
+msgid "Case insensitive"
+msgstr "Nerozlišovať veľkosť písmen"
+
+msgid "Case sensitive"
+msgstr "Rozlišovať veľkosť písmen"
 
 msgid "Catalan / Valencian"
 msgstr "katalánčina/valencijčina"
@@ -4376,12 +4391,6 @@ msgstr "Kolumbia"
 
 msgid "Color"
 msgstr "Farba"
-
-msgid "Color Bottom"
-msgstr "Farba dolu"
-
-msgid "Color Top"
-msgstr "Farba hore"
 
 msgid "Color format"
 msgstr "Formát farby"
@@ -5025,17 +5034,32 @@ msgstr "Kontrast videa"
 msgid "Contrast Video & OSD"
 msgstr "Kontrast videa a OSD"
 
+msgid "Contrast applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr "Kontrast aplikovaný na kombinovaný výstup videa + OSD. Týka sa všetkého na obrazovke, aj tohto menu."
+
+msgid "Contrast applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr "Kontrast aplikovaný len na vrstvu s videom. Netýka sa menu systému Enigma2 a ani OSD."
+
 msgid "Control LED can be turned on or off here."
 msgstr "Tu je možné zapnúť alebo vypnúť kontrolku LED."
 
 msgid "Control files:"
 msgstr "Kontrolné súbory:"
 
+msgid "Control how files will be sorted in screens that show a file list. Case sensitive will group uppercase files first followed by lowercase files. Case insensitive will sort files alphabetically, ignoring case."
+msgstr "Nastavte, ako sa zoradia súbory na obrazovkách zobrazujúcich zoznam súborov. Pri rozlišovaní veľkosti písmen sa najskôr zoskupia súbory s veľkými písmenami a potom súbory s malými písmenami. Ak sa veľkosť písmen nerozlišuje, zoradia sa súbory iba abecedne."
+
 msgid "Control of the position how finished timer are shown in the Timer List."
 msgstr "Nastavenie pozície zobrazovania dokončených časovačov v zozname časovačov."
 
 msgid "Control the InfoBar fading speed."
 msgstr "Nastavenie rýchlosti postupného strácania infolišty."
+
+msgid "Control the smoothing filter used for the dithering process."
+msgstr "Ovládanie použitia vyhladzovacieho filtra pre proces rozptylu (ditheringu)."
+
+msgid "Control the use of vertical scaler anti-aliasing."
+msgstr "Ovládanie použitia vertikálneho škálovania pre vyhladzovanie hrán."
 
 msgid "Control your Softcams"
 msgstr "Ovládanie softcamov"
@@ -5200,9 +5224,6 @@ msgstr "Vytvoriť výpis zavádzača aplikácie."
 msgid "Create backup image zip file."
 msgstr "Vytvoriť súbor ZIP so zálohou image."
 
-msgid "Create boot dump."
-msgstr "Vytvoriť výpis procesu spúšťania."
-
 msgid "Create boot image dump."
 msgstr "Vytvoriť výpis spúšťania image."
 
@@ -5235,7 +5256,7 @@ msgid "Create slots for the selected device"
 msgstr "Vytvoriť sloty pre vybrané zariadenie"
 
 msgid "Create swap"
-msgstr "Vytvoriť swap"
+msgstr "Vytvoriť odkladací (swap) priestor"
 
 msgid "Create tar file of root file system."
 msgstr "Vytvoriť súbor TAR z koreňového systému súborov."
@@ -5257,6 +5278,16 @@ msgstr "Vytvára sa súborový systém"
 
 msgid "Creating hard link to time shift file failed!"
 msgstr "Vytvorenie hardlinku na súbor timeshiftu neúspešné!"
+
+#, python-format
+msgid ""
+"Creating or activating the swap file failed.\n"
+"\n"
+"%s"
+msgstr ""
+"Nepodarilo sa vytvoriť alebo aktivovať odkladací (swap) súbor\n"
+"\n"
+"%s"
 
 msgid "Creating partition"
 msgstr "Vytvára sa partícia"
@@ -5523,11 +5554,17 @@ msgstr "Farba DVB titulkov"
 msgid "DVB-C"
 msgstr "DVB-C"
 
+msgid "DVB-C / Cable only"
+msgstr "DVB-C/len káblové"
+
 msgid "DVB-C ANNEX B"
 msgstr "DVB-C ANNEX B"
 
 msgid "DVB-C ANNEX C"
 msgstr "DVB-C ANNEX C"
+
+msgid "DVB-C and DVB-T/T2 via external 5V controlled coax switch"
+msgstr "DVB-C a DVB-T/T2 cez koax. prepínač ovládaný napätím 5 V"
 
 msgid "DVB-S"
 msgstr "DVB-S"
@@ -5537,6 +5574,9 @@ msgstr "DVB-S2"
 
 msgid "DVB-T"
 msgstr "DVB-T"
+
+msgid "DVB-T/T2 / Terrestrial only"
+msgstr "DVB-T/T2/Len terestriálne"
 
 msgid "DVB-T2"
 msgstr "DVB-T2"
@@ -5771,6 +5811,9 @@ msgstr "Formát času v denníku pre ladenie *"
 msgid "Decoder release strategy"
 msgstr "Stratégia uvoľnenia dekodéra"
 
+msgid "Decoder start delay"
+msgstr "Oneskorenie spustenia dekodéra"
+
 msgid "Decoder start timeout"
 msgstr "Časový limit pre spustenie dekodéra"
 
@@ -5827,7 +5870,7 @@ msgid "Default right column directory"
 msgstr "Predvolený priečinok v pravom stĺpci"
 
 msgid "Default sort order for directories in the left column."
-msgstr "Predvolené poradie zoraďovania pre priečinky v ľavom stĺpci"
+msgstr "Predvolené poradie zoraďovania pre priečinky v ľavom stĺpci."
 
 msgid "Default sort order for directories in the right column."
 msgstr "Predvolené poradie zoraďovania pre priečinky v pravom stĺpci."
@@ -6057,7 +6100,7 @@ msgstr "Vymazať denník"
 msgid "Delete only highlighted file"
 msgstr "Vymazať len zvýraznený súbor"
 
-msgid "Delete or Wipe the highlighted slot"
+msgid "Empty or Wipe the highlighted slot"
 msgstr "Vymazať alebo vyčistiť zvýraznený slot"
 
 msgid "Delete play list entry"
@@ -6709,6 +6752,9 @@ msgstr "Dokumentárne"
 msgid "Dolby Digital downmix is now"
 msgstr "Dolby Digital downmix je teraz"
 
+msgid "Dolby TrueHD"
+msgstr "Dolby TrueHD"
+
 msgid "Domain"
 msgstr "Doména"
 
@@ -7173,7 +7219,7 @@ msgid "Enable Quad PiP"
 msgstr "Zapnúť Quad PiP"
 
 msgid "Enable Swap at startup"
-msgstr "Povoliť Swap pri spúšťaní"
+msgstr "Povoliť odkladací súbor pri spúšťaní"
 
 msgid "Enable VPS"
 msgstr "Povoliť VPS"
@@ -7241,6 +7287,12 @@ msgstr "Povoliť denník pre ladenie *"
 
 msgid "Enable digital downmix"
 msgstr "Povoliť digitálny downmix"
+
+msgid "Enable extended cut file support"
+msgstr "Povoliť rozšírenú podporu strihania súborov"
+
+msgid "Enable extended cut file support. This will write cut with more information and not only marker."
+msgstr "Povoliť rozšírenú podporu strihania súborov. Pri aktivovaní sa strih zapisuje s podrobnejšími informáciami, nielen pomocou značky."
 
 msgid "Enable fallback remote receiver"
 msgstr "Povoliť záložný vzdialený prijímač"
@@ -7322,6 +7374,9 @@ msgstr "Aktiváciou tejto možnosti pridáte do súboru denníka ladenia názvy 
 
 msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
 msgstr "Aktiváciou tejto možnosti pridáte informáciu o úložnom zariadení, zistené počas načítavania systému a udalosti typu hot plug do súboru denníka ladenia."
+
+msgid "Enable this option to add text encoding information to the debug log file."
+msgstr "Aktiváciou tejto možnosti pridáte do denníka ladenia aj informáciu o kódovaní textu."
 
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Aktiváciou tejto možnosti pridáte do súboru denníka ladenia údaje ladenia časovača."
@@ -8244,8 +8299,8 @@ msgstr "Falklandy (Malvíny)"
 msgid "Fallback API did not return a valid result."
 msgstr "Záložné rozhranie API nevrátilo platný výsledok."
 
-msgid "Fallback Font *"
-msgstr "Záložný font *"
+msgid "Fallback Font"
+msgstr "Záložný font"
 
 msgid "Fallback Remote Receiver Settings"
 msgstr "Nastavenie záložného vzdialeného prijímača"
@@ -8464,6 +8519,9 @@ msgstr "Súbor sa zdá byť zaneprázdnený.\n"
 
 msgid "File compression"
 msgstr "Kompresia súboru"
+
+msgid "File sorting mode"
+msgstr "Režim zoraďovania súborov"
 
 msgid "File system"
 msgstr "Systém súborov"
@@ -8805,6 +8863,9 @@ msgstr "Úplné roztiahnutie"
 msgid "Full factory reset"
 msgstr "Obnovenie továrenského nastavenia"
 
+msgid "Full range (no clipping)"
+msgstr "Úplný rozsah (neobmedzený)"
+
 msgid "Full screen"
 msgstr "Celá obrazovka"
 
@@ -8835,8 +8896,8 @@ msgstr "Kategória denníka pre ladenie GStreamer *"
 msgid "GStreamer debug log level *"
 msgstr "Úroveň denníka pre ladenie GStreamer *"
 
-msgid "GUI Skin *"
-msgstr "Vzhľad GUI *"
+msgid "GUI Skin"
+msgstr "Vzhľad GUI"
 
 msgid "Gabon"
 msgstr "Gabon"
@@ -9118,6 +9179,9 @@ msgstr "Guyana"
 msgid "H"
 msgstr "H"
 
+msgid "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+msgstr "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 - nový model"
+
 msgid "H: = Hourly / D: = Daily / W: = Weekly / M: = Monthly"
 msgstr "H: = každú hodinu / D: = denne / W: = týždenne / M: = mesačne"
 
@@ -9234,6 +9298,9 @@ msgstr "Informácie o hardvéri"
 
 msgid "Hardware latency correction"
 msgstr "Korekcia latencie hardvéru"
+
+msgid "Hardware revision"
+msgstr "Revízia hardvéru"
 
 msgid "Hardware serial"
 msgstr "Sériové číslo hardvéru"
@@ -9499,8 +9566,8 @@ msgstr "Hodiny Minúty"
 msgid "Hours Minutes Seconds"
 msgstr "Hodiny Minúty Sekundy"
 
-msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
-msgstr "Spôsob uvoľnenia HW dekodéra pri prepnutí na SW dekódovanie. Voľba 'Rýchlo' uvoľňuje okamžite (rýchle prepnutie). Voľba 'Normal' vykoná najskôr čisté vypnutie (pri niektorých prijímačoch stabilnejšie)."
+msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels."
+msgstr "Spôsob uvoľnenia HW dekodéra pri prepnutí na SW dekódovanie. Voľbou 'Rýchlo' dôjde k okamžitému uvoľneniu (rýchlejšie prepínanie). Voľba 'Normálne' vykoná najskôr čisté vypnutie (stabilnejšie pri niektorých prijímačoch). Voľba 'Agresívne' vykoná úplný reset súčasti na dekódovanie medzi kódovanými kanálmi."
 
 msgid "Http(s) stream start delay"
 msgstr "Oneskorenie spustenia http(s) streamu"
@@ -9517,6 +9584,9 @@ msgstr "Maďarsko"
 msgid "Hybrid Tuner"
 msgstr "Hybridný tuner"
 
+msgid "Hybrid tuner mode"
+msgstr "Režim hybridného tunera"
+
 msgid "Hz"
 msgstr "Hz"
 
@@ -9525,9 +9595,6 @@ msgstr "I"
 
 msgid "I/O priority for scripts"
 msgstr "I/O priorita pre skripty"
-
-msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
-msgstr "I55SE/H7/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 nový model"
 
 msgid "IMDb Details"
 msgstr "Detaily IMDb"
@@ -9922,6 +9989,9 @@ msgstr "Zahrnúť údaje o úložnom zariadení"
 
 msgid "Include teletext details"
 msgstr "Zahrnúť teletextové podrobnosti"
+
+msgid "Include text encoding data"
+msgstr "Zahrnúť údaje o kódovaní textu"
 
 msgid "Include timer data"
 msgstr "Zahrnúť údaje časovača"
@@ -10503,8 +10573,8 @@ msgstr "LAN pripojenie"
 msgid "LCD scroll speed"
 msgstr "Rýchlosť rolovania LCD"
 
-msgid "LCD/Front panel *"
-msgstr "LCD/Predný panel *"
+msgid "LCD/Front panel"
+msgstr "LCD/Predný panel"
 
 msgid "LCN Scanner"
 msgstr "LCN skener"
@@ -10754,7 +10824,10 @@ msgid "Limit west"
 msgstr "Limit – západ"
 
 msgid "Limited memory size, swap file required"
-msgstr "Obmedzená veľkosť pamäte, vyžaduje sa súbor swap"
+msgstr "Obmedzená veľkosť pamäte, vyžaduje sa odkladací (swap) súbor"
+
+msgid "Limited range (64..940)"
+msgstr "Obmedzený rozsah (64..940)"
 
 msgid "Limits cancelled"
 msgstr "Limity zrušené"
@@ -11010,6 +11083,9 @@ msgstr "Prepojiť slučkou na"
 
 msgid "Lower Framerate saves CPU Time."
 msgstr "Nižšia snímková frekvencia šetrí procesorový čas."
+
+msgid "Lower RGB output clipping limit. 'Full range' = no lower clipping, 'Limited range' clips RGB outputs to 64 (broadcast safe)."
+msgstr "Dolná hranica obmedzovania RGB výstupu. 'Plný rozsah' = žiadne obmedzenie dolnej hranice, 'Obmedzený rozsah' obmedzí RGB výstupy na 64 (bezpečné pre vysielanie)."
 
 msgid "Lower USB"
 msgstr "Spodné USB"
@@ -11289,8 +11365,8 @@ msgstr "Maximálny počet dní v EPG"
 msgid "Maximum space used (MB)"
 msgstr "Maximálna použitá veľkosť (MB):"
 
-msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
-msgstr "Max. čas čakania pre prichádzajúce údaje a dešifrovacie kľúče (CW), pred spustením dekodéra. Zvyčajne dorazia oveľa rýchlejšie a toto nastavenie je určené len pre špecifické prípady."
+msgid "Maximum time to wait for the first descrambling key (CW) before starting the decoder. 'Disabled' starts the decoder immediately without waiting."
+msgstr "Max. čas čakania na prvý dekódovací kľúč (CW) pred spustením dekodéra. Voľbou 'Vypnuté' spustíte dekodér ihneď, bez čakania."
 
 msgid "Mayotte"
 msgstr "Mayotte"
@@ -13813,7 +13889,7 @@ msgid "Please select an aspect ratio..."
 msgstr "Prosím, vyberte pomer strán…"
 
 msgid "Please select device to use as swap file location"
-msgstr "Prosím, vyberte zariadenie na umiestnenie swap súboru"
+msgstr "Prosím, vyberte zariadenie na umiestnenie odkladacieho (swap) súboru"
 
 msgid "Please select medium to be scanned"
 msgstr "Prosím, vyberte médium na prehľadanie"
@@ -13951,7 +14027,7 @@ msgid "Please wait, loading picture..."
 msgstr "Prosím čakajte, načítava sa obrázok…"
 
 msgid "Please wait, swap is being created. This could take a few minutes to complete."
-msgstr "Vytvára sa priestor pre swap. Môže to trvať niekoľko minút. Čakajte, prosím."
+msgstr "Vytvára sa priestor pre odkladanie. Môže to trvať niekoľko minút. Čakajte, prosím."
 
 msgid "Please wait..."
 msgstr "Čakajte, prosím…"
@@ -13963,7 +14039,7 @@ msgid "Plug in USB device"
 msgstr "Pripojte USB zariadenie"
 
 msgid "Plug in a USB device that can be used as a swap device. Note that this device must not be removed while the %s %s is running!"
-msgstr "Pripojte USB zariadenie, ktoré sa môže použiť pre swap. Nezabudnite, že toto zariadenie sa počas spustenia %s %s nesmie odstrániť!"
+msgstr "Pripojte USB zariadenie, ktoré sa môže použiť ako odkladacie. Nezabudnite, že toto zariadenie sa počas spustenia %s %s nesmie odstrániť!"
 
 msgid "Plugin"
 msgstr "Plugin"
@@ -14279,11 +14355,11 @@ msgstr "Stlačte OK pre použitie tohto jazyka:  [%s]"
 msgid "Press OK to use this locale.  [%s]"
 msgstr "Stlačte OK pre použitie týchto miestnych nastavení:  [%s]"
 
-msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that image. If available, YELLOW will either delete or wipe the image. A deleted image can be restored with the BLUE button. A wiped image is completely removed and cannot be restored!"
-msgstr "Tlačidlami HORE/DOLU vyberte slot a stlačením ZELENÉHO tlačidla alebo OK spustíte reštart do príslušného image. ŽLTÝM tlačidlom sa image vymaže alebo vyčistí. Vymazaný image je možné obnoviť pomocou MODRÉHO tlačidla. Vyčistenie image znamená úplné odstránenie bez možnosti obnovenia!"
+msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that slot. If available, YELLOW will either delete or wipe the slot. A deleted slot can be restored with the BLUE button. A wiped slot is completely removed and cannot be restored!"
+msgstr "Tlačidlami HORE/DOLU vyberte slot a stlačením ZELENÉHO tlačidla alebo OK spustíte reštart do tohto slotu. ŽLTÝM tlačidlom sa image vymaže alebo sa vyčistí slot. Vymazaný slot je možné obnoviť pomocou MODRÉHO tlačidla. Vyčistený slot sa kompletne odstráni a nemožno ho obnoviť!"
 
-msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that image. If available, YELLOW will disable Multiboot, delete, or wipe the selected image. Press BLUE to add more slots."
-msgstr "Stlačením tlačidiel HORE/DOLU vyberte slot, potom stlačte OK alebo ZELENÉ tlačidlo pre reštartovanie do daného image. Ak je k dispozícii, ŽLTÉ tlačidlo deaktivuje Multiboot, odstráni alebo vymaže vybraný image. Stlačením MODRÉHO tlačidla pridáte ďalšie sloty."
+msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that slot. If available, YELLOW will disable MultiBoot, delete, or wipe the selected slot. Press BLUE to add more slots."
+msgstr "Stlačením tlačidiel HORE/DOLU vyberte slot, potom stlačte OK alebo ZELENÉ tlačidlo pre reštartovanie do tohto slotu. Ak je k dispozícii, ŽLTÉ tlačidlo deaktivuje Multiboot, vymaže alebo vyčistí vybraný slot. Stlačením MODRÉHO tlačidla pridáte ďalšie sloty."
 
 msgid "Press this button to emulate a long press on a button pressed afterwards (this also overrides any other actions assigned to emulation button)."
 msgstr "Stlačte toto tlačidlo na emuláciu dlhého stlačenia nasledujúceho tlačidla (táto funkcia ignoruje akékoľvek iné akcie priradené emulovaciemu tlačidlu)."
@@ -14431,7 +14507,7 @@ msgid "Properties of current title"
 msgstr "Vlastnosti aktuálneho titulu"
 
 msgid "Protect Quickmenu"
-msgstr "Ochrana Rýchleho menu"
+msgstr "Ochrana rýchleho menu"
 
 msgid "Protect Screens"
 msgstr "Ochrana obrazoviek"
@@ -14520,8 +14596,8 @@ msgstr "paštčina"
 msgid "Put TV in Standby"
 msgstr "Prepnúť TV do pohotovostného režimu"
 
-msgid "Put your AV Receiver in Standby"
-msgstr "Prepnúť AV receiver do pohotovostného režimu"
+msgid "Put your AV Receiver or Soundbar in Standby"
+msgstr "Prepnúť AV prijímač alebo soundbar do pohotovostného režimu"
 
 msgid "Python"
 msgstr "Python"
@@ -14569,7 +14645,7 @@ msgid "Quick Menu Actions"
 msgstr "Akcie pre rýchle menu"
 
 msgid "QuickEPG mode"
-msgstr "RýchlyEPG režim"
+msgstr "Režim rýchleho EPG"
 
 msgid "QuickMenu"
 msgstr "Rýchle menu"
@@ -14642,6 +14718,12 @@ msgstr "Červené – dlho"
 
 msgid "RF Output Settings"
 msgstr "RF výstup"
+
+msgid "RGB clamp (lower)"
+msgstr "Uzamknutie RGB (dolná hranica)"
+
+msgid "RGB clamp (upper)"
+msgstr "Uzamknutie RGB (horná hranica)"
 
 msgid "Racing"
 msgstr "Jazdenie"
@@ -15200,11 +15282,18 @@ msgstr "Premenovať názov a popis pre nové udalosti"
 msgid "Rename only highlighted file"
 msgstr "Premenovať len zvýraznený súbor"
 
+#, python-format
+msgid "Rename slot '%s' (leave empty to reset):"
+msgstr "Premenovať slot '%s' (pre resetovanie ponechajte prázdne)"
+
 msgid "Rename the proposed file to be created"
 msgstr "Premenovať navrhovaný vytváraný súbor"
 
 msgid "Rename the selected service"
 msgstr "Premenovať vybranú stanicu/službu"
+
+msgid "Rename the highlighted slot"
+msgstr "Premenovať zvýraznený slot"
 
 msgid "Rename this tag"
 msgstr "Premenovať tento tag"
@@ -15892,8 +15981,8 @@ msgstr "Ukladajú sa súbory timeshiftu"
 msgid "Scaler sharpness"
 msgstr "Ostrosť škálovania"
 
-msgid "Scaler vertical dejagging"
-msgstr "Škálovanie – vertikálne vyhladzovanie hrán"
+msgid "Scaler vertical anti-aliasing"
+msgstr "Vertikálne vyhladzovanie hrán pomocou škálovača"
 
 msgid "Scaling mode"
 msgstr "Režim škálovania"
@@ -16402,7 +16491,7 @@ msgid "Select 'Yes' to use alternate GitHub feed IP addresses. This can be helpf
 msgstr "Ak chcete použiť alternatívne IP adresy zdroja na portáli GitHub, vyberte možnosť 'Áno'. Môže to pomôcť, ak používate VPN a nie je možný prístup k bežným zdrojom prostredníctvom zverejnených DNS mien."
 
 msgid "Select 'Yes' to use legacy navigation where CH+/- swaps the active column. Select 'No' to use the newer unified navigation option for consistent navigation with other screens where LEFT/RIGHT swaps the active column and CH+/- pages up and down the list."
-msgstr "Ak chcete používať staršie navigovanie (CH+/- prepína aktívny stĺpec), vyberte 'Áno'. Ak chcete používať novšie, unifikované navigovanie (konzistentné s iným obrazovkami, kde tlačidlá DOĽAVA/DOPRAVA prepínajú aktívny stĺpec a CH+/- prepína o stránku nahor/nadol), vyberte možnosť 'Nie'."
+msgstr "Ak chcete používať staršie navigovanie (CH+/- prepína aktívny stĺpec), vyberte 'Áno'. Ak chcete používať novšie, unifikované navigovanie (konzistentné s inými obrazovkami, kde tlačidlá DOĽAVA/DOPRAVA prepínajú aktívny stĺpec a CH+/- prepína o stránku nahor/nadol), vyberte možnosť 'Nie'."
 
 msgid "Select 'Yes' to use signal values (SNR, etc) calculated from the older API V3. This API version has now been superseded."
 msgstr "Ak je nastavené na 'áno', hodnoty signálu (SNR atď.) sa budú vypočítavať z API V3. Je to staršia verzia API, ktorá je v súčasnosti už nahradená."
@@ -16643,6 +16732,9 @@ msgstr "Vyberte spôsob inštalácie satelitnej paraboly. Napríklad pevná para
 msgid "Select how the schedule is handled with respect to Standby."
 msgstr "Vyberte, ako sa má spracovávať plán vzhľadom na pohotovostný režim."
 
+msgid "Select how this DVB-C/T tuner is connected. Use the external coax switch option only with a 5V controlled coax switch."
+msgstr "Vyberte, ako je tento DVB-C/T tuner pripojený. Možnosť externého koax. prepínania používajte iba s koax. prepínačom ovládaným napätím 5 V."
+
 msgid "Select how to activate the Quick EPG mode."
 msgstr "Vyberte spôsob aktivácie režimu Quick EPG."
 
@@ -16763,7 +16855,7 @@ msgid "Select the Softcam protocol."
 msgstr "Vyberte protokol pre softcam."
 
 msgid "Select the Swap File Size:"
-msgstr "Vyberte veľkosť súboru pre swap:"
+msgstr "Vyberte veľkosť odkladacieho (swap) súboru:"
 
 msgid "Select the Unicable channel to be assigned to this tuner. This is a unique value. Be certain that no other device connected to this same Unicable system is allocated to the same Unicable channel."
 msgstr "Vyberte kanál Unicable, ktorý sa pridelí tomuto tuneru. Táto hodnota je unikátna. Žiadne iné zariadenie pripojené k tomuto systému nesmie mať priradený rovnaký Unicable kanál."
@@ -16865,8 +16957,11 @@ msgstr "Vyberte predvolený priečinok, ktorý sa použije, ak nebude uložený 
 msgid "Select the delay before the timer activates."
 msgstr "Vyberte oneskorenie pred aktiváciou časovača."
 
+msgid "Select the delay to buffer descrambled data before starting playback. This can reduce AC3 audio dropouts by ensuring enough data is available when the decoder starts. Higher values are more stable but increase channel switch time."
+msgstr "Výber oneskorenia pre uloženie dekódovaných údajov do vyrov. pamäte, pred prehrávaním. Môže to znížiť výpadky zvuku AC3 tým, že pri spustení dekodéra je dostupných dosť údajov. Väčšie hodnoty zlepšujú stabilitu, ale rastie aj doba potrebná na prepnutie stanice."
+
 msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for receivers with multiple satellite tuners."
-msgstr "Vyberte oneskorenie, ktoré sa použije pri ukončení služby prenosu streamu pred opätovným pridelením tunera pre inú službu. Hodnota '0' sa odporúča pre prijímače s viacerými satelitnými tunermi."
+msgstr "Vyberte oneskorenie, ktoré sa použije pri ukončení služby prenosu streamu pred opätovným pridelením tunera pre inú službu/stanicu. Hodnota '0' sa odporúča pre prijímače s viacerými satelitnými tunermi."
 
 msgid "Select the delay to wait after pressing more digit buttons to select a new service."
 msgstr "Používateľom určené oneskorenie po stlačení iného tlačidla na prepnutie na daný kanál."
@@ -17206,6 +17301,9 @@ msgstr "Vyberte, či sa majú zvukové stopy kanála DTS zlúčiť alebo transk�
 
 msgid "Select whether DTS channel audio tracks should be downmixed to stereo."
 msgstr "Vyberte, či sa majú zvukové stopy kanála DTS zlúčiť do režimu stereo."
+
+msgid "Select whether Dolby TrueHD audio tracks should be passed through or decoded."
+msgstr "Vyberte, či sa majú zvukové stopy Dolby TrueHD posielať ďalej alebo dekódovať."
 
 msgid "Select whether IPv4, IPv6, or both protocols should be used. If both are enabled then which should be preferred."
 msgstr "Vyberte či sa použije IPv4, IPv6, alebo obidva protokoly. Ak sú aktivované obidva, tak vyberte, ktorý bude preferovaný."
@@ -18472,7 +18570,7 @@ msgid "Show picon background color"
 msgstr "Zobraziť farbu pozadia pikon"
 
 msgid "Show picons in quickzap"
-msgstr "zobraziť pikony pri rýchlom prepínaní"
+msgstr "Zobraziť pikony pri rýchlom prepínaní"
 
 msgid "Show picons in service list"
 msgstr "zobraziť pikony v zozname staníc"
@@ -19202,7 +19300,7 @@ msgid "Sorry, no backups found!"
 msgstr "Žiaľ, nenašli sa žiadne zálohy!"
 
 msgid "Sorry, no physical devices that supports SWAP attached. Can't create swap file on network or FAT32 file systems"
-msgstr "Prepáčte, nie sú pripojené žiadne zariadenia podporujúce SWAP. Súbor SWAP nie je možné vytvoriť v sieti alebo v súborových systémoch FAT32"
+msgstr "Prepáčte, nie sú pripojené žiadne zariadenia podporujúce odkladanie. Odkladací (swap) súbor nie je možné vytvoriť v sieti alebo v súborových systémoch FAT32"
 
 msgid "Sorry, there was a problem:"
 msgstr "Prepáčte, vyskytol sa problém:"
@@ -19806,16 +19904,16 @@ msgid "Swahili"
 msgstr "svahilčina"
 
 msgid "Swap"
-msgstr "Swap"
+msgstr "Odkladanie (swap)"
 
 msgid "Swap File Manager"
-msgstr "Správca swap súboru"
+msgstr "Správca odkladacieho (swap) súboru"
 
 msgid "Swap File not found. You have to create the file before to activate."
-msgstr "Swap súbor sa nenašiel. Prosím, pred aktiváciou ho najskôr vytvorte."
+msgstr "Odkladací (swap) súbor sa nenašiel. Pred aktivovaním ho musíte najskôr vytvoriť."
 
 msgid "Swap Manager"
-msgstr "Správca Swap"
+msgstr "Správca odkladania (swap)"
 
 msgid "Swap PiP"
 msgstr "Vymeniť PiP"
@@ -19824,13 +19922,13 @@ msgid "Swap PiP and main picture"
 msgstr "Zameniť PiP a hlavný obraz"
 
 msgid "Swap Place:"
-msgstr "Swap umiestenie:"
+msgstr "Miesto na odkladanie (swap):"
 
 msgid "Swap SNR in '%' with SNR in 'db'"
 msgstr "Zameniť SNR v '%' za SNR v 'dB'"
 
 msgid "Swap Size:"
-msgstr "Veľkosť swap:"
+msgstr "Veľkosť pre odkladanie (swap):"
 
 msgid "Swap services"
 msgstr "Vymeniť stanice/služby"
@@ -19857,7 +19955,7 @@ msgid "Swimming"
 msgstr "Plávanie"
 
 msgid "Switch BLUE short (QuickMenu) with BLUE long (Extension Menu)."
-msgstr "Zameniť krátke stlačenie modrého tlačidla (Rýchle menu) s dlhým stlačením (Menu rozšírení)."
+msgstr "Zameniť krátke stlačenie MODRÉHO tlačidla (rýchle menu) s dlhým stlačením (menu rozšírení)."
 
 msgid "Switch EPG Page Down"
 msgstr "Prepnúť EPG o stránku nadol"
@@ -20045,8 +20143,14 @@ msgstr "TV"
 msgid "TV button mode"
 msgstr "Režim tlačidla TV"
 
+msgid "TV input and receiver wakeup"
+msgstr "TV vstup a prebudenie prijímača"
+
 msgid "TV physical address report"
 msgstr "Ohlásenie fyzickej adresy TV"
+
+msgid "TV power"
+msgstr "Napájanie TV"
 
 msgid "TXT PID"
 msgstr "TXT PID"
@@ -20277,7 +20381,7 @@ msgid "The %s %s does not have an Internet connection."
 msgstr "Zariadenie %s %s nie je pripojené k internetu."
 
 msgid "The %s %s has a limited memory capacity. A swap file is required to increase the amount of available memory otherwise the %s %s may not work properly. Select the target device to hold the swap file."
-msgstr "Zariadenie %s %s má obmedzenú kapacitu pamäte. Na zvýšenie množstva dostupnej pamäte je potrebný súbor swap, inak %s %s nemusí fungovať správne. Vyberte cieľové zariadenie, na ktorom bude umiestnený súbor swap."
+msgstr "Zariadenie %s %s má obmedzenú kapacitu pamäte. Na zvýšenie množstva dostupnej pamäte je potrebný odkladací (swap) súbor, inak %s %s nemusí fungovať správne. Vyberte cieľové zariadenie, na ktorom bude umiestnený odkladací (swap) súbor."
 
 msgid "The %s %s is shutting down. Please wait..."
 msgstr "%s %s sa vypína. Čakajte, prosím…"
@@ -20710,8 +20814,8 @@ msgstr "Umožňuje zmeniť relatívnu veľkosť písma vzhľadom na veľkosť vz
 msgid "This allows you to change the number of rows shown."
 msgstr "Umožňuje zmeniť počet zobrazených riadkov."
 
-msgid "This allows you to set the maximum number of digits in a service number, up to 5."
-msgstr "Umožňuje nastaviť počet číslic na 5, ak máte viac ako 9999 kanálov."
+msgid "This allows you to set the maximum number of digits in a service number, up to 6."
+msgstr "Umožňuje nastaviť maximálny počet číslic v čísle stanice/služby, až na 6."
 
 msgid "This bouquet is protected by a parental control PIN!"
 msgstr "Tento prehľad je chránený PIN kódom rodičovskej kontroly!"
@@ -20755,36 +20859,6 @@ msgstr "Redukcia blokového šumu v obraze. Zhorší sa tým však jeho ostrosť
 msgid "This option allows to set the level of dynamic contrast of the picture."
 msgstr "Nastavenie úrovne dynamického kontrastu obrazu."
 
-msgid "This option allows you to config the Colordepth for UHD."
-msgstr "Konfigurácia farebnej hĺbky pre UHD"
-
-msgid "This option allows you to config the Colorimetry for HDR."
-msgstr "Konfigurácia kolorimetrie pre HDR"
-
-msgid "This option allows you to config the Colorspace from Auto to RGB."
-msgstr "Zmena farebného priestoru z Auto na RGB"
-
-msgid "This option allows you to enable or disable the 10 Bit Color Mode."
-msgstr "Zapnutie/vypnutie režimu 10 bitových farieb"
-
-msgid "This option allows you to enable or disable the 12 Bit Color Mode."
-msgstr "Zapnutie/vypnutie režimu 12 bitových farieb"
-
-msgid "This option allows you to force the HDR Modes for UHD."
-msgstr "Vynútenie režimov HDR pre UHD"
-
-msgid "This option allows you to force the HDR10 Modes for UHD."
-msgstr "Vynútenie režimov HDR10 pre UHD"
-
-msgid "This option allows you to force the HLG Modes for UHD."
-msgstr "Vynútenie režimov HLG pre UHD"
-
-msgid "This option allows you enable smoothing filter to control the dithering process."
-msgstr "Zapnutie vyhladzovacieho filtra ditheringu."
-
-msgid "This option allows you enable the vertical scaler dejagging."
-msgstr "Zapnutie vyhladzovania vertikálnych hrán."
-
 msgid "This option allows you to Power Off the display."
 msgstr "Nastavenie úplného vypnutia displeja."
 
@@ -20798,7 +20872,7 @@ msgid "This option allows you to boost the green tones in the picture."
 msgstr "Zvýraznenie zelených tónov v obraze."
 
 msgid "This option allows you to bypass HDMI EDID check."
-msgstr "Nastavenie možnosti obísť kontrolu HDMI EDID"
+msgstr "Nastavenie možnosti obídenia kontroly HDMI EDID."
 
 msgid "This option allows you to change the virtual loudspeaker position."
 msgstr "Zmena pozície virtuálneho reproduktora."
@@ -20863,8 +20937,32 @@ msgstr "Nastavenie reakcie na prvé stlačenie tlačidla na obrazovke so zoznamo
 msgid "This option allows you to choose whether or not to display genre information for the event."
 msgstr "Nastavenie, či sa pre udalosť zobrazí informácia o žánri."
 
+msgid "This option allows you to config the Colordepth for UHD."
+msgstr "Konfigurácia farebnej hĺbky pre UHD."
+
+msgid "This option allows you to config the Colorimetry for HDR."
+msgstr "Konfigurácia kolorimetrie pre HDR."
+
+msgid "This option allows you to config the Colorspace from Auto to RGB."
+msgstr "Zmena farebného priestoru z Auto na RGB."
+
 msgid "This option allows you to enable 3D Surround Sound."
 msgstr "Zapnutie zvuku 3D Surround."
+
+msgid "This option allows you to enable or disable the 10 Bit Color Mode."
+msgstr "Zapnutie/vypnutie režimu 10 bitových farieb."
+
+msgid "This option allows you to enable or disable the 12 Bit Color Mode."
+msgstr "Zapnutie/vypnutie režimu 12 bitových farieb."
+
+msgid "This option allows you to force the HDR Modes for UHD."
+msgstr "Vynútenie režimov HDR pre UHD."
+
+msgid "This option allows you to force the HDR10 Modes for UHD."
+msgstr "Vynútenie režimov HDR10 pre UHD."
+
+msgid "This option allows you to force the HLG Modes for UHD."
+msgstr "Vynútenie režimov HLG pre UHD."
 
 msgid "This option allows you to set offset values for different Letterbox resolutions."
 msgstr "Nastavenie hodnoty odsadenia pre rôzne rozlíšenia letterboxu."
@@ -20882,7 +20980,7 @@ msgid "This option allows you to the SNR as a percentage (not all receivers supp
 msgstr "Zobrazenie SNR v percentách namiesto dB (nepodporujú všetky prijímače)."
 
 msgid "This option allows you to use all HDMI Modes."
-msgstr "Táto voľba umožňuje používať všetky režimy HDMI"
+msgstr "Táto voľba umožňuje používať všetky režimy HDMI."
 
 msgid "This option allows you to view the old and new settings side by side."
 msgstr "Zobrazenie starých a nových nastavení vedľa seba."
@@ -20946,18 +21044,6 @@ msgstr "Nastavenie ostrosti pri zmene mierky použitej na roztiahnutie obrazu z 
 
 msgid "This option sets the suppression of false digital contours, that are the result of a limited number of discrete values."
 msgstr "Nastavenie potlačenia falošných digitálnych obrysov, ktoré vznikajú v dôsledku príliš malých diskrétnych hodnôt."
-
-msgid "This option sets the video & osd picture brightness."
-msgstr "Nastavenie jasu videa a obrazovky s OSD."
-
-msgid "This option sets the video & osd picture contrast."
-msgstr "Nastavenie kontrastu videa a obrazovky s OSD."
-
-msgid "This option sets the video picture brightness."
-msgstr "Nastavenie jasu obrazu videa."
-
-msgid "This option sets the video picture contrast."
-msgstr "Nastavenie kontrastu obrazu videa."
 
 msgid "This option sets up the picture sharpness, used when the picture is being upscaled."
 msgstr "Nastavenie ostrosti obrazu pri použití upscalingu."
@@ -21267,6 +21353,9 @@ msgstr "Timeshift"
 msgid "Timezone"
 msgstr "Časová zóna"
 
+msgid "Timing and diagnostics"
+msgstr "Časovanie a diagnostika"
+
 msgid "Timor-Leste / East Timor"
 msgstr "Východný Timor"
 
@@ -21429,7 +21518,7 @@ msgid "Total memory"
 msgstr "Celková pamäť"
 
 msgid "Total swap"
-msgstr "Celkový swap"
+msgstr "Celkové odkladanie"
 
 msgid "Total:"
 msgstr "Celkom:"
@@ -22020,6 +22109,9 @@ msgstr "Uphops -"
 
 msgid "Uphops: "
 msgstr "Uphops: "
+
+msgid "Upper RGB output clipping limit. 'Full range' = no upper clipping, 'Limited range' clips RGB outputs to 940 (broadcast safe)."
+msgstr "Horná hranica pre obmedzenie výstupu RGB. 'Úplný rozsah' = žiadne obmedzenie hornej hranice, 'Obmedzený rozsah' obmedzí výstupy RGB na 940 (bezpečné pre vysielanie)."
 
 msgid "Upper USB"
 msgstr "Horný USB"
@@ -22737,8 +22829,8 @@ msgstr "Režim úpravy hlasitosti"
 msgid "Volume down"
 msgstr "Zníženie hlasitosti"
 
-msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
-msgstr "Tlačidlá hlasitosti na diaľkovom ovládači prijímača budú ovládať hlasitosť TV prijímača. Ak nie je takáto funkcia podporovaná, nemajú tlačidlá žiadnu inú funkciu!"
+msgid "Volume keys on the receiver remote will control the TV, AV receiver or soundbar volume over HDMI-CEC. If this feature is not supported the volume keys have no function!"
+msgstr "Tlačidlá pre hlasitosť prijímača budú ovládať hlasitosť TV, AV prijímača alebo soundbaru cez HDMI-CEC. Ak to nie je podporované, tak nebudú mať tlačidlá pre hlasitosť žiadnu funkciu!"
 
 msgid "Volume steps"
 msgstr "Kroky hlasitosti"
@@ -22795,7 +22887,7 @@ msgid "Wait for timesync at startup"
 msgstr "Pri spustení počkať na synchronizáciu času"
 
 msgid "Wait please while creating swap file..."
-msgstr "Vytvára sa swap súbor. Čakajte, prosím…"
+msgstr "Počkajte na vytvorenie odkladacieho (swap) súboru…"
 
 msgid "Wait please while scanning..."
 msgstr "Prebieha vyhľadávanie. Čakajte, prosím…"
@@ -22821,8 +22913,8 @@ msgstr "Čas prebudenia pred začiatkom časovača"
 msgid "Wake up to standby"
 msgstr "Prebudiť do pohotovostného režimu"
 
-msgid "Wake up your AV Receiver from Standby"
-msgstr "Prebudiť AV receiver z pohotovostného režimu"
+msgid "Wake up your AV Receiver or Soundbar from Standby"
+msgstr "Prebudiť AV prijímač alebo soundbar z pohotovostného režimu"
 
 msgid "Wallis and Futuna"
 msgstr "Wallis a Futuna"
@@ -23080,14 +23172,14 @@ msgstr "Ak je povolené, PiP sa bude dať ukončiť tlačidlom EXIT."
 msgid "When enabled, the VCR SCART option will be shown on the main menu."
 msgstr "Ak je povolené, zobrazí sa v hlavnom menu voľba VCR SCART."
 
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched off."
+msgstr "Ak je povolené, pripojený AV prijímač alebo soundbar sa bude vypínať automaticky."
+
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched on."
+msgstr "Ak je povolené, pripojený AV prijímač alebo soundbar sa bude zapínať automaticky."
+
 msgid "When enabled, the length of each recording will be shown in the movie list (this might cause some additional loading time)."
 msgstr "Ak je povolené, v zozname filmov sa zobrazí dĺžka každej nahrávky (môže sa predĺžiť čas načítania)."
-
-msgid "When enabled, the receiver will automatically be switched off."
-msgstr "Ak je aktivované, prijímač sa automaticky vypne."
-
-msgid "When enabled, the receiver will automatically be switched on."
-msgstr "Ak je aktivované, prijímač sa automaticky zapne."
 
 msgid "When enabled, the receiver will automatically return to Standby when the TV is turned off."
 msgstr "Ak je aktivované, prijímač sa pri vypnutí TV automaticky prepne do pohotovostného režimu."
@@ -23164,8 +23256,8 @@ msgstr "Keď vstupný kurzor dosiahne tento bod (percento šírky, z ktorejkoľv
 msgid "When the receiver wakes from Standby or Deep Standby it will send a command to the TV to bring it out of Standby."
 msgstr "Keď sa prijímač prebudí z pohotovostného režimu alebo sa zapne, odošle do TV príkaz na prebudenie z pohotovostného režimu."
 
-msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
-msgstr "Po prebudení prijímača z pohotovostného režimu sa televízor prepne na HDMI vstup pripojený k prijímaču."
+msgid "When the receiver wakes from Standby, send active source, stream path and routing commands so the TV switches to the HDMI input connected to the receiver."
+msgstr "Keď sa prijímač prebudí z pohotovostného režimu, odoslať aktívny zdroj, cestu k streamu a príkazy na smerovanie, aby sa TV prepol na vstup HDMI pripojený k prijímaču."
 
 msgid "When the red box is correctly visible press the GREEN button to save the settings and exit."
 msgstr "Keď bude viditeľný červený rámik, uložte nastavenia ZELENÝM tlačidlom a dokončite proces."
@@ -23468,7 +23560,7 @@ msgid "You have selected no logs to delete."
 msgstr "Nevybrali ste žiadne denníky na vymazanie."
 
 msgid "You have to create a Swap File before to activate the autostart."
-msgstr "Pred aktiváciou automatického spustenia sa najskôr musí vytvoriť swap súbor."
+msgstr "Pred aktiváciou automatického spustenia sa najskôr musí vytvoriť odkladací (swap) súbor."
 
 #, python-format
 msgid "You have to wait %s!"
@@ -24421,6 +24513,63 @@ msgstr "áno (zachovať zdroje)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Force TV input to this receiver"
+#~ msgstr "Vynútiť TV vstup pre tento prijímač"
+
+#~ msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
+#~ msgstr "Po prebudení prijímača z pohotovostného režimu sa televízor prepne na HDMI vstup pripojený k prijímaču."
+
+#~ msgid "When the receiver wakes from Standby, send stream path and routing commands so the TV switches from another HDMI input back to this receiver."
+#~ msgstr "Pri prebudení prijímača z pohotovostného režimu odoslať cestu k streamu a príkazy na presmerovanie, aby sa TV prepla z iného vstupu HDMI späť na prijímač."
+
+#~ msgid "Put your AV Receiver in Standby"
+#~ msgstr "Prepnúť AV receiver do pohotovostného režimu"
+
+#~ msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
+#~ msgstr "Tlačidlá hlasitosti na diaľkovom ovládači prijímača budú ovládať hlasitosť TV prijímača. Ak nie je takáto funkcia podporovaná, nemajú tlačidlá žiadnu inú funkciu!"
+
+#~ msgid "Wake up your AV Receiver from Standby"
+#~ msgstr "Prebudiť AV receiver z pohotovostného režimu"
+
+#~ msgid "When enabled, the receiver will automatically be switched off."
+#~ msgstr "Ak je aktivované, prijímač sa automaticky vypne."
+
+#~ msgid "When enabled, the receiver will automatically be switched on."
+#~ msgstr "Ak je aktivované, prijímač sa automaticky zapne."
+
+#~ msgid "Color Bottom"
+#~ msgstr "Farba dolu"
+
+#~ msgid "Color Top"
+#~ msgstr "Farba hore"
+
+#~ msgid "Create boot dump."
+#~ msgstr "Vytvoriť výpis procesu spúšťania."
+
+#~ msgid "This option sets the video & osd picture brightness."
+#~ msgstr "Nastavenie jasu videa a obrazovky s OSD."
+
+#~ msgid "This option sets the video & osd picture contrast."
+#~ msgstr "Nastavenie kontrastu videa a obrazovky s OSD."
+
+#~ msgid "This option sets the video picture brightness."
+#~ msgstr "Nastavenie jasu obrazu videa."
+
+#~ msgid "This option sets the video picture contrast."
+#~ msgstr "Nastavenie kontrastu obrazu videa."
+
+#~ msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
+#~ msgstr "Spôsob uvoľnenia HW dekodéra pri prepnutí na SW dekódovanie. Voľba 'Rýchlo' uvoľňuje okamžite (rýchle prepnutie). Voľba 'Normal' vykoná najskôr čisté vypnutie (pri niektorých prijímačoch stabilnejšie)."
+
+#~ msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+#~ msgstr "I55SE/H7/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 nový model"
+
+#~ msgid " "
+#~ msgstr " "
+
+#~ msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
+#~ msgstr "Max. čas čakania pre prichádzajúce údaje a dešifrovacie kľúče (CW), pred spustením dekodéra. Zvyčajne dorazia oveľa rýchlejšie a toto nastavenie je určené len pre špecifické prípady."
 
 #~ msgid "Error retrieving location of 'epg.dat' on the remote receiver!"
 #~ msgstr "Chyba pri získavaní umiestnenia 'epg.dat' na vzdialenom prijímači!"

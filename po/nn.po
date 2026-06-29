@@ -2,9 +2,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenATV\n"
+"Project-Id-Version: OpenATV Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-11 10:12+0000\n"
+"POT-Creation-Date: 2026-06-22 11:12+0000\n"
 "PO-Revision-Date: 2016-04-02 23:09+0200\n"
 "Last-Translator: Stig-O <stiose@hotmail.com>\n"
 "Language-Team: Stig-O\n"
@@ -24,9 +24,6 @@ msgstr ""
 msgid ""
 "\n"
 "Recording in progress."
-msgstr ""
-
-msgid " "
 msgstr ""
 
 msgid "  Menu key : Select quad channel"
@@ -1922,6 +1919,9 @@ msgstr "Legg til tilbyder"
 msgid "AV Setup"
 msgstr ""
 
+msgid "AV receiver, soundbar and remote"
+msgstr ""
+
 msgid "Abkhazian"
 msgstr ""
 
@@ -2193,7 +2193,7 @@ msgstr "Velg filer/mapper for sikkerhetskopi."
 msgid "Add legacy LEFT/RIGHT actions"
 msgstr ""
 
-msgid "Add more slots"
+msgid "Add slots"
 msgstr ""
 
 msgid "Add new CCcam line"
@@ -2364,6 +2364,9 @@ msgid "After zap"
 msgstr ""
 
 msgid "Aggregate data only"
+msgstr ""
+
+msgid "Aggressive"
 msgstr ""
 
 msgid "Akan"
@@ -2755,7 +2758,7 @@ msgstr "Er du sikker på at du vil slette denne loggen:\n"
 msgid "Are you sure you want to delete this?"
 msgstr ""
 
-msgid "Are you sure you want to disable Chkroot Multiboot?"
+msgid "Disable Chkroot Multiboot?"
 msgstr ""
 
 #
@@ -2968,6 +2971,9 @@ msgstr "Administrativ modus"
 msgid "Auto"
 msgstr "Auto"
 
+msgid "Auto (not available)"
+msgstr ""
+
 msgid "Auto Language"
 msgstr ""
 
@@ -3031,9 +3037,6 @@ msgid "Auto video mode selected"
 msgstr ""
 
 msgid "Auto video mode selected for the TV."
-msgstr ""
-
-msgid "Auto (not available)"
 msgstr ""
 
 msgid "AutoCam Settings"
@@ -3573,6 +3576,12 @@ msgstr ""
 msgid "Brightness Video & OSD"
 msgstr ""
 
+msgid "Brightness applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr ""
+
+msgid "Brightness applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr ""
+
 msgid "British Indian Ocean Territory"
 msgstr ""
 
@@ -4109,6 +4118,12 @@ msgid "Cartoons/Puppets"
 msgstr "tegneserie/dukketeater"
 
 msgid "Cascade PiP"
+msgstr ""
+
+msgid "Case insensitive"
+msgstr ""
+
+msgid "Case sensitive"
 msgstr ""
 
 msgid "Catalan / Valencian"
@@ -4739,12 +4754,6 @@ msgstr "Fargeformat"
 #, fuzzy
 msgid "Color"
 msgstr "Fargeformat"
-
-msgid "Color Bottom"
-msgstr ""
-
-msgid "Color Top"
-msgstr ""
 
 msgid "Color format"
 msgstr "Fargeformat"
@@ -5423,10 +5432,19 @@ msgstr ""
 msgid "Contrast Video & OSD"
 msgstr ""
 
+msgid "Contrast applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr ""
+
+msgid "Contrast applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr ""
+
 msgid "Control LED can be turned on or off here."
 msgstr ""
 
 msgid "Control files:"
+msgstr ""
+
+msgid "Control how files will be sorted in screens that show a file list. Case sensitive will group uppercase files first followed by lowercase files. Case insensitive will sort files alphabetically, ignoring case."
 msgstr ""
 
 msgid "Control of the position how finished timer are shown in the Timer List."
@@ -5434,6 +5452,12 @@ msgstr ""
 
 msgid "Control the InfoBar fading speed."
 msgstr ""
+
+msgid "Control the smoothing filter used for the dithering process."
+msgstr "Dette alternativet lar deg aktivere sortering av valg i utjamnings prosessen."
+
+msgid "Control the use of vertical scaler anti-aliasing."
+msgstr "Med dette alternativet kan du aktivere vertikal skalering dejagging."
 
 msgid "Control your Softcams"
 msgstr ""
@@ -5608,9 +5632,6 @@ msgstr ""
 msgid "Create backup image zip file."
 msgstr ""
 
-msgid "Create boot dump."
-msgstr ""
-
 msgid "Create boot image dump."
 msgstr ""
 
@@ -5666,6 +5687,13 @@ msgstr "Opprette filsystem"
 
 msgid "Creating hard link to time shift file failed!"
 msgstr "Opprette hardlink til Timeshifts filen mislyktes!"
+
+#, python-format
+msgid ""
+"Creating or activating the swap file failed.\n"
+"\n"
+"%s"
+msgstr ""
 
 msgid "Creating partition"
 msgstr "Oppretting av partisjon"
@@ -5951,12 +5979,18 @@ msgstr ""
 msgid "DVB-C"
 msgstr "DVB-C"
 
+msgid "DVB-C / Cable only"
+msgstr ""
+
 #, fuzzy
 msgid "DVB-C ANNEX B"
 msgstr "DVB-C ANNEX C"
 
 msgid "DVB-C ANNEX C"
 msgstr "DVB-C ANNEX C"
+
+msgid "DVB-C and DVB-T/T2 via external 5V controlled coax switch"
+msgstr ""
 
 #
 msgid "DVB-S"
@@ -5968,6 +6002,9 @@ msgstr "DVB-S2"
 
 msgid "DVB-T"
 msgstr "DVB-T"
+
+msgid "DVB-T/T2 / Terrestrial only"
+msgstr ""
 
 msgid "DVB-T2"
 msgstr "DVB-T2"
@@ -6214,6 +6251,9 @@ msgid "Debug log time format *"
 msgstr ""
 
 msgid "Decoder release strategy"
+msgstr ""
+
+msgid "Decoder start delay"
 msgstr ""
 
 msgid "Decoder start timeout"
@@ -6522,7 +6562,7 @@ msgstr ""
 msgid "Delete only highlighted file"
 msgstr ""
 
-msgid "Delete or Wipe the highlighted slot"
+msgid "Empty or Wipe the highlighted slot"
 msgstr ""
 
 #
@@ -7215,6 +7255,9 @@ msgstr "dokumentar"
 msgid "Dolby Digital downmix is now"
 msgstr "Dolby Digital / DTS nedmix er nå"
 
+msgid "Dolby TrueHD"
+msgstr ""
+
 msgid "Domain"
 msgstr ""
 
@@ -7787,6 +7830,12 @@ msgstr ""
 msgid "Enable digital downmix"
 msgstr "Digital nedmix"
 
+msgid "Enable extended cut file support"
+msgstr ""
+
+msgid "Enable extended cut file support. This will write cut with more information and not only marker."
+msgstr ""
+
 msgid "Enable fallback remote receiver"
 msgstr ""
 
@@ -7868,6 +7917,9 @@ msgid "Enable this option to add screen names and resolution data to the debug l
 msgstr ""
 
 msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr ""
+
+msgid "Enable this option to add text encoding information to the debug log file."
 msgstr ""
 
 msgid "Enable this option to add timer debugging data to the debug log file."
@@ -8832,7 +8884,7 @@ msgstr ""
 msgid "Fallback API did not return a valid result."
 msgstr ""
 
-msgid "Fallback Font *"
+msgid "Fallback Font"
 msgstr ""
 
 msgid "Fallback Remote Receiver Settings"
@@ -9062,6 +9114,9 @@ msgid "File appears to be busy!\n"
 msgstr "Filen ser ut til å være opptatt.\n"
 
 msgid "File compression"
+msgstr ""
+
+msgid "File sorting mode"
 msgstr ""
 
 msgid "File system"
@@ -9449,6 +9504,9 @@ msgstr ""
 msgid "Full factory reset"
 msgstr ""
 
+msgid "Full range (no clipping)"
+msgstr ""
+
 msgid "Full screen"
 msgstr ""
 
@@ -9481,7 +9539,7 @@ msgstr ""
 msgid "GStreamer debug log level *"
 msgstr ""
 
-msgid "GUI Skin *"
+msgid "GUI Skin"
 msgstr ""
 
 msgid "Gabon"
@@ -9795,6 +9853,9 @@ msgstr ""
 msgid "H"
 msgstr "CH"
 
+msgid "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+msgstr ""
+
 msgid "H: = Hourly / D: = Daily / W: = Weekly / M: = Monthly"
 msgstr "H: = Time / D: = Daglig / W: = Ukentlig / M: = Månedlig"
 
@@ -9920,6 +9981,9 @@ msgid "Hardware information"
 msgstr ""
 
 msgid "Hardware latency correction"
+msgstr ""
+
+msgid "Hardware revision"
 msgstr ""
 
 msgid "Hardware serial"
@@ -10206,7 +10270,7 @@ msgstr "Timer Minutter"
 msgid "Hours Minutes Seconds"
 msgstr "Timer Minutter Sekunder"
 
-msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
+msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels."
 msgstr ""
 
 msgid "Http(s) stream start delay"
@@ -10228,6 +10292,9 @@ msgstr "Ungarsk"
 msgid "Hybrid Tuner"
 msgstr ""
 
+msgid "Hybrid tuner mode"
+msgstr ""
+
 msgid "Hz"
 msgstr ""
 
@@ -10236,9 +10303,6 @@ msgid "I"
 msgstr "IP:"
 
 msgid "I/O priority for scripts"
-msgstr ""
-
-msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
 msgstr ""
 
 msgid "IMDb Details"
@@ -10649,6 +10713,9 @@ msgid "Include storage device data"
 msgstr ""
 
 msgid "Include teletext details"
+msgstr ""
+
+msgid "Include text encoding data"
 msgstr ""
 
 msgid "Include timer data"
@@ -11284,7 +11351,7 @@ msgstr "LAN forbindelse"
 msgid "LCD scroll speed"
 msgstr ""
 
-msgid "LCD/Front panel *"
+msgid "LCD/Front panel"
 msgstr ""
 
 msgid "LCN Scanner"
@@ -11560,6 +11627,9 @@ msgid "Limit west"
 msgstr "Grense vest"
 
 msgid "Limited memory size, swap file required"
+msgstr ""
+
+msgid "Limited range (64..940)"
 msgstr ""
 
 #
@@ -11843,6 +11913,9 @@ msgid "Loop through to"
 msgstr "Loop til"
 
 msgid "Lower Framerate saves CPU Time."
+msgstr ""
+
+msgid "Lower RGB output clipping limit. 'Full range' = no lower clipping, 'Limited range' clips RGB outputs to 64 (broadcast safe)."
 msgstr ""
 
 msgid "Lower USB"
@@ -12150,7 +12223,7 @@ msgstr "Maksimalt antall dager"
 msgid "Maximum space used (MB)"
 msgstr ""
 
-msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
+msgid "Maximum time to wait for the first descrambling key (CW) before starting the decoder. 'Disabled' starts the decoder immediately without waiting."
 msgstr ""
 
 msgid "Mayotte"
@@ -15427,10 +15500,10 @@ msgstr ""
 msgid "Press OK to use this locale.  [%s]"
 msgstr ""
 
-msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that image. If available, YELLOW will either delete or wipe the image. A deleted image can be restored with the BLUE button. A wiped image is completely removed and cannot be restored!"
+msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that slot. If available, YELLOW will either delete or wipe the slot. A deleted slot can be restored with the BLUE button. A wiped slot is completely removed and cannot be restored!"
 msgstr ""
 
-msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that image. If available, YELLOW will disable Multiboot, delete, or wipe the selected image. Press BLUE to add more slots."
+msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that slot. If available, YELLOW will disable MultiBoot, delete, or wipe the selected slot. Press BLUE to add more slots."
 msgstr ""
 
 msgid "Press this button to emulate a long press on a button pressed afterwards (this also overrides any other actions assigned to emulation button)."
@@ -15688,9 +15761,8 @@ msgstr ""
 msgid "Put TV in Standby"
 msgstr "Sett TV i dvalemodus"
 
-#, fuzzy
-msgid "Put your AV Receiver in Standby"
-msgstr "Sett din %s %s i dvalemodus"
+msgid "Put your AV Receiver or Soundbar in Standby"
+msgstr ""
 
 msgid "Python"
 msgstr ""
@@ -15827,6 +15899,12 @@ msgstr "Lang rød"
 #
 msgid "RF Output Settings"
 msgstr "RF utgang"
+
+msgid "RGB clamp (lower)"
+msgstr ""
+
+msgid "RGB clamp (upper)"
+msgstr ""
 
 msgid "Racing"
 msgstr ""
@@ -16441,10 +16519,17 @@ msgstr ""
 msgid "Rename only highlighted file"
 msgstr ""
 
+#, python-format
+msgid "Rename slot '%s' (leave empty to reset):"
+msgstr ""
+
 msgid "Rename the proposed file to be created"
 msgstr ""
 
 msgid "Rename the selected service"
+msgstr ""
+
+msgid "Rename the highlighted slot"
 msgstr ""
 
 msgid "Rename this tag"
@@ -17199,7 +17284,7 @@ msgstr "Lagrer Timeshift filer"
 msgid "Scaler sharpness"
 msgstr "Skarphet"
 
-msgid "Scaler vertical dejagging"
+msgid "Scaler vertical anti-aliasing"
 msgstr "Skalerer vertikal dejagging"
 
 #
@@ -17979,6 +18064,9 @@ msgstr ""
 msgid "Select how the schedule is handled with respect to Standby."
 msgstr ""
 
+msgid "Select how this DVB-C/T tuner is connected. Use the external coax switch option only with a 5V controlled coax switch."
+msgstr ""
+
 msgid "Select how to activate the Quick EPG mode."
 msgstr "Velg hvordan du aktiverer hurtig EPG-modus:"
 
@@ -18204,6 +18292,9 @@ msgid "Select the default directory to be used if the right column directory is 
 msgstr ""
 
 msgid "Select the delay before the timer activates."
+msgstr ""
+
+msgid "Select the delay to buffer descrambled data before starting playback. This can reduce AC3 audio dropouts by ensuring enough data is available when the decoder starts. Higher values are more stable but increase channel switch time."
 msgstr ""
 
 msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for receivers with multiple satellite tuners."
@@ -18552,6 +18643,9 @@ msgstr "Velg om flerkanals lydspor bør nedmikses til stereo."
 #, fuzzy
 msgid "Select whether DTS channel audio tracks should be downmixed to stereo."
 msgstr "Velg om flerkanals lydspor bør nedmikses til stereo."
+
+msgid "Select whether Dolby TrueHD audio tracks should be passed through or decoded."
+msgstr ""
 
 msgid "Select whether IPv4, IPv6, or both protocols should be used. If both are enabled then which should be preferred."
 msgstr ""
@@ -21600,8 +21694,14 @@ msgstr "TV"
 msgid "TV button mode"
 msgstr "TV-knappen modus"
 
+msgid "TV input and receiver wakeup"
+msgstr ""
+
 msgid "TV physical address report"
 msgstr "Tv's fysiske adresse rapport"
+
+msgid "TV power"
+msgstr ""
 
 msgid "TXT PID"
 msgstr "TXT PID"
@@ -22238,7 +22338,7 @@ msgstr "Dette gjør at du kan endre skriftstørrelsen i forhold til skin større
 msgid "This allows you to change the number of rows shown."
 msgstr ""
 
-msgid "This allows you to set the maximum number of digits in a service number, up to 5."
+msgid "This allows you to set the maximum number of digits in a service number, up to 6."
 msgstr ""
 
 msgid "This bouquet is protected by a parental control PIN!"
@@ -22282,43 +22382,6 @@ msgstr "Dette alternativet gjør det mulig å redusere blokk-støy i bildet. Sel
 
 msgid "This option allows to set the level of dynamic contrast of the picture."
 msgstr "Dette alternativet gjør det mulig å sette nivået av dynamisk kontrast i bildet."
-
-#, fuzzy
-msgid "This option allows you to config the Colordepth for UHD."
-msgstr "Dette valget gjør at du kan øke blå toner i bildet."
-
-#, fuzzy
-msgid "This option allows you to config the Colorimetry for HDR."
-msgstr "Dette alternativet lar deg deaktivere sortering av menyene"
-
-msgid "This option allows you to config the Colorspace from Auto to RGB."
-msgstr ""
-
-#, fuzzy
-msgid "This option allows you to enable or disable the 10 Bit Color Mode."
-msgstr "Med dette alternativet kan du aktivere vertikal skalering dejagging."
-
-#, fuzzy
-msgid "This option allows you to enable or disable the 12 Bit Color Mode."
-msgstr "Med dette alternativet kan du aktivere vertikal skalering dejagging."
-
-#, fuzzy
-msgid "This option allows you to force the HDR Modes for UHD."
-msgstr "Dette alternativet lar deg velge 3D-modus"
-
-#, fuzzy
-msgid "This option allows you to force the HDR10 Modes for UHD."
-msgstr "Dette alternativet lar deg velge 3D-modus"
-
-#, fuzzy
-msgid "This option allows you to force the HLG Modes for UHD."
-msgstr "Dette alternativet lar deg velge 3D-modus"
-
-msgid "This option allows you enable smoothing filter to control the dithering process."
-msgstr "Dette alternativet lar deg aktivere sortering av valg i utjamnings prosessen."
-
-msgid "This option allows you enable the vertical scaler dejagging."
-msgstr "Med dette alternativet kan du aktivere vertikal skalering dejagging."
 
 msgid "This option allows you to Power Off the display."
 msgstr ""
@@ -22403,8 +22466,39 @@ msgstr ""
 msgid "This option allows you to choose whether or not to display genre information for the event."
 msgstr "Med dette alternativet kan du velge hvordan du vil vise den gjenværende/medgåtte tid for tv."
 
+#, fuzzy
+msgid "This option allows you to config the Colordepth for UHD."
+msgstr "Dette valget gjør at du kan øke blå toner i bildet."
+
+#, fuzzy
+msgid "This option allows you to config the Colorimetry for HDR."
+msgstr "Dette alternativet lar deg deaktivere sortering av menyene"
+
+msgid "This option allows you to config the Colorspace from Auto to RGB."
+msgstr ""
+
 msgid "This option allows you to enable 3D Surround Sound."
 msgstr "Dette alternativet lar deg aktivere 3D Surround Sound."
+
+#, fuzzy
+msgid "This option allows you to enable or disable the 10 Bit Color Mode."
+msgstr "Med dette alternativet kan du aktivere vertikal skalering dejagging."
+
+#, fuzzy
+msgid "This option allows you to enable or disable the 12 Bit Color Mode."
+msgstr "Med dette alternativet kan du aktivere vertikal skalering dejagging."
+
+#, fuzzy
+msgid "This option allows you to force the HDR Modes for UHD."
+msgstr "Dette alternativet lar deg velge 3D-modus"
+
+#, fuzzy
+msgid "This option allows you to force the HDR10 Modes for UHD."
+msgstr "Dette alternativet lar deg velge 3D-modus"
+
+#, fuzzy
+msgid "This option allows you to force the HLG Modes for UHD."
+msgstr "Dette alternativet lar deg velge 3D-modus"
 
 msgid "This option allows you to set offset values for different Letterbox resolutions."
 msgstr ""
@@ -22490,18 +22584,6 @@ msgstr "Dette alternativet scaler skarphet, brukes når strekking av bildet fra 
 
 msgid "This option sets the suppression of false digital contours, that are the result of a limited number of discrete values."
 msgstr "Dette alternativet suppression av falske digitale konturer, som er et resultat av et begrenset antall diskrete verdier."
-
-msgid "This option sets the video & osd picture brightness."
-msgstr ""
-
-msgid "This option sets the video & osd picture contrast."
-msgstr ""
-
-msgid "This option sets the video picture brightness."
-msgstr ""
-
-msgid "This option sets the video picture contrast."
-msgstr ""
 
 msgid "This option sets up the picture sharpness, used when the picture is being upscaled."
 msgstr "Dette alternativet setter opp bildets skarphet, brukes når bildet blir oppskalert."
@@ -22838,6 +22920,9 @@ msgid "Timeshift"
 msgstr "Timeshift"
 
 msgid "Timezone"
+msgstr ""
+
+msgid "Timing and diagnostics"
 msgstr ""
 
 msgid "Timor-Leste / East Timor"
@@ -23668,6 +23753,9 @@ msgstr "Opphopp -"
 msgid "Uphops: "
 msgstr "Opphopp: "
 
+msgid "Upper RGB output clipping limit. 'Full range' = no upper clipping, 'Limited range' clips RGB outputs to 940 (broadcast safe)."
+msgstr ""
+
 msgid "Upper USB"
 msgstr ""
 
@@ -24398,7 +24486,7 @@ msgstr ""
 msgid "Volume down"
 msgstr ""
 
-msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
+msgid "Volume keys on the receiver remote will control the TV, AV receiver or soundbar volume over HDMI-CEC. If this feature is not supported the volume keys have no function!"
 msgstr ""
 
 msgid "Volume steps"
@@ -24491,10 +24579,8 @@ msgstr ""
 msgid "Wake up to standby"
 msgstr "Våkn opp til dvalemodus"
 
-#
-#, fuzzy
-msgid "Wake up your AV Receiver from Standby"
-msgstr "Våkn opp din %s %s fra dvalemodus"
+msgid "Wake up your AV Receiver or Soundbar from Standby"
+msgstr ""
 
 msgid "Wallis and Futuna"
 msgstr ""
@@ -24755,13 +24841,13 @@ msgstr ""
 msgid "When enabled, the VCR SCART option will be shown on the main menu."
 msgstr ""
 
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched off."
+msgstr ""
+
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched on."
+msgstr ""
+
 msgid "When enabled, the length of each recording will be shown in the movie list (this might cause some additional loading time)."
-msgstr ""
-
-msgid "When enabled, the receiver will automatically be switched off."
-msgstr ""
-
-msgid "When enabled, the receiver will automatically be switched on."
 msgstr ""
 
 msgid "When enabled, the receiver will automatically return to Standby when the TV is turned off."
@@ -24839,7 +24925,7 @@ msgstr ""
 msgid "When the receiver wakes from Standby or Deep Standby it will send a command to the TV to bring it out of Standby."
 msgstr ""
 
-msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
+msgid "When the receiver wakes from Standby, send active source, stream path and routing commands so the TV switches to the HDMI input connected to the receiver."
 msgstr ""
 
 msgid "When the red box is correctly visible press the GREEN button to save the settings and exit."
@@ -26234,6 +26320,15 @@ msgstr "ja (behold feeds)"
 
 msgid "®"
 msgstr ""
+
+#, fuzzy
+#~ msgid "Put your AV Receiver in Standby"
+#~ msgstr "Sett din %s %s i dvalemodus"
+
+#
+#, fuzzy
+#~ msgid "Wake up your AV Receiver from Standby"
+#~ msgstr "Våkn opp din %s %s fra dvalemodus"
 
 #~ msgid ""
 #~ "File oscam.conf not found.\n"

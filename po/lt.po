@@ -5,9 +5,9 @@
 # Gediminas Murauskas <muziejusinfo@gmail.com>, 2021.
 msgid ""
 msgstr ""
-"Project-Id-Version: tuxbox-enigma 0.0.1\n"
+"Project-Id-Version: OpenATV Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-11 10:12+0000\n"
+"POT-Creation-Date: 2026-06-22 11:12+0000\n"
 "PO-Revision-Date: 2025-06-11 19:04+0000\n"
 "Last-Translator: Adga56 <adga45@gmail.com>\n"
 "Language-Team: Lithuanian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/lt/>\n"
@@ -32,9 +32,6 @@ msgid ""
 msgstr ""
 "\n"
 "Vyksta įrašymas."
-
-msgid " "
-msgstr " "
 
 msgid "  Menu key : Select quad channel"
 msgstr "  Menu mygtukas : pasirinkite 4 PIP kanalą"
@@ -1766,6 +1763,9 @@ msgstr "ATSC teikėjas"
 msgid "AV Setup"
 msgstr "Garso/vaizdo valdymas"
 
+msgid "AV receiver, soundbar and remote"
+msgstr ""
+
 msgid "Abkhazian"
 msgstr "Abchazijos"
 
@@ -2003,7 +2003,7 @@ msgstr "Pridėti pasirinktą aplanką į žymes"
 msgid "Add legacy LEFT/RIGHT actions"
 msgstr "Senstelėjusių LEFT/RIGHT veiksmų įtraukimas"
 
-msgid "Add more slots"
+msgid "Add slots"
 msgstr ""
 
 msgid "Add new CCcam line"
@@ -2160,6 +2160,9 @@ msgid "After zap"
 msgstr "Po perjungimo"
 
 msgid "Aggregate data only"
+msgstr ""
+
+msgid "Aggressive"
 msgstr ""
 
 msgid "Akan"
@@ -2524,7 +2527,7 @@ msgstr "Ar tikrai norite pašalinti šį žurnalą:\n"
 msgid "Are you sure you want to delete this?"
 msgstr "Ar tikrai norite tai ištrinti?"
 
-msgid "Are you sure you want to disable Chkroot Multiboot?"
+msgid "Disable Chkroot Multiboot?"
 msgstr ""
 
 msgid "Are you sure you want to exit this wizard?"
@@ -2722,6 +2725,9 @@ msgstr "Kūrimas"
 msgid "Auto"
 msgstr "Auto"
 
+msgid "Auto (not available)"
+msgstr "Automatinis (negalimas)"
+
 msgid "Auto Language"
 msgstr "Automatinė kalba"
 
@@ -2778,9 +2784,6 @@ msgstr ""
 
 msgid "Auto video mode selected for the TV."
 msgstr ""
-
-msgid "Auto (not available)"
-msgstr "Automatinis (negalimas)"
 
 msgid "AutoCam Settings"
 msgstr ""
@@ -3277,6 +3280,12 @@ msgid "Brightness Video"
 msgstr ""
 
 msgid "Brightness Video & OSD"
+msgstr ""
+
+msgid "Brightness applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr ""
+
+msgid "Brightness applied to the video layer only. Does not affect enigma2 menus or OSD."
 msgstr ""
 
 msgid "British Indian Ocean Territory"
@@ -3806,6 +3815,12 @@ msgstr "animacija/lėlės"
 
 msgid "Cascade PiP"
 msgstr "PiP pakopomis"
+
+msgid "Case insensitive"
+msgstr ""
+
+msgid "Case sensitive"
+msgstr ""
 
 msgid "Catalan / Valencian"
 msgstr "Katalonų / Valensijos"
@@ -4385,12 +4400,6 @@ msgstr "Kolumbija"
 
 msgid "Color"
 msgstr "Spalva"
-
-msgid "Color Bottom"
-msgstr ""
-
-msgid "Color Top"
-msgstr ""
 
 msgid "Color format"
 msgstr "Spalvų formatas"
@@ -5035,17 +5044,32 @@ msgstr ""
 msgid "Contrast Video & OSD"
 msgstr ""
 
+msgid "Contrast applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr ""
+
+msgid "Contrast applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr ""
+
 msgid "Control LED can be turned on or off here."
 msgstr "LED valdymas gali būti įjungtas arba išjungtas čia."
 
 msgid "Control files:"
 msgstr "Valdymo failai:"
 
+msgid "Control how files will be sorted in screens that show a file list. Case sensitive will group uppercase files first followed by lowercase files. Case insensitive will sort files alphabetically, ignoring case."
+msgstr ""
+
 msgid "Control of the position how finished timer are shown in the Timer List."
 msgstr "Nustatykite pozicijas, kaip baigti laikmačiai bus rodomi laikmačių sąraše."
 
 msgid "Control the InfoBar fading speed."
 msgstr "Nustatykite infojuostos išnykimo/išblukimo greitį"
+
+msgid "Control the smoothing filter used for the dithering process."
+msgstr "Ši parinktis leidžia įjungti glotninimo filtrą, kad kontroliuoti vaizdų išlyginimo procesą."
+
+msgid "Control the use of vertical scaler anti-aliasing."
+msgstr "Ši parinktis leidžia įjungti vertikalių smailumų glotninimą."
 
 msgid "Control your Softcams"
 msgstr "Valdykite savo emuliatorius"
@@ -5210,9 +5234,6 @@ msgstr ""
 msgid "Create backup image zip file."
 msgstr ""
 
-msgid "Create boot dump."
-msgstr ""
-
 msgid "Create boot image dump."
 msgstr ""
 
@@ -5267,6 +5288,13 @@ msgstr "Kuriama failų sistema"
 
 msgid "Creating hard link to time shift file failed!"
 msgstr "Sukurti kieto disko nuorodos į laiko poslinkio failą nepavyko!"
+
+#, python-format
+msgid ""
+"Creating or activating the swap file failed.\n"
+"\n"
+"%s"
+msgstr ""
 
 msgid "Creating partition"
 msgstr "Kuriamas skaidinys"
@@ -5533,11 +5561,17 @@ msgstr ""
 msgid "DVB-C"
 msgstr "DVB-C"
 
+msgid "DVB-C / Cable only"
+msgstr ""
+
 msgid "DVB-C ANNEX B"
 msgstr "DVB-C ANNEX B"
 
 msgid "DVB-C ANNEX C"
 msgstr "DVB-C ANNEX C"
+
+msgid "DVB-C and DVB-T/T2 via external 5V controlled coax switch"
+msgstr ""
 
 msgid "DVB-S"
 msgstr "DVB-S"
@@ -5547,6 +5581,9 @@ msgstr "DVB-S2"
 
 msgid "DVB-T"
 msgstr "DVB-T"
+
+msgid "DVB-T/T2 / Terrestrial only"
+msgstr ""
 
 msgid "DVB-T2"
 msgstr "DVB-T2"
@@ -5779,6 +5816,9 @@ msgid "Debug log time format *"
 msgstr "Derinti žurnalo laiko formatą *"
 
 msgid "Decoder release strategy"
+msgstr ""
+
+msgid "Decoder start delay"
 msgstr ""
 
 msgid "Decoder start timeout"
@@ -6067,7 +6107,7 @@ msgstr "Trinti žurnalą"
 msgid "Delete only highlighted file"
 msgstr "Naikinti tik paryškintą failą"
 
-msgid "Delete or Wipe the highlighted slot"
+msgid "Empty or Wipe the highlighted slot"
 msgstr "Naikinti arba išvalyti paryškintą lizdą"
 
 msgid "Delete play list entry"
@@ -6711,6 +6751,9 @@ msgstr "Dokumentika"
 msgid "Dolby Digital downmix is now"
 msgstr "Dolby Digital kanalų suliejimas"
 
+msgid "Dolby TrueHD"
+msgstr ""
+
 msgid "Domain"
 msgstr "Domenas"
 
@@ -7244,6 +7287,12 @@ msgstr "Įjungti klaidų žurnalą *"
 msgid "Enable digital downmix"
 msgstr "Įjungti skaitmeninį suliejimą"
 
+msgid "Enable extended cut file support"
+msgstr ""
+
+msgid "Enable extended cut file support. This will write cut with more information and not only marker."
+msgstr ""
+
 msgid "Enable fallback remote receiver"
 msgstr "Įjungti atsarginį nuotolinį imtuvą"
 
@@ -7323,6 +7372,9 @@ msgid "Enable this option to add screen names and resolution data to the debug l
 msgstr "Įjunkite šią parinktį, jei į derinimo žurnalo failą norite įtraukti ekrano pavadinimus ir skiriamosios gebos duomenis."
 
 msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr ""
+
+msgid "Enable this option to add text encoding information to the debug log file."
 msgstr ""
 
 msgid "Enable this option to add timer debugging data to the debug log file."
@@ -8248,7 +8300,7 @@ msgstr "Folklando (Malvinų) Salos"
 msgid "Fallback API did not return a valid result."
 msgstr "Atsarginė API nepateikė galiojančio rezultato."
 
-msgid "Fallback Font *"
+msgid "Fallback Font"
 msgstr ""
 
 msgid "Fallback Remote Receiver Settings"
@@ -8467,6 +8519,9 @@ msgid "File appears to be busy!\n"
 msgstr "Failas tikriausiai užimtas.\n"
 
 msgid "File compression"
+msgstr ""
+
+msgid "File sorting mode"
 msgstr ""
 
 msgid "File system"
@@ -8809,6 +8864,9 @@ msgstr ""
 msgid "Full factory reset"
 msgstr "Pilnas gamyklinis atstatymas"
 
+msgid "Full range (no clipping)"
+msgstr ""
+
 msgid "Full screen"
 msgstr "Visas ekranas"
 
@@ -8839,7 +8897,7 @@ msgstr "GStreamer derinimo žurnalo kategorija *"
 msgid "GStreamer debug log level *"
 msgstr "GStreamer derinimo žurnalo lygis *"
 
-msgid "GUI Skin *"
+msgid "GUI Skin"
 msgstr ""
 
 msgid "Gabon"
@@ -9122,6 +9180,9 @@ msgstr "Gajana"
 msgid "H"
 msgstr "H"
 
+msgid "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+msgstr ""
+
 msgid "H: = Hourly / D: = Daily / W: = Weekly / M: = Monthly"
 msgstr "H: = kas valandą / D: = kas dieną / W: = kas savaitę / M: = kas mėnesį"
 
@@ -9237,6 +9298,9 @@ msgid "Hardware information"
 msgstr "Aparatūros informacija"
 
 msgid "Hardware latency correction"
+msgstr ""
+
+msgid "Hardware revision"
 msgstr ""
 
 msgid "Hardware serial"
@@ -9503,7 +9567,7 @@ msgstr "Valandos minutės"
 msgid "Hours Minutes Seconds"
 msgstr "Val min sek"
 
-msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
+msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels."
 msgstr ""
 
 msgid "Http(s) stream start delay"
@@ -9521,6 +9585,9 @@ msgstr "Vengrija"
 msgid "Hybrid Tuner"
 msgstr "Hibridinis imtuvas"
 
+msgid "Hybrid tuner mode"
+msgstr ""
+
 msgid "Hz"
 msgstr ""
 
@@ -9529,9 +9596,6 @@ msgstr "I"
 
 msgid "I/O priority for scripts"
 msgstr "Scenarijų įvesties / išvesties prioritetas"
-
-msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
-msgstr "I55SE/H7/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 naujas modelis"
 
 msgid "IMDb Details"
 msgstr "IMDb detaliau"
@@ -9925,6 +9989,9 @@ msgid "Include storage device data"
 msgstr ""
 
 msgid "Include teletext details"
+msgstr ""
+
+msgid "Include text encoding data"
 msgstr ""
 
 msgid "Include timer data"
@@ -10507,7 +10574,7 @@ msgstr "Laidinis tinklas"
 msgid "LCD scroll speed"
 msgstr "LCD užrašų slinkties greitis"
 
-msgid "LCD/Front panel *"
+msgid "LCD/Front panel"
 msgstr ""
 
 msgid "LCN Scanner"
@@ -10758,6 +10825,9 @@ msgid "Limit west"
 msgstr "Vakarų riba"
 
 msgid "Limited memory size, swap file required"
+msgstr ""
+
+msgid "Limited range (64..940)"
 msgstr ""
 
 msgid "Limits cancelled"
@@ -11014,6 +11084,9 @@ msgstr "Kilpa iki"
 
 msgid "Lower Framerate saves CPU Time."
 msgstr "Žemesnis kadrų dažnis atlaisvins CPU"
+
+msgid "Lower RGB output clipping limit. 'Full range' = no lower clipping, 'Limited range' clips RGB outputs to 64 (broadcast safe)."
+msgstr ""
 
 msgid "Lower USB"
 msgstr "Apatinis USB lizdas"
@@ -11293,7 +11366,7 @@ msgstr "Maksimalus EPG dienų skaičius"
 msgid "Maximum space used (MB)"
 msgstr "Maksimali naudojama apimtis (MB):"
 
-msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
+msgid "Maximum time to wait for the first descrambling key (CW) before starting the decoder. 'Disabled' starts the decoder immediately without waiting."
 msgstr ""
 
 msgid "Mayotte"
@@ -14280,10 +14353,10 @@ msgstr "Paspauskite OK, kad naudotumėte šią kalbą.  [%s]"
 msgid "Press OK to use this locale.  [%s]"
 msgstr "Paspauskite OK, kad naudotumėte šią lokalę.  [%s]"
 
-msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that image. If available, YELLOW will either delete or wipe the image. A deleted image can be restored with the BLUE button. A wiped image is completely removed and cannot be restored!"
+msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that slot. If available, YELLOW will either delete or wipe the slot. A deleted slot can be restored with the BLUE button. A wiped slot is completely removed and cannot be restored!"
 msgstr "Paspauskite mygtukus AUKŠTYN / ŽEMYN, kad pasirinktumėte lizdą, ir paspauskite Gerai arba ŽALIA, kad iš naujo paleistumėte į tą vaizdą. Jei įmanoma, geltona ištrins arba nušluostys vaizdą. Panaikintą vaizdą galima atkurti mygtuku MĖLYNA. Nuvalytas vaizdas visiškai pašalinamas ir jo negalima atkurti!"
 
-msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that image. If available, YELLOW will disable Multiboot, delete, or wipe the selected image. Press BLUE to add more slots."
+msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that slot. If available, YELLOW will disable MultiBoot, delete, or wipe the selected slot. Press BLUE to add more slots."
 msgstr ""
 
 msgid "Press this button to emulate a long press on a button pressed afterwards (this also overrides any other actions assigned to emulation button)."
@@ -14521,8 +14594,8 @@ msgstr "Puštūnų / Puštūnų"
 msgid "Put TV in Standby"
 msgstr "Jungti TV į budėjimo būseną"
 
-msgid "Put your AV Receiver in Standby"
-msgstr "Išjungti imtuvą į budėjimo būseną"
+msgid "Put your AV Receiver or Soundbar in Standby"
+msgstr ""
 
 msgid "Python"
 msgstr "Python"
@@ -14643,6 +14716,12 @@ msgstr "RAUDONAS ilgas mygtukas"
 
 msgid "RF Output Settings"
 msgstr "RF išvesties parametrai"
+
+msgid "RGB clamp (lower)"
+msgstr ""
+
+msgid "RGB clamp (upper)"
+msgstr ""
 
 msgid "Racing"
 msgstr ""
@@ -15201,10 +15280,17 @@ msgstr "Naujų įvykių pervardijimo pavadinimas ir apibūdinimas"
 msgid "Rename only highlighted file"
 msgstr "Pervardyti tik paryškintą failą"
 
+#, python-format
+msgid "Rename slot '%s' (leave empty to reset):"
+msgstr ""
+
 msgid "Rename the proposed file to be created"
 msgstr "Pervardykite siūlomą sukurti failą"
 
 msgid "Rename the selected service"
+msgstr ""
+
+msgid "Rename the highlighted slot"
 msgstr ""
 
 msgid "Rename this tag"
@@ -15893,7 +15979,7 @@ msgstr "Išsaugomi laiko poslinkio failai"
 msgid "Scaler sharpness"
 msgstr "Skalės aštrumas"
 
-msgid "Scaler vertical dejagging"
+msgid "Scaler vertical anti-aliasing"
 msgstr "Vertikalių smailumų pašalinimas"
 
 msgid "Scaling mode"
@@ -16644,6 +16730,9 @@ msgstr "Pasirinkite, kaip nustatyti palydovinę anteną. t.y. fiksuota antena, v
 msgid "Select how the schedule is handled with respect to Standby."
 msgstr ""
 
+msgid "Select how this DVB-C/T tuner is connected. Use the external coax switch option only with a 5V controlled coax switch."
+msgstr ""
+
 msgid "Select how to activate the Quick EPG mode."
 msgstr "Pasirinkite, kaip suaktyvinti sparčiojo EPG režimą."
 
@@ -16864,6 +16953,9 @@ msgid "Select the default directory to be used if the right column directory is 
 msgstr ""
 
 msgid "Select the delay before the timer activates."
+msgstr ""
+
+msgid "Select the delay to buffer descrambled data before starting playback. This can reduce AC3 audio dropouts by ensuring enough data is available when the decoder starts. Higher values are more stable but increase channel switch time."
 msgstr ""
 
 msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for receivers with multiple satellite tuners."
@@ -17201,6 +17293,9 @@ msgstr "Pasirinkite, ar DTS kanalo garso takeliai turėtų būti sulieti ar perk
 
 msgid "Select whether DTS channel audio tracks should be downmixed to stereo."
 msgstr "Ši parinktis leidžia nustatyti, ar DTS kanalo garso takeliai bus perkoduoti į stereo garsą."
+
+msgid "Select whether Dolby TrueHD audio tracks should be passed through or decoded."
+msgstr ""
 
 msgid "Select whether IPv4, IPv6, or both protocols should be used. If both are enabled then which should be preferred."
 msgstr ""
@@ -20034,8 +20129,14 @@ msgstr "TV"
 msgid "TV button mode"
 msgstr "TV mygtuko režimas"
 
+msgid "TV input and receiver wakeup"
+msgstr ""
+
 msgid "TV physical address report"
 msgstr "TV fizinio adreso ataskaita"
+
+msgid "TV power"
+msgstr ""
 
 msgid "TXT PID"
 msgstr "TXT PID"
@@ -20678,8 +20779,8 @@ msgstr "Ši parinktis leidžia nustatyti šrifto dydį lyginant su temos dydžiu
 msgid "This allows you to change the number of rows shown."
 msgstr "Ši parinktis leidžia nustatyti rodomų eilučių skaičių."
 
-msgid "This allows you to set the maximum number of digits in a service number, up to 5."
-msgstr "Ši parinktis leidžia nustatyti 5 skaitmenų skaičių, jei turite daugiau nei 9999 kanalus."
+msgid "This allows you to set the maximum number of digits in a service number, up to 6."
+msgstr "Ši parinktis leidžia nustatyti 6 skaitmenų skaičių, jei turite daugiau nei 99999 kanalus."
 
 msgid "This bouquet is protected by a parental control PIN!"
 msgstr "šis paketas apsaugotas tėvų kontrolės PIN kodu"
@@ -20722,36 +20823,6 @@ msgstr "Ši parinktis leidžia sumažinti matomo vaizdo \"kvadratavimosi\" triuk
 
 msgid "This option allows to set the level of dynamic contrast of the picture."
 msgstr "Ši parinktis leidžia nustatyti paveikslėlio dinaminio kontrasto lygį."
-
-msgid "This option allows you to config the Colordepth for UHD."
-msgstr "Ši parinktis leidžia nustatyti HDMI naudojamą spalvų gylį"
-
-msgid "This option allows you to config the Colorimetry for HDR."
-msgstr "Ši parinktis leidžia konfigūruoti HDR kolorimetriją"
-
-msgid "This option allows you to config the Colorspace from Auto to RGB."
-msgstr "Ši parinktis leidžia pasirinkti spalvų atvaizdavimo erdvę iš 'Auto' į RGB"
-
-msgid "This option allows you to enable or disable the 10 Bit Color Mode."
-msgstr "Ši parinktis leidžia jums įjungti arba išjungti 10 bitų spalvų režimą"
-
-msgid "This option allows you to enable or disable the 12 Bit Color Mode."
-msgstr "Ši parinktis leidžia jums įjungti arba išjungti 12 bitų spalvų režimą"
-
-msgid "This option allows you to force the HDR Modes for UHD."
-msgstr "Ši parinktis leidžia priverstinai naudoti HDR režimą dėl UHD"
-
-msgid "This option allows you to force the HDR10 Modes for UHD."
-msgstr "Ši parinktis leidžia priverstinai naudoti HDR10 režimą dėl UHD"
-
-msgid "This option allows you to force the HLG Modes for UHD."
-msgstr "Ši parinktis leidžia priverstinai naudoti HLG režimą dėl UHD"
-
-msgid "This option allows you enable smoothing filter to control the dithering process."
-msgstr "Ši parinktis leidžia įjungti glotninimo filtrą, kad kontroliuoti vaizdų išlyginimo procesą."
-
-msgid "This option allows you enable the vertical scaler dejagging."
-msgstr "Ši parinktis leidžia įjungti vertikalių smailumų glotninimą."
 
 msgid "This option allows you to Power Off the display."
 msgstr "Ši parinktis leidžia jums išjunkite ekraną."
@@ -20831,8 +20902,32 @@ msgstr "Ši parinktis leidžia pasirinkti, kur pirmu mygtuko paspaudimu peršoka
 msgid "This option allows you to choose whether or not to display genre information for the event."
 msgstr "Ši pasirinktis leidžia pasirinkti, rodyti, ar ne įvykio žanro informaciją."
 
+msgid "This option allows you to config the Colordepth for UHD."
+msgstr "Ši parinktis leidžia nustatyti HDMI naudojamą spalvų gylį"
+
+msgid "This option allows you to config the Colorimetry for HDR."
+msgstr "Ši parinktis leidžia konfigūruoti HDR kolorimetriją"
+
+msgid "This option allows you to config the Colorspace from Auto to RGB."
+msgstr "Ši parinktis leidžia pasirinkti spalvų atvaizdavimo erdvę iš 'Auto' į RGB"
+
 msgid "This option allows you to enable 3D Surround Sound."
 msgstr "Ši parinktis leidžia įjungti 3D erdvinį garsą."
+
+msgid "This option allows you to enable or disable the 10 Bit Color Mode."
+msgstr "Ši parinktis leidžia jums įjungti arba išjungti 10 bitų spalvų režimą"
+
+msgid "This option allows you to enable or disable the 12 Bit Color Mode."
+msgstr "Ši parinktis leidžia jums įjungti arba išjungti 12 bitų spalvų režimą"
+
+msgid "This option allows you to force the HDR Modes for UHD."
+msgstr "Ši parinktis leidžia priverstinai naudoti HDR režimą dėl UHD"
+
+msgid "This option allows you to force the HDR10 Modes for UHD."
+msgstr "Ši parinktis leidžia priverstinai naudoti HDR10 režimą dėl UHD"
+
+msgid "This option allows you to force the HLG Modes for UHD."
+msgstr "Ši parinktis leidžia priverstinai naudoti HLG režimą dėl UHD"
 
 msgid "This option allows you to set offset values for different Letterbox resolutions."
 msgstr ""
@@ -20914,18 +21009,6 @@ msgstr "Ši parinktis nustato skalerio ryškumą, naudojamas, kai tempiame pavei
 
 msgid "This option sets the suppression of false digital contours, that are the result of a limited number of discrete values."
 msgstr "Ši parinktis nustato klaidingų skaitmeninių kontūrų, kurie yra iš riboto skaičiaus atskirų verčių slopinimo rezultatas."
-
-msgid "This option sets the video & osd picture brightness."
-msgstr ""
-
-msgid "This option sets the video & osd picture contrast."
-msgstr ""
-
-msgid "This option sets the video picture brightness."
-msgstr ""
-
-msgid "This option sets the video picture contrast."
-msgstr ""
 
 msgid "This option sets up the picture sharpness, used when the picture is being upscaled."
 msgstr "Nustato paveikslėlių vaizdo ryškumą keičiantis masteliui."
@@ -21232,6 +21315,9 @@ msgstr "Laiko poslinkis"
 
 msgid "Timezone"
 msgstr "Laiko juosta"
+
+msgid "Timing and diagnostics"
+msgstr ""
 
 msgid "Timor-Leste / East Timor"
 msgstr "Rytų Timoras / Rytų Timoras"
@@ -21987,6 +22073,9 @@ msgstr "Uphops -"
 msgid "Uphops: "
 msgstr "Uphops: "
 
+msgid "Upper RGB output clipping limit. 'Full range' = no upper clipping, 'Limited range' clips RGB outputs to 940 (broadcast safe)."
+msgstr ""
+
 msgid "Upper USB"
 msgstr "Viršutinis USB lizdas"
 
@@ -22695,8 +22784,8 @@ msgstr ""
 msgid "Volume down"
 msgstr "Sumažinti garsumą"
 
-msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
-msgstr "Imtuvo nuotolinio valdymo pulto garsumo klavišai valdys televizoriaus garsumą. Jei ši funkcija nepalaikoma, garsumo klavišai neturi funkcijos!"
+msgid "Volume keys on the receiver remote will control the TV, AV receiver or soundbar volume over HDMI-CEC. If this feature is not supported the volume keys have no function!"
+msgstr ""
 
 msgid "Volume steps"
 msgstr ""
@@ -22779,8 +22868,8 @@ msgstr "Žadinimo laikas prieš laikmatį prasideda [min]"
 msgid "Wake up to standby"
 msgstr "Pabusti į budėjimo režimą"
 
-msgid "Wake up your AV Receiver from Standby"
-msgstr "Pažadinti imtuvą iš budėjimo"
+msgid "Wake up your AV Receiver or Soundbar from Standby"
+msgstr ""
 
 msgid "Wallis and Futuna"
 msgstr "Valis ir Futuna"
@@ -23035,14 +23124,14 @@ msgstr "Kai čia įjungta, PiP gali būti išjungtas su 'EXIT' mygtuku."
 msgid "When enabled, the VCR SCART option will be shown on the main menu."
 msgstr "Kai čia įjungta, pagrindiniame meniu bus rodomos VCR scart parinktys"
 
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched off."
+msgstr ""
+
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched on."
+msgstr ""
+
 msgid "When enabled, the length of each recording will be shown in the movie list (this might cause some additional loading time)."
 msgstr "Įjungus, kiekvieno įrašo trukmė bus rodoma filmų sąraše (tai gali sukelti papildomą įkėlimo laiką)."
-
-msgid "When enabled, the receiver will automatically be switched off."
-msgstr "Įjungus imtuvas bus automatiškai išjungtas."
-
-msgid "When enabled, the receiver will automatically be switched on."
-msgstr "Įjungus imtuvas bus automatiškai įjungtas."
 
 msgid "When enabled, the receiver will automatically return to Standby when the TV is turned off."
 msgstr "Kai įjungta, imtuvas automatiškai grįš į budėjimo režimą, kai televizorius bus išjungtas."
@@ -23119,8 +23208,8 @@ msgstr "Kai įvesties žymeklis pasiekia šį tašką (pločio procentą iš abi
 msgid "When the receiver wakes from Standby or Deep Standby it will send a command to the TV to bring it out of Standby."
 msgstr "Kai imtuvas atsibunda iš budėjimo arba gilaus budėjimo režimo, jis išsiųs komandą televizoriui kad išjungti budėjimo režimą."
 
-msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
-msgstr "Kai imtuvas pažadinamas iš budėjimo režimo, jis duos komandą televizoriui perjungti HDMI įvestį, prie kurios prijungtas imtuvas."
+msgid "When the receiver wakes from Standby, send active source, stream path and routing commands so the TV switches to the HDMI input connected to the receiver."
+msgstr ""
 
 msgid "When the red box is correctly visible press the GREEN button to save the settings and exit."
 msgstr ""
@@ -24371,6 +24460,30 @@ msgstr "taip (išsaugoti šaltinius)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
+#~ msgstr "Kai imtuvas pažadinamas iš budėjimo režimo, jis duos komandą televizoriui perjungti HDMI įvestį, prie kurios prijungtas imtuvas."
+
+#~ msgid "Put your AV Receiver in Standby"
+#~ msgstr "Išjungti imtuvą į budėjimo būseną"
+
+#~ msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
+#~ msgstr "Imtuvo nuotolinio valdymo pulto garsumo klavišai valdys televizoriaus garsumą. Jei ši funkcija nepalaikoma, garsumo klavišai neturi funkcijos!"
+
+#~ msgid "Wake up your AV Receiver from Standby"
+#~ msgstr "Pažadinti imtuvą iš budėjimo"
+
+#~ msgid "When enabled, the receiver will automatically be switched off."
+#~ msgstr "Įjungus imtuvas bus automatiškai išjungtas."
+
+#~ msgid "When enabled, the receiver will automatically be switched on."
+#~ msgstr "Įjungus imtuvas bus automatiškai įjungtas."
+
+#~ msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+#~ msgstr "I55SE/H7/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 naujas modelis"
+
+#~ msgid " "
+#~ msgstr " "
 
 #~ msgid ""
 #~ "File oscam.conf not found.\n"

@@ -2,10 +2,10 @@
 # tomppaa <tomzza@users.noreply.hosted.weblate.org>, 2023, 2024, 2025, 2026.
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenATV\n"
+"Project-Id-Version: OpenATV Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-11 10:12+0000\n"
-"PO-Revision-Date: 2026-02-27 06:09+0000\n"
+"POT-Creation-Date: 2026-06-22 11:12+0000\n"
+"PO-Revision-Date: 2026-06-17 09:16+0000\n"
 "Last-Translator: tomppaa <tomzza@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Finnish <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/fi/>\n"
 "Language: fi\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.16.1-dev\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 msgid ""
 "\n"
@@ -28,9 +28,6 @@ msgid ""
 msgstr ""
 "\n"
 "Tallennus käynnissä."
-
-msgid " "
-msgstr " "
 
 msgid "  Menu key : Select quad channel"
 msgstr "  MENU näppäin: Valitse 4 kanavaa"
@@ -920,7 +917,7 @@ msgstr[1] "%d pakettia löytyi."
 #, python-format
 msgid "%d package has an update."
 msgid_plural "%d packages have updates."
-msgstr[0] "%d paketti on päivitetty"
+msgstr[0] "%d paketti on päivitetty."
 msgstr[1] "%d paketit on päivitetty."
 
 #, python-format
@@ -1725,6 +1722,9 @@ msgstr "Lisää p.tarjoaja"
 msgid "AV Setup"
 msgstr "Kuva/Ääni Asetukset"
 
+msgid "AV receiver, soundbar and remote"
+msgstr ""
+
 msgid "Abkhazian"
 msgstr "Abkhazian"
 
@@ -1962,7 +1962,7 @@ msgstr "Lisää valittu kansio kirjanmerkkeihin"
 msgid "Add legacy LEFT/RIGHT actions"
 msgstr "Lisää vanhat VASEN/OIKEA toiminnot"
 
-msgid "Add more slots"
+msgid "Add slots"
 msgstr "Lisää paikkoja"
 
 msgid "Add new CCcam line"
@@ -2124,6 +2124,9 @@ msgstr "Vaihdoin jälkeen"
 
 msgid "Aggregate data only"
 msgstr "Aggregoituja tietoja vain"
+
+msgid "Aggressive"
+msgstr "Aggressiivinen"
 
 msgid "Akan"
 msgstr "Akan"
@@ -2485,7 +2488,7 @@ msgstr "Haluatko varmasti poistaa tämän lokin:\n"
 msgid "Are you sure you want to delete this?"
 msgstr "Haluatko varmasti poistaa tämän?"
 
-msgid "Are you sure you want to disable Chkroot Multiboot?"
+msgid "Disable Chkroot Multiboot?"
 msgstr "Haluatko poistaa Chkroot Multibootin käytöstä?"
 
 msgid "Are you sure you want to exit this wizard?"
@@ -2683,6 +2686,9 @@ msgstr "Toimintatapa"
 msgid "Auto"
 msgstr "Autom."
 
+msgid "Auto (not available)"
+msgstr "Auto (ei käytettävissä)"
+
 msgid "Auto Language"
 msgstr "Automaattinen kieli"
 
@@ -2739,9 +2745,6 @@ msgstr "Automaattinen videotila valittu"
 
 msgid "Auto video mode selected for the TV."
 msgstr "Automaattinen videotila valittu TV:lle."
-
-msgid "Auto (not available)"
-msgstr "Auto (ei käytettävissä)"
 
 msgid "AutoCam Settings"
 msgstr "Softcam Asetukset"
@@ -3239,6 +3242,12 @@ msgstr "Kuvan kirkkaus"
 
 msgid "Brightness Video & OSD"
 msgstr "Kuvan Kirkkaus & kuvaruutu"
+
+msgid "Brightness applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr "Kirkkaus kohdistetaan video- ja käyttöliittymän yhteiseen näyttöön. Vaikuttaa kaikkeen näytöllä näkyvään, myös tähän valikkoon."
+
+msgid "Brightness applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr "Kirkkaus kohdistetaan vain videoon. Tämä ei vaikuta valikoihin eikä käyttöliittymään."
 
 msgid "British Indian Ocean Territory"
 msgstr "Brittiläinen Intian valtameren alue"
@@ -3768,6 +3777,12 @@ msgstr "piirretty/nukke"
 
 msgid "Cascade PiP"
 msgstr "Aktivoi PiP"
+
+msgid "Case insensitive"
+msgstr "Haun tarkkuus"
+
+msgid "Case sensitive"
+msgstr "Haun tarkkuus"
 
 msgid "Catalan / Valencian"
 msgstr "Catalan / Valencian"
@@ -4346,12 +4361,6 @@ msgstr "Colombia"
 
 msgid "Color"
 msgstr "Väri"
-
-msgid "Color Bottom"
-msgstr "Väri näppäin"
-
-msgid "Color Top"
-msgstr "Päällimmäinen Väri"
 
 msgid "Color format"
 msgstr "Väriformaatti"
@@ -4994,17 +5003,32 @@ msgstr "Kontrasti Video"
 msgid "Contrast Video & OSD"
 msgstr "Kontrasti Video & kuvaruutu"
 
+msgid "Contrast applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr "Kontrasti kohdistetaan video ja käyttöliittymän yhteiseen näyttöön. Vaikuttaa kaikkeen näytöllä näkyvään, myös tähän valikkoon."
+
+msgid "Contrast applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr "Kontrasti vaikuttaa vain videoon. Ei vaikuta valikoihin eikä käyttöliittymään."
+
 msgid "Control LED can be turned on or off here."
 msgstr "LED voidaan kytkeä päälle tai pois täältä."
 
 msgid "Control files:"
 msgstr "Hallitse tiedostoja:"
 
+msgid "Control how files will be sorted in screens that show a file list. Case sensitive will group uppercase files first followed by lowercase files. Case insensitive will sort files alphabetically, ignoring case."
+msgstr "Määrittää tiedostoluetteloiden lajittelutavan. Kirjainkoolla erotteleva lajittelu näyttää isot kirjaimet ensin. Kirjainkoosta riippumaton lajittelu ohittaa kirjainkoon."
+
 msgid "Control of the position how finished timer are shown in the Timer List."
 msgstr "Hallitse sijaintia, kuinka valmiit ajastukset näytetään ajastinluettelossa."
 
 msgid "Control the InfoBar fading speed."
 msgstr "Määrittää tietopalkin häivytysnopeuden"
+
+msgid "Control the smoothing filter used for the dithering process."
+msgstr "Tämä asetus ottaa käyttöön pehmennyssuodattimen sävyjen sekoituksessa."
+
+msgid "Control the use of vertical scaler anti-aliasing."
+msgstr "Tämä asetus ottaa käyttöön skaalaimen pystysuuntaisen sahalaitojen poiston."
 
 msgid "Control your Softcams"
 msgstr "Hallinnoi softcameja"
@@ -5169,9 +5193,6 @@ msgstr "Luo sovelluksen lataajan muistikuva."
 msgid "Create backup image zip file."
 msgstr "Luo varmuuskopiointi image zip tiedosto."
 
-msgid "Create boot dump."
-msgstr "Luo käynnistysmuistikuva."
-
 msgid "Create boot image dump."
 msgstr "Luo käynnistyskuvan muistikuva."
 
@@ -5226,6 +5247,16 @@ msgstr "Luodaan tiedostojärjestelmää"
 
 msgid "Creating hard link to time shift file failed!"
 msgstr "Linkin (hardlink) luominen ajansiirron tiedostoon epäonnistui!"
+
+#, python-format
+msgid ""
+"Creating or activating the swap file failed.\n"
+"\n"
+"%s"
+msgstr ""
+"Swap tiedoston luominen tai aktivoiminen epäonnistui.\n"
+"\n"
+"%s"
 
 msgid "Creating partition"
 msgstr "Luodaan osiota"
@@ -5492,11 +5523,17 @@ msgstr "DVB tekstityksen väri"
 msgid "DVB-C"
 msgstr "DVB-C"
 
+msgid "DVB-C / Cable only"
+msgstr ""
+
 msgid "DVB-C ANNEX B"
 msgstr "DVB-C ANNEX B"
 
 msgid "DVB-C ANNEX C"
 msgstr "DVB-C ANNEX C"
+
+msgid "DVB-C and DVB-T/T2 via external 5V controlled coax switch"
+msgstr ""
 
 msgid "DVB-S"
 msgstr "DVB-S"
@@ -5506,6 +5543,9 @@ msgstr "DVB-S2"
 
 msgid "DVB-T"
 msgstr "DVB-T"
+
+msgid "DVB-T/T2 / Terrestrial only"
+msgstr ""
 
 msgid "DVB-T2"
 msgstr "DVB-T2"
@@ -5740,6 +5780,9 @@ msgstr "Vianmäärityslokin aikamuoto *"
 msgid "Decoder release strategy"
 msgstr "Dekooderin julkaisu strategia"
 
+msgid "Decoder start delay"
+msgstr "Dekooderin käynnistysviive"
+
 msgid "Decoder start timeout"
 msgstr "Dekooderin käynnistysaikakatkaisu"
 
@@ -5796,7 +5839,7 @@ msgid "Default right column directory"
 msgstr "Oikean sarakkeen oletus hakemisto"
 
 msgid "Default sort order for directories in the left column."
-msgstr "Oletusjärjestys hakemistoille vasemmassa sarakkeessa"
+msgstr "Oletusjärjestys hakemistoille vasemmassa sarakkeessa."
 
 msgid "Default sort order for directories in the right column."
 msgstr "Oletusjärjestys hakemistoille oikeassa sarakkeessa."
@@ -5817,7 +5860,7 @@ msgid "Default volume offset"
 msgstr "Oletus äänenvoimakkuuden offsetti"
 
 msgid "Default wake-up is 5 minutes prior to timer start to wake up from Deep Standby. Adjust if the wake-up is too early or late, e.g., for network drives."
-msgstr "Oletusasetus on herätä valmiustilasta 5 minuuttia etukäteen. Tämä voi tarpeen mukaan muutta (esim. herätysaika on epätarkka tai liian myöhäistä, odottaa verkkoasemaa, jne.)"
+msgstr "Oletusasetus on herätä valmiustilasta 5 minuuttia etukäteen. Tämä voi tarpeen mukaan muutta (esim. herätysaika on epätarkka tai liian myöhäistä, odottaa verkkoasemaa, jne."
 
 #, python-format
 msgid "Default: '%s'."
@@ -6026,7 +6069,7 @@ msgstr "Poista loki"
 msgid "Delete only highlighted file"
 msgstr "Poista vain korostettu tiedosto"
 
-msgid "Delete or Wipe the highlighted slot"
+msgid "Empty or Wipe the highlighted slot"
 msgstr "Poista tai pyyhi nykyinen ohjelmisto paikka"
 
 msgid "Delete play list entry"
@@ -6678,6 +6721,9 @@ msgstr "Dokumenttit"
 msgid "Dolby Digital downmix is now"
 msgstr "Dolby Digital stereoksi on nyt käytössä"
 
+msgid "Dolby TrueHD"
+msgstr ""
+
 msgid "Domain"
 msgstr "Verkkotunnus"
 
@@ -7210,6 +7256,12 @@ msgstr "Ota käyttöön vianselvitysloki *"
 msgid "Enable digital downmix"
 msgstr "Vaihda muunto stereoksi"
 
+msgid "Enable extended cut file support"
+msgstr "Ota käyttöön Laajennettu leikkaus tuki"
+
+msgid "Enable extended cut file support. This will write cut with more information and not only marker."
+msgstr "Ota käyttöön laajennettu leikkaustiedostotuki. Tallentaa leikkaustiedot tarkemmin, ei vain merkkejä."
+
 msgid "Enable fallback remote receiver"
 msgstr "Ota käyttöön etävastaanotin"
 
@@ -7290,6 +7342,9 @@ msgstr "Ota tämä vaihtoehto käyttöön, jos haluat lisätä näytön nimiä j
 
 msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
 msgstr "Ota tämä asetus käyttöön lisätäksesi järjestelmän käynnistyksen ja hot plug tapahtumat debug lokitiedostoon."
+
+msgid "Enable this option to add text encoding information to the debug log file."
+msgstr "Ota käyttöön tämä asetus lisätäksesi tekstikoodaus­tiedot debug-lokitiedostoon."
 
 msgid "Enable this option to add timer debugging data to the debug log file."
 msgstr "Ota tämä vaihtoehto käyttöön, jos haluat lisätä ajastin tiedot vianmääritys lokitiedostoon."
@@ -8210,8 +8265,8 @@ msgstr "Falklandinsaaret"
 msgid "Fallback API did not return a valid result."
 msgstr "Fallback API ei löytänyt oikeaa tulosta."
 
-msgid "Fallback Font *"
-msgstr "Toissijainen Fontti *"
+msgid "Fallback Font"
+msgstr "Toissijainen Fontti"
 
 msgid "Fallback Remote Receiver Settings"
 msgstr "Etävastaanottimen asetukset"
@@ -8430,6 +8485,9 @@ msgstr "Tiedosto näyttää olevan käytössä.\n"
 
 msgid "File compression"
 msgstr "Tiedostopakkaus"
+
+msgid "File sorting mode"
+msgstr "Tiedoston lajittelutila"
 
 msgid "File system"
 msgstr "Tiedostojärjestelmä"
@@ -8771,6 +8829,9 @@ msgstr "Kokoruutu"
 msgid "Full factory reset"
 msgstr "Täydellinen tehdasasetusten palautus"
 
+msgid "Full range (no clipping)"
+msgstr "Täydellinen (ei leikata)"
+
 msgid "Full screen"
 msgstr "Kokoruutu"
 
@@ -8801,8 +8862,8 @@ msgstr "GStreamerin debug loki luokka *"
 msgid "GStreamer debug log level *"
 msgstr "GStreamer virheenkorjauslokin taso *"
 
-msgid "GUI Skin *"
-msgstr "Käyttöliittymän teema *"
+msgid "GUI Skin"
+msgstr "Käyttöliittymän teema"
 
 msgid "Gabon"
 msgstr "Gabon"
@@ -9084,6 +9145,9 @@ msgstr "Guyana"
 msgid "H"
 msgstr "H"
 
+msgid "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+msgstr "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 uusi malli"
+
 msgid "H: = Hourly / D: = Daily / W: = Weekly / M: = Monthly"
 msgstr "H: = Tunneittain / D: = Päivittäin / W: = Viikoittain / M: = Kuukausittain"
 
@@ -9200,6 +9264,9 @@ msgstr "Laitteen tiedot"
 
 msgid "Hardware latency correction"
 msgstr "Laitteistoviiveen korjaus"
+
+msgid "Hardware revision"
+msgstr "Laitteiston tarkistus"
 
 msgid "Hardware serial"
 msgstr "Laitteen sarjanumero"
@@ -9465,8 +9532,8 @@ msgstr "Tunnit Minuutit"
 msgid "Hours Minutes Seconds"
 msgstr "Tunnit Minuutit Sekunnit"
 
-msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
-msgstr "Kuinka vapauttaa laitteistodekooderi siirryttäessä ohjelmistopurkuun: \"Nopea\" vapauttaa dekooderin heti (nopeampi kanavanvaihto). \"Normaali\" suorittaa ensin siistin sammutuksen (vakaa joillakin bokseilla)."
+msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels."
+msgstr "Määrittää, miten laitteiston dekooderi vapautetaan siirryttäessä ohjelmalliseen salauksen purkuun. 'Nopea' vapauttaa sen heti (nopeampi kanavanvaihto). 'Normaali' tekee ensin hallitun sulkemisen (vakavampi ja vakaampi joillakin laitteilla). 'Aggressiivinen' suorittaa täyden salauksenpurkuyksikön nollauksen salattujen kanavien välillä."
 
 msgid "Http(s) stream start delay"
 msgstr "Http/https streamin käynnistysviive"
@@ -9483,6 +9550,9 @@ msgstr "Unkari"
 msgid "Hybrid Tuner"
 msgstr "Hybridi viritin"
 
+msgid "Hybrid tuner mode"
+msgstr ""
+
 msgid "Hz"
 msgstr "Hz"
 
@@ -9491,9 +9561,6 @@ msgstr "I"
 
 msgid "I/O priority for scripts"
 msgstr "I/O-prioriteetti skripteille"
-
-msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
-msgstr "I55SE/H7/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 uusi malli"
 
 msgid "IMDb Details"
 msgstr "IMDb Lisätiedot"
@@ -9893,6 +9960,9 @@ msgstr "Sisältää tallennuslaitteen tiedot"
 
 msgid "Include teletext details"
 msgstr "Teksitv teksityksen yksityiskohdat"
+
+msgid "Include text encoding data"
+msgstr "Sisältää tekstin koodaustiedot"
 
 msgid "Include timer data"
 msgstr "Sisällytä ajastimen tiedot"
@@ -10473,8 +10543,8 @@ msgstr "LAN yhteys"
 msgid "LCD scroll speed"
 msgstr "LCD selausnopeus"
 
-msgid "LCD/Front panel *"
-msgstr "Näyttöpaneeli *"
+msgid "LCD/Front panel"
+msgstr "Näyttöpaneeli"
 
 msgid "LCN Scanner"
 msgstr "LCN Scanneri"
@@ -10725,6 +10795,9 @@ msgstr "Raja länteen"
 
 msgid "Limited memory size, swap file required"
 msgstr "Rajoitettu muistin koko, swap tiedosto tarvitaan"
+
+msgid "Limited range (64..940)"
+msgstr ""
 
 msgid "Limits cancelled"
 msgstr "Rajat pois"
@@ -10979,6 +11052,9 @@ msgstr "Läpisyöttö"
 
 msgid "Lower Framerate saves CPU Time."
 msgstr "Matalampi kuvataajuus vähentää CPU-kuormaa"
+
+msgid "Lower RGB output clipping limit. 'Full range' = no lower clipping, 'Limited range' clips RGB outputs to 64 (broadcast safe)."
+msgstr ""
 
 msgid "Lower USB"
 msgstr "Alempi USB"
@@ -11258,8 +11334,8 @@ msgstr "Ohjelmaoppaassa päiviä enintään"
 msgid "Maximum space used (MB)"
 msgstr "Käytä levytilaa lokeille enintään (MB):"
 
-msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
-msgstr "Maksimiodotusaika saapuville tiedoille ja purkuavaimille (CW) ennen dekooderin käynnistämistä. Tavallisesti molemmat saapuvat paljon nopeammin, ja tämä asetus on tarkoitettu vain erityistapauksia varten."
+msgid "Maximum time to wait for the first descrambling key (CW) before starting the decoder. 'Disabled' starts the decoder immediately without waiting."
+msgstr "Enimmäisaika on odottamassa ensimmäistä descrambling avainta (CW) ennen dekooderin aloittamista. \"Disabled\" alkaa heti odottamatta."
 
 msgid "Mayotte"
 msgstr "Mayotte"
@@ -14254,10 +14330,10 @@ msgstr "Paina OK käyttääksesi tätä kieltä. [%s]"
 msgid "Press OK to use this locale.  [%s]"
 msgstr "Käytä tätä aluetta painamalla OK.  [%s]"
 
-msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that image. If available, YELLOW will either delete or wipe the image. A deleted image can be restored with the BLUE button. A wiped image is completely removed and cannot be restored!"
+msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that slot. If available, YELLOW will either delete or wipe the slot. A deleted slot can be restored with the BLUE button. A wiped slot is completely removed and cannot be restored!"
 msgstr "Paina YLÖS/ALAS painikkeita valitaksesi image paikan ja paina OK tai VIHREÄ Uudelleen käynnistääksesi kyseiseen image paikan, jos on käytettävissä, KELTAINEN Poista image paikka. Poistettua ohjelmistoa ei voi palauttaa!"
 
-msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that image. If available, YELLOW will disable Multiboot, delete, or wipe the selected image. Press BLUE to add more slots."
+msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that slot. If available, YELLOW will disable MultiBoot, delete, or wipe the selected slot. Press BLUE to add more slots."
 msgstr "Paina Ylös/Alas painikkeita valitsemaan paikka, paina sitten OK tai Vihreä uudelleen käynnistettäväksi kyseiseen ohjelmiston. Jos käytettävissä, Keltainen poistaa Multibootin käytöstä, poista tai pyyhkii valitun ohjelmiston. Paina Sininen lisätäksesi lisää paikkoja."
 
 msgid "Press this button to emulate a long press on a button pressed afterwards (this also overrides any other actions assigned to emulation button)."
@@ -14495,8 +14571,8 @@ msgstr "Pushto / Pashto"
 msgid "Put TV in Standby"
 msgstr "Laita TV valmiustilaan"
 
-msgid "Put your AV Receiver in Standby"
-msgstr "Sammuta kotiteatteri valmiustilaan"
+msgid "Put your AV Receiver or Soundbar in Standby"
+msgstr ""
 
 msgid "Python"
 msgstr "python"
@@ -14517,7 +14593,7 @@ msgid "Quad PiP Screen"
 msgstr "Neljä PIP Ruutua"
 
 msgid "Quad PiP channel "
-msgstr "Neljä PIP Kanava "
+msgstr "Neljä PIP kanava "
 
 msgid "Quad PiP is not available."
 msgstr "Neljä PIP ei saatavilla."
@@ -14617,6 +14693,12 @@ msgstr "Punainen (pitkä)"
 
 msgid "RF Output Settings"
 msgstr "RF ulostulo"
+
+msgid "RGB clamp (lower)"
+msgstr ""
+
+msgid "RGB clamp (upper)"
+msgstr ""
 
 msgid "Racing"
 msgstr "Moottoriurheilu"
@@ -15175,11 +15257,18 @@ msgstr "Muokkaa nimi ja kuvaus uusille tallenteille"
 msgid "Rename only highlighted file"
 msgstr "Nimeä vain korostettu tiedosto uudelleen"
 
+#, python-format
+msgid "Rename slot '%s' (leave empty to reset):"
+msgstr ""
+
 msgid "Rename the proposed file to be created"
 msgstr "Nimeä ehdotettu tiedosto uudelleen"
 
 msgid "Rename the selected service"
 msgstr "Nimeä uudelleen valittu kanava"
+
+msgid "Rename the highlighted slot"
+msgstr ""
 
 msgid "Rename this tag"
 msgstr "Nimeä tämä tunniste uudelleen"
@@ -15867,7 +15956,7 @@ msgstr "Tallennetaan ajansiirron tiedostoja"
 msgid "Scaler sharpness"
 msgstr "Skaalaimen terävyys"
 
-msgid "Scaler vertical dejagging"
+msgid "Scaler vertical anti-aliasing"
 msgstr "Skaalaimen pystys. sahalaidat"
 
 msgid "Scaling mode"
@@ -16627,6 +16716,9 @@ msgstr ""
 msgid "Select how the schedule is handled with respect to Standby."
 msgstr "Valitse, miten aikataulu käsitellään valmiustilassa."
 
+msgid "Select how this DVB-C/T tuner is connected. Use the external coax switch option only with a 5V controlled coax switch."
+msgstr ""
+
 msgid "Select how to activate the Quick EPG mode."
 msgstr "Määrittää, kuinka Nopea EPG aktivoidaan."
 
@@ -16848,6 +16940,9 @@ msgstr "Valitse oletushakemisto, jota käytetään, jos oikean sarakkeen hakemis
 
 msgid "Select the delay before the timer activates."
 msgstr "Valitse viive ennen kuin ajastus aktivoituu."
+
+msgid "Select the delay to buffer descrambled data before starting playback. This can reduce AC3 audio dropouts by ensuring enough data is available when the decoder starts. Higher values are more stable but increase channel switch time."
+msgstr "Valitse viive, jonka ajan purettua tietoa puskuroidaan ennen toiston aloittamista. Tämä voi vähentää AC3-äänen katkeilua varmistamalla, että dekooderin käynnistyessä dataa on riittävästi. Suuremmat arvot ovat vakaampia, mutta pidentävät kanavan vaihto aikaa."
 
 msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for receivers with multiple satellite tuners."
 msgstr "Viive striimin välitys palvelun sulkemisessa ennen kuin virittimen vaihdettaan toista palvelua varten. 0:n käyttöä suositellaan vain bokseille, joissa on useita satelliittivirittimiä."
@@ -17190,6 +17285,9 @@ msgstr "Valitse muunnetaanko monikanavaiset DTS ääniraidat stereoksi."
 
 msgid "Select whether DTS channel audio tracks should be downmixed to stereo."
 msgstr "Valitse muunnetaanko monikanavaiset DTS ääniraidat stereoksi."
+
+msgid "Select whether Dolby TrueHD audio tracks should be passed through or decoded."
+msgstr ""
 
 msgid "Select whether IPv4, IPv6, or both protocols should be used. If both are enabled then which should be preferred."
 msgstr "Valitse DNS tila."
@@ -20029,8 +20127,14 @@ msgstr "TV"
 msgid "TV button mode"
 msgstr "TV näppäimen toiminto"
 
+msgid "TV input and receiver wakeup"
+msgstr ""
+
 msgid "TV physical address report"
 msgstr "TV:n fyysisen osoitteen raportti"
+
+msgid "TV power"
+msgstr ""
 
 msgid "TXT PID"
 msgstr "TXT PID"
@@ -20695,8 +20799,8 @@ msgstr "Määrittää tekstikoon suhteessa teeman määritykseen. Arvo 1 suurent
 msgid "This allows you to change the number of rows shown."
 msgstr "Määrittää, montako riviä näytetään."
 
-msgid "This allows you to set the maximum number of digits in a service number, up to 5."
-msgstr "Määrittää, näytetäänkö kanavanumerossa maksimissaan 4 vai 5 numeroa (tapauksessa, jossa kanavia on enemmän kuin 9999)."
+msgid "This allows you to set the maximum number of digits in a service number, up to 6."
+msgstr "Määrittää, näytetäänkö kanavanumerossa maksimissaan 4 vai 6 numeroa (tapauksessa, jossa kanavia on enemmän kuin 99999)."
 
 msgid "This bouquet is protected by a parental control PIN!"
 msgstr "Tämä kanava on suojattu lapsilukolla!"
@@ -20739,36 +20843,6 @@ msgstr "Tämä asetus vähentää pakkausneliöiden näkymistä kuvassa. Tämä 
 
 msgid "This option allows to set the level of dynamic contrast of the picture."
 msgstr "Määrittää kuvan dynaamisen kontrastin määrän."
-
-msgid "This option allows you to config the Colordepth for UHD."
-msgstr "Tämän asetuksen avulla voit määrittää värisyvyyden UltraHD:lle"
-
-msgid "This option allows you to config the Colorimetry for HDR."
-msgstr "Tämän asetuksen avulla voit määrittää värisyvyyden HDR:lle"
-
-msgid "This option allows you to config the Colorspace from Auto to RGB."
-msgstr "Tällä asetuksella voit muuttaa Väriavaruuden automaattisesta RGB:hen"
-
-msgid "This option allows you to enable or disable the 10 Bit Color Mode."
-msgstr "Tämän asetuksen avulla voit kytkeä 10 Bit väritila päälle/pois"
-
-msgid "This option allows you to enable or disable the 12 Bit Color Mode."
-msgstr "Tämän asetuksen avulla voit kytkeä 12 Bit väritila päälle/pois"
-
-msgid "This option allows you to force the HDR Modes for UHD."
-msgstr "Tämä asetus pakottaa HDR tilan UHD malleille"
-
-msgid "This option allows you to force the HDR10 Modes for UHD."
-msgstr "Tämä asetus pakottaa HDR10-tilat UHD:lle"
-
-msgid "This option allows you to force the HLG Modes for UHD."
-msgstr "Tämä asetus pakottaaa HLG-tilat UHD:lle"
-
-msgid "This option allows you enable smoothing filter to control the dithering process."
-msgstr "Tämä asetus ottaa käyttöön pehmennyssuodattimen sävyjen sekoituksessa."
-
-msgid "This option allows you enable the vertical scaler dejagging."
-msgstr "Tämä asetus ottaa käyttöön skaalaimen pystysuuntaisen sahalaitojen poiston."
 
 msgid "This option allows you to Power Off the display."
 msgstr ""
@@ -20850,8 +20924,32 @@ msgstr "Tämä asetus määrittää mitä ensimmäinen näppäimen painallus tek
 msgid "This option allows you to choose whether or not to display genre information for the event."
 msgstr "Tämä asetus määrittää näytetäänkö ohjelmatyylitiedot."
 
+msgid "This option allows you to config the Colordepth for UHD."
+msgstr "Tämän asetuksen avulla voit määrittää värisyvyyden UltraHD:lle"
+
+msgid "This option allows you to config the Colorimetry for HDR."
+msgstr "Tämän asetuksen avulla voit määrittää värisyvyyden HDR:lle"
+
+msgid "This option allows you to config the Colorspace from Auto to RGB."
+msgstr "Tällä asetuksella voit muuttaa Väriavaruuden automaattisesta RGB:hen"
+
 msgid "This option allows you to enable 3D Surround Sound."
 msgstr "Tämä asetus määrittää käyttöön 3D Surround Sound äänet."
+
+msgid "This option allows you to enable or disable the 10 Bit Color Mode."
+msgstr "Tämän asetuksen avulla voit kytkeä 10 Bit väritila päälle/pois"
+
+msgid "This option allows you to enable or disable the 12 Bit Color Mode."
+msgstr "Tämän asetuksen avulla voit kytkeä 12 Bit väritila päälle/pois"
+
+msgid "This option allows you to force the HDR Modes for UHD."
+msgstr "Tämä asetus pakottaa HDR tilan UHD malleille"
+
+msgid "This option allows you to force the HDR10 Modes for UHD."
+msgstr "Tämä asetus pakottaa HDR10-tilat UHD:lle"
+
+msgid "This option allows you to force the HLG Modes for UHD."
+msgstr "Tämä asetus pakottaaa HLG-tilat UHD:lle"
 
 msgid "This option allows you to set offset values for different Letterbox resolutions."
 msgstr "Tämän vaihtoehdon avulla voit asettaa offset arvoja eri Letterbox resoluutioihin."
@@ -20933,18 +21031,6 @@ msgstr "Tämä asetus määrittää skaalaimen terävyyden, käytetään kun kuv
 
 msgid "This option sets the suppression of false digital contours, that are the result of a limited number of discrete values."
 msgstr "Tämä asetus määrittää ääriviivakorostumien vaimennuksen."
-
-msgid "This option sets the video & osd picture brightness."
-msgstr "Tämä asetus asettaa toiston & kuvaruudun kirkkauden."
-
-msgid "This option sets the video & osd picture contrast."
-msgstr "Tämä asetus määrittää toiston & kuvan kontrastin."
-
-msgid "This option sets the video picture brightness."
-msgstr "Tämä asetus määrittää kuvan kirkkauden."
-
-msgid "This option sets the video picture contrast."
-msgstr "Tämä asetus määrittää videon kontrastin."
 
 msgid "This option sets up the picture sharpness, used when the picture is being upscaled."
 msgstr "Tämä asetus määrittää kuvan terävyyden, käytetään kun kuva skaalataan suurempaan tarkkuuteen."
@@ -21253,6 +21339,9 @@ msgstr "Ajansiirto"
 
 msgid "Timezone"
 msgstr "Aikavyöhyke"
+
+msgid "Timing and diagnostics"
+msgstr ""
 
 msgid "Timor-Leste / East Timor"
 msgstr "Timor-Leste / Itä Timor"
@@ -22009,6 +22098,9 @@ msgstr "Ylöshyppy -"
 msgid "Uphops: "
 msgstr "Ylöshypyt: "
 
+msgid "Upper RGB output clipping limit. 'Full range' = no upper clipping, 'Limited range' clips RGB outputs to 940 (broadcast safe)."
+msgstr ""
+
 msgid "Upper USB"
 msgstr "Ylempi USB"
 
@@ -22725,8 +22817,8 @@ msgstr "Äänenvoimakkuuden säätö tila"
 msgid "Volume down"
 msgstr "Äänenvoimakkuus -"
 
-msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
-msgstr "Vastaanottimen kaukosäätimen äänenvoimakkuusnäppäimet ohjaavat television äänenvoimakkuutta. Jos tätä ominaisuutta ei tueta, äänenvoimakkuusnäppäimillä ei ole mitään toimintaa!"
+msgid "Volume keys on the receiver remote will control the TV, AV receiver or soundbar volume over HDMI-CEC. If this feature is not supported the volume keys have no function!"
+msgstr ""
 
 msgid "Volume steps"
 msgstr "Äänenvoimakkuuden askelkoko"
@@ -22809,8 +22901,8 @@ msgstr "Herätysaika ennen ajastimen alkamista [minuutteina]"
 msgid "Wake up to standby"
 msgstr "Käynnisty valmiustilaan"
 
-msgid "Wake up your AV Receiver from Standby"
-msgstr "Käynnistä kotiteatteri valmiustilasta"
+msgid "Wake up your AV Receiver or Soundbar from Standby"
+msgstr ""
 
 msgid "Wallis and Futuna"
 msgstr "Wallis and Futuna"
@@ -23068,14 +23160,14 @@ msgstr "Kun päällä, PiP-kuvan voi sulkea exit-näppäimellä."
 msgid "When enabled, the VCR SCART option will be shown on the main menu."
 msgstr "Kun päällä, VCR SCART -valinta näytetään päävalikossa."
 
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched off."
+msgstr ""
+
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched on."
+msgstr ""
+
 msgid "When enabled, the length of each recording will be shown in the movie list (this might cause some additional loading time)."
 msgstr "Kun päällä, tallenteiden kestot näytetään tallenneluettelossa (saattaa hidastaa hieman näkymän latautumista)."
-
-msgid "When enabled, the receiver will automatically be switched off."
-msgstr "Kun tämä on käytössä, vastaanotin kytkeytyy automaattisesti pois päältä."
-
-msgid "When enabled, the receiver will automatically be switched on."
-msgstr "Kun tämä on käytössä, vastaanotin kytkeytyy automaattisesti päälle."
 
 msgid "When enabled, the receiver will automatically return to Standby when the TV is turned off."
 msgstr "Kun tämä on käytössä, vastaanotin palaa automaattisesti valmiustilaan, kun televisio sammutetaan."
@@ -23152,8 +23244,8 @@ msgstr "Kun syöttökursori saavuttaa tämän pisteen (prosenttiosuus leveydest�
 msgid "When the receiver wakes from Standby or Deep Standby it will send a command to the TV to bring it out of Standby."
 msgstr "Kun vastaanotin herää valmiustilasta tai virransäästötilasta, se lähettää televisiolle komennon, jolla se herätetään valmiustilasta."
 
-msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
-msgstr "Kun vastaanotin herää valmiustilasta, se käskee televisiota vaihtamaan HDMI tuloon, johon vastaanotin on liitetty."
+msgid "When the receiver wakes from Standby, send active source, stream path and routing commands so the TV switches to the HDMI input connected to the receiver."
+msgstr ""
 
 msgid "When the red box is correctly visible press the GREEN button to save the settings and exit."
 msgstr "Kun punainen laatikko on oikein näkyvissä, paina VIHREÄÄ painiketta tallentaaksesi asetukset ja poistuaksesi."
@@ -24414,6 +24506,57 @@ msgstr "kyllä (pidä syötteet)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
+#~ msgstr "Kun vastaanotin herää valmiustilasta, se käskee televisiota vaihtamaan HDMI tuloon, johon vastaanotin on liitetty."
+
+#~ msgid "Put your AV Receiver in Standby"
+#~ msgstr "Sammuta kotiteatteri valmiustilaan"
+
+#~ msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
+#~ msgstr "Vastaanottimen kaukosäätimen äänenvoimakkuusnäppäimet ohjaavat television äänenvoimakkuutta. Jos tätä ominaisuutta ei tueta, äänenvoimakkuusnäppäimillä ei ole mitään toimintaa!"
+
+#~ msgid "Wake up your AV Receiver from Standby"
+#~ msgstr "Käynnistä kotiteatteri valmiustilasta"
+
+#~ msgid "When enabled, the receiver will automatically be switched off."
+#~ msgstr "Kun tämä on käytössä, vastaanotin kytkeytyy automaattisesti pois päältä."
+
+#~ msgid "When enabled, the receiver will automatically be switched on."
+#~ msgstr "Kun tämä on käytössä, vastaanotin kytkeytyy automaattisesti päälle."
+
+#~ msgid "Color Bottom"
+#~ msgstr "Väri näppäin"
+
+#~ msgid "Color Top"
+#~ msgstr "Päällimmäinen Väri"
+
+#~ msgid "Create boot dump."
+#~ msgstr "Luo käynnistysmuistikuva."
+
+#~ msgid "This option sets the video & osd picture brightness."
+#~ msgstr "Tämä asetus asettaa toiston & kuvaruudun kirkkauden."
+
+#~ msgid "This option sets the video & osd picture contrast."
+#~ msgstr "Tämä asetus määrittää toiston & kuvan kontrastin."
+
+#~ msgid "This option sets the video picture brightness."
+#~ msgstr "Tämä asetus määrittää kuvan kirkkauden."
+
+#~ msgid "This option sets the video picture contrast."
+#~ msgstr "Tämä asetus määrittää videon kontrastin."
+
+#~ msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
+#~ msgstr "Kuinka vapauttaa laitteistodekooderi siirryttäessä ohjelmistopurkuun: \"Nopea\" vapauttaa dekooderin heti (nopeampi kanavanvaihto). \"Normaali\" suorittaa ensin siistin sammutuksen (vakaa joillakin bokseilla)."
+
+#~ msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+#~ msgstr "I55SE/H7/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 uusi malli"
+
+#~ msgid " "
+#~ msgstr " "
+
+#~ msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
+#~ msgstr "Maksimiodotusaika saapuville tiedoille ja purkuavaimille (CW) ennen dekooderin käynnistämistä. Tavallisesti molemmat saapuvat paljon nopeammin, ja tämä asetus on tarkoitettu vain erityistapauksia varten."
 
 #~ msgid "Error retrieving location of 'epg.dat' on the remote receiver!"
 #~ msgstr "Virhe haettaessa epg.dat tiedoston sijaintia etävastaanottimelta!"

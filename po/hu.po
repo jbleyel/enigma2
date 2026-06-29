@@ -7,9 +7,9 @@
 # Balázs Sólyom <balazs@solyom.online>, 2025.
 msgid ""
 msgstr ""
-"Project-Id-Version: hu_po v3.3\n"
+"Project-Id-Version: OpenATV Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-11 10:12+0000\n"
+"POT-Creation-Date: 2026-06-22 11:12+0000\n"
 "PO-Revision-Date: 2025-05-05 05:50+0000\n"
 "Last-Translator: Balázs Sólyom <balazs@solyom.online>\n"
 "Language-Team: Hungarian <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/hu/>\n"
@@ -33,9 +33,6 @@ msgid ""
 msgstr ""
 "\n"
 "Felvétel folyamatban."
-
-msgid " "
-msgstr " "
 
 msgid "  Menu key : Select quad channel"
 msgstr "  Menü gomb: Válassza ki a Quad csatorna üzemmódot"
@@ -1763,6 +1760,9 @@ msgstr "ATSC szolgáltató"
 msgid "AV Setup"
 msgstr "AV beállítás"
 
+msgid "AV receiver, soundbar and remote"
+msgstr ""
+
 msgid "Abkhazian"
 msgstr "Abkhazian"
 
@@ -2000,7 +2000,7 @@ msgstr "Kijelölt mappa hozzáadása könyvjelzőkhöz"
 msgid "Add legacy LEFT/RIGHT actions"
 msgstr ""
 
-msgid "Add more slots"
+msgid "Add slots"
 msgstr ""
 
 msgid "Add new CCcam line"
@@ -2157,6 +2157,9 @@ msgid "After zap"
 msgstr ""
 
 msgid "Aggregate data only"
+msgstr ""
+
+msgid "Aggressive"
 msgstr ""
 
 msgid "Akan"
@@ -2521,7 +2524,7 @@ msgstr "Biztos benne, hogy törölné ezt a naplót:\n"
 msgid "Are you sure you want to delete this?"
 msgstr ""
 
-msgid "Are you sure you want to disable Chkroot Multiboot?"
+msgid "Disable Chkroot Multiboot?"
 msgstr ""
 
 msgid "Are you sure you want to exit this wizard?"
@@ -2722,6 +2725,9 @@ msgstr "Authoring mód"
 msgid "Auto"
 msgstr "Automatikus"
 
+msgid "Auto (not available)"
+msgstr "Automatikus (nem érhető el)"
+
 msgid "Auto Language"
 msgstr "Automatikus nyelvválasztás"
 
@@ -2778,9 +2784,6 @@ msgstr ""
 
 msgid "Auto video mode selected for the TV."
 msgstr ""
-
-msgid "Auto (not available)"
-msgstr "Automatikus (nem érhető el)"
 
 msgid "AutoCam Settings"
 msgstr ""
@@ -3282,6 +3285,12 @@ msgid "Brightness Video"
 msgstr ""
 
 msgid "Brightness Video & OSD"
+msgstr ""
+
+msgid "Brightness applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr ""
+
+msgid "Brightness applied to the video layer only. Does not affect enigma2 menus or OSD."
 msgstr ""
 
 msgid "British Indian Ocean Territory"
@@ -3801,6 +3810,12 @@ msgstr "rajzfilm/báb"
 
 msgid "Cascade PiP"
 msgstr "Kaszkád Kép-a-Képben"
+
+msgid "Case insensitive"
+msgstr ""
+
+msgid "Case sensitive"
+msgstr ""
 
 msgid "Catalan / Valencian"
 msgstr ""
@@ -4382,12 +4397,6 @@ msgstr "Kolumbia"
 
 msgid "Color"
 msgstr "Szín"
-
-msgid "Color Bottom"
-msgstr ""
-
-msgid "Color Top"
-msgstr ""
 
 msgid "Color format"
 msgstr "Színformátum"
@@ -5026,6 +5035,12 @@ msgstr ""
 msgid "Contrast Video & OSD"
 msgstr ""
 
+msgid "Contrast applied to the combined video + OSD output. Affects everything on screen including this menu."
+msgstr ""
+
+msgid "Contrast applied to the video layer only. Does not affect enigma2 menus or OSD."
+msgstr ""
+
 #, fuzzy
 msgid "Control LED can be turned on or off here."
 msgstr "A Power LED itt be- és kikapcsolható."
@@ -5033,11 +5048,20 @@ msgstr "A Power LED itt be- és kikapcsolható."
 msgid "Control files:"
 msgstr ""
 
+msgid "Control how files will be sorted in screens that show a file list. Case sensitive will group uppercase files first followed by lowercase files. Case insensitive will sort files alphabetically, ignoring case."
+msgstr ""
+
 msgid "Control of the position how finished timer are shown in the Timer List."
 msgstr "A pozíció vezérlése, hogy a befejezett időzítő hogyan jelenik meg az időzítő listában."
 
 msgid "Control the InfoBar fading speed."
 msgstr "Információs sáv lassú eltűnésének vezérlése"
+
+msgid "Control the smoothing filter used for the dithering process."
+msgstr "Ezzel az opcióval engedélyezheti a simítási szűrőt a dithering folyamat vezérlésére."
+
+msgid "Control the use of vertical scaler anti-aliasing."
+msgstr "Ez a beállítás engedélyezi a skálázó függőleges élsimítást."
 
 msgid "Control your Softcams"
 msgstr "Softcam vezérlése"
@@ -5204,9 +5228,6 @@ msgstr ""
 msgid "Create backup image zip file."
 msgstr ""
 
-msgid "Create boot dump."
-msgstr ""
-
 msgid "Create boot image dump."
 msgstr ""
 
@@ -5261,6 +5282,13 @@ msgstr "Fájlrendszer létrehozása"
 
 msgid "Creating hard link to time shift file failed!"
 msgstr "Nem sikerült létrehozni Hardlink-t a Timeshift fájlhoz!"
+
+#, python-format
+msgid ""
+"Creating or activating the swap file failed.\n"
+"\n"
+"%s"
+msgstr ""
 
 msgid "Creating partition"
 msgstr "Partíció létrehozása"
@@ -5528,11 +5556,17 @@ msgstr ""
 msgid "DVB-C"
 msgstr "DVB-C"
 
+msgid "DVB-C / Cable only"
+msgstr ""
+
 msgid "DVB-C ANNEX B"
 msgstr "DVB-C ANNEX B"
 
 msgid "DVB-C ANNEX C"
 msgstr "DVB-C Annex C"
+
+msgid "DVB-C and DVB-T/T2 via external 5V controlled coax switch"
+msgstr ""
 
 msgid "DVB-S"
 msgstr "DVB-S"
@@ -5542,6 +5576,9 @@ msgstr "DVB-S2"
 
 msgid "DVB-T"
 msgstr "DVB-T"
+
+msgid "DVB-T/T2 / Terrestrial only"
+msgstr ""
 
 msgid "DVB-T2"
 msgstr "DVB-T2"
@@ -5780,6 +5817,9 @@ msgid "Debug log time format *"
 msgstr ""
 
 msgid "Decoder release strategy"
+msgstr ""
+
+msgid "Decoder start delay"
 msgstr ""
 
 msgid "Decoder start timeout"
@@ -6068,7 +6108,7 @@ msgstr ""
 msgid "Delete only highlighted file"
 msgstr ""
 
-msgid "Delete or Wipe the highlighted slot"
+msgid "Empty or Wipe the highlighted slot"
 msgstr ""
 
 msgid "Delete play list entry"
@@ -6712,6 +6752,9 @@ msgstr "Dokumentumfilm"
 msgid "Dolby Digital downmix is now"
 msgstr "Dolby Digital lekeverés most"
 
+msgid "Dolby TrueHD"
+msgstr ""
+
 msgid "Domain"
 msgstr ""
 
@@ -7245,6 +7288,12 @@ msgstr "Hibakeresési mód engedélyezése*"
 msgid "Enable digital downmix"
 msgstr "Digitális lekeverés engedélyezése"
 
+msgid "Enable extended cut file support"
+msgstr ""
+
+msgid "Enable extended cut file support. This will write cut with more information and not only marker."
+msgstr ""
+
 msgid "Enable fallback remote receiver"
 msgstr "Engedélyezi a tartalék háttér vevőegységet"
 
@@ -7324,6 +7373,9 @@ msgid "Enable this option to add screen names and resolution data to the debug l
 msgstr ""
 
 msgid "Enable this option to add storage device information detected during system boot and hot plug events to the debug log file."
+msgstr ""
+
+msgid "Enable this option to add text encoding information to the debug log file."
 msgstr ""
 
 msgid "Enable this option to add timer debugging data to the debug log file."
@@ -8242,7 +8294,7 @@ msgstr "Falkland-szigetek"
 msgid "Fallback API did not return a valid result."
 msgstr ""
 
-msgid "Fallback Font *"
+msgid "Fallback Font"
 msgstr ""
 
 msgid "Fallback Remote Receiver Settings"
@@ -8464,6 +8516,9 @@ msgid "File appears to be busy!\n"
 msgstr "A fájl használatban van.\n"
 
 msgid "File compression"
+msgstr ""
+
+msgid "File sorting mode"
 msgstr ""
 
 msgid "File system"
@@ -8810,6 +8865,9 @@ msgstr ""
 msgid "Full factory reset"
 msgstr ""
 
+msgid "Full range (no clipping)"
+msgstr ""
+
 msgid "Full screen"
 msgstr "Teljes képernyős"
 
@@ -8841,7 +8899,7 @@ msgstr ""
 msgid "GStreamer debug log level *"
 msgstr ""
 
-msgid "GUI Skin *"
+msgid "GUI Skin"
 msgstr ""
 
 msgid "Gabon"
@@ -9127,6 +9185,9 @@ msgstr "Guyana"
 msgid "H"
 msgstr "CH"
 
+msgid "H8SE/I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+msgstr ""
+
 msgid "H: = Hourly / D: = Daily / W: = Weekly / M: = Monthly"
 msgstr "H: = Óránkénti / D: = Napi / W: = Heti / M: = Havi"
 
@@ -9243,6 +9304,9 @@ msgid "Hardware information"
 msgstr ""
 
 msgid "Hardware latency correction"
+msgstr ""
+
+msgid "Hardware revision"
 msgstr ""
 
 msgid "Hardware serial"
@@ -9511,7 +9575,7 @@ msgstr "Óra Perc"
 msgid "Hours Minutes Seconds"
 msgstr "Óra Perc Másodperc"
 
-msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes)."
+msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels."
 msgstr ""
 
 msgid "Http(s) stream start delay"
@@ -9529,6 +9593,9 @@ msgstr "Magyarország"
 msgid "Hybrid Tuner"
 msgstr "Hibrid tuner"
 
+msgid "Hybrid tuner mode"
+msgstr ""
+
 msgid "Hz"
 msgstr ""
 
@@ -9537,9 +9604,6 @@ msgstr "I"
 
 msgid "I/O priority for scripts"
 msgstr ""
-
-msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
-msgstr "I55SE/H7/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 új modell"
 
 msgid "IMDb Details"
 msgstr "IMDb részletek"
@@ -9938,6 +10002,9 @@ msgid "Include storage device data"
 msgstr ""
 
 msgid "Include teletext details"
+msgstr ""
+
+msgid "Include text encoding data"
 msgstr ""
 
 msgid "Include timer data"
@@ -10527,7 +10594,7 @@ msgstr "Helyi privát"
 msgid "LCD scroll speed"
 msgstr "LCD görgetési sebesség"
 
-msgid "LCD/Front panel *"
+msgid "LCD/Front panel"
 msgstr ""
 
 msgid "LCN Scanner"
@@ -10782,6 +10849,9 @@ msgid "Limit west"
 msgstr "Nyugati limit"
 
 msgid "Limited memory size, swap file required"
+msgstr ""
+
+msgid "Limited range (64..940)"
 msgstr ""
 
 msgid "Limits cancelled"
@@ -11041,6 +11111,9 @@ msgstr "Loop through to"
 
 msgid "Lower Framerate saves CPU Time."
 msgstr "Lower Framerate saves CPU Time."
+
+msgid "Lower RGB output clipping limit. 'Full range' = no lower clipping, 'Limited range' clips RGB outputs to 64 (broadcast safe)."
+msgstr ""
 
 msgid "Lower USB"
 msgstr "Alsó USB"
@@ -11330,7 +11403,7 @@ msgstr "Maximális napok száma az EPG-ben"
 msgid "Maximum space used (MB)"
 msgstr "Maximális hely használata (MB):"
 
-msgid "Maximum time to wait for the incoming data and descrambling keys (CW) before starting decoder. Usually both arrive much faster and this is only for special cases."
+msgid "Maximum time to wait for the first descrambling key (CW) before starting the decoder. 'Disabled' starts the decoder immediately without waiting."
 msgstr ""
 
 msgid "Mayotte"
@@ -14365,10 +14438,10 @@ msgstr ""
 msgid "Press OK to use this locale.  [%s]"
 msgstr ""
 
-msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that image. If available, YELLOW will either delete or wipe the image. A deleted image can be restored with the BLUE button. A wiped image is completely removed and cannot be restored!"
+msgid "Press the UP/DOWN buttons to select a slot and press OK or GREEN to reboot to that slot. If available, YELLOW will either delete or wipe the slot. A deleted slot can be restored with the BLUE button. A wiped slot is completely removed and cannot be restored!"
 msgstr ""
 
-msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that image. If available, YELLOW will disable Multiboot, delete, or wipe the selected image. Press BLUE to add more slots."
+msgid "Press the UP/DOWN buttons to select a slot, then press OK or GREEN to reboot into that slot. If available, YELLOW will disable MultiBoot, delete, or wipe the selected slot. Press BLUE to add more slots."
 msgstr ""
 
 msgid "Press this button to emulate a long press on a button pressed afterwards (this also overrides any other actions assigned to emulation button)."
@@ -14606,8 +14679,8 @@ msgstr ""
 msgid "Put TV in Standby"
 msgstr "TV kikapcsolása"
 
-msgid "Put your AV Receiver in Standby"
-msgstr "Helyezze az AV-vevőt készenléti állapotába"
+msgid "Put your AV Receiver or Soundbar in Standby"
+msgstr ""
 
 msgid "Python"
 msgstr ""
@@ -14730,6 +14803,12 @@ msgstr "Piros hosszan"
 
 msgid "RF Output Settings"
 msgstr "RF kimenet"
+
+msgid "RGB clamp (lower)"
+msgstr ""
+
+msgid "RGB clamp (upper)"
+msgstr ""
 
 msgid "Racing"
 msgstr ""
@@ -15288,10 +15367,17 @@ msgstr "Új események nevének és leírásának szerkesztése"
 msgid "Rename only highlighted file"
 msgstr ""
 
+#, python-format
+msgid "Rename slot '%s' (leave empty to reset):"
+msgstr ""
+
 msgid "Rename the proposed file to be created"
 msgstr ""
 
 msgid "Rename the selected service"
+msgstr ""
+
+msgid "Rename the highlighted slot"
 msgstr ""
 
 msgid "Rename this tag"
@@ -15985,7 +16071,7 @@ msgstr "Timeshift fájljának mentése"
 msgid "Scaler sharpness"
 msgstr "Skálázó élesség"
 
-msgid "Scaler vertical dejagging"
+msgid "Scaler vertical anti-aliasing"
 msgstr "Skálázó függőleges élsimítás"
 
 msgid "Scaling mode"
@@ -16734,6 +16820,9 @@ msgstr "Válassza ki a műholdas antenna beállítását. vagyis rögzített dis
 msgid "Select how the schedule is handled with respect to Standby."
 msgstr ""
 
+msgid "Select how this DVB-C/T tuner is connected. Use the external coax switch option only with a 5V controlled coax switch."
+msgstr ""
+
 msgid "Select how to activate the Quick EPG mode."
 msgstr "Válassza ki, hogyan aktiválja a Gyors EPG módot:"
 
@@ -16955,6 +17044,9 @@ msgid "Select the default directory to be used if the right column directory is 
 msgstr ""
 
 msgid "Select the delay before the timer activates."
+msgstr ""
+
+msgid "Select the delay to buffer descrambled data before starting playback. This can reduce AC3 audio dropouts by ensuring enough data is available when the decoder starts. Higher values are more stable but increase channel switch time."
 msgstr ""
 
 msgid "Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for receivers with multiple satellite tuners."
@@ -17295,6 +17387,9 @@ msgstr "Válassza ki, hogy a DTS csatorna hangsávjait le kell-e keverni vagy á
 
 msgid "Select whether DTS channel audio tracks should be downmixed to stereo."
 msgstr "Ha kiválasztja, akkor az DTS csatorna hangsávjait lekeveri sztereóra."
+
+msgid "Select whether Dolby TrueHD audio tracks should be passed through or decoded."
+msgstr ""
 
 msgid "Select whether IPv4, IPv6, or both protocols should be used. If both are enabled then which should be preferred."
 msgstr ""
@@ -20143,8 +20238,14 @@ msgstr "TV"
 msgid "TV button mode"
 msgstr "TV gomb mód"
 
+msgid "TV input and receiver wakeup"
+msgstr ""
+
 msgid "TV physical address report"
 msgstr "TV fizikai port-cím"
+
+msgid "TV power"
+msgstr ""
 
 msgid "TXT PID"
 msgstr "Teletext PID"
@@ -20780,8 +20881,8 @@ msgstr "Ez lehetővé teszi a betűméret megváltoztatását a kinézeti méret
 msgid "This allows you to change the number of rows shown."
 msgstr "Ezzel megváltoztathatja a megjelenített sorok számát."
 
-msgid "This allows you to set the maximum number of digits in a service number, up to 5."
-msgstr "Ez lehetővé teszi, hogy a számjegyek számát 5-re állítsa be, ha több mint 9999 csatorna van."
+msgid "This allows you to set the maximum number of digits in a service number, up to 6."
+msgstr "Ez lehetővé teszi, hogy a számjegyek számát 6-re állítsa be, ha több mint 99999 csatorna van."
 
 msgid "This bouquet is protected by a parental control PIN!"
 msgstr "ez a csatornacsomag gyermekzár PIN-kóddal védett"
@@ -20824,36 +20925,6 @@ msgstr "Ez az opció lehetővé teszi a zaj csökkentését a képen. Nyilvánva
 
 msgid "This option allows to set the level of dynamic contrast of the picture."
 msgstr "Ez az opció lehetővé teszi a kép dinamikus kontrasztjának beállítását."
-
-msgid "This option allows you to config the Colordepth for UHD."
-msgstr "Ezzel az opcióval beállíthatja az UHD színmélységét"
-
-msgid "This option allows you to config the Colorimetry for HDR."
-msgstr "Ez az opció lehetővé teszi a Colorimetry for HDR konfigurálását"
-
-msgid "This option allows you to config the Colorspace from Auto to RGB."
-msgstr "Ezzel az opcióval beállíthatja a Colorspace módját az Auto-ról RGB-re"
-
-msgid "This option allows you to enable or disable the 10 Bit Color Mode."
-msgstr "Ezzel az opcióval beállíthatja vagy letilthatja a 10bit-es színes módot"
-
-msgid "This option allows you to enable or disable the 12 Bit Color Mode."
-msgstr "Ezzel az opcióval beállíthatja vagy letilthatja a 12bit-es színes módot"
-
-msgid "This option allows you to force the HDR Modes for UHD."
-msgstr "Ezzel az opcióval ki tudja kényszeríteni a HDR módot az UHD felbontásnál"
-
-msgid "This option allows you to force the HDR10 Modes for UHD."
-msgstr "Ezzel az opcióval ki tudja kényszeríteni a HDR10 módot az UHD felbontásnál"
-
-msgid "This option allows you to force the HLG Modes for UHD."
-msgstr "Ezzel az opcióval ki tudja kényszeríteni a HLG módot az UHD felbontásnál"
-
-msgid "This option allows you enable smoothing filter to control the dithering process."
-msgstr "Ezzel az opcióval engedélyezheti a simítási szűrőt a dithering folyamat vezérlésére."
-
-msgid "This option allows you enable the vertical scaler dejagging."
-msgstr "Ez a beállítás engedélyezi a skálázó függőleges élsimítást."
 
 msgid "This option allows you to Power Off the display."
 msgstr "Ez az opció lehetővé teszi az LCD kijelző kikapcsolását, bekapcsolását."
@@ -20933,8 +21004,32 @@ msgstr "Ezzel az opcióval kiválaszthatja, hogy az első gomb megnyomásakor ho
 msgid "This option allows you to choose whether or not to display genre information for the event."
 msgstr "Ezzel a beállítással megadhatja, hogy megjelenjenek-e az esemény műfajadatai."
 
+msgid "This option allows you to config the Colordepth for UHD."
+msgstr "Ezzel az opcióval beállíthatja az UHD színmélységét"
+
+msgid "This option allows you to config the Colorimetry for HDR."
+msgstr "Ez az opció lehetővé teszi a Colorimetry for HDR konfigurálását"
+
+msgid "This option allows you to config the Colorspace from Auto to RGB."
+msgstr "Ezzel az opcióval beállíthatja a Colorspace módját az Auto-ról RGB-re"
+
 msgid "This option allows you to enable 3D Surround Sound."
 msgstr "Ez az opció lehetővé teszi a 3D Surround hang használatát."
+
+msgid "This option allows you to enable or disable the 10 Bit Color Mode."
+msgstr "Ezzel az opcióval beállíthatja vagy letilthatja a 10bit-es színes módot"
+
+msgid "This option allows you to enable or disable the 12 Bit Color Mode."
+msgstr "Ezzel az opcióval beállíthatja vagy letilthatja a 12bit-es színes módot"
+
+msgid "This option allows you to force the HDR Modes for UHD."
+msgstr "Ezzel az opcióval ki tudja kényszeríteni a HDR módot az UHD felbontásnál"
+
+msgid "This option allows you to force the HDR10 Modes for UHD."
+msgstr "Ezzel az opcióval ki tudja kényszeríteni a HDR10 módot az UHD felbontásnál"
+
+msgid "This option allows you to force the HLG Modes for UHD."
+msgstr "Ezzel az opcióval ki tudja kényszeríteni a HLG módot az UHD felbontásnál"
 
 msgid "This option allows you to set offset values for different Letterbox resolutions."
 msgstr ""
@@ -21016,18 +21111,6 @@ msgstr "Ezzel beállítja a skálázó élességét., amelyet a képernyő 4:3-r
 
 msgid "This option sets the suppression of false digital contours, that are the result of a limited number of discrete values."
 msgstr "Ezzel beállítja a hibás digitális körvonalak elfojtását."
-
-msgid "This option sets the video & osd picture brightness."
-msgstr ""
-
-msgid "This option sets the video & osd picture contrast."
-msgstr ""
-
-msgid "This option sets the video picture brightness."
-msgstr ""
-
-msgid "This option sets the video picture contrast."
-msgstr ""
 
 msgid "This option sets up the picture sharpness, used when the picture is being upscaled."
 msgstr "Ezzel beállítja a kép élességét, amelyet a kép felskálázásnál használ."
@@ -21335,6 +21418,9 @@ msgid "Timeshift"
 msgstr "Timeshift"
 
 msgid "Timezone"
+msgstr ""
+
+msgid "Timing and diagnostics"
 msgstr ""
 
 #, fuzzy
@@ -22099,6 +22185,9 @@ msgstr "Uphops -"
 msgid "Uphops: "
 msgstr "Uphops: "
 
+msgid "Upper RGB output clipping limit. 'Full range' = no upper clipping, 'Limited range' clips RGB outputs to 940 (broadcast safe)."
+msgstr ""
+
 msgid "Upper USB"
 msgstr "Felső USB"
 
@@ -22789,7 +22878,7 @@ msgstr ""
 msgid "Volume down"
 msgstr "Hangerő le"
 
-msgid "Volume keys on the receiver remote will control the TV volume. If this feature is not supported the volume keys have no function!"
+msgid "Volume keys on the receiver remote will control the TV, AV receiver or soundbar volume over HDMI-CEC. If this feature is not supported the volume keys have no function!"
 msgstr ""
 
 msgid "Volume steps"
@@ -22873,8 +22962,8 @@ msgstr "Ébresztési idő mielőtt a Felvétel időzítő elindul [perc]"
 msgid "Wake up to standby"
 msgstr "Felébresztés készenléti módból"
 
-msgid "Wake up your AV Receiver from Standby"
-msgstr "Az AV vevő egység felébresztése a készenléti állapotból"
+msgid "Wake up your AV Receiver or Soundbar from Standby"
+msgstr ""
 
 msgid "Wallis and Futuna"
 msgstr "Wallis és Futuna"
@@ -23130,14 +23219,14 @@ msgstr "Kép-a-Képben bezárása a távirányító EXIT gomb megnyomásakor."
 msgid "When enabled, the VCR SCART option will be shown on the main menu."
 msgstr "Ha engedélyezi, a 'VCR Scart' menü meg fog jelenni a fő menüben"
 
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched off."
+msgstr ""
+
+msgid "When enabled, the connected AV receiver or soundbar will automatically be switched on."
+msgstr ""
+
 msgid "When enabled, the length of each recording will be shown in the movie list (this might cause some additional loading time)."
 msgstr "Minden egyes fájl hossza jelenjen meg a Felvétel listájában (megnövelheti a listának a betöltési idejét)."
-
-msgid "When enabled, the receiver will automatically be switched off."
-msgstr ""
-
-msgid "When enabled, the receiver will automatically be switched on."
-msgstr ""
 
 msgid "When enabled, the receiver will automatically return to Standby when the TV is turned off."
 msgstr ""
@@ -23214,7 +23303,7 @@ msgstr ""
 msgid "When the receiver wakes from Standby or Deep Standby it will send a command to the TV to bring it out of Standby."
 msgstr ""
 
-msgid "When the receiver wakes from Standby, it will switch the TV to the HDMI input connected to the receiver."
+msgid "When the receiver wakes from Standby, send active source, stream path and routing commands so the TV switches to the HDMI input connected to the receiver."
 msgstr ""
 
 msgid "When the red box is correctly visible press the GREEN button to save the settings and exit."
@@ -24471,6 +24560,18 @@ msgstr "igen (állapotok megtartása)"
 
 msgid "®"
 msgstr "®"
+
+#~ msgid "Put your AV Receiver in Standby"
+#~ msgstr "Helyezze az AV-vevőt készenléti állapotába"
+
+#~ msgid "Wake up your AV Receiver from Standby"
+#~ msgstr "Az AV vevő egység felébresztése a készenléti állapotból"
+
+#~ msgid "I55SE/H7/H17/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 new Model"
+#~ msgstr "I55SE/H7/H9/H9SE/H9COMBO/H9COMBOSE/H10/H11 új modell"
+
+#~ msgid " "
+#~ msgstr " "
 
 #~ msgid ""
 #~ "File oscam.conf not found.\n"
