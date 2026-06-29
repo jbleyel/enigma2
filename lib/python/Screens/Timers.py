@@ -1550,6 +1550,11 @@ class RecordTimerEdit(Setup):
 			(RECORDTIMER_AFTER_EVENTS.get(RECORD_AFTEREVENT.DEEPSTANDBY), RECORDTIMER_AFTER_EVENT_NAMES.get(RECORD_AFTEREVENT.DEEPSTANDBY)),
 			(RECORDTIMER_AFTER_EVENTS.get(RECORD_AFTEREVENT.AUTO), RECORDTIMER_AFTER_EVENT_NAMES.get(RECORD_AFTEREVENT.AUTO))
 		])
+		self.timerPrecondition = ConfigSelection(default=self.timer.precondition, choices=[
+			(0, _("Always")),
+			(1, _("Running only")),
+			(2, _("Standby only")),
+		])
 		self.timerFallback = ConfigYesNo(default=self.timer.external_prev or self.newEntry and config.usage.remote_fallback_external_timer.value and config.usage.remote_fallback.value and config.usage.remote_fallback_external_timer_default.value)
 		for callback in onRecordTimerCreate:
 			callback(self)
@@ -1621,6 +1626,7 @@ class RecordTimerEdit(Setup):
 		self.timer.description = self.timerDescription.value if self.timerDescription.default != self.timerDescription.value else self.timer.description
 		self.timer.justplay = self.timerType.value == "zap"
 		self.timer.always_zap = self.timerType.value == "zap+record"
+		self.timer.precondition = self.timerPrecondition.value if self.timerType.value == "zap" else 0
 		self.timer.rename_repeat = 1 if self.timerRename.value else 0
 		if self.timerType.value == "zap" and not self.timerHasEndTime.value:
 			self.timerAfterEvent.value = "nothing"

@@ -23,11 +23,6 @@ def InitRecordingConfig():
 	config.recording.zap_margin_after = ConfigSelection(default=0, choices=choices)
 	config.recording.zap_has_endtime = ConfigYesNo(default=False)
 	config.recording.ask_before_zap = ConfigYesNo(default=False)
-	config.recording.zap_wakeup = ConfigSelection(default="wakeup", choices=[
-		("wakeup", _("Zap and wake up from standby")),
-		("zap_no_wakeup", _("Zap but stay in standby")),
-		("nothing", _("Do nothing if in standby"))
-	])
 	config.recording.ascii_filenames = ConfigYesNo(default=False)
 	config.recording.keep_timers = ConfigSelection(default=7, choices=[(x, ngettext("%d Day", "%d Days", x) % x) for x in range(1, 121)])
 	config.recording.filename_composition = ConfigSelection(default="standard", choices=[

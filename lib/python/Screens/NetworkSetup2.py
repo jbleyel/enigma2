@@ -5,7 +5,6 @@ Screens:
 	NetworkConnections          – lists all connections; MENU/OK opens context menu
 	NetworkConnectionSetup      – Setup subclass for one Connection (BLUE → per-connection DNS)
 	DnsSettings                 – global system DNS (config.usage.dns.*, iNetworkManager)
-	NetworkConnectionDnsSetup   – optional per-connection DNS override
 	ScanResult                  – dataclass for one iwlist scan result
 	WlanScanScreen              – live iwlist scan, sorted by signal strength
 	WlanActivator               – ifup + wpa_supplicant + IP poll
@@ -453,62 +452,6 @@ class DnsSettings(Setup):
 
 
 # ===========================================================================
-# NetworkConnectionDnsSetup – optional per-connection DNS override
-#
-# Same UI as DnsSettings but:
-#   - Saves into conn.dnsServers instead of the global nameserverConfig
-#   - Does NOT touch config.usage.dns (always uses "custom" mode internally)
-#   - Does NOT offer dnscrypt or predefined server presets
-#     (those are global concerns; per-connection DNS is always custom or off)
-#   - "Use global DNS" option: when enabled, conn.dnsServers is cleared
-#     so the system falls back to the global DNS settings
-# ===========================================================================
-
-class NetworkConnectionDnsSetup(Setup):
-	"""Per-connection DNS override."""
-
-	def __init__(self, session, conn: Connection):
-		self._conn = conn
-		self._buildConfigObjects()
-		Setup.__init__(self, session=session, setup="DNSNetworkConnection")
-		self.setTitle(_("DNS – %s") % conn.adapter)
-
-	def _buildConfigObjects(self):
-		conn = self._conn
-		hasOwn = bool(conn.dnsServers)
-		self.cfgUseGlobal = NoSave(ConfigYesNo(default=not hasOwn))
-		dnsV4 = [s for s in conn.dnsServers if isinstance(s, list)]
-		dnsV6 = [s for s in conn.dnsServers if isinstance(s, str)]
-		self.cfgDns1v4 = NoSave(ConfigIP(default=dnsV4[0] if len(dnsV4) > 0 else [0, 0, 0, 0]))
-		self.cfgDns2v4 = NoSave(ConfigIP(default=dnsV4[1] if len(dnsV4) > 1 else [0, 0, 0, 0]))
-		self.cfgDns1v6 = NoSave(ConfigText(default=dnsV6[0] if len(dnsV6) > 0 else "", fixed_size=False))
-		self.cfgDns2v6 = NoSave(ConfigText(default=dnsV6[1] if len(dnsV6) > 1 else "", fixed_size=False))
-
-	def keySave(self):
-		conn = self._conn
-		if self.cfgUseGlobal.value:
-			# Clear per-connection DNS → fall back to global
-			conn.dnsServers = []
-		else:
-			servers: list = []
-			for cfgV4 in (self.cfgDns1v4, self.cfgDns2v4):
-				val = list(cfgV4.value)
-				if val != [0, 0, 0, 0]:
-					servers.append(val)
-			for cfgV6 in (self.cfgDns1v6, self.cfgDns2v6):
-				val = cfgV6.value.strip()
-				if val:
-					servers.append(val)
-			conn.dnsServers = servers
-		if nm is not None:
-			nm.save()
-		self.close(True)
-
-	def keyCancel(self):
-		self.close(False)
-
-
-# ===========================================================================
 # InformationNetworkConnection – scrollable info screen for one connection
 # ===========================================================================
 
@@ -840,7 +783,6 @@ class NetworkConnections(Screen):
 		menu = [
 			(_("Settings"), "setup"),
 			(_("Enable connection") if not conn.enabled else _("Disable connection"), "toggle"),
-			(_("Network connection DNS"), "connDns"),
 			(_("Network test"), "test"),
 			(_("Delete network connection"), "delete"),
 		]
@@ -862,8 +804,6 @@ class NetworkConnections(Screen):
 			self._openSetup(conn, adapter)
 		elif action == "toggle":
 			self._toggleConnection(conn, adapter)
-		elif action == "connDns":
-			self._openConnectionDns(conn)
 		elif action == "test":
 			self.session.open(NetworkAdapterTest2, adapter.name)
 		elif action == "delete":
@@ -879,13 +819,6 @@ class NetworkConnections(Screen):
 			NetworkConnectionSetup,
 			conn,
 			adapter,
-		)
-
-	def _openConnectionDns(self, conn: Connection):
-		self.session.openWithCallback(
-			lambda saved: self._buildList() if saved else None,
-			NetworkConnectionDnsSetup,
-			conn,
 		)
 
 	def _keyBlue(self):
@@ -1018,17 +951,10 @@ class NetworkConnectionSetup(Setup):
 		self._conn = conn
 		self._adapter = adapter
 		self._buildConfigObjects()
-		xmlSection = "NetworkConnectionWlan" if conn.isWlan else "NetworkConnection"
+		xmlSection = "NetworkWiFi" if conn.isWlan else "NetworkLAN"
 		Setup.__init__(self, session=session, setup=xmlSection)
 		self.setTitle(_("Network Connection Settings – %s") % conn.adapter)
-		self["key_yellow"] = StaticText("DNS")
 		self["key_blue"] = StaticText(_("Info"))
-		self["yellowActions"] = HelpableActionMap(
-			self,
-			["ColorActions"],
-			{"yellow": (self._openDns, _("Configure per-connection DNS"))},
-			prio=0,
-		)
 		self["blueActions"] = HelpableActionMap(
 			self,
 			["ColorActions"],
@@ -1086,32 +1012,26 @@ class NetworkConnectionSetup(Setup):
 			self.cfgKey = NoSave(ConfigPassword(default="", fixed_size=False))
 
 		# Wake-on-LAN (LAN adapters only, when hardware supports it)
-		wolChoices = [
-			("off", _("Disabled")),
-			("g", _("Magic Packet")),
-			("u", _("Unicast")),
-			("b", _("Broadcast")),
-		]
 		liveWol = conn.wakeOnLan
 		if not conn.isWlan and adapter.canWakeOnLan and nm is not None:
 			liveWol = nm.getWakeOnLan(adapter.name)
-		self.cfgWakeOnLan = NoSave(ConfigSelection(
-			choices=wolChoices,
-			default=liveWol if not conn.isWlan else "off",
-		))
+		self.cfgWakeOnLan = NoSave(ConfigYesNo(default=liveWol != "off"))
 
 		# Wake-on-WiFi (Broadcom wlan3 only)
-		self.cfgWakeOnWifi = NoSave(ConfigYesNo(default=conn.wakeOnWifi))
+		# cfgWakeOnWifi: WoW while normally active (activate=True)
+		# cfgWowOnly:    WoW only, no normal connection (activate=False)
+		self.cfgWakeOnWifi = NoSave(ConfigYesNo(default=conn.wakeOnWifi and conn.enabled))
+		self.cfgWowOnly = NoSave(ConfigYesNo(default=conn.wakeOnWifi and not conn.enabled))
 
-		# Read-only DNS indicator shown when a per-connection override is active
-		self.cfgDnsHint = NoSave(ConfigText(default=_("Custom (BLUE to change)"), fixed_size=False))
-
-	def _openDns(self):
-		self.session.openWithCallback(
-			lambda saved: Setup.createSetup(self) if saved else None,
-			NetworkConnectionDnsSetup,
-			self._conn,
-		)
+		# Per-connection DNS (inline, replaces separate DNS setup screen)
+		hasOwn = bool(conn.dnsServers)
+		self.cfgUseGlobalDns = NoSave(ConfigYesNo(default=not hasOwn))
+		dnsV4 = [s for s in conn.dnsServers if isinstance(s, list)]
+		dnsV6 = [s for s in conn.dnsServers if isinstance(s, str)]
+		self.cfgDns1v4 = NoSave(ConfigIP(default=dnsV4[0] if len(dnsV4) > 0 else [0, 0, 0, 0]))
+		self.cfgDns2v4 = NoSave(ConfigIP(default=dnsV4[1] if len(dnsV4) > 1 else [0, 0, 0, 0]))
+		self.cfgDns1v6 = NoSave(ConfigText(default=dnsV6[0] if len(dnsV6) > 0 else "", fixed_size=False))
+		self.cfgDns2v6 = NoSave(ConfigText(default=dnsV6[1] if len(dnsV6) > 1 else "", fixed_size=False))
 
 	def keySave(self):
 		conn = self._conn
@@ -1134,7 +1054,20 @@ class NetworkConnectionSetup(Setup):
 			conn.ip = list(self.cfgIp.value)
 			conn.netmask = list(self.cfgNetmask.value)
 			conn.gateway = list(self.cfgGateway.value)
-			# dnsServers managed separately via NetworkConnectionDnsSetup
+
+		if self.cfgUseGlobalDns.value:
+			conn.dnsServers = []
+		else:
+			servers = []
+			for cfgV4 in (self.cfgDns1v4, self.cfgDns2v4):
+				v = list(cfgV4.value)
+				if v != [0, 0, 0, 0]:
+					servers.append(v)
+			for cfgV6 in (self.cfgDns1v6, self.cfgDns2v6):
+				v = cfgV6.value.strip()
+				if v:
+					servers.append(v)
+			conn.dnsServers = servers
 
 		if conn.isWlan and conn.wlan:
 			w = conn.wlan
@@ -1146,7 +1079,7 @@ class NetworkConnectionSetup(Setup):
 
 		# Apply Wake-on-LAN via ethtool + optional /proc path
 		if not conn.isWlan and adapter.canWakeOnLan:
-			newWolMode = self.cfgWakeOnLan.value
+			newWolMode = "g" if self.cfgWakeOnLan.value else "off"
 			if newWolMode != conn.wakeOnLan and nm is not None:
 				cmds = nm.setWakeOnLanCommands(adapter.name, newWolMode)
 				if cmds:
@@ -1154,9 +1087,12 @@ class NetworkConnectionSetup(Setup):
 
 		# Apply Wake-on-WiFi (Broadcom)
 		if conn.isWlan and adapter.canWakeOnWifi:
-			newWow = self.cfgWakeOnWifi.value
-			if newWow != conn.wakeOnWifi and nm is not None:
-				cmds = nm.setWakeOnWifiCommands(adapter.name, newWow)
+			if conn.enabled:
+				conn.wakeOnWifi = self.cfgWakeOnWifi.value
+			else:
+				conn.wakeOnWifi = self.cfgWowOnly.value
+			if nm is not None:
+				cmds = nm.setWakeOnWifiCommands(adapter.name, conn.wakeOnWifi)
 				if cmds:
 					Console().eBatch(cmds, lambda _: None, debug=False)
 

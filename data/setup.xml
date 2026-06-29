@@ -1,59 +1,5 @@
 <setupxml>
-
-
-	<!--  NEW NETWORK -->
-
-	<setup key="NetworkConnection" title="Connection Settings">
-		<item level="0" text="Enabled" description="Enable this connection at boot (adds 'auto' to /etc/network/interfaces).">self.cfgEnabled</item>
-		<item level="1" text="IP protocol" description="Select which IP protocol version to use on this connection.">self.cfgIpMode</item>
-		<if conditional="self.cfgIpMode.value != 1">
-			<item level="0" text="Use DHCP" description="Obtain IP address, gateway and DNS automatically via DHCP.">self.cfgDhcp</item>
-			<if conditional="not self.cfgDhcp.value">
-				<item level="0" text="IP address" description="Static IPv4 address for this interface.">self.cfgIp</item>
-				<item level="0" text="Subnet mask" description="The subnet mask, e.g. 255.255.255.0">self.cfgNetmask</item>
-				<item level="0" text="Default gateway" description="The IP address of your router.">self.cfgGateway</item>
-			</if>
-		</if>
-		<item level="1" text="Wake-on-LAN" description="Enable Wake-on-LAN so this box can be powered on remotely via a Magic Packet." conditional="self._adapter.canWakeOnLan">self.cfgWakeOnLan</item>
-		<item level="1" text="DNS override" description="This connection has custom DNS servers. Press BLUE to change." conditional="bool(self._conn.dnsServers)">self.cfgDnsHint</item>
-	</setup>
-
-	<setup key="NetworkConnectionWlan" title="WLAN Connection Settings">
-		<item level="0" text="Profile name" description="A human-readable label for this connection (e.g. 'Home WiFi').">self.cfgName</item>
-		<item level="0" text="Enabled" description="Enable this connection at boot.">self.cfgEnabled</item>
-		<item level="1" text="IP protocol" description="Select which IP protocol version to use on this connection.">self.cfgIpMode</item>
-		<item level="0" text="Priority" description="Preferred order when multiple WLAN profiles are configured." conditional="self._hasMultiplePriorities">self.cfgPriority</item>
-		<item level="0" text="Network name (SSID)" description="The name (SSID) of the wireless network.">self.cfgSsid</item>
-		<item level="1" text="Hidden network" description="Enable if the access point does not broadcast its SSID.">self.cfgHidden</item>
-		<item level="0" text="Encryption" description="The security method used by the wireless network.">self.cfgEncryption</item>
-		<if conditional="self.cfgEncryption.value != 'none'">
-			<item level="0" text="Password / Key" description="The passphrase or pre-shared key for the wireless network.">self.cfgKey</item>
-		</if>
-		<if conditional="self.cfgIpMode.value != 1">
-			<item level="0" text="Use DHCP" description="Obtain IP address automatically. Recommended for most WLAN connections.">self.cfgDhcp</item>
-			<if conditional="not self.cfgDhcp.value">
-				<item level="0" text="IP address" description="Static IPv4 address (only used when DHCP is disabled).">self.cfgIp</item>
-				<item level="0" text="Subnet mask" description="Subnet mask, e.g. 255.255.255.0">self.cfgNetmask</item>
-				<item level="0" text="Default gateway" description="IP address of the router / access point.">self.cfgGateway</item>
-			</if>
-		</if>
-		<item level="1" text="Wake-on-WiFi" description="Keep the WLAN adapter in low-power scan mode during standby. Broadcom only." conditional="self._adapter.canWakeOnWifi">self.cfgWakeOnWifi</item>
-		<item level="1" text="DNS override" description="This connection has custom DNS servers. Press BLUE to change." conditional="bool(self._conn.dnsServers)">self.cfgDnsHint</item>
-	</setup>
-
-	<setup key="DNSNetworkConnection" title="Connection DNS Settings">
-		<item level="0" text="Use global DNS" description="When enabled this connection uses the system-wide DNS settings. Disable to enter custom DNS servers for this connection only.">self.cfgUseGlobal</item>
-		<if conditional="not self.cfgUseGlobal.value">
-			<item level="0" text="Primary DNS (IPv4)" description="Primary IPv4 DNS server for this connection.">self.cfgDns1v4</item>
-			<item level="0" text="Secondary DNS (IPv4)" description="Secondary IPv4 DNS server (optional).">self.cfgDns2v4</item>
-			<item level="1" text="Primary DNS (IPv6)" description="Primary IPv6 DNS server for this connection (optional).">self.cfgDns1v6</item>
-			<item level="1" text="Secondary DNS (IPv6)" description="Secondary IPv6 DNS server (optional).">self.cfgDns2v6</item>
-		</if>
-	</setup>
-
-	<!--  NEW NETWORK -->
-
-	<setup key="Audio" title="Audio Settings" level="1" showOpenWebif="1">
+	<setup key="Audio" title="Audio Settings" level="1" showOpenWebif="yes">
 		<item level="1" text="Volume steps" description="Select the size of the volume step when the VOLUME buttons are pressed.">config.volumeControl.pressStep</item>
 		<item level="1" text="Long press volume steps" description="Select the size of the volume steps when the VOLUME buttons are held down.">config.volumeControl.longStep</item>
 		<item level="1" text="Volume/Mute display timer" description="Select how long, in seconds, that the volume and mute displays are shown before they automatically hide.">config.volumeControl.hideTimer</item>
@@ -89,7 +35,7 @@
 		<item level="0" text="Use AutoCam" description="When set to 'Yes' a specific Softcam can be assigned to each encrypted service.">config.misc.autocamEnabled</item>
 		<item level="0" text="Select AutoCam default Softcam" description="Select a Softcam from the available list as the default for AutoCam." conditional="config.misc.autocamEnabled.value">self.autocamDefault</item>
 	</setup>
-	<setup key="AutoLanguage" title="Auto Language Settings" level="1" showOpenWebif="1">
+	<setup key="AutoLanguage" title="Auto Language Settings" level="1" showOpenWebif="yes">
 		<item level="1" text="Audio language selection 1" description="Configure the first audio language (highest priority).">config.autolanguage.audio_autoselect1</item>
 		<item level="1" text="Audio language selection 2" description="Configure the second audio language.">config.autolanguage.audio_autoselect2</item>
 		<item level="1" text="Audio language selection 3" description="Configure the third audio language.">config.autolanguage.audio_autoselect3</item>
@@ -109,7 +55,7 @@
 		<item level="1" text="EPG language selection 1" description="Configure the primary EPG language.">config.autolanguage.audio_epglanguage</item>
 		<item level="1" text="EPG language selection 2" description="Configure the secondary EPG language.">config.autolanguage.audio_epglanguage_alternative</item>
 	</setup>
-	<setup key="Cardserver" title="Cardserver Settings" showOpenWebif="1">
+	<setup key="Cardserver" title="Cardserver Settings" showOpenWebif="yes">
 		<item level="0" text="Select cardserver" description="Select the cardserver to be used from the list of available cardservers.">config.misc.cardservers</item>
 	</setup>
 	<setup key="CCcamLineEdit" title="CCcam Line Editor">
@@ -127,7 +73,7 @@
 		<item level="0" text="Password" description="Edit the password.">config.cccaminfo.password</item>
 		<item level="0" text="Port" description="Edit the remote CCCam port.">config.cccaminfo.port</item>
 	</setup>
-	<setup key="ChannelSelection" title="Channel Selection Settings" showOpenWebif="1">
+	<setup key="ChannelSelection" title="Channel Selection Settings" showOpenWebif="yes">
 		<item text="Channel Selection Screen" description="Select the screen layout, from the options provided by the skin, to be used for the ChannelSelection screen." conditional="len(config.channelSelection.screenStyle.choices) > 1">config.channelSelection.screenStyle</item>
 		<item text="Channel Selection List" description="Select the layout of the information in the services list, from the options provided by the skin, displayed within the ChannelSelection screen." conditional="config.channelSelection.screenStyle.value">config.channelSelection.widgetStyle</item>
 		<item level="0" text="Include CI assignment" description="Set CI assignment for detection of available services.">config.misc.use_ci_assignment</item>
@@ -196,7 +142,7 @@
 		<item level="0" text="DVB CI Delay" description="Set DVB CI delay." requires="CommonInterfaceCIDelay">config.cimisc.dvbCiDelay</item>
 		<item level="0" text="CI Boot Delay" description="Set CI Boot delay.">config.cimisc.bootDelay</item>
 	</setup>
-	<setup key="Display" title="Display Settings" showOpenWebif="1">
+	<setup key="Display" title="Display Settings" showOpenWebif="yes">
 		<item level="0" text="Clone TV screen to LCD" description="Shows live TV or informations on LCD." requires="FBLCDDisplay">config.lcd.fblcddisplay</item>
 		<item level="0" text="Brightness (Normal)" description="Configure the brightness level of the front panel display for normal operation.">config.lcd.bright</item>
 		<item level="0" text="Brightness (Dimmed)" description="Configure the brightness level of the front panel display for dimmed operation.">config.lcd.dimbright</item>
@@ -273,7 +219,7 @@
 			</if>
 		</if>
 	</setup>
-	<setup key="EPG" title="EPG Settings" level="2" showOpenWebif="1">
+	<setup key="EPG" title="EPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="EPG location" description="Choose the location where the EPG data will be stored when the %s %s is shut down. The location must be available at boot time.">config.misc.epgcachepath</item>
 		<item level="2" text="EPG filename" description="Choose the name of the file that holds the EPG data when the %s %s is shut down. This can be handy to differentiate between several receivers.">config.misc.epgcachefilename</item>
 		<item level="2" text="Scheduled load of 'epg.dat'" description="Allows the %s %s to read the stored EPG data regularly.">config.epg.cacheloadsched</item>
@@ -298,7 +244,7 @@
 		<item level="2" text="Country for EPG event genre information" description="Choose a country scheme for decoding genre information in EPG events.">config.misc.epggenrecountry</item>
 		<item level="2" text="Correct invalid EPG data" description="Choose the option to correct invalid EPG data.">config.usage.correct_invalid_epgdata</item>
 	</setup>
-	<setup key="EPGEnhanced" title="SingleEPG Settings" level="2" showOpenWebif="1">
+	<setup key="EPGEnhanced" title="SingleEPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="Channel preview mode" description="Select 'Yes' to enable preview of channels while in the EPG list.">config.epgselection.enhanced_preview_mode</item>
 		<item level="2" text="Skip empty services" description="Select 'Yes' to hide channels without EPG data.">config.epgselection.overjump</item>
 		<item level="2" text="Sort list by" description="You can have the list sorted by time or alphanumerical.">config.epgselection.sort</item>
@@ -307,7 +253,7 @@
 		<item level="2" text="Number of rows" description="Configure the number of rows shown.">config.epgselection.enhanced_itemsperpage</item>
 		<item level="2" text="Event font size" description="Configure the font size relative to skin size, so 1 increases by 1 point size, and -1 decreases by 1 point size.">config.epgselection.enhanced_eventfs</item>
 	</setup>
-	<setup key="EPGGraphical" title="GraphicalEPG Settings" level="2" showOpenWebif="1">
+	<setup key="EPGGraphical" title="GraphicalEPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="View mode" description="This option allows you to set the layout view (Text or Graphics).">config.epgselection.graph_type_mode</item>
 		<item level="2" text="Channel preview mode" description="Unless set to 'disabled' you get a preview of channels inside the EPG list.">config.epgselection.graph_preview_mode</item>
 		<item level="2" text="Show bouquet on launch" description="Select 'Yes' to show the bouquet selection screen every time you open the EPG.">config.epgselection.graph_showbouquet</item>
@@ -341,7 +287,7 @@
 		<item level="2" text="Timeline marker" description="Select the initial position of the timeline marker. The marker is the vertical line drawn on the EPG that shows the current time. The larger the value the more the marker will move to the right showing more history and less of upcoming events.">config.epgselection.graph_histminutes</item>
 		<item level="2" text="Timeline scale" description="Configure the amount of time that will be presented.">config.epgselection.graph_prevtimeperiod</item>
 	</setup>
-	<setup key="EPGInfobar" title="InfoBar EPG Settings" level="2" showOpenWebif="1">
+	<setup key="EPGInfobar" title="InfoBar EPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="View mode" description="This option allows you to set the layout view (Text or Graphics).">config.epgselection.infobar_type_mode</item>
 		<item level="2" text="Channel preview mode" description="Select 'Yes' to enable preview of channels while in the EPG list.">config.epgselection.infobar_preview_mode</item>
 		<item level="2" text="Skip empty services" description="Select 'Yes' to hide channels without EPG data.">config.epgselection.overjump</item>
@@ -351,7 +297,7 @@
 		<item level="2" text="Number of rows" description="Configure the number of rows shown.">config.epgselection.infobar_itemsperpage</item>
 		<item level="2" text="Event font size" description="Configure the font size relative to skin size, so 1 increases by 1 point size, and -1 decreases by 1 point size.">config.epgselection.infobar_eventfs</item>
 	</setup>
-	<setup key="EPGInfobarGraphical" title="Graphical InfoBar EPG Settings" level="2" showOpenWebif="1">
+	<setup key="EPGInfobarGraphical" title="Graphical InfoBar EPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="View mode" description="This option allows you to set the layout view (Text or Graphics).">config.epgselection.infobar_type_mode</item>
 		<item level="2" text="Channel preview mode" description="Select 'Yes' to enable preview of channels while in the EPG list.">config.epgselection.infobar_preview_mode</item>
 		<item level="2" text="Service Title mode" description="Configure to show channel names, numbers, picons or all three inside EPG.">config.epgselection.infobar_servicetitle_mode</item>
@@ -375,7 +321,7 @@
 		<item level="2" text="Timeline marker" description="Select the initial position of the timeline marker. The marker is the vertical line drawn on the EPG that shows the current time. The larger the value the more the marker will move to the right showing more history and less of upcoming events.">config.epgselection.infobar_histminutes</item>
 		<item level="2" text="Timeline scale" description="Configure the amount of time that will be presented.">config.epgselection.infobar_prevtimeperiod</item>
 	</setup>
-	<setup key="EPGMulti" title="MultiEPG Settings" level="2" showOpenWebif="1">
+	<setup key="EPGMulti" title="MultiEPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="Channel preview mode" description="Select 'Yes' to enable preview of channels while in the EPG list.">config.epgselection.multi_preview_mode</item>
 		<item level="2" text="Show bouquet on launch" description="Select 'Yes' to show the bouquet selection screen every time you open the EPG.">config.epgselection.multi_showbouquet</item>
 		<item level="2" text="Skip empty services" description="Select 'Yes' to hide channels without EPG data.">config.epgselection.overjump</item>
@@ -384,12 +330,12 @@
 		<item level="2" text="Number of rows" description="Configure the number of rows shown.">config.epgselection.multi_itemsperpage</item>
 		<item level="2" text="Event font size" description="Configure the font size relative to skin size, so 1 increases by 1 point size, and -1 decreases by 1 point size.">config.epgselection.multi_eventfs</item>
 	</setup>
-	<setup key="EPGSingle" title="ChannelEPG Settings" level="2" showOpenWebif="1">
+	<setup key="EPGSingle" title="ChannelEPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="Sort list by" description="You can have the list sorted by time or alphanumerical.">config.epgselection.sort</item>
 		<item level="2" text="Number of rows" description="Configure the number of rows shown.">config.epgselection.enhanced_itemsperpage</item>
 		<item level="2" text="Event font size" description="Configure the font size relative to skin size, so 1 increases by 1 point size, and -1 decreases by 1 point size.">config.epgselection.enhanced_eventfs</item>
 	</setup>
-	<setup key="EPGVertical" title="VerticalEPG Settings" level="2" showOpenWebif="1">
+	<setup key="EPGVertical" title="VerticalEPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="Start mode" description="Here can set the EPG will alway open at the current channel, the first channel or one of both with primetime. If no primetime selected, the current time is used.">config.epgselection.vertical_startmode</item>
 		<item level="2" text="Picture in EPG" description="Select 'Yes' to display a small TV image (PiG - Picture in Graphic) within the EPG screen.">config.epgselection.vertical_pig</item>
 		<item level="2" text="Channel preview mode" description="Select 'Yes' to enable preview of channels while in the EPG list.">config.epgselection.vertical_preview_mode</item>
@@ -493,7 +439,7 @@
 	<setup key="GPTSlotManager" title="Slot Manager">
 		<item level="0" text="Target location" description="Choose the target device for the slots.">self.GPTSlotManagerLocation</item>
 	</setup>
-	<setup key="HardDisk" title="Hard Disk Settings" showOpenWebif="1">
+	<setup key="HardDisk" title="Hard Disk Settings" showOpenWebif="yes">
 		<item level="0" text="Hard disk Standby after" description="Configure the hard disk drive to go to Standby after the specified idle time.">config.usage.hdd_standby</item>
 		<item level="0" text="Hard disk Standby in receiver Standby after" description="Configure the hard disk drive to go to Standby after the specified idle time when the receiver is in Standby.">config.usage.hdd_standby_in_standby</item>
 		<item level="0" text="Use Harddisk Hardware Standby Timer" description="Option to enable the hardware Standby timer.">config.usage.hdd_timer</item>
@@ -544,7 +490,7 @@
 			<item level="0" text="Enable debug log" description="If enabled, a log will be kept of CEC protocol traffic. The log files are located with the other log files but named 'Enigma2-hdmicec-[date].log'.">config.hdmicec.debug</item>
 		</if>
 	</setup>
-	<setup key="HDMIRecord" title="HDMI Recording Settings" showOpenWebif="1">
+	<setup key="HDMIRecord" title="HDMI Recording Settings" showOpenWebif="yes">
 		<item level="0" text="Bitrate" description="Set the bitrate of the video encoder. Larger values improve the quality and also increases the file size.">config.hdmirecord.bitrate</item>
 		<item level="0" text="Width" description="The width of the picture. The input will be scaled to match this value.">config.hdmirecord.width</item>
 		<item level="0" text="Height" description="The height of the picture. The input will be scaled to match this value.">config.hdmirecord.height</item>
@@ -559,10 +505,10 @@
 		<item level="0" text="Target location" description="Choose the target location for the slots.">self.kexecSlotManagerLocation</item>
 		<item level="0" text="Slot count" description="Choose the amount of additional slots." conditional="self.kexecSlotManagerLocation.value">self.kexecSlotManagerSlots</item>
 	</setup>
-	<setup key="Keyboard" title="Keyboard Settings" showOpenWebif="1">
+	<setup key="Keyboard" title="Keyboard Settings" showOpenWebif="yes">
 		<item level="0" text="Keyboard" description="Select the type of keyboard connected to the %s %s.">config.inputDevices.keyboardsIndex</item>
 	</setup>
-	<setup key="LEDs" title="LED Settings" showOpenWebif="1">
+	<setup key="LEDs" title="LED Settings" showOpenWebif="yes">
 		<item level="1" text="LED Color" description="With this option you can switch the LED color or deactivate the LED.">config.fp.led.default_color</item>
 		<item level="1" text="LED Brightness" description="LED brightness during normal operations.">config.fp.led.default_brightness</item>
 		<item level="1" text="LED Idle Color" description="With this option you can switch the LED color or deactivate the LED.">config.fp.led.standby_color</item>
@@ -573,7 +519,7 @@
 		<item level="0" text="Locales to be displayed" description="Display the base locales or all locales for a language.">config.locales.packageLocales</item>
 		<item level="0" text="Locale list sort order" description="Sort order for the language list.">config.locales.localesSortBy</item>
 	</setup>
-	<setup key="Logs" title="Logs Settings" level="2" showOpenWebif="1">
+	<setup key="Logs" title="Logs Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="Logs location" description="Choose the location for crash and debug logs.">config.crash.debug_path</item>
 		<item level="2" text="Handle Python crashes" description="Try to prevent reboots for software errors and maintain of the availability for the receiver.">config.crash.bsodpython</item>
 		<item level="2" text="Show crash info on screen and write crash log for x times" description="If 'never', will write crash log despite that for the first crash." requires="config.crash.bsodpython">config.crash.bsodhide</item>
@@ -610,7 +556,7 @@
 		<item level="2" text="Enable GStreamer pipeline graphs *" description="Allows you to enable the GStreamer pipeline graphs. These are .dot files that describe the topology of your pipeline, along with the caps negotiated in each link.">config.crash.gstdot</item>
 		<item level="2" text="Enable core dumps *" description="Core dumps are helpful for developers in case of a FATAL SIGNAL crash in the C++ code. Typical core dump size is 110 MB so adjust maximum space used and choose proper location.">config.crash.coredump</item>
 	</setup>
-	<setup key="MovieSelection" title="Movie Selection Settings" showOpenWebif="1">
+	<setup key="MovieSelection" title="Movie Selection Settings" showOpenWebif="yes">
 		<item level="0" text="Use 'Trash' in movie list" description="When enabled, deleted recordings are moved to the trashcan, instead of being deleted immediately.">config.usage.movielist_trashcan</item>
 		<item level="0" text="Purge 'Trash' after" description="Configure the number of days after which items are automatically removed from the trashcan.">config.usage.movielist_trashcan_days</item>
 		<item level="0" text="Clean network 'Trash'" description="When enabled, network trashcans are probed for cleaning.">config.usage.movielist_trashcan_network_clean</item>
@@ -657,20 +603,81 @@
 		<item text="Nameserver" description="Configure the name server (DNS).">config.network.dns</item>
 		<item text="Activate network settings" description="Activate the configured network settings.">config.network.activate</item>
 	</setup>
-	<setup key="NetworkNFS" title="NFS Settings" allowDefault="1">
-		<item text="NFS threads" description="Number of NFS server threads. Higher values improve performance with multiple clients.">self.nfsThreads</item>
-		<item text="Enable NFSv3" description="Select 'Yes' to enable NFS version 3 support.">self.nfsVers3</item>
-		<item text="Enable NFSv4" description="Select 'Yes' to enable NFS version 4 support.">self.nfsVers4</item>
-		<item text="Access mode" description="Read/Write or Read Only access for all exported directories.">self.nfsAccessMode</item>
-		<item text="Allowed clients" description="IP address, subnet (e.g. 192.168.1.0/24) or * for all hosts.">self.nfsClients</item>
-		<item text="Root squash" description="Select 'Yes' to map root to nobody (more secure). Select 'No' for full root access.">self.nfsRootSquash</item>
+	<setup key="NetworkLAN" title="LAN Connection Settings">
+		<item level="0" text="Enabled" description="When enabled, this connection will be available at boot time. (Adds 'auto' to /etc/network/interfaces.)">self.cfgEnabled</item>
+		<if conditional="self.cfgEnabled.value">
+			<item level="1" text="IP protocol" description="Select which IP protocols can be used for this connection.">self.cfgIpMode</item>
+			<if conditional="self.cfgIpMode.value != 1">
+				<item level="0" text="Use DHCP" description="When enabled, obtain the IP address, mask, gateway, and DNS settings automatically via DHCP.">self.cfgDhcp</item>
+				<if conditional="not self.cfgDhcp.value">
+					<item level="0" text="IP address" description="Enter the static IPv4 address for this connection.">self.cfgIp</item>
+					<item level="0" text="Subnet mask" description="Enter the subnet mask to use for this connection. (e.g. 255.255.255.0)">self.cfgNetmask</item>
+					<item level="0" text="Default gateway" description="Enter the IP address to use as a gateway to other networks for this connection. Typically this is the IP address of your router.">self.cfgGateway</item>
+				</if>
+			</if>
+			<item level="1" text="DNS override" description="When enabled, specify the DNS servers to be used for this connection.">self.cfgUseGlobalDns</item>
+			<if conditional="not self.cfgUseGlobalDns.value">
+				<if conditional="self.cfgIpMode.value != 1">
+					<item level="0" text="Primary DNS (IPv4)" description="Enter the primary IPv4 DNS server for this connection.">self.cfgDns1v4</item>
+					<item level="0" text="Secondary DNS (IPv4)" description="Enter the secondary IPv4 DNS server for this connection. (Optional)">self.cfgDns2v4</item>
+				</if>
+				<if conditional="self.cfgIpMode.value != 0">
+					<item level="0" text="Primary DNS (IPv6)" description="Enter the primary IPv6 DNS server for this connection. (Optional)">self.cfgDns1v6</item>
+					<item level="0" text="Secondary DNS (IPv6)" description="Enter the secondary IPv6 DNS server for this connection. (Optional)">self.cfgDns2v6</item>
+				</if>
+			</if>
+			<item level="1" text="Wake-on-LAN" description="When enabled, allow the receiver to be powered on by a remote Wake-on-LAN network signal (Magic Packet)." requires="WakeOnLAN">self.cfgWakeOnLan</item>
+		</if>
 	</setup>
-	<setup key="NetworkSamba" title="Samba Settings" allowDefault="1">
-		<item text="Enable automatic shares" description="Select 'Yes' to allow each storage device detected to be automatically exported as samba share.">config.samba.enableAutoShare</item>
-		<item text="Automatic shares access" description="Select the access mode for the automatically exported samba shares." conditional="config.samba.enableAutoShare.value">config.samba.autoShareAccess</item>
-		<item text="Allow guest access" description="Select 'Yes' to allow access without a password.">self.guestAccess</item>
-		<item text="Workgroup" description="Windows workgroup name (default: WORKGROUP).">self.workgroup</item>
-		<item text="Server name" description="Name this box appears as in the network (NetBIOS name).">self.netbiosName</item>
+	<setup key="NetworkWiFi" title="Wi-Fi Connection Settings">
+		<item level="0" text="Enabled" description="When enabled, this connection will be available at boot time. (Adds 'auto' to /etc/network/interfaces.)">self.cfgEnabled</item>
+		<item level="1" text="WoW only" description="When enabled, the WLAN adapter is kept in Wake-on-WiFi mode only and will not connect to a network normally." requires="wwol" conditional="not self.cfgEnabled.value">self.cfgWowOnly</item>
+		<if conditional="self.cfgEnabled.value or self.cfgWowOnly.value">
+			<item level="0" text="Profile name" description="Select a name to be used to refer to this connection. (e.g. 'Home Wi-Fi')">self.cfgName</item>
+			<item level="1" text="IP protocol" description="Select which IP protocols can be used for this connection.">self.cfgIpMode</item>
+			<item level="0" text="Priority" description="Preferred connection priority order when multiple Wi-Fi profiles are configured. Lower numbers have a higher priority." conditional="self._hasMultiplePriorities">self.cfgPriority</item>
+			<item level="0" text="Network name (SSID)" description="Select the name (SSID) of the wireless network to which the receiver should connect.">self.cfgSsid</item>
+			<item level="1" text="Hidden network" description="When enabled, allow connection to access points that don't broadcast their SSID.">self.cfgHidden</item>
+			<item level="0" text="Encryption" description="Select the security protocol that will be used to access the selected wireless network.">self.cfgEncryption</item>
+			<if conditional="self.cfgEncryption.value != 'none'">
+				<item level="0" text="Password / Key" description="Enter the password, pass-phrase or pre-shared key for the selected wireless network.">self.cfgKey</item>
+			</if>
+			<if conditional="self.cfgIpMode.value != 1">
+				<item level="0" text="Use DHCP" description="When enabled, obtain the IP address, mask, gateway, and DNS settings automatically via DHCP. This is recommended for most Wi-Fi connections.">self.cfgDhcp</item>
+				<if conditional="not self.cfgDhcp.value">
+					<item level="0" text="IP address" description="Enter the static IPv4 address for this connection.">self.cfgIp</item>
+					<item level="0" text="Subnet mask" description="Enter the subnet mask to use for this connection. (e.g. 255.255.255.0)">self.cfgNetmask</item>
+					<item level="0" text="Default gateway" description="Enter the IP address to use as a gateway to other networks for this connection. Typically this is the IP address of your router.">self.cfgGateway</item>
+				</if>
+			</if>
+			<item level="1" text="DNS override" description="When enabled, specify the DNS servers to be used for this connection.">self.cfgUseGlobalDns</item>
+			<if conditional="not self.cfgUseGlobalDns.value">
+				<if conditional="self.cfgIpMode.value != 1">
+					<item level="0" text="Primary DNS (IPv4)" description="Enter the primary IPv4 DNS server for this connection.">self.cfgDns1v4</item>
+					<item level="0" text="Secondary DNS (IPv4)" description="Enter the secondary IPv4 DNS server for this connection. (Optional)">self.cfgDns2v4</item>
+				</if>
+				<if conditional="self.cfgIpMode.value != 0">
+					<item level="0" text="Primary DNS (IPv6)" description="Enter the primary IPv6 DNS server for this connection. (Optional)">self.cfgDns1v6</item>
+					<item level="0" text="Secondary DNS (IPv6)" description="Enter the secondary IPv6 DNS server for this connection. (Optional)">self.cfgDns2v6</item>
+				</if>
+			</if>
+			<item level="1" text="Wake-on-WiFi" description="When enabled, keep the WLAN adapter in low-power scan mode during standby to allow the receiver to be powered on by a remote network signal (Magic Packet)." requires="wwol" conditional="self.cfgEnabled.value">self.cfgWakeOnWifi</item>
+		</if>
+	</setup>
+	<setup key="NetworkNFS" title="NFS Settings" allowDefault="yes">
+		<item text="NFS threads" description="Enter the number of NFS server threads to be allocated/used. Higher values improve performance with multiple clients but use more memory.">self.nfsThreads</item>
+		<item text="Enable NFSv3" description="When enabled, allow usage of the NFS version 3 protocols.">self.nfsVers3</item>
+		<item text="Enable NFSv4" description="When enabled, allow usage of the NFS version 4 protocols.">self.nfsVers4</item>
+		<item text="Access mode" description="Select the mode of access, Read/Write or Read Only, applied to all exported directories.">self.nfsAccessMode</item>
+		<item text="Allowed clients" description="Enter the IP address or subnet (e.g. 192.168.1.0/24) to which NFS host access is granted. Enter '*', the default, for all host access.">self.nfsClients</item>
+		<item text="Root squash" description="When enabled, map root to nobody (more secure). When disabled, full root access is available.">self.nfsRootSquash</item>
+	</setup>
+	<setup key="NetworkSamba" title="Samba Settings" allowDefault="yes">
+		<item text="Enable automatic shares" description="When enabled, allow each storage device detected to be automatically exported as a Samba share.">config.samba.enableAutoShare</item>
+		<item text="Automatic shares access" description="Select the mode of access, Read/Write or Read Only, applied to all automatically exported Samba shares." conditional="config.samba.enableAutoShare.value">config.samba.autoShareAccess</item>
+		<item text="Allow guest access" description="When enabled, allow Samba network access without a password.">self.guestAccess</item>
+		<item text="Server name" description="Enter the name to be used by this receiver when it appears in Samba network scans/lists.">self.netbiosName</item>
+		<item text="Workgroup name" description="Enter the workgroup name to be used by this receiver for Samba based connections. (Default is 'WORKGROUP'.)">self.workgroup</item>
 	</setup>
 	<setup key="NetworkZeroTier" title="ZeroTier Settings">
 		<item text="Network-ID" description="Enter the ZeroTier Network ID. The ID should be exactly 16 characters in length.">config.network.ZeroTierNetworkId</item>
@@ -688,12 +695,12 @@
 		<item level="0" text="Automatically update Client/Server View" description="Automatically update Client/Server View">config.oscaminfo.autoUpdate</item>
 		<item level="0" text="Automatically update Log-Fullscreen View" description="Automatically update Log-Fullscreen View">config.oscaminfo.autoUpdateLog</item>
 	</setup>
-	<setup key="OSD3DCalibration" title="OSD 3D Settings" allowDefault="1" showOpenWebif="1">
+	<setup key="OSD3DCalibration" title="OSD 3D Settings" allowDefault="yes" showOpenWebif="yes">
 		<item level="0" text="3D Mode" description="This option lets you choose the 3D mode of the OSD.">config.osd.threeDmode</item>
 		<item level="0" text="Depth" description="This option lets you adjust the 3D depth of the OSD.">config.osd.threeDznorm</item>
 		<item level="0" text="Show in Extension Menu" description="This option lets you show the 3D OSD menu option in the Extension Menu screen.">config.osd.show3dextensions</item>
 	</setup>
-	<setup key="OSDCalibration" title="OSD Calibration Settings" allowDefault="1" showOpenWebif="1">
+	<setup key="OSDCalibration" title="OSD Calibration Settings" allowDefault="yes" showOpenWebif="yes">
 		<if requires="CanChangeOsdPositionAML">
 			<item level="0" text="Left" description="Use the LEFT/RIGHT buttons on your remote to move the OSD left.">config.osd.dst_left</item>
 			<item level="0" text="Top" description="Use the LEFT/RIGHT buttons on your remote to move the OSD top.">config.osd.dst_top</item>
@@ -715,7 +722,7 @@
 	<setup key="Password" title="Password Settings">
 		<item level="0" text="New password" description="Setting a password is strongly advised if your receiver is open to the Internet. You must set a password in order to be able to use network services like FTP, Telnet or SSH.">config.network.password</item>
 	</setup>
-	<setup key="Picon" title="Picon Settings" showOpenWebif="1">
+	<setup key="Picon" title="Picon Settings" showOpenWebif="yes">
 		<item level="0" text="Picon mode" description="Define the mode for picon path selection and resolution.">config.picon.mode</item>
 		<if conditional="config.picon.mode.value == 1">
 			<item level="0" text="Picon path %s" description="Path for picon set %s." data="1">config.picon.set0.path</item>
@@ -800,7 +807,7 @@
 		<item level="2" text="Background delete speed" description="Configure the speed of the background deletion process. Lower speed will consume less hard disk drive performance.">config.misc.erase_speed</item>
 		<item level="2" text="Disable ServiceHiSilicon" description="Select 'Yes' to disable the ServiceHiSilicon plugin to allow use of the default internal media player code." requires="servicehisilicon" restart="gui">config.misc.disableServiceHiSilicon</item>
 	</setup>
-	<setup key="PluginBrowser" title="Plugin Browser Settings" showOpenWebif="1">
+	<setup key="PluginBrowser" title="Plugin Browser Settings" showOpenWebif="yes">
 		<item level="0" text="Plugin Browser layout" description="Select the layout of the installed plugins in the Plugin Browser screen. NOTE: The change is not immediate but will be seen when Plugin Browser is restarted!">config.usage.pluginListLayout</item>
 		<item level="0" text="Sort Plugin Browser entries" description="Select the sort order of the Plugin Browser menu entries. User defined also allows the plugin entries to be hidden.">config.usage.plugins_sort_mode</item>
 		<item level="0" text="Picon install location" description="Select the location where the picon files will be installed.">config.usage.piconInstallLocation</item>
@@ -826,7 +833,7 @@
 		<item level="0" text="User Feed URL" description="Enter your personal feed URL to allow you to select packages from your personal feed.">config.pluginfilter.userfeed</item>
 		<item level="0" text="Use alternate GitHub DNS" description="Select 'Yes' to use alternate GitHub feed IP addresses. This can be helpful if you use a VPN and the normal feeds can't be accessed via the published DNS names.">config.usage.alternateGitHubDNS</item>
 	</setup>
-	<setup key="Recording" title="Recording Settings" showOpenWebif="1">
+	<setup key="Recording" title="Recording Settings" showOpenWebif="yes">
 		<item level="2" text="Timer recording location" description="Set the default recording location for your timers. Press 'OK' to add new locations, press 'LEFT'/'RIGHT' to select from previously defined locations.">config.usage.timer_path</item>
 		<item level="2" text="Instant recording location" description="Set the default location for your instant recordings. Press 'OK' to add new locations, press 'LEFT'/'RIGHT' to select from previously defined locations.">config.usage.instantrec_path</item>
 		<item level="2" text="Time shift save location" description="Set the default location to save your time shift recording files. Press 'OK' to add new locations, press LEFT/RIGHT to select from previously defined locations.">config.timeshift.recordingPath</item>
@@ -841,7 +848,6 @@
 		<item level="0" text="Margin before recording" description="When nonzero, a recording will start the nominated period before the starting time indicated in the EPG.">config.recording.margin_before</item>
 		<item level="0" text="Margin after recording" description="When nonzero, a recording will stop the nominated period after the ending time indicated in the EPG.">config.recording.margin_after</item>
 		<item level="0" text="Use Zap timer end times" description="Select 'Yes' to enable new Zap timers to have an end time turned on and defined by default.">config.recording.zap_has_endtime</item>
-		<item level="0" text="Zap timer standby behavior" description="Configure what happens when a zap timer fires and the box is in standby. 'Zap and wake up' is the default. 'Zap but stay in standby' updates the last channel without waking the box. 'Do nothing' ignores the zap timer while in standby.">config.recording.zap_wakeup</item>
 		<item level="0" text="Margin before zap" description="When nonzero, a zap timer will start the nominated period before the starting time indicated in the EPG.">config.recording.zap_margin_before</item>
 		<item level="0" text="Margin after zap" description="When nonzero, a zap timer will stop the nominated period after the ending time indicated in the EPG." conditional="config.recording.zap_has_endtime.value">config.recording.zap_margin_after</item>
 		<item level="0" text="Ask before zap timer starts" description="When enabled, a dialog is shown before a zap timer switches the channel, allowing the user to cancel the zap.">config.recording.ask_before_zap</item>
@@ -914,13 +920,14 @@
 			<item level="2" text="Recording location" description="Select where the recording should be saved.">self.timerLocation</item>
 		</if>
 		<if conditional="self.timerType.value == 'zap'">
+			<item level="0" text="Zap condition" description="Select the conditions that apply when the timer activates. 'Always' allows the Zap function to run as programmed. 'Running only' allows the Zap function to run only when the receiver is not in Standby/Deep Standby. 'Standby only' allows the Zap function to run only when the receiver is in Standby/Deep Standby">self.timerPrecondition</item>
 			<item level="0" text="After zap" description="Select what do do after the timer zap has completed." conditional="self.timerHasEndTime.value">self.timerAfterEvent</item>
 		<else />
 			<item level="0" text="Tags" description="Select the tags that should be used for this recording.">self.timerTags</item>
 			<item level="0" text="After recording" description="Select what do do after the timer recording has completed.">self.timerAfterEvent</item>
 		</if>
 	</setup>
-	<setup key="RemoteButton" title="Remote Control Button Settings" showOpenWebif="1">
+	<setup key="RemoteButton" title="Remote Control Button Settings" showOpenWebif="yes">
 		<item level="2" text="Use key map *" description="Configure the current key map file.">config.usage.keymap</item>
 		<item level="1" text="Action on short POWER button press" description="Configure the function of a short press on the power button.">config.usage.on_short_powerpress</item>
 		<item level="1" text="Action on long POWER button press" description="Configure the function of a long press on the power button.">config.usage.on_long_powerpress</item>
@@ -1020,7 +1027,11 @@
 		</if>
 	</setup>
 	<setup key="Skin" title="Skin Settings">
-		<item text="GUI Skin" description="Choose the skin to be used for the GUI interface. Press 'GREEN' to activate the skin.">config.skin.guiSkin</item>
+		<if conditional="config.usage.fastSkinReload.value">
+			<item text="GUI Skin" description="Choose the skin to be used for the graphical user interface (GUI). Press 'GREEN' to activate the skin.">config.skin.guiSkin</item>
+		<else />
+			<item text="GUI Skin" description="Choose the skin to be used for the graphical user interface (GUI). Press 'GREEN' to activate the skin." restart="gui">config.skin.guiSkin</item>
+		</if>
 		<item text="LCD/Front panel" description="Choose the skin to be used for the LCD/front panel interface. Press 'GREEN' to activate the skin." requires="LCDSKINSetup" restart="gui">config.skin.lcdSkin</item>
 		<item text="Fallback Font" description="Choose the fallback font.">config.skin.FallbackFont</item>
 		<item text="Channel Selection Screen" description="Select the screen layout, from the options provided by the skin, to be used for the ChannelSelection screen." conditional="len(config.channelSelection.screenStyle.choices) > 1">config.channelSelection.screenStyle</item>
@@ -1028,7 +1039,7 @@
 		<item text="AutoRefresh" description="Enable autorefresh templates." requires="CanRefreshTemplates">config.skin.autorefresh</item>
 		<item text="Fast Skin Reload" description="Reload the skin without restarting the GUI when switching skins.">config.usage.fastSkinReload</item>
 	</setup>
-	<setup key="SleepTimer" title="SleepTimer Settings" showOpenWebif="1">
+	<setup key="SleepTimer" title="SleepTimer Settings" showOpenWebif="yes">
 		<item text="SleepTimer activation delay" description="Configure the duration, in minutes, before the SleepTimer activates.">config.usage.sleepTimer</item>
 		<item text="SleepTimer action" description="Select the type of shutdown desired when the SleepTimer activates.">config.usage.sleepTimerAction</item>
 		<if conditional="self.setupMode">
@@ -1036,11 +1047,11 @@
 			<item text="EnergySaver action" description="Select the type of shutdown desired when the EnergySaver timer activates.">config.usage.energyTimerAction</item>
 		</if>
 	</setup>
-	<setup key="Softcam" title="Softcam Settings" showOpenWebif="1">
+	<setup key="Softcam" title="Softcam Settings" showOpenWebif="yes">
 		<item level="0" text="Select Softcam" description="Select a Softcam from the available list.">config.misc.softcams</item>
 		<item level="2" text="Show OScam/CCcam in Extension Menu" description="Allows you to show/hide OScam/CCcam in the Extension Menu screen (BLUE button).">config.softcam.showInExtensions</item>
 	</setup>
-	<setup key="SoftwareManager" title="Software Manager Settings" showOpenWebif="1">
+	<setup key="SoftwareManager" title="Software Manager Settings" showOpenWebif="yes">
 		<if conditional="BoxInfo.getItem('model').startswith('et')">
 			<item level="2" text="Select Software Update" description="Select how your receiver will upgrade.">config.plugins.softwaremanager.updatetype</item>
 		</if>
@@ -1068,7 +1079,7 @@
 		<item level="2" text="Stream Relay port" description="Port number for the Stream Relay server used to descramble services that can only be decrypted via Stream Relay.">config.misc.softcam_streamrelay_port</item>
 		<item level="2" text="Stream Relay switch delay" description="Select the delay to use when closing a Stream Relay service before reallocating the tuner for another service. Using '0' is only recommended for receivers with multiple satellite tuners.">config.misc.softcam_streamrelay_delay</item>
 	</setup>
-	<setup key="Subtitle" title="Subtitle Settings" level="2" showOpenWebif="1">
+	<setup key="Subtitle" title="Subtitle Settings" level="2" showOpenWebif="yes">
 		<if requires="AISubs">
 			<item level="2" text="AI Translation enabled" description="Select 'Yes' to enable AI-Powered Translation for all teletext and DVB subtitles.">config.subtitles.ai_enabled</item>
 			<item level="2" text="AI Translation language" description="Select the AI-Powered Translation target language.">config.subtitles.ai_translate_to</item>
@@ -1098,7 +1109,7 @@
 		<item level="2" text="HI-cleanup for external subtitles" description="Remove texts for the hearing impaired from external subtitles (instrumental music or environmental sounds, e.g., when a doorbell rings or a gun shot is heard).">config.subtitles.pango_subtitle_removehi</item>
 		<item level="2" text="Automatically turn on external subtitles" description="When enabled, external subtitles will be always turned on for playback movie.">config.subtitles.pango_autoturnon</item>
 	</setup>
-	<setup key="Time" title="Time Settings" showOpenWebif="1">
+	<setup key="Time" title="Time Settings" showOpenWebif="yes">
 		<item level="0" text="Time zone area" description="Select your time zone area or region.">config.timezone.area</item>
 		<item level="0" text="Time zone" description="Select the time zone within the area or region.">config.timezone.val</item>
 		<item level="0" text="Sync time using" description="Synchronize system time using transponder or Internet.">config.misc.SyncTimeUsing</item>
@@ -1109,7 +1120,7 @@
 		<item level="0" text="Date style" description="Choose the display formatting style for dates. 'D'/'DD' is the date and 'M'/'MM' is the month in digits. ('DD' and 'MM' have leading zeros for single digit values.) The screen display will be based on your choice but can be influenced by the skin." requires="config.usage.date.enabled">config.usage.date.dayfull</item>
 		<item level="0" text="Time style" description="Choose the display formatting style for times. 'H'/'HH' is the hour for a 24 hour clock, 'h'/'hh' is the hour for a 12 hour clock, 'mm' is the minutes and 'ss' is the seconds. ('HH' and 'hh' have leading zeros for single digit values.) The screen display will be based on your choice but can be influenced by the skin." requires="config.usage.time.enabled">config.usage.time.long</item>
 	</setup>
-	<setup key="Timeshift" title="Time Shift Settings" level="1" showOpenWebif="1">
+	<setup key="Timeshift" title="Time Shift Settings" level="1" showOpenWebif="yes">
 		<item level="2" text="Time shift buffer location" description="Set the default location to store your time shift buffer files. Press 'OK' to add new locations, press 'LEFT'/'RIGHT' to select from previously defined locations.">config.timeshift.path</item>
 		<item level="1" text="Automatically start time shift after" description="When enabled, time shift starts automatically in background after specified time.">config.timeshift.startDelay</item>
 		<item level="2" text="Enable Autorecord" description="Set to 'Yes', to enable automatic recording of the background time shift buffer.">config.timeshift.autorecord</item>
@@ -1146,7 +1157,7 @@
 		<item level="0" text="Target location" description="Choose the target device for the slots.">self.UBISlotManagerLocation</item>
 		<item level="0" text="Slot count" description="Choose the amount of additional slots." conditional="self.UBISlotManagerLocation.value">self.UBISlotManagerSlots</item>
 	</setup>
-	<setup key="Usage" title="Customize System Settings" showOpenWebif="1">
+	<setup key="Usage" title="Customize System Settings" showOpenWebif="yes">
 		<item level="0" text="Settings mode" description="Choose which level of menu/setting's to display. 'Expert'-level shows all items.">config.usage.setup_level</item>
 		<item level="0" text="Input scroll position" description="When the input cursor reaches this point (percentage of the width, from either side) scroll the text to the cursor.">config.usage.cursorscroll</item>
 		<item level="1" text="Enable teletext caching" description="When enabled, teletext pages will be cached, allowing faster access.">config.usage.enable_tt_caching</item>
@@ -1184,7 +1195,7 @@
 		<item level="2" text="Enable chapter support for video files" description="Show chapter positions for supported video files.">config.usage.useChapterInfo</item>
 		<!--item level="2" text="Enable new GStreamer playback" description="If enabled, the new GStreamer playback engine will be used.">config.misc.usegstplaybin3</item-->
 	</setup>
-	<setup key="UserInterface" title="OSD Settings" showOpenWebif="1">
+	<setup key="UserInterface" title="OSD Settings" showOpenWebif="yes">
 		<item level="0" text="Menu style" description="Select the display design for menus.">config.usage.menuType</item>
 		<item level="0" text="Menu entry style" description="Select the display options for each menu entry item. If menu numbers are available then the number buttons can be used to select the numbered menu entries directly.">config.usage.menuEntryStyle</item>
 		<item level="0" text="Menu entry sort order" description="Select the sort order of the menu entries. User defined also allows the menu entries to be hidden.">config.usage.menuSortOrder</item>

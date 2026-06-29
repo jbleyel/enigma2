@@ -169,6 +169,8 @@ class RecordTimer(Timer):
 			timerEntry.append(f"disabled=\"{int(timer.disabled)}\"")
 			timerEntry.append(f"justplay=\"{int(timer.justplay)}\"")
 			timerEntry.append(f"always_zap=\"{int(timer.always_zap)}\"")
+			if timer.justplay and timer.precondition:
+				timerEntry.append(f"precondition=\"{timer.precondition}\"")
 			timerEntry.append(f"descramble=\"{int(timer.descramble)}\"")
 			timerEntry.append(f"record_ecm=\"{int(timer.record_ecm)}\"")
 			if timer.failed:
@@ -249,6 +251,7 @@ class RecordTimer(Timer):
 		recordEcm = int(timerDom.get("record_ecm") or "0")
 		isAutoTimer = int(timerDom.get("isAutoTimer") or "0")
 		# isAutoTimer = timerDom.get("isAutoTimer", "false").lower() in ("1", "true", "yes")
+		precondition = int(timerDom.get("precondition") or "0")
 		iceTimerId = timerDom.get("ice_timer_id")
 		vpsOverwrite = timerDom.get("vps_overwrite")
 		vpsEnabled = timerDom.get("vps_enabled")
@@ -258,7 +261,8 @@ class RecordTimer(Timer):
 		timer = RecordTimerEntry(
 			serviceRef, begin, end, name, description, eit, disabled, justplay, afterevent,
 			dirname=location, tags=tags, descramble=descramble, record_ecm=recordEcm,
-			isAutoTimer=isAutoTimer, ice_timer_id=iceTimerId, always_zap=alwaysZap, rename_repeat=renameRepeat
+			isAutoTimer=isAutoTimer, ice_timer_id=iceTimerId, always_zap=alwaysZap, rename_repeat=renameRepeat,
+			precondition=precondition
 		)
 		timer.marginBefore = marginBefore
 		timer.eventBegin = eventBegin
@@ -434,10 +438,14 @@ class RecordTimer(Timer):
 			callback(timer)
 		self.saveTimers()
 
-	def getNextZapTime(self):
+	def getNextZapTime(self, forWakeup=False):
 		now = int(time())
 		for timer in self.timer_list:
 			if not timer.justplay or timer.begin < now:
+				continue
+			if forWakeup and timer.precondition == 1:  # Running only: don't wake from deep standby.
+				continue
+			if not forWakeup and timer.precondition == 2:  # Standby only: don't prevent going to standby.
 				continue
 			return timer.begin
 		return -1
@@ -630,7 +638,7 @@ def createRecordTimerEntry(timer):
 
 
 class RecordTimerEntry(TimerEntry):
-	def __init__(self, serviceref, begin, end, name, description, eit, disabled=False, justplay=TIMERTYPE.JUSTPLAY, afterEvent=AFTEREVENT.DEFAULT, checkOldTimers=False, dirname=None, tags=None, descramble="notset", record_ecm="notset", rename_repeat=True, isAutoTimer=False, ice_timer_id=None, always_zap=TIMERTYPE.ALWAYS_ZAP, MountPath=None, fixDescription=False, cridSeries=None, cridEpisode=None, cridRecommendation=None, filename=None):
+	def __init__(self, serviceref, begin, end, name, description, eit, disabled=False, justplay=TIMERTYPE.JUSTPLAY, afterEvent=AFTEREVENT.DEFAULT, checkOldTimers=False, dirname=None, tags=None, descramble="notset", record_ecm="notset", rename_repeat=True, isAutoTimer=False, ice_timer_id=None, always_zap=TIMERTYPE.ALWAYS_ZAP, MountPath=None, fixDescription=False, cridSeries=None, cridEpisode=None, cridRecommendation=None, filename=None, precondition=0):
 		TimerEntry.__init__(self, int(begin), int(end))
 		# print("[RecordTimerEntry] DEBUG: Running init code.")
 		self.marginBefore = (getattr(config.recording, "zap_margin_before" if justplay == TIMERTYPE.ZAP else "margin_before").value * 60)
@@ -683,6 +691,7 @@ class RecordTimerEntry(TimerEntry):
 		self.start_prepare = 0
 		self.justplay = justplay
 		self.always_zap = always_zap
+		self.precondition = precondition
 		self.afterEvent = afterEvent
 		self.forceDeepStandby = False
 		self.dirname = dirname
@@ -945,15 +954,9 @@ class RecordTimerEntry(TimerEntry):
 			if self.justplay:
 				Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 				if Screens.Standby.inStandby:
-					zapWakeup = config.recording.zap_wakeup.value
-					if zapWakeup == "nothing":
-						self.log(11, "In standby, zap timer ignored.")
-					elif zapWakeup == "zap_no_wakeup":
-						self.wasInStandby = True
-						self.log(11, "In standby, zap without wakeup.")
-						Screens.Standby.inStandby.prev_running_service = self.service_ref.ref
-						Screens.Standby.inStandby.paused_service = None
-					else:
+					if self.precondition == 1:
+						self.log(11, "In standby, zap timer ignored (running only).")
+					else:  # 0 (always) or 2 (standby only)
 						self.wasInStandby = True
 						self.log(11, "Wake up and zap.")
 						Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
@@ -961,6 +964,8 @@ class RecordTimerEntry(TimerEntry):
 						Screens.Standby.inStandby.paused_service = None
 						Screens.Standby.inStandby.Power()
 					self.wasInStandby = True
+				elif self.precondition == 2:
+					self.log(11, "Not in standby, zap timer ignored (standby only).")
 				elif config.recording.ask_before_zap.value:
 					Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 					self.log(11, "Asking user before zapping.")

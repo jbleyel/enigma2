@@ -306,6 +306,7 @@ class InterfacesFile:
 	def parse(self) -> tuple[dict[str, list[Connection]], set[str]]:
 		result: dict[str, list[Connection]] = {}
 		autoIfaces: set = set()
+		wakeOnWifiIfaces: set = set()
 		current: Connection | None = None
 		disabled = False
 		inetSet: set[int] = set()  # id(conn) for connections that have had inet (IPv4) stanza set
@@ -314,10 +315,14 @@ class InterfacesFile:
 			line = raw.strip()
 			if line.startswith("#"):
 				inner = line[1:].strip()
-				first = inner.split()[0] if inner.split() else ""
+				tokens_inner = inner.split()
+				first = tokens_inner[0] if tokens_inner else ""
 				if first in self._stanzaKw:
 					line = inner
 					disabled = True
+				elif len(tokens_inner) >= 3 and tokens_inner[0] == "Only" and tokens_inner[1] == "WakeOnWiFi":
+					wakeOnWifiIfaces.add(tokens_inner[2])
+					continue
 				else:
 					disabled = False
 					continue
@@ -410,7 +415,7 @@ class InterfacesFile:
 			elif kw in ("pre-up", "pre-down", "post-up", "post-down", "up", "down"):
 				current.extraLines.append(raw.strip())
 
-		return result, autoIfaces
+		return result, autoIfaces, wakeOnWifiIfaces
 
 	def serialise(self, connectionsByAdapter: dict[str, list[Connection]], adapterEnabledMap: dict[str, bool] | None = None) -> list[str]:
 		lines: list[str] = list(self._header)
@@ -699,7 +704,7 @@ def _detectDriverApi(iface: str, module: str) -> str:
 
 
 def _canWakeOnWifi(iface: str) -> bool:
-	return iface == "wlan3" and exists(f"{_bcmTmpPrefix}/{iface}")
+	return iface == "wlan3" and bool(BoxInfo.getItem("wwol"))
 
 
 # ===========================================================================
@@ -1102,7 +1107,7 @@ class NetworkManager:
 
 	def _loadInterfacesFile(self):
 		self._ifacesFile.load()
-		parsed, autoIfaces = self._ifacesFile.parse()
+		parsed, autoIfaces, wakeOnWifiIfaces = self._ifacesFile.parse()
 		for iface, conns in parsed.items():
 			if iface not in self.adapters:
 				self.adapters[iface] = Adapter(
@@ -1112,6 +1117,9 @@ class NetworkManager:
 				)
 			self.adapters[iface].connections = conns
 			self.adapters[iface].adapterEnabled = iface in autoIfaces
+			if iface in wakeOnWifiIfaces:
+				for conn in conns:
+					conn.wakeOnWifi = True
 		for iface, adapter in self.adapters.items():
 			if not adapter.connections:
 				adapter.connections = [Connection(
@@ -1179,9 +1187,11 @@ class NetworkManager:
 					enabled = [c for c in baseConns if c.enabled]
 					baseConn = enabled[0] if enabled else baseConns[0]
 					# Sync base connection enabled with active SSID state.
+					# Exception: WoW-Only mode keeps base enabled so the iface stanza stays active.
 					wpaConns = [c for c in adapter.connections if c.wlan and c.wlan.ssid]
 					if wpaConns:
-						baseConn.enabled = any(c.enabled for c in wpaConns)
+						wowOnly = any(c.wakeOnWifi and not c.enabled for c in wpaConns)
+						baseConn.enabled = wowOnly or any(c.enabled for c in wpaConns)
 					connMap[iface] = [baseConn]
 				else:
 					connMap[iface] = []
@@ -1678,13 +1688,23 @@ class NetworkManager:
 		if enable:
 			cmds.append(f"wl -i {iface} wowl 0x100")
 			cmds.append(f"wl -i {iface} wowl_activate")
-			active = adapter.activeConnection()
-			if active and active.wlan:
-				encStr = {encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2"}.get(active.wlan.encryption, "NONE")
-				cmds.append(f"{wlConfigScript} -m {encStr} -k {active.wlan.key} -s \"{_reEscape(active.wlan.ssid)}\" || true")
 		else:
 			cmds.append(f"wl -i {iface} wowl 0")
+		procPath = BoxInfo.getItem("WakeOnLAN") or ""
+		if procPath and exists(procPath):
+			cmds.append(f"echo '{'enable' if enable else 'disable'}' > {procPath}")
+		self._updateWowPreup(adapter, enable)
 		return cmds
+
+	def _updateWowPreup(self, adapter: Adapter, enable: bool):
+		baseConn = next((c for c in adapter.connections if not (c.wlan and c.wlan.ssid)), None)
+		if baseConn is None:
+			return
+		iface = adapter.name
+		baseConn.extraLines = [x for x in baseConn.extraLines if "wowl" not in x]
+		if enable:
+			baseConn.extraLines.insert(0, f"pre-up wl -i {iface} wowl_activate || true")
+			baseConn.extraLines.insert(0, f"pre-up wl -i {iface} wowl 0x100 || true")
 
 	def getWakeOnWifi(self, iface: str) -> bool:
 		adapter = self.adapters.get(iface)
