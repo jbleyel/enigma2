@@ -178,13 +178,6 @@ class MultiBootManager(Screen):
 			self["restartActions"].setEnabled(True)
 			self["emptyActions"].setEnabled(False)
 			self["restoreActions"].setEnabled(False)
-		elif status == "unknown":
-			self["key_green"].setText("")
-			self["key_yellow"].setText("")
-			self["key_blue"].setText("")
-			self["restartActions"].setEnabled(False)
-			self["emptyActions"].setEnabled(False)
-			self["restoreActions"].setEnabled(False)
 		elif status == "hidden":
 			self["key_green"].setText("")
 			self["key_yellow"].setText("")
@@ -192,7 +185,7 @@ class MultiBootManager(Screen):
 			self["restartActions"].setEnabled(False)
 			self["emptyActions"].setEnabled(False)
 			self["restoreActions"].setEnabled(True)
-		elif status == "empty":
+		elif status in ("empty", "unknown"):
 			self["key_green"].setText("")
 			self["key_yellow"].setText("")
 			self["key_blue"].setText("")
@@ -555,7 +548,7 @@ class KexecSlotManager(Setup):
 					self.kexecSlotManagerLocation.value = path
 					maxSlots = int(self.freespace / 2)
 					maxSlots = 50 if maxSlots > 50 else maxSlots
-					self.kexecSlotManagerSlots.limits = [(1, maxSlots)]
+					self.kexecSlotManagerSlots.updateLimits([(1, maxSlots)])
 					self.createSetup()
 				self.kexecSlotManagerDevice = deviceId
 			self.updateStatus(footnote)
@@ -796,10 +789,10 @@ class GPTSlotManager(Setup):
 			if diskSize > 16:
 				maxSlots = int(diskSize // 4)
 				print(f"[GPTSlotManager] Setting maxSlots={maxSlots} for {diskSize}GB disk")
-				self.GPTSlotManagerSlots.limits = [(4, maxSlots)]
+				self.GPTSlotManagerSlots.updateLimits([(4, maxSlots)])
 			else:
 				print(f"[GPTSlotManager] Disk size {diskSize}GB <= 16GB, limiting to 4 slots")
-				self.GPTSlotManagerSlots.limits = [(4, 4)]
+				self.GPTSlotManagerSlots.updateLimits([(4, 4)])
 				self.GPTSlotManagerSlots.value = 4
 			self.createSetup()
 

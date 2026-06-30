@@ -17,7 +17,7 @@ config.hdmicec.enabled = ConfigYesNo(default=False)  # Query from this value in 
 config.hdmicec.control_tv_standby = ConfigYesNo(default=True)
 config.hdmicec.control_tv_wakeup = ConfigYesNo(default=True)
 config.hdmicec.report_active_source = ConfigYesNo(default=True)
-config.hdmicec.force_tv_input = ConfigYesNo(default=False)
+config.hdmicec.force_tv_input = ConfigYesNo(default=True)
 config.hdmicec.report_active_menu = ConfigYesNo(default=True)  # Query from this value in hdmi_cec.cpp
 choicelist = [
 	("disabled", _("Disabled")),
@@ -38,14 +38,14 @@ config.hdmicec.handle_tv_wakeup = ConfigSelection(default="streamrequest", choic
 })
 config.hdmicec.fixed_physical_address = ConfigText(default="0.0.0.0")
 config.hdmicec.volume_forwarding = ConfigYesNo(default=False)
-config.hdmicec.control_receiver_wakeup = ConfigYesNo(default=False)
-config.hdmicec.control_receiver_standby = ConfigYesNo(default=False)
+config.hdmicec.control_receiver_wakeup = ConfigYesNo(default=True)
+config.hdmicec.control_receiver_standby = ConfigYesNo(default=True)
 config.hdmicec.handle_deepstandby_events = ConfigYesNo(default=True)
 config.hdmicec.preemphasis = ConfigYesNo(default=False)
 choicelist = []
 for i in (10, 50, 100, 150, 250, 500, 750, 1000):
 	choicelist.append((i, _("%d ms") % i))
-config.hdmicec.minimum_send_interval = ConfigSelection(default=250, choices=[(0, _("Disabled"))] + choicelist)
+config.hdmicec.minimum_send_interval = ConfigSelection(default=0, choices=[(0, _("Disabled"))] + choicelist)
 choicelist = []
 for i in list(range(1, 6)):
 	choicelist.append((i, _("%d times") % i))
@@ -118,6 +118,7 @@ CEC_VENDOR_SONY = 0x080046
 CEC_VENDOR_BROADCOM = 0x18C086
 CEC_VENDOR_TEUFEL = 0x232425
 CEC_VENDOR_SHARP2 = 0x534850
+CEC_VENDOR_MEDIATEK = 0x6D746B
 CEC_VENDOR_VIZIO = 0x6B746D
 CEC_VENDOR_BENQ = 0x8065E9
 CEC_VENDOR_HARMAN_KARDON = 0x9C645E
@@ -161,6 +162,7 @@ CEC_VENDOR = {
 	CEC_VENDOR_BROADCOM: "Broadcom",
 	CEC_VENDOR_TEUFEL: "Teufel",
 	CEC_VENDOR_SHARP2: "Sharp Aquos Link",
+	CEC_VENDOR_MEDIATEK: "MediaTek",
 	CEC_VENDOR_VIZIO: "Vizio",
 	CEC_VENDOR_BENQ: "BenQ",
 	CEC_VENDOR_HARMAN_KARDON: "Harman/Kardon",
@@ -799,7 +801,7 @@ class HdmiCec:
 
 	def sendRawMessage(self, address, cmd, payload):
 		data = bytes(payload)
-		if config.misc.DeepStandby.value:
+		if config.misc.DeepStandby.value or not config.hdmicec.minimum_send_interval.value:
 			if config.hdmicec.debug.value:
 				self.debugTx(address, cmd, data)
 			self.sendCecMessage(address, cmd, data)
@@ -1127,7 +1129,7 @@ class HdmiCec:
 				case "powerstate":
 					cmd = 0x8f
 			if cmd:
-				if config.misc.DeepStandby.value:  # no delay for messages before go in to deep-standby
+				if config.misc.DeepStandby.value or not config.hdmicec.minimum_send_interval.value:  # no delay for messages before go in to deep-standby
 					if config.hdmicec.debug.value:
 						self.debugTx(address, cmd, data)
 					self.sendCecMessage(address, cmd, data)
@@ -1200,11 +1202,9 @@ class HdmiCec:
 				if config.hdmicec.control_tv_wakeup.value:
 					self.messages.append((0, "wakeup"))
 				if config.hdmicec.report_active_source.value:
-					if config.hdmicec.force_tv_input.value:
-						self.messages.append((0, "setstreampath"))
+					self.messages.append((0, "setstreampath"))
 					self.messages.append((0, "sourceactive"))
-					if config.hdmicec.force_tv_input.value:
-						self.messages.append((0, "routinginfo"))
+					self.messages.append((0, "routinginfo"))
 				if config.hdmicec.report_active_menu.value:
 					if not config.hdmicec.report_active_source.value and self.activesource:
 						self.messages.append((0, "sourceactive"))
@@ -1285,11 +1285,9 @@ class HdmiCec:
 		if "source" in state:
 			self.tv_powerstate = "on"
 			if state == "activesource" and self.what == "on" and config.hdmicec.report_active_source.value and not self.activesource and not self.firstrun:  # last try for switch to correct input
-				if config.hdmicec.force_tv_input.value:
-					self.sendMessage(0, "setstreampath")
+				self.sendMessage(0, "setstreampath")
 				self.sendMessage(0, "sourceactive")
-				if need_routinginfo or config.hdmicec.check_tv_state.value or config.hdmicec.force_tv_input.value:
-					self.sendMessage(0, "routinginfo")
+				self.sendMessage(0, "routinginfo")
 			if self.firstrun and not config.hdmicec.handle_deepstandby_events.value:
 				self.firstrun = False
 		elif state == "tvstandby":
