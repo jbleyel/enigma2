@@ -22,7 +22,7 @@ def InitRecordingConfig():
 	config.recording.zap_margin_before = ConfigSelection(default=0, choices=choices)
 	config.recording.zap_margin_after = ConfigSelection(default=0, choices=choices)
 	config.recording.zap_has_endtime = ConfigYesNo(default=False)
-	config.recording.ask_before_zap = ConfigYesNo(default=False)
+	config.recording.confirmZapDelay = ConfigSelection(default=0, choices=[(0, ("Disabled"))] + [(x, ngettext("%d Second", "%d Seconds", x) % x) for x in (5, 10, 15, 30)] + [(x, ngettext("%d Minute", "%d Minutes", x) % x) for x in (1, 2, 3, 5, 10)])
 	config.recording.ascii_filenames = ConfigYesNo(default=False)
 	config.recording.keep_timers = ConfigSelection(default=7, choices=[(x, ngettext("%d Day", "%d Days", x) % x) for x in range(1, 121)])
 	config.recording.filename_composition = ConfigSelection(default="standard", choices=[
@@ -73,7 +73,6 @@ def InitRecordingConfig():
 	config.recording.ask_to_abort_pip = ConfigSelection(default="abort_msg", choices=choices)
 	config.recording.prepare_time = ConfigSelection(default=20, choices=[(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(20, 121, 10)])
 	config.recording.timerviewshowfreespace = ConfigYesNo(default=True)
-	config.recording.shutdown_delay = ConfigSelection(default=0, choices=[(0, _("Disabled"))] + [(x, ngettext("%d Minute", "%d Minutes", x) % x) for x in range(1, 31)])
 
 	if BoxInfo.getItem("CanDescrambleInStandby"):
 		config.recording.standbyDescramble = ConfigEnableDisable(default=True)

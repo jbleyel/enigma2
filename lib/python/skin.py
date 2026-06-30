@@ -474,28 +474,19 @@ def parseFont(value, scale=((1, 1), (1, 1))):
 
 
 def parseFontScale(value, scale=((1, 1), (1, 1))):
-	if ";" in value:
-		scaleType, size = value.split(";")
-		try:
-			size = int(size)
-		except ValueError:
-			val = size.replace("f", f"{getSkinFactor()}")
-			try:
-				size = int(eval(val))
-			except Exception as err:
-				print(f"[Skin] Error ({type(err).__name__} - {err}): Font scale size in '{value}', evaluated to '{val}', can't be processed!")
-				size = None
-		if scaleType not in ("size", "width"):
-			print(f"[Skin] Error: Font scale size must be in 'size/width', value:'{value}', can't be processed!")
-			size = None
-			scaleType = 0
-		if size:
-			size = int(size * scale[1][0] / scale[1][1])
-			scaleType = 1 if scaleType == "size" else 2
-	else:
-		scaleType = 0
-		size = None
-	return scaleType, size
+    scaleType, *size = value.split(";")
+    try:
+        size = int(int(size or -4) * scale[1][0] / scale[1][1])
+    except ValueError as err:
+        print(f"[Skin] Error ({type(err).__name__} - {err}): Font scale size in '{value}' is '{size}' and is invalid!")
+        size = 0
+    if scaleType in ("size", "width"):
+        scaleType = 1 if scaleType == "size" else 2
+    else:
+        print(f"[Skin] Error: Font scale must be 'size' or 'width' not '{scaleType}'!")
+        size = 0
+        scaleType = 0
+    return scaleType, size
 
 
 def parseGradient(value):
@@ -1506,31 +1497,40 @@ def loadSingleSkinData(desktop, screenID, domSkin, pathSkin, scope=SCOPE_GUISKIN
 				skinError(f"Tag 'parameter' needs a name and value, got name='{name}' and size='{value}'")
 	for tag in domSkin.findall("screens"):
 		for screen in tag.findall("screen"):
-			key = screen.attrib.get("key")
 			image = screen.attrib.get("image")
-			if key and image is not None:
-				screens[key] = image
+			key = screen.attrib.get("key", "")
+			keys = screen.attrib.get("keys", "")
+			if image is not None and (key or keys):
+				keys = [x.strip() for x in keys.split(",")] if keys else [key]
+				for key in keys:
+					screens[key] = image
 				# print(f"[Skin] DEBUG: Screen key='{key}', image='{image}'.")
 			else:
-				skinError(f"Tag 'screen' needs key and image, got key='{key}' and image='{image}'")
+				skinError(f"Tag 'screen' needs key or keys and image, got key='{key}' keys='{keys}' and image='{image}'")
 	for tag in domSkin.findall("menus"):
 		for menu in tag.findall("menu"):
-			key = menu.attrib.get("key")
-			image = menu.attrib.get("image")
-			if key and image is not None:
-				menus[key] = image
+			image = screen.attrib.get("image")
+			key = screen.attrib.get("key", "")
+			keys = screen.attrib.get("keys", "")
+			if image is not None and (key or keys):
+				keys = [x.strip() for x in keys.split(",")] if keys else [key]
+				for key in keys:
+					menus[key] = image
 				# print(f"[Skin] DEBUG: Menu key='{key}', image='{image}'.")
 			else:
-				skinError(f"Tag 'menu' needs key and image, got key='{key}' and image='{image}'")
+				skinError(f"Tag 'menu' needs key or keys and image, got key='{key}' keys='{keys}' and image='{image}'")
 	for tag in domSkin.findall("setups"):
 		for setup in tag.findall("setup"):
-			key = setup.attrib.get("key")
-			image = setup.attrib.get("image")
-			if key and image is not None:
-				setups[key] = image
+			image = screen.attrib.get("image")
+			key = screen.attrib.get("key", "")
+			keys = screen.attrib.get("keys", "")
+			if image is not None and (key or keys):
+				keys = [x.strip() for x in keys.split(",")] if keys else [key]
+				for key in keys:
+					setups[key] = image
 				# print(f"[Skin] DEBUG: Setup key='{key}', image='{image}'.")
 			else:
-				skinError(f"Tag 'setup' needs key and image, got key='{key}' and image='{image}'")
+				skinError(f"Tag 'setup' needs key or keys and image, got key='{key}' keys='{keys}' and image='{image}'")
 	for tag in domSkin.findall("constant-widgets"):
 		for constant_widget in tag.findall("constant-widget"):
 			name = constant_widget.attrib.get("name")

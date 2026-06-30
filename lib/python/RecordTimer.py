@@ -5,11 +5,12 @@ from os.path import exists, isdir, realpath, ismount
 from threading import Thread, Timer as ThreadTimer
 from time import ctime, localtime, strftime, time
 
-from enigma import eEPGCache, getBestPlayableServiceReference, eStreamServer, eServiceEventEnums, eServiceReference, iRecordableService, quitMainloop, eActionMap, setPreferredTuner, pNavigation
+from enigma import eEPGCache, eTimer, getBestPlayableServiceReference, eStreamServer, eServiceEventEnums, eServiceReference, iRecordableService, quitMainloop, eActionMap, setPreferredTuner, pNavigation
 
 import NavigationInstance
 from timer import Timer, TimerEntry
 from Components.config import config
+from Components.Task import job_manager
 #from Components.DataBaseAPI import moviedb
 from Components.Harddisk import findMountPoint
 import Components.RecordingConfig
@@ -966,11 +967,11 @@ class RecordTimerEntry(TimerEntry):
 					self.wasInStandby = True
 				elif self.precondition == 2:
 					self.log(11, "Not in standby, zap timer ignored (standby only).")
-				elif config.recording.ask_before_zap.value:
+				elif config.recording.confirmZapDelay.value:
 					Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 					self.log(11, "Asking user before zapping.")
 					message = _("A zap timer wants to switch the channel.\nDo you want to zap now?\n")
-					AddModalNotification(text=message, timeout=30, default=True, windowTitle=_("Shutdown"), callback=self.zapTimerCB)
+					AddModalNotification(text=message, timeout=config.recording.confirmZapDelay.value, default=True, windowTitle=_("Zap"), callback=self.zapTimerCB)
 				else:
 					self.log(11, "Zapping.")
 					Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
@@ -1054,18 +1055,19 @@ class RecordTimerEntry(TimerEntry):
 							else:
 								AddNotificationWithCallback(self.sendTryQuitMainloopNotification, MessageBox, message, MessageBox.TYPE_YESNO, timeout=timeout, default=True)
 					else:
-						shutdown_delay = config.recording.shutdown_delay.value
-						if shutdown_delay > 0:
-							message = _("A finished record timer wants to shut down\nyour %s %s. Shutdown now?") % getBoxDisplayName()
-							AddModalNotification(text=message, timeout=shutdown_delay * 60, default=True, windowTitle=_("Shutdown"), callback=self.sendTryQuitMainloopNotification)
+						if job_manager.getPendingJobs():
+							self.waitForJobsThenShutdown()
 						else:
 							print("[RecordTimer] quitMainloop #1.")
 							quitMainloop(1)
 			elif self.afterEvent == AFTEREVENT.AUTO and wasRecTimerWakeup:
 				if not Screens.Standby.inTryQuitMainloop:  # No shutdown message box is open.
 					if Screens.Standby.inStandby:  # In standby.
-						print("[RecordTimer] quitMainloop #2.")
-						quitMainloop(1)
+						if job_manager.getPendingJobs():
+							self.waitForJobsThenShutdown()
+						else:
+							print("[RecordTimer] quitMainloop #2.")
+							quitMainloop(1)
 			self.wasInStandby = False
 			self.resetTimerWakeup()
 			return True
@@ -1077,6 +1079,15 @@ class RecordTimerEntry(TimerEntry):
 			if DEBUG:
 				print("[RecordTimer] Reset wakeup state.")
 		wasRecTimerWakeup = False
+
+	def waitForJobsThenShutdown(self):
+		if job_manager.getPendingJobs():
+			self._shutdownTimer = eTimer()
+			self._shutdownTimer.callback.append(self.waitForJobsThenShutdown)
+			self._shutdownTimer.start(1000, True)
+		else:
+			print("[RecordTimer] quitMainloop (jobs done).")
+			quitMainloop(1)
 
 	def getNextActivation(self, getNextStbPowerOn=False):
 		self.isStillRecording = False
