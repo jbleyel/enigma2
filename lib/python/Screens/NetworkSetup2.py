@@ -6,9 +6,9 @@ Screens:
 	NetworkConnectionSetup      – Setup subclass for one Connection (BLUE → per-connection DNS)
 	DnsSettings                 – global system DNS (config.usage.dns.*, iNetworkManager)
 	ScanResult                  – dataclass for one iwlist scan result
-	WlanScanScreen              – live iwlist scan, sorted by signal strength
-	WlanActivator               – ifup + wpa_supplicant + IP poll
-	WlanAddFlow                 – stateless coordinator / entry point
+	WifiScanScreen              – live iwlist scan, sorted by signal strength
+	WifiActivator               – ifup + wpa_supplicant + IP poll
+	WifiAddFlow                 – stateless coordinator / entry point
 
 Coding conventions (OpenATV):
 	Indentation  : tabs
@@ -53,7 +53,7 @@ from Tools.Directories import SCOPE_GUISKIN, SCOPE_SKINS, fileReadLines, fileRea
 from Tools.LoadPixmap import LoadPixmap
 from Tools.ServiceAction import ServiceAction
 from Components.NetworkManager import (
-	Adapter, Connection, WlanConfig,
+	Adapter, Connection, WifiConfig,
 	iNetworkManager as nm,
 	encNone, encWep, encWpa, encWpa2, encWpa3, pingAsync
 )
@@ -86,7 +86,7 @@ encryptionChoices = [
 
 _ENC_SHORT = {encNone: "open", encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2", encWpa3: "WPA3"}
 _ICON_LAN = chr(0xEA5A)   # settings_ethernet
-_ICON_WLAN = chr(0xE9FE)  # wifi
+_ICON_WIFI = chr(0xE9FE)  # wifi
 _ICON_INET = chr(0xEA5B)  # globe
 _ICON_CHECKBOX_ON = chr(0xE91B)   # check_box
 _ICON_CHECKBOX_OFF = chr(0xE91F)  # check_box_outline_blank
@@ -698,13 +698,13 @@ class NetworkConnections(Screen):
 		for iface in sorted(nm.adapters.keys()):
 			adapter = nm.adapters[iface]
 			internet = self._internetResult and self._internetResult.get(iface)
-			adapterIcon = _ICON_WLAN if adapter.isWlan else _ICON_LAN
+			adapterIcon = _ICON_WIFI if adapter.isWlan else _ICON_LAN
 			checkBox = _ICON_CHECKBOX_ON if adapter.adapterEnabled else _ICON_CHECKBOX_OFF
 			loc = _adapterLocation(adapter)
 			adapterLabel = f"Adapter {iface}   /   {loc}" if loc else f"Adapter {iface}"
 			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.adapterEnabled else self._colorDisabled
 			entries.append((adapterIcon, checkBox, adapterLabel, "", "", "", adapterColor, "", self._adapterPixmap(adapter), None, "", adapter, None))
-			# For WLAN: skip the base connection (no SSID) when wpa_supplicant
+			# For Wifi: skip the base connection (no SSID) when wpa_supplicant
 			# connections with SSIDs are present — the base only carries IP config.
 			conns = adapter.connections
 			if adapter.isWlan and any(c.wlan and c.wlan.ssid for c in conns):
@@ -787,8 +787,8 @@ class NetworkConnections(Screen):
 			(_("Delete network connection"), "delete"),
 		]
 		if conn.isWlan:
-			menu.append((_("Scan for WLAN networks"), "scan"))
-			menu.append((_("Add WLAN manually"), "addManual"))
+			menu.append((_("Scan for Wifi networks"), "scan"))
+			menu.append((_("Add Wifi manually"), "addManual"))
 		self.session.openWithCallback(
 			lambda choice: self._contextCb(choice, conn, adapter),
 			ChoiceBox,
@@ -878,7 +878,7 @@ class NetworkConnections(Screen):
 		wlanAdapters = [a for a in nm.adapters.values() if a.isWlan]
 		lanAdapters = [a for a in nm.adapters.values() if not a.isWlan]
 		if wlanAdapters:
-			WlanAddFlow.start(self.session, callback=self._buildList)
+			WifiAddFlow.start(self.session, callback=self._buildList)
 		elif lanAdapters:
 			adapter = lanAdapters[0]
 			newConn = Connection(adapter=adapter.name, name=_("New LAN connection"), dhcp=True)
@@ -906,7 +906,7 @@ class NetworkConnections(Screen):
 			return
 		self.session.openWithCallback(
 			lambda result: self._wlanScanDone(result, adapter),
-			WlanScanScreen,
+			WifiScanScreen,
 			adapter,
 		)
 
@@ -931,7 +931,7 @@ class NetworkConnections(Screen):
 		self._buildList()
 
 	def _openWlanManual(self, adapter: Adapter):
-		conn = Connection(adapter=adapter.name, name=_("New WLAN"), dhcp=True, enabled=False, wlan=WlanConfig())
+		conn = Connection(adapter=adapter.name, name=_("New Wifi"), dhcp=True, enabled=False, wlan=WifiConfig())
 		self.session.openWithCallback(
 			lambda saved: self._wlanSetupDone(saved, conn, adapter),
 			NetworkConnectionSetup,
@@ -1221,19 +1221,19 @@ def _scanResultToConnection(r: ScanResult, iface: str) -> Connection:
 		dhcp=True,
 		enabled=False,
 		priority=0,
-		wlan=WlanConfig(ssid=r.ssid, encryption=r.encryption),
+		wlan=WifiConfig(ssid=r.ssid, encryption=r.encryption),
 	)
 
 
 # ===========================================================================
-# WlanScanScreen – live iwlist scan
+# WifiScanScreen – live iwlist scan
 # ===========================================================================
 
-class WlanScanScreen(Screen):
+class WifiScanScreen(Screen):
 	"""Runs iwlist scan and shows results sorted by signal strength."""
 
 	skin = """
-	<screen name="WlanScanScreen" title="WLAN Scan" position="center,center" size="980,600" resolution="1280,720">
+	<screen name="WifiScanScreen" title="Wifi Scan" position="center,center" size="980,600" resolution="1280,720">
 		<widget name="description" position="10,10" size="960,40" font="Regular;22" halign="left" valign="center" />
 		<widget source="list" render="Listbox" position="0,60" size="980,450" scrollbarMode="showOnDemand">
 			<template name="Default" fonts="Regular;26,Regular;20" itemHeight="50">
@@ -1264,7 +1264,7 @@ class WlanScanScreen(Screen):
 		self._console = Console()
 		self._scanning = False
 		self._results: list[ScanResult] = []
-		self.setTitle(_("WLAN Scan – %s") % adapter.name)
+		self.setTitle(_("Wifi Scan – %s") % adapter.name)
 		self["key_red"] = StaticText(_("Cancel"))
 		self["key_green"] = StaticText(_("Select"))
 		self["key_yellow"] = StaticText(_("Rescan"))
@@ -1282,7 +1282,7 @@ class WlanScanScreen(Screen):
 				"cancel": (self._cancel, _("Cancel")),
 			},
 			prio=0,
-			description=_("WLAN Scan Actions"),
+			description=_("Wifi Scan Actions"),
 		)
 		self.onLayoutFinish.append(self._startScan)
 
@@ -1330,14 +1330,14 @@ class WlanScanScreen(Screen):
 
 
 # ===========================================================================
-# WlanActivator – brings up a WLAN connection
+# WifiActivator – brings up a Wifi connection
 # ===========================================================================
 
-class WlanActivator(Screen):
+class WifiActivator(Screen):
 	"""Runs ifup + wpa_supplicant and polls for an IP address."""
 
 	skin = """
-	<screen name="WlanActivator" title="Connecting…" position="center,center" size="980,200" resolution="1280,720">
+	<screen name="WifiActivator" title="Connecting…" position="center,center" size="980,200" resolution="1280,720">
 		<widget name="status" position="10,10" size="960,160" font="Regular;26" halign="center" valign="center" />
 	</screen>"""
 
@@ -1401,11 +1401,11 @@ class WlanActivator(Screen):
 
 
 # ===========================================================================
-# WlanAddFlow – coordinator / entry point
+# WifiAddFlow – coordinator / entry point
 # ===========================================================================
 
-class WlanAddFlow:
-	"""Stateless coordinator. Call WlanAddFlow.start() to begin the flow."""
+class WifiAddFlow:
+	"""Stateless coordinator. Call WifiAddFlow.start() to begin the flow."""
 
 	@staticmethod
 	def start(session, adapter: Adapter | None = None, callback=None):
@@ -1414,14 +1414,14 @@ class WlanAddFlow:
 		if adapter is None:
 			wlanAdapters = [a for a in nm.adapters.values() if a.isWlan]
 			if not wlanAdapters:
-				session.open(MessageBox, _("No WLAN adapter found."), type=MessageBox.TYPE_INFO, timeout=4)
+				session.open(MessageBox, _("No Wifi adapter found."), type=MessageBox.TYPE_INFO, timeout=4)
 				return
 			if len(wlanAdapters) == 1:
 				adapter = wlanAdapters[0]
 			else:
-				WlanAddFlow._pickAdapter(session, wlanAdapters, callback)
+				WifiAddFlow._pickAdapter(session, wlanAdapters, callback)
 				return
-		WlanAddFlow._openScan(session, adapter, callback)
+		WifiAddFlow._openScan(session, adapter, callback)
 
 	@staticmethod
 	def _openScan(session, adapter: Adapter, callback):
@@ -1441,7 +1441,7 @@ class WlanAddFlow:
 				if callback:
 					callback()
 			session.openWithCallback(_setupDone, NetworkConnectionSetup, conn, adapter)
-		session.openWithCallback(_scanned, WlanScanScreen, adapter)
+		session.openWithCallback(_scanned, WifiScanScreen, adapter)
 
 	@staticmethod
 	def _pickAdapter(session, adapters: list[Adapter], callback):
@@ -1452,9 +1452,9 @@ class WlanAddFlow:
 				if callback:
 					callback()
 				return
-			WlanAddFlow._openScan(session, choice[1], callback)
+			WifiAddFlow._openScan(session, choice[1], callback)
 
-		session.openWithCallback(_chosen, ChoiceBox, title=_("Select WLAN adapter"), list=choices)
+		session.openWithCallback(_chosen, ChoiceBox, title=_("Select Wifi adapter"), list=choices)
 
 
 # ===========================================================================

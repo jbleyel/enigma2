@@ -119,7 +119,7 @@ _wpaDefaultHeader = [
 
 
 @dataclass
-class WlanConfig:
+class WifiConfig:
 	"""WLAN-specific parameters for one Connection."""
 
 	ssid: str = ""
@@ -156,7 +156,7 @@ class Connection:
 	ipv6Dhcp: bool = True
 	dnsServers: list = field(default_factory=list)   # [int,int,int,int] | "::addr"
 	extraLines: list[str] = field(default_factory=list)
-	wlan: WlanConfig | None = None
+	wlan: WifiConfig | None = None
 	wakeOnLan: str = "off"       # "off" | "g" | "u" | "b"
 	wakeOnWifi: bool = False
 
@@ -367,7 +367,7 @@ class InterfacesFile:
 							ipMode=1,
 							ipv6Dhcp=mode == "dhcp",
 							enabled=not disabled,
-							wlan=WlanConfig() if _isWirelessName(iface) else None,
+							wlan=WifiConfig() if _isWirelessName(iface) else None,
 						)
 						result.setdefault(iface, []).append(conn)
 						current = conn
@@ -389,7 +389,7 @@ class InterfacesFile:
 						ipMode=0,
 						ipv6Dhcp=False,
 						enabled=not disabled,
-						wlan=WlanConfig() if _isWirelessName(iface) else None,
+						wlan=WifiConfig() if _isWirelessName(iface) else None,
 					)
 					result.setdefault(iface, []).append(conn)
 				conn.dhcp = mode == "dhcp"
@@ -508,8 +508,8 @@ class WpaSupplicantFile:
 			header.append(line)
 		return header
 
-	def parse(self) -> list[WlanConfig]:
-		configs: list[WlanConfig] = []
+	def parse(self) -> list[WifiConfig]:
+		configs: list[WifiConfig] = []
 		current: dict[str, str] | None = None
 		depth = 0
 		blockId = 0
@@ -538,7 +538,7 @@ class WpaSupplicantFile:
 
 		return configs
 
-	def serialise(self, configs: list[WlanConfig]) -> list[str]:
+	def serialise(self, configs: list[WifiConfig]) -> list[str]:
 		header = self._header if self._header else list(_wpaDefaultHeader)
 		lines: list[str] = list(header)
 		if lines and lines[-1].strip():
@@ -548,14 +548,14 @@ class WpaSupplicantFile:
 			lines.append("")
 		return lines
 
-	def save(self, configs: list[WlanConfig]) -> bool:
+	def save(self, configs: list[WifiConfig]) -> bool:
 		return _writeLines(self._writePath, self.serialise(configs))
 
 	def ensureDir(self):
 		os.makedirs(wpaSupplicantDir, exist_ok=True)
 
 
-def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WlanConfig:
+def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WifiConfig:
 	keyMgmt = d.get("key_mgmt", "NONE").upper()
 	proto = d.get("proto", "").upper()
 	pairwise = d.get("pairwise", "").upper()
@@ -569,7 +569,7 @@ def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WlanConfig:
 	else:
 		enc = encNone
 
-	return WlanConfig(
+	return WifiConfig(
 		ssid=d.get("ssid", ""),
 		hidden=d.get("scan_ssid", "0") == "1",
 		encryption=enc,
@@ -581,7 +581,7 @@ def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WlanConfig:
 	)
 
 
-def _wlanConfigToWpaBlock(wlan: WlanConfig, blockId: int) -> list[str]:
+def _wlanConfigToWpaBlock(wlan: WifiConfig, blockId: int) -> list[str]:
 	L = ["network={"]
 	L.append(f'\tssid="{wlan.ssid}"')
 	if wlan.hidden:
@@ -629,8 +629,8 @@ def _bcmConfPath(iface: str) -> str:
 	return f"/etc/wl.conf.{iface}"
 
 
-def _bcmLoadWlanConfig(iface: str) -> WlanConfig:
-	w = WlanConfig()
+def _bcmLoadWifiConfig(iface: str) -> WifiConfig:
+	w = WifiConfig()
 	for line in _readLines(_bcmConfPath(iface)):
 		line = line.strip()
 		if not line or line.startswith("#"):
@@ -646,7 +646,7 @@ def _bcmLoadWlanConfig(iface: str) -> WlanConfig:
 	return w
 
 
-def _bcmSaveWlanConfig(iface: str, wlan: WlanConfig) -> bool:
+def _bcmSaveWlanConfig(iface: str, wlan: WifiConfig) -> bool:
 	encStr = {
 		encNone: "None", encWep: "WEP", encWpa: "WPA",
 		encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
@@ -1126,7 +1126,7 @@ class NetworkManager:
 					adapter=iface,
 					name=iface,
 					dhcp=True,
-					wlan=WlanConfig() if adapter.isWlan else None,
+					wlan=WifiConfig() if adapter.isWlan else None,
 				)]
 
 	def _loadWpaSupplicantFiles(self):
@@ -1134,16 +1134,16 @@ class NetworkManager:
 			if not adapter.isWlan:
 				continue
 			if adapter.driverApi == apiBrcmWl:
-				self._mergeWlanConfig(adapter, _bcmLoadWlanConfig(iface))
+				self._mergeWifiConfig(adapter, _bcmLoadWifiConfig(iface))
 			else:
 				wpf = WpaSupplicantFile(iface)
 				if not wpf.exists():
 					continue
 				for wlan in wpf.parse():
-					self._mergeWlanConfig(adapter, wlan)
+					self._mergeWifiConfig(adapter, wlan)
 
 	@staticmethod
-	def _mergeWlanConfig(adapter: Adapter, wlan: WlanConfig):
+	def _mergeWifiConfig(adapter: Adapter, wlan: WifiConfig):
 		bySsid = {c.wlan.ssid: c for c in adapter.connections if c.wlan and c.wlan.ssid}
 		profileName = wlan.idStr if wlan.idStr else wlan.ssid
 		if wlan.ssid in bySsid:
