@@ -37,6 +37,7 @@ from Components.Harddisk import getProcMounts
 from Components.PluginComponent import plugins
 from Components.SystemInfo import BoxInfo
 from Plugins.Plugin import PluginDescriptor
+from Tools.Directories import fileReadLine, fileWriteLine
 from Tools.ServiceAction import ServiceAction
 
 # ---------------------------------------------------------------------------
@@ -65,6 +66,18 @@ socketDaemonPath = "/var/run/daemon.socket"
 netEventSocketPath = "/var/run/daemon_net.socket"
 netinfoPath = "/var/run/netinfo"
 netrestarterBin = "/usr/sbin/netrestarter"
+
+# Linux kernel ETHTOOL_ADVERTISED_* bitmask values, used by some drivers to
+# force a specific link speed/duplex instead of auto-negotiation.
+_LINKSPEED_BITS = {
+	"10baseT/Half": (0x01, "10 Mbit/s Half Duplex"),
+	"10baseT/Full": (0x02, "10 Mbit/s Full Duplex"),
+	"100baseT/Half": (0x04, "100 Mbit/s Half Duplex"),
+	"100baseT/Full": (0x08, "100 Mbit/s Full Duplex"),
+	"1000baseT/Half": (0x10, "1000 Mbit/s Half Duplex"),
+	"1000baseT/Full": (0x20, "1000 Mbit/s Full Duplex"),
+}
+
 
 # ---------------------------------------------------------------------------
 # Internal constants
@@ -199,6 +212,7 @@ class Adapter:
 	kernelPort: str = ""         # LAN only: "TP" | "MII" | "FIBRE" | …
 	kernelTransceiver: str = ""  # LAN only: "internal" | "external"
 	kernelAutoneg: bool = False  # LAN only
+	kernelLinkSupported: int = 0  # LAN only, ETHTOOL SUPPORTED_* bitmask from socketdaemon
 	kernelSsid: str = ""         # WLAN only
 	kernelBssid: str = ""        # WLAN only, AP MAC address
 	kernelFreqMhz: int = 0       # WLAN only, channel frequency in MHz
@@ -1714,6 +1728,36 @@ class NetworkManager:
 		return conn.wakeOnWifi if conn else False
 
 	# ------------------------------------------------------------------
+	# Link speed (forced, non-auto-negotiated)
+	# ------------------------------------------------------------------
+
+	def getSupportedLinkSpeeds(self, iface: str) -> list[tuple[str, str]]:
+		choices = [("auto", _("Auto"))]
+		adapter = self.adapters.get(iface)
+		if adapter is None or adapter.isWlan:
+			return choices
+		mask = adapter.kernelLinkSupported
+		for _ethtoolMode, (bits, label) in _LINKSPEED_BITS.items():
+			if mask & bits:
+				choices.append((f"{bits:#04x}", label))
+		return choices
+
+	@staticmethod
+	def getLinkSpeed(iface: str) -> str:
+		return fileReadLine(f"/etc/enigma2/{iface}_linkspeed", default="auto") or "auto"
+
+	@staticmethod
+	def setLinkSpeed(iface: str, value: str) -> None:
+		path = f"/etc/enigma2/{iface}_linkspeed"
+		if value == "auto":
+			try:
+				remove(path)
+			except OSError:
+				pass
+		else:
+			fileWriteLine(path, value)
+
+	# ------------------------------------------------------------------
 	# Event handlers (called by NetEventReader)
 	# ------------------------------------------------------------------
 
@@ -1760,6 +1804,7 @@ class NetworkManager:
 				adapter.kernelPort = data.get("port", "")
 				adapter.kernelTransceiver = data.get("transceiver", "")
 				adapter.kernelAutoneg = data.get("autoneg", False)
+				adapter.kernelLinkSupported = data.get("link_supported", 0)
 				wol = data.get("wol_supported", 0)
 				if wol:
 					adapter.kernelWolSupported = wol

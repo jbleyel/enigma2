@@ -1017,6 +1017,18 @@ class NetworkConnectionSetup(Setup):
 			liveWol = nm.getWakeOnLan(adapter.name)
 		self.cfgWakeOnLan = NoSave(ConfigYesNo(default=liveWol != "off"))
 
+		# Forced link speed (LAN adapters only)
+		if not conn.isWlan and nm is not None:
+			linkSpeedChoices = nm.getSupportedLinkSpeeds(adapter.name)
+			currentLinkSpeed = nm.getLinkSpeed(adapter.name)
+			if currentLinkSpeed not in dict(linkSpeedChoices):
+				currentLinkSpeed = "auto"
+			self._hasLinkSpeedChoices = len(linkSpeedChoices) > 1
+			self.cfgLinkSpeed = NoSave(ConfigSelection(choices=linkSpeedChoices, default=currentLinkSpeed))
+		else:
+			self._hasLinkSpeedChoices = False
+			self.cfgLinkSpeed = NoSave(ConfigSelection(choices=[("auto", _("Auto"))], default="auto"))
+
 		# Wake-on-WiFi (Broadcom wlan3 only)
 		# cfgWakeOnWifi: WoW while normally active (activate=True)
 		# cfgWowOnly:    WoW only, no normal connection (activate=False)
@@ -1095,6 +1107,10 @@ class NetworkConnectionSetup(Setup):
 				cmds = nm.setWakeOnWifiCommands(adapter.name, conn.wakeOnWifi)
 				if cmds:
 					Console().eBatch(cmds, lambda _: None, debug=False)
+
+		# Apply forced link speed (LAN adapters only)
+		if not conn.isWlan and nm is not None:
+			nm.setLinkSpeed(adapter.name, self.cfgLinkSpeed.value)
 
 		if nm is not None:
 			nm.save()
@@ -1204,14 +1220,7 @@ def _parseIwlist(raw: str) -> list[ScanResult]:
 		elif reEncOff.search(line):
 			current.encryption = encNone
 
-	seen: dict = {}
-	for r in results:
-		if not r.ssid:
-			continue
-		if r.ssid not in seen or r.signalPct > seen[r.ssid].signalPct:
-			seen[r.ssid] = r
-
-	return sorted(seen.values(), key=lambda x: -x.signalPct)
+	return sorted((r for r in results if r.ssid), key=lambda x: -x.signalPct)
 
 
 def _scanResultToConnection(r: ScanResult, iface: str) -> Connection:
@@ -1309,12 +1318,18 @@ class WifiScanScreen(Screen):
 		self._populateList()
 
 	def _populateList(self):
+		ssidCounts: dict = {}
+		for r in self._results:
+			ssidCounts[r.ssid] = ssidCounts.get(r.ssid, 0) + 1
 		rows = []
 		for r in self._results:
 			bars = self._bars[min(r.signalBars, 4)]
 			sig = f"{bars} {r.signalPct}% ({r.signalDbm} dBm)"
 			freq = r.frequency if r.frequency else (f"CH{r.channel}" if r.channel else "")
-			rows.append((r.ssid, sig, r.encLabel, freq, r))
+			ssidText = r.ssid
+			if ssidCounts[r.ssid] > 1:
+				ssidText = f"{r.ssid}  ({r.bssid})"
+			rows.append((ssidText, sig, r.encLabel, freq, r))
 		self["list"].setList(rows)
 
 	def _select(self):
