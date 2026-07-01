@@ -1504,31 +1504,31 @@ def loadSingleSkinData(desktop, screenID, domSkin, pathSkin, scope=SCOPE_GUISKIN
 				keys = [x.strip() for x in keys.split(",")] if keys else [key]
 				for key in keys:
 					screens[key] = image
-				# print(f"[Skin] DEBUG: Screen key='{key}', image='{image}'.")
+					# print(f"[Skin] DEBUG: Screen key='{key}', image='{image}'.")
 			else:
 				skinError(f"Tag 'screen' needs key or keys and image, got key='{key}' keys='{keys}' and image='{image}'")
 	for tag in domSkin.findall("menus"):
 		for menu in tag.findall("menu"):
-			image = screen.attrib.get("image")
-			key = screen.attrib.get("key", "")
-			keys = screen.attrib.get("keys", "")
+			image = menu.attrib.get("image")
+			key = menu.attrib.get("key", "")
+			keys = menu.attrib.get("keys", "")
 			if image is not None and (key or keys):
 				keys = [x.strip() for x in keys.split(",")] if keys else [key]
 				for key in keys:
 					menus[key] = image
-				# print(f"[Skin] DEBUG: Menu key='{key}', image='{image}'.")
+					# print(f"[Skin] DEBUG: Menu key='{key}', image='{image}'.")
 			else:
 				skinError(f"Tag 'menu' needs key or keys and image, got key='{key}' keys='{keys}' and image='{image}'")
 	for tag in domSkin.findall("setups"):
 		for setup in tag.findall("setup"):
-			image = screen.attrib.get("image")
-			key = screen.attrib.get("key", "")
-			keys = screen.attrib.get("keys", "")
+			image = setup.attrib.get("image")
+			key = setup.attrib.get("key", "")
+			keys = setup.attrib.get("keys", "")
 			if image is not None and (key or keys):
 				keys = [x.strip() for x in keys.split(",")] if keys else [key]
 				for key in keys:
 					setups[key] = image
-				# print(f"[Skin] DEBUG: Setup key='{key}', image='{image}'.")
+					# print(f"[Skin] DEBUG: Setup key='{key}', image='{image}'.")
 			else:
 				skinError(f"Tag 'setup' needs key or keys and image, got key='{key}' keys='{keys}' and image='{image}'")
 	for tag in domSkin.findall("constant-widgets"):
