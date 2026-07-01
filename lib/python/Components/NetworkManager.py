@@ -16,17 +16,16 @@ Coding conventions (OpenATV):
 
 from __future__ import annotations
 
-import json
-import os
-import re
-import socket
-import struct
-import subprocess
-import time
-import netifaces
 from dataclasses import dataclass, field
-from os import listdir, remove
+import json
+from os import getpid, listdir, makedirs, remove
 from os.path import basename, exists, isdir, realpath
+from re import compile, match, search
+from shutil import copy2
+import socket
+from struct import pack, unpack
+from subprocess import check_output, DEVNULL
+from time import monotonic
 from collections.abc import Callable
 from twisted.internet import reactor
 
@@ -43,11 +42,6 @@ from Tools.ServiceAction import ServiceAction
 # ---------------------------------------------------------------------------
 # Path constants
 # ---------------------------------------------------------------------------
-
-# Set to True to write config to safe test-paths instead of the live files.
-# /etc/network/interfaces  →  /etc/network/interfaces2
-# wpa_supplicant-<x>.conf  →  wpa_supplicant-<x>.conf.test
-NETWORKMANAGER_TESTMODE = True
 
 interfacesFile = "/etc/network/interfaces"
 resolvFile = "/etc/resolv.conf"
@@ -266,7 +260,12 @@ def _readLines(path: str) -> list[str]:
 		return []
 
 
-def _writeLines(path: str, lines: list[str]) -> bool:
+def _writeLines(path: str, lines: list[str], backup: bool = False) -> bool:
+	if backup and exists(path):
+		try:
+			copy2(path, path + ".bk")
+		except OSError as exc:
+			print(f"[NetworkManager] Cannot backup {path}: {exc}")
 	try:
 		with open(path, "w", encoding="utf-8") as fh:
 			fh.write("\n".join(lines))
@@ -309,7 +308,7 @@ class InterfacesFile:
 
 	def __init__(self, path: str = interfacesFile):
 		self.path = path
-		self._writePath = (path + "2") if NETWORKMANAGER_TESTMODE else path
+		self._writePath = path
 		self._raw: list[str] = []
 		self.load()
 
@@ -446,7 +445,7 @@ class InterfacesFile:
 
 	def save(self, connectionsByAdapter: dict[str, list[Connection]], adapterEnabledMap: dict[str, bool] | None = None) -> bool:
 		lines = self.serialise(connectionsByAdapter, adapterEnabledMap)
-		ok = _writeLines(self._writePath, lines)
+		ok = _writeLines(self._writePath, lines, backup=True)
 		if ok:
 			self._raw = lines
 		return ok
@@ -507,7 +506,7 @@ class WpaSupplicantFile:
 	def __init__(self, iface: str):
 		self.iface = iface
 		self.path = f"{wpaSupplicantDir}/wpa_supplicant-{iface}.conf"
-		self._writePath = (self.path + ".test") if NETWORKMANAGER_TESTMODE else self.path
+		self._writePath = self.path
 		self._raw: list[str] = _readLines(self.path)
 		self._header: list[str] = self._extractHeader()
 
@@ -563,10 +562,10 @@ class WpaSupplicantFile:
 		return lines
 
 	def save(self, configs: list[WifiConfig]) -> bool:
-		return _writeLines(self._writePath, self.serialise(configs))
+		return _writeLines(self._writePath, self.serialise(configs), backup=True)
 
 	def ensureDir(self):
-		os.makedirs(wpaSupplicantDir, exist_ok=True)
+		makedirs(wpaSupplicantDir, exist_ok=True)
 
 
 def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WifiConfig:
@@ -766,8 +765,8 @@ def _reEscape(s: str) -> str:
 class NameserverFiles:
 	"""Read and write /etc/resolv.conf + /etc/enigma2/nameserversdns.conf."""
 
-	_reNs4 = re.compile(r"nameserver\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
-	_reNs6 = re.compile(r"nameserver\s+(([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4})")
+	_reNs4 = compile(r"nameserver\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+	_reNs6 = compile(r"nameserver\s+(([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4})")
 
 	def load(self, ns: NameserverConfig):
 		path = resolvFile if ns.mode == "dhcp-router" else nameserverFile
@@ -871,48 +870,13 @@ class WlanRuntime:
 			return [f"wl -i {iface} status"]
 		return [f"iwconfig {iface}"]
 
-	@staticmethod
-	def parseIwconfigStatus(raw: str) -> dict[str, str]:
-		data: dict[str, str] = {
-			"essid": "", "accessPoint": "", "bitRate": "",
-			"signal": "", "quality": "", "encryption": "off",
-			"frequency": "", "channel": "",
-		}
-		for line in raw.splitlines():
-			line = line.strip()
-			m = re.search(r'ESSID:"([^"]*)"', line)
-			if m:
-				data["essid"] = m.group(1)
-			m = re.search(r"Access Point:\s*([0-9A-Fa-f:]{17})", line)
-			if m:
-				data["accessPoint"] = m.group(1)
-			m = re.search(r"Bit Rate[=:](\S+\s*\S*)", line)
-			if m:
-				data["bitRate"] = m.group(1).strip()
-			m = re.search(r"Signal level[=:](-?\d+)\s*dBm", line)
-			if m:
-				data["signal"] = m.group(1) + " dBm"
-			m = re.search(r"Link Quality[=:](\d+/\d+)", line)
-			if m:
-				data["quality"] = m.group(1)
-			m = re.search(r"Encryption key:(on|off)", line)
-			if m:
-				data["encryption"] = m.group(1)
-			m = re.search(r"Frequency:([\d.]+\s*\w+Hz)", line)
-			if m:
-				data["frequency"] = m.group(1)
-			m = re.search(r"Channel[=:](\d+)", line)
-			if m:
-				data["channel"] = m.group(1)
-		return data
-
 
 # ===========================================================================
 # Interface detection helpers
 # ===========================================================================
 
 def _isWirelessName(iface: str) -> bool:
-	return bool(re.match(r"(wlan|ath|ra|wl)\d+", iface))
+	return bool(match(r"(wlan|ath|ra|wl)\d+", iface))
 
 
 def _isWireless(iface: str) -> bool:
@@ -985,9 +949,8 @@ class NetEventReader:
 	# -- internal --
 
 	def _connect(self):
-		import socket as _socket
 		try:
-			s = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+			s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 			s.connect(netEventSocketPath)
 			s.setblocking(False)
 			self._sock = s
@@ -1090,17 +1053,6 @@ class NetworkManager:
 				adapter.kernelUp = bool(flags & 1)
 			except OSError:
 				pass
-			addrs = netifaces.ifaddresses(name)
-			if netifaces.AF_INET in addrs:
-				info = addrs[netifaces.AF_INET][0]
-				adapter.kernelIp = _parseIp4(info.get("addr", "0.0.0.0"))
-				adapter.kernelNetmask = _parseIp4(info.get("netmask", "0.0.0.0"))
-				adapter.kernelBcast = _parseIp4(info.get("broadcast", "0.0.0.0"))
-			if netifaces.AF_LINK in addrs:
-				adapter.mac = addrs[netifaces.AF_LINK][0].get("addr", adapter.mac)
-			gws = netifaces.gateways()
-			if "default" in gws and netifaces.AF_INET in gws["default"]:
-				adapter.kernelGateway = _parseIp4(gws["default"][netifaces.AF_INET][0])
 			self.adapters[name] = adapter
 			self._detectWol(adapter)
 
@@ -1659,8 +1611,8 @@ class NetworkManager:
 
 	def getWakeOnLan(self, iface: str) -> str:
 		try:
-			out = subprocess.check_output([ethtoolBin, iface], stderr=subprocess.DEVNULL, timeout=2).decode(errors="replace")
-			m = re.search(r"Wake-on:\s*(\S+)", out)
+			out = check_output([ethtoolBin, iface], stderr=DEVNULL, timeout=2).decode(errors="replace")
+			m = search(r"Wake-on:\s*(\S+)", out)
 			return m.group(1) if m else "off"
 		except Exception:
 			return "off"
@@ -1896,18 +1848,18 @@ def pingHost(host: str, iface: str, timeout: float = 2.0) -> bool:
 	try:
 		sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, (iface + "\0").encode())
-		pid = os.getpid() & 0xFFFF
-		hdr = struct.pack("!BBHHH", 8, 0, 0, pid, 1)
+		pid = getpid() & 0xFFFF
+		hdr = pack("!BBHHH", 8, 0, 0, pid, 1)
 		payload = b"e2net"
 		cs = _icmpChecksum(hdr + payload)
-		sock.sendto(struct.pack("!BBHHH", 8, 0, cs, pid, 1) + payload, (host, 0))
-		deadline = time.monotonic() + timeout
-		while time.monotonic() < deadline:
-			sock.settimeout(max(0.05, deadline - time.monotonic()))
+		sock.sendto(pack("!BBHHH", 8, 0, cs, pid, 1) + payload, (host, 0))
+		deadline = monotonic() + timeout
+		while monotonic() < deadline:
+			sock.settimeout(max(0.05, deadline - monotonic()))
 			try:
 				data, _ = sock.recvfrom(1024)
 				if len(data) >= 28:
-					rtype, _, _, rid, _ = struct.unpack("!BBHHH", data[20:28])
+					rtype, _, _, rid, _ = unpack("!BBHHH", data[20:28])
 					if rtype == 0 and rid == pid:
 						return True
 			except socket.timeout:
