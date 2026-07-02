@@ -1243,8 +1243,7 @@ class WifiScanScreen(Screen):
 
 	skin = """
 	<screen name="WifiScanScreen" title="Wifi Scan" position="center,center" size="980,600" resolution="1280,720">
-		<widget name="description" position="10,10" size="960,40" font="Regular;22" halign="left" valign="center" />
-		<widget source="list" render="Listbox" position="0,60" size="980,450" scrollbarMode="showOnDemand">
+		<widget source="list" render="Listbox" position="10,10" size="960,450" scrollbarMode="showOnDemand">
 			<template name="Default" fonts="Regular;26,Regular;20" itemHeight="50">
 				<mode name="default">
 					<text index="0" position="10,0" size="490,50" font="0" horizontalAlignment="left" verticalAlignment="center" />
@@ -1254,6 +1253,7 @@ class WifiScanScreen(Screen):
 				</mode>
 			</template>
 		</widget>
+		<widget name="description" position="10,10" size="960,480" font="Regular;22" halign="left" valign="center" />
 		<widget source="key_red" render="Label" position="10,e-50" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
@@ -1576,7 +1576,7 @@ class NetworkAdapterTest2(Screen):
 			_("Wireless link") if isWlan else _("LAN link"),
 			_("IP address"),
 			_("Gateway"),
-			_("Internet"),
+			"Internet",
 			"DNS",
 		]
 		self._rows = [(self._ICON_BUSY, label, "", "", self._COL_PENDING) for label in labels]

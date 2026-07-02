@@ -86,6 +86,12 @@ public:
 
 	int isTransparent() { return m_vis & wVisTransparent; }
 
+	void setModal(int m) {
+		if (m) m_vis |= wVisModal; else m_vis &= ~wVisModal;
+		invalidate();
+	}
+	int isModal() const { return m_vis & wVisModal; }
+
 	ePoint getAbsolutePosition();
 
 	eWidgetAnimation m_animation;
@@ -99,6 +105,7 @@ private:
 	enum {
 		wVisShow = 1,
 		wVisTransparent = 2,
+		wVisModal = 4,
 	};
 
 	int m_vis;
