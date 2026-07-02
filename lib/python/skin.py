@@ -476,7 +476,7 @@ def parseFont(value, scale=((1, 1), (1, 1))):
 def parseFontScale(value, scale=((1, 1), (1, 1))):
     scaleType, *size = value.split(";")
     try:
-        size = int(int(size or -4) * scale[1][0] / scale[1][1])
+        size = int(int(size[0] if size else -4) * scale[1][0] / scale[1][1])
     except ValueError as err:
         print(f"[Skin] Error ({type(err).__name__} - {err}): Font scale size in '{value}' is '{size}' and is invalid!")
         size = 0

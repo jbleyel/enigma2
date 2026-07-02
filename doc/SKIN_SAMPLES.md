@@ -252,14 +252,62 @@ Scrolls long text that doesn't fit in the widget horizontally.
 
 #### With font scale
 
-`fontScale` scales the font to fit a target size. Useful when the exact rendered size must match a fixed height or width regardless of the font face.
+`fontScale` shrinks the font — starting from the size given in `font` — only as far as needed so the text fits inside the widget, and never below a floor size `N`. If the text already fits, the original `font` size is used unchanged.
 
-**Scale by height** — font is scaled so its total height matches the given size:
+`N` can be given as:
+
+- a **positive** number — an absolute minimum point size (or point width) to shrink down to
+- a **negative** number — a floor *relative to* the `font` size, i.e. the font may shrink by at most `|N|` points (floor = original size − |N|)
+- omitted (just `fontScale="size"`) — defaults to `-4`, i.e. shrink by at most 4 points
+
+**Scale by height** — font shrinks (down to a floor of 16pt) so the text fits the label's width/height:
 
 ```xml
 <eLabel
     text="Scaled Text"
     position="20,250"
+    size="400,50"
+    font="Regular;24"
+    fontScale="size;16"
+    foregroundColor="#00FFFFFF"
+    transparent="1"
+/>
+```
+
+**Scale by height, relative floor** — font shrinks by at most 4pt below the `font` size (won't go below 20pt here):
+
+```xml
+<eLabel
+    text="Scaled Text"
+    position="20,250"
+    size="400,50"
+    font="Regular;24"
+    fontScale="size;-4"
+    foregroundColor="#00FFFFFF"
+    transparent="1"
+/>
+```
+
+**Scale by character width** — font's `pointWidth` shrinks (down to a floor of 14) so a line that is too wide (but whose height still fits) is condensed instead of wrapped/clipped:
+
+```xml
+<eLabel
+    text="00:00"
+    position="20,310"
+    size="200,50"
+    font="Regular;24"
+    fontScale="width;14"
+    foregroundColor="#00FFFFFF"
+    transparent="1"
+/>
+```
+
+**Force a fixed rendered size regardless of container** — using a tiny base `font` size (e.g. `;1`) makes the natural fit calculation always undershoot the floor, so the floor `N` effectively becomes the actual rendered size:
+
+```xml
+<eLabel
+    text="Scaled Text"
+    position="20,370"
     size="400,50"
     font="Regular;1"
     fontScale="size;48"
@@ -268,26 +316,12 @@ Scrolls long text that doesn't fit in the widget horizontally.
 />
 ```
 
-**Scale by character width** — font is scaled so a character's width matches the given size:
+| Attribute   | Format        | Description                                                                          |
+| ----------- | ------------- | ------------------------------------------------------------------------------------- |
+| `fontScale` | `size;N`      | Shrink font size as needed to fit, floor at `N` (or `font size − \|N\|` if negative)   |
+| `fontScale` | `width;N`     | Shrink font's character width as needed to fit, same floor rules as above             |
 
-```xml
-<eLabel
-    text="00:00"
-    position="20,310"
-    size="200,50"
-    font="Regular;1"
-    fontScale="width;38"
-    foregroundColor="#00FFFFFF"
-    transparent="1"
-/>
-```
-
-| Attribute   | Format        | Description                                                              |
-| ----------- | ------------- | ------------------------------------------------------------------------ |
-| `fontScale` | `size;N`      | Scale font so its **total height** equals N pixels                       |
-| `fontScale` | `width;N`     | Scale font so a **character width** equals N pixels                      |
-
-> `font` must still be set (e.g. `Regular;1`). `fontScale` overrides the size at render time.
+> `font` must still be set — its point size is both the starting size and the reference for a negative (relative) `N`.
 
 ---
 
@@ -1011,13 +1045,15 @@ The syntax is identical to `eLabel`'s `scrollText` attribute.
 
 ### fontScale — scale font to fit items
 
-`fontScale` limits font size so text fits within each item row. Two modes:
+`fontScale` shrinks the font — starting from the size given in `font` — only as far as needed so each item's text fits within the row, and never below a floor `N`. Two modes:
 
-- `size;N` — scale by height: font will fit within N pixels vertically
-- `width;N` — scale by character width: font will fit within N pixels horizontally
+- `size;N` — scale by point size: shrinks the font size, floor at `N`
+- `width;N` — scale by character width: shrinks the font's character width (used when a line is too wide but its height still fits), floor at `N`
+
+As with `eLabel`, `N` may be negative to mean "shrink by at most `|N|` points relative to the `font` size" instead of an absolute floor; omitting `N` (`fontScale="size"`) defaults to `-4`.
 
 ```xml
-<!-- Fit font height within 22 pixels -->
+<!-- Shrink font size as needed, but never below 22pt -->
 <widget name="list"
     position="20,80"
     size="600,500"
@@ -1032,7 +1068,7 @@ The syntax is identical to `eLabel`'s `scrollText` attribute.
 ```
 
 ```xml
-<!-- Limit font by character width -->
+<!-- Condense character width as needed, but never below 14 -->
 <widget name="list"
     position="20,80"
     size="600,500"

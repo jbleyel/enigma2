@@ -160,11 +160,12 @@ Main font settings
 - Example: `Regular;20`
 
 #### fontScale=
-Controls how the font is scaled to fit the widget area.
+Shrinks the font (starting from the `font` size) only as far as needed so the text fits the widget area, down to a floor size.
 - Format: `scaleType;size`
-  - `scaleType`: `size` (scale by total height) or `width` (scale by character width)
-  - `size`: target size in pixels (scaled by the skin resolution factor)
-- Example: `fontScale=size;20`
+  - `scaleType`: `size` (scale by point size) or `width` (scale by character width)
+  - `size`: floor to shrink down to, in pixels (scaled by the skin resolution factor). Positive = absolute floor; negative = relative to the `font` size (floor = font size − |size|); omitted = defaults to `-4`
+- Example: `fontScale=size;20` (absolute floor of 20)
+- Example: `fontScale=size;-4` (shrink by at most 4 below the `font` size)
 
 #### foregroundColor=
 Text/content color

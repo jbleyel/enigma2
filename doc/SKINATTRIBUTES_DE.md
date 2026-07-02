@@ -160,11 +160,12 @@ Hauptschriftart-Einstellungen
 - Beispiel: `Regular;20`
 
 #### fontScale=
-Steuert wie die Schriftart auf den Widget-Bereich skaliert wird.
+Verkleinert die Schriftart (ausgehend von der `font`-Größe) nur so weit wie nötig, damit der Text in den Widget-Bereich passt, bis maximal zu einer unteren Grenze.
 - Format: `Skalierungstyp;Größe`
-  - `Skalierungstyp`: `size` (nach Gesamthöhe skalieren) oder `width` (nach Zeichenbreite skalieren)
-  - `Größe`: Zielgröße in Pixeln (wird mit dem Skin-Auflösungsfaktor skaliert)
-- Beispiel: `fontScale=size;20`
+  - `Skalierungstyp`: `size` (nach Punktgröße skalieren) oder `width` (nach Zeichenbreite skalieren)
+  - `Größe`: untere Grenze in Pixeln, bis zu der verkleinert wird (wird mit dem Skin-Auflösungsfaktor skaliert). Positiv = absolute Untergrenze; negativ = relativ zur `font`-Größe (Untergrenze = Font-Größe − |Größe|); weggelassen = Standardwert `-4`
+- Beispiel: `fontScale=size;20` (absolute Untergrenze von 20)
+- Beispiel: `fontScale=size;-4` (verkleinert um maximal 4 unter die `font`-Größe)
 
 #### foregroundColor=
 Text-/Inhaltsfarbe
