@@ -128,6 +128,7 @@ public:
 private:
 	unsigned char m_pkt[192];
 	int m_pktptr;
+	off_t m_pkt_offset;
 	int processPacket(const unsigned char *pkt, off_t offset);
 	inline int wantPacket(const unsigned char *pkt) const;
 	void addAccessPoint(off_t offset, pts_t pts, bool streamtime = false);

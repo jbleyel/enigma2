@@ -253,9 +253,17 @@ off_t eMPEGStreamInformation::getAccessPoint(pts_t ts, int marg)
 	 * original full linear scan, which stays correct (seeking is not a hot
 	 * path, so the extra iterations are harmless).
 	 */
-	if (!m_pts_to_offset.empty() && m_timestamp_deltas.size() <= 1)
+	if (!m_pts_to_offset.empty() && m_timestamp_deltas.size() == 1)
 	{
-		std::multimap<pts_t, off_t>::const_iterator candidate = m_pts_to_offset.lower_bound(ts);
+		/*
+		 * m_pts_to_offset is keyed by raw PTS while the caller gives a
+		 * delta-corrected stream time.  With a single constant delta we can
+		 * translate the lookup target safely.  If there is more than one delta
+		 * (real discontinuity or PTS wrap), keep the full linear scan because
+		 * raw PTS ordering is no longer equivalent to playback-time ordering.
+		 */
+		pts_t raw_target = ts + m_timestamp_deltas.begin()->second;
+		std::multimap<pts_t, off_t>::const_iterator candidate = m_pts_to_offset.lower_bound(raw_target);
 		if (candidate != m_pts_to_offset.begin())
 			--candidate;
 		std::map<off_t, pts_t>::const_iterator hint = m_access_points.lower_bound(candidate->second);
@@ -926,12 +934,44 @@ static inline bool isHEVCStructureNal(int nal_type)
 	return nal_type == 35 || isHEVCAccessPointNal(nal_type);
 }
 
+static inline bool isLikelyHEVCNalHeader(const unsigned char *nal, const unsigned char *end)
+{
+	if (nal + 1 >= end)
+		return false;
+	if (nal[0] & 0x80) /* forbidden_zero_bit must be zero */
+		return false;
+	if ((nal[1] & 0x07) == 0) /* nuh_temporal_id_plus1 must not be zero */
+		return false;
+
+	int nal_type = hevcNalType(nal);
+	return nal_type == 32 || /* VPS */
+	       nal_type == 33 || /* SPS */
+	       nal_type == 34 || /* PPS */
+	       nal_type == 35 || /* AUD */
+	       isHEVCAccessPointNal(nal_type);
+}
+
+static inline off_t hevcByteOffsetAt(int idx, int prepended_tail,
+	const off_t *tail_offsets, off_t data_offset)
+{
+	return (idx < prepended_tail) ? tail_offsets[idx]
+	                              : data_offset + (idx - prepended_tail);
+}
+
+static inline off_t hevcPacketOffsetAt(int idx, int prepended_tail,
+	const off_t *tail_packet_offsets, off_t packet_offset)
+{
+	return (idx < prepended_tail) ? tail_packet_offsets[idx]
+	                              : packet_offset;
+}
+
 /* ---------------------------------------------------------------------------
  * eMPEGStreamParserTS
  * -------------------------------------------------------------------------*/
 
 eMPEGStreamParserTS::eMPEGStreamParserTS(int packetsize):
 	m_pktptr(0),
+	m_pkt_offset(0),
 	m_pid(-1),
 	m_streamtype(-1),
 	m_need_next_packet(0),
@@ -1027,15 +1067,8 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 	for (int i = 0; i < payload_size; ++i)
 		buffer[total++] = data[i];
 
-	/* Derive the original file/packet offset of any buffer index. */
-	auto byteOffsetAt = [&](int idx) -> off_t {
-		return (idx < prepended_tail) ? m_hevc_tail_offsets[idx]
-		                              : data_offset + (idx - prepended_tail);
-	};
-	auto packetOffsetAt = [&](int idx) -> off_t {
-		return (idx < prepended_tail) ? m_hevc_tail_packet_offsets[idx]
-		                              : packet_offset;
-	};
+	/* Offsets for bytes copied from the previous packet tail are stored in
+	 * m_hevc_tail_*; offsets for bytes from the current packet are derived. */
 
 	/*
 	 * Scan for start codes 0x000001 (3-byte) or 0x00000001 (4-byte).
@@ -1063,9 +1096,9 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 		int nal_type = hevcNalType(buffer + nal_pos);
 
 		/* Only skip complete NALs already processed in a previous packet. */
-		if (byteOffsetAt(i) < data_offset && byteOffsetAt(nal_pos + 1) < data_offset)
+		if (hevcByteOffsetAt(i, prepended_tail, m_hevc_tail_offsets, data_offset) < data_offset && hevcByteOffsetAt(nal_pos + 1, prepended_tail, m_hevc_tail_offsets, data_offset) < data_offset)
 		{
-			if (nal_type != 35 || (nal_pos + 2 < total && byteOffsetAt(nal_pos + 2) < data_offset))
+			if (nal_type != 35 || (nal_pos + 2 < total && hevcByteOffsetAt(nal_pos + 2, prepended_tail, m_hevc_tail_offsets, data_offset) < data_offset))
 				continue;
 		}
 
@@ -1085,13 +1118,13 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 		}
 		if (ptsvalid)
 			structure_data |= ((pts & 0x1ffffffffULL) << 31) | 0x1000000;
-		writeStructureEntry(byteOffsetAt(i), structure_data);
+		writeStructureEntry(hevcByteOffsetAt(i, prepended_tail, m_hevc_tail_offsets, data_offset), structure_data);
 
 		if (nal_type == 35 && ((buffer[nal_pos + 2] >> 5) == 0) && ptsvalid && m_enable_accesspoints)
 		{
 			if (!m_hevc_last_ap_pts_valid || m_hevc_last_ap_pts != pts)
 			{
-				addAccessPoint(packetOffsetAt(i), pts);
+				addAccessPoint(hevcPacketOffsetAt(i, prepended_tail, m_hevc_tail_packet_offsets, packet_offset), pts);
 				m_hevc_last_ap_pts       = pts;
 				m_hevc_last_ap_pts_valid = true;
 			}
@@ -1103,7 +1136,7 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 			 * (multiple IRAP NALs can appear in one access unit) */
 			if (!m_hevc_last_ap_pts_valid || m_hevc_last_ap_pts != pts)
 			{
-				addAccessPoint(packetOffsetAt(i), pts);
+				addAccessPoint(hevcPacketOffsetAt(i, prepended_tail, m_hevc_tail_packet_offsets, packet_offset), pts);
 				m_hevc_last_ap_pts       = pts;
 				m_hevc_last_ap_pts_valid = true;
 			}
@@ -1114,8 +1147,8 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 	}
 
 	/* Save the last (up to 7) bytes as the tail for the next packet.
-	 * Compute into temporaries first: byteOffsetAt()/packetOffsetAt() may
-	 * read m_hevc_tail_*[] (when src < prepended_tail), so we must not
+	 * Compute into temporaries first: offset helper calls may read
+	 * m_hevc_tail_*[] (when src < prepended_tail), so we must not
 	 * overwrite those members until all source values have been read. */
 	const int new_tail = total < 7 ? total : 7;
 	unsigned char new_tail_bytes[7];
@@ -1125,8 +1158,8 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 	{
 		int src = total - new_tail + i;
 		new_tail_bytes[i]    = buffer[src];
-		new_tail_byte_off[i] = byteOffsetAt(src);
-		new_tail_pkt_off[i]  = packetOffsetAt(src);
+		new_tail_byte_off[i] = hevcByteOffsetAt(src, prepended_tail, m_hevc_tail_offsets, data_offset);
+		new_tail_pkt_off[i]  = hevcPacketOffsetAt(src, prepended_tail, m_hevc_tail_packet_offsets, packet_offset);
 	}
 	m_hevc_tail_size = new_tail;
 	for (int i = 0; i < new_tail; ++i)
@@ -1214,6 +1247,8 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 		eWarning("[eMPEGStreamParserTS] dropping huge adaption field");
 		return 0;
 	}
+	if (pkt == end)
+		return 0;
 
 	pts_t pts    = 0;
 	int ptsvalid = 0;
@@ -1221,6 +1256,13 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 	if (pusi)
 	{
 		/* start of payload, aligned with PES packet start */
+		if (end - pkt < 9)
+		{
+			eWarning("[eMPEGStreamParserTS] short PES header");
+			if (m_streamtype == eDVBVideo::H265_HEVC)
+				resetHEVCTail();
+			return 0;
+		}
 		if (pkt[0] || pkt[1] || (pkt[2] != 1))
 		{
 			eWarning("[eMPEGStreamParserTS] broken startcode");
@@ -1229,6 +1271,13 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 
 		if (pkt[7] & 0x80) // PTS present?
 		{
+			if (end - pkt < 14)
+			{
+				eWarning("[eMPEGStreamParserTS] short PTS header");
+				if (m_streamtype == eDVBVideo::H265_HEVC)
+					resetHEVCTail();
+				return 0;
+			}
 			pts  = ((unsigned long long)(pkt[ 9]&0xE))  << 29;
 			pts |= ((unsigned long long)(pkt[10]&0xFF)) << 22;
 			pts |= ((unsigned long long)(pkt[11]&0xFE)) << 14;
@@ -1244,6 +1293,13 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 
 		/* advance past PES header to ES payload */
 		pkt += pkt[8] + 9;
+		if (pkt > end)
+		{
+			eWarning("[eMPEGStreamParserTS] PES header exceeds packet payload");
+			if (m_streamtype == eDVBVideo::H265_HEVC)
+				resetHEVCTail();
+			return 0;
+		}
 	}
 
 	/* HEVC is handled by the dedicated NAL scanner (all packets, not just PUSI) */
@@ -1283,17 +1339,13 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 				eDebug("[eMPEGStreamParserTS] - detected H264 stream");
 				m_streamtype = eDVBVideo::MPEG4_H264;
 			}
-			else if (((sc >> 1) & 0x3F) == 35 || ((sc >> 1) & 0x3F) == 32 || ((sc >> 1) & 0x3F) == 33)
+			else if (isLikelyHEVCNalHeader(pkt + 3, end))
 			{
 				/*
-				 * H.265/HEVC autodetection. AUD_NUT (35) is optional in HEVC,
-				 * so streams that omit it would never be detected if we only
-				 * keyed on AUD. VPS (32) and SPS (33) are present at the start
-				 * of every coded video sequence, so we also trigger on those.
-				 * MPEG-2 (0x00/0xb3/0xb8) and H.264 (0x09) are matched earlier,
-				 * and at a PES payload start MPEG-2 begins with a sequence/
-				 * picture header (not a slice), so there is no collision with
-				 * MPEG-2 slice_start_codes that happen to equal 0x40/0x42.
+				 * H.265/HEVC autodetection. AUD_NUT (35) is optional, so we
+				 * also accept parameter sets and IRAP NALs, but only after checking
+				 * the two-byte HEVC NAL header invariants.  This avoids some false
+				 * positives against H.264 streams without AUD.
 				 */
 				eDebug("[eMPEGStreamParserTS] - detected H265/HEVC stream");
 				m_streamtype = eDVBVideo::H265_HEVC;
@@ -1470,7 +1522,7 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 
 			if (m_pktptr == m_packetsize)
 			{
-				int res = processPacket(m_pkt, offset + (packet - packet_start));
+				int res = processPacket(m_pkt, m_pkt_offset);
 				if (res != 0) return res;
 				m_need_next_packet = res;
 				m_pktptr = 0;
@@ -1488,6 +1540,7 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 				}
 				else
 				{
+					m_pkt_offset = offset + (packet - packet_start);
 					memcpy(m_pkt, packet, len);  /* otherwise queue it up */
 					m_pktptr = len;
 				}
@@ -1505,6 +1558,7 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 		}
 		else
 		{
+			m_pkt_offset = offset + (packet - packet_start);
 			memcpy(m_pkt, packet, len);   /* complete header next time */
 			m_pktptr = len;
 			packet += len;
@@ -1532,6 +1586,7 @@ void eMPEGStreamParserTS::addAccessPoint(off_t offset, pts_t pts, timespec &now,
 void eMPEGStreamParserTS::setPid(int _pid, iDVBTSRecorder::timing_pid_type pidtype, int streamtype)
 {
 	m_pktptr = 0;
+	m_pkt_offset = 0;
 	resetHEVCParserState();
 	/*
 	 * eMPEGStreamParserTS handles video only: MPEG-2, H.264, H.265.
