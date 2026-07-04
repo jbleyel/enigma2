@@ -61,10 +61,6 @@ from Components.NetworkManager import (
 
 MODULE_NAME = __name__.split(".")[-1]
 
-_COLOR_LINK = gRGB(0x0000CC00).argb()  # green  – physical link up
-_COLOR_ENABLED = gRGB(0x00FFFFFF).argb()  # white  – enabled, no link
-_COLOR_GRAY = gRGB(0x00808080).argb()  # gray   – disabled
-
 _DUPLEX_LABELS = {"full": lambda: _("Full duplex"), "half": lambda: _("Half duplex")}
 
 # ---------------------------------------------------------------------------
@@ -85,15 +81,6 @@ encryptionChoices = [
 # ---------------------------------------------------------------------------
 
 _ENC_SHORT = {encNone: "open", encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2", encWpa3: "WPA3"}
-_ICON_LAN = chr(0xEA5A)   # settings_ethernet
-_ICON_WIFI = chr(0xE9FE)  # wifi
-_ICON_INET = chr(0xEA5B)  # globe
-_ICON_CHECKBOX_ON = chr(0xE91B)   # check_box
-_ICON_CHECKBOX_OFF = chr(0xE91F)  # check_box_outline_blank
-_ICON_LINK_ACTIVE = chr(0xEA62)    # arrow_circle_up
-_ICON_LINK_INACTIVE = chr(0xEA5C)  # arrow_circle_down
-_ICON_BRANCH = chr(0xF001)         # branch (tree connector)
-_ICON_LAST_CHILD = chr(0xF002)     # last_child (tree connector)
 
 
 def _connLabel(conn: Connection, adapter: Adapter) -> str:
@@ -573,6 +560,21 @@ class NetworkConnections(Screen):
 	INDEX_LINK_ICON = 10
 	INDEX_ADAPTER = 11
 	INDEX_CONN = 12
+
+	COLOR_LINK = gRGB(0x0000CC00).argb()  # green  – physical link up
+	COLOR_ENABLED = gRGB(0x00FFFFFF).argb()  # white  – enabled, no link
+	COLOR_GRAY = gRGB(0x00808080).argb()  # gray   – disabled
+
+	ICON_LAN = "\uEA5A"   # settings_ethernet
+	ICON_WIFI = "\uE9FE"  # wifi
+	ICON_INET = "\uEA5B"  # globe
+	ICON_CHECKBOX_ON = "\uE91B"   # check_box
+	ICON_CHECKBOX_OFF = "\uE91F"  # check_box_outline_blank
+	ICON_LINK_ACTIVE = "\uEA62"    # arrow_circle_up
+	ICON_LINK_INACTIVE = "\uEA5C"  # arrow_circle_down
+	ICON_BRANCH = "\uF001"         # branch (tree connector)
+	ICON_LAST_CHILD = "\uF002"     # last_child (tree connector)
+
 	skin = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,600" resolution="1280,720">
 		<widget source="list" render="Listbox" position="0,0" size="980,520" scrollbarMode="showOnDemand">
@@ -649,18 +651,17 @@ class NetworkConnections(Screen):
 		self["list"] = List([], indexNames=indexNames)
 		self["list"].onSelectionChanged.append(self._updateYellowKey)
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions", "InfoActions"], {
-			"ok": (self._keyOK, _("Open settings for selected network connection")),
+			"ok": (self.keyOK, _("Open settings for selected network connection")),
 			"cancel": (self.close, _("Close network connection list")),
 			"red": (self.close, _("Close network connection list")),
-			"green": (self._keyGreen, _("Add a new network connection")),
-			"yellow": (self._keyYellow, _("Activate/Deactivate adapter")),
-			"info": (self._showInfo, _("Show network connection info")),
-			# "blue": (self._keyBlue, _("Open global DNS settings")),
-			"menu": (self._keyMenu, _("Open context menu for selected network connection")),
+			"green": (self.keyGreen, _("Add a new network connection")),
+			"yellow": (self.keyYellow, _("Activate/Deactivate adapter")),
+			"info": (self.keyInfo, _("Show network connection info")),
+			"menu": (self.keyMenu, _("Open context menu for selected network connection")),
 		}, prio=0, description=_("Network Connection Actions"))
-		self._colorLink = _COLOR_LINK
-		self._colorEnabled = _COLOR_ENABLED
-		self._colorDisabled = _COLOR_GRAY
+		self._colorLink = self.COLOR_LINK
+		self._colorEnabled = self.COLOR_ENABLED
+		self._colorDisabled = self.COLOR_GRAY
 		self.onLayoutFinish.append(self._readSkinColors)
 		self.onLayoutFinish.append(self._buildList)
 		self._internetChecked = False
@@ -672,9 +673,9 @@ class NetworkConnections(Screen):
 
 	def _readSkinColors(self):
 		attrs = self["list"].additionalTemplateAttributes
-		self._colorLink = parseColor(attrs["colorStateLink"]).argb() if "colorStateLink" in attrs else _COLOR_LINK
-		self._colorEnabled = parseColor(attrs["colorStateEnabled"]).argb() if "colorStateEnabled" in attrs else _COLOR_ENABLED
-		self._colorDisabled = parseColor(attrs["colorStateDisabled"]).argb() if "colorStateDisabled" in attrs else _COLOR_GRAY
+		self._colorLink = parseColor(attrs["colorStateLink"]).argb() if "colorStateLink" in attrs else self.COLOR_LINK
+		self._colorEnabled = parseColor(attrs["colorStateEnabled"]).argb() if "colorStateEnabled" in attrs else self.COLOR_ENABLED
+		self._colorDisabled = parseColor(attrs["colorStateDisabled"]).argb() if "colorStateDisabled" in attrs else self.COLOR_GRAY
 
 	def checkInternet(self):
 		def checkInternetCallback(result):
@@ -706,8 +707,8 @@ class NetworkConnections(Screen):
 		for iface in sorted(nm.adapters.keys()):
 			adapter = nm.adapters[iface]
 			internet = self._internetResult and self._internetResult.get(iface)
-			adapterIcon = _ICON_WIFI if adapter.isWlan else _ICON_LAN
-			checkBox = _ICON_CHECKBOX_ON if adapter.adapterEnabled else _ICON_CHECKBOX_OFF
+			adapterIcon = self.ICON_WIFI if adapter.isWlan else self.ICON_LAN
+			checkBox = self.ICON_CHECKBOX_ON if adapter.adapterEnabled else self.ICON_CHECKBOX_OFF
 			loc = _adapterLocation(adapter)
 			adapterLabel = f"Adapter {iface}   /   {loc}" if loc else f"Adapter {iface}"
 			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.adapterEnabled else self._colorDisabled
@@ -720,23 +721,23 @@ class NetworkConnections(Screen):
 			for idx, conn in enumerate(conns):
 				isLast = idx == len(conns) - 1
 				connColor = self._colorEnabled if conn.enabled else self._colorDisabled
-				inetIcon = _ICON_INET if (internet and conn.enabled) else ""
-				linkIcon = _ICON_LINK_ACTIVE if adapter.kernelLink else _ICON_LINK_INACTIVE
-				entries.append(("", "", "", _ICON_LAST_CHILD if isLast else _ICON_BRANCH, _connLine1(conn, adapter), _connLine2(conn, adapter), connColor, inetIcon, None, self._connPixmap(conn), linkIcon, adapter, conn))
+				inetIcon = self.ICON_INET if (internet and conn.enabled) else ""
+				linkIcon = self.ICON_LINK_ACTIVE if adapter.kernelLink else self.ICON_LINK_INACTIVE
+				entries.append(("", "", "", self.ICON_LAST_CHILD if isLast else self.ICON_BRANCH, _connLine1(conn, adapter), _connLine2(conn, adapter), connColor, inetIcon, None, self._connPixmap(conn), linkIcon, adapter, conn))
 		self["list"].setList(entries)
 		self._updateYellowKey()
 
 	def _current(self) -> tuple | None:
 		return self["list"].getCurrent()
 
-	def _keyOK(self):
+	def keyOK(self):
 		entry = self._current()
 		if entry is not None:
 			conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
 			if conn is not None:
 				self._openSetup(conn, adapter)
 
-	def _keyYellow(self):
+	def keyYellow(self):
 		entry = self._current()
 		if entry is None:
 			return
@@ -744,7 +745,7 @@ class NetworkConnections(Screen):
 		if conn is None:
 			self._toggleAdapter(adapter)
 
-	def _showInfo(self):
+	def keyInfo(self):
 		entry = self._current()
 		if entry is None:
 			return
@@ -759,7 +760,7 @@ class NetworkConnections(Screen):
 			adapter = entry[self.INDEX_ADAPTER]
 			self["key_yellow"].setText(_("Deactivate") if adapter.adapterEnabled else _("Activate"))
 
-	def _keyMenu(self):
+	def keyMenu(self):
 		entry = self._current()
 		if entry is None:
 			return
@@ -780,9 +781,7 @@ class NetworkConnections(Screen):
 		)
 
 	def _adapterMenuCb(self, choice, adapter: Adapter):
-		if choice is None:
-			return
-		if choice[1] == "toggle":
+		if choice and choice[1] == "toggle":
 			self._toggleAdapter(adapter)
 
 	def _showContextMenu(self, conn: Connection, adapter: Adapter):
@@ -803,21 +802,20 @@ class NetworkConnections(Screen):
 		)
 
 	def _contextCb(self, choice, conn: Connection, adapter: Adapter):
-		if choice is None:
-			return
-		action = choice[1]
-		if action == "setup":
-			self._openSetup(conn, adapter)
-		elif action == "toggle":
-			self._toggleConnection(conn, adapter)
-		elif action == "test":
-			self.session.open(NetworkAdapterTest2, adapter.name)
-		elif action == "delete":
-			self._confirmDelete(conn, adapter)
-		elif action == "scan":
-			self._openWlanScan(adapter.name)
-		elif action == "addManual":
-			self._openWlanManual(adapter)
+		if choice:
+			action = choice[1]
+			if action == "setup":
+				self._openSetup(conn, adapter)
+			elif action == "toggle":
+				self._toggleConnection(conn, adapter)
+			elif action == "test":
+				self.session.open(NetworkAdapterTest2, adapter.name)
+			elif action == "delete":
+				self._confirmDelete(conn, adapter)
+			elif action == "scan":
+				self._openWlanScan(adapter.name)
+			elif action == "addManual":
+				self._openWlanManual(adapter)
 
 	def _openSetup(self, conn: Connection, adapter: Adapter):
 		self.session.openWithCallback(
@@ -826,9 +824,6 @@ class NetworkConnections(Screen):
 			conn,
 			adapter,
 		)
-
-	def _keyBlue(self):
-		pass
 
 	def _toggleAdapter(self, adapter: Adapter):
 		adapter.adapterEnabled = not adapter.adapterEnabled
@@ -868,17 +863,16 @@ class NetworkConnections(Screen):
 		)
 
 	def _doDelete(self, confirmed: bool, conn: Connection, adapter: Adapter):
-		if not confirmed:
-			return
-		if conn.isWlan and conn.wlan:
-			nm.removeConnection(adapter.name, conn.wlan.ssid)
-		else:
-			adapter.connections = [x for x in adapter.connections if x is not conn]
-		if nm:
-			nm.save()
-		self._buildList()
+		if confirmed:
+			if conn.isWlan and conn.wlan:
+				nm.removeConnection(adapter.name, conn.wlan.ssid)
+			else:
+				adapter.connections = [x for x in adapter.connections if x is not conn]
+			if nm:
+				nm.save()
+			self._buildList()
 
-	def _keyGreen(self):
+	def keyGreen(self):
 		if nm is None or not nm.adapters:
 			return
 		wlanAdapters = [x for x in nm.adapters.values() if x.isWlan]
@@ -915,24 +909,22 @@ class NetworkConnections(Screen):
 				)
 
 	def _wlanScanDone(self, result: ScanResult | None, adapter: Adapter):
-		if result is None:
-			return
-		conn = _scanResultToConnection(result, adapter.name)
-		self.session.openWithCallback(
-			lambda saved: self._wlanSetupDone(saved, conn, adapter),
-			NetworkConnectionSetup,
-			conn,
-			adapter,
-		)
+		if result:
+			conn = _scanResultToConnection(result, adapter.name)
+			self.session.openWithCallback(
+				lambda saved: self._wlanSetupDone(saved, conn, adapter),
+				NetworkConnectionSetup,
+				conn,
+				adapter,
+			)
 
 	def _wlanSetupDone(self, saved: bool, conn: Connection, adapter: Adapter):
-		if not saved:
-			return
-		if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in adapter.connections):
-			adapter.connections.append(conn)
-			if nm:
-				nm.save()
-		self._buildList()
+		if saved:
+			if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in adapter.connections):
+				adapter.connections.append(conn)
+				if nm:
+					nm.save()
+			self._buildList()
 
 	def _openWlanManual(self, adapter: Adapter):
 		conn = Connection(adapter=adapter.name, name=_("New Wi-Fi"), dhcp=True, enabled=False, wlan=WiFiConfig())
@@ -1158,71 +1150,6 @@ class ScanResult:
 		}.get(self.encryption, self.encryption.upper())
 
 
-# ---------------------------------------------------------------------------
-# iwlist parser
-# ---------------------------------------------------------------------------
-
-def _dbmToPct(dbm: int) -> int:
-	dbm = max(-100, min(-30, dbm))
-	return int((dbm + 100) * 100 / 70)
-
-
-def _parseIwlist(raw: str) -> list[ScanResult]:
-	results: list[ScanResult] = []
-	current: ScanResult | None = None
-
-	reCell = re.compile(r"Cell \d+ - Address:\s*([0-9A-Fa-f:]{17})")
-	reSsid = re.compile(r'ESSID:"(.*?)"')
-	reFreq = re.compile(r"Frequency:([\d.]+ \w+Hz).*?Channel:?(\d+)?")
-	reQuality = re.compile(r"Quality=(\d+)/(\d+)\s+Signal level=(-?\d+) dBm")
-	reEncOn = re.compile(r"Encryption key:on")
-	reEncOff = re.compile(r"Encryption key:off")
-	reIeWpa1 = re.compile(r"IE:.*WPA Version 1", re.IGNORECASE)
-	reIeWpa2 = re.compile(r"IE:.*WPA2|IE:.*RSN", re.IGNORECASE)
-	reIeWpa3 = re.compile(r"IE:.*SAE|IE:.*WPA3", re.IGNORECASE)
-
-	for line in raw.splitlines():
-		line = line.strip()
-		match = reCell.search(line)
-		if match:
-			current = ScanResult(bssid=match.group(1))
-			results.append(current)
-			continue
-		if current is None:
-			continue
-		match = reSsid.search(line)
-		if match:
-			current.ssid = match.group(1)
-		match = reFreq.search(line)
-		if match:
-			current.frequency = match.group(1)
-			if match.group(2):
-				current.channel = int(match.group(2))
-		match = reQuality.search(line)
-		if match:
-			qVal, qMax = int(match.group(1)), int(match.group(2))
-			current.signalPct = int(qVal * 100 / qMax) if qMax else 0
-			current.signalDbm = int(match.group(3))
-		if reIeWpa3.search(line):
-			current.encryption = encWpa3
-			current.encDetails = line
-		elif reIeWpa2.search(line):
-			if current.encryption != encWpa3:
-				current.encryption = encWpa2
-				current.encDetails = line
-		elif reIeWpa1.search(line):
-			if current.encryption == encNone:
-				current.encryption = encWpa
-				current.encDetails = line
-		elif reEncOn.search(line):
-			if current.encryption == encNone:
-				current.encryption = encWep
-		elif reEncOff.search(line):
-			current.encryption = encNone
-
-	return sorted((x for x in results if x.ssid), key=lambda x: -x.signalPct)
-
-
 def _scanResultToConnection(scanResult: ScanResult, iface: str) -> Connection:
 	return Connection(
 		adapter=iface,
@@ -1242,15 +1169,18 @@ class WiFiScanScreen(Screen):
 	"""Runs iwlist scan and shows results sorted by signal strength."""
 
 	skin = """
-	<screen name="WiFiScanScreen" title="Wi-Fi Scan" position="center,center" size="990,515" resolution="1280,720">
+	<screen name="WiFiScanScreen" title="Wi-Fi Scan" position="center,center" size="1000,455" resolution="1280,720">
 		<widget source="list" render="Listbox" position="10,10" size="e-20,e-105">
-			<template name="Default" fonts="Regular;25,Regular;20" itemHeight="35">
+			<template name="Default" fonts="Regular;25,Regular;20,enigma2icons;20" itemHeight="35">
 				<mode name="default">
-					<panel position="0,0" size="e,e" layout="horizontal" spacing="10">
-						<text index="Name" position="left" size="480,35" flags="scroll" font="0" horizontalAlignment="left" padding="5,0" verticalAlignment="center" />
-						<text index="Strength" position="left" size="200,35" font="1" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
+					<panel position="0,0" size="e,e" layout="horizontal">
+						<text index="Name" position="left" size="460,35" flags="scroll" font="0" horizontalAlignment="left" padding="5,0" verticalAlignment="center" />
+						<text index="Glyph" position="left" size="30,35" font="2" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
+						<text index="Percentage" position="left" size="70,35" font="1" horizontalAlignment="right" padding="5,0" verticalAlignment="center" />
+						<text index="dBm" position="left" size="100,35" font="1" horizontalAlignment="right" padding="5,0" verticalAlignment="center" />
 						<text index="Encryption" position="left" size="110,35" font="1" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
-						<text index="Frequency" position="right" size="140,35" font="1" horizontalAlignment="right" padding="5,0" verticalAlignment="center" />
+						<text index="Channel" position="left" size="90,35" font="1" horizontalAlignment="right" padding="5,0" verticalAlignment="center" />
+						<text index="Frequency" position="right" size="120,35" font="1" horizontalAlignment="right" padding="5,0" verticalAlignment="center" />
 					</panel>
 				</mode>
 			</template>
@@ -1270,20 +1200,12 @@ class WiFiScanScreen(Screen):
 		</widget>
 	</screen>"""
 
-	_bars = ["", "\uEA66", "\uEA67", "\uEA64", "\uEA65"]
+	STRENGTH_GLYPHS = ["", "\uEA66", "\uEA67", "\uEA64", "\uEA65"]
 
 	def __init__(self, session, adapter: Adapter):
 		Screen.__init__(self, session, enableHelp=True)
-		self._adapter = adapter
-		self._console = Console()
-		self._scanning = False
-		self._results: list[ScanResult] = []
-		self.setTitle(_("Wi-Fi Scan – %s") % adapter.name)
-		self["key_red"] = StaticText(_("Cancel"))
-		self["key_green"] = StaticText(_("Select"))
-		self["key_yellow"] = StaticText(_("Rescan"))
-		self["key_blue"] = StaticText("")
-		self["description"] = Label(_("Scanning…"))
+		self.adapter = adapter.name
+		self.setTitle(_("Wi-Fi Scan – %s") % self.adapter)
 		indexNames = {
 			"Name": 0,
 			"SSID": 1,
@@ -1293,68 +1215,131 @@ class WiFiScanScreen(Screen):
 			"Percentage": 5,
 			"dBm": 6,
 			"Encryption": 7,
-			"Channel": 8,
-			"ChannelFrequency": 9,
+			"ChannelFrequency": 8,
+			"Channel": 9,
 			"Frequency": 10
 		}
 		self["list"] = List([], indexNames=indexNames)
+		self["description"] = Label()
+		self["key_red"] = StaticText(_("Close"))
+		self["key_green"] = StaticText(_("Select"))
+		self["key_yellow"] = StaticText(_("Rescan"))
+		self["key_blue"] = StaticText("")
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
-			"ok": (self._select, _("Use selected network")),
-			"green": (self._select, _("Use selected network")),
-			"yellow": (self._startScan, _("Scan again")),
-			"red": (self._cancel, _("Cancel")),
-			"cancel": (self._cancel, _("Cancel")),
+			"ok": (self.keySelect, _("Use selected Wi-Fi network")),
+			"cancel": (self.keyClose, _("Close")),
+			"red": (self.keyClose, _("Close")),
+			"green": (self.keySelect, _("Use selected Wi-Fi network")),
+			"yellow": (self.keyStartScan, _("Rescan for any available Wi-Fi networks"))
 		}, prio=0, description=_("Wi-Fi Scan Actions"))
-		self.onLayoutFinish.append(self._startScan)
+		self.console = Console()
+		self.scanning = False
+		self.accessPoints: dict[str, ScanResult] = {}
+		self.onLayoutFinish.append(self.keyStartScan)
 
-	def _startScan(self):
-		if self._scanning:
-			return
-		self._scanning = True
-		self["description"].setText(_("Scanning…"))
-		self["list"].setList([])
-		self._console.ePopen(f"ifconfig {self._adapter.name} up", lambda *_: self._runIwlist())
-
-	def _runIwlist(self):
-		self._console.ePopen(f"iwlist {self._adapter.name} scan", self._scanDoneCb)
-
-	def _scanDoneCb(self, result: str, retval: int, extraArgs=None):
-		self._scanning = False
-		if isinstance(result, bytes):
-			result = result.decode("utf-8", errors="replace")
-		self._results = _parseIwlist(result)
-		if not self._results:
-			self["description"].setText(_("No networks found.  Press YELLOW to scan again."))
-			return
-		self["description"].setText(_("%d network(s) found.  Press OK to select.") % len(self._results))
-		self._populateList()
-
-	def _populateList(self):
-		ssidCounts: dict = {}
-		for scanResult in self._results:
-			ssidCounts[scanResult.ssid] = ssidCounts.get(scanResult.ssid, 0) + 1
-		rows = []
-		for scanResult in self._results:
-			name = scanResult.ssid
-			if ssidCounts[scanResult.ssid] > 1:
-				name = f"{scanResult.ssid}  ({scanResult.bssid})"
-			glyph = self._bars[min(scanResult.signalBars, 4)]
-			strength = f"{scanResult.signalPct}%  ({scanResult.signalDbm} dBm)"
-			channel = f"CH{scanResult.channel}" if scanResult.channel else ""
-			channelFrequency = scanResult.frequency if scanResult.frequency else channel
-			rows.append((name, scanResult.ssid, scanResult.bssid, glyph, strength, scanResult.signalPct, scanResult.signalDbm, scanResult.encLabel, channel, channelFrequency, scanResult.frequency, scanResult))
-		self["list"].setList(rows)
-
-	def _select(self):
+	def keySelect(self):
 		current = self["list"].getCurrent()
-		if current is None:
-			return
-		self.close(current[-1])
+		if current:
+			self.close(current[-1])
 
-	def _cancel(self):
-		if self._console:
-			self._console.killAll()
+	def keyClose(self):
+		if self.console:
+			self.console.killAll()
 		self.close(None)
+
+	def keyStartScan(self):
+		def startScanCallback(results: str, retVal: int, extraArgs=None):
+			def scanCompleteCallback(results: str, retVal: int, extraArgs=None):
+				self.scanning = False
+				if isinstance(results, bytes):
+					results = results.decode("UTF-8", errors="replace")
+				for accessPoint in self._parseIwlist(results):
+					self.accessPoints[accessPoint.bssid] = accessPoint
+				if self.accessPoints:
+					accessPointList = []
+					for accessPoint in sorted(self.accessPoints.values(), key=lambda ap: -ap.signalPct):
+						accessPointList.append((
+							f"{accessPoint.ssid}  ({accessPoint.bssid})",  # Name.
+							accessPoint.ssid,  # SSID.
+							accessPoint.bssid,  # BSSID.
+							self.STRENGTH_GLYPHS[min(accessPoint.signalBars, 4)],  # Glyph.
+							f"{accessPoint.signalPct}%  ({accessPoint.signalDbm} dBm)",  # Strength.
+							f"{accessPoint.signalPct}%",  # Percent.
+							f"{accessPoint.signalDbm} dBm",  # dBM.
+							accessPoint.encLabel,  # Encryption.
+							f"Ch-{accessPoint.channel}  ({accessPoint.frequency})",  # ChannelFrequency.
+							f"Ch-{accessPoint.channel}",  # Channel.
+							accessPoint.frequency,  # Frequency.
+							accessPoint  # AccessPoint data record.
+						))
+					self["list"].setList(accessPointList)
+					count = len(self.accessPoints)
+					self["description"].setText(ngettext("%d network found.", "%d networks found.", count) % count)
+				else:
+					self["list"].setList([])
+					self["description"].setText(_("No networks found."))
+
+			self.console.ePopen(f"/sbin/iwlist {self.adapter} scanning", callback=scanCompleteCallback)
+
+		if not self.scanning:
+			self.scanning = True
+			self["description"].setText(_("Scanning…"))
+			self.console.ePopen(f"/sbin/ifconfig {self.adapter} up", callback=startScanCallback)
+
+	def _parseIwlist(self, raw: str) -> list[ScanResult]:
+		results: list[ScanResult] = []
+		current: ScanResult | None = None
+
+		reCell = re.compile(r"Cell \d+ - Address:\s*([0-9A-Fa-f:]{17})")
+		reSsid = re.compile(r'ESSID:"(.*?)"')
+		reFreq = re.compile(r"Frequency:([\d.]+ \w+Hz).*?Channel:?\s*(\d+)?")
+		reQuality = re.compile(r"Quality=(\d+)/(\d+)\s+Signal level=(-?\d+) dBm")
+		reEncOn = re.compile(r"Encryption key:on")
+		reEncOff = re.compile(r"Encryption key:off")
+		reIeWpa1 = re.compile(r"IE:.*WPA Version 1", re.IGNORECASE)
+		reIeWpa2 = re.compile(r"IE:.*WPA2|IE:.*RSN", re.IGNORECASE)
+		reIeWpa3 = re.compile(r"IE:.*SAE|IE:.*WPA3", re.IGNORECASE)
+
+		for line in raw.splitlines():
+			line = line.strip()
+			match = reCell.search(line)
+			if match:
+				current = ScanResult(bssid=match.group(1))
+				results.append(current)
+				continue
+			if current is None:
+				continue
+			match = reSsid.search(line)
+			if match:
+				current.ssid = match.group(1)
+			match = reFreq.search(line)
+			if match:
+				current.frequency = match.group(1)
+				if match.group(2):
+					current.channel = int(match.group(2))
+			match = reQuality.search(line)
+			if match:
+				qVal, qMax = int(match.group(1)), int(match.group(2))
+				current.signalPct = int(qVal * 100 / qMax) if qMax else 0
+				current.signalDbm = int(match.group(3))
+			if reIeWpa3.search(line):
+				current.encryption = encWpa3
+				current.encDetails = line
+			elif reIeWpa2.search(line):
+				if current.encryption != encWpa3:
+					current.encryption = encWpa2
+					current.encDetails = line
+			elif reIeWpa1.search(line):
+				if current.encryption == encNone:
+					current.encryption = encWpa
+					current.encDetails = line
+			elif reEncOn.search(line):
+				if current.encryption == encNone:
+					current.encryption = encWep
+			elif reEncOff.search(line):
+				current.encryption = encNone
+
+		return sorted((x for x in results if x.ssid), key=lambda x: -x.signalPct)
 
 
 # ===========================================================================
