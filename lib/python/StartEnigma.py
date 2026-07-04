@@ -888,7 +888,6 @@ InitSkins()
 enigma.eProfileWrite("InitInputDevices")
 from Components.InputDevice import InitInputDevices
 InitInputDevices()
-import Components.InputHotplug
 
 enigma.eProfileWrite("InitAVSwitch")
 from Components.AVSwitch import InitAVSwitch, InitiVideomodeHotplug
@@ -932,8 +931,8 @@ if exists(config.usage.keymap_usermod.value):
 	loadKeymap(config.usage.keymap_usermod.value)
 
 enigma.eProfileWrite("InitNetwork")
-from Components.Network import InitNetwork
-InitNetwork()
+from Components.NetworkManager import iNetworkManager
+iNetworkManager.startNetworkCheck()
 
 enigma.eProfileWrite("InitLCD")
 from Components.Lcd import IconCheck, InitLcd

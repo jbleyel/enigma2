@@ -32,7 +32,7 @@ from twisted.internet import reactor
 from enigma import eTimer
 
 from Components.Console import Console
-from Components.Harddisk import getProcMounts
+from Components.Harddisk import harddiskmanager
 from Components.PluginComponent import plugins
 from Components.SystemInfo import BoxInfo
 from Plugins.Plugin import PluginDescriptor
@@ -1015,6 +1015,34 @@ class NetEventReader:
 			self._manager._onScanTrigger(parts[1])
 
 
+# Polls (up to 10 x 1s) until the hostname resolves to something other than
+# 127.0.0.1, then triggers a rescan of network mounts (NFS/CIFS) that couldn't
+# be mounted before the network came up.
+class NetworkCheck:
+	def __init__(self):
+		self._timer = eTimer()
+		self._timer.callback.append(self._check)
+		self._retry = 0
+
+	def start(self):
+		self._retry = 10
+		self._timer.start(1000, True)
+
+	def _check(self):
+		self._timer.stop()
+		if self._retry <= 0:
+			return
+		try:
+			if socket.gethostbyname(socket.gethostname()) != "127.0.0.1":
+				print("[NetworkManager] NetworkCheck: Done.")
+				harddiskmanager.enumerateNetworkMounts(refresh=True)
+				return
+			self._retry -= 1
+			self._timer.start(1000, True)
+		except Exception as err:
+			print(f"[NetworkManager] NetworkCheck: Error {err}!")
+
+
 # ===========================================================================
 # NetworkManager – central singleton
 # ===========================================================================
@@ -1028,9 +1056,15 @@ class NetworkManager:
 		self._ifacesFile = InterfacesFile()
 		self._nsFiles = NameserverFiles()
 		self._pendingRestart = None
+		self._networkCheck = None
 		self.onAdaptersChanged: list[Callable] = []
 		self.load()
 		self._eventReader = NetEventReader(self)
+
+	# Called once by InitNetwork() during Enigma2 startup.
+	def startNetworkCheck(self):
+		self._networkCheck = NetworkCheck()
+		self._networkCheck.start()
 
 	# ------------------------------------------------------------------
 	# Loading
@@ -1268,16 +1302,6 @@ class NetworkManager:
 				callback()
 		self._pendingRestart = ServiceAction.netrestart(_done, iface=iface)
 
-	@staticmethod
-	def _isRemoteRootfs() -> bool:
-		try:
-			for parts in getProcMounts():
-				if parts[1] == "/" and parts[2] == "nfs":
-					return True
-		except Exception:
-			pass
-		return False
-
 	# ------------------------------------------------------------------
 	# Accessors
 	# ------------------------------------------------------------------
@@ -1309,95 +1333,10 @@ class NetworkManager:
 		adapter.connections = [x for x in adapter.connections if not (x.wlan and x.wlan.ssid == ssid)]
 		return len(adapter.connections) < before
 
-	def isWireless(self, iface: str) -> bool:
-		adapter = self.adapters.get(iface)
-		return adapter.isWlan if adapter else _isWirelessName(iface)
-
-	def getInstalledAdapters(self) -> list[str]:
-		return list(self.adapters.keys())
-
-	def getNameservers(self) -> list:
-		return list(self.nameserverConfig.servers)
-
 	def setNameservers(self, servers: list):
 		self.nameserverConfig.servers = list(servers)
 
-	# Compatibility shim for old iNetwork.getAdapterAttribute() callers.
-	def getAdapterAttribute(self, iface: str, attr: str):
-		adapter = self.adapters.get(iface)
-		if adapter is None:
-			return None
-		conn = adapter.activeConnection()
-		attrMap = {
-			"up": lambda: adapter.kernelUp,
-			"ip": lambda: (conn.ip if conn else adapter.kernelIp),
-			"netmask": lambda: (conn.netmask if conn else adapter.kernelNetmask),
-			"gateway": lambda: (conn.gateway if conn else adapter.kernelGateway),
-			"bcast": lambda: adapter.kernelBcast,
-			"mac": lambda: adapter.mac,
-			"dhcp": lambda: (conn.dhcp if conn else True),
-			"preup": lambda: (conn.extraLines[0] if conn and conn.extraLines else False),
-			"predown": lambda: (conn.extraLines[-1] if conn and len(conn.extraLines) > 1 else False),
-			"ipv6": lambda: (conn.ipMode in (1, 2) if conn else False),
-		}
-		getter = attrMap.get(attr)
-		return getter() if getter else None
-
-	# Compatibility shim for old iNetwork.setAdapterAttribute() callers.
-	def setAdapterAttribute(self, iface: str, attr: str, value):
-		adapter = self.adapters.get(iface)
-		if adapter is None:
-			return
-		conn = adapter.activeConnection()
-		if conn is None:
-			return
-		if attr == "dhcp":
-			conn.dhcp = value
-		elif attr == "ip":
-			conn.ip = value
-		elif attr == "netmask":
-			conn.netmask = value
-		elif attr == "gateway":
-			conn.gateway = value
-		elif attr == "up":
-			conn.enabled = value
-		elif attr == "ipv6":
-			conn.ipMode = 2 if value else 0
-
-	# Compatibility shim for old iNetwork.removeAdapterAttribute() callers.
-	def removeAdapterAttribute(self, iface: str, attr: str):
-		self.setAdapterAttribute(iface, attr, None)
-
-	# Compatibility shim for old iNetwork.writeNetworkConfig() callers.
-	def writeNetworkConfig(self):
-		self.save()
-
-	# Compatibility shim for old iNetwork.getConfiguredAdapters() callers.
-	def getConfiguredAdapters(self) -> list[str]:
-		return [
-			iface for iface, adapter in self.adapters.items()
-			if any(x.enabled for x in adapter.connections)
-		]
-
-	# Compatibility shim – same as getInstalledAdapters().
-	def getAdapterList(self) -> list[str]:
-		return self.getInstalledAdapters()
-
-	# Compatibility shim for old iNetwork.isWirelessInterface() callers.
-	def isWirelessInterface(self, iface: str) -> bool:
-		return self.isWireless(iface)
-
-	# Compatibility shim for old iNetwork.detectWlanModule() callers.
-	def detectWlanModule(self, iface: str) -> str:
-		adapter = self.adapters.get(iface)
-		return adapter.driverApi if adapter else apiNl80211
-
-	# Compatibility shim for old iNetwork.canWakeOnWiFi() callers.
-	def canWakeOnWiFi(self, iface: str) -> bool:
-		adapter = self.adapters.get(iface)
-		return adapter.canWakeOnWifi if adapter else False
-
-	# Compatibility shim – returns a human-readable adapter label.
+	# Returns a human-readable adapter label.
 	def getFriendlyAdapterName(self, iface: str) -> str:
 		adapter = self.adapters.get(iface)
 		if adapter is None:
@@ -1419,55 +1358,6 @@ class NetworkManager:
 			return f"{adapter.module or 'Unknown'} {_('wireless network interface')}"
 		return _("Ethernet network interface")
 
-	# Compatibility shim – alias for getFriendlyAdapterName().
-	def getAdapterName(self, iface: str) -> str:
-		return self.getFriendlyAdapterName(iface)
-
-	# Compatibility shim for old iNetwork.getNumberOfAdapters() callers.
-	def getNumberOfAdapters(self) -> int:
-		return len(self.adapters)
-
-	# Compatibility shim for old iNetwork.isBlacklisted() callers.
-	def isBlacklisted(self, iface: str) -> bool:
-		return _isBlacklisted(iface)
-
-	# Compatibility shim for old iNetwork.getMacAddress() callers.
-	def getMacAddress(self, iface: str) -> str:
-		adapter = self.adapters.get(iface)
-		return adapter.mac if adapter else ""
-
-	@property
-	# Compatibility shim for old iNetwork.ifaces dict access.
-	def ifaces(self) -> dict:
-		result = {}
-		ns = list(self.nameserverConfig.servers)
-		for iface, adapter in self.adapters.items():
-			conn = adapter.activeConnection()
-			result[iface] = {
-				"up": adapter.kernelUp,
-				"ip": list(adapter.kernelIp),
-				"netmask": list(adapter.kernelNetmask),
-				"gateway": list(adapter.kernelGateway),
-				"mac": adapter.mac,
-				"dhcp": conn.dhcp if conn else True,
-				"dns-nameservers": ns,
-			}
-		return result
-
-	@ifaces.setter
-	def ifaces(self, value):
-		pass  # old callers do iNetwork.ifaces = {} before getInterfaces(); ignore
-
-	# Compatibility shim for old iNetwork.activateNetworkConfig() callers.
-	def activateNetworkConfig(self):
-		self.save()
-		for iface in self.getConfiguredAdapters():
-			self.activateInterface(iface)
-
-	# Compatibility shim for old iNetwork.deactivateNetworkConfig() callers.
-	def deactivateNetworkConfig(self):
-		self.deactivateInterface(list(self.adapters.keys()))
-
 	# Fire WHERE_NETWORKCONFIG_READ plugins – but ONLY when at least one
 	def _notifyNetworkPlugins(self, reason: bool):
 		active = any(
@@ -1482,78 +1372,6 @@ class NetworkManager:
 		except Exception:
 			pass
 
-	# Compatibility shim for old iNetwork.msgPlugins() callers.
-	def msgPlugins(self):
-		self._notifyNetworkPlugins(True)
-
-	# Compatibility shim for old iNetwork.getLinkState() callers.
-	def getLinkState(self, iface: str, callback):
-		try:
-			info = _readNetinfo()
-			link = info.get("interfaces", {}).get(iface, {}).get("link", False)
-			callback("connected" if link else "not connected")
-		except Exception:
-			callback("not connected")
-
-	# Compatibility shim for old iNetwork.checkNetworkState() callers.
-	def checkNetworkState(self, callback):
-		try:
-			pingTargets = ["1.1.1.1", "8.8.8.8", "9.9.9.9"]
-			results = []
-
-			def _pingDone(out, retval, extra):
-				results.append(retval == 0)
-				if len(results) == len(pingTargets):
-					callback(sum(results))
-
-			for target in pingTargets:
-				Console().ePopen(f"/bin/ping -c 1 -W 2 {target}", _pingDone)
-		except Exception:
-			callback(0)
-
-	# Compatibility shim for old iNetwork.onRemoteRootFS() callers.
-	def onRemoteRootFS(self) -> bool:
-		return self._isRemoteRootfs()
-
-	# Compatibility shim for old iNetwork.getNameserverList() callers.
-	def getNameserverList(self) -> list:
-		return self.getNameservers()
-
-	# Compatibility shim for old iNetwork.loadNameserverConfig() callers.
-	def loadNameserverConfig(self) -> list:
-		return self.getNameservers()
-
-	# Compatibility shim for old iNetwork.clearNameservers() callers.
-	def clearNameservers(self):
-		self.nameserverConfig.servers = []
-
-	# Compatibility shim for old iNetwork.addNameserver() callers.
-	def addNameserver(self, nameserver):
-		if nameserver not in self.nameserverConfig.servers:
-			self.nameserverConfig.servers.append(nameserver)
-
-	# Compatibility shim for old iNetwork.writeNameserverConfig() callers.
-	def writeNameserverConfig(self):
-		anyDhcp = any(
-			conn.dhcp for adapter in self.adapters.values()
-			for conn in adapter.connections if conn.enabled
-		)
-		self._nsFiles.save(self.nameserverConfig, anyDhcp)
-
-	# Compatibility shim for old iNetwork.loadResolveConfig() callers.
-	def loadResolveConfig(self) -> list:
-		tmp = NameserverConfig(mode="dhcp-router")
-		NameserverFiles().load(tmp)
-		return tmp.servers
-
-	# Compatibility shim for old iNetwork.getInterfaces() callers.
-	def getInterfaces(self, callback=None):
-		self._discoverAdapters()
-		self._loadInterfacesFile()
-		if callback:
-			callback(True)
-
-	# Compatibility shim for old iNetwork.activateInterface() callers.
 	def activateInterface(self, iface, callback=None):
 		adapter = self.adapters.get(iface)
 		if adapter and not adapter.isWlan:
@@ -1574,29 +1392,6 @@ class NetworkManager:
 		except Exception:
 			if callback:
 				callback(False)
-
-	# Compatibility shim for old iNetwork.deactivateInterface() callers.
-	def deactivateInterface(self, ifaces, callback=None):
-		if isinstance(ifaces, str):
-			ifaces = [ifaces]
-		wlanIfaces = [x for x in ifaces if self.adapters.get(x) and self.adapters[x].isWlan]
-		lanIfaces = [x for x in ifaces if x not in wlanIfaces]
-		total = (1 if lanIfaces else 0) + len(wlanIfaces)
-		if total == 0:
-			if callback:
-				callback(True)
-			return
-		done = [0]
-
-		def _one_done(*_args):
-			done[0] += 1
-			if done[0] >= total and callback:
-				callback(True)
-		self._pendingDeactivates = []
-		if lanIfaces:
-			self._pendingDeactivates.append(ServiceAction.ifdown(lanIfaces, _one_done))
-		for iface in wlanIfaces:
-			self._pendingDeactivates.append(ServiceAction.wlanDeactivate(iface, _one_done))
 
 	# ------------------------------------------------------------------
 	# WLAN switch
