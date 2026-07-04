@@ -2123,7 +2123,7 @@ class TemplateParser:
 
 		flags = 0
 		if attributes["type"] == "text":
-			attributesFlags = attributes.get("flags")
+			attributesFlags = attributes.get("flags", "")
 			for attributesflag in attributesFlags.split(","):
 				if attributesflag == "blend":
 					flags += 256  # RT_BLEND
