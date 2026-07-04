@@ -98,25 +98,30 @@ _ICON_LAST_CHILD = chr(0xF002)     # last_child (tree connector)
 
 def _connLabel(conn: Connection, adapter: Adapter) -> str:
 	if conn.isWlan and conn.wlan and conn.wlan.ssid:
-		return f"{conn.adapter}  │  {conn.wlan.ssid}  [{_ENC_SHORT.get(conn.wlan.encryption, conn.wlan.encryption)}]"
-	mode = "DHCP" if conn.dhcp else conn.ipStr()
-	return f"{conn.adapter}  │  {mode}"
+		result = f"{conn.adapter}  │  {conn.wlan.ssid}  [{_ENC_SHORT.get(conn.wlan.encryption, conn.wlan.encryption)}]"
+	else:
+		mode = "DHCP" if conn.dhcp else conn.ipStr()
+		result = f"{conn.adapter}  │  {mode}"
+	return result
 
 
 def _connLiveIp(adapter: Adapter) -> str:
-	ip = ".".join(str(b) for b in adapter.kernelIp)
+	ip = ".".join(str(x) for x in adapter.kernelIp)
 	return "" if ip == "0.0.0.0" else ip
 
 
 def _adapterLocation(adapter: Adapter) -> str:
 	if adapter.kernelTransceiver == "internal":
-		return _("Internal")
-	if adapter.kernelTransceiver == "external":
-		return _("External")
-	link = f"/sys/class/net/{adapter.name}/device"
-	if exists(link):
-		return _("External") if "usb" in realpath(link).lower() else _("Internal")
-	return ""
+		result = _("Internal")
+	elif adapter.kernelTransceiver == "external":
+		result = _("External")
+	else:
+		link = f"/sys/class/net/{adapter.name}/device"
+		if exists(link):
+			result = _("External") if "usb" in realpath(link).lower() else _("Internal")
+		else:
+			result = ""
+	return result
 
 
 def _connLine1(conn: Connection, adapter: Adapter) -> str:
@@ -124,8 +129,10 @@ def _connLine1(conn: Connection, adapter: Adapter) -> str:
 	liveIp = f"  IP: {liveIp}" if liveIp else ""
 	if conn.isWlan:
 		profileName = conn.name or (conn.wlan.ssid if conn.wlan else "") or conn.adapter
-		return f"{_('Profile')}: {profileName}" + liveIp
-	return _("LAN connection") + liveIp
+		result = f"{_('Profile')}: {profileName}" + liveIp
+	else:
+		result = _("LAN connection") + liveIp
+	return result
 
 
 def _connLine2(conn: Connection, adapter: Adapter) -> str:
@@ -149,8 +156,8 @@ def _connLine2(conn: Connection, adapter: Adapter) -> str:
 
 
 def _ip4Str(addr: list) -> str:
-	s = ".".join(str(b) for b in addr)
-	return "" if s == "0.0.0.0" else s
+	joined = ".".join(str(x) for x in addr)
+	return "" if joined == "0.0.0.0" else joined
 
 
 # ===========================================================================
@@ -214,15 +221,16 @@ class DnsSettings(Setup):
 		}, prio=0, description=_("DNS Settings Actions"))
 
 	def _defaultGw(self) -> list[int]:
-		if nm is None:
-			return [0, 0, 0, 0]
-		for iface in sorted(nm.adapters.keys()):
-			adapter = nm.adapters[iface]
-			if adapter.kernelUp:
-				conn = adapter.activeConnection()
-				if conn:
-					return list(conn.gateway)
-		return [0, 0, 0, 0]
+		result = [0, 0, 0, 0]
+		if nm is not None:
+			for iface in sorted(nm.adapters.keys()):
+				adapter = nm.adapters[iface]
+				if adapter.kernelUp:
+					conn = adapter.activeConnection()
+					if conn:
+						result = list(conn.gateway)
+						break
+		return result
 
 	def createSetup(self):  # noqa
 		if config.usage.dns.value != "dnscrypt":
@@ -337,66 +345,72 @@ class DnsSettings(Setup):
 
 	def _tomlInt(self, val, default=0):
 		try:
-			return str(int(val))
+			result = str(int(val))
 		except Exception:
-			return str(int(default))
+			result = str(int(default))
+		return result
 
 	def _replaceKeyLine(self, line, key, newRhs, foundSet):
 		ls = line.lstrip()
 		indent = line[:len(line) - len(ls)]
+		result = line
 		if ls.startswith(f"{key} ") or ls.startswith(f"{key}=") or ls.startswith(f"#{key} ") or ls.startswith(f"#{key}="):
 			foundSet.add(key)
-			return f"{indent}{key} = {newRhs}"
-		return line
+			result = f"{indent}{key} = {newRhs}"
+		return result
 
 	def _findGlobalEnd(self, lines):
-		for i, line in enumerate(lines):
-			s = line.lstrip()
-			if s.startswith("[") and s.rstrip().endswith("]") and not s.startswith("#"):
-				return i
-		return len(lines)
+		result = len(lines)
+		for idx, line in enumerate(lines):
+			stripped = line.lstrip()
+			if stripped.startswith("[") and stripped.rstrip().endswith("]") and not stripped.startswith("#"):
+				result = idx
+				break
+		return result
 
 	def _insertGlobalKey(self, lines, key, rhs, anchorKeys, foundSet):
 		if key in foundSet:
 			return
 		endGlobal = self._findGlobalEnd(lines)
 		insertAt = None
-		for i in range(endGlobal):
-			s = lines[i].lstrip()
-			for a in anchorKeys:
-				if s.startswith(f"{a} ") or s.startswith(f"{a}=") or s.startswith(f"#{a} ") or s.startswith(f"#{a}="):
-					insertAt = i + 1
+		for idx in range(endGlobal):
+			stripped = lines[idx].lstrip()
+			for anchor in anchorKeys:
+				if stripped.startswith(f"{anchor} ") or stripped.startswith(f"{anchor}=") or stripped.startswith(f"#{anchor} ") or stripped.startswith(f"#{anchor}="):
+					insertAt = idx + 1
 		lines.insert(insertAt if insertAt is not None else endGlobal, f"{key} = {rhs}")
 		foundSet.add(key)
 
 	def _findSectionRange(self, lines, sectionName):
 		start = None
-		for i, line in enumerate(lines):
-			s = line.lstrip()
-			if s.startswith("[") and s.rstrip().endswith("]") and not s.startswith("#"):
-				name = s.strip()[1:-1].strip()
+		result = None
+		for idx, line in enumerate(lines):
+			stripped = line.lstrip()
+			if stripped.startswith("[") and stripped.rstrip().endswith("]") and not stripped.startswith("#"):
+				name = stripped.strip()[1:-1].strip()
 				if start is None and name == sectionName:
-					start = i + 1
+					start = idx + 1
 					continue
 				if start is not None:
-					return (start, i)
-		return (start, len(lines)) if start is not None else (None, None)
+					result = (start, idx)
+					break
+		if result is None:
+			result = (start, len(lines)) if start is not None else (None, None)
+		return result
 
 	def _insertSectionKey(self, lines, sectionName, key, rhs, anchorKeys, foundSet):
 		token = f"{sectionName}.{key}"
-		if token in foundSet:
-			return
-		start, end = self._findSectionRange(lines, sectionName)
-		if start is None:
-			return
-		insertAt = None
-		for i in range(start, end):
-			s = lines[i].lstrip()
-			for a in anchorKeys:
-				if s.startswith(f"{a} ") or s.startswith(f"{a}=") or s.startswith(f"#{a} ") or s.startswith(f"#{a}="):
-					insertAt = i + 1
-		lines.insert(insertAt if insertAt is not None else end, f"{key} = {rhs}")
-		foundSet.add(token)
+		if token not in foundSet:
+			start, end = self._findSectionRange(lines, sectionName)
+			if start is not None:
+				insertAt = None
+				for idx in range(start, end):
+					stripped = lines[idx].lstrip()
+					for anchor in anchorKeys:
+						if stripped.startswith(f"{anchor} ") or stripped.startswith(f"{anchor}=") or stripped.startswith(f"#{anchor} ") or stripped.startswith(f"#{anchor}="):
+							insertAt = idx + 1
+				lines.insert(insertAt if insertAt is not None else end, f"{key} = {rhs}")
+				foundSet.add(token)
 
 	def writeDnsCryptToml(self):
 		tomlPath = "/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
@@ -634,22 +648,16 @@ class NetworkConnections(Screen):
 		}
 		self["list"] = List([], indexNames=indexNames)
 		self["list"].onSelectionChanged.append(self._updateYellowKey)
-		self["actions"] = HelpableActionMap(
-			self,
-			["OkCancelActions", "ColorActions", "MenuActions", "InfoActions"],
-			{
-				"ok": (self._keyOK, _("Open settings for selected network connection")),
-				"cancel": (self.close, _("Close network connection list")),
-				"red": (self.close, _("Close network connection list")),
-				"green": (self._keyGreen, _("Add a new network connection")),
-				"yellow": (self._keyYellow, _("Activate/Deactivate adapter")),
-				"info": (self._showInfo, _("Show network connection info")),
-				# "blue": (self._keyBlue, _("Open global DNS settings")),
-				"menu": (self._keyMenu, _("Open context menu for selected network connection")),
-			},
-			prio=0,
-			description=_("Network Connection Actions"),
-		)
+		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions", "InfoActions"], {
+			"ok": (self._keyOK, _("Open settings for selected network connection")),
+			"cancel": (self.close, _("Close network connection list")),
+			"red": (self.close, _("Close network connection list")),
+			"green": (self._keyGreen, _("Add a new network connection")),
+			"yellow": (self._keyYellow, _("Activate/Deactivate adapter")),
+			"info": (self._showInfo, _("Show network connection info")),
+			# "blue": (self._keyBlue, _("Open global DNS settings")),
+			"menu": (self._keyMenu, _("Open context menu for selected network connection")),
+		}, prio=0, description=_("Network Connection Actions"))
 		self._colorLink = _COLOR_LINK
 		self._colorEnabled = _COLOR_ENABLED
 		self._colorDisabled = _COLOR_GRAY
@@ -707,8 +715,8 @@ class NetworkConnections(Screen):
 			# For Wi-Fi: skip the base connection (no SSID) when wpa_supplicant
 			# connections with SSIDs are present — the base only carries IP config.
 			conns = adapter.connections
-			if adapter.isWlan and any(c.wlan and c.wlan.ssid for c in conns):
-				conns = [c for c in conns if c.wlan and c.wlan.ssid]
+			if adapter.isWlan and any(x.wlan and x.wlan.ssid for x in conns):
+				conns = [x for x in conns if x.wlan and x.wlan.ssid]
 			for idx, conn in enumerate(conns):
 				isLast = idx == len(conns) - 1
 				connColor = self._colorEnabled if conn.enabled else self._colorDisabled
@@ -723,12 +731,10 @@ class NetworkConnections(Screen):
 
 	def _keyOK(self):
 		entry = self._current()
-		if entry is None:
-			return
-		conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
-		if conn is None:
-			return
-		self._openSetup(conn, adapter)
+		if entry is not None:
+			conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
+			if conn is not None:
+				self._openSetup(conn, adapter)
 
 	def _keyYellow(self):
 		entry = self._current()
@@ -835,11 +841,11 @@ class NetworkConnections(Screen):
 	def _toggleConnection(self, conn: Connection, adapter: Adapter):
 		if adapter.isWlan:
 			if conn.enabled:
-				for c in adapter.connections:
-					c.enabled = False
+				for other in adapter.connections:
+					other.enabled = False
 			else:
-				for c in adapter.connections:
-					c.enabled = (c is conn)
+				for other in adapter.connections:
+					other.enabled = (other is conn)
 		else:
 			conn.enabled = not conn.enabled
 			adapter.adapterEnabled = conn.enabled
@@ -867,7 +873,7 @@ class NetworkConnections(Screen):
 		if conn.isWlan and conn.wlan:
 			nm.removeConnection(adapter.name, conn.wlan.ssid)
 		else:
-			adapter.connections = [c for c in adapter.connections if c is not conn]
+			adapter.connections = [x for x in adapter.connections if x is not conn]
 		if nm:
 			nm.save()
 		self._buildList()
@@ -875,8 +881,8 @@ class NetworkConnections(Screen):
 	def _keyGreen(self):
 		if nm is None or not nm.adapters:
 			return
-		wlanAdapters = [a for a in nm.adapters.values() if a.isWlan]
-		lanAdapters = [a for a in nm.adapters.values() if not a.isWlan]
+		wlanAdapters = [x for x in nm.adapters.values() if x.isWlan]
+		lanAdapters = [x for x in nm.adapters.values() if not x.isWlan]
 		if wlanAdapters:
 			WiFiAddFlow.start(self.session, callback=self._buildList)
 		elif lanAdapters:
@@ -891,7 +897,7 @@ class NetworkConnections(Screen):
 
 	def _newLanConnClosed(self, changed: bool, conn: Connection, adapter: Adapter):
 		if changed:
-			existingIds = {id(c) for c in adapter.connections}
+			existingIds = {id(x) for x in adapter.connections}
 			if id(conn) not in existingIds:
 				adapter.connections.append(conn)
 				if nm:
@@ -899,16 +905,14 @@ class NetworkConnections(Screen):
 			self._buildList()
 
 	def _openWlanScan(self, iface: str):
-		if nm is None:
-			return
-		adapter = nm.getAdapter(iface)
-		if adapter is None or not adapter.isWlan:
-			return
-		self.session.openWithCallback(
-			lambda result: self._wlanScanDone(result, adapter),
-			WiFiScanScreen,
-			adapter,
-		)
+		if nm is not None:
+			adapter = nm.getAdapter(iface)
+			if adapter is not None and adapter.isWlan:
+				self.session.openWithCallback(
+					lambda result: self._wlanScanDone(result, adapter),
+					WiFiScanScreen,
+					adapter,
+				)
 
 	def _wlanScanDone(self, result: ScanResult | None, adapter: Adapter):
 		if result is None:
@@ -924,7 +928,7 @@ class NetworkConnections(Screen):
 	def _wlanSetupDone(self, saved: bool, conn: Connection, adapter: Adapter):
 		if not saved:
 			return
-		if not any(c.wlan and c.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for c in adapter.connections):
+		if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in adapter.connections):
 			adapter.connections.append(conn)
 			if nm:
 				nm.save()
@@ -955,12 +959,9 @@ class NetworkConnectionSetup(Setup):
 		Setup.__init__(self, session=session, setup=xmlSection)
 		self.setTitle(_("Network Connection Settings – %s") % conn.adapter)
 		self["key_blue"] = StaticText(_("Info"))
-		self["blueActions"] = HelpableActionMap(
-			self,
-			["ColorActions"],
-			{"blue": (self._showInfo, _("Show network connection info"))},
-			prio=0,
-		)
+		self["blueActions"] = HelpableActionMap(self, ["ColorActions"], {
+			"blue": (self._showInfo, _("Show network connection info"))
+		}, prio=0)
 
 	def _showInfo(self):
 		self.session.open(InformationNetworkConnection, self._conn, self._adapter)
@@ -972,12 +973,12 @@ class NetworkConnectionSetup(Setup):
 		self.cfgName = NoSave(ConfigText(default=conn.name, fixed_size=False))
 		self.cfgEnabled = NoSave(ConfigYesNo(default=conn.enabled))
 		if conn.isWlan:
-			wlanConns = [c for c in adapter.connections if c.isWlan and c.wlan and c.wlan.ssid]
+			wlanConns = [x for x in adapter.connections if x.isWlan and x.wlan and x.wlan.ssid]
 			self._hasMultiplePriorities = len(wlanConns) > 1
 			if self._hasMultiplePriorities:
-				self._wlanConnsSorted = sorted(wlanConns, key=lambda c: c.priority, reverse=True)
-				currentRank = next((i + 1 for i, c in enumerate(self._wlanConnsSorted) if c is conn), 1)
-				rankChoices = [(i + 1, _("1st (highest)") if i == 0 else _("%d.") % (i + 1)) for i in range(len(wlanConns))]
+				self._wlanConnsSorted = sorted(wlanConns, key=lambda wlanConn: wlanConn.priority, reverse=True)
+				currentRank = next((idx + 1 for idx, x in enumerate(self._wlanConnsSorted) if x is conn), 1)
+				rankChoices = [(x + 1, _("1st (highest)") if x == 0 else _("%d.") % (x + 1)) for x in range(len(wlanConns))]
 				self.cfgPriority = NoSave(ConfigSelection(choices=rankChoices, default=currentRank))
 			else:
 				self._wlanConnsSorted = []
@@ -1000,11 +1001,11 @@ class NetworkConnectionSetup(Setup):
 		))
 
 		if conn.isWlan and conn.wlan:
-			w = conn.wlan
-			self.cfgSsid = NoSave(ConfigText(default=w.ssid, fixed_size=False))
-			self.cfgHidden = NoSave(ConfigYesNo(default=w.hidden))
-			self.cfgEncryption = NoSave(ConfigSelection(choices=encryptionChoices, default=w.encryption))
-			self.cfgKey = NoSave(ConfigPassword(default=w.key, fixed_size=False))
+			wlan = conn.wlan
+			self.cfgSsid = NoSave(ConfigText(default=wlan.ssid, fixed_size=False))
+			self.cfgHidden = NoSave(ConfigYesNo(default=wlan.hidden))
+			self.cfgEncryption = NoSave(ConfigSelection(choices=encryptionChoices, default=wlan.encryption))
+			self.cfgKey = NoSave(ConfigPassword(default=wlan.key, fixed_size=False))
 		else:
 			self.cfgSsid = NoSave(ConfigText(default="", fixed_size=False))
 			self.cfgHidden = NoSave(ConfigYesNo(default=False))
@@ -1035,8 +1036,8 @@ class NetworkConnectionSetup(Setup):
 		# Per-connection DNS (inline, replaces separate DNS setup screen)
 		hasOwn = bool(conn.dnsServers)
 		self.cfgDnsOverride = NoSave(ConfigYesNo(default=hasOwn))
-		dnsV4 = [s for s in conn.dnsServers if isinstance(s, list)]
-		dnsV6 = [s for s in conn.dnsServers if isinstance(s, str)]
+		dnsV4 = [x for x in conn.dnsServers if isinstance(x, list)]
+		dnsV6 = [x for x in conn.dnsServers if isinstance(x, str)]
 		self.cfgDns1v4 = NoSave(ConfigIP(default=dnsV4[0] if len(dnsV4) > 0 else [0, 0, 0, 0]))
 		self.cfgDns2v4 = NoSave(ConfigIP(default=dnsV4[1] if len(dnsV4) > 1 else [0, 0, 0, 0]))
 		self.cfgDns1v6 = NoSave(ConfigText(default=dnsV6[0] if len(dnsV6) > 0 else "", fixed_size=False))
@@ -1050,10 +1051,10 @@ class NetworkConnectionSetup(Setup):
 		conn.enabled = self.cfgEnabled.value
 		if self._hasMultiplePriorities:
 			chosenRank = self.cfgPriority.value
-			others = [c for c in self._wlanConnsSorted if c is not conn]
+			others = [x for x in self._wlanConnsSorted if x is not conn]
 			newOrder = others[:chosenRank - 1] + [conn] + others[chosenRank - 1:]
-			for i, c in enumerate(newOrder):
-				c.priority = (len(newOrder) - i) * 10
+			for idx, wlanConn in enumerate(newOrder):
+				wlanConn.priority = (len(newOrder) - idx) * 10
 		else:
 			conn.priority = int(self.cfgPriority.value)
 		conn.dhcp = self.cfgDhcp.value
@@ -1069,22 +1070,22 @@ class NetworkConnectionSetup(Setup):
 		else:
 			servers = []
 			for cfgV4 in (self.cfgDns1v4, self.cfgDns2v4):
-				v = list(cfgV4.value)
-				if v != [0, 0, 0, 0]:
-					servers.append(v)
+				ipValue = list(cfgV4.value)
+				if ipValue != [0, 0, 0, 0]:
+					servers.append(ipValue)
 			for cfgV6 in (self.cfgDns1v6, self.cfgDns2v6):
-				v = cfgV6.value.strip()
-				if v:
-					servers.append(v)
+				textValue = cfgV6.value.strip()
+				if textValue:
+					servers.append(textValue)
 			conn.dnsServers = servers
 
 		if conn.isWlan and conn.wlan:
-			w = conn.wlan
-			w.ssid = self.cfgSsid.value.strip()
-			w.hidden = self.cfgHidden.value
-			w.encryption = self.cfgEncryption.value
-			if w.encryption != encNone:
-				w.key = self.cfgKey.value
+			wlan = conn.wlan
+			wlan.ssid = self.cfgSsid.value.strip()
+			wlan.hidden = self.cfgHidden.value
+			wlan.encryption = self.cfgEncryption.value
+			if wlan.encryption != encNone:
+				wlan.key = self.cfgKey.value
 
 		# Apply Wake-on-LAN via ethtool + optional /proc path
 		if not conn.isWlan and adapter.canWakeOnLan:
@@ -1092,7 +1093,7 @@ class NetworkConnectionSetup(Setup):
 			if newWolMode != conn.wakeOnLan and nm is not None:
 				cmds = nm.setWakeOnLanCommands(adapter.name, newWolMode)
 				if cmds:
-					Console().eBatch(cmds, lambda _: None, debug=False)
+					Console().eBatch(cmds, lambda result: None, debug=False)
 
 		# Apply Wake-on-WiFi (Broadcom)
 		if conn.isWlan and adapter.canWakeOnWiFi:
@@ -1103,7 +1104,7 @@ class NetworkConnectionSetup(Setup):
 			if nm is not None:
 				cmds = nm.setWakeOnWiFiCommands(adapter.name, conn.wakeOnWiFi)
 				if cmds:
-					Console().eBatch(cmds, lambda _: None, debug=False)
+					Console().eBatch(cmds, lambda result: None, debug=False)
 
 		# Apply forced link speed (LAN adapters only)
 		if not conn.isWlan and nm is not None:
@@ -1135,14 +1136,16 @@ class ScanResult:
 	@property
 	def signalBars(self) -> int:
 		if self.signalPct >= 80:
-			return 4
-		if self.signalPct >= 60:
-			return 3
-		if self.signalPct >= 35:
-			return 2
-		if self.signalPct >= 10:
-			return 1
-		return 0
+			result = 4
+		elif self.signalPct >= 60:
+			result = 3
+		elif self.signalPct >= 35:
+			result = 2
+		elif self.signalPct >= 10:
+			result = 1
+		else:
+			result = 0
+		return result
 
 	@property
 	def encLabel(self) -> str:
@@ -1180,26 +1183,26 @@ def _parseIwlist(raw: str) -> list[ScanResult]:
 
 	for line in raw.splitlines():
 		line = line.strip()
-		m = reCell.search(line)
-		if m:
-			current = ScanResult(bssid=m.group(1))
+		match = reCell.search(line)
+		if match:
+			current = ScanResult(bssid=match.group(1))
 			results.append(current)
 			continue
 		if current is None:
 			continue
-		m = reSsid.search(line)
-		if m:
-			current.ssid = m.group(1)
-		m = reFreq.search(line)
-		if m:
-			current.frequency = m.group(1)
-			if m.group(2):
-				current.channel = int(m.group(2))
-		m = reQuality.search(line)
-		if m:
-			qVal, qMax = int(m.group(1)), int(m.group(2))
+		match = reSsid.search(line)
+		if match:
+			current.ssid = match.group(1)
+		match = reFreq.search(line)
+		if match:
+			current.frequency = match.group(1)
+			if match.group(2):
+				current.channel = int(match.group(2))
+		match = reQuality.search(line)
+		if match:
+			qVal, qMax = int(match.group(1)), int(match.group(2))
 			current.signalPct = int(qVal * 100 / qMax) if qMax else 0
-			current.signalDbm = int(m.group(3))
+			current.signalDbm = int(match.group(3))
 		if reIeWpa3.search(line):
 			current.encryption = encWpa3
 			current.encDetails = line
@@ -1217,17 +1220,17 @@ def _parseIwlist(raw: str) -> list[ScanResult]:
 		elif reEncOff.search(line):
 			current.encryption = encNone
 
-	return sorted((r for r in results if r.ssid), key=lambda x: -x.signalPct)
+	return sorted((x for x in results if x.ssid), key=lambda x: -x.signalPct)
 
 
-def _scanResultToConnection(r: ScanResult, iface: str) -> Connection:
+def _scanResultToConnection(scanResult: ScanResult, iface: str) -> Connection:
 	return Connection(
 		adapter=iface,
-		name=r.ssid,
+		name=scanResult.ssid,
 		dhcp=True,
 		enabled=False,
 		priority=0,
-		wlan=WiFiConfig(ssid=r.ssid, encryption=r.encryption),
+		wlan=WiFiConfig(ssid=scanResult.ssid, encryption=scanResult.encryption),
 	)
 
 
@@ -1328,18 +1331,18 @@ class WiFiScanScreen(Screen):
 
 	def _populateList(self):
 		ssidCounts: dict = {}
-		for r in self._results:
-			ssidCounts[r.ssid] = ssidCounts.get(r.ssid, 0) + 1
+		for scanResult in self._results:
+			ssidCounts[scanResult.ssid] = ssidCounts.get(scanResult.ssid, 0) + 1
 		rows = []
-		for r in self._results:
-			name = r.ssid
-			if ssidCounts[r.ssid] > 1:
-				name = f"{r.ssid}  ({r.bssid})"
-			glyph = self._bars[min(r.signalBars, 4)]
-			strength = f"{r.signalPct}%  ({r.signalDbm} dBm)"
-			channel = f"CH{r.channel}" if r.channel else ""
-			channelFrequency = r.frequency if r.frequency else channel
-			rows.append((name, r.ssid, r.bssid, glyph, strength, r.signalPct, r.signalDbm, r.encLabel, channel, channelFrequency, r.frequency, r))
+		for scanResult in self._results:
+			name = scanResult.ssid
+			if ssidCounts[scanResult.ssid] > 1:
+				name = f"{scanResult.ssid}  ({scanResult.bssid})"
+			glyph = self._bars[min(scanResult.signalBars, 4)]
+			strength = f"{scanResult.signalPct}%  ({scanResult.signalDbm} dBm)"
+			channel = f"CH{scanResult.channel}" if scanResult.channel else ""
+			channelFrequency = scanResult.frequency if scanResult.frequency else channel
+			rows.append((name, scanResult.ssid, scanResult.bssid, glyph, strength, scanResult.signalPct, scanResult.signalDbm, scanResult.encLabel, channel, channelFrequency, scanResult.frequency, scanResult))
 		self["list"].setList(rows)
 
 	def _select(self):
@@ -1404,20 +1407,20 @@ class WiFiActivator(Screen):
 			ssid = self._conn.wlan.ssid if self._conn.wlan else iface
 			self["status"].setText(_("Connected to '%s'\nIP: %s") % (ssid, ip))
 			self._scheduleClose(2500)
-			return
-		if self._pollCount >= self._pollMaxAttempts:
+		elif self._pollCount >= self._pollMaxAttempts:
 			self._pollTimer.stop()
 			self["status"].setText(_("Connection timed out.\nNetwork saved – will retry automatically at next boot."))
 			self._scheduleClose(4000)
-			return
-		self._pollTimer.start(self._pollIntervalMs, True)
+		else:
+			self._pollTimer.start(self._pollIntervalMs, True)
 
 	@staticmethod
 	def _getKernelIp(iface: str) -> str:
 		addrs = netifaces.ifaddresses(iface)
+		result = ""
 		if netifaces.AF_INET in addrs:
-			return addrs[netifaces.AF_INET][0].get("addr", "")
-		return ""
+			result = addrs[netifaces.AF_INET][0].get("addr", "")
+		return result
 
 	def _scheduleClose(self, delayMs: int):
 		self._closeTimer = eTimer()
@@ -1434,19 +1437,17 @@ class WiFiAddFlow:
 
 	@staticmethod
 	def start(session, adapter: Adapter | None = None, callback=None):
-		if nm is None:
-			return
-		if adapter is None:
-			wlanAdapters = [a for a in nm.adapters.values() if a.isWlan]
-			if not wlanAdapters:
-				session.open(MessageBox, _("No Wi-Fi adapter found."), type=MessageBox.TYPE_INFO, timeout=4)
-				return
-			if len(wlanAdapters) == 1:
-				adapter = wlanAdapters[0]
+		if nm is not None:
+			if adapter is not None:
+				WiFiAddFlow._openScan(session, adapter, callback)
 			else:
-				WiFiAddFlow._pickAdapter(session, wlanAdapters, callback)
-				return
-		WiFiAddFlow._openScan(session, adapter, callback)
+				wlanAdapters = [x for x in nm.adapters.values() if x.isWlan]
+				if not wlanAdapters:
+					session.open(MessageBox, _("No Wi-Fi adapter found."), type=MessageBox.TYPE_INFO, timeout=4)
+				elif len(wlanAdapters) == 1:
+					WiFiAddFlow._openScan(session, wlanAdapters[0], callback)
+				else:
+					WiFiAddFlow._pickAdapter(session, wlanAdapters, callback)
 
 	@staticmethod
 	def _openScan(session, adapter: Adapter, callback):
@@ -1459,7 +1460,7 @@ class WiFiAddFlow:
 
 			def _setupDone(saved: bool):
 				if saved:
-					if not any(c.wlan and c.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for c in adapter.connections):
+					if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in adapter.connections):
 						adapter.connections.append(conn)
 						if nm:
 							nm.save()
@@ -1470,7 +1471,7 @@ class WiFiAddFlow:
 
 	@staticmethod
 	def _pickAdapter(session, adapters: list[Adapter], callback):
-		choices = [(a.name, a) for a in adapters]
+		choices = [(x.name, x) for x in adapters]
 
 		def _chosen(choice):
 			if choice is None:
@@ -1559,17 +1560,11 @@ class NetworkAdapterTest2(Screen):
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Restart"))
 		self["list"] = List([])
-		self["actions"] = HelpableActionMap(
-			self,
-			["OkCancelActions", "ColorActions"],
-			{
-				"cancel": (self.close, _("Close network test")),
-				"red": (self.close, _("Close network test")),
-				"green": (self._restart, _("Restart test")),
-			},
-			prio=0,
-			description=_("Network Test Actions"),
-		)
+		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
+			"cancel": (self.close, _("Close network test")),
+			"red": (self.close, _("Close network test")),
+			"green": (self._restart, _("Restart test")),
+		}, prio=0, description=_("Network Test Actions"))
 		self.onLayoutFinish.append(self._start)
 
 	def _restart(self):
@@ -1594,9 +1589,9 @@ class NetworkAdapterTest2(Screen):
 		self._testAdapter()
 
 	def _setRow(self, idx: int, icon: str, result: str, detail: str, color: int):
-		r = list(self._rows[idx])
-		r[0], r[2], r[3], r[4] = icon, result, detail, color
-		self._rows[idx] = tuple(r)
+		row = list(self._rows[idx])
+		row[0], row[2], row[3], row[4] = icon, result, detail, color
+		self._rows[idx] = tuple(row)
 		self["list"].setList(list(self._rows))
 
 	def _pingRow(self, row: int, host: str, okText: str, failText: str, detail: str, nextFn):
@@ -1639,7 +1634,7 @@ class NetworkAdapterTest2(Screen):
 
 	def _testIp(self, adapter):
 		ip = adapter.kernelIp or []
-		ipStr = ".".join(str(b) for b in ip) if ip else ""
+		ipStr = ".".join(str(x) for x in ip) if ip else ""
 		if ipStr and ipStr != "0.0.0.0":
 			conn = adapter.activeConnection()
 			hint = "DHCP" if (conn and conn.dhcp) else self._T_STATIC

@@ -172,13 +172,13 @@ class Connection:
 		return self.wlan is not None
 
 	def ipStr(self) -> str:
-		return ".".join(str(b) for b in self.ip)
+		return ".".join(str(x) for x in self.ip)
 
 	def netmaskStr(self) -> str:
-		return ".".join(str(b) for b in self.netmask)
+		return ".".join(str(x) for x in self.netmask)
 
 	def gatewayStr(self) -> str:
-		return ".".join(str(b) for b in self.gateway)
+		return ".".join(str(x) for x in self.gateway)
 
 
 @dataclass
@@ -221,8 +221,8 @@ class Adapter:
 
 	# Highest-priority enabled connection.
 	def activeConnection(self) -> Connection | None:
-		enabled = [c for c in self.connections if c.enabled]
-		return max(enabled, key=lambda c: c.priority, default=None)
+		enabled = [x for x in self.connections if x.enabled]
+		return max(enabled, key=lambda conn: conn.priority, default=None)
 
 	@property
 	def wpaConfPath(self) -> str:
@@ -498,8 +498,8 @@ def _serialiseConnection(conn: Connection, adapterEnabled: bool) -> list[str]:
 
 	if conn.dnsServers:
 		serversStr = " ".join(
-			".".join(str(b) for b in s) if isinstance(s, list) else s
-			for s in conn.dnsServers
+			".".join(str(octet) for octet in x) if isinstance(x, list) else x
+			for x in conn.dnsServers
 		)
 		lines.append(f"{connPfx}\tdns-nameservers {serversStr}")
 
@@ -541,19 +541,19 @@ class WpaSupplicantFile:
 		blockId = 0
 
 		for line in self._raw:
-			s = line.strip()
-			if s.startswith("#"):
+			stripped = line.strip()
+			if stripped.startswith("#"):
 				continue
-			if s.startswith("network") and "{" in s:
+			if stripped.startswith("network") and "{" in stripped:
 				current = {}
-				depth = s.count("{") - s.count("}")
+				depth = stripped.count("{") - stripped.count("}")
 				continue
 			if current is None:
 				continue
-			depth += s.count("{") - s.count("}")
-			if "=" in s and depth > 0:
-				k, _, v = s.partition("=")
-				current[k.strip()] = v.strip().strip('"')
+			depth += stripped.count("{") - stripped.count("}")
+			if "=" in stripped and depth > 0:
+				key, sep, value = stripped.partition("=")
+				current[key.strip()] = value.strip().strip('"')
 			if depth <= 0 and current is not None:
 				wlan = _wpaDictToWlanConfig(current, blockId)
 				if wlan.ssid:
@@ -581,13 +581,13 @@ class WpaSupplicantFile:
 		makedirs(wpaSupplicantDir, exist_ok=True)
 
 
-def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WiFiConfig:
-	keyMgmt = d.get("key_mgmt", "NONE").upper()
-	proto = d.get("proto", "").upper()
-	pairwise = d.get("pairwise", "").upper()
+def _wpaDictToWlanConfig(fields: dict[str, str], blockId: int) -> WiFiConfig:
+	keyMgmt = fields.get("key_mgmt", "NONE").upper()
+	proto = fields.get("proto", "").upper()
+	pairwise = fields.get("pairwise", "").upper()
 
 	if keyMgmt == "NONE":
-		enc = encNone if not d.get("wep_key0") else encWep
+		enc = encNone if not fields.get("wep_key0") else encWep
 	elif "SAE" in keyMgmt:
 		enc = encWpa3
 	elif "WPA" in keyMgmt:
@@ -596,55 +596,55 @@ def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WiFiConfig:
 		enc = encNone
 
 	return WiFiConfig(
-		ssid=d.get("ssid", ""),
-		hidden=d.get("scan_ssid", "0") == "1",
+		ssid=fields.get("ssid", ""),
+		hidden=fields.get("scan_ssid", "0") == "1",
 		encryption=enc,
-		key=d.get("psk", d.get("wep_key0", "")),
-		bgscan=d.get("bgscan", "simple:30:-70:3600"),
+		key=fields.get("psk", fields.get("wep_key0", "")),
+		bgscan=fields.get("bgscan", "simple:30:-70:3600"),
 		wpaId=blockId,
-		idStr=d.get("id_str", ""),
-		disabled=d.get("disabled", "0") == "1",
+		idStr=fields.get("id_str", ""),
+		disabled=fields.get("disabled", "0") == "1",
 	)
 
 
 def _wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
-	L = ["network={"]
-	L.append(f'\tssid="{wlan.ssid}"')
+	lines = ["network={"]
+	lines.append(f'\tssid="{wlan.ssid}"')
 	if wlan.hidden:
-		L.append("\tscan_ssid=1")
-	L.append(f"\tpriority={blockId}")
+		lines.append("\tscan_ssid=1")
+	lines.append(f"\tpriority={blockId}")
 	if wlan.bgscan:
-		L.append(f'\tbgscan="{wlan.bgscan}"')
+		lines.append(f'\tbgscan="{wlan.bgscan}"')
 
 	enc = wlan.encryption
 	if enc == encNone:
-		L.append("\tkey_mgmt=NONE")
+		lines.append("\tkey_mgmt=NONE")
 	elif enc == encWep:
-		L.append("\tkey_mgmt=NONE")
+		lines.append("\tkey_mgmt=NONE")
 		if wlan.wepKeyType == "HEX":
-			L.append(f"\twep_key0={wlan.key}")
+			lines.append(f"\twep_key0={wlan.key}")
 		else:
-			L.append(f'\twep_key0="{wlan.key}"')
-		L.append("\twep_tx_keyidx=0")
+			lines.append(f'\twep_key0="{wlan.key}"')
+		lines.append("\twep_tx_keyidx=0")
 	elif enc == encWpa:
-		L.append("\tkey_mgmt=WPA-PSK")
-		L.append("\tproto=WPA")
-		L.append(f'\tpsk="{wlan.key}"')
+		lines.append("\tkey_mgmt=WPA-PSK")
+		lines.append("\tproto=WPA")
+		lines.append(f'\tpsk="{wlan.key}"')
 	elif enc in (encWpa2, encWpaWpa2):
-		L.append("\tkey_mgmt=WPA-PSK")
-		L.append("\tproto=RSN")
-		L.append(f'\tpsk="{wlan.key}"')
+		lines.append("\tkey_mgmt=WPA-PSK")
+		lines.append("\tproto=RSN")
+		lines.append(f'\tpsk="{wlan.key}"')
 	elif enc == encWpa3:
-		L.append("\tkey_mgmt=SAE")
-		L.append("\tproto=RSN")
-		L.append(f'\tpsk="{wlan.key}"')
+		lines.append("\tkey_mgmt=SAE")
+		lines.append("\tproto=RSN")
+		lines.append(f'\tpsk="{wlan.key}"')
 
 	if wlan.idStr:
-		L.append(f'\tid_str="{wlan.idStr}"')
+		lines.append(f'\tid_str="{wlan.idStr}"')
 	if wlan.disabled:
-		L.append("\tdisabled=1")
-	L.append("}")
-	return L
+		lines.append("\tdisabled=1")
+	lines.append("}")
+	return lines
 
 
 # ===========================================================================
@@ -656,20 +656,20 @@ def _bcmConfPath(iface: str) -> str:
 
 
 def _bcmLoadWiFiConfig(iface: str) -> WiFiConfig:
-	w = WiFiConfig()
+	wlan = WiFiConfig()
 	for line in _readLines(_bcmConfPath(iface)):
 		line = line.strip()
 		if not line or line.startswith("#"):
 			continue
-		k, _, v = line.partition("=")
-		k, v = k.strip(), v.strip()
-		if k == "ssid":
-			w.ssid = v
-		elif k == "method":
-			w.encryption = _legacyEncMap.get(v.lower(), encNone)
-		elif k == "key":
-			w.key = v
-	return w
+		key, sep, value = line.partition("=")
+		key, value = key.strip(), value.strip()
+		if key == "ssid":
+			wlan.ssid = value
+		elif key == "method":
+			wlan.encryption = _legacyEncMap.get(value.lower(), encNone)
+		elif key == "key":
+			wlan.key = value
+	return wlan
 
 
 def _bcmSaveWlanConfig(iface: str, wlan: WiFiConfig) -> bool:
@@ -767,8 +767,8 @@ def _buildWlanConfigStrings(adapter: Adapter, conn: Connection) -> str:
 	return "\n".join(lines)
 
 
-def _reEscape(s: str) -> str:
-	return s.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`")
+def _reEscape(text: str) -> str:
+	return text.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`")
 
 
 # ===========================================================================
@@ -811,8 +811,8 @@ class NameserverFiles:
 
 	def _build(self, ns: NameserverConfig) -> list[str]:
 		mode = ns.ipMode
-		v4 = ["nameserver " + ".".join(str(b) for b in s) for s in ns.servers if isinstance(s, list) and s != [0, 0, 0, 0]]
-		v6 = [f"nameserver {s}" for s in ns.servers if isinstance(s, str) and s]
+		v4 = ["nameserver " + ".".join(str(octet) for octet in x) for x in ns.servers if isinstance(x, list) and x != [0, 0, 0, 0]]
+		v6 = [f"nameserver {x}" for x in ns.servers if isinstance(x, str) and x]
 		if mode == 0:
 			nsLines = v4 + v6
 		elif mode == 1:
@@ -909,10 +909,10 @@ def _isBlacklisted(iface: str) -> bool:
 	return iface in ADAPTER_BLACKLIST
 
 
-def _parseIp4(s: str) -> list[int]:
+def _parseIp4(text: str) -> list[int]:
 	try:
-		parts = [int(x) for x in s.split(".")]
-		if len(parts) == 4 and all(0 <= p <= 255 for p in parts):
+		parts = [int(x) for x in text.split(".")]
+		if len(parts) == 4 and all(0 <= x <= 255 for x in parts):
 			return parts
 	except (ValueError, AttributeError):
 		pass
@@ -963,10 +963,10 @@ class NetEventReader:
 
 	def _connect(self):
 		try:
-			s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-			s.connect(netEventSocketPath)
-			s.setblocking(False)
-			self._sock = s
+			sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+			sock.connect(netEventSocketPath)
+			sock.setblocking(False)
+			self._sock = sock
 			reactor.addReader(self)
 			print(f"[NetEventReader] connected to {netEventSocketPath}")
 		except OSError:
@@ -1045,7 +1045,7 @@ class NetworkManager:
 
 	def _discoverAdapters(self):
 		try:
-			names = [n for n in listdir(sysfsNet) if not _isBlacklisted(n)]
+			names = [x for x in listdir(sysfsNet) if not _isBlacklisted(x)]
 		except OSError:
 			names = []
 
@@ -1123,7 +1123,7 @@ class NetworkManager:
 
 	@staticmethod
 	def _mergeWiFiConfig(adapter: Adapter, wlan: WiFiConfig):
-		bySsid = {c.wlan.ssid: c for c in adapter.connections if c.wlan and c.wlan.ssid}
+		bySsid = {x.wlan.ssid: x for x in adapter.connections if x.wlan and x.wlan.ssid}
 		profileName = wlan.idStr if wlan.idStr else wlan.ssid
 		if wlan.ssid in bySsid:
 			conn = bySsid[wlan.ssid]
@@ -1178,20 +1178,20 @@ class NetworkManager:
 		connMap = {}
 		for iface, adapter in self.adapters.items():
 			if adapter.isWlan:
-				baseConns = [c for c in adapter.connections if not (c.wlan and c.wlan.ssid)]
+				baseConns = [x for x in adapter.connections if not (x.wlan and x.wlan.ssid)]
 				if baseConns:
-					enabled = [c for c in baseConns if c.enabled]
+					enabled = [x for x in baseConns if x.enabled]
 					baseConn = enabled[0] if enabled else baseConns[0]
 					# Sync base connection enabled with active SSID state.
 					# Exception: WoW-Only mode keeps base enabled so the iface stanza stays active.
-					wpaConns = [c for c in adapter.connections if c.wlan and c.wlan.ssid]
+					wpaConns = [x for x in adapter.connections if x.wlan and x.wlan.ssid]
 					if wpaConns:
-						wowOnly = any(c.wakeOnWifi and not c.enabled for c in wpaConns)
-						baseConn.enabled = wowOnly or any(c.enabled for c in wpaConns)
+						wowOnly = any(x.wakeOnWifi and not x.enabled for x in wpaConns)
+						baseConn.enabled = wowOnly or any(x.enabled for x in wpaConns)
 						# The base connection is the only one written to
 						# /etc/network/interfaces, so it must carry the
 						# active SSID's pre-up/pre-down commands.
-						activeWpa = max((c for c in wpaConns if c.enabled), key=lambda c: c.priority, default=None)
+						activeWpa = max((x for x in wpaConns if x.enabled), key=lambda conn: conn.priority, default=None)
 						baseConn.extraLines = activeWpa.extraLines if activeWpa else []
 					else:
 						baseConn.extraLines = []
@@ -1205,8 +1205,8 @@ class NetworkManager:
 			enabled = adapter.adapterEnabled
 			if adapter.isWlan and enabled:
 				# In wpa_supplicant mode: only mark adapter enabled if an SSID is active.
-				wpaConns = [c for c in adapter.connections if c.wlan and c.wlan.ssid]
-				if wpaConns and not any(c.enabled for c in wpaConns):
+				wpaConns = [x for x in adapter.connections if x.wlan and x.wlan.ssid]
+				if wpaConns and not any(x.enabled for x in wpaConns):
 					enabled = False
 			adapterEnabledMap[iface] = enabled
 		ok = self._ifacesFile.save(connMap, adapterEnabledMap) and ok
@@ -1219,7 +1219,7 @@ class NetworkManager:
 					conn.wlan.idStr = conn.name
 				if conn.wlan is not None and conn.wlan.ssid:
 					conn.wlan.disabled = not conn.enabled
-			wlanConfigs = [c.wlan for c in adapter.connections if c.wlan is not None and c.wlan.ssid]
+			wlanConfigs = [x.wlan for x in adapter.connections if x.wlan is not None and x.wlan.ssid]
 			if not wlanConfigs:
 				continue
 			if adapter.driverApi == apiBrcmWl:
@@ -1231,7 +1231,7 @@ class NetworkManager:
 				wpf.ensureDir()
 				ok = wpf.save(wlanConfigs) and ok
 
-		anyDhcp = any(c.dhcp for a in self.adapters.values() for c in a.connections if c.enabled)
+		anyDhcp = any(conn.dhcp for adapter in self.adapters.values() for conn in adapter.connections if conn.enabled)
 		self._nsFiles.save(self.nameserverConfig, anyDhcp)
 		self._notifyNetworkPlugins(True)
 		return ok
@@ -1286,32 +1286,32 @@ class NetworkManager:
 		return self.adapters.get(iface)
 
 	def getConnections(self, iface: str) -> list[Connection]:
-		a = self.adapters.get(iface)
-		return a.connections if a else []
+		adapter = self.adapters.get(iface)
+		return adapter.connections if adapter else []
 
 	def getActiveConnection(self, iface: str) -> Connection | None:
-		a = self.adapters.get(iface)
-		return a.activeConnection() if a else None
+		adapter = self.adapters.get(iface)
+		return adapter.activeConnection() if adapter else None
 
 	def getWlanConnections(self, iface: str) -> list[Connection]:
-		return [c for c in self.getConnections(iface) if c.isWlan]
+		return [x for x in self.getConnections(iface) if x.isWlan]
 
 	def addConnection(self, conn: Connection):
-		a = self.adapters.get(conn.adapter)
-		if a:
-			a.connections.append(conn)
+		adapter = self.adapters.get(conn.adapter)
+		if adapter:
+			adapter.connections.append(conn)
 
 	def removeConnection(self, iface: str, ssid: str) -> bool:
-		a = self.adapters.get(iface)
-		if not a:
+		adapter = self.adapters.get(iface)
+		if not adapter:
 			return False
-		before = len(a.connections)
-		a.connections = [c for c in a.connections if not (c.wlan and c.wlan.ssid == ssid)]
-		return len(a.connections) < before
+		before = len(adapter.connections)
+		adapter.connections = [x for x in adapter.connections if not (x.wlan and x.wlan.ssid == ssid)]
+		return len(adapter.connections) < before
 
 	def isWireless(self, iface: str) -> bool:
-		a = self.adapters.get(iface)
-		return a.isWlan if a else _isWirelessName(iface)
+		adapter = self.adapters.get(iface)
+		return adapter.isWlan if adapter else _isWirelessName(iface)
 
 	def getInstalledAdapters(self) -> list[str]:
 		return list(self.adapters.keys())
@@ -1376,7 +1376,7 @@ class NetworkManager:
 	def getConfiguredAdapters(self) -> list[str]:
 		return [
 			iface for iface, adapter in self.adapters.items()
-			if any(c.enabled for c in adapter.connections)
+			if any(x.enabled for x in adapter.connections)
 		]
 
 	# Compatibility shim – same as getInstalledAdapters().
@@ -1402,8 +1402,8 @@ class NetworkManager:
 		adapter = self.adapters.get(iface)
 		if adapter is None:
 			return iface
-		wlanAdapters = sorted(i for i, a in self.adapters.items() if a.isWlan)
-		lanAdapters = sorted(i for i, a in self.adapters.items() if not a.isWlan)
+		wlanAdapters = sorted(name for name, other in self.adapters.items() if other.isWlan)
+		lanAdapters = sorted(name for name, other in self.adapters.items() if not other.isWlan)
 		if adapter.isWlan:
 			idx = wlanAdapters.index(iface) if iface in wlanAdapters else 0
 			return _("WLAN connection") + (f" {idx + 1}" if idx else "")
@@ -1471,8 +1471,8 @@ class NetworkManager:
 	# Fire WHERE_NETWORKCONFIG_READ plugins – but ONLY when at least one
 	def _notifyNetworkPlugins(self, reason: bool):
 		active = any(
-			a.kernelUp and any(b != 0 for b in a.kernelIp)
-			for a in self.adapters.values()
+			x.kernelUp and any(octet != 0 for octet in x.kernelIp)
+			for x in self.adapters.values()
 		)
 		if not active:
 			return
@@ -1535,8 +1535,8 @@ class NetworkManager:
 	# Compatibility shim for old iNetwork.writeNameserverConfig() callers.
 	def writeNameserverConfig(self):
 		anyDhcp = any(
-			c.dhcp for a in self.adapters.values()
-			for c in a.connections if c.enabled
+			conn.dhcp for adapter in self.adapters.values()
+			for conn in adapter.connections if conn.enabled
 		)
 		self._nsFiles.save(self.nameserverConfig, anyDhcp)
 
@@ -1564,13 +1564,13 @@ class NetworkManager:
 			self._pendingRestart = ServiceAction.ifup(iface, _lanUp)
 			return
 
-		def _wlanUp(_: bool = True):
+		def _wlanUp(retval: bool = True):
 			self._notifyNetworkPlugins(False)
 			if callback:
 				callback(True)
 		try:
 			cmds = self.activateCommands(iface)
-			Console().eBatch(cmds, lambda _: _wlanUp(), debug=True)
+			Console().eBatch(cmds, lambda result: _wlanUp(), debug=True)
 		except Exception:
 			if callback:
 				callback(False)
@@ -1579,8 +1579,8 @@ class NetworkManager:
 	def deactivateInterface(self, ifaces, callback=None):
 		if isinstance(ifaces, str):
 			ifaces = [ifaces]
-		wlanIfaces = [i for i in ifaces if self.adapters.get(i) and self.adapters[i].isWlan]
-		lanIfaces = [i for i in ifaces if i not in wlanIfaces]
+		wlanIfaces = [x for x in ifaces if self.adapters.get(x) and self.adapters[x].isWlan]
+		lanIfaces = [x for x in ifaces if x not in wlanIfaces]
 		total = (1 if lanIfaces else 0) + len(wlanIfaces)
 		if total == 0:
 			if callback:
@@ -1588,7 +1588,7 @@ class NetworkManager:
 			return
 		done = [0]
 
-		def _one_done(*_):
+		def _one_done(*_args):
 			done[0] += 1
 			if done[0] >= total and callback:
 				callback(True)
@@ -1607,8 +1607,8 @@ class NetworkManager:
 		adapter = self.adapters.get(iface)
 		if adapter is None or not adapter.isWlan:
 			return []
-		others = [c for c in adapter.connections if c is not targetConn]
-		maxOther = max((c.priority for c in others), default=0)
+		others = [x for x in adapter.connections if x is not targetConn]
+		maxOther = max((x.priority for x in others), default=0)
 		targetConn.priority = maxOther + 10
 		cmds: list[str] = []
 		wpaId = targetConn.wlan.wpaId if targetConn.wlan else None
@@ -1649,8 +1649,8 @@ class NetworkManager:
 	def getWakeOnLan(self, iface: str) -> str:
 		try:
 			out = check_output([ethtoolBin, iface], stderr=DEVNULL, timeout=2).decode(errors="replace")
-			m = search(r"Wake-on:\s*(\S+)", out)
-			return m.group(1) if m else "off"
+			match = search(r"Wake-on:\s*(\S+)", out)
+			return match.group(1) if match else "off"
 		except Exception:
 			return "off"
 
@@ -1700,7 +1700,7 @@ class NetworkManager:
 		return cmds
 
 	def _updateWowPreup(self, adapter: Adapter, enable: bool):
-		baseConn = next((c for c in adapter.connections if not (c.wlan and c.wlan.ssid)), None)
+		baseConn = next((x for x in adapter.connections if not (x.wlan and x.wlan.ssid)), None)
 		if baseConn is None:
 			return
 		iface = adapter.name
@@ -1869,14 +1869,14 @@ class NetworkManager:
 # ===========================================================================
 
 def _icmpChecksum(data: bytes) -> int:
-	s = 0
-	for i in range(0, len(data) - len(data) % 2, 2):
-		s += data[i] + (data[i + 1] << 8)
+	checksum = 0
+	for idx in range(0, len(data) - len(data) % 2, 2):
+		checksum += data[idx] + (data[idx + 1] << 8)
 	if len(data) % 2:
-		s += data[-1]
-	while s >> 16:
-		s = (s & 0xFFFF) + (s >> 16)
-	return ~s & 0xFFFF
+		checksum += data[-1]
+	while checksum >> 16:
+		checksum = (checksum & 0xFFFF) + (checksum >> 16)
+	return ~checksum & 0xFFFF
 
 
 # Send one ICMP Echo Request to host bound to iface. Returns True on reply.
@@ -1894,9 +1894,9 @@ def pingHost(host: str, iface: str, timeout: float = 2.0) -> bool:
 		while monotonic() < deadline:
 			sock.settimeout(max(0.05, deadline - monotonic()))
 			try:
-				data, _ = sock.recvfrom(1024)
+				data, _addr = sock.recvfrom(1024)
 				if len(data) >= 28:
-					rtype, _, _, rid, _ = unpack("!BBHHH", data[20:28])
+					rtype, _code, _checksum, rid, _seq = unpack("!BBHHH", data[20:28])
 					if rtype == 0 and rid == pid:
 						return True
 			except socket.timeout:
