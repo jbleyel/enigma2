@@ -616,8 +616,8 @@
 					<item level="0" text="Default gateway" description="Enter the IP address to use as a gateway to other networks for this connection. Typically this is the IP address of your router.">self.cfgGateway</item>
 				</if>
 			</if>
-			<item level="1" text="DNS override" description="When enabled, specify the DNS servers to be used for this connection.">self.cfgUseGlobalDns</item>
-			<if conditional="not self.cfgUseGlobalDns.value">
+			<item level="1" text="DNS override" description="When enabled, specify custom DNS servers for this connection instead of the global DNS servers.">self.cfgDnsOverride</item>
+			<if conditional="self.cfgDnsOverride.value">
 				<if conditional="self.cfgIpMode.value != 1">
 					<item level="0" text="Primary DNS (IPv4)" description="Enter the primary IPv4 DNS server for this connection.">self.cfgDns1v4</item>
 					<item level="0" text="Secondary DNS (IPv4)" description="Enter the secondary IPv4 DNS server for this connection. (Optional)">self.cfgDns2v4</item>
@@ -652,8 +652,8 @@
 					<item level="0" text="Default gateway" description="Enter the IP address to use as a gateway to other networks for this connection. Typically this is the IP address of your router.">self.cfgGateway</item>
 				</if>
 			</if>
-			<item level="1" text="DNS override" description="When enabled, specify the DNS servers to be used for this connection.">self.cfgUseGlobalDns</item>
-			<if conditional="not self.cfgUseGlobalDns.value">
+			<item level="1" text="DNS override" description="When enabled, specify custom DNS servers for this connection instead of the global DNS servers.">self.cfgDnsOverride</item>
+			<if conditional="self.cfgDnsOverride.value">
 				<if conditional="self.cfgIpMode.value != 1">
 					<item level="0" text="Primary DNS (IPv4)" description="Enter the primary IPv4 DNS server for this connection.">self.cfgDns1v4</item>
 					<item level="0" text="Secondary DNS (IPv4)" description="Enter the secondary IPv4 DNS server for this connection. (Optional)">self.cfgDns2v4</item>
@@ -663,7 +663,7 @@
 					<item level="0" text="Secondary DNS (IPv6)" description="Enter the secondary IPv6 DNS server for this connection. (Optional)">self.cfgDns2v6</item>
 				</if>
 			</if>
-			<item level="1" text="Wake-on-WiFi" description="When enabled, keep the Wi-Fi adapter in low-power scan mode during Standby to allow the receiver to be powered on by a remote network signal (Magic Packet)." requires="wwol" conditional="self.cfgEnabled.value">self.cfgWakeOnWifi</item>
+			<item level="1" text="Wake-on-WiFi" description="When enabled, keep the Wi-Fi adapter in low-power scan mode during Standby to allow the receiver to be powered on by a remote network signal (Magic Packet)." requires="wwol" conditional="self.cfgEnabled.value">self.cfgWakeOnWiFi</item>
 		</if>
 	</setup>
 	<setup key="NetworkNFS" title="NFS Settings" allowDefault="yes">

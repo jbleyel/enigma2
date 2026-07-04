@@ -126,7 +126,7 @@ _wpaDefaultHeader = [
 
 
 @dataclass
-class WifiConfig:
+class WiFiConfig:
 	"""WLAN-specific parameters for one Connection."""
 
 	ssid: str = ""
@@ -163,9 +163,9 @@ class Connection:
 	ipv6Dhcp: bool = True
 	dnsServers: list = field(default_factory=list)   # [int,int,int,int] | "::addr"
 	extraLines: list[str] = field(default_factory=list)
-	wlan: WifiConfig | None = None
+	wlan: WiFiConfig | None = None
 	wakeOnLan: str = "off"       # "off" | "g" | "u" | "b"
-	wakeOnWifi: bool = False
+	wakeOnWiFi: bool = False
 
 	@property
 	def isWlan(self) -> bool:
@@ -190,7 +190,7 @@ class Adapter:
 	isWlan: bool = False
 	module: str = ""
 	driverApi: str = apiNl80211
-	canWakeOnWifi: bool = False
+	canWakeOnWiFi: bool = False
 	canWakeOnLan: bool = False
 	wolProcPath: str = ""
 	wolProcType: str = ""
@@ -267,7 +267,7 @@ def _writeLines(path: str, lines: list[str], backup: bool = False) -> bool:
 		except OSError as exc:
 			print(f"[NetworkManager] Cannot backup {path}: {exc}")
 	try:
-		with open(path, "w", encoding="utf-8") as fh:
+		with open(path + "2", "w", encoding="utf-8") as fh:
 			fh.write("\n".join(lines))
 			if lines:
 				fh.write("\n")
@@ -319,7 +319,7 @@ class InterfacesFile:
 	def parse(self) -> tuple[dict[str, list[Connection]], set[str]]:
 		result: dict[str, list[Connection]] = {}
 		autoIfaces: set = set()
-		wakeOnWifiIfaces: set = set()
+		wakeOnWiFiIfaces: set = set()
 		current: Connection | None = None
 		disabled = False
 		inetSet: set[int] = set()  # id(conn) for connections that have had inet (IPv4) stanza set
@@ -334,7 +334,7 @@ class InterfacesFile:
 					line = inner
 					disabled = True
 				elif len(tokens_inner) >= 3 and tokens_inner[0] == "Only" and tokens_inner[1] == "WakeOnWiFi":
-					wakeOnWifiIfaces.add(tokens_inner[2])
+					wakeOnWiFiIfaces.add(tokens_inner[2])
 					continue
 				else:
 					disabled = False
@@ -362,6 +362,11 @@ class InterfacesFile:
 					continue
 
 				if inet == "inet6":
+					# A commented-out "# iface ... inet6 dhcp" means IPv6 is not
+					# configured – treat it as absent instead of upgrading ipMode,
+					# otherwise a disabled ipv6 stanza would come back enabled.
+					if disabled:
+						continue
 					# IPv6 stanza – update the existing Connection for this iface,
 					# do NOT create a second one.
 					existing = result.get(iface, [])
@@ -380,7 +385,7 @@ class InterfacesFile:
 							ipMode=1,
 							ipv6Dhcp=mode == "dhcp",
 							enabled=not disabled,
-							wlan=WifiConfig() if _isWirelessName(iface) else None,
+							wlan=WiFiConfig() if _isWirelessName(iface) else None,
 						)
 						result.setdefault(iface, []).append(conn)
 						current = conn
@@ -402,7 +407,7 @@ class InterfacesFile:
 						ipMode=0,
 						ipv6Dhcp=False,
 						enabled=not disabled,
-						wlan=WifiConfig() if _isWirelessName(iface) else None,
+						wlan=WiFiConfig() if _isWirelessName(iface) else None,
 					)
 					result.setdefault(iface, []).append(conn)
 				conn.dhcp = mode == "dhcp"
@@ -426,9 +431,17 @@ class InterfacesFile:
 					if ip:
 						current.dnsServers.append(ip)
 			elif kw in ("pre-up", "pre-down", "post-up", "post-down", "up", "down"):
-				current.extraLines.append(raw.strip())
+				# The ethtool Wake-on-LAN pre-up is regenerated from
+				# conn.wakeOnLan on save (gated on hardware support), not
+				# carried over verbatim – otherwise a stale line would
+				# survive forever even if WoL is unsupported/disabled.
+				wolTag = f"pre-up {ethtoolBin} -s {current.adapter} wol "
+				if line.startswith(wolTag) and line.endswith(" || true"):
+					current.wakeOnLan = line[len(wolTag):-len(" || true")].strip()
+				else:
+					current.extraLines.append(raw.strip())
 
-		return result, autoIfaces, wakeOnWifiIfaces
+		return result, autoIfaces, wakeOnWiFiIfaces
 
 	def serialise(self, connectionsByAdapter: dict[str, list[Connection]], adapterEnabledMap: dict[str, bool] | None = None) -> list[str]:
 		lines: list[str] = list(self._header)
@@ -457,7 +470,7 @@ def _serialiseConnection(conn: Connection, adapterEnabled: bool) -> list[str]:
 	autoPfx = "" if adapterEnabled else "# "
 	connPfx = "" if conn.enabled else "# "
 
-	if conn.wakeOnWifi:
+	if conn.wakeOnWiFi:
 		lines.append(f"# Only WakeOnWiFi {conn.adapter}")
 	else:
 		lines.append(f"{autoPfx}auto {conn.adapter}")
@@ -475,11 +488,11 @@ def _serialiseConnection(conn: Connection, adapterEnabled: bool) -> list[str]:
 			lines.append(f"{connPfx}iface {conn.adapter} inet dhcp")
 		else:
 			lines.append(f"{connPfx}iface {conn.adapter} inet static")
-			lines.append(f"{connPfx}  hostname $(hostname)")
-			lines.append(f"{connPfx}  address {conn.ipStr()}")
-			lines.append(f"{connPfx}  netmask {conn.netmaskStr()}")
+			lines.append(f"{connPfx}\thostname $(hostname)")
+			lines.append(f"{connPfx}\taddress {conn.ipStr()}")
+			lines.append(f"{connPfx}\tnetmask {conn.netmaskStr()}")
 			if conn.gateway != [0, 0, 0, 0]:
-				lines.append(f"{connPfx}  gateway {conn.gatewayStr()}")
+				lines.append(f"{connPfx}\tgateway {conn.gatewayStr()}")
 	else:
 		lines.append(f"# iface {conn.adapter} inet dhcp")
 
@@ -488,10 +501,10 @@ def _serialiseConnection(conn: Connection, adapterEnabled: bool) -> list[str]:
 			".".join(str(b) for b in s) if isinstance(s, list) else s
 			for s in conn.dnsServers
 		)
-		lines.append(f"{connPfx}  dns-nameservers {serversStr}")
+		lines.append(f"{connPfx}\tdns-nameservers {serversStr}")
 
 	for extra in conn.extraLines:
-		lines.append(f"{connPfx}{extra}")
+		lines.append(f"{connPfx}\t{extra}")
 
 	return lines
 
@@ -521,8 +534,8 @@ class WpaSupplicantFile:
 			header.append(line)
 		return header
 
-	def parse(self) -> list[WifiConfig]:
-		configs: list[WifiConfig] = []
+	def parse(self) -> list[WiFiConfig]:
+		configs: list[WiFiConfig] = []
 		current: dict[str, str] | None = None
 		depth = 0
 		blockId = 0
@@ -551,7 +564,7 @@ class WpaSupplicantFile:
 
 		return configs
 
-	def serialise(self, configs: list[WifiConfig]) -> list[str]:
+	def serialise(self, configs: list[WiFiConfig]) -> list[str]:
 		header = self._header if self._header else list(_wpaDefaultHeader)
 		lines: list[str] = list(header)
 		if lines and lines[-1].strip():
@@ -561,14 +574,14 @@ class WpaSupplicantFile:
 			lines.append("")
 		return lines
 
-	def save(self, configs: list[WifiConfig]) -> bool:
+	def save(self, configs: list[WiFiConfig]) -> bool:
 		return _writeLines(self._writePath, self.serialise(configs), backup=True)
 
 	def ensureDir(self):
 		makedirs(wpaSupplicantDir, exist_ok=True)
 
 
-def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WifiConfig:
+def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WiFiConfig:
 	keyMgmt = d.get("key_mgmt", "NONE").upper()
 	proto = d.get("proto", "").upper()
 	pairwise = d.get("pairwise", "").upper()
@@ -582,7 +595,7 @@ def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WifiConfig:
 	else:
 		enc = encNone
 
-	return WifiConfig(
+	return WiFiConfig(
 		ssid=d.get("ssid", ""),
 		hidden=d.get("scan_ssid", "0") == "1",
 		encryption=enc,
@@ -594,7 +607,7 @@ def _wpaDictToWlanConfig(d: dict[str, str], blockId: int) -> WifiConfig:
 	)
 
 
-def _wlanConfigToWpaBlock(wlan: WifiConfig, blockId: int) -> list[str]:
+def _wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
 	L = ["network={"]
 	L.append(f'\tssid="{wlan.ssid}"')
 	if wlan.hidden:
@@ -642,8 +655,8 @@ def _bcmConfPath(iface: str) -> str:
 	return f"/etc/wl.conf.{iface}"
 
 
-def _bcmLoadWifiConfig(iface: str) -> WifiConfig:
-	w = WifiConfig()
+def _bcmLoadWiFiConfig(iface: str) -> WiFiConfig:
+	w = WiFiConfig()
 	for line in _readLines(_bcmConfPath(iface)):
 		line = line.strip()
 		if not line or line.startswith("#"):
@@ -659,7 +672,7 @@ def _bcmLoadWifiConfig(iface: str) -> WifiConfig:
 	return w
 
 
-def _bcmSaveWlanConfig(iface: str, wlan: WifiConfig) -> bool:
+def _bcmSaveWlanConfig(iface: str, wlan: WiFiConfig) -> bool:
 	encStr = {
 		encNone: "None", encWep: "WEP", encWpa: "WPA",
 		encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
@@ -716,7 +729,7 @@ def _detectDriverApi(iface: str, module: str) -> str:
 	return apiNl80211
 
 
-def _canWakeOnWifi(iface: str) -> bool:
+def _canWakeOnWiFi(iface: str) -> bool:
 	return iface == "wlan3" and bool(BoxInfo.getItem("wwol"))
 
 
@@ -1045,7 +1058,7 @@ class NetworkManager:
 				isWlan=isWlan,
 				module=module,
 				driverApi=api,
-				canWakeOnWifi=_canWakeOnWifi(name),
+				canWakeOnWiFi=_canWakeOnWiFi(name),
 				mac=_readSys(f"{sysfsNet}/{name}/address"),
 			)
 			try:
@@ -1073,7 +1086,7 @@ class NetworkManager:
 
 	def _loadInterfacesFile(self):
 		self._ifacesFile.load()
-		parsed, autoIfaces, wakeOnWifiIfaces = self._ifacesFile.parse()
+		parsed, autoIfaces, wakeOnWiFiIfaces = self._ifacesFile.parse()
 		for iface, conns in parsed.items():
 			if iface not in self.adapters:
 				self.adapters[iface] = Adapter(
@@ -1083,16 +1096,16 @@ class NetworkManager:
 				)
 			self.adapters[iface].connections = conns
 			self.adapters[iface].adapterEnabled = iface in autoIfaces
-			if iface in wakeOnWifiIfaces:
+			if iface in wakeOnWiFiIfaces:
 				for conn in conns:
-					conn.wakeOnWifi = True
+					conn.wakeOnWiFi = True
 		for iface, adapter in self.adapters.items():
 			if not adapter.connections:
 				adapter.connections = [Connection(
 					adapter=iface,
 					name=iface,
 					dhcp=True,
-					wlan=WifiConfig() if adapter.isWlan else None,
+					wlan=WiFiConfig() if adapter.isWlan else None,
 				)]
 
 	def _loadWpaSupplicantFiles(self):
@@ -1100,16 +1113,16 @@ class NetworkManager:
 			if not adapter.isWlan:
 				continue
 			if adapter.driverApi == apiBrcmWl:
-				self._mergeWifiConfig(adapter, _bcmLoadWifiConfig(iface))
+				self._mergeWiFiConfig(adapter, _bcmLoadWiFiConfig(iface))
 			else:
 				wpf = WpaSupplicantFile(iface)
 				if not wpf.exists():
 					continue
 				for wlan in wpf.parse():
-					self._mergeWifiConfig(adapter, wlan)
+					self._mergeWiFiConfig(adapter, wlan)
 
 	@staticmethod
-	def _mergeWifiConfig(adapter: Adapter, wlan: WifiConfig):
+	def _mergeWiFiConfig(adapter: Adapter, wlan: WiFiConfig):
 		bySsid = {c.wlan.ssid: c for c in adapter.connections if c.wlan and c.wlan.ssid}
 		profileName = wlan.idStr if wlan.idStr else wlan.ssid
 		if wlan.ssid in bySsid:
@@ -1135,10 +1148,27 @@ class NetworkManager:
 	def save(self) -> bool:
 		ok = True
 		for iface, adapter in self.adapters.items():
+			if adapter.isWlan:
+				continue
+			# Only emit the ethtool WoL pre-up if the hardware actually
+			# supports it and it's actually turned on – never carry over a
+			# stale/unsupported setting from a previously parsed file.
+			# canWakeOnLan alone is not proof: it's also set from a generic
+			# per-model /proc control path (_detectWol) that may exist even
+			# when the NIC chip has no real WoL support. kernelWolSupported
+			# is the actual ethtool-reported capability bitmask.
+			activeConn = adapter.activeConnection()
+			hwSupportsWol = adapter.canWakeOnLan and adapter.kernelWolSupported != 0
+			mode = activeConn.wakeOnLan if (activeConn and hwSupportsWol) else "off"
+			self._updateWolPreup(adapter, mode)
+		for iface, adapter in self.adapters.items():
 			if not adapter.isWlan:
 				continue
 			for conn in adapter.connections:
-				if conn.isWlan:
+				# Only real SSID profiles carry a usable wlan config; the base
+				# (non-SSID) placeholder's WifiConfig is always empty and must
+				# not be used to build pre-up/pre-down commands.
+				if conn.wlan and conn.wlan.ssid:
 					cs = _buildWlanConfigStrings(adapter, conn)
 					conn.extraLines = [x for x in cs.splitlines() if x] if cs else []
 
@@ -1158,6 +1188,13 @@ class NetworkManager:
 					if wpaConns:
 						wowOnly = any(c.wakeOnWifi and not c.enabled for c in wpaConns)
 						baseConn.enabled = wowOnly or any(c.enabled for c in wpaConns)
+						# The base connection is the only one written to
+						# /etc/network/interfaces, so it must carry the
+						# active SSID's pre-up/pre-down commands.
+						activeWpa = max((c for c in wpaConns if c.enabled), key=lambda c: c.priority, default=None)
+						baseConn.extraLines = activeWpa.extraLines if activeWpa else []
+					else:
+						baseConn.extraLines = []
 					connMap[iface] = [baseConn]
 				else:
 					connMap[iface] = []
