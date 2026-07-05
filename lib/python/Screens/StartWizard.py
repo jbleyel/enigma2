@@ -237,11 +237,11 @@ class StartWizard(Wizard, ShowRemoteControl):
 	def nwListInterfaces(self):
 		result = []
 		try:
-			from Components.NetworkManager import iNetworkManager as _nm
-			for iface, adapter in _nm.adapters.items():
+			from Components.NetworkManager import networkManager
+			for iface, adapter in networkManager.adapters.items():
 				typeLabel = _("WLAN") if adapter.isWlan else _("LAN")
-				name = _nm.getFriendlyAdapterName(iface)
-				desc = _nm.getFriendlyAdapterDescription(iface)
+				name = networkManager.getFriendlyAdapterName(iface)
+				desc = networkManager.getFriendlyAdapterDescription(iface)
 				result.append(("%s  %s  (%s)  –  %s" % (typeLabel, name, iface, desc), iface))
 		except Exception:
 			pass
@@ -263,8 +263,8 @@ class StartWizard(Wizard, ShowRemoteControl):
 
 	def nwOpenSetup(self):
 		try:
-			from Components.NetworkManager import iNetworkManager as _nm, Connection
-			adapter = _nm.adapters.get(self.nwSelectedIface) if self.nwSelectedIface else None
+			from Components.NetworkManager import networkManager, Connection
+			adapter = networkManager.adapters.get(self.nwSelectedIface) if self.nwSelectedIface else None
 			if adapter is None:
 				self._nwDone()
 				return
@@ -301,8 +301,8 @@ class StartWizard(Wizard, ShowRemoteControl):
 	def nwActivateAndPoll(self):
 		if self._nwSetupSaved:
 			try:
-				from Components.NetworkManager import iNetworkManager as _nm
-				_nm.activateInterface(self.nwSelectedIface, lambda ok: self._nwStartIpPoll())
+				from Components.NetworkManager import networkManager
+				networkManager.activateInterface(self.nwSelectedIface, lambda ok: self._nwStartIpPoll())
 			except Exception:
 				self._nwStartIpPoll()
 		else:

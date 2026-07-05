@@ -5,7 +5,7 @@ from enigma import eDVBDB
 from Components.ActionMap import HelpableActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.config import ConfigBoolean, ConfigIP, ConfigSelection, ConfigSubsection, ConfigYesNo, config
-from Components.NetworkManager import iNetworkManager as nm
+from Components.NetworkManager import networkManager
 from Tools.ServiceAction import ServiceAction
 from Components.Opkg import OpkgComponent
 from Components.Sources.StaticText import StaticText
@@ -29,7 +29,7 @@ class InstallWizard(ConfigListScreen, Screen):
 			self.createMenu()
 
 		def checkNetworkLinkCallback(exitCode=None):
-			nm.checkConnectionInternet(checkNetworkCallback)
+			networkManager.checkConnectionInternet(checkNetworkCallback)
 
 		Screen.__init__(self, session)
 		ConfigListScreen.__init__(self, [])
@@ -41,11 +41,11 @@ class InstallWizard(ConfigListScreen, Screen):
 				self.enabled = ConfigSelection(default=0, choices={0: " "})
 				self.configUpdate = ConfigSelection(default=0, choices={0: "Press OK to install"})
 				isFound = False
-				for name, adapter in (nm.adapters.items() if nm is not None else {}.items()):
+				for name, adapter in (networkManager.adapters.items() if networkManager is not None else {}.items()):
 					if not adapter.isWlan:
 						if adapter.kernelUp:
 							self.ipConfigEntry = ConfigIP(default=list(adapter.kernelIp))
-							nm.checkConnectionInternet(checkNetworkCallback)
+							networkManager.checkConnectionInternet(checkNetworkCallback)
 							isFound = True
 						else:
 							ServiceAction.netrestart(checkNetworkLinkCallback, timeout=10000)

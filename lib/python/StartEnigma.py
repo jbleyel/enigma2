@@ -931,8 +931,8 @@ if exists(config.usage.keymap_usermod.value):
 	loadKeymap(config.usage.keymap_usermod.value)
 
 enigma.eProfileWrite("InitNetwork")
-from Components.NetworkManager import iNetworkManager
-iNetworkManager.startNetworkCheck()
+from Components.NetworkManager import networkManager
+networkManager.startNetworkCheck()
 
 enigma.eProfileWrite("InitLCD")
 from Components.Lcd import IconCheck, InitLcd

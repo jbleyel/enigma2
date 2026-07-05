@@ -4,7 +4,7 @@ NetworkSetup.py – Network connection screens for Enigma2 / OpenATV
 Screens:
 	NetworkConnections          – lists all connections; MENU/OK opens context menu
 	NetworkConnectionSetup      – Setup subclass for one Connection (BLUE → per-connection DNS)
-	DnsSettings                 – global system DNS (config.usage.dns.*, iNetworkManager)
+	DnsSettings                 – global system DNS (config.usage.dns.*, networkManager)
 	ScanResult                  – dataclass for one iwlist scan result
 	WiFiScanScreen              – live iwlist scan, sorted by signal strength
 	WiFiActivator               – ifup + wpa_supplicant + IP poll
@@ -52,11 +52,7 @@ from Tools.Conversions import formatNetworkSpeed
 from Tools.Directories import SCOPE_GUISKIN, SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 from Tools.LoadPixmap import LoadPixmap
 from Tools.ServiceAction import ServiceAction
-from Components.NetworkManager import (
-	Adapter, Connection, WiFiConfig,
-	iNetworkManager as nm,
-	encNone, encWep, encWpa, encWpa2, encWpa3, pingAsync
-)
+from Components.NetworkManager import Adapter, Connection, WiFiConfig, networkManager, encNone, encWep, encWpa, encWpa2, encWpa3, pingAsync
 
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -151,10 +147,10 @@ def _ip4Str(addr: list) -> str:
 # DnsSettings – global system DNS (drop-in replacement for DNSSettings)
 # ===========================================================================
 class DnsSettings(Setup):
-	"""Global system DNS configuration. Uses iNetworkManager (NetworkManager.py)."""
+	"""Global system DNS configuration. Uses networkManager (NetworkManager.py)."""
 
 	def __init__(self, session):
-		dnsInitial = list(nm.nameserverConfig.servers) if nm is not None else []
+		dnsInitial = list(networkManager.nameserverConfig.servers) if networkManager is not None else []
 		self.dnsOptions = {}
 		self.dnsServers = []
 		self.dnsServerItems = []
@@ -209,9 +205,9 @@ class DnsSettings(Setup):
 
 	def _defaultGw(self) -> list[int]:
 		result = [0, 0, 0, 0]
-		if nm is not None:
-			for iface in sorted(nm.adapters.keys()):
-				adapter = nm.adapters[iface]
+		if networkManager is not None:
+			for iface in sorted(networkManager.adapters.keys()):
+				adapter = networkManager.adapters[iface]
 				if adapter.kernelUp:
 					conn = adapter.activeConnection()
 					if conn:
@@ -290,7 +286,7 @@ class DnsSettings(Setup):
 				self.createSetup()
 
 	def keySave(self):
-		if nm is not None:
+		if networkManager is not None:
 			servers: list = []
 			if config.usage.dns.value == "dnscrypt":
 				servers = [[127, 0, 0, 1]]
@@ -303,8 +299,8 @@ class DnsSettings(Setup):
 				for val in self.dnsServers:
 					if val:
 						servers.append(val)
-			nm.setNameservers(servers)
-			nm.save()
+			networkManager.setNameservers(servers)
+			networkManager.save()
 			if config.usage.dns.value == "dnscrypt":
 				self.writeDnsCryptToml()
 		hasChanges = False
@@ -667,9 +663,9 @@ class NetworkConnections(Screen):
 		self._internetChecked = False
 		self._internetResult = None
 		self.onShown.append(self.checkInternet)
-		if nm:
-			nm.onAdaptersChanged.append(self._buildList)
-			self.onClose.append(lambda: nm.onAdaptersChanged.remove(self._buildList) if self._buildList in nm.onAdaptersChanged else None)
+		if networkManager:
+			networkManager.onAdaptersChanged.append(self._buildList)
+			self.onClose.append(lambda: networkManager.onAdaptersChanged.remove(self._buildList) if self._buildList in networkManager.onAdaptersChanged else None)
 
 	def _readSkinColors(self):
 		attrs = self["list"].additionalTemplateAttributes
@@ -685,7 +681,7 @@ class NetworkConnections(Screen):
 				self._internetChecked = True
 
 		if not self._internetChecked:
-			nm.checkConnectionInternet(callback=checkInternetCallback)
+			networkManager.checkConnectionInternet(callback=checkInternetCallback)
 
 	@staticmethod
 	def _adapterPixmap(adapter: Adapter):
@@ -701,11 +697,9 @@ class NetworkConnections(Screen):
 		return LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, f"icons/{name}"))
 
 	def _buildList(self):
-		if nm is None:
-			return
 		entries: list[tuple] = []
-		for iface in sorted(nm.adapters.keys()):
-			adapter = nm.adapters[iface]
+		for iface in sorted(networkManager.adapters.keys()):
+			adapter = networkManager.adapters[iface]
 			internet = self._internetResult and self._internetResult.get(iface)
 			adapterIcon = self.ICON_WIFI if adapter.isWlan else self.ICON_LAN
 			checkBox = self.ICON_CHECKBOX_ON if adapter.adapterEnabled else self.ICON_CHECKBOX_OFF
@@ -827,8 +821,8 @@ class NetworkConnections(Screen):
 
 	def _toggleAdapter(self, adapter: Adapter):
 		adapter.adapterEnabled = not adapter.adapterEnabled
-		if nm:
-			nm.save()
+		if networkManager:
+			networkManager.save()
 		self._buildList()
 		state = _("enabled") if adapter.adapterEnabled else _("disabled")
 		self.session.open(MessageBox, _("Adapter %s %s") % (adapter.name, state), type=MessageBox.TYPE_INFO, timeout=3)
@@ -844,8 +838,8 @@ class NetworkConnections(Screen):
 		else:
 			conn.enabled = not conn.enabled
 			adapter.adapterEnabled = conn.enabled
-		if nm:
-			nm.save()
+		if networkManager:
+			networkManager.save()
 		self._buildList()
 		self.session.open(
 			MessageBox,
@@ -865,42 +859,41 @@ class NetworkConnections(Screen):
 	def _doDelete(self, confirmed: bool, conn: Connection, adapter: Adapter):
 		if confirmed:
 			if conn.isWlan and conn.wlan:
-				nm.removeConnection(adapter.name, conn.wlan.ssid)
+				networkManager.removeConnection(adapter.name, conn.wlan.ssid)
 			else:
 				adapter.connections = [x for x in adapter.connections if x is not conn]
-			if nm:
-				nm.save()
+			if networkManager:
+				networkManager.save()
 			self._buildList()
 
 	def keyGreen(self):
-		if nm is None or not nm.adapters:
-			return
-		wlanAdapters = [x for x in nm.adapters.values() if x.isWlan]
-		lanAdapters = [x for x in nm.adapters.values() if not x.isWlan]
-		if wlanAdapters:
-			WiFiAddFlow.start(self.session, callback=self._buildList)
-		elif lanAdapters:
-			adapter = lanAdapters[0]
-			newConn = Connection(adapter=adapter.name, name=_("New LAN connection"), dhcp=True)
-			self.session.openWithCallback(
-				lambda changed: self._newLanConnClosed(changed, newConn, adapter),
-				NetworkConnectionSetup,
-				newConn,
-				adapter,
-			)
+		if networkManager.adapters:
+			wlanAdapters = [x for x in networkManager.adapters.values() if x.isWlan]
+			lanAdapters = [x for x in networkManager.adapters.values() if not x.isWlan]
+			if wlanAdapters:
+				WiFiAddFlow.start(self.session, callback=self._buildList)
+			elif lanAdapters:
+				adapter = lanAdapters[0]
+				newConn = Connection(adapter=adapter.name, name=_("New LAN connection"), dhcp=True)
+				self.session.openWithCallback(
+					lambda changed: self._newLanConnClosed(changed, newConn, adapter),
+					NetworkConnectionSetup,
+					newConn,
+					adapter,
+				)
 
 	def _newLanConnClosed(self, changed: bool, conn: Connection, adapter: Adapter):
 		if changed:
 			existingIds = {id(x) for x in adapter.connections}
 			if id(conn) not in existingIds:
 				adapter.connections.append(conn)
-				if nm:
-					nm.save()
+				if networkManager:
+					networkManager.save()
 			self._buildList()
 
 	def _openWlanScan(self, iface: str):
-		if nm is not None:
-			adapter = nm.getAdapter(iface)
+		if networkManager is not None:
+			adapter = networkManager.getAdapter(iface)
 			if adapter is not None and adapter.isWlan:
 				self.session.openWithCallback(
 					lambda result: self._wlanScanDone(result, adapter),
@@ -922,8 +915,8 @@ class NetworkConnections(Screen):
 		if saved:
 			if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in adapter.connections):
 				adapter.connections.append(conn)
-				if nm:
-					nm.save()
+				if networkManager:
+					networkManager.save()
 			self._buildList()
 
 	def _openWlanManual(self, adapter: Adapter):
@@ -1008,9 +1001,9 @@ class NetworkConnectionSetup(Setup):
 		self.cfgWakeOnLan = NoSave(ConfigYesNo(default=conn.wakeOnLan != "off"))
 
 		# Forced link speed (LAN adapters only)
-		if not conn.isWlan and nm is not None:
-			linkSpeedChoices = nm.getSupportedLinkSpeeds(adapter.name)
-			currentLinkSpeed = nm.getLinkSpeed(adapter.name)
+		if not conn.isWlan and networkManager is not None:
+			linkSpeedChoices = networkManager.getSupportedLinkSpeeds(adapter.name)
+			currentLinkSpeed = networkManager.getLinkSpeed(adapter.name)
 			if currentLinkSpeed not in dict(linkSpeedChoices):
 				currentLinkSpeed = "auto"
 			self._hasLinkSpeedChoices = len(linkSpeedChoices) > 1
@@ -1082,8 +1075,8 @@ class NetworkConnectionSetup(Setup):
 		# Apply Wake-on-LAN via ethtool + optional /proc path
 		if not conn.isWlan and adapter.canWakeOnLan:
 			newWolMode = "g" if self.cfgWakeOnLan.value else "off"
-			if newWolMode != conn.wakeOnLan and nm is not None:
-				cmds = nm.setWakeOnLanCommands(adapter.name, newWolMode)
+			if newWolMode != conn.wakeOnLan and networkManager is not None:
+				cmds = networkManager.setWakeOnLanCommands(adapter.name, newWolMode)
 				if cmds:
 					Console().eBatch(cmds, lambda result: None, debug=False)
 
@@ -1093,17 +1086,17 @@ class NetworkConnectionSetup(Setup):
 				conn.wakeOnWiFi = self.cfgWakeOnWiFi.value
 			else:
 				conn.wakeOnWiFi = self.cfgWowOnly.value
-			if nm is not None:
-				cmds = nm.setWakeOnWiFiCommands(adapter.name, conn.wakeOnWiFi)
+			if networkManager is not None:
+				cmds = networkManager.setWakeOnWiFiCommands(adapter.name, conn.wakeOnWiFi)
 				if cmds:
 					Console().eBatch(cmds, lambda result: None, debug=False)
 
 		# Apply forced link speed (LAN adapters only)
-		if not conn.isWlan and nm is not None:
-			nm.setLinkSpeed(adapter.name, self.cfgLinkSpeed.value)
+		if not conn.isWlan and networkManager is not None:
+			networkManager.setLinkSpeed(adapter.name, self.cfgLinkSpeed.value)
 
-		if nm is not None:
-			nm.save()
+		if networkManager is not None:
+			networkManager.save()
 		self.close(True)
 
 	def keyCancel(self):
@@ -1422,11 +1415,11 @@ class WiFiAddFlow:
 
 	@staticmethod
 	def start(session, adapter: Adapter | None = None, callback=None):
-		if nm is not None:
+		if networkManager is not None:
 			if adapter is not None:
 				WiFiAddFlow._openScan(session, adapter, callback)
 			else:
-				wlanAdapters = [x for x in nm.adapters.values() if x.isWlan]
+				wlanAdapters = [x for x in networkManager.adapters.values() if x.isWlan]
 				if not wlanAdapters:
 					session.open(MessageBox, _("No Wi-Fi adapter found."), type=MessageBox.TYPE_INFO, timeout=4)
 				elif len(wlanAdapters) == 1:
@@ -1447,8 +1440,8 @@ class WiFiAddFlow:
 				if saved:
 					if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in adapter.connections):
 						adapter.connections.append(conn)
-						if nm:
-							nm.save()
+						if networkManager:
+							networkManager.save()
 				if callback:
 					callback()
 			session.openWithCallback(_setupDone, NetworkConnectionSetup, conn, adapter)
@@ -1557,9 +1550,9 @@ class NetworkAdapterTest2(Screen):
 		self._start()
 
 	def _start(self):
-		adapterName = nm.getFriendlyAdapterName(self._iface) if nm else self._iface
+		adapterName = networkManager.getFriendlyAdapterName(self._iface) if networkManager else self._iface
 		self.setTitle(_("Network Test – %s") % adapterName)
-		adapter = nm.adapters.get(self._iface) if nm else None
+		adapter = networkManager.adapters.get(self._iface) if networkManager else None
 		isWlan = adapter.isWlan if adapter else False
 		labels = [
 			_("Adapter"),
@@ -1591,14 +1584,14 @@ class NetworkAdapterTest2(Screen):
 		pingAsync(host, self._iface, _done)
 
 	def _testAdapter(self):
-		adapter = nm.adapters.get(self._iface) if nm else None
+		adapter = networkManager.adapters.get(self._iface) if networkManager else None
 		if adapter is None:
 			self._setRow(self._ROW_ADAPTER, self._ICON_FAIL, self._T_NOT_FOUND, "", self._COL_FAIL)
 			self._setRow(self._ROW_LINK, self._ICON_SKIP, self._T_NA, "", self._COL_PENDING)
 			self._setRow(self._ROW_IP, self._ICON_SKIP, self._T_NA, "", self._COL_PENDING)
 			self._testGateway()
 			return
-		self._setRow(self._ROW_ADAPTER, self._ICON_OK, nm.getFriendlyAdapterName(self._iface), adapter.kernelDriver or "", self._COL_OK)
+		self._setRow(self._ROW_ADAPTER, self._ICON_OK, networkManager.getFriendlyAdapterName(self._iface), adapter.kernelDriver or "", self._COL_OK)
 		self._testLink(adapter)
 
 	def _testLink(self, adapter):
@@ -1629,7 +1622,7 @@ class NetworkAdapterTest2(Screen):
 		self._testGateway()
 
 	def _testGateway(self):
-		adapter = nm.adapters.get(self._iface) if nm else None
+		adapter = networkManager.adapters.get(self._iface) if networkManager else None
 		gw = ""
 		if adapter:
 			conn = adapter.activeConnection()

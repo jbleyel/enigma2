@@ -1719,4 +1719,4 @@ def pingAsync(host: str, iface: str, callback):
 # Module-level singleton
 # ===========================================================================
 
-iNetworkManager = NetworkManager()
+networkManager = NetworkManager()

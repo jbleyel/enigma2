@@ -21,7 +21,7 @@ from traceback import format_stack
 
 from Components.Console import Console
 from Components.Harddisk import getProcMounts
-from Components.NetworkManager import iNetworkManager as _nm
+from Components.NetworkManager import networkManager
 from Tools.ServiceAction import ServiceAction
 
 
@@ -37,26 +37,26 @@ class NetworkCompat:
 	# ------------------------------------------------------------------
 
 	def activateInterface(self, iface: str, callback=None):
-		_nm.activateInterface(iface, callback)
+		networkManager.activateInterface(iface, callback)
 
 	def restartNetwork(self, callback=None):
-		_nm.restartNetwork(callback=callback)
+		networkManager.restartNetwork(callback=callback)
 
 	def getFriendlyAdapterName(self, iface: str) -> str:
-		return _nm.getFriendlyAdapterName(iface)
+		return networkManager.getFriendlyAdapterName(iface)
 
 	# ------------------------------------------------------------------
 	# Plugin-only shims
 	# ------------------------------------------------------------------
 
 	def getAdapterName(self, iface: str) -> str:
-		return _nm.getFriendlyAdapterName(iface)
+		return networkManager.getFriendlyAdapterName(iface)
 
 	def getAdapterAttribute(self, iface: str, attr: str):
-		adapter = _nm.getAdapter(iface)
+		adapter = networkManager.getAdapter(iface)
 		if adapter is None:
 			return None
-		conn = _nm.getActiveConnection(iface)
+		conn = networkManager.getActiveConnection(iface)
 		attrMap = {
 			"up": lambda: adapter.kernelUp,
 			"ip": lambda: (conn.ip if conn else adapter.kernelIp),
@@ -73,7 +73,7 @@ class NetworkCompat:
 		return getter() if getter else None
 
 	def setAdapterAttribute(self, iface: str, attr: str, value):
-		conn = _nm.getActiveConnection(iface)
+		conn = networkManager.getActiveConnection(iface)
 		if conn is None:
 			return
 		if attr == "dhcp":
@@ -91,28 +91,28 @@ class NetworkCompat:
 
 	def getConfiguredAdapters(self) -> list[str]:
 		return [
-			iface for iface in _nm.adapters
-			if any(x.enabled for x in _nm.getConnections(iface))
+			iface for iface in networkManager.adapters
+			if any(x.enabled for x in networkManager.getConnections(iface))
 		]
 
 	def getInstalledAdapters(self) -> list[str]:
-		return list(_nm.adapters.keys())
+		return list(networkManager.adapters.keys())
 
 	def getAdapterList(self) -> list[str]:
 		return self.getInstalledAdapters()
 
 	def getNumberOfAdapters(self) -> int:
-		return len(_nm.adapters)
+		return len(networkManager.adapters)
 
 	def getInterfaces(self, callback=None):
-		_nm.load()
+		networkManager.load()
 		if callback:
 			callback(True)
 
 	def deactivateInterface(self, ifaces, callback=None):
 		if isinstance(ifaces, str):
 			ifaces = [ifaces]
-		wlanIfaces = [x for x in ifaces if _nm.getAdapter(x) and _nm.getAdapter(x).isWlan]
+		wlanIfaces = [x for x in ifaces if networkManager.getAdapter(x) and networkManager.getAdapter(x).isWlan]
 		lanIfaces = [x for x in ifaces if x not in wlanIfaces]
 		total = (1 if lanIfaces else 0) + len(wlanIfaces)
 		if total == 0:
@@ -166,8 +166,8 @@ class NetworkCompat:
 	@property
 	def ifaces(self) -> dict:
 		result = {}
-		ns = list(_nm.nameserverConfig.servers)
-		for iface, adapter in _nm.adapters.items():
+		ns = list(networkManager.nameserverConfig.servers)
+		for iface, adapter in networkManager.adapters.items():
 			conn = adapter.activeConnection()
 			result[iface] = {
 				"up": adapter.kernelUp,

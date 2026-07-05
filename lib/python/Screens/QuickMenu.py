@@ -6,7 +6,7 @@ import NavigationInstance
 from Components.ActionMap import HelpableActionMap, HelpableNumberActionMap
 from Components.config import config
 from Components.Label import Label
-from Components.NetworkManager import iNetworkManager as nm
+from Components.NetworkManager import networkManager
 from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
@@ -333,21 +333,19 @@ class QuickMenu(Screen, ProtectedScreen):
 
 	def subMenuNetwork(self):  # Network Menu.
 		def getNetworkInterfaces():
-			if nm is None:
-				return [], None
 			adapters = [
 				(f"{'WLAN' if a.isWlan else 'LAN'} ({name})", name)
-				for name, a in nm.adapters.items()
+				for name, a in networkManager.adapters.items()
 			]
 			activeInterface = next(
-				(name for name, a in nm.adapters.items() if a.kernelUp),
+				(name for name, a in networkManager.adapters.items() if a.kernelUp),
 				None
 			)
 			return adapters, activeInterface
 
 		def networkInterface():
 			from Screens.NetworkSetup import NetworkConnectionSetup
-			adapter = nm.adapters.get(activeInterface)
+			adapter = networkManager.adapters.get(activeInterface)
 			if adapter and adapter.connections:
 				conn = adapter.activeConnection() or adapter.connections[0]
 				self.session.open(NetworkConnectionSetup, conn, adapter)

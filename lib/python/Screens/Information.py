@@ -19,7 +19,7 @@ from Components.Console import Console
 from Components.Harddisk import harddiskmanager
 from Components.InputDevice import remoteControl
 from Components.Label import Label
-from Components.NetworkManager import iNetworkManager as nm
+from Components.NetworkManager import networkManager
 from Components.NimManager import nimmanager
 from Components.Pixmap import Pixmap
 from Components.ScrollLabel import ScrollLabel
@@ -120,8 +120,8 @@ class InformationBase(Screen):
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Refresh"))
 		self["actions"] = HelpableActionMap(self, ["CancelSaveActions", "OkActions", "NavigationActions"], {
-			"cancel": (self.keyCancel, _("Close the screen")),
-			"close": (self.closeRecursive, _("Close the screen and exit all menus")),
+			"cancel": (self.keyClose, _("Close the screen")),
+			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
 			"save": (self.refreshInformation, _("Refresh the screen")),
 			"ok": (self.refreshInformation, _("Refresh the screen")),
 			"top": (self["information"].goTop, _("Move to first line / screen")),
@@ -146,11 +146,11 @@ class InformationBase(Screen):
 		self.informationTimer.callback.append(self.fetchInformation)
 		self.informationTimer.start(25)
 
-	def keyCancel(self):
+	def keyClose(self):
 		self.console.killAll()
 		self.close()
 
-	def closeRecursive(self):
+	def keyCloseRecursive(self):
 		self.console.killAll()
 		self.close(True)
 
@@ -201,11 +201,34 @@ class BenchmarkInformation(InformationBase):
 		self.skinName.insert(0, "BenchmarkInformation")
 		self.skinName.insert(0, "InformationBenchmark")
 		self.cpuTypes = []
+		self.cpuMemoryClock = None
 		self.cpuBenchmark = None
 		self.cpuRating = None
 		self.ramBenchmark = None
 
 	def fetchInformation(self):
+		def cpuBenchmarkCallback(result, retVal, extraArgs):
+			def ramBenchmarkCallback(result, retVal, extraArgs):
+				for line in result.split("\n"):
+					if line.startswith("Copy rate:"):
+						self.ramBenchmark = float([x.strip() for x in line.split(":")][1])
+				for callback in self.onInformationUpdated:
+					if callable(callback):
+						callback()
+
+			for line in result.split("\n"):
+				if line.startswith("Memory clock speed (HZ):"):
+					self.cpuMemoryClock = int([x.strip() for x in line.split(":")][1])
+				if line.startswith("DMIPS:"):
+					self.cpuBenchmark = int([x.strip() for x in line.split(":")][1])
+				if line.startswith("CPU status:"):
+					self.cpuRating = [x.strip() for x in line.split(":")][1]
+			# Serialize the tests for better accuracy.
+			self.console.ePopen(("/usr/bin/streambench", "/usr/bin/streambench"), ramBenchmarkCallback)
+			for callback in self.onInformationUpdated:
+				if callable(callback):
+					callback()
+
 		self.informationTimer.stop()
 		self.cpuTypes = []
 		lines = []
@@ -213,29 +236,8 @@ class BenchmarkInformation(InformationBase):
 		for line in lines:
 			if line.startswith("model name") or line.startswith("Processor"):  # HiSilicon use the label "Processor"!
 				self.cpuTypes.append([x.strip() for x in line.split(":")][1])
-		self.console.ePopen(("/usr/bin/dhry", "/usr/bin/dhry"), self.cpuBenchmarkFinished)
 		# Serialize the tests for better accuracy.
-		# self.console.ePopen(("/usr/bin/streambench", "/usr/bin/streambench"), self.ramBenchmarkFinished)
-		for callback in self.onInformationUpdated:
-			if callable(callback):
-				callback()
-
-	def cpuBenchmarkFinished(self, result, retVal, extraArgs):
-		for line in result.split("\n"):
-			if line.startswith("DMIPS"):
-				self.cpuBenchmark = int([x.strip() for x in line.split(":")][1])
-			if line.startswith("CPU status"):
-				self.cpuRating = [x.strip() for x in line.split(":")][1]
-		# Serialize the tests for better accuracy.
-		self.console.ePopen(("/usr/bin/streambench", "/usr/bin/streambench"), self.ramBenchmarkFinished)
-		for callback in self.onInformationUpdated:
-			if callable(callback):
-				callback()
-
-	def ramBenchmarkFinished(self, result, retVal, extraArgs):
-		for line in result.split("\n"):
-			if line.startswith("Copy rate"):
-				self.ramBenchmark = float([x.strip() for x in line.split(":")][1])
+		self.console.ePopen(("/usr/bin/dhry", "/usr/bin/dhry"), callback=cpuBenchmarkCallback)
 		for callback in self.onInformationUpdated:
 			if callable(callback):
 				callback()
@@ -253,7 +255,8 @@ class BenchmarkInformation(InformationBase):
 		for index, cpu in enumerate(self.cpuTypes):
 			info.append(formatLine("P1", _("CPU / Core %d type") % index, cpu))
 		info.append("")
-		info.append(formatLine("P1", _("CPU benchmark"), _("%d DMIPS per core") % (self.cpuBenchmark if self.cpuBenchmark else _("Calculating benchmark..."))))
+		info.append(formatLine("P1", _("CPU memory clock"), _("%d Hz") % self.cpuMemoryClock if self.cpuMemoryClock else _("Calculating clock...")))
+		info.append(formatLine("P1", _("CPU benchmark"), _("%s DMIPS per core") % self.cpuBenchmark if self.cpuBenchmark else _("Calculating benchmark...")))
 		count = len(self.cpuTypes)
 		if count > 1:
 			info.append(formatLine("P1", _("Total CPU benchmark"), _("%d DMIPS with %d cores") % (self.cpuBenchmark * count, count) if self.cpuBenchmark else _("Calculating benchmark...")))
@@ -304,33 +307,33 @@ class CommitInformation(InformationBase):
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
 		self["commitActions"] = HelpableActionMap(self, ["MenuActions", "ColorActions", "NavigationActions"], {
-			"menu": (self.showCommitMenu, _("Show selection menu for commit logs")),
-			"yellow": (self.previousCommitLog, _("Show previous commit log")),
-			"blue": (self.nextCommitLog, _("Show next commit log")),
-			"left": (self.previousCommitLog, _("Show previous commit log")),
-			"right": (self.nextCommitLog, _("Show next commit log"))
+			"menu": (self.keyShowCommitMenu, _("Show selection menu for commit logs")),
+			"yellow": (self.keyPreviousCommitLog, _("Show previous commit log")),
+			"blue": (self.keyNextCommitLog, _("Show next commit log")),
+			"left": (self.keyPreviousCommitLog, _("Show previous commit log")),
+			"right": (self.keyNextCommitLog, _("Show next commit log"))
 		}, prio=0, description=_("Commit Information Actions"))
 		self.commitLogs = BoxInfo.getItem("InformationCommitLogs", [("Unavailable", None)])
 		self.commitLogIndex = 0
 		self.commitLogMax = len(self.commitLogs)
 		self.cachedCommitInfo = {}
 
-	def showCommitMenu(self):
+	def keyShowCommitMenu(self):
+		def keyShowCommitMenuCallBack(selectedIndex):
+			if isinstance(selectedIndex, int):
+				self.commitLogIndex = selectedIndex
+				self.displayInformation()
+				self.informationTimer.start(25)
+
 		choices = [(commitLog[0], index) for index, commitLog in enumerate(self.commitLogs)]
-		self.session.openWithCallback(self.showCommitMenuCallBack, MessageBox, text=_("Select a repository commit log to view:"), list=choices, windowTitle=self.baseTitle)
+		self.session.openWithCallback(keyShowCommitMenuCallBack, MessageBox, text=_("Select a repository commit log to view:"), list=choices, windowTitle=self.baseTitle)
 
-	def showCommitMenuCallBack(self, selectedIndex):
-		if isinstance(selectedIndex, int):
-			self.commitLogIndex = selectedIndex
-			self.displayInformation()
-			self.informationTimer.start(25)
-
-	def previousCommitLog(self):
+	def keyPreviousCommitLog(self):
 		self.commitLogIndex = (self.commitLogIndex - 1) % self.commitLogMax
 		self.displayInformation()
 		self.informationTimer.start(25)
 
-	def nextCommitLog(self):
+	def keyNextCommitLog(self):
 		self.commitLogIndex = (self.commitLogIndex + 1) % self.commitLogMax
 		self.displayInformation()
 		self.informationTimer.start(25)
@@ -405,12 +408,12 @@ class DebugInformation(InformationBase):
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
 		self["debugActions"] = HelpableActionMap(self, ["MenuActions", "InfoActions", "ColorActions", "NavigationActions"], {
-			"menu": (self.showLogMenu, _("Show selection menu for debug log files")),
-			"info": (self.showLogSettings, _("Show the Logs Settings screen")),
-			"yellow": (self.deleteLog, _("Delete the currently displayed log file")),
-			"blue": (self.deleteAllLogs, _("Delete all log files")),
-			"left": (self.previousDebugLog, _("Show previous debug log file")),
-			"right": (self.nextDebugLog, _("Show next debug log file"))
+			"menu": (self.keyShowLogMenu, _("Show selection menu for debug log files")),
+			"info": (self.keyShowLogSettings, _("Show the Logs Settings screen")),
+			"yellow": (self.keyDeleteLog, _("Delete the currently displayed log file")),
+			"blue": (self.keyDeleteAllLogs, _("Delete all log files")),
+			"left": (self.keyPreviousDebugLog, _("Show previous debug log file")),
+			"right": (self.keyNextDebugLog, _("Show next debug log file"))
 		}, prio=0, description=_("Debug Log Information Actions"))
 		self["debugActions"].setEnabled(False)
 		self.debugLogs = []
@@ -418,17 +421,17 @@ class DebugInformation(InformationBase):
 		self.debugLogMax = 0
 		self.cachedDebugInfo = {}
 
-	def showLogMenu(self):
+	def keyShowLogMenu(self):
+		def keyShowLogMenuCallBack(selectedIndex):
+			if isinstance(selectedIndex, int):
+				self.debugLogIndex = selectedIndex
+				self.displayInformation()
+				self.informationTimer.start(25)
+
 		choices = [(_("Log file: '%s'  (%s)") % (debugLog[0], debugLog[1]), index) for index, debugLog in enumerate(self.debugLogs)]
-		self.session.openWithCallback(self.showLogMenuCallBack, MessageBox, text=_("Select a debug log file to view:"), list=choices, default=self.debugLogIndex, windowTitle=self.baseTitle)
+		self.session.openWithCallback(keyShowLogMenuCallBack, MessageBox, text=_("Select a debug log file to view:"), list=choices, default=self.debugLogIndex, windowTitle=self.baseTitle)
 
-	def showLogMenuCallBack(self, selectedIndex):
-		if isinstance(selectedIndex, int):
-			self.debugLogIndex = selectedIndex
-			self.displayInformation()
-			self.informationTimer.start(25)
-
-	def showLogSettings(self):
+	def keyShowLogSettings(self):
 		self.setTitle(_("Debug Log Information"))
 		self.session.openWithCallback(self.showLogSettingsCallback, Setup, "Logs")
 
@@ -436,57 +439,85 @@ class DebugInformation(InformationBase):
 		if retVal and retVal[0]:
 			self.close(True)
 
-	def deleteLog(self):
-		name, sequence, path = self.debugLogs[self.debugLogIndex]
-		self.session.openWithCallback(self.deleteLogCallback, MessageBox, "%s\n\n%s" % (_("Log file: '%s'  (%s)") % (name, sequence), _("Do you want to delete this log file?")), default=False)
-
-	def deleteLogCallback(self, answer):
-		if answer:
-			name, sequence, path = self.debugLogs[self.debugLogIndex]
-			try:
-				remove(path)
-				del self.cachedDebugInfo[path]
-				self.session.open(MessageBox, _("Log file '%s' deleted.") % name, type=MessageBox.TYPE_INFO, timeout=5, close_on_any_key=True, windowTitle=self.baseTitle)
-				self.debugLogs = []
-			except OSError as err:
-				self.session.open(MessageBox, _("Error %d: Log file '%s' not deleted!  (%s)") % (err.errno, name, err.strerror), type=MessageBox.TYPE_ERROR, timeout=5, windowTitle=self.baseTitle)
-			self.informationTimer.start(25)
-
-	def deleteAllLogs(self):
-		self.session.openWithCallback(self.deleteAllLogsCallback, MessageBox, _("Do you want to delete all the log files?"), default=False)
-
-	def deleteAllLogsCallback(self, answer):
-		if answer:
-			log = []
-			type = MessageBox.TYPE_INFO
-			close = True
-			for name, sequence, path in self.debugLogs:
+	def keyDeleteLog(self):
+		def keyDeleteLogCallback(answer):
+			if answer:
+				name, sequence, path = self.debugLogs[self.debugLogIndex]
 				try:
 					remove(path)
-					log.append(((_("Log file '%s' deleted.") % name), None))
+					del self.cachedDebugInfo[path]
+					self.session.open(MessageBox, _("Log file '%s' deleted.") % name, type=MessageBox.TYPE_INFO, timeout=5, close_on_any_key=True, windowTitle=self.baseTitle)
+					self.debugLogs = []
 				except OSError as err:
-					type = MessageBox.TYPE_ERROR
-					close = False
-					log.append(((_("Error %d: Log file '%s' not deleted!  (%s)") % (err.errno, name, err.strerror)), None))
-			self.session.open(MessageBox, _("Results of the delete all logs:"), type=type, list=log, timeout=5, close_on_any_key=close, windowTitle=self.baseTitle)
-			self.debugLogs = []
-			self.cachedDebugInfo = {}
-			self.informationTimer.start(25)
+					self.session.open(MessageBox, _("Error %d: Log file '%s' not deleted!  (%s)") % (err.errno, name, err.strerror), type=MessageBox.TYPE_ERROR, timeout=5, windowTitle=self.baseTitle)
+				self.informationTimer.start(25)
 
-	def previousDebugLog(self):
+		name, sequence, path = self.debugLogs[self.debugLogIndex]
+		self.session.openWithCallback(keyDeleteLogCallback, MessageBox, "%s\n\n%s" % (_("Log file: '%s'  (%s)") % (name, sequence), _("Do you want to delete this log file?")), default=False)
+
+	def keyDeleteAllLogs(self):
+		def keyDeleteAllLogsCallback(answer):
+			if answer:
+				log = []
+				type = MessageBox.TYPE_INFO
+				close = True
+				for name, sequence, path in self.debugLogs:
+					try:
+						remove(path)
+						log.append(((_("Log file '%s' deleted.") % name), None))
+					except OSError as err:
+						type = MessageBox.TYPE_ERROR
+						close = False
+						log.append(((_("Error %d: Log file '%s' not deleted!  (%s)") % (err.errno, name, err.strerror)), None))
+				self.session.open(MessageBox, _("Results of the delete all logs:"), type=type, list=log, timeout=5, close_on_any_key=close, windowTitle=self.baseTitle)
+				self.debugLogs = []
+				self.cachedDebugInfo = {}
+				self.informationTimer.start(25)
+
+		self.session.openWithCallback(keyDeleteAllLogsCallback, MessageBox, _("Do you want to delete all the log files?"), default=False)
+
+	def keyPreviousDebugLog(self):
 		self.debugLogIndex = (self.debugLogIndex - 1) % self.debugLogMax
 		self.displayInformation()
 		self.informationTimer.start(25)
 
-	def nextDebugLog(self):
+	def keyNextDebugLog(self):
 		self.debugLogIndex = (self.debugLogIndex + 1) % self.debugLogMax
 		self.displayInformation()
 		self.informationTimer.start(25)
 
 	def fetchInformation(self):
+		def findLogFiles():
+			debugLogs = []
+			installLog = "/home/root/autoinstall.log"
+			if isfile(installLog):
+				debugLogs.append((_("Auto install log"), _("Install 1/1"), installLog))
+			crashLog = "/tmp/enigma2_crash.log"
+			if isfile(crashLog):
+				debugLogs.append((_("Current crash log"), _("Current 1/1"), crashLog))
+			paths = [x for x in sorted(glob("/mnt/hdd/*.log"), key=lambda x: isfile(x) and getmtime(x))]
+			if paths:
+				countLogs = len(paths)
+				for index, path in enumerate(reversed(paths)):
+					debugLogs.append((basename(path), _("Log %d/%d") % (index + 1, countLogs), path))
+			logPath = config.crash.debug_path.value
+			paths = [x for x in sorted(glob(join(logPath, "*-enigma2-crash.log")), key=lambda x: isfile(x) and getmtime(x))]
+			paths += [x for x in sorted(glob(join(logPath, "enigma2_crash*.log")), key=lambda x: isfile(x) and getmtime(x))]
+			if paths:
+				countLogs = len(paths)
+				for index, path in enumerate(reversed(paths)):
+					debugLogs.append((basename(path), _("Crash %d/%d") % (index + 1, countLogs), path))
+			paths = [x for x in sorted(glob(join(logPath, "*-enigma2-debug.log")), key=lambda x: isfile(x) and getmtime(x))]
+			paths += [x for x in sorted(glob(join(logPath, "Enigma2-debug*.log")), key=lambda x: isfile(x) and getmtime(x))]
+			if paths:
+				countLogs = len(paths)
+				for index, path in enumerate(reversed(paths)):
+					debugLogs.append((basename(path), _("Debug %d/%d") % (index + 1, countLogs), path))
+			return debugLogs
+
 		self.informationTimer.stop()
 		if not self.debugLogs:
-			self.debugLogs = self.findLogFiles()
+			self.debugLogs = findLogFiles()
 			self.debugLogIndex = 0
 			self.debugLogMax = len(self.debugLogs)
 		if self.debugLogs:
@@ -515,34 +546,6 @@ class DebugInformation(InformationBase):
 		for callback in self.onInformationUpdated:
 			if callable(callback):
 				callback()
-
-	def findLogFiles(self):
-		debugLogs = []
-		installLog = "/home/root/autoinstall.log"
-		if isfile(installLog):
-			debugLogs.append((_("Auto install log"), _("Install 1/1"), installLog))
-		crashLog = "/tmp/enigma2_crash.log"
-		if isfile(crashLog):
-			debugLogs.append((_("Current crash log"), _("Current 1/1"), crashLog))
-		paths = [x for x in sorted(glob("/mnt/hdd/*.log"), key=lambda x: isfile(x) and getmtime(x))]
-		if paths:
-			countLogs = len(paths)
-			for index, path in enumerate(reversed(paths)):
-				debugLogs.append((basename(path), _("Log %d/%d") % (index + 1, countLogs), path))
-		logPath = config.crash.debug_path.value
-		paths = [x for x in sorted(glob(join(logPath, "*-enigma2-crash.log")), key=lambda x: isfile(x) and getmtime(x))]
-		paths += [x for x in sorted(glob(join(logPath, "enigma2_crash*.log")), key=lambda x: isfile(x) and getmtime(x))]
-		if paths:
-			countLogs = len(paths)
-			for index, path in enumerate(reversed(paths)):
-				debugLogs.append((basename(path), _("Crash %d/%d") % (index + 1, countLogs), path))
-		paths = [x for x in sorted(glob(join(logPath, "*-enigma2-debug.log")), key=lambda x: isfile(x) and getmtime(x))]
-		paths += [x for x in sorted(glob(join(logPath, "Enigma2-debug*.log")), key=lambda x: isfile(x) and getmtime(x))]
-		if paths:
-			countLogs = len(paths)
-			for index, path in enumerate(reversed(paths)):
-				debugLogs.append((basename(path), _("Debug %d/%d") % (index + 1, countLogs), path))
-		return debugLogs
 
 	def refreshInformation(self):  # Should we limit the number of fetches per minute?
 		self.debugLogs = []
@@ -586,9 +589,9 @@ class DistributionInformation(InformationBase):
 		self["key_yellow"] = StaticText(_("Commit Logs"))
 		self["key_blue"] = StaticText(_("Translation"))
 		self["receiverActions"] = HelpableActionMap(self, ["InfoActions", "ColorActions"], {
-			"info": (self.showBuild, _("Show build information")),
-			"yellow": (self.showCommitLogs, _("Show commit log information")),
-			"blue": (self.showTranslation, _("Show translation information"))
+			"info": (self.keyShowBuild, _("Show build information")),
+			"yellow": (self.keyShowCommitLogs, _("Show commit log information")),
+			"blue": (self.keyShowTranslation, _("Show translation information"))
 		}, prio=0, description=_("%s Information Actions") % self.displayDistro)
 		self.resolutions = {
 			480: "NTSC",
@@ -601,13 +604,13 @@ class DistributionInformation(InformationBase):
 		}
 		self.imageMessage = BoxInfo.getItem("InformationDistributionWelcome", "")
 
-	def showBuild(self):
+	def keyShowBuild(self):
 		self.session.openWithCallback(self.informationWindowClosed, BuildInformation)
 
-	def showCommitLogs(self):
+	def keyShowCommitLogs(self):
 		self.session.openWithCallback(self.informationWindowClosed, CommitInformation)
 
-	def showTranslation(self):
+	def keyShowTranslation(self):
 		self.session.openWithCallback(self.informationWindowClosed, TranslationInformation)
 
 	def displayInformation(self):
@@ -832,9 +835,17 @@ class MemoryInformation(InformationBase):
 		self.skinName.insert(0, "MemoryInformation")
 		self.skinName.insert(0, "InformationMemory")
 		self["clearActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"yellow": (self.clearMemoryInformation, _("Clear the virtual memory caches"))
+			"yellow": (self.keyClearMemoryInformation, _("Clear the virtual memory caches"))
 		}, prio=0, description=_("Memory Information Actions"))
 		self["key_yellow"] = StaticText(_("Clear"))
+
+	def keyClearMemoryInformation(self):
+		self.console.ePopen(("/bin/sync", "/bin/sync"))
+		fileWriteLine("/proc/sys/vm/drop_caches", "3")
+		self.informationTimer.start(25)
+		for callback in self.onInformationUpdated:
+			if callable(callback):
+				callback()
 
 	def displayInformation(self):
 		def formatNumber(number):
@@ -898,14 +909,6 @@ class MemoryInformation(InformationBase):
 		info.append(formatLine("M1", _("The detailed information is intended for developers only.")))
 		info.append(formatLine("M1", _("Please don't panic if you see values that look suspicious.")))
 		self["information"].setText("\n".join(info))
-
-	def clearMemoryInformation(self):
-		self.console.ePopen(("/bin/sync", "/bin/sync"))
-		fileWriteLine("/proc/sys/vm/drop_caches", "3")
-		self.informationTimer.start(25)
-		for callback in self.onInformationUpdated:
-			if callable(callback):
-				callback()
 
 	def getSummaryInformation(self):
 		return "Memory Information Data"
@@ -985,7 +988,7 @@ class NetworkInformation(InformationBase):
 		self.skinName.insert(0, "InformationNetwork")
 		self["key_yellow"] = StaticText(_("WAN Geolocation"))
 		self["geolocationActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"yellow": (self.useGeolocation, _("Use geolocation to get WAN information")),
+			"yellow": (self.keyUseGeolocation, _("Use geolocation to get WAN information")),
 		}, prio=0, description=_("Network Information Actions"))
 		self.interfaceData = {}
 		self.geolocationData = []
@@ -1044,7 +1047,7 @@ class NetworkInformation(InformationBase):
 			"Link detected": "link"
 		}
 
-	def useGeolocation(self):
+	def keyUseGeolocation(self):
 		geolocationData = geolocation.getGeolocationData(fields="isp,org,mobile,proxy,query", useCache=False)
 		info = []
 		if geolocationData.get("status", None) == "success":
@@ -1074,137 +1077,139 @@ class NetworkInformation(InformationBase):
 				callback()
 
 	def fetchInformation(self):
-		self.informationTimer.stop()
-		for interface in sorted([x for x in listdir("/sys/class/net") if not self.isBlacklisted(x)]):
-			self.interfaceData[interface] = {}
-			self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", interface), self.ifconfigInfoFinished, extra_args=interface)
-			_adapter = nm.adapters.get(interface) if nm is not None else None
-			if _adapter.isWlan if _adapter else isdir(f"/sys/class/net/{interface}/wireless"):
-				self.console.ePopen(("/sbin/iwconfig", "/sbin/iwconfig", interface), self.iwconfigInfoFinished, extra_args=interface)
-			else:
-				self.console.ePopen(("/usr/sbin/ethtool", "/usr/sbin/ethtool", interface), self.ethtoolInfoFinished, extra_args=interface)
-		for callback in self.onInformationUpdated:
-			if callable(callback):
-				callback()
+		def isBlacklisted(interface):
+			for type in ("lo", "wifi", "wmaster", "sit", "tun", "sys", "p2p", "ip6_vti", "ip_vti", "ip6tn", "wg", "tap"):
+				if interface.startswith(type):
+					return True
+			return False
 
-	def isBlacklisted(self, interface):
-		for type in ("lo", "wifi", "wmaster", "sit", "tun", "sys", "p2p", "ip6_vti", "ip_vti", "ip6tn", "wg", "tap"):
-			if interface.startswith(type):
-				return True
-		return False
+		def ifconfigCallback(result, retVal, extraArgs):  # This temporary code borrowed and adapted from the new but unreleased Network.py!
+			if retVal == 0:
+				capture = False
+				data = ""
+				if isinstance(result, bytes):
+					result = result.decode("UTF-8", "ignore")
+				for line in result.split("\n"):
+					if line.startswith(f"{extraArgs} "):
+						capture = True
+						if "HWaddr " in line:
+							line = line.replace("HWaddr ", "HWaddr:")
+						data += line
+						continue
+					if capture and line.startswith(" "):
+						if " Scope:" in line:
+							line = line.replace(" Scope:", " ")
+						elif "X packets:" in line:
+							pos = line.index("X packets:")
+							direction = line[pos - 1:pos].lower()
+							line = "%s%s" % (line[0:pos + 10], line[pos + 10:].replace(" ", "  %sx" % direction))
+							# line = f"{line[0:pos + 10]}{line[pos + 10:].replace(" ", f"  {direction}x")}"  # Python 3.12
+						elif " txqueuelen" in line:
+							line = line.replace(" txqueuelen:", "  txqueuelen:")
+						data += line
+						continue
+					if line == "":
+						break
+				data = list(filter(None, [x.strip().replace("=", ":", 1) for x in data.split("  ")]))
+				data[0] = f"interface:{data[0]}"
+				# print("[Network] DEBUG: Raw network data %s." % data)
+				for item in data:
+					if ":" not in item:
+						flags = item.split()
+						self.interfaceData[extraArgs]["up"] = True if "UP" in flags else False
+						self.interfaceData[extraArgs]["status"] = "up" if "UP" in flags else "down"  # Legacy status flag.
+						self.interfaceData[extraArgs]["running"] = True if "RUNNING" in flags else False
+						self.interfaceData[extraArgs]["broadcast"] = True if "BROADCAST" in flags else False
+						self.interfaceData[extraArgs]["multicast"] = True if "MULTICAST" in flags else False
+						continue
+					key, value = item.split(":", 1)
+					key = self.ifconfigAttributes.get(key, None)
+					if key:
+						value = value.strip()
+						if value.startswith("\""):
+							value = value[1:-1]
+						if key == "addr6":
+							if key not in self.interfaceData[extraArgs]:
+								self.interfaceData[extraArgs][key] = []
+							self.interfaceData[extraArgs][key].append(value)
+						else:
+							self.interfaceData[extraArgs][key] = value
+			for callback in self.onInformationUpdated:
+				if callable(callback):
+					callback()
 
-	def ifconfigInfoFinished(self, result, retVal, extraArgs):  # This temporary code borrowed and adapted from the new but unreleased Network.py!
-		if retVal == 0:
-			capture = False
-			data = ""
-			if isinstance(result, bytes):
-				result = result.decode("UTF-8", "ignore")
-			for line in result.split("\n"):
-				if line.startswith(f"{extraArgs} "):
-					capture = True
-					if "HWaddr " in line:
-						line = line.replace("HWaddr ", "HWaddr:")
-					data += line
-					continue
-				if capture and line.startswith(" "):
-					if " Scope:" in line:
-						line = line.replace(" Scope:", " ")
-					elif "X packets:" in line:
-						pos = line.index("X packets:")
-						direction = line[pos - 1:pos].lower()
-						line = "%s%s" % (line[0:pos + 10], line[pos + 10:].replace(" ", "  %sx" % direction))
-						# line = f"{line[0:pos + 10]}{line[pos + 10:].replace(" ", f"  {direction}x")}"  # Python 3.12
-					elif " txqueuelen" in line:
-						line = line.replace(" txqueuelen:", "  txqueuelen:")
-					data += line
-					continue
-				if line == "":
-					break
-			data = list(filter(None, [x.strip().replace("=", ":", 1) for x in data.split("  ")]))
-			data[0] = f"interface:{data[0]}"
-			# print("[Network] DEBUG: Raw network data %s." % data)
-			for item in data:
-				if ":" not in item:
-					flags = item.split()
-					self.interfaceData[extraArgs]["up"] = True if "UP" in flags else False
-					self.interfaceData[extraArgs]["status"] = "up" if "UP" in flags else "down"  # Legacy status flag.
-					self.interfaceData[extraArgs]["running"] = True if "RUNNING" in flags else False
-					self.interfaceData[extraArgs]["broadcast"] = True if "BROADCAST" in flags else False
-					self.interfaceData[extraArgs]["multicast"] = True if "MULTICAST" in flags else False
-					continue
-				key, value = item.split(":", 1)
-				key = self.ifconfigAttributes.get(key, None)
-				if key:
-					value = value.strip()
-					if value.startswith("\""):
-						value = value[1:-1]
-					if key == "addr6":
-						if key not in self.interfaceData[extraArgs]:
-							self.interfaceData[extraArgs][key] = []
-						self.interfaceData[extraArgs][key].append(value)
-					else:
+		def iwconfigCallback(result, retVal, extraArgs):  # This temporary code borrowed and adapted from the new but unreleased Network.py!
+			if retVal == 0:
+				capture = False
+				data = ""
+				if isinstance(result, bytes):
+					result = result.decode("UTF-8", "ignore")
+				for line in result.split("\n"):
+					if line.startswith(f"{extraArgs} "):
+						capture = True
+						data += line
+						continue
+					if capture and line.startswith(" "):
+						data += line
+						continue
+					if line == "":
+						break
+				data = list(filter(None, [x.strip().replace("=", ":", 1) for x in data.split("  ")]))
+				data[0] = f"interface:{data[0]}"
+				data[1] = f"standard:{data[1]}"
+				for item in data:
+					if ":" not in item:
+						continue
+					key, value = item.split(":", 1)
+					key = self.iwconfigAttributes.get(key, None)
+					if key:
+						value = value.strip()
+						if value.startswith("\""):
+							value = value[1:-1]
 						self.interfaceData[extraArgs][key] = value
-		for callback in self.onInformationUpdated:
-			if callable(callback):
-				callback()
+				if "encryption" in self.interfaceData[extraArgs]:
+					self.interfaceData[extraArgs]["encryption"] = _("Disabled or WPA/WPA2") if self.interfaceData[extraArgs]["encryption"] == "off" else _("Enabled")
+				if "standard" in self.interfaceData[extraArgs] and "no wireless extensions" in self.interfaceData[extraArgs]["standard"]:
+					del self.interfaceData[extraArgs]["standard"]
+					self.interfaceData[extraArgs]["wireless"] = False
+				else:
+					self.interfaceData[extraArgs]["wireless"] = True
+				if "ssid" in self.interfaceData[extraArgs]:
+					self.interfaceData[extraArgs]["SSID"] = self.interfaceData[extraArgs]["ssid"]
+			for callback in self.onInformationUpdated:
+				if callable(callback):
+					callback()
 
-	def iwconfigInfoFinished(self, result, retVal, extraArgs):  # This temporary code borrowed and adapted from the new but unreleased Network.py!
-		if retVal == 0:
-			capture = False
-			data = ""
-			if isinstance(result, bytes):
-				result = result.decode("UTF-8", "ignore")
-			for line in result.split("\n"):
-				if line.startswith(f"{extraArgs} "):
-					capture = True
-					data += line
-					continue
-				if capture and line.startswith(" "):
-					data += line
-					continue
-				if line == "":
-					break
-			data = list(filter(None, [x.strip().replace("=", ":", 1) for x in data.split("  ")]))
-			data[0] = f"interface:{data[0]}"
-			data[1] = f"standard:{data[1]}"
-			for item in data:
-				if ":" not in item:
-					continue
-				key, value = item.split(":", 1)
-				key = self.iwconfigAttributes.get(key, None)
-				if key:
-					value = value.strip()
-					if value.startswith("\""):
-						value = value[1:-1]
-					self.interfaceData[extraArgs][key] = value
-			if "encryption" in self.interfaceData[extraArgs]:
-				self.interfaceData[extraArgs]["encryption"] = _("Disabled or WPA/WPA2") if self.interfaceData[extraArgs]["encryption"] == "off" else _("Enabled")
-			if "standard" in self.interfaceData[extraArgs] and "no wireless extensions" in self.interfaceData[extraArgs]["standard"]:
-				del self.interfaceData[extraArgs]["standard"]
-				self.interfaceData[extraArgs]["wireless"] = False
+		def ethtoolCallback(result, retVal, extraArgs):  # This temporary code borrowed and adapted from the new but unreleased Network.py!
+			if retVal == 0:
+				if isinstance(result, bytes):
+					result = result.decode("UTF-8", "ignore")
+				for line in result.split("\n"):
+					if "Speed:" in line:
+						self.interfaceData[extraArgs]["speed"] = line.split(":")[1][:-4].strip()
+					if "Duplex:" in line:
+						self.interfaceData[extraArgs]["duplex"] = _(line.split(":")[1].strip().capitalize())
+					if "Transceiver:" in line:
+						self.interfaceData[extraArgs]["transceiver"] = _(line.split(":")[1].strip().capitalize())
+					if "Auto-negotiation:" in line:
+						self.interfaceData[extraArgs]["autoNegotiation"] = line.split(":")[1].strip().lower() == "on"
+					if "Link detected:" in line:
+						self.interfaceData[extraArgs]["link"] = line.split(":")[1].strip().lower() == "yes"
+			for callback in self.onInformationUpdated:
+				if callable(callback):
+					callback()
+
+		self.informationTimer.stop()
+		print("[Information] DEBUG: Starting network fetch.")
+		for interface in sorted([x for x in listdir("/sys/class/net") if not isBlacklisted(x)]):
+			print("[Information] DEBUG: Found interface '{interface}'.")
+			self.interfaceData[interface] = {}
+			self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", interface), callback=ifconfigCallback, extra_args=interface)
+			adapter = networkManager.adapters.get(interface) if networkManager else None
+			if adapter.isWlan if adapter else isdir(f"/sys/class/net/{interface}/wireless"):
+				self.console.ePopen(("/sbin/iwconfig", "/sbin/iwconfig", interface), callback=iwconfigCallback, extra_args=interface)
 			else:
-				self.interfaceData[extraArgs]["wireless"] = True
-			if "ssid" in self.interfaceData[extraArgs]:
-				self.interfaceData[extraArgs]["SSID"] = self.interfaceData[extraArgs]["ssid"]
-		for callback in self.onInformationUpdated:
-			if callable(callback):
-				callback()
-
-	def ethtoolInfoFinished(self, result, retVal, extraArgs):  # This temporary code borrowed and adapted from the new but unreleased Network.py!
-		if retVal == 0:
-			if isinstance(result, bytes):
-				result = result.decode("UTF-8", "ignore")
-			for line in result.split("\n"):
-				if "Speed:" in line:
-					self.interfaceData[extraArgs]["speed"] = line.split(":")[1][:-4].strip()
-				if "Duplex:" in line:
-					self.interfaceData[extraArgs]["duplex"] = _(line.split(":")[1].strip().capitalize())
-				if "Transceiver:" in line:
-					self.interfaceData[extraArgs]["transceiver"] = _(line.split(":")[1].strip().capitalize())
-				if "Auto-negotiation:" in line:
-					self.interfaceData[extraArgs]["autoNegotiation"] = line.split(":")[1].strip().lower() == "on"
-				if "Link detected:" in line:
-					self.interfaceData[extraArgs]["link"] = line.split(":")[1].strip().lower() == "yes"
+				self.console.ePopen(("/usr/sbin/ethtool", "/usr/sbin/ethtool", interface), callback=ethtoolCallback, extra_args=interface)
 		for callback in self.onInformationUpdated:
 			if callable(callback):
 				callback()
@@ -1212,14 +1217,15 @@ class NetworkInformation(InformationBase):
 	def displayInformation(self):
 		info = []
 		info.append(formatLine("H", _("Network information for %s %s") % getBoxDisplayName()))
+		self.informationTimer.stop()
 		info.append("")
 		hostname = fileReadLine("/proc/sys/kernel/hostname", source=MODULE_NAME)
 		info.append(formatLine("S0S", _("Hostname"), hostname))
 		for interface in sorted(self.interfaceData.keys()):
 			info.append("")
-			_adapter = nm.adapters.get(interface) if nm is not None else None
-			_isWlan = _adapter.isWlan if _adapter else isdir(f"/sys/class/net/{interface}/wireless")
-			info.append(formatLine("S", _("Interface '%s'") % interface, _("WLAN") if _isWlan else _("LAN")))
+			adapter = networkManager.adapters.get(interface) if networkManager is not None else None
+			isWlan = adapter.isWlan if adapter else isdir(f"/sys/class/net/{interface}/wireless")
+			info.append(formatLine("S", _("Interface '%s'") % interface, _("WLAN") if isWlan else _("LAN")))
 			if "up" in self.interfaceData[interface]:
 				info.append(formatLine("P1", _("Status"), (_("Up / Active") if self.interfaceData[interface]["up"] else _("Down / Inactive"))))
 				if self.interfaceData[interface]["up"]:
@@ -1301,18 +1307,18 @@ class PictureInformation(Screen):
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
-			"cancel": (self.keyCancel, _("Close the screen")),
-			"close": (self.closeRecursive, _("Close the screen and exit all menus")),
-			"red": (self.keyCancel, _("Close the screen")),
+			"cancel": (self.keyClose, _("Close the screen")),
+			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
+			"red": (self.keyClose, _("Close the screen")),
 		}, prio=0, description=_("Picture Information Actions"))
 		self["pictureActions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "NavigationActions"], {
-			"ok": (self.nextPicture, _("Show next picture")),
-			"yellow": (self.prevPicture, _("Show previous picture")),
-			"blue": (self.nextPicture, _("Show next picture")),
-			"up": (self.prevPicture, _("Show previous picture")),
-			"left": (self.prevPicture, _("Show previous picture")),
-			"right": (self.nextPicture, _("Show next picture")),
-			"down": (self.nextPicture, _("Show next picture"))
+			"ok": (self.keyNextPicture, _("Show next picture")),
+			"yellow": (self.keyPrevPicture, _("Show previous picture")),
+			"blue": (self.keyNextPicture, _("Show next picture")),
+			"up": (self.keyPrevPicture, _("Show previous picture")),
+			"left": (self.keyPrevPicture, _("Show previous picture")),
+			"right": (self.keyNextPicture, _("Show next picture")),
+			"down": (self.keyNextPicture, _("Show next picture"))
 		}, prio=0, description=_("Picture Information Actions"))
 		self["pictureActions"].setEnabled(False)
 		self.definedPictures = (
@@ -1334,11 +1340,19 @@ class PictureInformation(Screen):
 		self.pictureMax = len(self.pictures)
 		self.onLayoutFinish.append(self.layoutFinished)
 
-	def keyCancel(self):
+	def keyClose(self):
 		self.close()
 
-	def closeRecursive(self):
+	def keyCloseRecursive(self):
 		self.close(True)
+
+	def keyPrevPicture(self):
+		self.pictureIndex = (self.pictureIndex - 1) % self.pictureMax
+		self.layoutFinished()
+
+	def keyNextPicture(self):
+		self.pictureIndex = (self.pictureIndex + 1) % self.pictureMax
+		self.layoutFinished()
 
 	def layoutFinished(self):
 		self["name"].setText(f"{DISPLAY_BRAND} {DISPLAY_MODEL}  -  {_("%s View") % self.pictures[self.pictureIndex][0]}")
@@ -1354,14 +1368,6 @@ class PictureInformation(Screen):
 		if picture:
 			self["picture"].instance.setPixmap(self.pictures[self.pictureIndex][1])
 
-	def prevPicture(self):
-		self.pictureIndex = (self.pictureIndex - 1) % self.pictureMax
-		self.layoutFinished()
-
-	def nextPicture(self):
-		self.pictureIndex = (self.pictureIndex + 1) % self.pictureMax
-		self.layoutFinished()
-
 
 class ReceiverInformation(InformationBase):
 	def __init__(self, session):
@@ -1373,18 +1379,18 @@ class ReceiverInformation(InformationBase):
 		self["key_yellow"] = StaticText(_("System Information"))
 		self["key_blue"] = StaticText(_("Debug Information"))
 		self["receiverActions"] = HelpableActionMap(self, ["InfoActions", "ColorActions"], {
-			"info": (self.showPictureInformation, _("Show picture information")),
-			"yellow": (self.showSystemInformation, _("Show system information")),
-			"blue": (self.showDebugInformation, _("Show debug log information"))
+			"info": (self.keyShowPictureInformation, _("Show picture information")),
+			"yellow": (self.keyShowSystemInformation, _("Show system information")),
+			"blue": (self.keyShowDebugInformation, _("Show debug log information"))
 		}, prio=0, description=_("Receiver Information Actions"))
 
-	def showPictureInformation(self):
+	def keyShowPictureInformation(self):
 		self.session.openWithCallback(self.informationWindowClosed, PictureInformation)
 
-	def showSystemInformation(self):
+	def keyShowSystemInformation(self):
 		self.session.openWithCallback(self.informationWindowClosed, SystemInformation)
 
-	def showDebugInformation(self):
+	def keyShowDebugInformation(self):
 		self.session.openWithCallback(self.informationWindowClosed, DebugInformation)
 
 	def displayInformation(self):
@@ -1590,11 +1596,11 @@ class ServiceInformation(InformationBase):
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
 		self["serviceActions"] = HelpableActionMap(self, ["MenuActions", "ColorActions", "NavigationActions"], {
-			"menu": (self.showServiceMenu, _("Show selection for service information screen")),
-			"yellow": (self.previousService, _("Show previous service information screen")),
-			"blue": (self.nextService, _("Show next service information screen")),
-			"left": (self.previousService, _("Show previous service information screen")),
-			"right": (self.nextService, _("Show next service information screen"))
+			"menu": (self.keyShowServiceMenu, _("Show selection for service information screen")),
+			"yellow": (self.keyPreviousService, _("Show previous service information screen")),
+			"blue": (self.keyNextService, _("Show next service information screen")),
+			"left": (self.keyPreviousService, _("Show previous service information screen")),
+			"right": (self.keyNextService, _("Show next service information screen"))
 		}, prio=0, description=_("Service Information Actions"))
 		self.serviceCommands = [
 			(_("Service and PID information"), _("Service & PID"), self.showServiceInformation),
@@ -1608,6 +1614,38 @@ class ServiceInformation(InformationBase):
 		else:
 			self.eventTracker = ServiceEventTracker(screen=self, eventmap={iPlayableService.evEnd: self.fetchInformationDelayed})
 			self.serviceCommandsIndex = 0
+
+	def fetchInformationDelayed(self):  # This allows the newly selected service to stabilize before updating the service data.
+		self.informationTimer.startLongTimer(3)
+
+	def keyShowServiceMenu(self):
+		def keyShowServiceMenuCallBack(selectedIndex):
+			if isinstance(selectedIndex, int):
+				self.serviceCommandsIndex = selectedIndex
+				self.displayInformation()
+				self.informationTimer.start(25)
+
+		choices = [(serviceCommand[0], index) for index, serviceCommand in enumerate(self.serviceCommands)]
+		self.session.openWithCallback(keyShowServiceMenuCallBack, MessageBox, text=_("Select service information to view:"), list=choices, windowTitle=self.baseTitle)
+
+	def keyPreviousService(self):
+		self.serviceCommandsIndex = (self.serviceCommandsIndex - 1) % self.serviceCommandsMax
+		self.displayInformation()
+		self.informationTimer.start(25)
+
+	def keyNextService(self):
+		self.serviceCommandsIndex = (self.serviceCommandsIndex + 1) % self.serviceCommandsMax
+		self.displayInformation()
+		self.informationTimer.start(25)
+
+	def fetchInformation(self):
+		self.informationTimer.stop()
+		self.getServiceTransponderData()
+		name, label, method = self.serviceCommands[self.serviceCommandsIndex]
+		self.info = method()
+		for callback in self.onInformationUpdated:
+			if callable(callback):
+				callback()
 
 	def getServiceTransponderData(self):
 		self.frontendInfo = None
@@ -1640,38 +1678,6 @@ class ServiceInformation(InformationBase):
 					self.transponderInfo = serviceRef and eServiceCenter.getInstance().info(serviceRef).getInfoObject(serviceRef, iServiceInformation.sTransponderData)
 			self["key_menu"].setText(_("MENU"))
 			self["serviceActions"].setEnabled(True)
-
-	def showServiceMenu(self):
-		def showServiceMenuCallBack(selectedIndex):
-			if isinstance(selectedIndex, int):
-				self.serviceCommandsIndex = selectedIndex
-				self.displayInformation()
-				self.informationTimer.start(25)
-
-		choices = [(serviceCommand[0], index) for index, serviceCommand in enumerate(self.serviceCommands)]
-		self.session.openWithCallback(showServiceMenuCallBack, MessageBox, text=_("Select service information to view:"), list=choices, windowTitle=self.baseTitle)
-
-	def previousService(self):
-		self.serviceCommandsIndex = (self.serviceCommandsIndex - 1) % self.serviceCommandsMax
-		self.displayInformation()
-		self.informationTimer.start(25)
-
-	def nextService(self):
-		self.serviceCommandsIndex = (self.serviceCommandsIndex + 1) % self.serviceCommandsMax
-		self.displayInformation()
-		self.informationTimer.start(25)
-
-	def fetchInformation(self):
-		self.informationTimer.stop()
-		self.getServiceTransponderData()
-		name, label, method = self.serviceCommands[self.serviceCommandsIndex]
-		self.info = method()
-		for callback in self.onInformationUpdated:
-			if callable(callback):
-				callback()
-
-	def fetchInformationDelayed(self):  # This allows the newly selected service to stabilize before updating the service data.
-		self.informationTimer.startLongTimer(3)
 
 	def refreshInformation(self):
 		self.getServiceTransponderData()
@@ -1963,37 +1969,37 @@ class StorageInformation(InformationBase):
 		self.mountInfo = []
 
 	def fetchInformation(self):
-		self.informationTimer.stop()
-		self.console.ePopen("df -mh | grep -v '^Filesystem'", self.fetchComplete)
-		for callback in self.onInformationUpdated:
-			if callable(callback):
-				callback()
+		def fetchCallback(result, retVal, extraArgs=None):
+			self.mountInfo = []
+			previousLine = None
+			for line in [x.strip() for x in result.split("\n")]:
+				if "%" in line:
+					if previousLine:
+						line = f"{previousLine} {line}"
+						previousLine = None
+					if line.startswith("//"):
+						line = line[::-1]
+						mount, other = line.split(" %")
+						percent, free, used, total, device = other.split(None, 4)
+						self.mountInfo.append([device[::-1], total[::-1], used[::-1], free[::-1], f"{percent[::-1]}%", mount[::-1]])
+				else:
+					previousLine = line
+			if isdir("/media/autofs"):
+				for entry in sorted(listdir("/media/autofs")):
+					path = join("/media/autofs", entry)
+					keep = True
+					for data in self.mountInfo:
+						if data[5] == path:
+							keep = False
+							break
+					if keep:
+						self.mountInfo.append(["", 0, 0, 0, "N/A", path])
+			for callback in self.onInformationUpdated:
+				if callable(callback):
+					callback()
 
-	def fetchComplete(self, result, retVal, extraArgs=None):
-		self.mountInfo = []
-		previousLine = None
-		for line in [x.strip() for x in result.split("\n")]:
-			if "%" in line:
-				if previousLine:
-					line = f"{previousLine} {line}"
-					previousLine = None
-				if line.startswith("//"):
-					line = line[::-1]
-					mount, other = line.split(" %")
-					percent, free, used, total, device = other.split(None, 4)
-					self.mountInfo.append([device[::-1], total[::-1], used[::-1], free[::-1], f"{percent[::-1]}%", mount[::-1]])
-			else:
-				previousLine = line
-		if isdir("/media/autofs"):
-			for entry in sorted(listdir("/media/autofs")):
-				path = join("/media/autofs", entry)
-				keep = True
-				for data in self.mountInfo:
-					if data[5] == path:
-						keep = False
-						break
-				if keep:
-					self.mountInfo.append(["", 0, 0, 0, "N/A", path])
+		self.informationTimer.stop()
+		self.console.ePopen("/bin/df -mh | /bin/grep -v '^Filesystem'", callback=fetchCallback)
 		for callback in self.onInformationUpdated:
 			if callable(callback):
 				callback()
@@ -2061,6 +2067,9 @@ class StorageInformation(InformationBase):
 			info.append(formatLine("S1", _("No network storage detected.")))
 		self["information"].setText("\n".join(info))
 
+	def getSummaryInformation(self):
+		return "Storage / Disk Information"
+
 
 class StreamingInformation(InformationBase):
 	def __init__(self, session):
@@ -2071,19 +2080,19 @@ class StreamingInformation(InformationBase):
 		self["key_yellow"] = StaticText(_("Stop Auto Refresh"))
 		self["key_blue"] = StaticText()
 		self["refreshActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"yellow": (self.toggleAutoRefresh, _("Toggle auto refresh On/Off"))
+			"yellow": (self.keyToggleAutoRefresh, _("Toggle auto refresh On/Off"))
 		}, prio=0, description=_("Streaming Information Actions"))
 		self["streamActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"blue": (self.stopStreams, _("Stop streams"))
+			"blue": (self.keyStopStreams, _("Stop streams"))
 		}, prio=0, description=_("Streaming Information Actions"))
 		self["streamActions"].setEnabled(False)
 		self.autoRefresh = True
 
-	def toggleAutoRefresh(self):
+	def keyToggleAutoRefresh(self):
 		self.autoRefresh = not self.autoRefresh
 		self["key_yellow"].setText(_("Stop Auto Refresh") if self.autoRefresh else _("Start Auto Refresh"))
 
-	def stopStreams(self):
+	def keyStopStreams(self):
 		if eStreamServer.getInstance().getConnectedClients():
 			eStreamServer.getInstance().stopStream()
 		if eRTSPStreamServer.getInstance().getConnectedClients():
@@ -2129,11 +2138,11 @@ class SystemInformation(InformationBase):
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
 		self["systemActions"] = HelpableActionMap(self, ["MenuActions", "ColorActions", "NavigationActions"], {
-			"menu": (self.showSystemMenu, _("Show selection for system information screen")),
-			"yellow": (self.previousSystem, _("Show previous system information screen")),
-			"blue": (self.nextSystem, _("Show next system information screen")),
-			"left": (self.previousSystem, _("Show previous system information screen")),
-			"right": (self.nextSystem, _("Show next system information screen"))
+			"menu": (self.keyShowSystemMenu, _("Show selection for system information screen")),
+			"yellow": (self.keyPreviousSystem, _("Show previous system information screen")),
+			"blue": (self.keyNextSystem, _("Show next system information screen")),
+			"left": (self.keyPreviousSystem, _("Show previous system information screen")),
+			"right": (self.keyNextSystem, _("Show next system information screen"))
 		}, prio=0, description=_("System Information Actions"))
 		self.systemCommands = [
 			("CPU", None, "/proc/cpuinfo"),
@@ -2155,22 +2164,22 @@ class SystemInformation(InformationBase):
 		self.systemCommandsMax = len(self.systemCommands)
 		self.info = None
 
-	def showSystemMenu(self):
-		def showSystemMenuCallBack(selectedIndex):
+	def keyShowSystemMenu(self):
+		def keyShowSystemMenuCallBack(selectedIndex):
 			if isinstance(selectedIndex, int):
 				self.systemCommandsIndex = selectedIndex
 				self.displayInformation()
 				self.informationTimer.start(25)
 
 		choices = [(systemCommand[0], index) for index, systemCommand in enumerate(self.systemCommands)]
-		self.session.openWithCallback(showSystemMenuCallBack, MessageBox, text=_("Select system information to view:"), list=choices, windowTitle=self.baseTitle)
+		self.session.openWithCallback(keyShowSystemMenuCallBack, MessageBox, text=_("Select system information to view:"), list=choices, windowTitle=self.baseTitle)
 
-	def previousSystem(self):
+	def keyPreviousSystem(self):
 		self.systemCommandsIndex = (self.systemCommandsIndex - 1) % self.systemCommandsMax
 		self.displayInformation()
 		self.informationTimer.start(25)
 
-	def nextSystem(self):
+	def keyNextSystem(self):
 		self.systemCommandsIndex = (self.systemCommandsIndex + 1) % self.systemCommandsMax
 		self.displayInformation()
 		self.informationTimer.start(25)
