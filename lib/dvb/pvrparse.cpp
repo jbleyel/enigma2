@@ -1025,7 +1025,6 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 	 * the stack buffers below. */
 	if (payload_size > 188)
 	{
-		// eDebug("[eMPEGStreamParserTS] scanHEVCNalUnits: payload_size %d exceeds 188, dropping packet", payload_size);
 		resetHEVCTail();
 		return;
 	}
@@ -1254,6 +1253,11 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 		if (pkt[0] || pkt[1] || (pkt[2] != 1))
 		{
 			eWarning("[eMPEGStreamParserTS] broken startcode");
+			if (m_streamtype == eDVBVideo::H265_HEVC)
+			{
+				resetHEVCParserState();
+				m_last_cc_valid = false;
+			}
 			return -2;
 		}
 
@@ -1522,7 +1526,17 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 			if (m_pktptr == m_packetsize)
 			{
 				int res = processPacket(m_pkt, m_pkt_offset);
-				if (res < 0) return res;
+				if (res < 0)
+				{
+					if (m_streamtype == eDVBVideo::H265_HEVC)
+					{
+						resetHEVCParserState();
+						m_last_cc_valid = false;
+					}
+					m_need_next_packet = 0;
+					m_pktptr = 0;
+					return res;
+				}
 				m_need_next_packet = res;
 				m_pktptr = 0;
 			}
@@ -1534,7 +1548,16 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 				if (len >= (unsigned int)m_packetsize)          /* packet complete? */
 				{
 					int res = processPacket(packet, offset + (packet - packet_start));
-					if (res < 0) return res;
+					if (res < 0)
+					{
+						if (m_streamtype == eDVBVideo::H265_HEVC)
+						{
+							resetHEVCParserState();
+							m_last_cc_valid = false;
+						}
+						m_need_next_packet = 0;
+						return res;
+					}
 					m_need_next_packet = res;
 				}
 				else
