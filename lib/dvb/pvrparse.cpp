@@ -1008,22 +1008,7 @@ void eMPEGStreamParserTS::resetHEVCTail()
 	m_hevc_tail_size = 0;
 }
 
-/*
- * scanHEVCNalUnits – scan one TS packet payload for HEVC NAL units.
- *
- * H.265 NAL units can straddle TS packet boundaries, so we carry a small
- * tail buffer (up to 7 bytes) from the previous packet to catch start codes
- * that were split across the boundary.
- *
- * Speed notes (ARM):
- *  - The inner loop is a byte scan.  On a modern ARM Cortex-A the branch
- *    predictor handles the "mostly not a start code" case well, so a plain
- *    byte-at-a-time scan is fine for 188-byte packets.
- *  - We avoid heap allocation: buffer[] and offset arrays live on the stack.
- *    188 payload bytes + 7 tail bytes = 195 bytes max – fits in L1 cache.
- *  - We write structure entries and access points only on the rare I-frame
- *    boundary, so those paths are not on the critical path.
- */
+/* HEVC NAL units can straddle TS packet boundaries, so keep a 7-byte tail. */
 void eMPEGStreamParserTS::scanHEVCNalUnits(
 	const unsigned char *data, const unsigned char *end,
 	off_t data_offset, off_t packet_offset,
@@ -1040,7 +1025,7 @@ void eMPEGStreamParserTS::scanHEVCNalUnits(
 	 * the stack buffers below. */
 	if (payload_size > 188)
 	{
-		eDebug("[eMPEGStreamParserTS] scanHEVCNalUnits: payload_size %d exceeds 188, dropping packet", payload_size);
+		// eDebug("[eMPEGStreamParserTS] scanHEVCNalUnits: payload_size %d exceeds 188, dropping packet", payload_size);
 		resetHEVCTail();
 		return;
 	}
@@ -1182,18 +1167,16 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 
 	pkt += m_header_offset;
 
-	if (!(pkt[3] & 0x10)) return 0; /* do not process packets without payload */
-
-	/* Continuity Counter tracking (diagnostics + HEVC tail reset on loss) */
+	/* HEVC-only continuity tracking: keep MPEG-2/H.264 hot paths log-free. */
+	if (m_streamtype == eDVBVideo::H265_HEVC)
 	{
 		int cc = pkt[3] & 0x0F;
 		bool has_adaptation = (pkt[3] & 0x20) != 0;
 		if (has_adaptation && pkt[4] > 0 && (pkt[5] & 0x80))
 		{
-			/* discontinuity_indicator set */
 			m_last_cc_valid = false;
-			if (m_streamtype == eDVBVideo::H265_HEVC)
-				resetHEVCTail();
+			resetHEVCTail();
+			m_hevc_last_ap_pts_valid = false;
 		}
 		if (m_last_cc_valid)
 		{
@@ -1201,21 +1184,26 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 			if (cc != expected && cc != m_last_cc)
 			{
 				++m_cc_errors;
-				if (m_streamtype == eDVBVideo::H265_HEVC)
-					resetHEVCTail();
-				if (m_cc_errors <= 10 || (m_cc_errors % 100) == 0)
-					eDebug("[eMPEGStreamParserTS] CC gap: expected %d got %d (total=%u pid=0x%04x)",
-					       expected, cc, m_cc_errors, m_pid);
+				resetHEVCTail();
+				m_hevc_last_ap_pts_valid = false;
 			}
 		}
 		m_last_cc       = cc;
 		m_last_cc_valid = true;
 	}
 
+	if (!(pkt[3] & 0x10)) return 0; /* do not process packets without payload */
+
 	bool pusi = (pkt[1] & 0x40) != 0;
 
 	if (pkt[3] & 0xc0)
 	{
+		if (m_streamtype == eDVBVideo::H265_HEVC)
+		{
+			resetHEVCTail();
+			m_hevc_last_ap_pts_valid = false;
+		}
+
 		/* scrambled stream: extrapolate access points from wall-clock time */
 		if (pusi && m_enable_accesspoints)
 		{
@@ -1308,6 +1296,7 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 		if (pusi)
 		{
 			resetHEVCTail();
+			m_hevc_last_ap_pts_valid = false;
 			m_hevc_current_pts_valid = ptsvalid;
 			if (ptsvalid)
 				m_hevc_current_pts = pts;
@@ -1355,6 +1344,10 @@ int eMPEGStreamParserTS::processPacket(const unsigned char *pkt, off_t offset)
 				 * H265_HEVC. Hand off what we have so far in this packet.
 				 */
 				resetHEVCTail();
+				m_last_cc = begin[3] & 0x0F;
+				m_last_cc_valid = true;
+				m_cc_errors = 0;
+				m_hevc_last_ap_pts_valid = false;
 				m_hevc_current_pts_valid = ptsvalid;
 				if (ptsvalid)
 					m_hevc_current_pts = pts;
@@ -1447,8 +1440,7 @@ inline int eMPEGStreamParserTS::wantPacket(const unsigned char *pkt) const
 	if (hdr[1] & 0x40) /* pusi set */
 		return 1;
 
-	/* MPEG-2 needs every packet; H.264 only PUSI; HEVC needs every packet
-	 * because NAL units span packet boundaries */
+	/* MPEG-2 and HEVC need every packet; H.264 and UNKNOWN stay PUSI-only. */
 	return m_streamtype == eDVBVideo::MPEG2 || m_streamtype == eDVBVideo::H265_HEVC;
 }
 
@@ -1504,9 +1496,16 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 				if (m_pktptr == m_header_offset + 4)
 					if (!wantPacket(m_pkt))
 					{
-							/* skip packet */
-						packet += 184 + m_header_offset;
-						len -= 184 + m_header_offset;
+						unsigned int skiplen = m_packetsize - m_pktptr;
+						if (skiplen > len)
+						{
+							m_pktptr = -(int)(skiplen - len);
+							packet += len;
+							len = 0;
+							continue;
+						}
+						packet += skiplen;
+						len -= skiplen;
 						m_pktptr = 0;
 						continue;
 					}
@@ -1523,7 +1522,7 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 			if (m_pktptr == m_packetsize)
 			{
 				int res = processPacket(m_pkt, m_pkt_offset);
-				if (res != 0) return res;
+				if (res < 0) return res;
 				m_need_next_packet = res;
 				m_pktptr = 0;
 			}
@@ -1535,7 +1534,7 @@ int eMPEGStreamParserTS::parseData(off_t offset, const void *data, unsigned int 
 				if (len >= (unsigned int)m_packetsize)          /* packet complete? */
 				{
 					int res = processPacket(packet, offset + (packet - packet_start));
-					if (res != 0) return res;
+					if (res < 0) return res;
 					m_need_next_packet = res;
 				}
 				else
