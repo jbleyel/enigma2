@@ -269,10 +269,10 @@ class StartWizard(Wizard, ShowRemoteControl):
 				self._nwDone()
 				return
 			if adapter.isWlan:
-				from Screens.NetworkSetup2 import WiFiAddFlow
+				from Screens.NetworkSetup import WiFiAddFlow
 				WiFiAddFlow.start(self.session, adapter=adapter, callback=self._nwWlanDone)
 			else:
-				from Screens.NetworkSetup2 import NetworkConnectionSetup
+				from Screens.NetworkSetup import NetworkConnectionSetup
 				if adapter.connections:
 					conn = adapter.connections[0]
 				else:

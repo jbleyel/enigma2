@@ -346,14 +346,14 @@ class QuickMenu(Screen, ProtectedScreen):
 			return adapters, activeInterface
 
 		def networkInterface():
-			from Screens.NetworkSetup2 import NetworkConnectionSetup
+			from Screens.NetworkSetup import NetworkConnectionSetup
 			adapter = nm.adapters.get(activeInterface)
 			if adapter and adapter.connections:
 				conn = adapter.activeConnection() or adapter.connections[0]
 				self.session.open(NetworkConnectionSetup, conn, adapter)
 
 		def networkAdapterSelection():
-			from Screens.NetworkSetup2 import NetworkConnections
+			from Screens.NetworkSetup import NetworkConnections
 			self.session.open(NetworkConnections)
 
 		adapters, activeInterface = getNetworkInterfaces()
