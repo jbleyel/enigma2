@@ -1279,12 +1279,12 @@ class WiFiScanScreen(Screen):
 					self["list"].setList([])
 					self["description"].setText(_("No networks found."))
 
-			self.console.ePopen(f"/sbin/iwlist {self.adapter} scanning", callback=scanCompleteCallback)
+			self.console.ePopen(("/sbin/iwlist", "/sbin/iwlist", self.adapter, "scanning"), callback=scanCompleteCallback)
 
 		if not self.scanning:
 			self.scanning = True
 			self["description"].setText(_("Scanning…"))
-			self.console.ePopen(f"/sbin/ifconfig {self.adapter} up", callback=startScanCallback)
+			self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=startScanCallback)
 
 	def _parseIwlist(self, raw: str) -> list[ScanResult]:
 		results: list[ScanResult] = []
