@@ -108,6 +108,7 @@ class NotificationCenter:
 		self.session = session
 		self._modalDialog = session.instantiateDialog(MessageBox, "", enableInput=False, skinName="MessageBoxModal")
 		self._modalDialog.setAnimationMode(0)
+		self._modalDialog.hide()
 		self._nextModalTimer = eTimer()
 		self._nextModalTimer.callback.append(self._showNextModal)
 
