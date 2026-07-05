@@ -1070,7 +1070,7 @@
 		<!-- This is just a placeholder, the 'specialfeatures' menu is currently disabled. -->
 	</setup>
 	<setup key="SoftCSA" title="SoftCSA Settings">
-		<item level="0" text="Decoder release strategy" description="How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels." restart="gui">config.softcsa.decoderRelease</item>
+		<item level="0" text="Decoder release strategy" description="How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs a clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels." restart="gui">config.softcsa.decoderRelease</item>
 		<item level="0" text="Sync mode" description="Select how the descrambled data stream is processed. 'Automatic' uses asynchronous writes (lower CPU usage) with automatic fallback to synchronous if kernel AIO is not supported. 'Synchronous' forces blocking writes (stable, most compatible)." restart="gui">config.softcsa.syncMode</item>
 		<item level="2" text="Decoder start timeout" description="Maximum time to wait for the first descrambling key (CW) before starting the decoder. 'Disabled' starts the decoder immediately without waiting." restart="gui">config.softcsa.waitForDataTimeout</item>
 		<item level="2" text="Decoder start delay" description="Select the delay to buffer descrambled data before starting playback. This can reduce AC3 audio dropouts by ensuring enough data is available when the decoder starts. Higher values are more stable but increase channel switch time." restart="gui">config.softcsa.bufferTime</item>
@@ -1184,7 +1184,7 @@
 		<item level="2" text="Require authentication for http streams" description="When enabled, authentication is required to watch http streams.">config.streaming.authentication</item>
 		<item level="2" text="Http(s) stream start delay" description="Define additional delay in milliseconds before start of http(s) streams.">config.usage.http_startdelay</item>
 		<!--item level="2" text="Enable Startup Bootvideo" description="You can Enable or Disable the Startup Bootvideo.">config.misc.bootvideo</item-->
-		<item level="1" text="After PowerLost" description="Select what should be done when the %s %s was shutdown incorrectly, or after the Power was lost.">config.usage.shutdownNOK_action</item>
+		<item level="1" text="After Power Lost" description="Select what should be done when the %s %s was shut down incorrectly, or after power was lost.">config.usage.shutdownNOK_action</item>
 		<item level="1" text="Boot-up action" description="Select what should be done when the %s %s was boot-up, normal playing or goto Standby.">config.usage.boot_action</item>
 		<item level="2" text="Wake up time before a timer begins" description="Default wake-up is 5 minutes prior to timer start to wake up from Deep Standby. Adjust if the wake-up is too early or late, e.g., for network drives.">config.workaround.wakeuptime</item>
 		<item level="1" text="Use workaround for wake up from deep-standby" description="If enabled, a time window is used to detect wake-ups from Deep Standby triggered by a timer. The default setting is disabled, which uses a special signal from the receiver. However, some devices send an incorrect or no signal, causing wake-up detection to fail.">config.workaround.deeprecord</item>
@@ -1198,7 +1198,7 @@
 	</setup>
 	<setup key="UserInterface" title="OSD Settings" showOpenWebif="yes">
 		<item level="0" text="Menu style" description="Select the display design for menus.">config.usage.menuType</item>
-		<item level="0" text="Menu entry style" description="Select the display options for each menu entry item. If menu numbers are available then the number buttons can be used to select the numbered menu entries directly.">config.usage.menuEntryStyle</item>
+		<item level="0" text="Menu entry style" description="Select the display options for each menu entry item. If menu numbers are available, then the number buttons can be used to select the numbered menu entries directly.">config.usage.menuEntryStyle</item>
 		<item level="0" text="Menu entry sort order" description="Select the sort order of the menu entries. User defined also allows the menu entries to be hidden.">config.usage.menuSortOrder</item>
 		<item level="1" text="Show screen menu path" description="Select if the screen menu path history is displayed and, if so, how it is to be displayed.">config.usage.showScreenPath</item>
 		<item level="1" text="Sort Extension Menu" description="Select the sort order of the Extension Menu entries.">config.usage.sortExtensionslist</item>
@@ -1231,7 +1231,7 @@
 			<item level="0" text="InfoBar fade-out speed" description="Control the InfoBar fading speed." conditional="config.usage.show_infobar_do_dimming.value">config.usage.show_infobar_dimming_speed</item>
 		</if>
 		<item level="0" text="InfoBar EPG mode" description="Select how to activate the Quick EPG mode." requires="InfoBarEpg">config.plisettings.InfoBarEpg_mode</item>
-		<item level="0" text="Time delay of the shutdown messages" description="Set the time to wait for execute the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, Scheduler, SleepTimer etc.">config.usage.shutdown_msgbox_timeout</item>
+		<item level="0" text="Time delay of the shutdown messages" description="Set the time to wait before executing the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, Scheduler, SleepTimer etc.">config.usage.shutdown_msgbox_timeout</item>
 		<item level="1" text="Show job tasks in Extension Menu" description="With this option you can hide Job Tasks from the Extension Menu screen (BLUE button press).">config.usage.jobtaksextensions</item>
 		<item level="1" text="Show positioner movement" description="Select whether or not to show an icon when a motorized dish is moving.">config.usage.showdish</item>
 		<item level="1" text="Alternative radio mode" description="Use the alternative or the conventional radio mode.">config.usage.e1like_radio_mode</item>
