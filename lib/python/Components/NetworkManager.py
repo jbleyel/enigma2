@@ -96,6 +96,16 @@ encWpa2 = "wpa2"
 encWpaWpa2 = "wpa+wpa2"   # legacy combined mode → stored as wpa2 in wpa_supplicant
 encWpa3 = "wpa3"
 
+# Deferred via lambda so translation happens at display time, not import time.
+encryptionLabels = {
+	encNone: lambda: _("None"),
+	encWep: lambda: "WEP",
+	encWpa: lambda: "WPA",
+	encWpa2: lambda: "WPA2",
+	encWpaWpa2: lambda: "WPA/WPA2",
+	encWpa3: lambda: "WPA3"
+}
+
 # Driver-API identifiers
 apiNl80211 = "nl80211"
 apiWext = "wext"
@@ -216,7 +226,11 @@ class Adapter:
 	kernelIp6: list = field(default_factory=list)  # [{"addr": "…", "prefix": 64}, …]
 	kernelDriver: str = ""       # kernel module name (e.g. "r8168", "mt76x2u")
 	kernelHwId: str = ""         # "VVVV:DDDD" PCI or USB vendor:product hex
+	kernelBus: str = ""          # physical bus from socketdaemon (e.g. "usb", "pci", "platform")
 	kernelWolSupported: int = 0  # ethtool WoL bitmask; 0 = not supported
+	kernelRxBytes: int = 0       # /proc/net/dev counter
+	kernelTxBytes: int = 0       # /proc/net/dev counter
+	kernelMtu: int = 0
 	connections: list[Connection] = field(default_factory=list)
 
 	# Highest-priority enabled connection.
@@ -1570,8 +1584,15 @@ class NetworkManager:
 				gw = data.get("gw", "")
 				if gw:
 					adapter.kernelGateway = _parseIp4(gw)
+				brd = data.get("brd", "")
+				if brd:
+					adapter.kernelBcast = _parseIp4(brd)
 			adapter.kernelDriver = data.get("driver", "")
 			adapter.kernelHwId = data.get("hw_id", "")
+			adapter.kernelBus = data.get("bus", "")
+			adapter.kernelRxBytes = data.get("rx_bytes", 0)
+			adapter.kernelTxBytes = data.get("tx_bytes", 0)
+			adapter.kernelMtu = data.get("mtu", 0)
 			adapter.kernelIp6 = data.get("ip6", [])
 			if adapter.isWlan:
 				adapter.kernelSsid = data.get("ssid", "")

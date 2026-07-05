@@ -65,10 +65,10 @@ _DUPLEX_LABELS = {"full": lambda: _("Full duplex"), "half": lambda: _("Half dupl
 
 encryptionChoices = [
 	(encNone, _("None")),
-	(encWep, _("WEP")),
-	(encWpa, _("WPA")),
-	(encWpa2, _("WPA2")),
-	(encWpa3, _("WPA3 (SAE)")),
+	(encWep, "WEP"),
+	(encWpa, "WPA"),
+	(encWpa2, "WPA2"),
+	(encWpa3, "WPA3"),
 ]
 
 
@@ -1135,7 +1135,7 @@ class ScanResult:
 	@property
 	def encLabel(self) -> str:
 		return {
-			encNone: _("Open"),
+			encNone: _("None"),
 			encWep: "WEP",
 			encWpa: "WPA",
 			encWpa2: "WPA2",

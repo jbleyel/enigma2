@@ -19,7 +19,7 @@ from Components.Console import Console
 from Components.Harddisk import harddiskmanager
 from Components.InputDevice import remoteControl
 from Components.Label import Label
-from Components.NetworkManager import networkManager
+from Components.NetworkManager import encryptionLabels, networkManager
 from Components.NimManager import nimmanager
 from Components.Pixmap import Pixmap
 from Components.ScrollLabel import ScrollLabel
@@ -990,62 +990,7 @@ class NetworkInformation(InformationBase):
 		self["geolocationActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"yellow": (self.keyUseGeolocation, _("Use geolocation to get WAN information")),
 		}, prio=0, description=_("Network Information Actions"))
-		self.interfaceData = {}
 		self.geolocationData = []
-		self.ifconfigAttributes = {
-			"Link encap": "encapsulation",
-			"HWaddr": "mac",
-			"inet addr": "addr",
-			"Bcast": "brdaddr",
-			"Mask": "nmask",
-			"inet6 addr": "addr6",
-			"Scope": "scope",
-			"MTU": "mtu",
-			"Metric": "metric",
-			"RX packets": "rxPackets",
-			"rxerrors": "rxErrors",
-			"rxdropped": "rxDropped",
-			"rxoverruns": "rxOverruns",
-			"rxframe": "rxFrame",
-			"TX packets": "txPackets",
-			"txerrors": "txErrors",
-			"txdropped": "txDropped",
-			"txoverruns": "txOverruns",
-			"collisions": "txCollisions",
-			"txqueuelen": "txQueueLen",
-			"RX bytes": "rxBytes",
-			"TX bytes": "txBytes"
-		}
-		self.iwconfigAttributes = {
-			"interface": "interface",
-			"standard": "standard",
-			"ESSID": "ssid",
-			"Mode": "mode",
-			"Frequency": "frequency",
-			"Access Point": "accessPoint",
-			"Bit Rate": "bitrate",
-			"Tx-Power": "transmitPower",
-			"Retry short limit": "retryLimit",
-			"RTS thr": "rtsThrottle",
-			"Fragment thr": "fragThrottle",
-			"Encryption key": "encryption",
-			"Power Management": "powerManagement",
-			"Link Quality": "signalQuality",
-			"Signal level": "signalStrength",
-			"Rx invalid nwid": "rxInvalidNwid",
-			"Rx invalid crypt": "rxInvalidCrypt",
-			"Rx invalid frag": "rxInvalidFrag",
-			"Tx excessive retries": "txExcessiveReties",
-			"Invalid misc": "invalidMisc",
-			"Missed beacon": "missedBeacon"
-		}
-		self.ethtoolAttributes = {
-			"Speed": "speed",
-			"Duplex": "duplex",
-			"Transceiver": "transceiver",
-			"Auto-negotiation": "autoNegotiation",
-			"Link detected": "link"
-		}
 
 	def keyUseGeolocation(self):
 		geolocationData = geolocation.getGeolocationData(fields="isp,org,mobile,proxy,query", useCache=False)
@@ -1077,139 +1022,7 @@ class NetworkInformation(InformationBase):
 				callback()
 
 	def fetchInformation(self):
-		def isBlacklisted(interface):
-			for type in ("lo", "wifi", "wmaster", "sit", "tun", "sys", "p2p", "ip6_vti", "ip_vti", "ip6tn", "wg", "tap"):
-				if interface.startswith(type):
-					return True
-			return False
-
-		def ifconfigCallback(result, retVal, extraArgs):  # This temporary code borrowed and adapted from the new but unreleased Network.py!
-			if retVal == 0:
-				capture = False
-				data = ""
-				if isinstance(result, bytes):
-					result = result.decode("UTF-8", "ignore")
-				for line in result.split("\n"):
-					if line.startswith(f"{extraArgs} "):
-						capture = True
-						if "HWaddr " in line:
-							line = line.replace("HWaddr ", "HWaddr:")
-						data += line
-						continue
-					if capture and line.startswith(" "):
-						if " Scope:" in line:
-							line = line.replace(" Scope:", " ")
-						elif "X packets:" in line:
-							pos = line.index("X packets:")
-							direction = line[pos - 1:pos].lower()
-							line = "%s%s" % (line[0:pos + 10], line[pos + 10:].replace(" ", "  %sx" % direction))
-							# line = f"{line[0:pos + 10]}{line[pos + 10:].replace(" ", f"  {direction}x")}"  # Python 3.12
-						elif " txqueuelen" in line:
-							line = line.replace(" txqueuelen:", "  txqueuelen:")
-						data += line
-						continue
-					if line == "":
-						break
-				data = list(filter(None, [x.strip().replace("=", ":", 1) for x in data.split("  ")]))
-				data[0] = f"interface:{data[0]}"
-				# print("[Network] DEBUG: Raw network data %s." % data)
-				for item in data:
-					if ":" not in item:
-						flags = item.split()
-						self.interfaceData[extraArgs]["up"] = True if "UP" in flags else False
-						self.interfaceData[extraArgs]["status"] = "up" if "UP" in flags else "down"  # Legacy status flag.
-						self.interfaceData[extraArgs]["running"] = True if "RUNNING" in flags else False
-						self.interfaceData[extraArgs]["broadcast"] = True if "BROADCAST" in flags else False
-						self.interfaceData[extraArgs]["multicast"] = True if "MULTICAST" in flags else False
-						continue
-					key, value = item.split(":", 1)
-					key = self.ifconfigAttributes.get(key, None)
-					if key:
-						value = value.strip()
-						if value.startswith("\""):
-							value = value[1:-1]
-						if key == "addr6":
-							if key not in self.interfaceData[extraArgs]:
-								self.interfaceData[extraArgs][key] = []
-							self.interfaceData[extraArgs][key].append(value)
-						else:
-							self.interfaceData[extraArgs][key] = value
-			for callback in self.onInformationUpdated:
-				if callable(callback):
-					callback()
-
-		def iwconfigCallback(result, retVal, extraArgs):  # This temporary code borrowed and adapted from the new but unreleased Network.py!
-			if retVal == 0:
-				capture = False
-				data = ""
-				if isinstance(result, bytes):
-					result = result.decode("UTF-8", "ignore")
-				for line in result.split("\n"):
-					if line.startswith(f"{extraArgs} "):
-						capture = True
-						data += line
-						continue
-					if capture and line.startswith(" "):
-						data += line
-						continue
-					if line == "":
-						break
-				data = list(filter(None, [x.strip().replace("=", ":", 1) for x in data.split("  ")]))
-				data[0] = f"interface:{data[0]}"
-				data[1] = f"standard:{data[1]}"
-				for item in data:
-					if ":" not in item:
-						continue
-					key, value = item.split(":", 1)
-					key = self.iwconfigAttributes.get(key, None)
-					if key:
-						value = value.strip()
-						if value.startswith("\""):
-							value = value[1:-1]
-						self.interfaceData[extraArgs][key] = value
-				if "encryption" in self.interfaceData[extraArgs]:
-					self.interfaceData[extraArgs]["encryption"] = _("Disabled or WPA/WPA2") if self.interfaceData[extraArgs]["encryption"] == "off" else _("Enabled")
-				if "standard" in self.interfaceData[extraArgs] and "no wireless extensions" in self.interfaceData[extraArgs]["standard"]:
-					del self.interfaceData[extraArgs]["standard"]
-					self.interfaceData[extraArgs]["wireless"] = False
-				else:
-					self.interfaceData[extraArgs]["wireless"] = True
-				if "ssid" in self.interfaceData[extraArgs]:
-					self.interfaceData[extraArgs]["SSID"] = self.interfaceData[extraArgs]["ssid"]
-			for callback in self.onInformationUpdated:
-				if callable(callback):
-					callback()
-
-		def ethtoolCallback(result, retVal, extraArgs):  # This temporary code borrowed and adapted from the new but unreleased Network.py!
-			if retVal == 0:
-				if isinstance(result, bytes):
-					result = result.decode("UTF-8", "ignore")
-				for line in result.split("\n"):
-					if "Speed:" in line:
-						self.interfaceData[extraArgs]["speed"] = line.split(":")[1][:-4].strip()
-					if "Duplex:" in line:
-						self.interfaceData[extraArgs]["duplex"] = _(line.split(":")[1].strip().capitalize())
-					if "Transceiver:" in line:
-						self.interfaceData[extraArgs]["transceiver"] = _(line.split(":")[1].strip().capitalize())
-					if "Auto-negotiation:" in line:
-						self.interfaceData[extraArgs]["autoNegotiation"] = line.split(":")[1].strip().lower() == "on"
-					if "Link detected:" in line:
-						self.interfaceData[extraArgs]["link"] = line.split(":")[1].strip().lower() == "yes"
-			for callback in self.onInformationUpdated:
-				if callable(callback):
-					callback()
-
 		self.informationTimer.stop()
-		print("[Information] DEBUG: Starting network fetch.")
-		for interface in sorted([x for x in listdir("/sys/class/net") if not isBlacklisted(x)]):
-			print("[Information] DEBUG: Found interface '{interface}'.")
-			self.interfaceData[interface] = {}
-			self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", interface), callback=ifconfigCallback, extra_args=interface)
-			adapter = networkManager.adapters.get(interface) if networkManager else None
-			if adapter.isWlan if adapter else isdir(f"/sys/class/net/{interface}/wireless"):
-				self.console.ePopen(("/sbin/iwconfig", "/sbin/iwconfig", interface), callback=iwconfigCallback, extra_args=interface)
-			else:
-				self.console.ePopen(("/usr/sbin/ethtool", "/usr/sbin/ethtool", interface), callback=ethtoolCallback, extra_args=interface)
 		for callback in self.onInformationUpdated:
 			if callable(callback):
 				callback()
@@ -1217,61 +1030,63 @@ class NetworkInformation(InformationBase):
 	def displayInformation(self):
 		info = []
 		info.append(formatLine("H", _("Network information for %s %s") % getBoxDisplayName()))
-		self.informationTimer.stop()
 		info.append("")
 		hostname = fileReadLine("/proc/sys/kernel/hostname", source=MODULE_NAME)
 		info.append(formatLine("S0S", _("Hostname"), hostname))
-		for interface in sorted(self.interfaceData.keys()):
+		for interface in sorted(networkManager.adapters.keys()):
+			adapter = networkManager.adapters[interface]
 			info.append("")
-			adapter = networkManager.adapters.get(interface) if networkManager is not None else None
-			isWlan = adapter.isWlan if adapter else isdir(f"/sys/class/net/{interface}/wireless")
-			info.append(formatLine("S", _("Interface '%s'") % interface, _("WLAN") if isWlan else _("LAN")))
-			if "up" in self.interfaceData[interface]:
-				info.append(formatLine("P1", _("Status"), (_("Up / Active") if self.interfaceData[interface]["up"] else _("Down / Inactive"))))
-				if self.interfaceData[interface]["up"]:
-					if "addr" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("IP address"), self.interfaceData[interface]["addr"]))
-					if "nmask" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Netmask"), self.interfaceData[interface]["nmask"]))
-					if "brdaddr" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Broadcast address"), self.interfaceData[interface]["brdaddr"]))
-					if "addr6" in self.interfaceData[interface]:
-						for addr6 in self.interfaceData[interface]["addr6"]:
-							addr, scope = addr6.split()
-							info.append(formatLine("P1", _("IPv6 address"), addr))
-							info.append(formatLine("P3V2", _("Scope"), scope))
-					if "mac" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("MAC address"), self.interfaceData[interface]["mac"]))
-					if "speed" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Speed"), f"{self.interfaceData[interface]["speed"]} Mbps"))
-					if "duplex" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Duplex"), self.interfaceData[interface]["duplex"]))
-					if "mtu" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("MTU"), self.interfaceData[interface]["mtu"]))
-					if "link" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Link detected"), (_("Yes") if self.interfaceData[interface]["link"] else _("No"))))
-					if "ssid" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("SSID"), self.interfaceData[interface]["ssid"]))
-					if "standard" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Standard"), self.interfaceData[interface]["standard"]))
-					if "encryption" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Encryption"), self.interfaceData[interface]["encryption"]))
-					if "frequency" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Frequency"), self.interfaceData[interface]["frequency"]))
-					if "accessPoint" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Access point"), self.interfaceData[interface]["accessPoint"]))
-					if "bitrate" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Bitrate"), self.interfaceData[interface]["bitrate"]))
-					if "signalQuality" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Signal quality"), self.interfaceData[interface]["signalQuality"]))
-					if "signalStrength" in self.interfaceData[interface]:
-						info.append(formatLine("P1", _("Signal strength"), self.interfaceData[interface]["signalStrength"]))
-			if "rxBytes" in self.interfaceData[interface] or "txBytes" in self.interfaceData[interface]:
+			info.append(formatLine("S", _("Interface '%s'") % interface, _("WLAN") if adapter.isWlan else _("LAN")))
+			info.append(formatLine("P1", _("Status"), (_("Up / Active") if adapter.kernelUp else _("Down / Inactive"))))
+			if adapter.kernelUp:
+				if adapter.kernelIp != [0, 0, 0, 0]:
+					info.append(formatLine("P1", _("IP address"), ".".join(str(x) for x in adapter.kernelIp)))
+				if adapter.kernelNetmask != [0, 0, 0, 0]:
+					info.append(formatLine("P1", _("Netmask"), ".".join(str(x) for x in adapter.kernelNetmask)))
+				if adapter.kernelBcast != [0, 0, 0, 0]:
+					info.append(formatLine("P1", _("Broadcast address"), ".".join(str(x) for x in adapter.kernelBcast)))
+				if adapter.kernelGateway != [0, 0, 0, 0]:
+					info.append(formatLine("P1", _("Gateway"), ".".join(str(x) for x in adapter.kernelGateway)))
+				for ip6 in adapter.kernelIp6:
+					info.append(formatLine("P1", _("IPv6 address"), ip6.get("addr", "")))
+					info.append(formatLine("P3V2", _("Scope"), ip6.get("scope", "").capitalize()))
+				if adapter.mac:
+					info.append(formatLine("P1", _("MAC address"), adapter.mac))
+				if adapter.kernelMtu:
+					info.append(formatLine("P1", _("MTU"), adapter.kernelMtu))
+				if adapter.isWlan:
+					if adapter.kernelSsid:
+						info.append(formatLine("P1", _("SSID"), adapter.kernelSsid))
+						connection = next((x for x in adapter.connections if x.wlan and x.wlan.ssid == adapter.kernelSsid), None)
+						if connection:
+							label = encryptionLabels.get(connection.wlan.encryption)
+							info.append(formatLine("P1", _("Encryption"), label() if label else connection.wlan.encryption))
+					if adapter.kernelBssid:
+						info.append(formatLine("P1", _("Access point"), adapter.kernelBssid))
+					if adapter.kernelFreqMhz:
+						info.append(formatLine("P1", _("Frequency"), f"{adapter.kernelFreqMhz} MHz"))
+					if adapter.kernelChannel:
+						info.append(formatLine("P1", _("Channel"), adapter.kernelChannel))
+					if adapter.kernelBitrateBps:
+						info.append(formatLine("P1", _("Bitrate"), f"{adapter.kernelBitrateBps // 1000000} Mbps"))
+					if adapter.kernelSignal:
+						info.append(formatLine("P1", _("Signal strength"), f"{adapter.kernelSignal} dBm"))
+				else:
+					if adapter.kernelSpeed > 0:
+						info.append(formatLine("P1", _("Speed"), f"{adapter.kernelSpeed} Mbps"))
+					if adapter.kernelDuplex:
+						info.append(formatLine("P1", _("Duplex"), _(adapter.kernelDuplex.capitalize())))
+					if adapter.kernelTransceiver:
+						info.append(formatLine("P1", _("Transceiver"), _(adapter.kernelTransceiver.capitalize())))
+					info.append(formatLine("P1", _("Link detected"), (_("Yes") if adapter.kernelLink else _("No"))))
+				if adapter.kernelBus:
+					info.append(formatLine("P1", _("Bus"), adapter.kernelBus.upper()))
+				if adapter.kernelDriver:
+					info.append(formatLine("P1", _("Driver"), adapter.kernelDriver))
+			if adapter.kernelRxBytes or adapter.kernelTxBytes:
 				info.append("")
-				rxBytes = int(self.interfaceData[interface]["rxBytes"].split(" ")[0])
-				txBytes = int(self.interfaceData[interface]["txBytes"].split(" ")[0])
-				info.append(formatLine("P1", _("Bytes received"), "%d (%s)" % (rxBytes, scaleNumber(rxBytes, style="Iec", format="%.1f"))))
-				info.append(formatLine("P1", _("Bytes sent"), "%d (%s)" % (txBytes, scaleNumber(txBytes, style="Iec", format="%.1f"))))
+				info.append(formatLine("P1", _("Bytes received"), "%d (%s)" % (adapter.kernelRxBytes, scaleNumber(adapter.kernelRxBytes, style="Iec", format="%.1f"))))
+				info.append(formatLine("P1", _("Bytes sent"), "%d (%s)" % (adapter.kernelTxBytes, scaleNumber(adapter.kernelTxBytes, style="Iec", format="%.1f"))))
 		info += self.geolocationData
 		self["information"].setText("\n".join(info))
 
