@@ -800,7 +800,7 @@ class NetworkConnections(Screen):
 			elif action == "toggle":
 				self._toggleConnection(conn, adapter)
 			elif action == "test":
-				self.session.open(NetworkAdapterTest2, adapter.name)
+				self.session.open(NetworkTest, adapter.name)
 			elif action == "delete":
 				self._confirmDelete(conn, adapter)
 			elif action == "scan":
@@ -1478,15 +1478,15 @@ class NameserverSetup(DnsSettings):
 
 
 # ===========================================================================
-# NetworkAdapterTest2 – list-based adapter test (replaces NetworkAdapterTest)
+# NetworkTest – list-based adapter test (replaces NetworkAdapterTest)
 # ===========================================================================
 
 
-class NetworkAdapterTest2(Screen):
+class NetworkTest(Screen):
 	"""Sequential network adapter tests displayed as a simple list."""
 
 	skin = """
-	<screen name="NetworkAdapterTest2" title="Network Test" position="center,center" size="900,510" resolution="1280,720">
+	<screen name="NetworkTest" title="Network Test" position="center,center" size="900,510" resolution="1280,720">
 		<widget source="list" render="Listbox" position="0,0" size="900,420" scrollbarMode="showNever">
 			<template name="Default" fonts="Regular;24,Regular;22,Regular;18" itemHeight="60" itemWidth="900">
 				<mode name="default">
