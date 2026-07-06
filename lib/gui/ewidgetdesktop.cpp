@@ -345,14 +345,27 @@ void eWidgetDesktop::paintModalIm(eWidget *widget)
 		painter.moveOffset(-comp->m_position);
 		painter.resetClip(dirty);
 		if (fullscreen)
+		{
 			/* flood the whole screen with the modal's background
-			   color first, the widget then paints over its own area. */
-			painter.setBackgroundColor(widget->m_background_color);
+			   (or gradient) first, the widget then paints over its own area. */
+			if (widget->isGradientSet())
+			{
+				painter.setGradient(widget->m_gradient_colors, widget->m_gradient_direction, widget->m_gradient_alphablend);
+				painter.drawRectangle(eRect(ePoint(0, 0), bbox.size()));
+			}
+			else
+			{
+				painter.setBackgroundColor(widget->m_background_color);
+				painter.clear();
+			}
+		}
 		else
+		{
 			/* clear to fully transparent, so the widget's own
 			   (possibly translucent) background keeps its alpha. */
 			painter.setBackgroundColor(gRGB(0, 0, 0, 0xFF));
-		painter.clear();
+			painter.clear();
+		}
 		widget->doPaint(painter, dirty, 0);
 		painter.resetOffset();
 	}
