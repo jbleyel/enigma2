@@ -92,7 +92,7 @@ private:
 
 	eWidgetDesktopCompBuffer m_screen;
 
-	void createBufferForWidget(eWidget *widget, int layer);
+	void createBufferForWidget(eWidget *widget, int layer, const eRect *bboxOverride = 0);
 	void removeBufferForWidget(eWidget *widget, int layer);
 
 	void redrawComposition(int notifed);

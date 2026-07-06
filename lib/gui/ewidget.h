@@ -86,11 +86,14 @@ public:
 
 	int isTransparent() { return m_vis & wVisTransparent; }
 
+	/* m: 0 = not modal, 1 = modal, 2 = modal, dimming the full screen */
 	void setModal(int m) {
 		if (m) m_vis |= wVisModal; else m_vis &= ~wVisModal;
+		if (m == 2) m_vis |= wVisModalFull; else m_vis &= ~wVisModalFull;
 		invalidate();
 	}
-	int isModal() const { return m_vis & wVisModal; }
+	/* returns 0, 1 or 2, mirroring the setModal() argument */
+	int isModal() const { return (m_vis & wVisModalFull) ? 2 : (m_vis & wVisModal) ? 1 : 0; }
 
 	ePoint getAbsolutePosition();
 
@@ -106,6 +109,7 @@ private:
 		wVisShow = 1,
 		wVisTransparent = 2,
 		wVisModal = 4,
+		wVisModalFull = 8,
 	};
 
 	int m_vis;

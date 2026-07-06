@@ -324,27 +324,34 @@ void eWidgetDesktop::paintModalIm(eWidget *widget)
 		   own composition buffer and alpha-blend it onto the screen,
 		   so (semi-)transparent modal windows blend with the window
 		   content painted below them instead of overwriting it. */
-	gRegion abs_region = gRegion(eRect(widget->position(), widget->size()));
+	bool fullscreen = widget->isModal() == 2;
+	eRect bbox = fullscreen ? eRect(ePoint(0, 0), m_screen.m_screen_size) : eRect(widget->position(), widget->size());
+	gRegion abs_region = gRegion(bbox);
 	gRegion dirty = m_screen.m_dirty_region & abs_region;
 
 	eWidgetDesktopCompBuffer *comp = widget->m_comp_buffer[0];
-	if (!comp || (widget->size() != comp->m_screen_size))
+	if (!comp || (bbox.size() != comp->m_screen_size))
 	{
-		createBufferForWidget(widget, 0);
+		createBufferForWidget(widget, 0, fullscreen ? &bbox : 0);
 		comp = widget->m_comp_buffer[0];
 		dirty = abs_region; /* fresh buffer: render everything */
 	}
 	if (dirty.empty())
 		return;
-	comp->m_position = widget->position();
+	comp->m_position = bbox.topLeft();
 
 	{
 		gPainter painter(comp->m_dc);
 		painter.moveOffset(-comp->m_position);
 		painter.resetClip(dirty);
+		if (fullscreen)
+			/* flood the whole screen with the modal's background
+			   color first, the widget then paints over its own area. */
+			painter.setBackgroundColor(widget->m_background_color);
+		else
 			/* clear to fully transparent, so the widget's own
 			   (possibly translucent) background keeps its alpha. */
-		painter.setBackgroundColor(gRGB(0, 0, 0, 0xFF));
+			painter.setBackgroundColor(gRGB(0, 0, 0, 0xFF));
 		painter.clear();
 		widget->doPaint(painter, dirty, 0);
 		painter.resetOffset();
@@ -515,15 +522,15 @@ eWidgetDesktop::~eWidgetDesktop()
 	setCompositionMode(-1);
 }
 
-void eWidgetDesktop::createBufferForWidget(eWidget *widget, int layer)
+void eWidgetDesktop::createBufferForWidget(eWidget *widget, int layer, const eRect *bboxOverride)
 {
 	removeBufferForWidget(widget, layer);
 
 	eWidgetDesktopCompBuffer *comp = widget->m_comp_buffer[layer] = new eWidgetDesktopCompBuffer;
 
-	eDebug("[eWidgetDesktop] create buffer for widget layer %d, %d x %d\n", layer, widget->size().width(), widget->size().height());
+	eRect bbox = bboxOverride ? *bboxOverride : eRect(widget->position(), widget->size());
 
-	eRect bbox = eRect(widget->position(), widget->size());
+	eDebug("[eWidgetDesktop] create buffer for widget layer %d, %d x %d\n", layer, bbox.width(), bbox.height());
 	comp->m_position = bbox.topLeft();
 	comp->m_dirty_region = gRegion(eRect(ePoint(0, 0), bbox.size()));
 	comp->m_screen_size = bbox.size();

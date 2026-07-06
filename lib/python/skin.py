@@ -1401,9 +1401,6 @@ class AttributeParser:
 	def transparent(self, value):
 		self.guiObject.setTransparent(1 if parseBoolean("transparent", value) else 0)
 
-	def modal(self, value):
-		self.guiObject.setModal(1 if parseBoolean("modal", value) else 0)
-
 	def underline(self, value):
 		self.guiObject.setUnderline(parseBoolean("underline", value))
 
