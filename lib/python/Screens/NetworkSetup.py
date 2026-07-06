@@ -562,16 +562,16 @@ class NetworkConnections(Screen):
 	skin = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,600" resolution="1280,720">
 		<widget source="list" render="Listbox" position="0,0" size="980,520" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30" itemHeight="80" itemWidth="980" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080">
+			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30,enigma2icons;80" itemHeight="80" itemWidth="980" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080">
 				<mode name="default">
 					<!-- adapter icon (large, left) -->
-					<text index="0" position="5,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
+					<text index="0" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
 					<!-- enabled/disabled checkbox placeholder -->
 					<text index="1" position="66,26" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
 					<!-- adapter label "eth0 / Intern" -->
 					<text index="2" position="104,15" size="780,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
 					<!-- tree connector branch/last_child (enigma2icons) -->
-					<text index="3" position="5,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
+					<text index="3" position="0,0" size="80,80" font="5" horizontalAlignment="left" verticalAlignment="top" foregroundColor="=6" foregroundColorSelected="=6" />
 					<!-- connection line 1: profile/LAN + IP -->
 					<text index="4" position="104,8" size="780,34" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=6" />
 					<!-- connection line 2: speed / mask / gw -->
@@ -637,6 +637,7 @@ class NetworkConnections(Screen):
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions", "InfoActions"], {
 			"ok": (self.keyOK, _("Open settings for selected network connection")),
 			"cancel": (self.close, _("Close network connection list")),
+			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
 			"red": (self.close, _("Close network connection list")),
 			"green": (self.keyGreen, _("Add a new network connection")),
 			"yellow": (self.keyYellow, _("Activate/Deactivate adapter")),
@@ -722,6 +723,9 @@ class NetworkConnections(Screen):
 			if conn is not None:
 				self._openSetup(conn, adapter)
 
+	def keyCloseRecursive(self):
+		self.close(True)
+
 	def keyYellow(self):
 		entry = self._current()
 		if entry is None:
@@ -806,11 +810,22 @@ class NetworkConnections(Screen):
 
 	def _openSetup(self, conn: Connection, adapter: Adapter):
 		self.session.openWithCallback(
-			lambda saved: self._buildList() if saved else None,
+			self._setupClosed,
 			NetworkConnectionSetup,
 			conn,
 			adapter,
 		)
+
+	def _setupClosed(self, *result):
+		if len(result) == 1 and isinstance(result[0], tuple):
+			recursive, saved = result[0]
+		else:
+			recursive = bool(result[0]) if result else False
+			saved = False
+		if saved:
+			self._buildList()
+		elif recursive:
+			self.keyCloseRecursive()
 
 	def _toggleAdapter(self, adapter: Adapter):
 		adapter.adapterEnabled = not adapter.adapterEnabled
@@ -862,30 +877,11 @@ class NetworkConnections(Screen):
 	def keyGreen(self):
 		if networkManager.adapters:
 			wlanAdapters = [x for x in networkManager.adapters.values() if x.isWlan]
-			lanAdapters = [x for x in networkManager.adapters.values() if not x.isWlan]
 			if wlanAdapters:
 				entry = self._current()
 				selected = entry[self.INDEX_ADAPTER] if entry is not None else None
 				preselected = selected if selected is not None and selected.isWlan else None
 				WiFiAddFlow.start(self.session, adapter=preselected, callback=self._buildList)
-			elif lanAdapters:
-				adapter = lanAdapters[0]
-				newConn = Connection(adapter=adapter.name, name=_("New LAN connection"), dhcp=True)
-				self.session.openWithCallback(
-					lambda changed: self._newLanConnClosed(changed, newConn, adapter),
-					NetworkConnectionSetup,
-					newConn,
-					adapter,
-				)
-
-	def _newLanConnClosed(self, changed: bool, conn: Connection, adapter: Adapter):
-		if changed:
-			existingIds = {id(x) for x in adapter.connections}
-			if id(conn) not in existingIds:
-				adapter.connections.append(conn)
-				if networkManager:
-					networkManager.save()
-			self._buildList()
 
 	def _openWlanScan(self, iface: str):
 		if networkManager is not None:
@@ -901,24 +897,16 @@ class NetworkConnections(Screen):
 		if result:
 			conn = _scanResultToConnection(result, adapter.name)
 			self.session.openWithCallback(
-				lambda saved: self._wlanSetupDone(saved, conn, adapter),
+				self._setupClosed,
 				NetworkConnectionSetup,
 				conn,
 				adapter,
 			)
 
-	def _wlanSetupDone(self, saved: bool, conn: Connection, adapter: Adapter):
-		if saved:
-			if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in adapter.connections):
-				adapter.connections.append(conn)
-				if networkManager:
-					networkManager.save()
-			self._buildList()
-
 	def _openWlanManual(self, adapter: Adapter):
 		conn = Connection(adapter=adapter.name, name=_("New Wi-Fi"), dhcp=True, enabled=False, wlan=WiFiConfig())
 		self.session.openWithCallback(
-			lambda saved: self._wlanSetupDone(saved, conn, adapter),
+			self._setupClosed,
 			NetworkConnectionSetup,
 			conn,
 			adapter,
@@ -1115,12 +1103,11 @@ class NetworkConnectionSetup(Setup):
 		if not conn.isWlan and networkManager is not None:
 			networkManager.setLinkSpeed(adapter.name, self.cfgLinkSpeed.value)
 
+		if not any(x is conn for x in adapter.connections):
+			adapter.connections.append(conn)
 		if networkManager is not None:
 			networkManager.save()
-		self.close(True)
-
-	def keyCancel(self):
-		self.close(False)
+		self.close((False, True))
 
 
 # ===========================================================================
