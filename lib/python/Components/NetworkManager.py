@@ -1234,7 +1234,7 @@ class NetworkManager:
 					# Exception: WoW-Only mode keeps base enabled so the iface stanza stays active.
 					wpaConns = [x for x in adapter.connections if x.wlan and x.wlan.ssid]
 					if wpaConns:
-						wowOnly = any(x.wakeOnWifi and not x.enabled for x in wpaConns)
+						wowOnly = any(x.wakeOnWiFi and not x.enabled for x in wpaConns)
 						baseConn.enabled = wowOnly or any(x.enabled for x in wpaConns)
 						# The base connection is the only one written to
 						# /etc/network/interfaces, so it must carry the
@@ -1495,7 +1495,7 @@ class NetworkManager:
 		if adapter is None or not adapter.canWakeOnWifi:
 			return []
 		for conn in adapter.connections:
-			conn.wakeOnWifi = enable
+			conn.wakeOnWiFi = enable
 		cmds: list[str] = []
 		if enable:
 			cmds.append(f"wl -i {iface} wowl 0x100")
@@ -1523,7 +1523,7 @@ class NetworkManager:
 		if adapter is None:
 			return False
 		conn = adapter.activeConnection()
-		return conn.wakeOnWifi if conn else False
+		return conn.wakeOnWiFi if conn else False
 
 	# ------------------------------------------------------------------
 	# Link speed (forced, non-auto-negotiated)

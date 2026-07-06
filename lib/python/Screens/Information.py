@@ -194,12 +194,11 @@ def formatLine(style, left, right=None):
 	return f"{leftIndent}{leftStartColor}{left}:{leftEndColor}|{rightIndent}{rightStartColor}{right}{rightEndColor}"
 
 
-class BenchmarkInformation(InformationBase):
+class InformationBenchmark(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Benchmark Information"))
-		self.skinName.insert(0, "BenchmarkInformation")
-		self.skinName.insert(0, "InformationBenchmark")
+		self.skinName.append("BenchmarkInformation")
 		self.cpuTypes = []
 		self.cpuMemoryClock = None
 		self.cpuBenchmark = None
@@ -269,12 +268,11 @@ class BenchmarkInformation(InformationBase):
 		return "Benchmark Information"
 
 
-class BuildInformation(InformationBase):
+class InformationBuild(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Build Information"))
-		self.skinName.insert(0, "BuildInformation")
-		self.skinName.insert(0, "InformationBuild")
+		self.skinName.append("BuildInformation")
 
 	def displayInformation(self):
 		info = []
@@ -296,13 +294,12 @@ class BuildInformation(InformationBase):
 		return "Build Information"
 
 
-class CommitInformation(InformationBase):
+class InformationCommit(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Commit Log Information"))
 		self.baseTitle = _("Commit Log")
-		self.skinName.insert(0, "CommitInformation")
-		self.skinName.insert(0, "InformationCommit")
+		self.skinName.append("CommitInformation")
 		self["key_menu"] = StaticText(_("MENU"))
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
@@ -396,13 +393,12 @@ class CommitInformation(InformationBase):
 		return "Commit Log Information"
 
 
-class DebugInformation(InformationBase):
+class InformationDebug(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Debug Log Information"))
 		self.baseTitle = _("Log")
-		self.skinName.insert(0, "DebugInformation")
-		self.skinName.insert(0, "InformationDebug")
+		self.skinName.append("DebugInformation")
 		self["key_menu"] = StaticText()
 		self["key_info"] = StaticText(_("INFO"))
 		self["key_yellow"] = StaticText()
@@ -578,13 +574,12 @@ class DebugInformation(InformationBase):
 		return "Debug Log Information"
 
 
-class DistributionInformation(InformationBase):
+class InformationDistribution(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.displayDistro = BoxInfo.getItem("displaydistro", "Enigma2")
 		self.setTitle(_("%s Information") % self.displayDistro)
-		self.skinName.insert(0, "DistributionInformation")
-		self.skinName.insert(0, "InformationDistribution")
+		self.skinName.append("DistributionInformation")
 		self["key_info"] = StaticText(_("INFO"))
 		self["key_yellow"] = StaticText(_("Commit Logs"))
 		self["key_blue"] = StaticText(_("Translation"))
@@ -605,13 +600,13 @@ class DistributionInformation(InformationBase):
 		self.imageMessage = BoxInfo.getItem("InformationDistributionWelcome", "")
 
 	def keyShowBuild(self):
-		self.session.openWithCallback(self.informationWindowClosed, BuildInformation)
+		self.session.openWithCallback(self.informationWindowClosed, InformationBuild)
 
 	def keyShowCommitLogs(self):
-		self.session.openWithCallback(self.informationWindowClosed, CommitInformation)
+		self.session.openWithCallback(self.informationWindowClosed, InformationCommit)
 
 	def keyShowTranslation(self):
-		self.session.openWithCallback(self.informationWindowClosed, TranslationInformation)
+		self.session.openWithCallback(self.informationWindowClosed, InformationTranslation)
 
 	def displayInformation(self):
 		info = []
@@ -755,12 +750,11 @@ class DistributionInformation(InformationBase):
 		return f"{self.displayDistro} Information"
 
 
-class GeolocationInformation(InformationBase):
+class InformationGeolocation(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Geolocation Information"))
-		self.skinName.insert(0, "GeolocationInformation")
-		self.skinName.insert(0, "InformationGeolocation")
+		self.skinName.append("GeolocationInformation")
 
 	def displayInformation(self):
 		info = []
@@ -828,12 +822,11 @@ class GeolocationInformation(InformationBase):
 		return "Geolocation Information"
 
 
-class MemoryInformation(InformationBase):
+class InformationMemory(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Memory Information"))
-		self.skinName.insert(0, "MemoryInformation")
-		self.skinName.insert(0, "InformationMemory")
+		self.skinName.append("MemoryInformation")
 		self["clearActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"yellow": (self.keyClearMemoryInformation, _("Clear the virtual memory caches"))
 		}, prio=0, description=_("Memory Information Actions"))
@@ -914,12 +907,11 @@ class MemoryInformation(InformationBase):
 		return "Memory Information Data"
 
 
-class MultiBootInformation(InformationBase):
+class InformationMultiBoot(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("MultiBoot Information"))
-		self.skinName.insert(0, "MultiBootInformation")
-		self.skinName.insert(0, "InformationMultiBoot")
+		self.skinName.append("MultiBootInformation")
 		self.slotImages = None
 
 	def fetchInformation(self):
@@ -980,12 +972,11 @@ class MultiBootInformation(InformationBase):
 		return "MultiBoot Information Data"
 
 
-class NetworkInformation(InformationBase):
+class InformationNetwork(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Network Information"))
-		self.skinName.insert(0, "NetworkInformation")
-		self.skinName.insert(0, "InformationNetwork")
+		self.skinName.append("NetworkInformation")
 		self["key_yellow"] = StaticText(_("WAN Geolocation"))
 		self["geolocationActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"yellow": (self.keyUseGeolocation, _("Use geolocation to get WAN information")),
@@ -1021,12 +1012,6 @@ class NetworkInformation(InformationBase):
 			if callable(callback):
 				callback()
 
-	def fetchInformation(self):
-		self.informationTimer.stop()
-		for callback in self.onInformationUpdated:
-			if callable(callback):
-				callback()
-
 	def displayInformation(self):
 		info = []
 		info.append(formatLine("H", _("Network information for %s %s") % getBoxDisplayName()))
@@ -1036,17 +1021,17 @@ class NetworkInformation(InformationBase):
 		for interface in sorted(networkManager.adapters.keys()):
 			adapter = networkManager.adapters[interface]
 			info.append("")
-			info.append(formatLine("S", _("Interface '%s'") % interface, _("WLAN") if adapter.isWlan else _("LAN")))
+			info.append(formatLine("S", _("Interface '%s'") % interface, _("WLAN / Wi-Fi") if adapter.isWlan else _("LAN")))
 			info.append(formatLine("P1", _("Status"), (_("Up / Active") if adapter.kernelUp else _("Down / Inactive"))))
 			if adapter.kernelUp:
 				if adapter.kernelIp != [0, 0, 0, 0]:
 					info.append(formatLine("P1", _("IP address"), ".".join(str(x) for x in adapter.kernelIp)))
 				if adapter.kernelNetmask != [0, 0, 0, 0]:
 					info.append(formatLine("P1", _("Netmask"), ".".join(str(x) for x in adapter.kernelNetmask)))
-				if adapter.kernelBcast != [0, 0, 0, 0]:
-					info.append(formatLine("P1", _("Broadcast address"), ".".join(str(x) for x in adapter.kernelBcast)))
 				if adapter.kernelGateway != [0, 0, 0, 0]:
 					info.append(formatLine("P1", _("Gateway"), ".".join(str(x) for x in adapter.kernelGateway)))
+				if adapter.kernelBcast != [0, 0, 0, 0]:
+					info.append(formatLine("P1", _("Broadcast address"), ".".join(str(x) for x in adapter.kernelBcast)))
 				for ip6 in adapter.kernelIp6:
 					info.append(formatLine("P1", _("IPv6 address"), ip6.get("addr", "")))
 					info.append(formatLine("P3V2", _("Scope"), ip6.get("scope", "").capitalize()))
@@ -1091,7 +1076,7 @@ class NetworkInformation(InformationBase):
 		self["information"].setText("\n".join(info))
 
 
-class PictureInformation(Screen):
+class InformationPicture(Screen):
 	skin = """
 	<screen name="InformationPicture" title="Picture Information" position="center,center" size="950,560" resolution="1280,720">
 		<widget name="Image" position="0,0" size="0,0" conditional="Image" />
@@ -1114,8 +1099,8 @@ class PictureInformation(Screen):
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Picture Information"))
-		self.skinName = ["PictureInformation"]
-		self.skinName.insert(0, "InformationPicture")
+		self.skinName = ["InformationPicture"]
+		self.skinName.append("PictureInformation")
 		self["name"] = Label()
 		self["picture"] = Pixmap()
 		self["key_red"] = StaticText(_("Close"))
@@ -1184,12 +1169,11 @@ class PictureInformation(Screen):
 			self["picture"].instance.setPixmap(self.pictures[self.pictureIndex][1])
 
 
-class ReceiverInformation(InformationBase):
+class InformationReceiver(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Receiver Information"))
-		self.skinName.insert(0, "ReceiverInformation")
-		self.skinName.insert(0, "InformationReceiver")
+		self.skinName.append("ReceiverInformation")
 		self["key_info"] = StaticText(_("INFO"))
 		self["key_yellow"] = StaticText(_("System Information"))
 		self["key_blue"] = StaticText(_("Debug Information"))
@@ -1200,13 +1184,13 @@ class ReceiverInformation(InformationBase):
 		}, prio=0, description=_("Receiver Information Actions"))
 
 	def keyShowPictureInformation(self):
-		self.session.openWithCallback(self.informationWindowClosed, PictureInformation)
+		self.session.openWithCallback(self.informationWindowClosed, InformationPicture)
 
 	def keyShowSystemInformation(self):
-		self.session.openWithCallback(self.informationWindowClosed, SystemInformation)
+		self.session.openWithCallback(self.informationWindowClosed, InformationSystem)
 
 	def keyShowDebugInformation(self):
-		self.session.openWithCallback(self.informationWindowClosed, DebugInformation)
+		self.session.openWithCallback(self.informationWindowClosed, InformationDebug)
 
 	def displayInformation(self):
 		def findPackageRevision(package, packageList):
@@ -1399,13 +1383,12 @@ class ReceiverInformation(InformationBase):
 		return "Receiver Information"
 
 
-class ServiceInformation(InformationBase):
+class InformationService(InformationBase):
 	def __init__(self, session, serviceRef=None):
 		InformationBase.__init__(self, session)
 		self.baseTitle = _("Service Information")
 		self.setTitle(self.baseTitle)
-		self.skinName.insert(0, "ServiceInformation")
-		self.skinName.insert(0, "InformationService")
+		self.skinName.append("ServiceInformation")
 		self.serviceRef = serviceRef
 		self["key_menu"] = StaticText()
 		self["key_yellow"] = StaticText()
@@ -1774,12 +1757,11 @@ class ServiceInformation(InformationBase):
 		return "Service Information"
 
 
-class StorageInformation(InformationBase):
+class InformationStorage(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Storage / Disk Information"))
-		self.skinName.insert(0, "StorageDiskInformation")
-		self.skinName.insert(0, "InformationStorageDisk")
+		self.skinName.append("StorageDiskInformation")
 		self["information"].setText(_("Retrieving network server information, please wait..."))
 		self.mountInfo = []
 
@@ -1886,12 +1868,11 @@ class StorageInformation(InformationBase):
 		return "Storage / Disk Information"
 
 
-class StreamingInformation(InformationBase):
+class InformationStreaming(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Streaming Tuner Information"))
-		self.skinName.insert(0, "StreamingInformation")
-		self.skinName.insert(0, "InformationStreaming")
+		self.skinName.append("StreamingInformation")
 		self["key_yellow"] = StaticText(_("Stop Auto Refresh"))
 		self["key_blue"] = StaticText()
 		self["refreshActions"] = HelpableActionMap(self, ["ColorActions"], {
@@ -1942,13 +1923,12 @@ class StreamingInformation(InformationBase):
 		return "Streaming Tuner Information"
 
 
-class SystemInformation(InformationBase):
+class InformationSystem(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.baseTitle = _("System Information")
 		self.setTitle(self.baseTitle)
-		self.skinName.insert(0, "SystemInformation")
-		self.skinName.insert(0, "InformationSystem")
+		self.skinName.append("SystemInformation")
 		self["key_menu"] = StaticText(_("MENU"))
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
@@ -2044,12 +2024,11 @@ class SystemInformation(InformationBase):
 		return "System Information"
 
 
-class TranslationInformation(InformationBase):
+class InformationTranslation(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Translation Information"))
-		self.skinName.insert(0, "TranslationInformation")
-		self.skinName.insert(0, "InformationTranslation")
+		self.skinName.append("TranslationInformation")
 
 	def displayInformation(self):
 		info = []
@@ -2077,12 +2056,11 @@ class TranslationInformation(InformationBase):
 		return "Translation Information"
 
 
-class TunerInformation(InformationBase):
+class InformationTuner(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Tuner Information"))
-		self.skinName.insert(0, "TunerInformation")
-		self.skinName.insert(0, "InformationTuner")
+		self.skinName.append("TunerInformation")
 		self.frontEndFields = {
 			"DVB API version": "api",
 			"Name": "name",
@@ -2215,11 +2193,11 @@ class TunerInformation(InformationBase):
 		return "Tuner Information"
 
 
-class TestingInformation(InformationBase):
+class InformationTesting(InformationBase):
 	def __init__(self, session):
 		InformationBase.__init__(self, session)
 		self.setTitle(_("Testing Information"))
-		self.skinName.insert(0, "InformationTesting")
+		self.skinName.append("TestingInformation")
 		self.slotImages = None
 
 	def displayInformation(self):

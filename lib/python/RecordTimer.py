@@ -971,7 +971,7 @@ class RecordTimerEntry(TimerEntry):
 					Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 					self.log(11, "Asking user before zapping.")
 					message = _("A zap timer wants to switch the channel.\nDo you want to zap now?\n")
-					AddModalNotification(text=message, timeout=config.recording.confirmZapDelay.value * 1000, default=True, windowTitle=_("Zap"), callback=self.zapTimerCB)
+					AddModalNotification(text=message, timeout=config.recording.confirmZapDelay.value, default=True, windowTitle=_("Zap"), callback=self.zapTimerCB)
 				else:
 					self.log(11, "Zapping.")
 					Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
