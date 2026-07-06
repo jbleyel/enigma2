@@ -59,18 +59,6 @@ MODULE_NAME = __name__.split(".")[-1]
 
 _DUPLEX_LABELS = {"full": lambda: _("Full duplex"), "half": lambda: _("Half duplex")}
 
-# ---------------------------------------------------------------------------
-# Encryption choices
-# ---------------------------------------------------------------------------
-
-encryptionChoices = [
-	(encNone, _("None")),
-	(encWep, "WEP"),
-	(encWpa, "WPA"),
-	(encWpa2, "WPA2"),
-	(encWpa3, "WPA3"),
-]
-
 
 # ---------------------------------------------------------------------------
 # Display helpers
@@ -614,7 +602,7 @@ class NetworkConnections(Screen):
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Network Connections"))
 		self["key_red"] = StaticText(_("Close"))
-		self["key_green"] = StaticText(_("Add Wi-Fi"))
+		self["key_green"] = StaticText("")
 		self["key_yellow"] = StaticText("")
 		self["key_blue"] = StaticText("")
 		# Tuple indices (see class INDEX_* constants):
@@ -719,6 +707,9 @@ class NetworkConnections(Screen):
 				linkIcon = self.ICON_LINK_ACTIVE if adapter.kernelLink else self.ICON_LINK_INACTIVE
 				entries.append(("", "", "", self.ICON_LAST_CHILD if isLast else self.ICON_BRANCH, _connLine1(conn, adapter), _connLine2(conn, adapter), connColor, inetIcon, None, self._connPixmap(conn), linkIcon, adapter, conn))
 		self["list"].setList(entries)
+		text = _("Add Wi-Fi") if any(x.isWlan for x in networkManager.adapters.values()) else ""
+		self["key_green"].setText(text)
+		self["actions"].setEnabledAction("green", text != "")
 		self._updateYellowKey()
 
 	def _current(self) -> tuple | None:
@@ -749,10 +740,12 @@ class NetworkConnections(Screen):
 	def _updateYellowKey(self):
 		entry = self._current()
 		if entry is None or entry[self.INDEX_CONN] is not None:
-			self["key_yellow"].setText("")
+			text = ""
 		else:
 			adapter = entry[self.INDEX_ADAPTER]
-			self["key_yellow"].setText(_("Deactivate") if adapter.adapterEnabled else _("Activate"))
+			text = _("Deactivate") if adapter.adapterEnabled else _("Activate")
+		self["key_yellow"].setText(text)
+		self["actions"].setEnabledAction("yellow", text != "")
 
 	def keyMenu(self):
 		entry = self._current()
@@ -871,7 +864,10 @@ class NetworkConnections(Screen):
 			wlanAdapters = [x for x in networkManager.adapters.values() if x.isWlan]
 			lanAdapters = [x for x in networkManager.adapters.values() if not x.isWlan]
 			if wlanAdapters:
-				WiFiAddFlow.start(self.session, callback=self._buildList)
+				entry = self._current()
+				selected = entry[self.INDEX_ADAPTER] if entry is not None else None
+				preselected = selected if selected is not None and selected.isWlan else None
+				WiFiAddFlow.start(self.session, adapter=preselected, callback=self._buildList)
 			elif lanAdapters:
 				adapter = lanAdapters[0]
 				newConn = Connection(adapter=adapter.name, name=_("New LAN connection"), dhcp=True)
@@ -936,6 +932,19 @@ class NetworkConnections(Screen):
 class NetworkConnectionSetup(Setup):
 	"""Setup screen for one Connection."""
 
+	RANK_LABELS = (
+		_("1st (Highest)"),
+		_("2nd"),
+		_("3rd"),
+		_("4th"),
+		_("5th"),
+		_("6th"),
+		_("7th"),
+		_("8th"),
+		_("9th"),
+		_("10th (Lowest)"),
+	)
+
 	def __init__(self, session, conn: Connection, adapter: Adapter):
 		self._conn = conn
 		self._adapter = adapter
@@ -959,11 +968,13 @@ class NetworkConnectionSetup(Setup):
 		self.cfgEnabled = NoSave(ConfigYesNo(default=conn.enabled))
 		if conn.isWlan:
 			wlanConns = [x for x in adapter.connections if x.isWlan and x.wlan and x.wlan.ssid]
+			if not any(x is conn for x in wlanConns):
+				wlanConns = wlanConns + [conn]
 			self._hasMultiplePriorities = len(wlanConns) > 1
 			if self._hasMultiplePriorities:
 				self._wlanConnsSorted = sorted(wlanConns, key=lambda wlanConn: wlanConn.priority, reverse=True)
 				currentRank = next((idx + 1 for idx, x in enumerate(self._wlanConnsSorted) if x is conn), 1)
-				rankChoices = [(x + 1, _("1st (highest)") if x == 0 else _("%d.") % (x + 1)) for x in range(len(wlanConns))]
+				rankChoices = [(x + 1, self.RANK_LABELS[x] if x < len(self.RANK_LABELS) else _("%d.") % (x + 1)) for x in range(len(wlanConns))]
 				self.cfgPriority = NoSave(ConfigSelection(choices=rankChoices, default=currentRank))
 			else:
 				self._wlanConnsSorted = []
@@ -984,6 +995,15 @@ class NetworkConnectionSetup(Setup):
 				(2, _("IPv4 and IPv6")),
 			]
 		))
+
+		encryptionChoices = [
+			(encNone, _("None")),
+			(encWep, "WEP"),
+			(encWpa, "WPA"),
+			(encWpa2, "WPA2"),
+		]
+		if BoxInfo.getItem("wpa3") or (conn.isWlan and conn.wlan and conn.wlan.encryption == encWpa3):
+			encryptionChoices.append((encWpa3, "WPA3"))
 
 		if conn.isWlan and conn.wlan:
 			wlan = conn.wlan
@@ -1451,14 +1471,14 @@ class WiFiAddFlow:
 	def _pickAdapter(session, adapters: list[Adapter], callback):
 		choices = [(x.name, x) for x in adapters]
 
-		def _chosen(choice):
-			if choice is None:
+		def _chosen(adapter):
+			if not adapter:
 				if callback:
 					callback()
 				return
-			WiFiAddFlow._openScan(session, choice[1], callback)
+			WiFiAddFlow._openScan(session, adapter, callback)
 
-		session.openWithCallback(_chosen, ChoiceBox, title=_("Select Wi-Fi adapter"), list=choices)
+		session.openWithCallback(_chosen, MessageBox, _("Select Wi-Fi adapter"), type=MessageBox.TYPE_YESNO, list=choices)
 
 
 # ===========================================================================

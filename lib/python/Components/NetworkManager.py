@@ -240,7 +240,7 @@ class Adapter:
 
 	@property
 	def wpaConfPath(self) -> str:
-		return f"{wpaSupplicantDir}/wpa_supplicant-{self.name}.conf"
+		return f"{wpaSupplicantDir}/wpa_supplicant.{self.name}.conf"
 
 	@property
 	def wpaPidPath(self) -> str:
@@ -281,7 +281,7 @@ def _writeLines(path: str, lines: list[str], backup: bool = False) -> bool:
 		except OSError as exc:
 			print(f"[NetworkManager] Cannot backup {path}: {exc}")
 	try:
-		with open(path + "2", "w", encoding="utf-8") as fh:
+		with open(path, "w", encoding="utf-8") as fh:
 			fh.write("\n".join(lines))
 			if lines:
 				fh.write("\n")
@@ -528,11 +528,11 @@ def _serialiseConnection(conn: Connection, adapterEnabled: bool) -> list[str]:
 # ===========================================================================
 
 class WpaSupplicantFile:
-	"""Parser and writer for /etc/wpa_supplicant/wpa_supplicant-<iface>.conf."""
+	"""Parser and writer for /etc/wpa_supplicant.<iface>.conf."""
 
 	def __init__(self, iface: str):
 		self.iface = iface
-		self.path = f"{wpaSupplicantDir}/wpa_supplicant-{iface}.conf"
+		self.path = f"{wpaSupplicantDir}/wpa_supplicant.{iface}.conf"
 		self._writePath = self.path
 		self._raw: list[str] = _readLines(self.path)
 		self._header: list[str] = self._extractHeader()
