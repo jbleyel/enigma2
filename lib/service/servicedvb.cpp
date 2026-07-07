@@ -1300,7 +1300,6 @@ void eDVBServicePlay::serviceEvent(int event)
 		if (m_timeshift_enabled)
 		{
 			eTrace("[PreciseRecovery] Signal lost during timeshift. Initiating recovery.");
-			onPreRecovery(); // Allow subclass (eRamServicePlay) to freeze playback position
 			m_stream_corruption_detected = true;
 			handleEofRecovery();
 		}
@@ -1319,7 +1318,6 @@ void eDVBServicePlay::serviceEvent(int event)
 		if (recovery_enabled && m_timeshift_enabled && !m_stream_corruption_detected)
 		{
 			eTrace("[PreciseRecovery] Tune failed/PAT/PMT loss during timeshift. Initiating recovery.");
-			onPreRecovery(); // Allow subclass (eRamServicePlay) to freeze playback position
 			m_stream_corruption_detected = true;
 			handleEofRecovery();
 		}
