@@ -3,6 +3,27 @@ from enigma import eListboxPythonMultiContent
 from skin import SkinContext, SkinContextStack, TemplateParser, parseFont, parsePadding
 from Components.Converter.StringList import StringList
 
+# Fraction (0.0-1.0) of the shape's box occupied by a stroke, and where its
+# centerline sits. TYPE_RECTS resolves these fractions against the item's
+# actual pixel width/height at paint time in C++, so the same shape stays
+# pixel-exact at every item size, unlike a font glyph rasterized once per size.
+SHAPE_STROKE_FRACTION = 0.12
+SHAPE_CENTER_FRACTION = 0.5
+
+
+def buildShapeRects(name):
+	thickness = SHAPE_STROKE_FRACTION
+	strokeStart = SHAPE_CENTER_FRACTION - thickness / 2
+	horizontal = (strokeStart, strokeStart, 1.0 - strokeStart, thickness)
+	match name:
+		case "branch":  # tree connector "├": vertical line spans the full height
+			return [(strokeStart, 0.0, thickness, 1.0), horizontal]
+		case "lastchild":  # tree connector "└": vertical line stops at the branch
+			return [(strokeStart, 0.0, thickness, strokeStart + thickness), horizontal]
+		case _:
+			print(f"[XmlMultiContent] Error: Unknown shape name '{name}'!")
+			return None
+
 
 class MultiContentTemplateParser(TemplateParser):
 	_KNOWN_TEMPLATE_ATTRS = {"name", "fonts", "itemWidth", "itemHeight"}
@@ -132,6 +153,16 @@ class MultiContentTemplateParser(TemplateParser):
 											modeData.append((eListboxPythonMultiContent.TYPE_LINEAR_GRADIENT, pos[0], pos[1], size[0], size[1], gradientDirection, gradientStart, gradientMid, gradientEnd, gradientStartSelected, gradientMidSelected, gradientEndSelected, cornerRadius, cornerEdges))
 									else:
 										modeData.append((eListboxPythonMultiContent.TYPE_RECT, pos[0], pos[1], size[0], size[1], backgroundColor, backgroundColorSelected, borderWidth, borderColor, borderColorSelected, cornerRadius, cornerEdges))
+								case "shape":
+									shapeName = item.get("name")
+									if index != -1:  # dynamic: the row provides the fractional rect list (or None) at this index
+										rects = index
+									elif shapeName:  # static: same shape for every row
+										rects = buildShapeRects(shapeName)
+									else:
+										print("[XmlMultiContent] Error: 'shape' requires either an 'index' or a 'name' attribute!")
+										rects = None
+									modeData.append((eListboxPythonMultiContent.TYPE_RECTS, pos[0], pos[1], size[0], size[1], rects, backgroundColor, backgroundColorSelected))
 								case "progress":
 									if index == -1:
 										index = None

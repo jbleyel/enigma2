@@ -19,6 +19,7 @@ Licensed under GPLv2.
 #include <lib/gdi/epng.h>
 #include <lib/base/esimpleconfig.h>
 #include <lib/gui/ewindowstyleskinned.h>
+#include <cmath>
 #include <sstream>
 
 // Width used for unbounded text measurement (wider than any real screen)
@@ -2037,6 +2038,89 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 					rect.setRect(x + width - bwidth, y + bwidth, bwidth, height - bwidth);
 					painter.fill(rect);
 
+					painter.clippop();
+				}
+
+				break;
+			}
+			case TYPE_RECTS: // a shape made of several simple rectangles (e.g. tree connector lines), no border/radius support
+			{
+				/*
+					(TYPE_RECTS, x, y, width, height, rects [, backgroundColor, backgroundColorSelected])
+
+					'rects' is either a per-row index into 'data' (the row provides the shape for
+					this item, e.g. depending on tree position) or a literal list, in both cases a
+					list of (fx, fy, fw, fh) tuples, each a fraction (0.0-1.0) of width/height. Using
+					fractions resolved at paint time (against the item's actual pixel size) keeps the
+					shape pixel-exact at every item size, unlike a font glyph rasterized once per size.
+				*/
+				ePyObject px = PyTuple_GET_ITEM(item, 1),
+						  py = PyTuple_GET_ITEM(item, 2),
+						  pwidth = PyTuple_GET_ITEM(item, 3),
+						  pheight = PyTuple_GET_ITEM(item, 4),
+						  prects = PyTuple_GET_ITEM(item, 5),
+						  pbackColor, pbackColorSelected;
+
+				if (!(px && py && pwidth && pheight && prects))
+				{
+					eDebug("[eListboxPythonMultiContent] tuple too small (must be (TYPE_RECTS, x, y, width, height, rects [, backgroundColor, backgroundColorSelected]))");
+					goto error_out;
+				}
+
+				if (size > 6)
+					pbackColor = lookupColor(PyTuple_GET_ITEM(item, 6), data);
+
+				if (size > 7)
+					pbackColorSelected = lookupColor(PyTuple_GET_ITEM(item, 7), data);
+
+				if (PyLong_Check(prects) && data) /* if 'rects' is in fact a number, it refers to the 'data' list. */
+					prects = PyTuple_GetItem(data, PyLong_AsLong(prects));
+
+				/* don't do anything if this row has no shape here (e.g. no connector on this row) */
+				if (!prects || prects == Py_None || !PyList_Check(prects))
+					continue;
+
+				int x = PyFloat_Check(px) ? (int)PyFloat_AsDouble(px) : PyLong_AsLong(px);
+				int y = PyFloat_Check(py) ? (int)PyFloat_AsDouble(py) : PyLong_AsLong(py);
+				int width = PyFloat_Check(pwidth) ? (int)PyFloat_AsDouble(pwidth) : PyLong_AsLong(pwidth);
+				int height = PyFloat_Check(pheight) ? (int)PyFloat_AsDouble(pheight) : PyLong_AsLong(pheight);
+
+				if (selected && itemZoomContent)
+				{
+					x = (x * local_style->m_selection_zoom) + offs.x();
+					y = (y * local_style->m_selection_zoom) + offs.y();
+					width *= local_style->m_selection_zoom;
+					height *= local_style->m_selection_zoom;
+				}
+				else
+				{
+					x += zoomoffs.x();
+					y += zoomoffs.y();
+				}
+
+				bool mustClear = (selected && pbackColorSelected) || (!selected && pbackColor);
+				int rectCount = PyList_Size(prects);
+				for (int r = 0; r < rectCount; ++r)
+				{
+					ePyObject rectItem = PyList_GET_ITEM(prects, r);
+
+					if (PyTuple_Size(rectItem) < 4)
+					{
+						eDebug("[eListboxPythonMultiContent] TYPE_RECTS shape entry too small (must be (fx, fy, fw, fh) fractions of width/height)");
+						goto error_out;
+					}
+
+					double fx = PyFloat_AsDouble(PyTuple_GET_ITEM(rectItem, 0));
+					double fy = PyFloat_AsDouble(PyTuple_GET_ITEM(rectItem, 1));
+					double fw = PyFloat_AsDouble(PyTuple_GET_ITEM(rectItem, 2));
+					double fh = PyFloat_AsDouble(PyTuple_GET_ITEM(rectItem, 3));
+
+					eRect rect(x + (int)lround(fx * width), y + (int)lround(fy * height), (int)lround(fw * width), (int)lround(fh * height));
+					painter.clip(rect);
+					{
+						gRegion rc(rect);
+						clearRegion(painter, style, local_style, ePyObject(), ePyObject(), pbackColor, pbackColorSelected, selected, marked, rc, sel_clip, offs, itemRect.size(), cursorValid, mustClear, orientation, even);
+					}
 					painter.clippop();
 				}
 

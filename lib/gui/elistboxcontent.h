@@ -134,7 +134,8 @@ public:
 		TYPE_PIXMAP,
 		TYPE_PIXMAP_ALPHATEST,
 		TYPE_PIXMAP_ALPHABLEND,
-		TYPE_PROGRESS_PIXMAP
+		TYPE_PROGRESS_PIXMAP,
+		TYPE_RECTS
 	};
 	void paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected) override;
 	int currentCursorSelectable() override;
