@@ -1538,8 +1538,8 @@ class NetworkWiFiActivator(Screen):
 
 	def _connectedCb(self, retval: int):
 		if retval != 0:
-			self["status"].setText(_("Connection failed (code %d).\nCheck your settings and try again.") % retval)
-			self._scheduleClose(4000)
+			self["status"].setText(self._diagnoseFailure())
+			self._scheduleClose(6000)
 			return
 		self._pollCount = 0
 		self["status"].setText(_("Waiting for IP address…"))
@@ -1558,10 +1558,31 @@ class NetworkWiFiActivator(Screen):
 			self._scheduleClose(2500)
 		elif self._pollCount >= self._pollMaxAttempts:
 			self._pollTimer.stop()
-			self["status"].setText(_("Connection timed out.\nNetwork saved – will retry automatically at next boot."))
-			self._scheduleClose(4000)
+			self["status"].setText(self._diagnoseFailure())
+			self._scheduleClose(6000)
 		else:
 			self._pollTimer.start(self._pollIntervalMs, True)
+
+	def _diagnoseFailure(self) -> str:
+		"""Best-effort explanation of *why* the connection attempt failed, based on
+		wpa_supplicant's association state (wpa_cli status) – distinguishes a
+		missing/unreachable AP, a wrong key, and DHCP-only failures instead of a
+		single generic "failed" message."""
+		iface = self._adapter.name
+		ssid = self._conn.wlan.ssid if self._conn.wlan else iface
+		if networkManager is None or not networkManager.wpaSupplicantRunning(iface):
+			reason = _("Could not connect to '%s'.\nWi-Fi driver (wpa_supplicant) did not start – check your Wi-Fi settings.") % ssid
+		else:
+			state = networkManager.getWlanStatus(iface).get("wpa_state", "")
+			if state == "COMPLETED":
+				reason = _("Connected to '%s', but no IP address was received.\nCheck your router's DHCP settings.") % ssid
+			elif state in ("4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
+				reason = _("Could not connect to '%s'.\nWrong Wi-Fi password?") % ssid
+			elif state in ("SCANNING", "DISCONNECTED", "INACTIVE", ""):
+				reason = _("Access point '%s' not found.\nCheck that it is in range and the SSID is correct.") % ssid
+			else:
+				reason = _("Could not connect to '%s' (status: %s).") % (ssid, state)
+		return reason + "\n" + _("Configuration saved – will retry automatically at next boot.")
 
 	@staticmethod
 	def _getKernelIp(iface: str) -> str:

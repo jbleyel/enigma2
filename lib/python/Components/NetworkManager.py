@@ -1420,6 +1420,21 @@ class NetworkManager:
 		adapter = self.adapters.get(iface)
 		return exists(adapter.wpaCtrlPath) if adapter else False
 
+	def getWlanStatus(self, iface: str) -> dict:
+		"""Parsed `wpa_cli status` (wpa_state, bssid, …) – used to explain *why* a
+		Wi-Fi connection attempt failed (wrong key, AP not found, DHCP only, …).
+		Empty dict if wpa_supplicant isn't reachable."""
+		result = {}
+		try:
+			out = check_output([wpaCliBin, "-i", iface, "status"], stderr=DEVNULL, timeout=2).decode(errors="replace")
+			for line in out.splitlines():
+				key, sep, val = line.partition("=")
+				if sep:
+					result[key.strip()] = val.strip()
+		except Exception:
+			pass
+		return result
+
 	def setBgscan(self, iface: str, bgscan: str):
 		for conn in self.getWlanConnections(iface):
 			if conn.wlan:
