@@ -38,6 +38,7 @@ from Components.config import (
 	ConfigIP, ConfigNumber, ConfigPassword, ConfigSelection,
 	ConfigText, ConfigYesNo, NoSave, ReadOnly, config, getConfigListEntry,
 )
+from Components.Converter.XmlMultiContent import buildShapeRects
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
@@ -547,28 +548,66 @@ class NetworkConnections(Screen):
 	ICON_CHECKBOX_OFF = "\uE91F"  # check_box_outline_blank
 	ICON_LINK_ACTIVE = "\uEA62"    # arrow_circle_up
 	ICON_LINK_INACTIVE = "\uEA5C"  # arrow_circle_down
-	ICON_BRANCH = "\uF001"         # branch (tree connector)
-	ICON_LAST_CHILD = "\uF002"     # last_child (tree connector)
 
 	skin = """
+	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,570">
+        <widget source="list" render="Listbox" position="10,10" size="e-20,e-70">
+			<template name="Default" fonts="enigma2icons;40,Regular;25,Regular;20,enigma2icons;25" itemHeight="50" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
+				<mode name="default">
+                    <!-- adapter icon (large, left) -->
+                    <text index="adapterIcon" position="10,2" size="46,46" font="0" horizontalAlignment="center" verticalAlignment="center" />
+                    <!-- enabled/disabled checkbox placeholder -->
+                    <text index="enabledIcon" position="65,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" />
+                    <!-- adapter label "eth0 / Intern" -->
+                    <text index="label" position="110,0" size="840,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+                    <!-- tree connector branch/last_child -->
+					<shape index="connector" position="0,0" size="50,50" backgroundColor="=6" backgroundColorSelected="=7" />
+                    <!-- connection line 1: profile/LAN + IP -->
+                    <text index="line1" position="130,0" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
+                    <!-- connection line 2: speed / mask / gw -->
+                    <text index="line2" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
+                    <!-- internet icon top-right (connection rows only) -->
+                    <text index="inetIcon" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
+                </mode>
+            </template>
+        </widget>
+		<widget source="key_red" render="Label" position="10,e-50" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_green" render="Label" position="200,e-50" size="180,40" backgroundColor="key_green" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_yellow" render="Label" position="390,e-50" size="180,40" backgroundColor="key_yellow" conditional="key_yellow" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_blue" render="Label" position="580,e-50" size="180,40" backgroundColor="key_blue" conditional="key_blue" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_help" render="Label" position="e-100,e-50" size="90,40" backgroundColor="key_back" font="Regular;20" conditional="key_help" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+    </screen>
+	"""
+
+	skinA = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,600" resolution="1280,720">
 		<widget source="list" render="Listbox" position="0,0" size="980,520" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30,enigma2icons;80" itemHeight="80" itemWidth="980" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
+			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30" itemHeight="80" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
 				<mode name="default">
 					<!-- adapter icon (large, left) -->
-					<text index="0" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
+					<text index="adapterIcon" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
 					<!-- enabled/disabled checkbox placeholder -->
-					<text index="1" position="66,26" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
+					<text index="enabledIcon" position="66,26" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
 					<!-- adapter label "eth0 / Intern" -->
-					<text index="2" position="104,15" size="780,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
-					<!-- tree connector branch/last_child (enigma2icons) -->
-					<text index="3" position="0,0" size="80,80" font="5" horizontalAlignment="left" verticalAlignment="top" foregroundColor="=6" foregroundColorSelected="=7" />
+					<text index="label" position="104,15" size="780,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
+					<!-- tree connector branch/last_child -->
+					<shape index="connector" position="0,0" size="80,80" backgroundColor="=6" backgroundColorSelected="=7" />
 					<!-- connection line 1: profile/LAN + IP -->
-					<text index="4" position="104,8" size="780,34" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
+					<text index="line1" position="104,8" size="780,34" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
 					<!-- connection line 2: speed / mask / gw -->
-					<text index="5" position="104,44" size="780,28" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="line2" position="104,44" size="780,28" font="2" horizontalAlignment="left" verticalAlignment="center" />
 					<!-- internet icon top-right (connection rows only) -->
-					<text index="8" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
+					<text index="inetIcon" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
 				</mode>
 			</template>
 		</widget>
@@ -590,7 +629,7 @@ class NetworkConnections(Screen):
 	</screen>"""
 
 	def __init__(self, session):
-		Screen.__init__(self, session, enableHelp=True)
+		Screen.__init__(self, session, enableHelp=True, mandatoryWidgets=["test"])
 		self.setTitle(_("Network Connections"))
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText("")
@@ -600,7 +639,7 @@ class NetworkConnections(Screen):
 		#   0=adapterIcon    adapter: WLAN/LAN iconfont;  connection: ""
 		#   1=enabledIcon    adapter: enabled indicator;  connection: ""
 		#   2=label          adapter: "eth0 / Intern";    connection: ""
-		#   3=connector      adapter: "";                 connection: "├" or "└"
+		#   3=connector      adapter: None;               connection: buildShapeRects("branch"/"lastchild")
 		#   4=line1          adapter: "";                 connection: "Profile: SSID  IP: ..."
 		#   5=line2          adapter: "";                 connection: "speed / mask / gw"
 		#   6=stateColor     color int (both rows)
@@ -626,7 +665,7 @@ class NetworkConnections(Screen):
 			"linkIcon": self.INDEX_LINK_ICON,
 		}
 		self["list"] = List([], indexNames=indexNames)
-		self["list"].onSelectionChanged.append(self._updateYellowKey)
+		self["list"].onSelectionChanged.append(self.updateGreenKey)
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions", "InfoActions"], {
 			"ok": (self.keyOK, _("Open settings for selected network connection")),
 			"cancel": (self.close, _("Close network connection list")),
@@ -695,7 +734,7 @@ class NetworkConnections(Screen):
 			adapterLabel = f"Adapter {iface}   /   {loc}" if loc else f"Adapter {iface}"
 			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.adapterEnabled else self._colorDisabled
 			adapterColorSelected = self._colorLinkSelected if adapter.kernelLink else self._colorEnabledSelected if adapter.adapterEnabled else self._colorDisabledSelected
-			entries.append((adapterIcon, checkBox, adapterLabel, "", "", "", adapterColor, adapterColorSelected, "", self._adapterPixmap(adapter), None, "", adapter, None))
+			entries.append((adapterIcon, checkBox, adapterLabel, None, "", "", adapterColor, adapterColorSelected, "", self._adapterPixmap(adapter), None, "", adapter, None))
 			# For Wi-Fi: skip the base connection (no SSID) when wpa_supplicant
 			# connections with SSIDs are present — the base only carries IP config.
 			conns = adapter.connections
@@ -707,12 +746,12 @@ class NetworkConnections(Screen):
 				connColorSelected = self._colorEnabledSelected if conn.enabled else self._colorDisabledSelected
 				inetIcon = self.ICON_INET if (internet and conn.enabled) else ""
 				linkIcon = self.ICON_LINK_ACTIVE if adapter.kernelLink else self.ICON_LINK_INACTIVE
-				entries.append(("", "", "", self.ICON_LAST_CHILD if isLast else self.ICON_BRANCH, _connLine1(conn, adapter), _connLine2(conn, adapter), connColor, connColorSelected, inetIcon, None, self._connPixmap(conn), linkIcon, adapter, conn))
+				entries.append(("", "", "", buildShapeRects("lastchild" if isLast else "branch"), _connLine1(conn, adapter), _connLine2(conn, adapter), connColor, connColorSelected, inetIcon, None, self._connPixmap(conn), linkIcon, adapter, conn))
 		self["list"].setList(entries)
 		text = _("Add Wi-Fi") if any(x.isWlan for x in networkManager.adapters.values()) else ""
 		self["key_yellow"].setText(text)
 		self["actions"].setEnabledAction("yellow", text != "")
-		self._updateGreenKey()
+		self.updateGreenKey()
 
 	def _current(self) -> tuple | None:
 		return self["list"].getCurrent()
@@ -742,7 +781,7 @@ class NetworkConnections(Screen):
 		conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
 		self.session.open(InformationNetworkConnection, conn, adapter)
 
-	def _updateGreenKey(self):
+	def updateGreenKey(self):
 		entry = self._current()
 		if entry is None or entry[self.INDEX_CONN] is not None:
 			text = ""

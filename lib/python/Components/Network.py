@@ -59,9 +59,9 @@ class NetworkCompat:
 		conn = networkManager.getActiveConnection(iface)
 		attrMap = {
 			"up": lambda: adapter.kernelUp,
-			"ip": lambda: (conn.ip if conn else adapter.kernelIp),
-			"netmask": lambda: (conn.netmask if conn else adapter.kernelNetmask),
-			"gateway": lambda: (conn.gateway if conn else adapter.kernelGateway),
+			"ip": lambda: adapter.kernelIp,
+			"netmask": lambda: adapter.kernelNetmask,
+			"gateway": lambda: adapter.kernelGateway,
 			"bcast": lambda: adapter.kernelBcast,
 			"mac": lambda: adapter.mac,
 			"dhcp": lambda: (conn.dhcp if conn else True),
