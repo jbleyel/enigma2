@@ -1616,7 +1616,14 @@ class NetworkManager:
 					adapter.kernelSsid = ""
 			else:
 				adapter.kernelLink = up
+				self._showToast(up)
 		self._notifyAdaptersChanged()
+
+	def _showToast(self, up: bool):
+		from Screens.Toast import Toast
+		text = _("") if up else _("")
+		icon = "\uF003" if up else "\uF004"
+		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_INFO, timeout=4, customIcon=icon)
 
 	def _onIpChange(self, iface: str, ipPrefix: str):
 		adapter = self.adapters.get(iface)
