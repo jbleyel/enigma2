@@ -1440,7 +1440,6 @@ void eDVBServicePlay::handleEofRecovery() {
 	if (m_decoder) {
 		m_decoder->pause();
 		m_is_paused = 1;
-		onRecoveryPaused();
 	}
 
 	if (m_record) {
