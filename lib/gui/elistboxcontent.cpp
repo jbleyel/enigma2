@@ -2113,7 +2113,7 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 					} else if (local_style && local_style->is_set.foreground_color) {
 						painter.setForegroundColor(local_style->m_foreground_color);
 					} else {
-						painter.setForegroundColor(defaultForeColorS);
+						painter.setForegroundColor(defaultForeColor);
 					}
 				}
 
