@@ -36,7 +36,7 @@ from Components.Harddisk import harddiskmanager
 from Components.PluginComponent import plugins
 from Components.SystemInfo import BoxInfo
 from Plugins.Plugin import PluginDescriptor
-from Tools.Directories import fileReadLine, fileWriteLine
+from Tools.Directories import fileReadLine, fileWriteLine, fileWriteLines
 from Tools.ServiceAction import ServiceAction
 
 # ---------------------------------------------------------------------------
@@ -64,12 +64,12 @@ netrestarterBin = "/usr/sbin/netrestarter"
 # Linux kernel ETHTOOL_ADVERTISED_* bitmask values, used by some drivers to
 # force a specific link speed/duplex instead of auto-negotiation.
 _LINKSPEED_BITS = {
-	"10baseT/Half": (0x01, "10 Mbit/s Half Duplex"),
-	"10baseT/Full": (0x02, "10 Mbit/s Full Duplex"),
-	"100baseT/Half": (0x04, "100 Mbit/s Half Duplex"),
-	"100baseT/Full": (0x08, "100 Mbit/s Full Duplex"),
-	"1000baseT/Half": (0x10, "1000 Mbit/s Half Duplex"),
-	"1000baseT/Full": (0x20, "1000 Mbit/s Full Duplex"),
+	"10baseT/Half": (0x01, "10 Mbps Half Duplex"),
+	"10baseT/Full": (0x02, "10 Mbps Full Duplex"),
+	"100baseT/Half": (0x04, "100 Mbps Half Duplex"),
+	"100baseT/Full": (0x08, "100 Mbps Full Duplex"),
+	"1000baseT/Half": (0x10, "1000 Mbps Half Duplex"),
+	"1000baseT/Full": (0x20, "1000 Mbps Full Duplex"),
 }
 
 
@@ -268,43 +268,21 @@ class NameserverConfig:
 
 def _readLines(path: str) -> list[str]:
 	try:
-		with open(path, "r", encoding="utf-8", errors="replace") as fh:
+		with open(path, encoding="utf-8", errors="replace") as fh:
 			return fh.read().splitlines()
 	except OSError:
 		return []
 
 
+# fileWriteLines() appends "" to the given list in place before joining it,
+# so a copy is passed to keep the caller's list untouched.
 def _writeLines(path: str, lines: list[str], backup: bool = False) -> bool:
 	if backup and exists(path):
 		try:
 			copy2(path, path + ".bk")
 		except OSError as exc:
 			print(f"[NetworkManager] Cannot backup {path}: {exc}")
-	try:
-		with open(path, "w", encoding="utf-8") as fh:
-			fh.write("\n".join(lines))
-			if lines:
-				fh.write("\n")
-		return True
-	except OSError as exc:
-		print(f"[NetworkManager] Cannot write {path}: {exc}")
-		return False
-
-
-# Read and parse /var/run/netinfo written by socketdaemon. Returns {} on error.
-def _readNetinfo() -> dict:
-	try:
-		with open(netinfoPath, encoding="utf-8") as fh:
-			return json.loads(fh.read())
-	except (OSError, json.JSONDecodeError):
-		return {}
-
-
-def _readSys(path: str) -> str:
-	try:
-		return open(path).read().strip()
-	except OSError:
-		return ""
+	return bool(fileWriteLines(path, list(lines)))
 
 
 # ===========================================================================
@@ -1107,7 +1085,7 @@ class NetworkManager:
 				module=module,
 				driverApi=api,
 				canWakeOnWiFi=_canWakeOnWiFi(name),
-				mac=_readSys(f"{sysfsNet}/{name}/address"),
+				mac=fileReadLine(f"{sysfsNet}/{name}/address", default=""),
 			)
 			try:
 				flags = int(open(f"{sysfsNet}/{name}/flags").read().strip(), 16)
@@ -1568,7 +1546,11 @@ class NetworkManager:
 
 	# Update adapter runtime state from /var/run/netinfo without a full rescan.
 	def _applyNetinfo(self):
-		info = _readNetinfo()
+		try:
+			with open(netinfoPath, encoding="utf-8") as fh:
+				info = json.loads(fh.read())
+		except (OSError, json.JSONDecodeError):
+			info = {}
 		ifaces = info.get("interfaces", {})
 		for iface, data in ifaces.items():
 			adapter = self.adapters.get(iface)
