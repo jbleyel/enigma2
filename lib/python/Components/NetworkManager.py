@@ -1616,12 +1616,12 @@ class NetworkManager:
 					adapter.kernelSsid = ""
 			else:
 				adapter.kernelLink = up
-				self._showToast(up)
+				self._showToast(iface, up)
 		self._notifyAdaptersChanged()
 
-	def _showToast(self, up: bool):
+	def _showToast(self, iface: str, up: bool):
 		from Screens.Toast import Toast
-		text = _("") if up else _("")
+		text = _("Network cable connected (%s)") % iface if up else _("Network cable disconnected (%s)") % iface
 		icon = "\uF003" if up else "\uF004"
 		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_INFO, timeout=4, customIcon=icon)
 

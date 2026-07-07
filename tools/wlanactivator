@@ -26,7 +26,7 @@ validate_iface() {
 
 do_start() {
   validate_iface
-  WPA_CONF="/etc/wpa_supplicant/wpa_supplicant-${IFACE}.conf"
+  WPA_CONF="/etc/wpa_supplicant.${IFACE}.conf"
   WPA_PID="/var/run/wpa_supplicant-${IFACE}.pid"
 
   # tear down any existing state

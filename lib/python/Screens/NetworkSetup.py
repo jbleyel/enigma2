@@ -984,8 +984,7 @@ class NetworkConnections(Screen):
 			networkManager.save()
 		Processing.instance.hideProgress()
 		self._buildList()
-		state = _("enabled") if adapter.effectiveEnabled else _("disabled")
-		self.session.open(MessageBox, _("Adapter %s %s") % (adapter.name, state), type=MessageBox.TYPE_INFO, timeout=3)
+		self.session.showInfo(_("Network adapter enabled") if adapter.effectiveEnabled else _("Network adapter disabled"))
 
 	def _toggleConnection(self, conn: Connection, adapter: Adapter):
 		Processing.instance.setDescription(_("Please wait..."))
@@ -1004,12 +1003,10 @@ class NetworkConnections(Screen):
 			networkManager.save()
 		Processing.instance.hideProgress()
 		self._buildList()
-		self.session.open(
-			MessageBox,
-			_("Network connection %s") % (_("enabled") if conn.enabled else _("disabled")),
-			type=MessageBox.TYPE_INFO,
-			timeout=3,
-		)
+		if adapter.isWlan and conn.enabled:
+			self.session.openWithCallback(lambda *_: self._buildList(), NetworkWiFiActivator, conn, adapter)
+		else:
+			self.session.showInfo(_("Network connection enabled") if conn.enabled else _("Network connection disabled"))
 
 	def _confirmDelete(self, conn: Connection, adapter: Adapter):
 		self.session.openWithCallback(
@@ -1269,7 +1266,10 @@ class NetworkConnectionSetup(Setup):
 		if networkManager is not None:
 			networkManager.save()
 		Processing.instance.hideProgress()
-		self.close((False, True))
+		if conn.isWlan and conn.enabled:
+			self.session.openWithCallback(lambda *_: self.close((False, True)), NetworkWiFiActivator, conn, adapter)
+		else:
+			self.close((False, True))
 
 
 # ===========================================================================
@@ -1509,7 +1509,9 @@ class NetworkWiFiScanScreen(Screen):
 # ===========================================================================
 
 class NetworkWiFiActivator(Screen):
-	"""Runs ifup + wpa_supplicant and polls for an IP address."""
+	"""Runs ifup + wpa_supplicant (scoped to this one adapter, via wlanactivator)
+	and polls for an IP address, so the user gets feedback if the connection
+	attempt fails or times out."""
 
 	skin = """
 	<screen name="NetworkWiFiActivator" title="Connecting…" position="center,center" size="980,200" resolution="1280,720">
@@ -1590,7 +1592,7 @@ class NetworkWiFiAddFlow:
 			else:
 				wlanAdapters = [x for x in networkManager.adapters.values() if x.isWlan]
 				if not wlanAdapters:
-					session.open(MessageBox, _("No Wi-Fi adapter found."), type=MessageBox.TYPE_INFO, timeout=4)
+					session.showWarning(_("No Wi-Fi adapter found."))
 				elif len(wlanAdapters) == 1:
 					NetworkWiFiAddFlow._openScan(session, wlanAdapters[0], callback)
 				else:
