@@ -142,10 +142,21 @@ void eRamServicePlay::checkLapAndSeek() {
 		pvr_channel->forceSourcePosition(safe);
 }
 
-void eRamServicePlay::onPreRecovery() {
-	if (!m_stream_corruption_detected) {
-		getPlayPosition(m_frozen_play_position);
-	}
+void eRamServicePlay::onRecoveryPaused() {
+	if (!m_timeshift_active || !m_ram_recorder || !m_decoder || !m_record)
+		return;
+
+	pts_t first_pts = 0;
+	if (m_record->getFirstPTS(first_pts) != 0)
+		return;
+
+	pts_t decoder_pts = 0;
+	if (m_decoder->getPTS(0, decoder_pts) != 0)
+		if (m_decoder->getPTS(1, decoder_pts) != 0)
+			return;
+
+	decoder_pts &= 0x1FFFFFFFF;
+	m_frozen_play_position = pts_delta(decoder_pts, first_pts);
 }
 
 void eRamServicePlay::recordEvent(int event) {
@@ -162,7 +173,7 @@ void eRamServicePlay::recordEvent(int event) {
 // edge (normal — wait for data). Suppress switchToLive() in both cases.
 void eRamServicePlay::serviceEventTimeshift(int event) {
 	if (event == eDVBServicePMTHandler::eventEOF) {
-		eTrace("[eRamServicePlay] ignoring eventEOF — watchdog handles lap/live-edge");
+		eDebug("[eRamServicePlay] ignoring eventEOF — watchdog handles lap/live-edge");
 		return;
 	}
 	eDVBServicePlay::serviceEventTimeshift(event);
@@ -214,7 +225,7 @@ RESULT eRamServicePlay::seekTo(pts_t to) {
 	// Seek disabled for RAM timeshift to prevent issues with 4K channels
 	// and to offload PCR history searches. Does not affect PRS.
 	if (m_timeshift_active && m_ram_recorder) {
-		eTrace("[eRamServicePlay] seekTo: disabled on RAM timeshift");
+		eDebug("[eRamServicePlay] seekTo: disabled on RAM timeshift");
 		return -1;
 	}
 	return eDVBServicePlay::seekTo(to);
@@ -224,7 +235,7 @@ RESULT eRamServicePlay::seekRelative(int direction, pts_t to) {
 	// Seek disabled for RAM timeshift to prevent issues with 4K channels
 	// and to offload PCR history searches. Does not affect PRS.
 	if (m_timeshift_active && m_ram_recorder) {
-		eTrace("[eRamServicePlay] seekRelative: disabled on RAM timeshift");
+		eDebug("[eRamServicePlay] seekRelative: disabled on RAM timeshift");
 		return -1;
 	}
 	return eDVBServicePlay::seekRelative(direction, to);
