@@ -173,6 +173,8 @@ class MultiContentTemplateParser(TemplateParser):
 										modeData.append((eListboxPythonMultiContent.TYPE_RECT, pos[0], pos[1], size[0], size[1], backgroundColor, backgroundColorSelected, borderWidth, borderColor, borderColorSelected, cornerRadius, cornerEdges))
 								case "shape":
 									shapeName = item.get("name")
+									foregroundColorSelected = item.get("foregroundColorSelected")
+									foregroundColor = item.get("foregroundColor")
 									if index != -1:  # dynamic: the row provides the fractional rect list (or None) at this index
 										rects = index
 									elif shapeName:  # static: same shape for every row
@@ -180,7 +182,7 @@ class MultiContentTemplateParser(TemplateParser):
 									else:
 										print("[XmlMultiContent] Error: 'shape' requires either an 'index' or a 'name' attribute!")
 										rects = None
-									modeData.append((eListboxPythonMultiContent.TYPE_RECTS, pos[0], pos[1], size[0], size[1], rects, backgroundColor, backgroundColorSelected))
+									modeData.append((eListboxPythonMultiContent.TYPE_RECTS, pos[0], pos[1], size[0], size[1], rects, foregroundColor, foregroundColorSelected))
 								case "progress":
 									if index == -1:
 										index = None

@@ -520,7 +520,7 @@ class NetworkConnections(Screen):
 	skin = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,570">
         <widget source="list" render="Listbox" position="10,10" size="e-20,e-70">
-			<template name="Default" fonts="enigma2icons;46,Regular;25,Regular;20,enigma2icons;25" itemHeight="50" shapeStroke="6" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
+			<template name="Default" fonts="enigma2icons;46,Regular;25,Regular;20,enigma2icons;25" itemHeight="50" shapeStroke="2" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
 				<mode name="default">
                     <!-- adapter icon (large, left) -->
                     <text index="adapterIcon" position="10,2" size="46,46" font="0" horizontalAlignment="center" verticalAlignment="center" />
@@ -528,9 +528,17 @@ class NetworkConnections(Screen):
                     <text index="enabledIcon" position="65,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=3" foregroundColorSelected="=3" />
                     <!-- up/down glyph placeholder -->
                     <text index="linkIcon" position="100,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" />
-                    <!-- TODO: adapterText1/adapterText2, connectionText1..4 widgets — positioning follows later -->
-                    <!-- tree connector branch/last_child -->
-					<shape index="connector" position="0,0" size="50,50" />
+                    <!-- adapterText1/adapterText2 -->
+                    <text index="adapterText1" position="140,0" size="740,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+                    <!-- <text index="adapterText2" position="110,0" size="840,50" font="1" horizontalAlignment="left" verticalAlignment="center" /> -->
+                    <!-- connection connectionText1: profile/LAN + IP -->
+                    <text index="connectionText1" position="130,0" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
+                    <!-- connection connectionText2: speed / mask / gw -->
+                    <text index="connectionText2" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
+                    <!--<text index="connectionText3" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" /> -->
+                    <!--<text index="connectionText4" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" /> -->
+					<!-- tree connector branch/last_child -->
+					<shape index="connector" position="10,0" size="50,50" foregroundColor="white" foregroundColorSelected="white" />
                     <!-- internet icon top-right (connection rows only) -->
                     <text index="inetIcon" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
                 </mode>
@@ -565,7 +573,7 @@ class NetworkConnections(Screen):
 					<text index="enabledIcon" position="66,26" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=3" foregroundColorSelected="=3" />
 					<!-- TODO: adapterText1/adapterText2, connectionText1..4 widgets — positioning follows later -->
 					<!-- tree connector branch/last_child -->
-					<shape index="connector" position="0,0" size="80,80" backgroundColor="=9" backgroundColorSelected="=10" />
+					<shape index="connector" position="0,0" size="80,80" foregroundColor="=9" foregroundColorSelected="=10" />
 					<!-- internet icon top-right (connection rows only) -->
 					<text index="inetIcon" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
 				</mode>
@@ -601,9 +609,9 @@ class NetworkConnections(Screen):
 		#   2=enabledIcon    adapter: enabled indicator;  connection: ""
 		#   3=enabledColor   COLOR_ON (green) if enabled else COLOR_OFF (red), both rows
 		#   4=enabledPixmap  adapter: None;               connection: lock_on/lock_error (checkbox as image)
-		#   5=linkIcon       adapter: "";                 connection: link active/inactive glyph
-		#   6=linkPixmap     adapter: "";                 connection: None
-		#   7=linkText       adapter: "";                 connection: _("Up")/_("Down")
+		#   5=linkIcon       adapter: link active/inactive glyph;  connection: ""
+		#   6=linkPixmap     adapter: None;               connection: None
+		#   7=linkText       adapter: _("Up")/_("Down");  connection: ""
 		#   8=inetIcon       adapter: "";                 connection: globe char if internet
 		#   9=inetPixmap     adapter: "";                 connection: None
 		#  10=stateColor     color int (both rows)
@@ -744,7 +752,7 @@ class NetworkConnections(Screen):
 			liveIp = connLiveIp(adapter)
 			return {
 				"profileName": profileName,
-				"ip": f"IP: {liveIp}",
+				"ip": f"IP: {liveIp}" if liveIp else "",
 				"speed": "   ".join(speedParts),
 				"netmask": f"Mask: {_ip4Str(adapter.kernelNetmask)}" if adapter.adapterEnabled else "",
 				"gateway": f"GW: {_ip4Str(adapter.kernelGateway)}" if adapter.adapterEnabled and liveIp else "",
@@ -767,15 +775,17 @@ class NetworkConnections(Screen):
 			}
 			adapterText1 = applyFormat(self._formats, "adapterText1", _ADAPTER_TEXT1_FORMAT, **adapterKwargs)
 			adapterText2 = applyFormat(self._formats, "adapterText2", _ADAPTER_TEXT2_FORMAT, **adapterKwargs)
+			linkIcon = self.ICON_LINK_ACTIVE if adapter.kernelLink else self.ICON_LINK_INACTIVE
+			linkText = _("Up") if adapter.kernelLink else _("Down")
 			entries.append((
 				adapterIcon,                    # adapterIcon
 				self._adapterPixmap(adapter),   # adapterPixmap
 				checkBox,                       # enabledIcon
 				enabledColor,                   # enabledColor
 				None,                           # enabledPixmap
-				"",                             # linkIcon
+				linkIcon,                       # linkIcon
 				None,                           # linkPixmap
-				"",                             # linkText
+				linkText,                       # linkText
 				"",                             # inetIcon
 				None,                           # inetPixmap
 				adapterColor,                   # stateColor
@@ -801,8 +811,6 @@ class NetworkConnections(Screen):
 				connColorSelected = self._colorEnabledSelected if conn.enabled else self._colorDisabledSelected
 				enabledColor = self.COLOR_ON if conn.enabled else self.COLOR_OFF
 				inetIcon = self.ICON_INET if (internet and conn.enabled) else ""
-				linkIcon = self.ICON_LINK_ACTIVE if adapter.kernelLink else self.ICON_LINK_INACTIVE
-				linkText = _("Up") if adapter.kernelLink else _("Down")
 				connectionKwargs = connectionFields(conn, adapter)
 				connectionText1 = applyFormat(self._formats, "connectionText1", _CONNECTION_TEXT1_FORMAT, **connectionKwargs)
 				connectionText2 = applyFormat(self._formats, "connectionText2", _(_CONNECTION_TEXT2_FORMAT), **connectionKwargs)
@@ -814,9 +822,9 @@ class NetworkConnections(Screen):
 					"",                                                              # enabledIcon
 					enabledColor,                                                    # enabledColor
 					self._connPixmap(conn),                                          # enabledPixmap
-					linkIcon,                                                        # linkIcon
+					"",                                                              # linkIcon
 					None,                                                            # linkPixmap
-					linkText,                                                        # linkText
+					"",                                                              # linkText
 					inetIcon,                                                        # inetIcon
 					None,                                                            # inetPixmap
 					connColor,                                                       # stateColor
