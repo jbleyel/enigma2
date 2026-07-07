@@ -1561,6 +1561,19 @@ static void clearRegion(gPainter &painter, eWindowStyle &style, eListboxStyle *l
 	}
 }
 
+/* Resolves a TYPE_RECTS rect field: 'component' is an (fraction, pixelOffset)
+ * pair, result = round(fraction * dimension) + pixelOffset. Lets a shape stay
+ * centered/full-length relative to an item's actual size while using a fixed
+ * pixel stroke width (see the TYPE_RECTS case for details). */
+static int resolveAffine(ePyObject component, int dimension)
+{
+	ePyObject pfraction = PyTuple_GET_ITEM(component, 0);
+	ePyObject ppixels = PyTuple_GET_ITEM(component, 1);
+	double fraction = PyFloat_Check(pfraction) ? PyFloat_AsDouble(pfraction) : PyLong_AsLong(pfraction);
+	long pixels = PyFloat_Check(ppixels) ? (long)lround(PyFloat_AsDouble(ppixels)) : PyLong_AsLong(ppixels);
+	return (int)lround(fraction * dimension) + (int)pixels;
+}
+
 static ePyObject lookupColor(ePyObject color, ePyObject data)
 {
 	if (color == Py_None)
@@ -2050,9 +2063,12 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 
 					'rects' is either a per-row index into 'data' (the row provides the shape for
 					this item, e.g. depending on tree position) or a literal list, in both cases a
-					list of (fx, fy, fw, fh) tuples, each a fraction (0.0-1.0) of width/height. Using
-					fractions resolved at paint time (against the item's actual pixel size) keeps the
-					shape pixel-exact at every item size, unlike a font glyph rasterized once per size.
+					list of (fx, fy, fw, fh) tuples. Each of fx/fy/fw/fh is itself an
+					(fraction, pixelOffset) pair, resolved at paint time as
+					round(fraction * dimension) + pixelOffset — e.g. (0.5, -3) centers a 6px-thick
+					stroke regardless of the item's actual pixel size. Resolving against the item's
+					real size here (not once when the shape was built) keeps it pixel-exact at every
+					item size, unlike a font glyph rasterized once per size.
 				*/
 				ePyObject px = PyTuple_GET_ITEM(item, 1),
 						  py = PyTuple_GET_ITEM(item, 2),
@@ -2106,16 +2122,16 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 
 					if (PyTuple_Size(rectItem) < 4)
 					{
-						eDebug("[eListboxPythonMultiContent] TYPE_RECTS shape entry too small (must be (fx, fy, fw, fh) fractions of width/height)");
+						eDebug("[eListboxPythonMultiContent] TYPE_RECTS shape entry too small (must be (fx, fy, fw, fh), each an (fraction, pixelOffset) pair)");
 						goto error_out;
 					}
 
-					double fx = PyFloat_AsDouble(PyTuple_GET_ITEM(rectItem, 0));
-					double fy = PyFloat_AsDouble(PyTuple_GET_ITEM(rectItem, 1));
-					double fw = PyFloat_AsDouble(PyTuple_GET_ITEM(rectItem, 2));
-					double fh = PyFloat_AsDouble(PyTuple_GET_ITEM(rectItem, 3));
+					int rx = resolveAffine(PyTuple_GET_ITEM(rectItem, 0), width);
+					int ry = resolveAffine(PyTuple_GET_ITEM(rectItem, 1), height);
+					int rw = resolveAffine(PyTuple_GET_ITEM(rectItem, 2), width);
+					int rh = resolveAffine(PyTuple_GET_ITEM(rectItem, 3), height);
 
-					eRect rect(x + (int)lround(fx * width), y + (int)lround(fy * height), (int)lround(fw * width), (int)lround(fh * height));
+					eRect rect(x + rx, y + ry, rw, rh);
 					painter.clip(rect);
 					{
 						gRegion rc(rect);

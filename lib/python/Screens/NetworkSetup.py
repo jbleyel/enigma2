@@ -38,7 +38,7 @@ from Components.config import (
 	ConfigIP, ConfigNumber, ConfigPassword, ConfigSelection,
 	ConfigText, ConfigYesNo, NoSave, ReadOnly, config, getConfigListEntry,
 )
-from Components.Converter.XmlMultiContent import buildShapeRects
+from Components.Converter.XmlMultiContent import SHAPE_STROKE_WIDTH, buildShapeRects
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
@@ -64,51 +64,6 @@ MODULE_NAME = __name__.split(".")[-1]
 # ---------------------------------------------------------------------------
 
 _ENC_SHORT = {encNone: "open", encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2", encWpa3: "WPA3"}
-
-
-def _connLabel(conn: Connection, adapter: Adapter) -> str:
-	if conn.isWlan and conn.wlan and conn.wlan.ssid:
-		result = f"{conn.adapter}  │  {conn.wlan.ssid}  [{_ENC_SHORT.get(conn.wlan.encryption, conn.wlan.encryption)}]"
-	else:
-		mode = "DHCP" if conn.dhcp else conn.ipStr()
-		result = f"{conn.adapter}  │  {mode}"
-	return result
-
-
-def _connLiveIp(adapter: Adapter) -> str:
-	ip = ".".join(str(x) for x in adapter.kernelIp)
-	return "" if ip == "0.0.0.0" else ip
-
-
-def _connLine1(conn: Connection, adapter: Adapter) -> str:
-	liveIp = _connLiveIp(adapter)
-	liveIp = f"  IP: {liveIp}" if liveIp else ""
-	if conn.isWlan:
-		profileName = conn.name or (conn.wlan.ssid if conn.wlan else "") or conn.adapter
-		result = f"{_('Profile')}: {profileName}" + liveIp
-	else:
-		result = _("LAN connection") + liveIp
-	return result
-
-
-def _connLine2(conn: Connection, adapter: Adapter) -> str:
-	parts = []
-	if adapter.isWlan:
-		if adapter.kernelBitrateBps:
-			parts.append(f"{adapter.kernelBitrateBps // 1000000} Mbps")
-		if adapter.kernelSignal:
-			parts.append(f"{adapter.kernelSignal} dBm")
-	else:
-		if adapter.kernelSpeed > 0:
-			parts.append(formatNetworkSpeed(adapter.kernelSpeed))
-	mask = _ip4Str(adapter.kernelNetmask)
-	gw = _ip4Str(adapter.kernelGateway)
-	if adapter.adapterEnabled:
-		if mask:
-			parts.append(f"Mask: {mask}")
-		if gw and _connLiveIp(adapter):
-			parts.append(f"GW: {gw}")
-	return "   ".join(parts)
 
 
 def _ip4Str(addr: list) -> str:
@@ -520,19 +475,26 @@ class NetworkConnections(Screen):
 	"""Lists every Connection from every Adapter."""
 
 	INDEX_ADAPTER_ICON = 0
-	INDEX_ENABLED_ICON = 1
-	INDEX_LABEL = 2
-	INDEX_CONNECTOR = 3
-	INDEX_LINE1 = 4
-	INDEX_LINE2 = 5
-	INDEX_STATE_COLOR = 6
-	INDEX_STATE_COLOR_SELECTED = 7
+	INDEX_ADAPTER_PIXMAP = 1
+	INDEX_ENABLED_ICON = 2
+	INDEX_ENABLED_COLOR = 3
+	INDEX_ENABLED_PIXMAP = 4
+	INDEX_LINK_ICON = 5
+	INDEX_LINK_PIXMAP = 6
+	INDEX_LINK_TEXT = 7
 	INDEX_INET_ICON = 8
-	INDEX_ADAPTER_PIXMAP = 9
-	INDEX_ENABLED_PIXMAP = 10
-	INDEX_LINK_ICON = 11
-	INDEX_ADAPTER = 12
-	INDEX_CONN = 13
+	INDEX_INET_PIXMAP = 9
+	INDEX_STATE_COLOR = 10
+	INDEX_STATE_COLOR_SELECTED = 11
+	INDEX_ADAPTER_TEXT1 = 12
+	INDEX_ADAPTER_TEXT2 = 13
+	INDEX_CONNECTION_TEXT1 = 14
+	INDEX_CONNECTION_TEXT2 = 15
+	INDEX_CONNECTION_TEXT3 = 16
+	INDEX_CONNECTION_TEXT4 = 17
+	INDEX_CONNECTOR = 18
+	INDEX_ADAPTER = 19
+	INDEX_CONN = 20
 
 	COLOR_LINK = gRGB(0x0000CC00).argb()  # green  – physical link up
 	COLOR_ENABLED = gRGB(0x00FFFFFF).argb()  # white  – enabled, no link
@@ -541,31 +503,34 @@ class NetworkConnections(Screen):
 	COLOR_ENABLED_SELECTED = COLOR_ENABLED
 	COLOR_GRAY_SELECTED = COLOR_GRAY
 
+	COLOR_ON = gRGB(0x0000CC00).argb()   # green – enabledColor when adapter/connection is enabled
+	COLOR_OFF = gRGB(0x00CC0000).argb()  # red   – enabledColor when disabled
+
 	ICON_LAN = "\uEA5A"   # settings_ethernet
 	ICON_WIFI = "\uE9FE"  # wifi
 	ICON_INET = "\uEA5B"  # globe
 	ICON_CHECKBOX_ON = "\uE91B"   # check_box
-	ICON_CHECKBOX_OFF = "\uE91F"  # check_box_outline_blank
+	ICON_CHECKBOX_OFF = "\uE935" 	# check_box_outline_blank
 	ICON_LINK_ACTIVE = "\uEA62"    # arrow_circle_up
 	ICON_LINK_INACTIVE = "\uEA5C"  # arrow_circle_down
+
+	# TOOD:
+	# Adapter row / UP/DOWN.  -- text or glyph
 
 	skin = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,570">
         <widget source="list" render="Listbox" position="10,10" size="e-20,e-70">
-			<template name="Default" fonts="enigma2icons;40,Regular;25,Regular;20,enigma2icons;25" itemHeight="50" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
+			<template name="Default" fonts="enigma2icons;46,Regular;25,Regular;20,enigma2icons;25" itemHeight="50" shapeStroke="6" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
 				<mode name="default">
                     <!-- adapter icon (large, left) -->
                     <text index="adapterIcon" position="10,2" size="46,46" font="0" horizontalAlignment="center" verticalAlignment="center" />
-                    <!-- enabled/disabled checkbox placeholder -->
-                    <text index="enabledIcon" position="65,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" />
-                    <!-- adapter label "eth0 / Intern" -->
-                    <text index="label" position="110,0" size="840,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+                    <!-- enabled/disabled glyph placeholder -->
+                    <text index="enabledIcon" position="65,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=3" foregroundColorSelected="=3" />
+                    <!-- up/down glyph placeholder -->
+                    <text index="linkIcon" position="100,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" />
+                    <!-- TODO: adapterText1/adapterText2, connectionText1..4 widgets — positioning follows later -->
                     <!-- tree connector branch/last_child -->
-					<shape index="connector" position="0,0" size="50,50" backgroundColor="=6" backgroundColorSelected="=7" />
-                    <!-- connection line 1: profile/LAN + IP -->
-                    <text index="line1" position="130,0" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
-                    <!-- connection line 2: speed / mask / gw -->
-                    <text index="line2" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<shape index="connector" position="0,0" size="50,50" />
                     <!-- internet icon top-right (connection rows only) -->
                     <text index="inetIcon" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
                 </mode>
@@ -592,20 +557,15 @@ class NetworkConnections(Screen):
 	skinA = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,600" resolution="1280,720">
 		<widget source="list" render="Listbox" position="0,0" size="980,520" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30" itemHeight="80" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
+			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30" itemHeight="80" shapeStroke="8" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
 				<mode name="default">
 					<!-- adapter icon (large, left) -->
-					<text index="adapterIcon" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
+					<text index="adapterIcon" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=9" foregroundColorSelected="=10" />
 					<!-- enabled/disabled checkbox placeholder -->
-					<text index="enabledIcon" position="66,26" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
-					<!-- adapter label "eth0 / Intern" -->
-					<text index="label" position="104,15" size="780,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
+					<text index="enabledIcon" position="66,26" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=3" foregroundColorSelected="=3" />
+					<!-- TODO: adapterText1/adapterText2, connectionText1..4 widgets — positioning follows later -->
 					<!-- tree connector branch/last_child -->
-					<shape index="connector" position="0,0" size="80,80" backgroundColor="=6" backgroundColorSelected="=7" />
-					<!-- connection line 1: profile/LAN + IP -->
-					<text index="line1" position="104,8" size="780,34" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="=6" foregroundColorSelected="=7" />
-					<!-- connection line 2: speed / mask / gw -->
-					<text index="line2" position="104,44" size="780,28" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<shape index="connector" position="0,0" size="80,80" backgroundColor="=9" backgroundColorSelected="=10" />
 					<!-- internet icon top-right (connection rows only) -->
 					<text index="inetIcon" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
 				</mode>
@@ -637,32 +597,46 @@ class NetworkConnections(Screen):
 		self["key_blue"] = StaticText("")
 		# Tuple indices (see class INDEX_* constants):
 		#   0=adapterIcon    adapter: WLAN/LAN iconfont;  connection: ""
-		#   1=enabledIcon    adapter: enabled indicator;  connection: ""
-		#   2=label          adapter: "eth0 / Intern";    connection: ""
-		#   3=connector      adapter: None;               connection: buildShapeRects("branch"/"lastchild")
-		#   4=line1          adapter: "";                 connection: "Profile: SSID  IP: ..."
-		#   5=line2          adapter: "";                 connection: "speed / mask / gw"
-		#   6=stateColor     color int (both rows)
-		#   7=stateColorSelected  color int, used when row is selected (both rows)
+		#   1=adapterPixmap  adapter: wired/wireless-active/inactive;  connection: None
+		#   2=enabledIcon    adapter: enabled indicator;  connection: ""
+		#   3=enabledColor   COLOR_ON (green) if enabled else COLOR_OFF (red), both rows
+		#   4=enabledPixmap  adapter: None;               connection: lock_on/lock_error (checkbox as image)
+		#   5=linkIcon       adapter: "";                 connection: link active/inactive glyph
+		#   6=linkPixmap     adapter: "";                 connection: None
+		#   7=linkText       adapter: "";                 connection: _("Up")/_("Down")
 		#   8=inetIcon       adapter: "";                 connection: globe char if internet
-		#   9=adapterPixmap  adapter: wired/wireless-active/inactive;  connection: None
-		#  10=enabledPixmap  adapter: None;               connection: lock_on/lock_error (checkbox as image)
-		#  11=linkIcon       adapter: "";                 connection: link active/inactive glyph
-		#  12=adapter        always the Adapter object
-		#  13=conn           None for adapter row, Connection for connection row
+		#   9=inetPixmap     adapter: "";                 connection: None
+		#  10=stateColor     color int (both rows)
+		#  11=stateColorSelected  color int, used when row is selected (both rows)
+		#  12=adapterText1     adapter: "eth0 / Intern";    connection: ""
+		#  13=adapterText2     adapter: "";                 connection: ""
+		#  14=connectionText1  adapter: "";                 connection: "Profile: SSID  IP: ..."
+		#  15=connectionText2  adapter: "";                 connection: "speed / mask / gw"
+		#  16=connectionText3  adapter: "";                 connection: ""
+		#  17=connectionText4  adapter: "";                 connection: ""
+		#  18=connector      adapter: None;               connection: buildShapeRects("branch"/"lastchild")
+		#  19=adapter        always the Adapter object
+		#  20=conn           None for adapter row, Connection for connection row
 		indexNames = {
 			"adapterIcon": self.INDEX_ADAPTER_ICON,
-			"enabledIcon": self.INDEX_ENABLED_ICON,
-			"label": self.INDEX_LABEL,
-			"connector": self.INDEX_CONNECTOR,
-			"line1": self.INDEX_LINE1,
-			"line2": self.INDEX_LINE2,
-			"stateColor": self.INDEX_STATE_COLOR,
-			"stateColorSelected": self.INDEX_STATE_COLOR_SELECTED,
-			"inetIcon": self.INDEX_INET_ICON,
 			"adapterPixmap": self.INDEX_ADAPTER_PIXMAP,
+			"enabledIcon": self.INDEX_ENABLED_ICON,
+			"enabledColor": self.INDEX_ENABLED_COLOR,
 			"enabledPixmap": self.INDEX_ENABLED_PIXMAP,
 			"linkIcon": self.INDEX_LINK_ICON,
+			"linkPixmap": self.INDEX_LINK_PIXMAP,
+			"linkText": self.INDEX_LINK_TEXT,
+			"inetIcon": self.INDEX_INET_ICON,
+			"inetPixmap": self.INDEX_INET_PIXMAP,
+			"stateColor": self.INDEX_STATE_COLOR,
+			"stateColorSelected": self.INDEX_STATE_COLOR_SELECTED,
+			"adapterText1": self.INDEX_ADAPTER_TEXT1,
+			"adapterText2": self.INDEX_ADAPTER_TEXT2,
+			"connectionText1": self.INDEX_CONNECTION_TEXT1,
+			"connectionText2": self.INDEX_CONNECTION_TEXT2,
+			"connectionText3": self.INDEX_CONNECTION_TEXT3,
+			"connectionText4": self.INDEX_CONNECTION_TEXT4,
+			"connector": self.INDEX_CONNECTOR,
 		}
 		self["list"] = List([], indexNames=indexNames)
 		self["list"].onSelectionChanged.append(self.updateGreenKey)
@@ -699,6 +673,8 @@ class NetworkConnections(Screen):
 		self._colorLinkSelected = parseColor(attrs["colorStateLinkSelected"]).argb() if "colorStateLinkSelected" in attrs else self.COLOR_LINK_SELECTED
 		self._colorEnabledSelected = parseColor(attrs["colorStateEnabledSelected"]).argb() if "colorStateEnabledSelected" in attrs else self.COLOR_ENABLED_SELECTED
 		self._colorDisabledSelected = parseColor(attrs["colorStateDisabledSelected"]).argb() if "colorStateDisabledSelected" in attrs else self.COLOR_GRAY_SELECTED
+		self._shapeStroke = int(attrs["shapeStroke"]) if "shapeStroke" in attrs else SHAPE_STROKE_WIDTH
+		self._formats = self["list"].templateDataFormats
 
 	def checkInternet(self):
 		def checkInternetCallback(result):
@@ -724,17 +700,96 @@ class NetworkConnections(Screen):
 		return LoadPixmap(cached=True, path=resolveFilename(SCOPE_GUISKIN, f"icons/{name}"))
 
 	def _buildList(self):
+		# Default format strings for the 6 free-form text items (see templateDataFormats /
+		# applyFormat) — used whenever the skin doesn't set its own "format" attribute.
+		# Not wrapped in _() here: this module executes once at import time, which would
+		# freeze the translation instead of re-evaluating it on every language switch.
+		_ADAPTER_TEXT1_FORMAT = "{adapterName}"
+		_ADAPTER_TEXT2_FORMAT = "{busName}"
+		_CONNECTION_TEXT1_FORMAT = "{profileName}"
+		_CONNECTION_TEXT2_FORMAT = "{ip}"
+		_CONNECTION_TEXT3_FORMAT = "{speed}"
+		_CONNECTION_TEXT4_FORMAT = "{netmask} {gateway}"
+
+		def applyFormat(formats: dict, key: str, default: str, **kwargs) -> str:
+			"""Applies the skin-provided format string for 'key' (see templateDataFormats),
+			falling back to 'default' if none is set or it references an unknown variable."""
+			template = formats.get(key, default)
+			try:
+				return template.format(**kwargs)
+			except (KeyError, IndexError) as err:
+				print(f"[NetworkSetup] Error: format for '{key}' ('{template}') references unknown variable {err}!")
+				return default.format(**kwargs)
+
+		def connectionFields(conn: Connection, adapter: Adapter) -> dict:
+			"""Named values available to a connection row's format strings (connectionText1..4)."""
+
+			def connLiveIp(adapter: Adapter) -> str:
+				ip = ".".join(str(x) for x in adapter.kernelIp)
+				return "" if ip == "0.0.0.0" else ip
+
+			if conn.isWlan:
+				profileValue = conn.name or (conn.wlan.ssid if conn.wlan else "") or conn.adapter
+				profileName = f"{_('Profile')}: {profileValue}"
+			else:
+				profileName = _("LAN connection")
+			speedParts = []
+			if adapter.isWlan:
+				if adapter.kernelBitrateBps:
+					speedParts.append(f"{adapter.kernelBitrateBps // 1000000} Mbps")
+				if adapter.kernelSignal:
+					speedParts.append(f"{adapter.kernelSignal} dBm")
+			elif adapter.kernelSpeed > 0:
+				speedParts.append(formatNetworkSpeed(adapter.kernelSpeed))
+			liveIp = connLiveIp(adapter)
+			return {
+				"profileName": profileName,
+				"ip": f"IP: {liveIp}",
+				"speed": "   ".join(speedParts),
+				"netmask": f"Mask: {_ip4Str(adapter.kernelNetmask)}" if adapter.adapterEnabled else "",
+				"gateway": f"GW: {_ip4Str(adapter.kernelGateway)}" if adapter.adapterEnabled and liveIp else "",
+			}
+
 		entries: list[tuple] = []
 		for iface in sorted(networkManager.adapters.keys()):
 			adapter = networkManager.adapters[iface]
 			internet = self._internetResult and self._internetResult.get(iface)
 			adapterIcon = self.ICON_WIFI if adapter.isWlan else self.ICON_LAN
 			checkBox = self.ICON_CHECKBOX_ON if adapter.adapterEnabled else self.ICON_CHECKBOX_OFF
-			loc = "USB" if adapter.kernelBus == "usb" else _("Internal")
-			adapterLabel = f"Adapter {iface}   /   {loc}" if loc else f"Adapter {iface}"
 			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.adapterEnabled else self._colorDisabled
 			adapterColorSelected = self._colorLinkSelected if adapter.kernelLink else self._colorEnabledSelected if adapter.adapterEnabled else self._colorDisabledSelected
-			entries.append((adapterIcon, checkBox, adapterLabel, None, "", "", adapterColor, adapterColorSelected, "", self._adapterPixmap(adapter), None, "", adapter, None))
+			enabledColor = self.COLOR_ON if adapter.adapterEnabled else self.COLOR_OFF
+			adapterKwargs = {
+				"adapterName": iface,
+				"busName": "USB" if adapter.kernelBus == "usb" else _("Internal"),
+				"driver": adapter.kernelDriver,
+				"mac": adapter.mac,
+			}
+			adapterText1 = applyFormat(self._formats, "adapterText1", _ADAPTER_TEXT1_FORMAT, **adapterKwargs)
+			adapterText2 = applyFormat(self._formats, "adapterText2", _ADAPTER_TEXT2_FORMAT, **adapterKwargs)
+			entries.append((
+				adapterIcon,                    # adapterIcon
+				self._adapterPixmap(adapter),   # adapterPixmap
+				checkBox,                       # enabledIcon
+				enabledColor,                   # enabledColor
+				None,                           # enabledPixmap
+				"",                             # linkIcon
+				None,                           # linkPixmap
+				"",                             # linkText
+				"",                             # inetIcon
+				None,                           # inetPixmap
+				adapterColor,                   # stateColor
+				adapterColorSelected,           # stateColorSelected
+				adapterText1,                   # adapterText1
+				adapterText2,                   # adapterText2
+				"",                             # connectionText1
+				"",                             # connectionText2
+				"",                             # connectionText3
+				"",                             # connectionText4
+				None,                           # connector
+				adapter,                        # adapter
+				None,                           # conn
+			))
 			# For Wi-Fi: skip the base connection (no SSID) when wpa_supplicant
 			# connections with SSIDs are present — the base only carries IP config.
 			conns = adapter.connections
@@ -744,9 +799,38 @@ class NetworkConnections(Screen):
 				isLast = idx == len(conns) - 1
 				connColor = self._colorEnabled if conn.enabled else self._colorDisabled
 				connColorSelected = self._colorEnabledSelected if conn.enabled else self._colorDisabledSelected
+				enabledColor = self.COLOR_ON if conn.enabled else self.COLOR_OFF
 				inetIcon = self.ICON_INET if (internet and conn.enabled) else ""
 				linkIcon = self.ICON_LINK_ACTIVE if adapter.kernelLink else self.ICON_LINK_INACTIVE
-				entries.append(("", "", "", buildShapeRects("lastchild" if isLast else "branch"), _connLine1(conn, adapter), _connLine2(conn, adapter), connColor, connColorSelected, inetIcon, None, self._connPixmap(conn), linkIcon, adapter, conn))
+				linkText = _("Up") if adapter.kernelLink else _("Down")
+				connectionKwargs = connectionFields(conn, adapter)
+				connectionText1 = applyFormat(self._formats, "connectionText1", _CONNECTION_TEXT1_FORMAT, **connectionKwargs)
+				connectionText2 = applyFormat(self._formats, "connectionText2", _(_CONNECTION_TEXT2_FORMAT), **connectionKwargs)
+				connectionText3 = applyFormat(self._formats, "connectionText3", _CONNECTION_TEXT3_FORMAT, **connectionKwargs)
+				connectionText4 = applyFormat(self._formats, "connectionText4", _(_CONNECTION_TEXT4_FORMAT), **connectionKwargs)
+				entries.append((
+					"",                                                              # adapterIcon
+					None,                                                            # adapterPixmap
+					"",                                                              # enabledIcon
+					enabledColor,                                                    # enabledColor
+					self._connPixmap(conn),                                          # enabledPixmap
+					linkIcon,                                                        # linkIcon
+					None,                                                            # linkPixmap
+					linkText,                                                        # linkText
+					inetIcon,                                                        # inetIcon
+					None,                                                            # inetPixmap
+					connColor,                                                       # stateColor
+					connColorSelected,                                               # stateColorSelected
+					"",                                                              # adapterText1
+					"",                                                              # adapterText2
+					connectionText1,                                                 # connectionText1
+					connectionText2,                                                 # connectionText2
+					connectionText3,                                                 # connectionText3
+					connectionText4,                                                 # connectionText4
+					buildShapeRects("lastchild" if isLast else "branch", self._shapeStroke),  # connector
+					adapter,                                                         # adapter
+					conn,                                                            # conn
+				))
 		self["list"].setList(entries)
 		text = _("Add Wi-Fi") if any(x.isWlan for x in networkManager.adapters.values()) else ""
 		self["key_yellow"].setText(text)
@@ -815,6 +899,14 @@ class NetworkConnections(Screen):
 		if choice and choice[1] == "toggle":
 			self._toggleAdapter(adapter)
 
+	def _connLabel(self, conn: Connection, adapter: Adapter) -> str:
+		if conn.isWlan and conn.wlan and conn.wlan.ssid:
+			result = f"{conn.adapter}  │  {conn.wlan.ssid}  [{_ENC_SHORT.get(conn.wlan.encryption, conn.wlan.encryption)}]"
+		else:
+			mode = "DHCP" if conn.dhcp else conn.ipStr()
+			result = f"{conn.adapter}  │  {mode}"
+		return result
+
 	def _showContextMenu(self, conn: Connection, adapter: Adapter):
 		menu = [
 			(_("Settings"), "setup"),
@@ -828,7 +920,7 @@ class NetworkConnections(Screen):
 		self.session.openWithCallback(
 			lambda choice: self._contextCb(choice, conn, adapter),
 			ChoiceBox,
-			title=_("Network connection: %s") % _connLabel(conn, adapter),
+			title=_("Network connection: %s") % self._connLabel(conn, adapter),
 			list=[(item[0], item[1]) for item in menu],
 		)
 
@@ -900,7 +992,7 @@ class NetworkConnections(Screen):
 		self.session.openWithCallback(
 			lambda confirmed: self._doDelete(confirmed, conn, adapter),
 			MessageBox,
-			_("Delete network connection '%s'?") % _connLabel(conn, adapter),
+			_("Delete network connection '%s'?") % self._connLabel(conn, adapter),
 			type=MessageBox.TYPE_YESNO,
 		)
 

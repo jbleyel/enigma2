@@ -3,23 +3,31 @@ from enigma import eListboxPythonMultiContent
 from skin import SkinContext, SkinContextStack, TemplateParser, parseFont, parsePadding
 from Components.Converter.StringList import StringList
 
-# Fraction (0.0-1.0) of the shape's box occupied by a stroke, and where its
-# centerline sits. TYPE_RECTS resolves these fractions against the item's
-# actual pixel width/height at paint time in C++, so the same shape stays
-# pixel-exact at every item size, unlike a font glyph rasterized once per size.
-SHAPE_STROKE_FRACTION = 0.12
-SHAPE_CENTER_FRACTION = 0.5
+# Default stroke width in pixels for shapes built without an explicit strokeWidth
+# (e.g. via the skin's "shapeStroke" template attribute).
+SHAPE_STROKE_WIDTH = 6
+
+# Each TYPE_RECTS rect field is an (fraction, pixelOffset) pair, resolved in C++
+# at paint time as round(fraction * dimension) + pixelOffset. That lets a shape
+# stay centered/full-length relative to the item's actual size while still using
+# a fixed pixel stroke width, without Python ever needing to know that size.
 
 
-def buildShapeRects(name):
-	thickness = SHAPE_STROKE_FRACTION
-	strokeStart = SHAPE_CENTER_FRACTION - thickness / 2
-	horizontal = (strokeStart, strokeStart, 1.0 - strokeStart, thickness)
+def buildShapeRects(name, strokeWidth=SHAPE_STROKE_WIDTH):
+	half = strokeWidth / 2.0
+	center = (0.5, -half)         # centered offset along the cross axis
+	toFar = (0.5, half)           # from the centered stroke to the far edge
+	thickness = (0.0, strokeWidth)  # fixed pixel thickness, independent of item size
+	full = (1.0, 0.0)             # full dimension
+	zero = (0.0, 0.0)
+	vertical_full = (center, zero, thickness, full)    # branch: full-height vertical bar
+	vertical_half = (center, zero, thickness, toFar)   # lastchild: vertical bar down to the branch point
+	horizontal = (center, center, toFar, thickness)    # the rightward branch stub, both shapes
 	match name:
 		case "branch":  # tree connector "├": vertical line spans the full height
-			return [(strokeStart, 0.0, thickness, 1.0), horizontal]
+			return [vertical_full, horizontal]
 		case "lastchild":  # tree connector "└": vertical line stops at the branch
-			return [(strokeStart, 0.0, thickness, strokeStart + thickness), horizontal]
+			return [vertical_half, horizontal]
 		case _:
 			print(f"[XmlMultiContent] Error: Unknown shape name '{name}'!")
 			return None
@@ -33,6 +41,7 @@ class MultiContentTemplateParser(TemplateParser):
 		self.template = {}
 		self.indexNames = {}
 		self.additionalTemplateAttributes = {}
+		self.templateDataFormats = {}
 
 	def scaleWithHeight(self, itemWidth, itemHeight):
 		scaleFactorVertical = self.scale[1][0] / self.scale[1][1]
@@ -95,8 +104,10 @@ class MultiContentTemplateParser(TemplateParser):
 				templateStyleName = template.get("name", "Default")
 				self.itemWidth = int(template.get("itemWidth", self.itemWidth))
 				self.itemHeight = int(template.get("itemHeight", self.itemHeight))
+				self.shapeStroke = int(template.get("shapeStroke", SHAPE_STROKE_WIDTH))
 				if templateStyleName == templateName:
 					self.additionalTemplateAttributes = {k: v for k, v in template.items() if k not in self._KNOWN_TEMPLATE_ATTRS}
+					self.templateDataFormats = {}
 					templateModes, modesItems = parseTemplateModes(template)
 					for index, font in enumerate([x.strip() for x in template.get("fonts", "").split(",")]):
 						self.template["fonts"].append(parseFont(font, self.scale))
@@ -133,6 +144,13 @@ class MultiContentTemplateParser(TemplateParser):
 									foregroundColorSelected = item.get("foregroundColorSelected")
 									foregroundColor = item.get("foregroundColor")
 									font = int(item.get("font", 0))
+									# 'format' is not consumed here — it's collected for the screen to read
+									# back (like additionalTemplateAttributes) and apply itself when it
+									# builds each row's data, since the named values it references (e.g.
+									# adapterName, busName) only exist in the screen's own row-build code.
+									formatString = item.get("format")
+									if formatString:
+										self.templateDataFormats[item.get("index")] = formatString
 									if index == -1:
 										index = item.get("text", "")
 									modeData.append((eListboxPythonMultiContent.TYPE_TEXT, pos[0], pos[1], size[0], size[1], font or 0, flags, index, foregroundColor, foregroundColorSelected, backgroundColor, backgroundColorSelected, borderWidth, borderColor, cornerRadius, cornerEdges, textBorderWidth, textBorderColor, padding[0], padding[1], padding[2], padding[3]))
@@ -158,7 +176,7 @@ class MultiContentTemplateParser(TemplateParser):
 									if index != -1:  # dynamic: the row provides the fractional rect list (or None) at this index
 										rects = index
 									elif shapeName:  # static: same shape for every row
-										rects = buildShapeRects(shapeName)
+										rects = buildShapeRects(shapeName, self.shapeStroke)
 									else:
 										print("[XmlMultiContent] Error: 'shape' requires either an 'index' or a 'name' attribute!")
 										rects = None
@@ -241,6 +259,7 @@ class XmlMultiContent(StringList, MultiContentTemplateParser):
 				self.indexNames = self.source.indexNames
 				self.readTemplate(self.source.template)
 				self.source.additionalTemplateAttributes = self.additionalTemplateAttributes
+				self.source.templateDataFormats = self.templateDataFormats
 				if "fonts" not in self.template:
 					print("[XmlMultiContent] Error: All templates must include a 'fonts' entry!")
 				if "modes" not in self.template:
