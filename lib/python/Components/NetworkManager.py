@@ -239,6 +239,18 @@ class Adapter:
 		return max(enabled, key=lambda conn: conn.priority, default=None)
 
 	@property
+	def effectiveEnabled(self) -> bool:
+		"""adapterEnabled, but for WLAN also requires an active SSID connection
+		(mirrors NetworkManager.save(), which forces the "auto <iface>" stanza off
+		when no SSID profile is enabled)."""
+		enabled = self.adapterEnabled
+		if self.isWlan and enabled:
+			wpaConns = [x for x in self.connections if x.wlan and x.wlan.ssid]
+			if wpaConns and not any(x.enabled for x in wpaConns):
+				enabled = False
+		return enabled
+
+	@property
 	def wpaConfPath(self) -> str:
 		return f"{wpaSupplicantDir}/wpa_supplicant.{self.name}.conf"
 
@@ -1226,15 +1238,7 @@ class NetworkManager:
 					connMap[iface] = []
 			else:
 				connMap[iface] = adapter.connections
-		adapterEnabledMap = {}
-		for iface, adapter in self.adapters.items():
-			enabled = adapter.adapterEnabled
-			if adapter.isWlan and enabled:
-				# In wpa_supplicant mode: only mark adapter enabled if an SSID is active.
-				wpaConns = [x for x in adapter.connections if x.wlan and x.wlan.ssid]
-				if wpaConns and not any(x.enabled for x in wpaConns):
-					enabled = False
-			adapterEnabledMap[iface] = enabled
+		adapterEnabledMap = {iface: adapter.effectiveEnabled for iface, adapter in self.adapters.items()}
 		ok = self._ifacesFile.save(connMap, adapterEnabledMap) and ok
 
 		for iface, adapter in self.adapters.items():

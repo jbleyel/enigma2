@@ -45,6 +45,7 @@ from Components.SystemInfo import BoxInfo
 from Screens.ChoiceBox import ChoiceBox
 from Screens.Information import InformationBase, formatLine
 from Screens.MessageBox import MessageBox
+from Screens.Processing import Processing
 from Screens.RestartNetwork import RestartNetworkNew
 from Screens.Screen import Screen
 from Screens.Setup import Setup
@@ -653,7 +654,7 @@ class NetworkConnections(Screen):
 			"cancel": (self.close, _("Close network connection list")),
 			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
 			"red": (self.close, _("Close network connection list")),
-			"green": (self.keyGreen, _("Activate/Deactivate adapter")),
+			"green": (self.keyGreen, _("Activate/Deactivate adapter or connection")),
 			"yellow": (self.keyYellow, _("Add a new WiFi connection")),
 			"info": (self.keyInfo, _("Show network connection info")),
 			"menu": (self.keyMenu, _("Open context menu for selected network connection")),
@@ -697,9 +698,9 @@ class NetworkConnections(Screen):
 	@staticmethod
 	def _adapterPixmap(adapter: Adapter):
 		if adapter.isWlan:
-			name = "network_wireless-active.png" if adapter.kernelLink else "network_wireless-inactive.png" if adapter.adapterEnabled else "network_wireless.png"
+			name = "network_wireless-active.png" if adapter.kernelLink else "network_wireless-inactive.png" if adapter.effectiveEnabled else "network_wireless.png"
 		else:
-			name = "network_wired-active.png" if adapter.kernelLink else "network_wired-inactive.png" if adapter.adapterEnabled else "network_wired.png"
+			name = "network_wired-active.png" if adapter.kernelLink else "network_wired-inactive.png" if adapter.effectiveEnabled else "network_wired.png"
 		return LoadPixmap(resolveFilename(SCOPE_GUISKIN, f"icons/{name}"))
 
 	@staticmethod
@@ -763,10 +764,10 @@ class NetworkConnections(Screen):
 			adapter = networkManager.adapters[iface]
 			internet = self._internetResult and self._internetResult.get(iface)
 			adapterIcon = self.ICON_WIFI if adapter.isWlan else self.ICON_LAN
-			checkBox = self.ICON_CHECKBOX_ON if adapter.adapterEnabled else self.ICON_CHECKBOX_OFF
-			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.adapterEnabled else self._colorDisabled
-			adapterColorSelected = self._colorLinkSelected if adapter.kernelLink else self._colorEnabledSelected if adapter.adapterEnabled else self._colorDisabledSelected
-			enabledColor = self.COLOR_ON if adapter.adapterEnabled else self.COLOR_OFF
+			checkBox = self.ICON_CHECKBOX_ON if adapter.effectiveEnabled else self.ICON_CHECKBOX_OFF
+			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.effectiveEnabled else self._colorDisabled
+			adapterColorSelected = self._colorLinkSelected if adapter.kernelLink else self._colorEnabledSelected if adapter.effectiveEnabled else self._colorDisabledSelected
+			enabledColor = self.COLOR_ON if adapter.effectiveEnabled else self.COLOR_OFF
 			adapterKwargs = {
 				"adapterName": iface,
 				"busName": "USB" if adapter.kernelBus == "usb" else _("Internal"),
@@ -865,6 +866,8 @@ class NetworkConnections(Screen):
 		conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
 		if conn is None:
 			self._toggleAdapter(adapter)
+		else:
+			self._toggleConnection(conn, adapter)
 
 	def keyInfo(self):
 		entry = self._current()
@@ -875,11 +878,14 @@ class NetworkConnections(Screen):
 
 	def updateGreenKey(self):
 		entry = self._current()
-		if entry is None or entry[self.INDEX_CONN] is not None:
+		if entry is None:
 			text = ""
 		else:
-			adapter = entry[self.INDEX_ADAPTER]
-			text = _("Deactivate") if adapter.adapterEnabled else _("Activate")
+			conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
+			if conn is None:
+				text = _("Deactivate") if adapter.effectiveEnabled else _("Activate")
+			else:
+				text = _("Disable connection") if conn.enabled else _("Enable connection")
 		self["key_green"].setText(text)
 		self["actions"].setEnabledAction("green", text != "")
 
@@ -894,7 +900,7 @@ class NetworkConnections(Screen):
 			self._showContextMenu(conn, adapter)
 
 	def _showAdapterMenu(self, adapter: Adapter):
-		isEnabled = adapter.adapterEnabled
+		isEnabled = adapter.effectiveEnabled
 		label = _("Disable adapter") if isEnabled else _("Enable adapter")
 		self.session.openWithCallback(
 			lambda choice: self._adapterMenuCb(choice, adapter),
@@ -919,6 +925,7 @@ class NetworkConnections(Screen):
 		menu = [
 			(_("Settings"), "setup"),
 			(_("Enable connection") if not conn.enabled else _("Disable connection"), "toggle"),
+			(_("Enable adapter") if not adapter.effectiveEnabled else _("Disable adapter"), "toggleAdapter"),
 			(_("Network test"), "test"),
 			(_("Delete network connection"), "delete"),
 		]
@@ -939,6 +946,8 @@ class NetworkConnections(Screen):
 				self._openSetup(conn, adapter)
 			elif action == "toggle":
 				self._toggleConnection(conn, adapter)
+			elif action == "toggleAdapter":
+				self._toggleAdapter(adapter)
 			elif action == "test":
 				self.session.open(NetworkTest, adapter.name)
 			elif action == "delete":
@@ -968,14 +977,19 @@ class NetworkConnections(Screen):
 			self.keyCloseRecursive()
 
 	def _toggleAdapter(self, adapter: Adapter):
-		adapter.adapterEnabled = not adapter.adapterEnabled
+		Processing.instance.setDescription(_("Please wait..."))
+		Processing.instance.showProgress(endless=True)
+		adapter.adapterEnabled = not adapter.effectiveEnabled
 		if networkManager:
 			networkManager.save()
+		Processing.instance.hideProgress()
 		self._buildList()
-		state = _("enabled") if adapter.adapterEnabled else _("disabled")
+		state = _("enabled") if adapter.effectiveEnabled else _("disabled")
 		self.session.open(MessageBox, _("Adapter %s %s") % (adapter.name, state), type=MessageBox.TYPE_INFO, timeout=3)
 
 	def _toggleConnection(self, conn: Connection, adapter: Adapter):
+		Processing.instance.setDescription(_("Please wait..."))
+		Processing.instance.showProgress(endless=True)
 		if adapter.isWlan:
 			if conn.enabled:
 				for other in adapter.connections:
@@ -988,6 +1002,7 @@ class NetworkConnections(Screen):
 			adapter.adapterEnabled = conn.enabled
 		if networkManager:
 			networkManager.save()
+		Processing.instance.hideProgress()
 		self._buildList()
 		self.session.open(
 			MessageBox,
@@ -1006,12 +1021,15 @@ class NetworkConnections(Screen):
 
 	def _doDelete(self, confirmed: bool, conn: Connection, adapter: Adapter):
 		if confirmed:
+			Processing.instance.setDescription(_("Please wait..."))
+			Processing.instance.showProgress(endless=True)
 			if conn.isWlan and conn.wlan:
 				networkManager.removeConnection(adapter.name, conn.wlan.ssid)
 			else:
 				adapter.connections = [x for x in adapter.connections if x is not conn]
 			if networkManager:
 				networkManager.save()
+			Processing.instance.hideProgress()
 			self._buildList()
 
 	def keyYellow(self):
@@ -1180,6 +1198,9 @@ class NetworkConnectionSetup(Setup):
 		conn = self._conn
 		adapter = self._adapter
 
+		Processing.instance.setDescription(_("Please wait..."))
+		Processing.instance.showProgress(endless=True)
+
 		conn.name = self.cfgName.value
 		conn.enabled = self.cfgEnabled.value
 		if self._hasMultiplePriorities:
@@ -1247,6 +1268,7 @@ class NetworkConnectionSetup(Setup):
 			adapter.connections.append(conn)
 		if networkManager is not None:
 			networkManager.save()
+		Processing.instance.hideProgress()
 		self.close((False, True))
 
 

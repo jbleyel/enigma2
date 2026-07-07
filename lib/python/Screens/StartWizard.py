@@ -15,6 +15,7 @@ from Screens.FlashExpander import MOUNT_DEVICE, MOUNT_MOUNTPOINT, MOUNT_FILESYST
 from Screens.HarddiskSetup import HarddiskSelection
 from Screens.HelpMenu import ShowRemoteControl
 from Screens.MessageBox import MessageBox
+from Screens.Processing import Processing
 from Screens.Standby import TryQuitMainloop, QUIT_RESTART
 from Screens.VideoWizard import VideoWizard
 from Screens.Wizard import wizardManager, Wizard
@@ -299,6 +300,9 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self.updateValues()
 
 	def nwActivateAndPoll(self):
+		if Processing.instance:
+			Processing.instance.setDescription(_("Please wait, activating network connection..."))
+			Processing.instance.showProgress(endless=True)
 		if self._nwSetupSaved:
 			try:
 				from Components.NetworkManager import networkManager
@@ -338,6 +342,8 @@ class StartWizard(Wizard, ShowRemoteControl):
 		if self._nwPollTimer:
 			self._nwPollTimer.stop()
 			self._nwPollTimer = None
+		if Processing.instance:
+			Processing.instance.hideProgress()
 		self.currStep = self.getStepWithID("nwstatus") + 1
 		self.updateValues()
 
