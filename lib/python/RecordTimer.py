@@ -1055,19 +1055,15 @@ class RecordTimerEntry(TimerEntry):
 							else:
 								AddNotificationWithCallback(self.sendTryQuitMainloopNotification, MessageBox, message, MessageBox.TYPE_YESNO, timeout=timeout, default=True)
 					else:
-						if job_manager.getPendingJobs():
-							self.waitForJobsThenShutdown()
-						else:
-							print("[RecordTimer] quitMainloop #1.")
-							quitMainloop(1)
+						print("[RecordTimer] quitMainloop #1.")
+						if self.checkForJobsThenShutdown():
+							return True
 			elif self.afterEvent == AFTEREVENT.AUTO and wasRecTimerWakeup:
 				if not Screens.Standby.inTryQuitMainloop:  # No shutdown message box is open.
 					if Screens.Standby.inStandby:  # In standby.
-						if job_manager.getPendingJobs():
-							self.waitForJobsThenShutdown()
-						else:
-							print("[RecordTimer] quitMainloop #2.")
-							quitMainloop(1)
+						print("[RecordTimer] quitMainloop #2.")
+						if self.checkForJobsThenShutdown():
+							return True
 			self.wasInStandby = False
 			self.resetTimerWakeup()
 			return True
@@ -1081,12 +1077,23 @@ class RecordTimerEntry(TimerEntry):
 		wasRecTimerWakeup = False
 
 	def waitForJobsThenShutdown(self):
-		if job_manager.getPendingJobs():
-			self._shutdownTimer = eTimer()
-			self._shutdownTimer.callback.append(self.waitForJobsThenShutdown)
+		self._shutdownTimer.stop()
+		if job_manager.getPendingJobs() and self._shutdownTimerMaxRetry > 0:
+			print(f"[RecordTimer] waitForJobsThenShutdown. MaxRetry:{self._shutdownTimerMaxRetry}")
+			self._shutdownTimerMaxRetry -= 1
 			self._shutdownTimer.start(1000, True)
 		else:
 			print("[RecordTimer] quitMainloop (jobs done).")
+			quitMainloop(1)
+
+	def checkForJobsThenShutdown(self):
+		if job_manager.getPendingJobs():
+			self._shutdownTimerMaxRetry = 100
+			self._shutdownTimer = eTimer()
+			self._shutdownTimer.callback.append(self.waitForJobsThenShutdown)
+			self._shutdownTimer.start(1000, True)
+			return True
+		else:
 			quitMainloop(1)
 
 	def getNextActivation(self, getNextStbPowerOn=False):
