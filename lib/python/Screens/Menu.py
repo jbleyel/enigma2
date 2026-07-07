@@ -571,6 +571,8 @@ class Menu(Screen, ProtectedScreen):
 			else:
 				self.nextNumberTimer.start(1500, True)
 		else:
+			if hasattr(self.session, "infobar") and self.session.infobar:
+				self.session.infobar.showUnhandledKey()
 			self.resetNumberKey()
 
 	def resetNumberKey(self):
