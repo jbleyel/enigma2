@@ -31,6 +31,7 @@ from twisted.internet import reactor
 
 from enigma import eTimer
 
+from Components.config import config
 from Components.Console import Console
 from Components.Harddisk import harddiskmanager
 from Components.PluginComponent import plugins
@@ -42,8 +43,6 @@ from Tools.ServiceAction import ServiceAction
 # ---------------------------------------------------------------------------
 # Path constants
 # ---------------------------------------------------------------------------
-
-DEBUG = True
 
 interfacesFile = "/etc/network/interfaces"
 resolvFile = "/etc/resolv.conf"
@@ -1046,7 +1045,7 @@ class NetworkManager:
 	"""Central access point for all network configuration."""
 
 	def __init__(self):
-		self._debug = DEBUG
+		self._debug = config.crash.debugNetwork.value
 		self.adapters: dict[str, Adapter] = {}
 		self.nameserverConfig = NameserverConfig()
 		self._ifacesFile = InterfacesFile()
