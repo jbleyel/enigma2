@@ -319,7 +319,9 @@ class StartWizard(Wizard, ShowRemoteControl):
 			self._nwPollTimer.stop()
 		self._nwPollTimer = eTimer()
 		self._nwPollTimer.callback.append(self._nwPollIp)
-		self._nwPollTimer.start(self._nwPollIntervalMs, True)
+		# Check immediately instead of waiting a full interval first – activateInterface()
+		# already waited for ifup/DHCP, so the IP is often already there.
+		self._nwPollIp()
 
 	def _nwPollIp(self):
 		try:

@@ -572,7 +572,7 @@ class NetworkConnections(Screen):
 					<text index="adapterIcon" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=9" foregroundColorSelected="=10" />
 					<!-- enabled/disabled checkbox placeholder -->
 					<text index="enabledIcon" position="66,26" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=3" foregroundColorSelected="=3" />
-					<!-- TODO: adapterText1/adapterText2, connectionText1..4 widgets — positioning follows later -->
+					<!-- adapterText1/adapterText2, connectionText1..4 widgets — positioning follows later -->
 					<!-- tree connector branch/last_child -->
 					<shape index="connector" position="0,0" size="80,80" foregroundColor="=9" foregroundColorSelected="=10" />
 					<!-- internet icon top-right (connection rows only) -->
@@ -698,9 +698,9 @@ class NetworkConnections(Screen):
 	@staticmethod
 	def _adapterPixmap(adapter: Adapter):
 		if adapter.isWlan:
-			name = "network_wireless-active.png" if adapter.kernelLink else "network_wireless-inactive.png" if adapter.effectiveEnabled else "network_wireless.png"
+			name = "network_wireless-active.png" if adapter.kernelLink else "network_wireless-inactive.png" if adapter.adapterEnabled else "network_wireless.png"
 		else:
-			name = "network_wired-active.png" if adapter.kernelLink else "network_wired-inactive.png" if adapter.effectiveEnabled else "network_wired.png"
+			name = "network_wired-active.png" if adapter.kernelLink else "network_wired-inactive.png" if adapter.adapterEnabled else "network_wired.png"
 		return LoadPixmap(resolveFilename(SCOPE_GUISKIN, f"icons/{name}"))
 
 	@staticmethod
@@ -764,10 +764,10 @@ class NetworkConnections(Screen):
 			adapter = networkManager.adapters[iface]
 			internet = self._internetResult and self._internetResult.get(iface)
 			adapterIcon = self.ICON_WIFI if adapter.isWlan else self.ICON_LAN
-			checkBox = self.ICON_CHECKBOX_ON if adapter.effectiveEnabled else self.ICON_CHECKBOX_OFF
-			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.effectiveEnabled else self._colorDisabled
-			adapterColorSelected = self._colorLinkSelected if adapter.kernelLink else self._colorEnabledSelected if adapter.effectiveEnabled else self._colorDisabledSelected
-			enabledColor = self.COLOR_ON if adapter.effectiveEnabled else self.COLOR_OFF
+			checkBox = self.ICON_CHECKBOX_ON if adapter.adapterEnabled else self.ICON_CHECKBOX_OFF
+			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.adapterEnabled else self._colorDisabled
+			adapterColorSelected = self._colorLinkSelected if adapter.kernelLink else self._colorEnabledSelected if adapter.adapterEnabled else self._colorDisabledSelected
+			enabledColor = self.COLOR_ON if adapter.adapterEnabled else self.COLOR_OFF
 			adapterKwargs = {
 				"adapterName": iface,
 				"busName": "USB" if adapter.kernelBus == "usb" else _("Internal"),
@@ -840,6 +840,18 @@ class NetworkConnections(Screen):
 					adapter,                                                         # adapter
 					conn,                                                            # conn
 				))
+		if networkManager._debug:
+			for iface, adapter in networkManager.adapters.items():
+				networkManager._log(
+					f"_buildList(): adapter {iface} isWlan={adapter.isWlan} adapterEnabled={adapter.adapterEnabled} "
+					f"kernelUp={adapter.kernelUp} kernelLink={adapter.kernelLink}"
+				)
+				for conn in adapter.connections:
+					ssid = conn.wlan.ssid if conn.wlan else ""
+					networkManager._log(
+						f"_buildList():   connection name={conn.name!r} ssid={ssid!r} enabled={conn.enabled} "
+						f"dhcp={conn.dhcp} priority={conn.priority}"
+					)
 		self["list"].setList(entries)
 		text = _("Add Wi-Fi") if any(x.isWlan for x in networkManager.adapters.values()) else ""
 		self["key_yellow"].setText(text)
@@ -883,7 +895,7 @@ class NetworkConnections(Screen):
 		else:
 			conn, adapter = entry[self.INDEX_CONN], entry[self.INDEX_ADAPTER]
 			if conn is None:
-				text = _("Deactivate") if adapter.effectiveEnabled else _("Activate")
+				text = _("Deactivate") if adapter.adapterEnabled else _("Activate")
 			else:
 				text = _("Disable connection") if conn.enabled else _("Enable connection")
 		self["key_green"].setText(text)
@@ -900,7 +912,7 @@ class NetworkConnections(Screen):
 			self._showContextMenu(conn, adapter)
 
 	def _showAdapterMenu(self, adapter: Adapter):
-		isEnabled = adapter.effectiveEnabled
+		isEnabled = adapter.adapterEnabled
 		label = _("Disable adapter") if isEnabled else _("Enable adapter")
 		self.session.openWithCallback(
 			lambda choice: self._adapterMenuCb(choice, adapter),
@@ -925,7 +937,7 @@ class NetworkConnections(Screen):
 		menu = [
 			(_("Settings"), "setup"),
 			(_("Enable connection") if not conn.enabled else _("Disable connection"), "toggle"),
-			(_("Enable adapter") if not adapter.effectiveEnabled else _("Disable adapter"), "toggleAdapter"),
+			(_("Enable adapter") if not adapter.adapterEnabled else _("Disable adapter"), "toggleAdapter"),
 			(_("Network test"), "test"),
 			(_("Delete network connection"), "delete"),
 		]
@@ -979,12 +991,12 @@ class NetworkConnections(Screen):
 	def _toggleAdapter(self, adapter: Adapter):
 		Processing.instance.setDescription(_("Please wait..."))
 		Processing.instance.showProgress(endless=True)
-		adapter.adapterEnabled = not adapter.effectiveEnabled
+		adapter.adapterEnabled = not adapter.adapterEnabled
 		if networkManager:
 			networkManager.save()
 		Processing.instance.hideProgress()
 		self._buildList()
-		self.session.showInfo(_("Network adapter enabled") if adapter.effectiveEnabled else _("Network adapter disabled"))
+		self.session.showInfo(_("Network adapter enabled") if adapter.adapterEnabled else _("Network adapter disabled"))
 
 	def _toggleConnection(self, conn: Connection, adapter: Adapter):
 		Processing.instance.setDescription(_("Please wait..."))
@@ -1514,8 +1526,8 @@ class NetworkWiFiActivator(Screen):
 	attempt fails or times out."""
 
 	skin = """
-	<screen name="NetworkWiFiActivator" title="Connecting…" position="center,center" size="980,200" resolution="1280,720">
-		<widget name="status" position="10,10" size="960,160" font="Regular;26" halign="center" valign="center" />
+	<screen name="NetworkWiFiActivator" title="Connecting…" position="center,center" size="600,180" resolution="1280,720">
+		<widget name="status" position="10,10" size="580,160" font="Regular;22" halign="center" valign="center" />
 	</screen>"""
 
 	_pollIntervalMs = 1500

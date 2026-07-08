@@ -43,6 +43,8 @@ from Tools.ServiceAction import ServiceAction
 # Path constants
 # ---------------------------------------------------------------------------
 
+DEBUG = True
+
 interfacesFile = "/etc/network/interfaces"
 resolvFile = "/etc/resolv.conf"
 nameserverFile = "/etc/enigma2/nameserversdns.conf"
@@ -237,18 +239,6 @@ class Adapter:
 	def activeConnection(self) -> Connection | None:
 		enabled = [x for x in self.connections if x.enabled]
 		return max(enabled, key=lambda conn: conn.priority, default=None)
-
-	@property
-	def effectiveEnabled(self) -> bool:
-		"""adapterEnabled, but for WLAN also requires an active SSID connection
-		(mirrors NetworkManager.save(), which forces the "auto <iface>" stanza off
-		when no SSID profile is enabled)."""
-		enabled = self.adapterEnabled
-		if self.isWlan and enabled:
-			wpaConns = [x for x in self.connections if x.wlan and x.wlan.ssid]
-			if wpaConns and not any(x.enabled for x in wpaConns):
-				enabled = False
-		return enabled
 
 	@property
 	def wpaConfPath(self) -> str:
@@ -1003,6 +993,7 @@ class NetEventReader:
 	def _dispatch(self, line: str):
 		if not line:
 			return
+		self._manager._log(f"NetEventReader: recv {line!r}")
 		parts = line.split(",")
 		evt = parts[0]
 		if evt == "UPDATE":
@@ -1055,6 +1046,7 @@ class NetworkManager:
 	"""Central access point for all network configuration."""
 
 	def __init__(self):
+		self._debug = DEBUG
 		self.adapters: dict[str, Adapter] = {}
 		self.nameserverConfig = NameserverConfig()
 		self._ifacesFile = InterfacesFile()
@@ -1064,6 +1056,10 @@ class NetworkManager:
 		self.onAdaptersChanged: list[Callable] = []
 		self.load()
 		self._eventReader = NetEventReader(self)
+
+	def _log(self, msg: str):
+		if self._debug:
+			print(f"[NetworkManager] {msg}")
 
 	# Called once by InitNetwork() during Enigma2 startup.
 	def startNetworkCheck(self):
@@ -1075,11 +1071,13 @@ class NetworkManager:
 	# ------------------------------------------------------------------
 
 	def load(self):
+		self._log("load(): starting full config/state load")
 		self._discoverAdapters()
 		self._loadInterfacesFile()
 		self._loadWpaSupplicantFiles()
 		self._nsFiles.load(self.nameserverConfig)
 		self._applyNetinfo()
+		self._log(f"load(): done, adapters={sorted(self.adapters.keys())}")
 
 	def _discoverAdapters(self):
 		try:
@@ -1106,6 +1104,7 @@ class NetworkManager:
 				pass
 			self.adapters[name] = adapter
 			self._detectWol(adapter)
+			self._log(f"_discoverAdapters(): {name} isWlan={isWlan} module={module} driverApi={api} kernelUp={adapter.kernelUp}")
 
 	@staticmethod
 	# Detect WoL capability at startup. socketdaemon will refine via _applyNetinfo().
@@ -1125,6 +1124,7 @@ class NetworkManager:
 	def _loadInterfacesFile(self):
 		self._ifacesFile.load()
 		parsed, autoIfaces, wakeOnWiFiIfaces = self._ifacesFile.parse()
+		self._log(f"_loadInterfacesFile(): autoIfaces={sorted(autoIfaces)} wakeOnWiFiIfaces={sorted(wakeOnWiFiIfaces)}")
 		for iface, conns in parsed.items():
 			if iface not in self.adapters:
 				self.adapters[iface] = Adapter(
@@ -1137,6 +1137,7 @@ class NetworkManager:
 			if iface in wakeOnWiFiIfaces:
 				for conn in conns:
 					conn.wakeOnWiFi = True
+			self._log(f"_loadInterfacesFile(): {iface} adapterEnabled={self.adapters[iface].adapterEnabled} connections={len(conns)}")
 		for iface, adapter in self.adapters.items():
 			if not adapter.connections:
 				adapter.connections = [Connection(
@@ -1155,8 +1156,10 @@ class NetworkManager:
 			else:
 				wpf = WpaSupplicantFile(iface)
 				if not wpf.exists():
+					self._log(f"_loadWpaSupplicantFiles(): {iface} no {wpf.path}")
 					continue
 				for wlan in wpf.parse():
+					self._log(f"_loadWpaSupplicantFiles(): {iface} ssid={wlan.ssid!r} disabled={wlan.disabled} encryption={wlan.encryption}")
 					self._mergeWiFiConfig(adapter, wlan)
 
 	@staticmethod
@@ -1184,6 +1187,7 @@ class NetworkManager:
 	# ------------------------------------------------------------------
 
 	def save(self) -> bool:
+		self._log("save(): starting")
 		ok = True
 		for iface, adapter in self.adapters.items():
 			if adapter.isWlan:
@@ -1238,7 +1242,8 @@ class NetworkManager:
 					connMap[iface] = []
 			else:
 				connMap[iface] = adapter.connections
-		adapterEnabledMap = {iface: adapter.effectiveEnabled for iface, adapter in self.adapters.items()}
+		adapterEnabledMap = {iface: adapter.adapterEnabled for iface, adapter in self.adapters.items()}
+		self._log(f"save(): adapterEnabledMap={adapterEnabledMap}")
 		ok = self._ifacesFile.save(connMap, adapterEnabledMap) and ok
 
 		for iface, adapter in self.adapters.items():
@@ -1252,6 +1257,7 @@ class NetworkManager:
 			wlanConfigs = [x.wlan for x in adapter.connections if x.wlan is not None and x.wlan.ssid]
 			if not wlanConfigs:
 				continue
+			self._log(f"save(): {iface} writing {len(wlanConfigs)} wlan profile(s): " + ", ".join(f"{w.ssid!r}(disabled={w.disabled})" for w in wlanConfigs))
 			if adapter.driverApi == apiBrcmWl:
 				active = adapter.activeConnection()
 				if active and active.wlan:
@@ -1264,6 +1270,7 @@ class NetworkManager:
 		anyDhcp = any(conn.dhcp for adapter in self.adapters.values() for conn in adapter.connections if conn.enabled)
 		self._nsFiles.save(self.nameserverConfig, anyDhcp)
 		self._notifyNetworkPlugins(True)
+		self._log(f"save(): done, ok={ok}")
 		return ok
 
 	# ------------------------------------------------------------------
@@ -1292,7 +1299,10 @@ class NetworkManager:
 
 	# Restart via socketdaemon NETRESTART;
 	def restartNetwork(self, iface: str = "", callback: Callable | None = None):
+		self._log(f"restartNetwork(): iface={iface or 'all'}")
+
 		def _done(retval: int = 0):
+			self._log(f"restartNetwork(): {iface or 'all'} done, retval={retval}")
 			self._discoverAdapters()
 			if callback:
 				callback()
@@ -1324,10 +1334,13 @@ class NetworkManager:
 	def removeConnection(self, iface: str, ssid: str) -> bool:
 		adapter = self.adapters.get(iface)
 		if not adapter:
+			self._log(f"removeConnection(): {iface} not found")
 			return False
 		before = len(adapter.connections)
 		adapter.connections = [x for x in adapter.connections if not (x.wlan and x.wlan.ssid == ssid)]
-		return len(adapter.connections) < before
+		removed = len(adapter.connections) < before
+		self._log(f"removeConnection(): {iface} ssid={ssid!r} removed={removed}")
+		return removed
 
 	def setNameservers(self, servers: list):
 		self.nameserverConfig.servers = list(servers)
@@ -1372,20 +1385,25 @@ class NetworkManager:
 		adapter = self.adapters.get(iface)
 		if adapter and not adapter.isWlan:
 			def _lanUp(retval: int):
+				self._log(f"activateInterface(): {iface} (LAN) ifup retval={retval}")
 				self._notifyNetworkPlugins(False)
 				if callback:
 					callback(retval == 0)
+			self._log(f"activateInterface(): {iface} (LAN) ifup")
 			self._pendingRestart = ServiceAction.ifup(iface, _lanUp)
 			return
 
 		def _wlanUp(retval: bool = True):
+			self._log(f"activateInterface(): {iface} (WLAN) done")
 			self._notifyNetworkPlugins(False)
 			if callback:
 				callback(True)
 		try:
 			cmds = self.activateCommands(iface)
+			self._log(f"activateInterface(): {iface} (WLAN) commands={cmds}")
 			Console().eBatch(cmds, lambda result: _wlanUp(), debug=True)
-		except Exception:
+		except Exception as e:
+			self._log(f"activateInterface(): {iface} (WLAN) failed: {e}")
 			if callback:
 				callback(False)
 
@@ -1404,13 +1422,15 @@ class NetworkManager:
 		cmds: list[str] = []
 		wpaId = targetConn.wlan.wpaId if targetConn.wlan else None
 		ctrl = adapter.wpaCtrlPath
-		if exists(ctrl) and wpaId is not None:
+		viaWpaCli = exists(ctrl) and wpaId is not None
+		if viaWpaCli:
 			cmds.append(f"{wpaCliBin} -i{iface} disable_network all 2>/dev/null; true")
 			cmds.append(f"{wpaCliBin} -i{iface} enable_network {wpaId}")
 			cmds.append(f"{wpaCliBin} -i{iface} select_network {wpaId}")
 			cmds.append(f"{wpaCliBin} -i{iface} reassociate")
 		else:
 			cmds.extend(WlanRuntime(adapter).commandsActivate(targetConn))
+		self._log(f"switchWlanConnection(): {iface} ssid={targetConn.wlan.ssid if targetConn.wlan else '?'!r} viaWpaCli={viaWpaCli} cmds={cmds}")
 		return cmds
 
 	def getWlanNetworkList(self, iface: str) -> list[str]:
@@ -1418,7 +1438,9 @@ class NetworkManager:
 
 	def wpaSupplicantRunning(self, iface: str) -> bool:
 		adapter = self.adapters.get(iface)
-		return exists(adapter.wpaCtrlPath) if adapter else False
+		running = exists(adapter.wpaCtrlPath) if adapter else False
+		self._log(f"wpaSupplicantRunning(): {iface} = {running}")
+		return running
 
 	def getWlanStatus(self, iface: str) -> dict:
 		"""Parsed `wpa_cli status` (wpa_state, bssid, …) – used to explain *why* a
@@ -1431,8 +1453,9 @@ class NetworkManager:
 				key, sep, val = line.partition("=")
 				if sep:
 					result[key.strip()] = val.strip()
-		except Exception:
-			pass
+		except Exception as e:
+			self._log(f"getWlanStatus(): {iface} wpa_cli failed: {e}")
+		self._log(f"getWlanStatus(): {iface} = {result}")
 		return result
 
 	def setBgscan(self, iface: str, bgscan: str):
@@ -1617,10 +1640,12 @@ class NetworkManager:
 					adapter.canWakeOnLan = True
 
 	def _onNetinfoUpdate(self):
+		self._log("_onNetinfoUpdate()")
 		self._applyNetinfo()
 		self._notifyAdaptersChanged()
 
 	def _onLinkChange(self, iface: str, up: bool):
+		self._log(f"_onLinkChange(): {iface} up={up}")
 		adapter = self.adapters.get(iface)
 		if adapter:
 			adapter.kernelUp = up
@@ -1634,6 +1659,7 @@ class NetworkManager:
 				self._showToast(iface, up)
 		self._notifyAdaptersChanged()
 
+	# TODO: Wenn der user an der Config was ändert oder wenn man was an den Socket als Befehl schickt sollte dieser Toast nicht kommen.
 	def _showToast(self, iface: str, up: bool):
 		from Screens.Toast import Toast
 		text = _("Network cable connected (%s)") % iface if up else _("Network cable disconnected (%s)") % iface
@@ -1641,6 +1667,7 @@ class NetworkManager:
 		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_INFO, timeout=4, customIcon=icon)
 
 	def _onIpChange(self, iface: str, ipPrefix: str):
+		self._log(f"_onIpChange(): {iface} ipPrefix={ipPrefix}")
 		adapter = self.adapters.get(iface)
 		if adapter:
 			adapter.kernelIp = _parseIp4(ipPrefix.split("/")[0])
@@ -1655,6 +1682,7 @@ class NetworkManager:
 				conn := adapter.activeConnection()
 			) is not None and (conn.dhcp or conn.gateway != [0, 0, 0, 0])
 		]
+		self._log(f"checkConnectionInternet(): candidates={candidates}")
 		if not candidates:
 			callback({})
 			return
@@ -1666,6 +1694,7 @@ class NetworkManager:
 			results[iface] = ok
 			remaining[0] -= 1
 			if remaining[0] == 0:
+				self._log(f"checkConnectionInternet(): results={results}")
 				callback(results)
 
 		def _check(iface: str):
@@ -1676,15 +1705,18 @@ class NetworkManager:
 			reactor.callInThread(_check, iface)
 
 	def _onIfaceAdd(self, iface: str):
+		self._log(f"_onIfaceAdd(): {iface}")
 		if iface not in self.adapters:
 			self._discoverAdapters()
 		self._notifyAdaptersChanged()
 
 	def _onIfaceRemove(self, iface: str):
+		self._log(f"_onIfaceRemove(): {iface}")
 		self.adapters.pop(iface, None)
 		self._notifyAdaptersChanged()
 
 	def _onScanTrigger(self, iface: str):
+		self._log(f"_onScanTrigger(): {iface}")
 		pass  # placeholder: trigger wpa_cli scan when WLAN comes up
 
 
