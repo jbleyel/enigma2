@@ -288,16 +288,12 @@ class StartWizard(Wizard, ShowRemoteControl):
 	def _nwLanSetupDone(self, saved=False):
 		print("[NW-WIZ] _nwLanSetupDone: saved=%s currStep=%s codeAfter=%s updateValues_in_onShown=%s" % (saved, self.currStep, self.codeAfter, self.updateValues in self.onShown))
 		self._nwSetupSaved = saved
-		self._nwGoToDns()
+		self.nwActivateAndPoll()
 
 	def _nwWlanDone(self):
 		print("[NW-WIZ] _nwWlanDone called")
 		self._nwSetupSaved = True
-		self._nwGoToDns()
-
-	def _nwGoToDns(self):
-		self.currStep = self.getStepWithID("nwdns") + 1
-		self.updateValues()
+		self.nwActivateAndPoll()
 
 	def nwActivateAndPoll(self):
 		if Processing.instance:

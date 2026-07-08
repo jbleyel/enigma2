@@ -46,7 +46,6 @@ from Screens.ChoiceBox import ChoiceBox
 from Screens.Information import InformationBase, formatLine
 from Screens.MessageBox import MessageBox
 from Screens.Processing import Processing
-from Screens.RestartNetwork import RestartNetworkNew
 from Screens.Screen import Screen
 from Screens.Setup import Setup
 from skin import parseColor
@@ -241,9 +240,7 @@ class DnsSettings(Setup):
 				break
 		if hasChanges:
 			self.saveAll()
-			RestartNetworkNew.start(callback=self.close)
-		else:
-			self.close()
+		self.close()
 
 	# ------------------------------------------------------------------
 	# DNSCrypt TOML helpers

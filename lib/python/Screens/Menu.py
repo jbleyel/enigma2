@@ -739,7 +739,10 @@ class MenuHorizontal(Menu):
 			"right": (self.keyRight, _("Move right a item")),
 			"last": (self.keyLast, _("Move to last item / screen"))
 		}, prio=0, description=_("Menu Navigation Actions"))
-		self.skinName.append("MenuHorizontal")
+		self.skinName = []
+		if self.menuID is not None:
+			self.skinName.append(f"MenuHorizontal{self.menuID}")
+		self.skinName.extend(["MenuHorizontal", "Menu"])
 
 	def keyFirst(self):
 		self.currentIndex = self["menu"].getSelectedIndex()

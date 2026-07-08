@@ -84,6 +84,18 @@ self.nwOpenSetup()
 		</code>
 	</step>
 
+	<step id="nwstatus">
+		<displaytext value="Network status" />
+		<text value="Network setup result:" />
+		<code>
+self.nwShowStatus()
+		</code>
+		<list>
+			<listentry caption="Continue" step="nwdns" />
+			<listentry caption="Configure another interface" step="nwifaceselect" />
+		</list>
+	</step>
+
 	<step id="nwdns">
 		<text value="Configure or verify your DNS (name servers) by adjusting the values shown.\n\nWhen the settings are correct press OK to continue." />
 		<displaytext value="Configure DNS (name servers)" />
@@ -92,21 +104,6 @@ self.nwOpenSetup()
 self.clearSelectedKeys()
 self.selectKey("OK")
 		</code>
-		<code pos="after" async="yes">
-self.nwActivateAndPoll()
-		</code>
-	</step>
-
-	<step id="nwstatus">
-		<displaytext value="Network status" />
-		<text value="Network setup result:" />
-		<code>
-self.nwShowStatus()
-		</code>
-		<list>
-			<listentry caption="Continue" step="network" />
-			<listentry caption="Configure another interface" step="nwifaceselect" />
-		</list>
 	</step>
 
 	<step id="network">
