@@ -55,6 +55,15 @@ class MultiContentTemplateParser(TemplateParser):
 				int(padding[3] * self.scale[1][0] / self.scale[1][1]))
 
 	def readTemplate(self, templateName):
+		def parseIndexColor(color):
+			if self.indexNames and color and color[0] == "+" and not color[1:].isdigit():
+				index = self.indexNames.get(color[1:], -1)
+				if index < 0 or index >= len(self.indexNames):
+					print(f"[XmlMultiContent] Error: Index name must resolve to a number between 0 and {len(self.indexNames) - 1} inclusive!")
+				else:
+					color = f"+{index}"
+			return color
+
 		def parseTemplateModes(template):
 			modes = {}
 			modesItems = {}
@@ -128,10 +137,10 @@ class MultiContentTemplateParser(TemplateParser):
 								print("[XmlMultiContent] Error: Index must be a list item number!")
 							pos = item.get("position")
 							size = item.get("size")
-							backgroundColor = item.get("backgroundColor")
-							backgroundColorSelected = item.get("backgroundColorSelected")
-							borderColor = item.get("borderColor")
-							borderColorSelected = item.get("borderColorSelected")
+							backgroundColor = parseIndexColor(item.get("backgroundColor"))
+							backgroundColorSelected = parseIndexColor(item.get("backgroundColorSelected"))
+							borderColor = parseIndexColor(item.get("borderColor"))
+							borderColorSelected = parseIndexColor(item.get("borderColorSelected"))
 							borderWidth = int(item.get("borderWidth", "0"))
 							cornerRadius, cornerEdges = item.get("_radius", (0, 0))
 							flags = item.get("_flags", 0)
@@ -139,10 +148,10 @@ class MultiContentTemplateParser(TemplateParser):
 								case "text":
 									padding = parsePadding("padding", item.get("padding", "0,0,0,0"))
 									padding = self.scalePadding(padding)
-									textBorderColor = item.get("textBorderColor")
+									textBorderColor = parseIndexColor(item.get("textBorderColor"))
 									textBorderWidth = int(item.get("textBorderWidth", "0"))
-									foregroundColorSelected = item.get("foregroundColorSelected")
-									foregroundColor = item.get("foregroundColor")
+									foregroundColorSelected = parseIndexColor(item.get("foregroundColorSelected"))
+									foregroundColor = parseIndexColor(item.get("foregroundColor"))
 									font = int(item.get("font", 0))
 									# 'format' is not consumed here — it's collected for the screen to read
 									# back (like additionalTemplateAttributes) and apply itself when it
@@ -173,8 +182,8 @@ class MultiContentTemplateParser(TemplateParser):
 										modeData.append((eListboxPythonMultiContent.TYPE_RECT, pos[0], pos[1], size[0], size[1], backgroundColor, backgroundColorSelected, borderWidth, borderColor, borderColorSelected, cornerRadius, cornerEdges))
 								case "shape":
 									shapeName = item.get("name")
-									foregroundColorSelected = item.get("foregroundColorSelected")
-									foregroundColor = item.get("foregroundColor")
+									foregroundColorSelected = parseIndexColor(item.get("foregroundColorSelected"))
+									foregroundColor = parseIndexColor(item.get("foregroundColor"))
 									if index != -1:  # dynamic: the row provides the fractional rect list (or None) at this index
 										rects = index
 									elif shapeName:  # static: same shape for every row
@@ -186,8 +195,8 @@ class MultiContentTemplateParser(TemplateParser):
 								case "progress":
 									if index == -1:
 										index = None
-									foregroundColorSelected = item.get("foregroundColorSelected", None)
-									foregroundColor = item.get("foregroundColor", None)
+									foregroundColorSelected = parseIndexColor(item.get("foregroundColorSelected", None))
+									foregroundColor = parseIndexColor(item.get("foregroundColor", None))
 									gradientDirection, gradientAlpha, gradientStart, gradientEnd, gradientMid, gradientStartSelected, gradientEndSelected, gradientMidSelected = item.get("_gradient", (0, 0, None, None, None, None, None, None))
 									modeData.append((eListboxPythonMultiContent.TYPE_PROGRESS, pos[0], pos[1], size[0], size[1], index, borderWidth, foregroundColor, foregroundColorSelected, borderColor, gradientStart, gradientMid, gradientEnd, gradientStartSelected, gradientMidSelected, gradientEndSelected, cornerRadius, cornerEdges))
 						maxX = 0
