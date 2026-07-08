@@ -1666,9 +1666,7 @@ class NetworkWiFiAddFlow:
 # NameserverSetup – backward-compat alias (some screens still import this)
 # ===========================================================================
 
-class NameserverSetup(DnsSettings):
-	def __init__(self, session):
-		DnsSettings.__init__(self, session=session)
+NameserverSetup = DnsSettings
 
 
 # ===========================================================================

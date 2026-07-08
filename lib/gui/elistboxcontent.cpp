@@ -1732,6 +1732,7 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 	bool marked = false;
 	gRGB defaultForeColor;
 	gRGB defaultBackColor;
+	int rightShift = 0;
 
 	if (sel_clip.valid())
 		sel_clip.moveBy(offset);
@@ -1745,6 +1746,8 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 		orientation = m_listbox->getOrientation();
 		itemZoomed = local_style->m_selection_zoom > 1.0;
 		itemZoomContent = itemZoomed && local_style->is_set.zoom_content;
+		if (local_style->is_set.shift)
+			rightShift = m_listbox->getScrollbarListOffset();
 	}
 
 	ePoint offs = offset;
@@ -2252,6 +2255,9 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 					if (orientation & 1) // vertical
 						width -= m_listbox->getScrollbarListOffset();
 				}
+
+				if (rightShift > 0 && (x + width) > itemRect.width())
+					x -= rightShift;
 
 				int flags = PyLong_AsLong(pflags);
 				int fnt = PyLong_AsLong(pfnt);

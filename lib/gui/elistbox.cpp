@@ -86,6 +86,12 @@ eListbox::~eListbox()
 
 void eListbox::setScrollbarMode(uint8_t mode)
 {
+	if (mode == eListbox::showOnDemandShift) {
+		m_style.is_set.shift = 1;
+		mode = eListbox::showOnDemand;
+	} else
+		m_style.is_set.shift = 0;
+
 	m_scrollbar_mode = mode;
 	if (m_scrollbar)
 	{
