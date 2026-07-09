@@ -56,12 +56,13 @@ class MultiContentTemplateParser(TemplateParser):
 
 	def readTemplate(self, templateName):
 		def parseIndexColor(color):
-			if self.indexNames and color and color[0] == "+" and not color[1:].isdigit():
+			if self.indexNames and isinstance(color, str) and color[0] == "+":
 				index = self.indexNames.get(color[1:], -1)
 				if index < 0 or index >= len(self.indexNames):
 					print(f"[XmlMultiContent] Error: Index name must resolve to a number between 0 and {len(self.indexNames) - 1} inclusive!")
+					color = None
 				else:
-					color = f"+{index}"
+					color = 0xff000000 | index
 			return color
 
 		def parseTemplateModes(template):

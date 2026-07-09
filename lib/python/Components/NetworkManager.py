@@ -997,8 +997,8 @@ class NetEventReader:
 		evt = parts[0]
 		if evt == "UPDATE":
 			self._manager._onNetinfoUpdate()
-		elif evt == "LINK" and len(parts) == 3:
-			self._manager._onLinkChange(parts[1], parts[2] == "up")
+		elif evt == "LINK" and len(parts) == 4:
+			self._manager._onLinkChange(parts[1], parts[2] == "up", parts[3] == "up")
 		elif evt == "IP" and len(parts) == 3:
 			self._manager._onIpChange(parts[1], parts[2])
 		elif evt == "IFACE_ADD" and len(parts) == 2:
@@ -1643,19 +1643,19 @@ class NetworkManager:
 		self._applyNetinfo()
 		self._notifyAdaptersChanged()
 
-	def _onLinkChange(self, iface: str, up: bool):
-		self._log(f"_onLinkChange(): {iface} up={up}")
+	def _onLinkChange(self, iface: str, up: bool, running: bool):
+		self._log(f"_onLinkChange(): {iface} up={up} running={running}")
 		adapter = self.adapters.get(iface)
 		if adapter:
 			adapter.kernelUp = up
 			if adapter.isWlan:
-				# WLAN link = AP association; only clear on down — set on netinfo update
-				if not up:
+				# WLAN link = AP association; only clear on not-running — set on netinfo update
+				if not running:
 					adapter.kernelLink = False
 					adapter.kernelSsid = ""
 			else:
-				adapter.kernelLink = up
-				self._showToast(iface, up)
+				adapter.kernelLink = running
+				self._showToast(iface, running)
 		self._notifyAdaptersChanged()
 
 	# TODO: Wenn der user an der Config was ändert oder wenn man was an den Socket als Befehl schickt sollte dieser Toast nicht kommen.

@@ -2019,6 +2019,8 @@ class TemplateParser:
 			try:
 				if color and color[0] in ("=", "+") and color[1:].isdigit():  # Index color for MultiContent.
 					return 0xff000000 | int(color[1:])
+				if color and color[0] == "+":  # Named index color for MultiContent, resolved later via indexNames.
+					return color
 				value = parseColor(color).argb()
 				return value - 0x1000000 if value >> 24 == 0xff else value  # Prevent index color
 			except Exception as err:

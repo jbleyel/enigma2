@@ -99,7 +99,7 @@ self.nwShowStatus()
 	<step id="nwdns">
 		<text value="Configure or verify your DNS (name servers) by adjusting the values shown.\n\nWhen the settings are correct press OK to continue." />
 		<displaytext value="Configure DNS (name servers)" />
-		<config screen="NameserverSetup" module="NetworkSetup" type="ConfigList" />
+		<config screen="DnsSettings" module="NetworkSetup" type="ConfigList" />
 		<code>
 self.clearSelectedKeys()
 self.selectKey("OK")

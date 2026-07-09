@@ -476,33 +476,39 @@ class NetworkConnections(Screen):
 	INDEX_ADAPTER_PIXMAP = 1
 	INDEX_ENABLED_ICON = 2
 	INDEX_ENABLED_COLOR = 3
-	INDEX_ENABLED_PIXMAP = 4
-	INDEX_LINK_ICON = 5
-	INDEX_LINK_PIXMAP = 6
-	INDEX_LINK_TEXT = 7
-	INDEX_INET_ICON = 8
-	INDEX_INET_PIXMAP = 9
-	INDEX_STATE_COLOR = 10
-	INDEX_STATE_COLOR_SELECTED = 11
-	INDEX_ADAPTER_TEXT1 = 12
-	INDEX_ADAPTER_TEXT2 = 13
-	INDEX_CONNECTION_TEXT1 = 14
-	INDEX_CONNECTION_TEXT2 = 15
-	INDEX_CONNECTION_TEXT3 = 16
-	INDEX_CONNECTION_TEXT4 = 17
-	INDEX_CONNECTOR = 18
-	INDEX_ADAPTER = 19
-	INDEX_CONN = 20
+	INDEX_ENABLED_COLOR_SELECTED = 4
+	INDEX_ENABLED_PIXMAP = 5
+	INDEX_LINK_ICON = 6
+	INDEX_LINK_PIXMAP = 7
+	INDEX_LINK_TEXT = 8
+	INDEX_LINK_COLOR = 9
+	INDEX_LINK_COLOR_SELECTED = 10
+	INDEX_INET_ICON = 11
+	INDEX_INET_PIXMAP = 12
+	INDEX_STATE_COLOR = 13
+	INDEX_STATE_COLOR_SELECTED = 14
+	INDEX_ADAPTER_TEXT1 = 15
+	INDEX_ADAPTER_TEXT2 = 16
+	INDEX_CONNECTION_TEXT1 = 17
+	INDEX_CONNECTION_TEXT2 = 18
+	INDEX_CONNECTION_TEXT3 = 19
+	INDEX_CONNECTION_TEXT4 = 20
+	INDEX_CONNECTOR = 21
+	INDEX_ADAPTER = 22
+	INDEX_CONN = 23
 
-	COLOR_LINK = gRGB(0x0000CC00).argb()  # green  – physical link up
-	COLOR_ENABLED = gRGB(0x00FFFFFF).argb()  # white  – enabled, no link
-	COLOR_GRAY = gRGB(0x00808080).argb()  # gray   – disabled
-	COLOR_LINK_SELECTED = COLOR_LINK
-	COLOR_ENABLED_SELECTED = COLOR_ENABLED
-	COLOR_GRAY_SELECTED = COLOR_GRAY
+	_GREEN = gRGB(0x0000CC00).argb()
+	_WHITE = gRGB(0x00FFFFFF).argb()
+	_GRAY = gRGB(0x00808080).argb()
+	_RED = gRGB(0x00CC0000).argb()
+	_YELLOW = gRGB(0x00CCCC00).argb()
+	_BLUE = gRGB(0x000000CC).argb()
 
-	COLOR_ON = gRGB(0x0000CC00).argb()   # green – enabledColor when adapter/connection is enabled
-	COLOR_OFF = gRGB(0x00CC0000).argb()  # red   – enabledColor when disabled
+	# Fallback colors, same order/meaning as the skin's "colors" attribute:
+	# 1=stateUp, 2=stateEnabled, 3=stateDisabled, 4=stateUpSelected, 5=stateEnabledSelected, 6=stateDisabledSelected,
+	# 7=enabledColorOn, 8=enabledColorOff, 9=enabledColorOnSelected, 10=enabledColorOffSelected,
+	# 11=linkColorUp, 12=linkColorDown, 13=linkColorUpSelected, 14=linkColorDownSelected
+	DEFAULT_COLORS = (_GREEN, _WHITE, _GRAY, _GREEN, _WHITE, _GRAY, _GREEN, _RED, _GREEN, _RED, _YELLOW, _BLUE, _YELLOW, _BLUE)
 
 	ICON_LAN = "\uEA5A"   # settings_ethernet
 	ICON_WIFI = "\uE9FE"  # wifi
@@ -515,15 +521,16 @@ class NetworkConnections(Screen):
 	# TOOD:
 	# Adapter row / UP/DOWN.  -- text or glyph
 
-	skin = """
+	skin50 = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,570">
         <widget source="list" render="Listbox" position="10,10" size="e-20,e-70">
-			<template name="Default" fonts="enigma2icons;46,Regular;25,Regular;20,enigma2icons;25" itemHeight="50" shapeStroke="2" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
+			<!-- colors: 1=stateUp, 2=stateEnabled, 3=stateDisabled, 4=stateUpSelected, 5=stateEnabledSelected, 6=stateDisabledSelected, 7=enabledColorOn, 8=enabledColorOff, 9=enabledColorOnSelected, 10=enabledColorOffSelected, 11=linkColorUp, 12=linkColorDown, 13=linkColorUpSelected, 14=linkColorDownSelected -->
+			<template name="Default" fonts="enigma2icons;46,Regular;25,Regular;20,enigma2icons;25" itemHeight="50" shapeStroke="2" colors="#0000CC00,#00FFFFFF,#00808080,#0000CC00,#00FFFFFF,#00808080,#0000CC00,#00CC0000,#0000CC00,#00CC0000,#00CCCC00,#000000CC,#00CCCC00,#000000CC">
 				<mode name="default">
                     <!-- adapter icon (large, left) -->
                     <text index="adapterIcon" position="10,2" size="46,46" font="0" horizontalAlignment="center" verticalAlignment="center" />
                     <!-- enabled/disabled glyph placeholder -->
-                    <text index="enabledIcon" position="65,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=3" foregroundColorSelected="=3" />
+                    <text index="enabledIcon" position="65,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+enabledColor" foregroundColorSelected="+enabledColorSelected" />
                     <!-- up/down glyph placeholder -->
                     <text index="linkIcon" position="100,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" />
                     <!-- adapterText1/adapterText2 -->
@@ -560,20 +567,32 @@ class NetworkConnections(Screen):
     </screen>
 	"""
 
-	skinA = """
+	skin = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,600" resolution="1280,720">
 		<widget source="list" render="Listbox" position="0,0" size="980,520" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30" itemHeight="80" shapeStroke="8" colorStateLink="#0000CC00" colorStateEnabled="#00FFFFFF" colorStateDisabled="#00808080" colorStateLinkSelected="#0000CC00" colorStateEnabledSelected="#00FFFFFF" colorStateDisabledSelected="#00808080">
+			<!-- colors: 1=stateUp, 2=stateEnabled, 3=stateDisabled, 4=stateUpSelected, 5=stateEnabledSelected, 6=stateDisabledSelected, 7=enabledColorOn, 8=enabledColorOff, 9=enabledColorOnSelected, 10=enabledColorOffSelected, 11=linkColorUp, 12=linkColorDown, 13=linkColorUpSelected, 14=linkColorDownSelected -->
+			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30" itemHeight="80" shapeStroke="8" colors="#0000CC00,#00FFFFFF,#00808080,#0000CC00,#00FFFFFF,#00808080,#0000CC00,#00CC0000,#0000CC00,#00CC0000,#00CCCC00,#000000CC,#00CCCC00,#000000CC">
 				<mode name="default">
-					<!-- adapter icon (large, left) -->
-					<text index="adapterIcon" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=9" foregroundColorSelected="=10" />
-					<!-- enabled/disabled checkbox placeholder -->
-					<text index="enabledIcon" position="66,26" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="=3" foregroundColorSelected="=3" />
-					<!-- adapterText1/adapterText2, connectionText1..4 widgets — positioning follows later -->
-					<!-- tree connector branch/last_child -->
-					<shape index="connector" position="0,0" size="80,80" foregroundColor="=9" foregroundColorSelected="=10" />
+					<!-- tree connector branch/last_child, colored by state -->
+					<shape index="connector" position="0,0" size="80,80" foregroundColor="+stateColor" foregroundColorSelected="+stateColorSelected" />
+					<!-- adapter icon (large, left), colored by state -->
+					<text index="adapterIcon" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+stateColor" foregroundColorSelected="+stateColorSelected" />
+					<!-- enabled/disabled checkbox glyph -->
+					<text index="enabledIcon" position="70,6" size="28,28" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+enabledColor" foregroundColorSelected="+enabledColorSelected" />
+					<!-- link up/down glyph -->
+					<text index="linkIcon" position="70,44" size="28,28" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+linkColor" foregroundColorSelected="+linkColorSelected" />
+					<!-- link up/down label -->
+					<text index="linkText" position="102,44" size="70,28" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="+linkColor" foregroundColorSelected="+linkColorSelected" />
+					<!-- adapter row: name (top) / bus (bottom) -->
+					<text index="adapterText1" position="180,6" size="600,34" font="1" horizontalAlignment="left" verticalAlignment="center" format="{AdapterLabel}: {adapterName}" />
+					<text index="adapterText2" position="180,42" size="600,30" font="2" horizontalAlignment="left" verticalAlignment="center" format="{busName}" />
+					<!-- connection row: profile (top-left) / ip (top-right) / speed (bottom-left) / netmask+gateway (bottom-right) -->
+					<text index="connectionText1" position="180,4" size="500,36" font="4" horizontalAlignment="left" verticalAlignment="center" format="{profileName}" />
+					<text index="connectionText2" position="690,4" size="220,36" font="2" horizontalAlignment="left" verticalAlignment="center" format="{ip}" />
+					<text index="connectionText3" position="180,44" size="300,30" font="2" horizontalAlignment="left" verticalAlignment="center" format="{speed}" />
+					<text index="connectionText4" position="490,44" size="420,30" font="2" horizontalAlignment="left" verticalAlignment="center" format="{netmask} {gateway}" />
 					<!-- internet icon top-right (connection rows only) -->
-					<text index="inetIcon" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
+					<text index="inetIcon" position="e-50,23" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
 				</mode>
 			</template>
 		</widget>
@@ -605,33 +624,39 @@ class NetworkConnections(Screen):
 		#   0=adapterIcon    adapter: WLAN/LAN iconfont;  connection: ""
 		#   1=adapterPixmap  adapter: wired/wireless-active/inactive;  connection: None
 		#   2=enabledIcon    adapter: enabled indicator;  connection: ""
-		#   3=enabledColor   COLOR_ON (green) if enabled else COLOR_OFF (red), both rows
-		#   4=enabledPixmap  adapter: None;               connection: lock_on/lock_error (checkbox as image)
-		#   5=linkIcon       adapter: link active/inactive glyph;  connection: ""
-		#   6=linkPixmap     adapter: None;               connection: None
-		#   7=linkText       adapter: _("Up")/_("Down");  connection: ""
-		#   8=inetIcon       adapter: "";                 connection: globe char if internet
-		#   9=inetPixmap     adapter: "";                 connection: None
-		#  10=stateColor     color int (both rows)
-		#  11=stateColorSelected  color int, used when row is selected (both rows)
-		#  12=adapterText1     adapter: "eth0 / Intern";    connection: ""
-		#  13=adapterText2     adapter: "";                 connection: ""
-		#  14=connectionText1  adapter: "";                 connection: "Profile: SSID  IP: ..."
-		#  15=connectionText2  adapter: "";                 connection: "speed / mask / gw"
-		#  16=connectionText3  adapter: "";                 connection: ""
-		#  17=connectionText4  adapter: "";                 connection: ""
-		#  18=connector      adapter: None;               connection: buildShapeRects("branch"/"lastchild")
-		#  19=adapter        always the Adapter object
-		#  20=conn           None for adapter row, Connection for connection row
+		#   3=enabledColor   colorOn (green) if enabled else colorOff (red), both rows
+		#   4=enabledColorSelected  colorOnSelected (green) if enabled else colorOffSelected (red), both rows
+		#   5=enabledPixmap  adapter: None;               connection: lock_on/lock_error (checkbox as image)
+		#   6=linkIcon       adapter: link active/inactive glyph;  connection: ""
+		#   7=linkPixmap     adapter: None;               connection: None
+		#   8=linkText       adapter: _("Up")/_("Down");  connection: ""
+		#   9=linkColor      adapter: linkColorUp (yellow) if link else linkColorDown (blue);  connection: ""
+		#  10=linkColorSelected  adapter: same, selected variant;  connection: ""
+		#  11=inetIcon       adapter: "";                 connection: globe char if internet
+		#  12=inetPixmap     adapter: "";                 connection: None
+		#  13=stateColor     color int (both rows)
+		#  14=stateColorSelected  color int, used when row is selected (both rows)
+		#  15=adapterText1     adapter: "eth0 / Intern";    connection: ""
+		#  16=adapterText2     adapter: "";                 connection: ""
+		#  17=connectionText1  adapter: "";                 connection: "Profile: SSID  IP: ..."
+		#  18=connectionText2  adapter: "";                 connection: "speed / mask / gw"
+		#  19=connectionText3  adapter: "";                 connection: ""
+		#  20=connectionText4  adapter: "";                 connection: ""
+		#  21=connector      adapter: None;               connection: buildShapeRects("branch"/"lastchild")
+		#  22=adapter        always the Adapter object
+		#  23=conn           None for adapter row, Connection for connection row
 		indexNames = {
 			"adapterIcon": self.INDEX_ADAPTER_ICON,
 			"adapterPixmap": self.INDEX_ADAPTER_PIXMAP,
 			"enabledIcon": self.INDEX_ENABLED_ICON,
 			"enabledColor": self.INDEX_ENABLED_COLOR,
+			"enabledColorSelected": self.INDEX_ENABLED_COLOR_SELECTED,
 			"enabledPixmap": self.INDEX_ENABLED_PIXMAP,
 			"linkIcon": self.INDEX_LINK_ICON,
 			"linkPixmap": self.INDEX_LINK_PIXMAP,
 			"linkText": self.INDEX_LINK_TEXT,
+			"linkColor": self.INDEX_LINK_COLOR,
+			"linkColorSelected": self.INDEX_LINK_COLOR_SELECTED,
 			"inetIcon": self.INDEX_INET_ICON,
 			"inetPixmap": self.INDEX_INET_PIXMAP,
 			"stateColor": self.INDEX_STATE_COLOR,
@@ -656,12 +681,12 @@ class NetworkConnections(Screen):
 			"info": (self.keyInfo, _("Show network connection info")),
 			"menu": (self.keyMenu, _("Open context menu for selected network connection")),
 		}, prio=0, description=_("Network Connection Actions"))
-		self._colorLink = self.COLOR_LINK
-		self._colorEnabled = self.COLOR_ENABLED
-		self._colorDisabled = self.COLOR_GRAY
-		self._colorLinkSelected = self.COLOR_LINK_SELECTED
-		self._colorEnabledSelected = self.COLOR_ENABLED_SELECTED
-		self._colorDisabledSelected = self.COLOR_GRAY_SELECTED
+		(
+			self._colorLink, self._colorEnabled, self._colorDisabled,
+			self._colorLinkSelected, self._colorEnabledSelected, self._colorDisabledSelected,
+			self._colorOn, self._colorOff, self._colorOnSelected, self._colorOffSelected,
+			self._linkColorUp, self._linkColorDown, self._linkColorUpSelected, self._linkColorDownSelected,
+		) = self.DEFAULT_COLORS
 		self.onLayoutFinish.append(self._readSkinColors)
 		self.onLayoutFinish.append(self._buildList)
 		self._internetChecked = False
@@ -673,12 +698,16 @@ class NetworkConnections(Screen):
 
 	def _readSkinColors(self):
 		attrs = self["list"].additionalTemplateAttributes
-		self._colorLink = parseColor(attrs["colorStateLink"]).argb() if "colorStateLink" in attrs else self.COLOR_LINK
-		self._colorEnabled = parseColor(attrs["colorStateEnabled"]).argb() if "colorStateEnabled" in attrs else self.COLOR_ENABLED
-		self._colorDisabled = parseColor(attrs["colorStateDisabled"]).argb() if "colorStateDisabled" in attrs else self.COLOR_GRAY
-		self._colorLinkSelected = parseColor(attrs["colorStateLinkSelected"]).argb() if "colorStateLinkSelected" in attrs else self.COLOR_LINK_SELECTED
-		self._colorEnabledSelected = parseColor(attrs["colorStateEnabledSelected"]).argb() if "colorStateEnabledSelected" in attrs else self.COLOR_ENABLED_SELECTED
-		self._colorDisabledSelected = parseColor(attrs["colorStateDisabledSelected"]).argb() if "colorStateDisabledSelected" in attrs else self.COLOR_GRAY_SELECTED
+		if "colors" in attrs:
+			colors = [parseColor(color.strip()).argb() for color in attrs["colors"].split(",")]
+		else:
+			colors = self.DEFAULT_COLORS
+		(
+			self._colorLink, self._colorEnabled, self._colorDisabled,
+			self._colorLinkSelected, self._colorEnabledSelected, self._colorDisabledSelected,
+			self._colorOn, self._colorOff, self._colorOnSelected, self._colorOffSelected,
+			self._linkColorUp, self._linkColorDown, self._linkColorUpSelected, self._linkColorDownSelected,
+		) = colors
 		self._shapeStroke = int(attrs["shapeStroke"]) if "shapeStroke" in attrs else SHAPE_STROKE_WIDTH
 		self._formats = self["list"].templateDataFormats
 
@@ -710,7 +739,7 @@ class NetworkConnections(Screen):
 		# applyFormat) — used whenever the skin doesn't set its own "format" attribute.
 		# Not wrapped in _() here: this module executes once at import time, which would
 		# freeze the translation instead of re-evaluating it on every language switch.
-		_ADAPTER_TEXT1_FORMAT = "{adapterName}"
+		_ADAPTER_TEXT1_FORMAT = "{AdapterLabel}: {adapterName}"
 		_ADAPTER_TEXT2_FORMAT = "{busName}"
 		_CONNECTION_TEXT1_FORMAT = "{profileName}"
 		_CONNECTION_TEXT2_FORMAT = "{ip}"
@@ -764,8 +793,10 @@ class NetworkConnections(Screen):
 			checkBox = self.ICON_CHECKBOX_ON if adapter.adapterEnabled else self.ICON_CHECKBOX_OFF
 			adapterColor = self._colorLink if adapter.kernelLink else self._colorEnabled if adapter.adapterEnabled else self._colorDisabled
 			adapterColorSelected = self._colorLinkSelected if adapter.kernelLink else self._colorEnabledSelected if adapter.adapterEnabled else self._colorDisabledSelected
-			enabledColor = self.COLOR_ON if adapter.adapterEnabled else self.COLOR_OFF
+			enabledColor = self._colorOn if adapter.adapterEnabled else self._colorOff
+			enabledColorSelected = self._colorOnSelected if adapter.adapterEnabled else self._colorOffSelected
 			adapterKwargs = {
+				"AdapterLabel": _("Adapter"),
 				"adapterName": iface,
 				"busName": "USB" if adapter.kernelBus == "usb" else _("Internal"),
 				"driver": adapter.kernelDriver,
@@ -775,15 +806,20 @@ class NetworkConnections(Screen):
 			adapterText2 = applyFormat(self._formats, "adapterText2", _ADAPTER_TEXT2_FORMAT, **adapterKwargs)
 			linkIcon = self.ICON_LINK_ACTIVE if adapter.kernelLink else self.ICON_LINK_INACTIVE
 			linkText = _("Up") if adapter.kernelLink else _("Down")
+			linkColor = self._linkColorUp if adapter.kernelLink else self._linkColorDown
+			linkColorSelected = self._linkColorUpSelected if adapter.kernelLink else self._linkColorDownSelected
 			entries.append((
 				adapterIcon,                    # adapterIcon
 				self._adapterPixmap(adapter),   # adapterPixmap
 				checkBox,                       # enabledIcon
 				enabledColor,                   # enabledColor
+				enabledColorSelected,           # enabledColorSelected
 				None,                           # enabledPixmap
 				linkIcon,                       # linkIcon
 				None,                           # linkPixmap
 				linkText,                       # linkText
+				linkColor,                      # linkColor
+				linkColorSelected,              # linkColorSelected
 				"",                             # inetIcon
 				None,                           # inetPixmap
 				adapterColor,                   # stateColor
@@ -807,7 +843,8 @@ class NetworkConnections(Screen):
 				isLast = idx == len(conns) - 1
 				connColor = self._colorEnabled if conn.enabled else self._colorDisabled
 				connColorSelected = self._colorEnabledSelected if conn.enabled else self._colorDisabledSelected
-				enabledColor = self.COLOR_ON if conn.enabled else self.COLOR_OFF
+				enabledColor = self._colorOn if conn.enabled else self._colorOff
+				enabledColorSelected = self._colorOnSelected if conn.enabled else self._colorOffSelected
 				inetIcon = self.ICON_INET if (internet and conn.enabled) else ""
 				connectionKwargs = connectionFields(conn, adapter)
 				connectionText1 = applyFormat(self._formats, "connectionText1", _CONNECTION_TEXT1_FORMAT, **connectionKwargs)
@@ -819,10 +856,13 @@ class NetworkConnections(Screen):
 					None,                                                            # adapterPixmap
 					"",                                                              # enabledIcon
 					enabledColor,                                                    # enabledColor
+					enabledColorSelected,                                            # enabledColorSelected
 					self._connPixmap(conn),                                          # enabledPixmap
 					"",                                                              # linkIcon
 					None,                                                            # linkPixmap
 					"",                                                              # linkText
+					self._linkColorDown,                                             # linkColor
+					self._linkColorDownSelected,                                     # linkColorSelected
 					inetIcon,                                                        # inetIcon
 					None,                                                            # inetPixmap
 					connColor,                                                       # stateColor
@@ -1375,6 +1415,7 @@ class NetworkWiFiScanScreen(Screen):
 
 	def __init__(self, session, adapter: Adapter):
 		Screen.__init__(self, session, enableHelp=True)
+		self.adapterObj = adapter
 		self.adapter = adapter.name
 		self.setTitle(_("Wi-Fi Scan – %s") % self.adapter)
 		indexNames = {
@@ -1455,7 +1496,10 @@ class NetworkWiFiScanScreen(Screen):
 		if not self.scanning:
 			self.scanning = True
 			self["description"].setText(_("Scanning…"))
-			self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=startScanCallback)
+			if self.adapterObj.kernelUp:
+				startScanCallback(None, 0)
+			else:
+				self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=startScanCallback)
 
 	def _parseIwlist(self, raw: str) -> list[ScanResult]:
 		results: list[ScanResult] = []
