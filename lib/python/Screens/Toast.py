@@ -30,6 +30,9 @@ class ToastScreen(Screen):
 		self._timer.callback.append(self._dohide)
 		self._fadeTimer = eTimer()
 		self._fadeTimer.callback.append(self._doFade)
+
+	def applySkin(self):
+		Screen.applySkin(self)
 		self._displayW = None
 		self._displayH = None
 

@@ -53,7 +53,7 @@ from Tools.Conversions import formatNetworkSpeed
 from Tools.Directories import SCOPE_GUISKIN, SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 from Tools.LoadPixmap import LoadPixmap
 from Tools.ServiceAction import ServiceAction
-from Components.NetworkManager import Adapter, Connection, WiFiConfig, networkManager, encNone, encWep, encWpa, encWpa2, encWpa3, pingAsync
+from Components.NetworkManager import Adapter, Connection, WiFiConfig, networkManager, encNone, encWep, encWpa, encWpa2, encWpa3, encryptionLabels, pingAsync
 
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -472,30 +472,29 @@ class InformationNetworkConnection(InformationBase):
 class NetworkConnections(Screen):
 	"""Lists every Connection from every Adapter."""
 
-	INDEX_ADAPTER_ICON = 0
+	INDEX_ADAPTER_GLYPH = 0
 	INDEX_ADAPTER_PIXMAP = 1
-	INDEX_ENABLED_ICON = 2
+	INDEX_ENABLED_GLYPH = 2
 	INDEX_ENABLED_COLOR = 3
 	INDEX_ENABLED_COLOR_SELECTED = 4
 	INDEX_ENABLED_PIXMAP = 5
-	INDEX_LINK_ICON = 6
+	INDEX_LINK_GLYPH = 6
 	INDEX_LINK_PIXMAP = 7
-	INDEX_LINK_TEXT = 8
-	INDEX_LINK_COLOR = 9
-	INDEX_LINK_COLOR_SELECTED = 10
-	INDEX_INET_ICON = 11
-	INDEX_INET_PIXMAP = 12
-	INDEX_STATE_COLOR = 13
-	INDEX_STATE_COLOR_SELECTED = 14
-	INDEX_ADAPTER_TEXT1 = 15
-	INDEX_ADAPTER_TEXT2 = 16
-	INDEX_CONNECTION_TEXT1 = 17
-	INDEX_CONNECTION_TEXT2 = 18
-	INDEX_CONNECTION_TEXT3 = 19
-	INDEX_CONNECTION_TEXT4 = 20
-	INDEX_CONNECTOR = 21
-	INDEX_ADAPTER = 22
-	INDEX_CONN = 23
+	INDEX_LINK_COLOR = 8
+	INDEX_LINK_COLOR_SELECTED = 9
+	INDEX_INET_GLYPH = 10
+	INDEX_INET_PIXMAP = 11
+	INDEX_STATE_COLOR = 12
+	INDEX_STATE_COLOR_SELECTED = 13
+	INDEX_ADAPTER_TEXT1 = 14
+	INDEX_ADAPTER_TEXT2 = 15
+	INDEX_CONNECTION_TEXT1 = 16
+	INDEX_CONNECTION_TEXT2 = 17
+	INDEX_CONNECTION_TEXT3 = 18
+	INDEX_CONNECTION_TEXT4 = 19
+	INDEX_CONNECTOR = 20
+	INDEX_ADAPTER = 21
+	INDEX_CONN = 22
 
 	_GREEN = gRGB(0x0000CC00).argb()
 	_WHITE = gRGB(0x00FFFFFF).argb()
@@ -505,9 +504,10 @@ class NetworkConnections(Screen):
 	_BLUE = gRGB(0x000000CC).argb()
 
 	# Fallback colors, same order/meaning as the skin's "colors" attribute:
-	# 1=stateUp, 2=stateEnabled, 3=stateDisabled, 4=stateUpSelected, 5=stateEnabledSelected, 6=stateDisabledSelected,
-	# 7=enabledColorOn, 8=enabledColorOff, 9=enabledColorOnSelected, 10=enabledColorOffSelected,
-	# 11=linkColorUp, 12=linkColorDown, 13=linkColorUpSelected, 14=linkColorDownSelected
+	# StateUp,   StateEnabled, StateDisabled, StateUpSelected, StateEnabledSelected, StateDisabledSelected,
+	# #0000CC00, #00FFFFFF,    #00808080,     #0000CC00,       #00FFFFFF,            #00808080,
+	# EnabledOn, EnabledOff, EnabledOnSelected, EnabledOffSelected, LinkUp,    LinkDown,  LinkUpSelected, LinkDownSelected.
+	# #0000CC00, #00CC0000,  #0000CC00,         #00CC0000,          #00CCCC00, #000000CC, #00CCCC00,      #000000CC.
 	DEFAULT_COLORS = (_GREEN, _WHITE, _GRAY, _GREEN, _WHITE, _GRAY, _GREEN, _RED, _GREEN, _RED, _YELLOW, _BLUE, _YELLOW, _BLUE)
 
 	ICON_LAN = "\uEA5A"   # settings_ethernet
@@ -524,28 +524,33 @@ class NetworkConnections(Screen):
 	skin50 = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,570">
         <widget source="list" render="Listbox" position="10,10" size="e-20,e-70">
-			<!-- colors: 1=stateUp, 2=stateEnabled, 3=stateDisabled, 4=stateUpSelected, 5=stateEnabledSelected, 6=stateDisabledSelected, 7=enabledColorOn, 8=enabledColorOff, 9=enabledColorOnSelected, 10=enabledColorOffSelected, 11=linkColorUp, 12=linkColorDown, 13=linkColorUpSelected, 14=linkColorDownSelected -->
+			<!-- colors:
+				StateUp,   StateEnabled, StateDisabled, StateUpSelected, StateEnabledSelected, StateDisabledSelected,
+				#0000CC00, #00FFFFFF,    #00808080,     #0000CC00,       #00FFFFFF,            #00808080,
+				EnabledOn, EnabledOff, EnabledOnSelected, EnabledOffSelected, LinkUp,    LinkDown,  LinkUpSelected, LinkDownSelected.
+				#0000CC00, #00CC0000,  #0000CC00,         #00CC0000,          #00CCCC00, #000000CC, #00CCCC00,      #000000CC.
+			-->
 			<template name="Default" fonts="enigma2icons;46,Regular;25,Regular;20,enigma2icons;25" itemHeight="50" shapeStroke="2" colors="#0000CC00,#00FFFFFF,#00808080,#0000CC00,#00FFFFFF,#00808080,#0000CC00,#00CC0000,#0000CC00,#00CC0000,#00CCCC00,#000000CC,#00CCCC00,#000000CC">
 				<mode name="default">
                     <!-- adapter icon (large, left) -->
-                    <text index="adapterIcon" position="10,2" size="46,46" font="0" horizontalAlignment="center" verticalAlignment="center" />
+                    <text index="AdapterGlyph" position="10,2" size="46,46" font="0" horizontalAlignment="center" verticalAlignment="center" />
                     <!-- enabled/disabled glyph placeholder -->
-                    <text index="enabledIcon" position="65,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+enabledColor" foregroundColorSelected="+enabledColorSelected" />
+                    <text index="EnabledGlyph" position="65,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+EnabledColor" foregroundColorSelected="+EnabledColorSelected" />
                     <!-- up/down glyph placeholder -->
-                    <text index="linkIcon" position="100,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" />
-                    <!-- adapterText1/adapterText2 -->
-                    <text index="adapterText1" position="140,0" size="740,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
-                    <!-- <text index="adapterText2" position="110,0" size="840,50" font="1" horizontalAlignment="left" verticalAlignment="center" /> -->
-                    <!-- connection connectionText1: profile/LAN + IP -->
-                    <text index="connectionText1" position="130,0" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
-                    <!-- connection connectionText2: speed / mask / gw -->
-                    <text index="connectionText2" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
-                    <!--<text index="connectionText3" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" /> -->
-                    <!--<text index="connectionText4" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" /> -->
+                    <text index="LinkGlyph" position="100,10" size="30,30" font="3" horizontalAlignment="center" verticalAlignment="center" />
+                    <!-- AdapterText1/AdapterText2 -->
+                    <text index="AdapterText1" position="140,0" size="740,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+                    <!-- <text index="AdapterText2" position="110,0" size="840,50" font="1" horizontalAlignment="left" verticalAlignment="center" /> -->
+                    <!-- connection ConnectionText1: profile/LAN + IP -->
+                    <text index="ConnectionText1" position="130,0" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
+                    <!-- connection ConnectionText2: speed / mask / gw -->
+                    <text index="ConnectionText2" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" />
+                    <!--<text index="ConnectionText3" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" /> -->
+                    <!--<text index="ConnectionText4" position="130,25" size="820,25" font="2" horizontalAlignment="left" verticalAlignment="center" /> -->
 					<!-- tree connector branch/last_child -->
-					<shape index="connector" position="10,0" size="50,50" foregroundColor="white" foregroundColorSelected="white" />
+					<shape index="Connector" position="10,0" size="50,50" foregroundColor="white" foregroundColorSelected="white" />
                     <!-- internet icon top-right (connection rows only) -->
-                    <text index="inetIcon" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
+                    <text index="InternetGlyph" position="e-50,4" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
                 </mode>
             </template>
         </widget>
@@ -570,29 +575,32 @@ class NetworkConnections(Screen):
 	skin = """
 	<screen name="NetworkConnections" title="Network Connections" position="center,center" size="980,600" resolution="1280,720">
 		<widget source="list" render="Listbox" position="0,0" size="980,520" scrollbarMode="showOnDemand">
-			<!-- colors: 1=stateUp, 2=stateEnabled, 3=stateDisabled, 4=stateUpSelected, 5=stateEnabledSelected, 6=stateDisabledSelected, 7=enabledColorOn, 8=enabledColorOff, 9=enabledColorOnSelected, 10=enabledColorOffSelected, 11=linkColorUp, 12=linkColorDown, 13=linkColorUpSelected, 14=linkColorDownSelected -->
+			<!-- colors:
+				StateUp,   StateEnabled, StateDisabled, StateUpSelected, StateEnabledSelected, StateDisabledSelected,
+				#0000CC00, #00FFFFFF,    #00808080,     #0000CC00,       #00FFFFFF,            #00808080,
+				EnabledOn, EnabledOff, EnabledOnSelected, EnabledOffSelected, LinkUp,    LinkDown,  LinkUpSelected, LinkDownSelected.
+				#0000CC00, #00CC0000,  #0000CC00,         #00CC0000,          #00CCCC00, #000000CC, #00CCCC00,      #000000CC.
+			-->
 			<template name="Default" fonts="enigma2icons;42,Regular;28,Regular;20,enigma2icons;24,Regular;30" itemHeight="80" shapeStroke="8" colors="#0000CC00,#00FFFFFF,#00808080,#0000CC00,#00FFFFFF,#00808080,#0000CC00,#00CC0000,#0000CC00,#00CC0000,#00CCCC00,#000000CC,#00CCCC00,#000000CC">
 				<mode name="default">
 					<!-- tree connector branch/last_child, colored by state -->
-					<shape index="connector" position="0,0" size="80,80" foregroundColor="+stateColor" foregroundColorSelected="+stateColorSelected" />
+					<shape index="Connector" position="0,0" size="80,80" foregroundColor="+StateColor" foregroundColorSelected="+StateColorSelected" />
 					<!-- adapter icon (large, left), colored by state -->
-					<text index="adapterIcon" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+stateColor" foregroundColorSelected="+stateColorSelected" />
+					<text index="AdapterGlyph" position="6,4" size="58,72" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+StateColor" foregroundColorSelected="+StateColorSelected" />
 					<!-- enabled/disabled checkbox glyph -->
-					<text index="enabledIcon" position="70,6" size="28,28" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+enabledColor" foregroundColorSelected="+enabledColorSelected" />
+					<text index="EnabledGlyph" position="70,6" size="28,28" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+EnabledColor" foregroundColorSelected="+EnabledColorSelected" />
 					<!-- link up/down glyph -->
-					<text index="linkIcon" position="70,44" size="28,28" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+linkColor" foregroundColorSelected="+linkColorSelected" />
-					<!-- link up/down label -->
-					<text index="linkText" position="102,44" size="70,28" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="+linkColor" foregroundColorSelected="+linkColorSelected" />
+					<text index="LinkGlyph" position="70,44" size="28,28" font="3" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+LinkColor" foregroundColorSelected="+LinkColorSelected" />
 					<!-- adapter row: name (top) / bus (bottom) -->
-					<text index="adapterText1" position="180,6" size="600,34" font="1" horizontalAlignment="left" verticalAlignment="center" format="{AdapterLabel}: {adapterName}" />
-					<text index="adapterText2" position="180,42" size="600,30" font="2" horizontalAlignment="left" verticalAlignment="center" format="{busName}" />
+					<text index="AdapterText1" position="180,6" size="600,34" font="1" horizontalAlignment="left" verticalAlignment="center" format="{AdapterLabel}: {adapterName}" />
+					<text index="AdapterText2" position="180,42" size="600,30" font="2" horizontalAlignment="left" verticalAlignment="center" format="{busName}" />
 					<!-- connection row: profile (top-left) / ip (top-right) / speed (bottom-left) / netmask+gateway (bottom-right) -->
-					<text index="connectionText1" position="180,4" size="500,36" font="4" horizontalAlignment="left" verticalAlignment="center" format="{profileName}" />
-					<text index="connectionText2" position="690,4" size="220,36" font="2" horizontalAlignment="left" verticalAlignment="center" format="{ip}" />
-					<text index="connectionText3" position="180,44" size="300,30" font="2" horizontalAlignment="left" verticalAlignment="center" format="{speed}" />
-					<text index="connectionText4" position="490,44" size="420,30" font="2" horizontalAlignment="left" verticalAlignment="center" format="{netmask} {gateway}" />
+					<text index="ConnectionText1" position="180,4" size="500,36" font="4" horizontalAlignment="left" verticalAlignment="center" format="{profileName}" />
+					<text index="ConnectionText2" position="690,4" size="220,36" font="2" horizontalAlignment="left" verticalAlignment="center" format="{ip}" />
+					<text index="ConnectionText3" position="180,44" size="300,30" font="2" horizontalAlignment="left" verticalAlignment="center" format="{speed}" />
+					<text index="ConnectionText4" position="490,44" size="420,30" font="2" horizontalAlignment="left" verticalAlignment="center" format="{netmask} {gateway}" />
 					<!-- internet icon top-right (connection rows only) -->
-					<text index="inetIcon" position="e-50,23" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
+					<text index="InternetGlyph" position="e-50,23" size="34,34" font="3" horizontalAlignment="center" verticalAlignment="center" />
 				</mode>
 			</template>
 		</widget>
@@ -629,45 +637,43 @@ class NetworkConnections(Screen):
 		#   5=enabledPixmap  adapter: None;               connection: lock_on/lock_error (checkbox as image)
 		#   6=linkIcon       adapter: link active/inactive glyph;  connection: ""
 		#   7=linkPixmap     adapter: None;               connection: None
-		#   8=linkText       adapter: _("Up")/_("Down");  connection: ""
-		#   9=linkColor      adapter: linkColorUp (yellow) if link else linkColorDown (blue);  connection: ""
-		#  10=linkColorSelected  adapter: same, selected variant;  connection: ""
-		#  11=inetIcon       adapter: "";                 connection: globe char if internet
-		#  12=inetPixmap     adapter: "";                 connection: None
-		#  13=stateColor     color int (both rows)
-		#  14=stateColorSelected  color int, used when row is selected (both rows)
-		#  15=adapterText1     adapter: "eth0 / Intern";    connection: ""
-		#  16=adapterText2     adapter: "";                 connection: ""
-		#  17=connectionText1  adapter: "";                 connection: "Profile: SSID  IP: ..."
-		#  18=connectionText2  adapter: "";                 connection: "speed / mask / gw"
-		#  19=connectionText3  adapter: "";                 connection: ""
-		#  20=connectionText4  adapter: "";                 connection: ""
-		#  21=connector      adapter: None;               connection: buildShapeRects("branch"/"lastchild")
-		#  22=adapter        always the Adapter object
-		#  23=conn           None for adapter row, Connection for connection row
+		#   8=linkColor      adapter: linkColorUp (yellow) if link else linkColorDown (blue);  connection: ""
+		#   9=linkColorSelected  adapter: same, selected variant;  connection: ""
+		#  10=inetIcon       adapter: "";                 connection: globe char if internet
+		#  11=inetPixmap     adapter: "";                 connection: None
+		#  12=stateColor     color int (both rows)
+		#  13=stateColorSelected  color int, used when row is selected (both rows)
+		#  14=adapterText1     adapter: "eth0 / Intern";    connection: ""
+		#  15=adapterText2     adapter: "";                 connection: ""
+		#  16=connectionText1  adapter: "";                 connection: "Profile: SSID  IP: ..."
+		#  17=connectionText2  adapter: "";                 connection: "speed / mask / gw"
+		#  18=connectionText3  adapter: "";                 connection: ""
+		#  19=connectionText4  adapter: "";                 connection: ""
+		#  20=connector      adapter: None;               connection: buildShapeRects("branch"/"lastchild")
+		#  21=adapter        always the Adapter object
+		#  22=conn           None for adapter row, Connection for connection row
 		indexNames = {
-			"adapterIcon": self.INDEX_ADAPTER_ICON,
-			"adapterPixmap": self.INDEX_ADAPTER_PIXMAP,
-			"enabledIcon": self.INDEX_ENABLED_ICON,
-			"enabledColor": self.INDEX_ENABLED_COLOR,
-			"enabledColorSelected": self.INDEX_ENABLED_COLOR_SELECTED,
-			"enabledPixmap": self.INDEX_ENABLED_PIXMAP,
-			"linkIcon": self.INDEX_LINK_ICON,
-			"linkPixmap": self.INDEX_LINK_PIXMAP,
-			"linkText": self.INDEX_LINK_TEXT,
-			"linkColor": self.INDEX_LINK_COLOR,
-			"linkColorSelected": self.INDEX_LINK_COLOR_SELECTED,
-			"inetIcon": self.INDEX_INET_ICON,
-			"inetPixmap": self.INDEX_INET_PIXMAP,
-			"stateColor": self.INDEX_STATE_COLOR,
-			"stateColorSelected": self.INDEX_STATE_COLOR_SELECTED,
-			"adapterText1": self.INDEX_ADAPTER_TEXT1,
-			"adapterText2": self.INDEX_ADAPTER_TEXT2,
-			"connectionText1": self.INDEX_CONNECTION_TEXT1,
-			"connectionText2": self.INDEX_CONNECTION_TEXT2,
-			"connectionText3": self.INDEX_CONNECTION_TEXT3,
-			"connectionText4": self.INDEX_CONNECTION_TEXT4,
-			"connector": self.INDEX_CONNECTOR,
+			"AdapterGlyph": self.INDEX_ADAPTER_GLYPH,
+			"AdapterPixmap": self.INDEX_ADAPTER_PIXMAP,
+			"EnabledGlyph": self.INDEX_ENABLED_GLYPH,
+			"EnabledColor": self.INDEX_ENABLED_COLOR,
+			"EnabledColorSelected": self.INDEX_ENABLED_COLOR_SELECTED,
+			"EnabledPixmap": self.INDEX_ENABLED_PIXMAP,
+			"LinkGlyph": self.INDEX_LINK_GLYPH,
+			"LinkPixmap": self.INDEX_LINK_PIXMAP,
+			"LinkColor": self.INDEX_LINK_COLOR,
+			"LinkColorSelected": self.INDEX_LINK_COLOR_SELECTED,
+			"InternetGlyph": self.INDEX_INET_GLYPH,
+			"InternetPixmap": self.INDEX_INET_PIXMAP,
+			"StateColor": self.INDEX_STATE_COLOR,
+			"StateColorSelected": self.INDEX_STATE_COLOR_SELECTED,
+			"AdapterText1": self.INDEX_ADAPTER_TEXT1,
+			"AdapterText2": self.INDEX_ADAPTER_TEXT2,
+			"ConnectionText1": self.INDEX_CONNECTION_TEXT1,
+			"ConnectionText2": self.INDEX_CONNECTION_TEXT2,
+			"ConnectionText3": self.INDEX_CONNECTION_TEXT3,
+			"ConnectionText4": self.INDEX_CONNECTION_TEXT4,
+			"Connector": self.INDEX_CONNECTOR,
 		}
 		self["list"] = List([], indexNames=indexNames)
 		self["list"].onSelectionChanged.append(self.updateGreenKey)
@@ -763,6 +769,9 @@ class NetworkConnections(Screen):
 				ip = ".".join(str(x) for x in adapter.kernelIp)
 				return "" if ip == "0.0.0.0" else ip
 
+			def signalToPercent(dbm: int) -> int:
+				return max(0, min(100, 2 * (dbm + 100)))
+
 			if conn.isWlan:
 				profileValue = conn.name or (conn.wlan.ssid if conn.wlan else "") or conn.adapter
 				profileName = f"{_('Profile')}: {profileValue}"
@@ -783,6 +792,14 @@ class NetworkConnections(Screen):
 				"speed": "   ".join(speedParts),
 				"netmask": f"Mask: {_ip4Str(adapter.kernelNetmask)}" if adapter.adapterEnabled else "",
 				"gateway": f"GW: {_ip4Str(adapter.kernelGateway)}" if adapter.adapterEnabled and liveIp else "",
+				"bssid": adapter.kernelBssid,
+				"channel": adapter.kernelChannel,
+				"duplex": {"full": _("Full duplex"), "half": _("Half duplex")}.get(adapter.kernelDuplex, adapter.kernelDuplex),
+				"encryption": encryptionLabels.get(conn.wlan.encryption, lambda: "")() if conn.wlan else "",
+				"frequency": f"{adapter.kernelFreqMhz} MHz" if adapter.kernelFreqMhz else "",
+				"ssid": conn.wlan.ssid if conn.wlan else "",
+				"strength": f"{adapter.kernelSignal} dBm" if adapter.kernelSignal else "",
+				"strengthPercentage": f"{signalToPercent(adapter.kernelSignal)}%" if adapter.kernelSignal else "",
 			}
 
 		entries: list[tuple] = []
@@ -800,12 +817,11 @@ class NetworkConnections(Screen):
 				"adapterName": iface,
 				"busName": "USB" if adapter.kernelBus == "usb" else _("Internal"),
 				"driver": adapter.kernelDriver,
-				"mac": adapter.mac,
+				"mac": adapter.mac.upper(),
 			}
-			adapterText1 = applyFormat(self._formats, "adapterText1", _ADAPTER_TEXT1_FORMAT, **adapterKwargs)
-			adapterText2 = applyFormat(self._formats, "adapterText2", _ADAPTER_TEXT2_FORMAT, **adapterKwargs)
+			adapterText1 = applyFormat(self._formats, "AdapterText1", _ADAPTER_TEXT1_FORMAT, **adapterKwargs)
+			adapterText2 = applyFormat(self._formats, "AdapterText2", _ADAPTER_TEXT2_FORMAT, **adapterKwargs)
 			linkIcon = self.ICON_LINK_ACTIVE if adapter.kernelLink else self.ICON_LINK_INACTIVE
-			linkText = _("Up") if adapter.kernelLink else _("Down")
 			linkColor = self._linkColorUp if adapter.kernelLink else self._linkColorDown
 			linkColorSelected = self._linkColorUpSelected if adapter.kernelLink else self._linkColorDownSelected
 			entries.append((
@@ -817,7 +833,6 @@ class NetworkConnections(Screen):
 				None,                           # enabledPixmap
 				linkIcon,                       # linkIcon
 				None,                           # linkPixmap
-				linkText,                       # linkText
 				linkColor,                      # linkColor
 				linkColorSelected,              # linkColorSelected
 				"",                             # inetIcon
@@ -847,10 +862,10 @@ class NetworkConnections(Screen):
 				enabledColorSelected = self._colorOnSelected if conn.enabled else self._colorOffSelected
 				inetIcon = self.ICON_INET if (internet and conn.enabled) else ""
 				connectionKwargs = connectionFields(conn, adapter)
-				connectionText1 = applyFormat(self._formats, "connectionText1", _CONNECTION_TEXT1_FORMAT, **connectionKwargs)
-				connectionText2 = applyFormat(self._formats, "connectionText2", _(_CONNECTION_TEXT2_FORMAT), **connectionKwargs)
-				connectionText3 = applyFormat(self._formats, "connectionText3", _CONNECTION_TEXT3_FORMAT, **connectionKwargs)
-				connectionText4 = applyFormat(self._formats, "connectionText4", _(_CONNECTION_TEXT4_FORMAT), **connectionKwargs)
+				connectionText1 = applyFormat(self._formats, "ConnectionText1", _CONNECTION_TEXT1_FORMAT, **connectionKwargs)
+				connectionText2 = applyFormat(self._formats, "ConnectionText2", _(_CONNECTION_TEXT2_FORMAT), **connectionKwargs)
+				connectionText3 = applyFormat(self._formats, "ConnectionText3", _CONNECTION_TEXT3_FORMAT, **connectionKwargs)
+				connectionText4 = applyFormat(self._formats, "ConnectionText4", _(_CONNECTION_TEXT4_FORMAT), **connectionKwargs)
 				entries.append((
 					"",                                                              # adapterIcon
 					None,                                                            # adapterPixmap
@@ -860,7 +875,6 @@ class NetworkConnections(Screen):
 					self._connPixmap(conn),                                          # enabledPixmap
 					"",                                                              # linkIcon
 					None,                                                            # linkPixmap
-					"",                                                              # linkText
 					self._linkColorDown,                                             # linkColor
 					self._linkColorDownSelected,                                     # linkColorSelected
 					inetIcon,                                                        # inetIcon
@@ -1045,6 +1059,7 @@ class NetworkConnections(Screen):
 			else:
 				for other in adapter.connections:
 					other.enabled = (other is conn)
+			adapter.adapterEnabled = any(x.enabled for x in adapter.connections)
 		else:
 			conn.enabled = not conn.enabled
 			adapter.adapterEnabled = conn.enabled
@@ -1312,6 +1327,8 @@ class NetworkConnectionSetup(Setup):
 
 		if not any(x is conn for x in adapter.connections):
 			adapter.connections.append(conn)
+		if conn.isWlan and conn.enabled:
+			adapter.adapterEnabled = True
 		if networkManager is not None:
 			networkManager.save()
 		Processing.instance.hideProgress()
@@ -1681,7 +1698,13 @@ class NetworkWiFiAddFlow:
 				return
 			conn = _scanResultToConnection(result, adapter.name)
 
-			def _setupDone(saved: bool):
+			def _setupDone(*result):
+				# NetworkConnectionSetup.close() shape varies: no args (cancel), a bare
+				# bool, or a (recursive, saved) tuple (see NetworkConnections._setupClosed).
+				if len(result) == 1 and isinstance(result[0], tuple):
+					saved = bool(result[0][1]) if len(result[0]) > 1 else False
+				else:
+					saved = bool(result[0]) if result else False
 				if saved:
 					if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in adapter.connections):
 						adapter.connections.append(conn)
