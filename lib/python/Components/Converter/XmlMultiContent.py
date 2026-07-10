@@ -68,9 +68,13 @@ class MultiContentTemplateParser(TemplateParser):
 		def parseTemplateModes(template):
 			modes = {}
 			modesItems = {}
-			for mode in template.findall("mode"):
+			modeElements = template.findall("mode")
+			implicitDefault = not modeElements  # no <mode> children: template's own children are the "default" mode
+			if implicitDefault:
+				modeElements = [template]
+			for mode in modeElements:
 				items = []
-				modeName = mode.get("name")
+				modeName = "default" if implicitDefault else mode.get("name")
 				itemWidth = int(mode.get("itemWidth", self.itemWidth))  # Override from mode.
 				itemHeight = int(mode.get("itemHeight", self.itemHeight))  # Override from mode.
 				attibutes = {
