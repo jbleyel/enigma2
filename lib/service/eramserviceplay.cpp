@@ -146,6 +146,9 @@ void eRamServicePlay::onRecoveryPaused() {
 	if (!m_timeshift_active || !m_ram_recorder || !m_decoder || !m_record)
 		return;
 
+	if (eDVBServicePlay::getPlayPosition(m_frozen_play_position) == 0)
+		return;
+
 	pts_t first_pts = 0;
 	if (m_record->getFirstPTS(first_pts) != 0)
 		return;
@@ -285,6 +288,9 @@ RESULT eRamServicePlay::getPlayPosition(pts_t& pos) {
 		pos = m_frozen_play_position;
 		return 0;
 	}
+
+	if (eDVBServicePlay::getPlayPosition(pos) == 0)
+		return 0;
 
 	pts_t first_pts = 0;
 	if (m_record->getFirstPTS(first_pts) != 0)
