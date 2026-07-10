@@ -1259,9 +1259,6 @@ class NetworkConnectionSetup(Setup):
 		conn = self._conn
 		adapter = self._adapter
 
-		Processing.instance.setDescription(_("Please wait..."))
-		Processing.instance.showProgress(endless=True)
-
 		conn.name = self.cfgName.value
 		conn.enabled = self.cfgEnabled.value
 		if self._hasMultiplePriorities:
@@ -1331,7 +1328,6 @@ class NetworkConnectionSetup(Setup):
 			adapter.adapterEnabled = True
 		if networkManager is not None:
 			networkManager.save()
-		Processing.instance.hideProgress()
 		if conn.isWlan and conn.enabled:
 			self.session.openWithCallback(lambda *_: self.close((False, True)), NetworkWiFiActivator, conn, adapter)
 		else:
@@ -1584,8 +1580,8 @@ class NetworkWiFiActivator(Screen):
 	attempt fails or times out."""
 
 	skin = """
-	<screen name="NetworkWiFiActivator" title="Connecting…" position="center,center" size="600,180" resolution="1280,720">
-		<widget name="status" position="10,10" size="580,160" font="Regular;22" halign="center" valign="center" />
+	<screen name="NetworkWiFiActivator" title="Connecting…" position="center,center" size="500,180" resolution="1280,720">
+		<widget name="status" position="10,10" size="480,160" font="Regular;22" halign="center" valign="center" />
 	</screen>"""
 
 	_pollIntervalMs = 1500

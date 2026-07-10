@@ -4,60 +4,9 @@
 		<text value="Welcome to OpenATV.\n\nUse the UP/DOWN buttons on your remote control to select an option. Use the LEFT/RIGHT buttons to change the values of a configurable option. After that, press OK to proceed to the next screen." />
 		<displaytext value="Use UP/DOWN buttons to select option then press OK" />
 		<list>
-			<listentry caption="Use the wizard to set up basic features" step="flashexpander" />
+			<listentry caption="Use the wizard to set up basic features" step="nwifaceselect" />
 			<listentry caption="Exit the wizard" step="end" />
 		</list>
-	</step>
-
-	<step id="flashexpander" nextstep="swap">
-		<condition>
-self.condition = self.smallFlashSize
-		</condition>
-		<config screen="FlashExpander" module="FlashExpander" type="standalone" />
-		<code pos="after" async="yes">
-if self.isFlashExpanderActive() and self.getFreeMemory() &lt; 128:
-	self.createSwapFileFlashExpander(self.afterAsyncCode)
-		</code>
-	</step>
-
-	<step id="swap" nextstep="swapretry">
-		<condition>
-self.condition = not self.smallFlashSize and self.getFreeMemory() &lt; 128 and not self.swapExists
-		</condition>
-		<buttons enable="OK,UP,DOWN,YELLOW" />
-		<text value="The %s %s has a limited memory capacity. A swap file is required to increase the amount of available memory otherwise the %s %s may not work properly. Select the target device to hold the swap file."/>
-		<displaytext value="Limited memory size, swap file required" />
-		<list type="dynamic" source="swapDeviceList" evaluation="swapDeviceSelectionMade" onselect="swapDeviceSelectionMoved"/>
-		<code async="yes">
-self.readSwapDevices(self.afterAsyncCode)
-if not self.isFlashExpanderActive():
-	self["key_yellow"].setText(_("Format"))
-		</code>
-		<code pos="after" async="yes">
-if self.swapDevice and self.swapDevice != ".":
-	self.createSwapFile(self.afterAsyncCode)
-else:
-	self.afterAsyncCode()
-		</code>
-	</step>
-
-	<step id="swapretry">
-		<condition>
-self.condition = self.swapDevice and self.swapDevice == "."
-		</condition>
-		<text value="Plug in a USB device that can be used as a swap device. Note that this device must not be removed while the %s %s is running!"/>
-		<displaytext value="Plug in USB device" />
-		<list>
-			<listentry caption="Retry" step="swap" />
-			<listentry caption="Cancel" step="devices" />
-		</list>
-	</step>
-
-	<step id="devices" nextstep="nwifaceselect">
-		<condition>
-self.condition = self.hasPartitions()
-		</condition>
-		<config screen="DeviceManagerMountPoints" module="DeviceManager" type="standalone" />
 	</step>
 
 	<step id="nwifaceselect">
@@ -104,6 +53,57 @@ self.nwShowStatus()
 self.clearSelectedKeys()
 self.selectKey("OK")
 		</code>
+	</step>
+
+	<step id="flashexpander" nextstep="swap">
+		<condition>
+self.condition = self.smallFlashSize
+		</condition>
+		<config screen="FlashExpander" module="FlashExpander" type="standalone" />
+		<code pos="after" async="yes">
+if self.isFlashExpanderActive() and self.getFreeMemory() &lt; 128:
+	self.createSwapFileFlashExpander(self.afterAsyncCode)
+		</code>
+	</step>
+
+	<step id="swap" nextstep="swapretry">
+		<condition>
+self.condition = not self.smallFlashSize and self.getFreeMemory() &lt; 128 and not self.swapExists
+		</condition>
+		<buttons enable="OK,UP,DOWN,YELLOW" />
+		<text value="The %s %s has a limited memory capacity. A swap file is required to increase the amount of available memory otherwise the %s %s may not work properly. Select the target device to hold the swap file."/>
+		<displaytext value="Limited memory size, swap file required" />
+		<list type="dynamic" source="swapDeviceList" evaluation="swapDeviceSelectionMade" onselect="swapDeviceSelectionMoved"/>
+		<code async="yes">
+self.readSwapDevices(self.afterAsyncCode)
+if not self.isFlashExpanderActive():
+	self["key_yellow"].setText(_("Format"))
+		</code>
+		<code pos="after" async="yes">
+if self.swapDevice and self.swapDevice != ".":
+	self.createSwapFile(self.afterAsyncCode)
+else:
+	self.afterAsyncCode()
+		</code>
+	</step>
+
+	<step id="swapretry">
+		<condition>
+self.condition = self.swapDevice and self.swapDevice == "."
+		</condition>
+		<text value="Plug in a USB device that can be used as a swap device. Note that this device must not be removed while the %s %s is running!"/>
+		<displaytext value="Plug in USB device" />
+		<list>
+			<listentry caption="Retry" step="swap" />
+			<listentry caption="Cancel" step="devices" />
+		</list>
+	</step>
+
+	<step id="devices" nextstep="network">
+		<condition>
+self.condition = self.hasPartitions()
+		</condition>
+		<config screen="DeviceManagerMountPoints" module="DeviceManager" type="standalone" />
 	</step>
 
 	<step id="network">
