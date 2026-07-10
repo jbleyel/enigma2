@@ -114,3 +114,19 @@ class ServiceAction:
         """SWITCH_CARDSERVER,<serverName> → callback(exitCode)"""
         cls._dispatch("SWITCH_CARDSERVER", serverName, callback, timeout)
         return cls(serverName)
+
+    @classmethod
+    def ping(cls, iface: str, host: str, callback, timeout: int = 3000) -> "ServiceAction":
+        """PING,<iface>,<host> → one ICMP echo bound to iface → callback(exitCode)"""
+        cls._dispatch("PING", f"{iface},{host}", callback, timeout)
+        obj = cls.__new__(cls)
+        obj.serviceName = host
+        return obj
+
+    @classmethod
+    def resolve(cls, host: str, callback, timeout: int = 3000) -> "ServiceAction":
+        """RESOLVE,<host> → resolve host via getaddrinfo → callback(exitCode)"""
+        cls._dispatch("RESOLVE", host, callback, timeout)
+        obj = cls.__new__(cls)
+        obj.serviceName = host
+        return obj

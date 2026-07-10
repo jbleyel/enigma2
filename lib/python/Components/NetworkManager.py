@@ -18,14 +18,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import json
-from os import getpid, listdir, makedirs, remove
+from os import listdir, makedirs, remove
 from os.path import basename, exists, isdir, realpath
 from re import compile, match, search
 from shutil import copy2
 import socket
-from struct import pack, unpack
 from subprocess import check_output, DEVNULL
-from time import monotonic
 from collections.abc import Callable
 from twisted.internet import reactor
 
@@ -1703,12 +1701,17 @@ class NetworkManager:
 				self._log(f"checkConnectionInternet(): results={results}")
 				callback(results)
 
-		def _check(iface: str):
-			ok = pingHost("8.8.8.8", iface) or pingHost("1.1.1.1", iface)
-			reactor.callFromThread(_onResult, iface, ok)
+		def _fallbackDone(iface: str, exitCode: int):
+			_onResult(iface, exitCode == 0)
+
+		def _primaryDone(iface: str, exitCode: int):
+			if exitCode == 0:
+				_onResult(iface, True)
+			else:
+				ServiceAction.ping(iface, "1.1.1.1", lambda ec, iface=iface: _fallbackDone(iface, ec))
 
 		for iface in candidates:
-			reactor.callInThread(_check, iface)
+			ServiceAction.ping(iface, "8.8.8.8", lambda ec, iface=iface: _primaryDone(iface, ec))
 
 	def _onIfaceAdd(self, iface: str):
 		self._log(f"_onIfaceAdd(): {iface}")
@@ -1724,62 +1727,6 @@ class NetworkManager:
 	def _onScanTrigger(self, iface: str):
 		self._log(f"_onScanTrigger(): {iface}")
 		pass  # placeholder: trigger wpa_cli scan when WLAN comes up
-
-
-# ===========================================================================
-# Internet connectivity check (ICMP via raw socket, threaded)
-# ===========================================================================
-
-def _icmpChecksum(data: bytes) -> int:
-	checksum = 0
-	for idx in range(0, len(data) - len(data) % 2, 2):
-		checksum += data[idx] + (data[idx + 1] << 8)
-	if len(data) % 2:
-		checksum += data[-1]
-	while checksum >> 16:
-		checksum = (checksum & 0xFFFF) + (checksum >> 16)
-	return ~checksum & 0xFFFF
-
-
-# Send one ICMP Echo Request to host bound to iface. Returns True on reply.
-def pingHost(host: str, iface: str, timeout: float = 2.0) -> bool:
-	sock = None
-	try:
-		sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
-		sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, (iface + "\0").encode())
-		pid = getpid() & 0xFFFF
-		hdr = pack("!BBHHH", 8, 0, 0, pid, 1)
-		payload = b"e2net"
-		cs = _icmpChecksum(hdr + payload)
-		sock.sendto(pack("!BBHHH", 8, 0, cs, pid, 1) + payload, (host, 0))
-		deadline = monotonic() + timeout
-		while monotonic() < deadline:
-			sock.settimeout(max(0.05, deadline - monotonic()))
-			try:
-				data, _addr = sock.recvfrom(1024)
-				if len(data) >= 28:
-					rtype, _code, _checksum, rid, _seq = unpack("!BBHHH", data[20:28])
-					if rtype == 0 and rid == pid:
-						return True
-			except socket.timeout:
-				break
-	except Exception:
-		pass
-	finally:
-		if sock:
-			try:
-				sock.close()
-			except Exception:
-				pass
-	return False
-
-
-# Ping host bound to iface in a background thread; calls callback(ok: bool) on main thread.
-def pingAsync(host: str, iface: str, callback):
-	try:
-		reactor.callInThread(lambda: reactor.callFromThread(callback, pingHost(host, iface)))
-	except Exception:
-		callback(False)
 
 
 # ===========================================================================
