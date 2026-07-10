@@ -1030,7 +1030,7 @@ class NetworkConnections(Screen):
 
 	def _setupClosed(self, *result):
 		if len(result) == 1 and isinstance(result[0], tuple):
-			recursive, saved = result[0]
+			recursive, saved = result[0][0], result[0][1]
 		else:
 			recursive = bool(result[0]) if result else False
 			saved = False
@@ -1100,7 +1100,7 @@ class NetworkConnections(Screen):
 				entry = self._current()
 				selected = entry[self.INDEX_ADAPTER] if entry is not None else None
 				preselected = selected if selected is not None and selected.isWlan else None
-				NetworkWiFiAddFlow.start(self.session, adapter=preselected, callback=self._buildList)
+				NetworkWiFiAddFlow.start(self.session, adapter=preselected, callback=lambda *_: self._buildList())
 
 	def _openWlanScan(self, iface: str):
 		if networkManager is not None:
@@ -1329,9 +1329,26 @@ class NetworkConnectionSetup(Setup):
 		if networkManager is not None:
 			networkManager.save()
 		if conn.isWlan and conn.enabled:
-			self.session.openWithCallback(lambda *_: self.close((False, True)), NetworkWiFiActivator, conn, adapter)
+			self.session.openWithCallback(self.wifiConnectionVerified, NetworkWiFiActivator, conn, adapter)
 		else:
 			self.close((False, True))
+
+	def wifiConnectionVerified(self, ip=""):
+		# NetworkWiFiActivator closes with the IP it found, or "" if the
+		# connection could not be verified (wrong password, AP out of range, ...).
+		if ip:
+			self.close((False, True, ip))
+		else:
+			self.session.openWithCallback(
+				self.wifiRetryChoice,
+				MessageBox,
+				_("Could not verify the Wi-Fi connection.\n\nDo you want to change the settings again?"),
+				type=MessageBox.TYPE_YESNO,
+			)
+
+	def wifiRetryChoice(self, retry):
+		if not retry:
+			self.close((False, True, ""))
 
 
 # ===========================================================================
@@ -1605,7 +1622,7 @@ class NetworkWiFiActivator(Screen):
 	def _connectedCb(self, retval: int):
 		if retval != 0:
 			self["status"].setText(self._diagnoseFailure())
-			self._scheduleClose(6000)
+			self._scheduleClose(6000, "")
 			return
 		self._pollCount = 0
 		self["status"].setText(_("Waiting for IP address…"))
@@ -1621,11 +1638,11 @@ class NetworkWiFiActivator(Screen):
 			self._pollTimer.stop()
 			ssid = self._conn.wlan.ssid if self._conn.wlan else iface
 			self["status"].setText(_("Connected to '%s'\nIP: %s") % (ssid, ip))
-			self._scheduleClose(2500)
+			self._scheduleClose(2500, ip)
 		elif self._pollCount >= self._pollMaxAttempts:
 			self._pollTimer.stop()
 			self["status"].setText(self._diagnoseFailure())
-			self._scheduleClose(6000)
+			self._scheduleClose(6000, "")
 		else:
 			self._pollTimer.start(self._pollIntervalMs, True)
 
@@ -1658,9 +1675,9 @@ class NetworkWiFiActivator(Screen):
 			result = addrs[netifaces.AF_INET][0].get("addr", "")
 		return result
 
-	def _scheduleClose(self, delayMs: int):
+	def _scheduleClose(self, delayMs: int, ip: str):
 		self._closeTimer = eTimer()
-		self._closeTimer.callback.append(lambda: self.close(True))
+		self._closeTimer.callback.append(lambda: self.close(ip))
 		self._closeTimer.start(delayMs, True)
 
 
@@ -1696,9 +1713,13 @@ class NetworkWiFiAddFlow:
 
 			def _setupDone(*result):
 				# NetworkConnectionSetup.close() shape varies: no args (cancel), a bare
-				# bool, or a (recursive, saved) tuple (see NetworkConnections._setupClosed).
+				# bool, or a (recursive, saved, ip) tuple (see NetworkConnections._setupClosed).
+				# For Wi-Fi, "ip" is the address NetworkWiFiActivator already verified,
+				# or "" if the connection could not be verified.
+				ip = ""
 				if len(result) == 1 and isinstance(result[0], tuple):
 					saved = bool(result[0][1]) if len(result[0]) > 1 else False
+					ip = result[0][2] if len(result[0]) > 2 else ""
 				else:
 					saved = bool(result[0]) if result else False
 				if saved:
@@ -1707,7 +1728,7 @@ class NetworkWiFiAddFlow:
 						if networkManager:
 							networkManager.save()
 				if callback:
-					callback()
+					callback(ip)
 			session.openWithCallback(_setupDone, NetworkConnectionSetup, conn, adapter)
 		session.openWithCallback(_scanned, NetworkWiFiScanScreen, adapter)
 

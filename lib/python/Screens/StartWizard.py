@@ -290,16 +290,14 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self._nwSetupSaved = saved
 		self.nwActivateAndPoll()
 
-	def _nwWlanDone(self):
-		print("[NW-WIZ] _nwWlanDone called")
-		self._nwSetupSaved = True
-		# NetworkWiFiActivator already brought the adapter up (ifup + wpa_supplicant)
-		# and polled for an IP itself, so activateInterface() here would be a
-		# pointless second activation of an adapter that is already up.
-		if Processing.instance:
-			Processing.instance.setDescription(_("Please wait, activating network connection..."))
-			Processing.instance.showProgress(endless=True)
-		self._nwStartIpPoll()
+	def _nwWlanDone(self, ip=""):
+		print("[NW-WIZ] _nwWlanDone called, ip=%s" % ip)
+		# NetworkConnectionSetup already ran NetworkWiFiActivator (ifup + wpa_supplicant
+		# + IP poll) and reports the result here, so there is nothing left to activate
+		# or poll for – activateInterface() again would just redo work on an adapter
+		# that is already up (or already given up on).
+		self.nwIpFound = ip
+		self._nwDone()
 
 	def nwActivateAndPoll(self):
 		if Processing.instance:

@@ -989,6 +989,12 @@ class NetEventReader:
 		self._retryTimer = None
 		self._connect()
 
+	# TODO: During Wi-Fi association retries the daemon can fire bursts of several
+	# LINK/SCAN_TRIGGER/UPDATE events within a few milliseconds (driver flapping).
+	# Each is processed immediately below, causing redundant adapter updates/GUI
+	# refreshes. Debounce this: buffer incoming events and only actually process
+	# them once no further event has arrived within X ms, instead of acting on
+	# every single line as it comes in.
 	def _dispatch(self, line: str):
 		if not line:
 			return
@@ -1619,14 +1625,14 @@ class NetworkManager:
 			adapter.kernelIp6 = data.get("ip6", [])
 			if adapter.isWlan:
 				adapter.kernelSsid = data.get("ssid", "")
-				adapter.kernelLink = bool(adapter.kernelSsid)  # link = associated to AP
+				adapter.kernelLink = adapter.kernelUp and bool(adapter.kernelSsid)  # link = up and associated to AP
 				adapter.kernelBssid = data.get("bssid", "")
 				adapter.kernelFreqMhz = data.get("freq_mhz", 0)
 				adapter.kernelChannel = data.get("channel", 0)
 				adapter.kernelBitrateBps = data.get("bitrate_bps", 0)
 				adapter.kernelSignal = data.get("signal_dbm", 0)
 			else:
-				adapter.kernelLink = data.get("link", False)
+				adapter.kernelLink = adapter.kernelUp and data.get("link", False)
 				adapter.kernelSpeed = data.get("speed", -1)
 				adapter.kernelDuplex = data.get("duplex", "")
 				adapter.kernelPort = data.get("port", "")
@@ -1649,12 +1655,13 @@ class NetworkManager:
 		if adapter:
 			adapter.kernelUp = up
 			if adapter.isWlan:
-				# WLAN link = AP association; only clear on not-running — set on netinfo update
-				if not running:
+				# WLAN link = up and associated to AP; only clear here (on not-running or
+				# not-up) — actually setting it True happens on the next netinfo update.
+				if not running or not up:
 					adapter.kernelLink = False
 					adapter.kernelSsid = ""
 			else:
-				adapter.kernelLink = running
+				adapter.kernelLink = up and running
 				self._showToast(iface, running)
 		self._notifyAdaptersChanged()
 
