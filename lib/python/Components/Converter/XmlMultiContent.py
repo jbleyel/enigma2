@@ -196,7 +196,6 @@ class MultiContentTemplateParser(TemplateParser):
 				templateStyleName = template.get("name", "Default")
 				self.itemWidth = int(template.get("itemWidth", self.itemWidth))
 				self.itemHeight = int(template.get("itemHeight", self.itemHeight))
-				self.shapeStroke = int(template.get("shapeStroke", SHAPE_STROKE_WIDTH))
 				if templateStyleName == templateName:
 					self.additionalTemplateAttributes = {k: v for k, v in template.items() if k not in self._KNOWN_TEMPLATE_ATTRS}
 					self.templateDataFormats = {}
