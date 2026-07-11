@@ -607,7 +607,7 @@
 	</setup>
 	<setup key="NetworkAdapter" title="Network Adapter Settings">
 		<item level="0" text="Enabled" description="When enabled, this adapter is active and brought up at boot time. (Adds 'auto' to /etc/network/interfaces, calls ifup/ifdown.)">self.cfgEnabled</item>
-		<if conditional="self._adapter.isWlan">
+		<if conditional="self.adapter.isWlan">
 			<item level="1" text="WoW only" description="When enabled, the Wi-Fi adapter is kept in Wake-on-WiFi mode only and will not connect to any network." requires="wwol" conditional="not self.cfgEnabled.value">self.cfgWowOnly</item>
 		</if>
 		<if conditional="self.cfgEnabled.value or self.cfgWowOnly.value">
@@ -631,7 +631,7 @@
 					<item level="0" text="Secondary DNS (IPv6)" description="Enter the secondary IPv6 DNS server for this adapter. (Optional)">self.cfgDns2v6</item>
 				</if>
 			</if>
-			<if conditional="not self._adapter.isWlan">
+			<if conditional="not self.adapter.isWlan">
 				<item level="1" text="Wake-on-LAN" description="When enabled, allow the receiver to be powered on by a remote Wake-on-LAN network signal (Magic Packet)." requires="WakeOnLAN">self.cfgWakeOnLan</item>
 				<item level="2" text="Link speed" description="Force a specific network link speed/duplex mode instead of auto-negotiation. Only change this if you have a specific reason to - an incorrect setting can break network connectivity." conditional="self._hasLinkSpeedChoices">self.cfgLinkSpeed</item>
 			<else />

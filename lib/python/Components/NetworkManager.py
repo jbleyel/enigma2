@@ -62,26 +62,12 @@ netrestarterBin = "/usr/sbin/netrestarter"
 
 # Linux kernel ETHTOOL_ADVERTISED_* bitmask values, used by some drivers to
 # force a specific link speed/duplex instead of auto-negotiation.
-_LINKSPEED_BITS = {
-	"10baseT/Half": (0x01, "10 Mbps Half Duplex"),
-	"10baseT/Full": (0x02, "10 Mbps Full Duplex"),
-	"100baseT/Half": (0x04, "100 Mbps Half Duplex"),
-	"100baseT/Full": (0x08, "100 Mbps Full Duplex"),
-	"1000baseT/Half": (0x10, "1000 Mbps Half Duplex"),
-	"1000baseT/Full": (0x20, "1000 Mbps Full Duplex"),
-}
 
 
 # ---------------------------------------------------------------------------
 # Internal constants
 # ---------------------------------------------------------------------------
 
-ADAPTER_BLACKLIST = frozenset((
-	"lo", "wifi0", "wmaster0", "sit0", "tap0", "tun0",
-	"wg0", "sys0", "p2p0", "tunl0", "ip6tnl0", "ip_vti0", "ip6_vti0",
-))
-
-_bcmTmpPrefix = "/tmp/bcm"
 
 # ---------------------------------------------------------------------------
 # Encryption constants
@@ -113,21 +99,6 @@ apiRalink = "ralink"
 apiZydas = "zydas"
 apiBrcmWl = "brcm-wl"
 
-_legacyEncMap: dict[str, str] = {
-	"unencrypted": encNone,
-	"none": encNone,
-	"wep": encWep,
-	"wpa": encWpa,
-	"wpa/wpa2": encWpaWpa2,
-	"wpa2": encWpa2,
-	"wpa3": encWpa3,
-}
-
-_wpaDefaultHeader = [
-	"ctrl_interface=/var/run/wpa_supplicant",
-	"update_config=1",
-	"",
-]
 
 # ===========================================================================
 # Data classes
@@ -511,6 +482,12 @@ def _serialiseConnection(conn: Connection, adapterEnabled: bool) -> list[str]:
 class WpaSupplicantFile:
 	"""Parser and writer for /etc/wpa_supplicant.<iface>.conf."""
 
+	WPA_DEFAULT_HEADER = [
+		"ctrl_interface=/var/run/wpa_supplicant",
+		"update_config=1",
+		"",
+	]
+
 	def __init__(self, iface: str):
 		self.iface = iface
 		self.path = f"{wpaSupplicantDir}/wpa_supplicant.{iface}.conf"
@@ -560,7 +537,7 @@ class WpaSupplicantFile:
 		return configs
 
 	def serialise(self, configs: list[WiFiConfig]) -> list[str]:
-		header = self._header if self._header else list(_wpaDefaultHeader)
+		header = self._header if self._header else list(self.WPA_DEFAULT_HEADER)
 		lines: list[str] = list(header)
 		if lines and lines[-1].strip():
 			lines.append("")
@@ -643,120 +620,14 @@ def _wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
 # Broadcom wl-config format
 # ===========================================================================
 
-def _bcmConfPath(iface: str) -> str:
-	return f"/etc/wl.conf.{iface}"
-
-
-def _bcmLoadWiFiConfig(iface: str) -> WiFiConfig:
-	wlan = WiFiConfig()
-	for line in _readLines(_bcmConfPath(iface)):
-		line = line.strip()
-		if not line or line.startswith("#"):
-			continue
-		key, sep, value = line.partition("=")
-		key, value = key.strip(), value.strip()
-		if key == "ssid":
-			wlan.ssid = value
-		elif key == "method":
-			wlan.encryption = _legacyEncMap.get(value.lower(), encNone)
-		elif key == "key":
-			wlan.key = value
-	return wlan
-
-
-def _bcmSaveWlanConfig(iface: str, wlan: WiFiConfig) -> bool:
-	encStr = {
-		encNone: "None", encWep: "WEP", encWpa: "WPA",
-		encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
-	}.get(wlan.encryption, "None")
-	return _writeLines(_bcmConfPath(iface), [
-		f"ssid={wlan.ssid}",
-		f"method={encStr}",
-		f"key={wlan.key}",
-	])
-
 
 # ===========================================================================
 # Driver / module detection
 # ===========================================================================
 
-def _detectModule(iface: str) -> str:
-	devDir = f"{sysfsNet}/{iface}/device"
-	modLink = f"{devDir}/driver/module"
-	if isdir(modLink):
-		return basename(realpath(modLink))
-	try:
-		for entry in listdir(devDir):
-			if entry.startswith("1-"):
-				deep = f"{devDir}/{entry}/driver/module"
-				if isdir(deep):
-					return basename(realpath(deep))
-		fallback = f"{devDir}/driver"
-		if isdir(fallback):
-			return basename(realpath(fallback))
-	except OSError:
-		pass
-	return ""
-
-
-def _detectDriverApi(iface: str, module: str) -> str:
-	if exists(f"{_bcmTmpPrefix}/{iface}"):
-		return apiBrcmWl
-	if module in ("brcm-systemport", "brcmfmac", "brcmsmac"):
-		return apiBrcmWl
-	if isdir(f"{sysfsNet}/{iface}/device/ieee80211"):
-		return apiNl80211
-	if module in ("ath_pci", "ath5k", "ar6k_wlan"):
-		return apiMadwifi
-	if module in ("rt73", "rt73usb", "rt3070sta", "rt2800usb"):
-		return apiRalink
-	if module == "zd1211b":
-		return apiZydas
-	if exists(procNetWireless):
-		try:
-			if f"{iface}:" in open(procNetWireless).read():
-				return apiWext
-		except OSError:
-			pass
-	return apiNl80211
-
 
 def _canWakeOnWiFi(iface: str) -> bool:
 	return iface == "wlan3" and bool(BoxInfo.getItem("wwol"))
-
-
-# ===========================================================================
-# WLAN configStrings (interfaces pre-up / pre-down)
-# ===========================================================================
-
-def _buildWlanConfigStrings(adapter: Adapter, conn: Connection) -> str:
-	if not conn.isWlan or not conn.wlan:
-		return ""
-
-	iface = adapter.name
-	wlan = conn.wlan
-	api = adapter.driverApi
-	lines: list[str] = []
-
-	if api == apiBrcmWl:
-		encStr = {
-			encNone: "NONE", encWep: "WEP", encWpa: "WPA",
-			encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
-		}.get(wlan.encryption, "NONE")
-		lines.append(f"pre-up {wlConfigScript} -m {encStr} -k {wlan.key} -s \"{_reEscape(wlan.ssid)}\" || true")
-		lines.append(f"pre-up {ifconfigBin} {iface} up || true")
-		lines.append(f"pre-up iwconfig {iface} essid \"{_reEscape(wlan.ssid)}\" || true")
-		lines.append(f"post-down {wlConfigScript} -m NONE || true")
-	else:
-		driverFlags = f"-D {api}" if api != apiNl80211 else ""
-		lines.append(f"pre-up {ifconfigBin} {iface} up || true")
-		if wlan.encryption != encNone:
-			lines.append(f"pre-up {wpaSupplicantBin} -i{iface} -c{adapter.wpaConfPath} -B {driverFlags} -P{adapter.wpaPidPath} || true")
-		else:
-			lines.append(f"pre-up iwconfig {iface} essid \"{_reEscape(wlan.ssid)}\" || true")
-		lines.append(f"pre-down {wpaCliBin} -i{iface} terminate 2>/dev/null; true")
-
-	return "\n".join(lines)
 
 
 def _reEscape(text: str) -> str:
@@ -770,27 +641,46 @@ def _reEscape(text: str) -> str:
 class NameserverFiles:
 	"""Read and write /etc/resolv.conf + /etc/enigma2/nameserversdns.conf."""
 
-	_reNs4 = compile(r"nameserver\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
-	_reNs6 = compile(r"nameserver\s+(([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4})")
+	RE_NS4 = compile(r"nameserver\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+	RE_NS6 = compile(r"nameserver\s+(([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4})")
 
 	def load(self, ns: NameserverConfig):
 		path = resolvFile if ns.mode == "dhcp-router" else nameserverFile
-		ns.servers = self._parse(path)
+		ns.servers = self.parse(path)
 
-	def _parse(self, path: str) -> list:
+	def parse(self, path: str) -> list:
 		servers: list = []
 		for line in _readLines(path):
-			m4 = self._reNs4.match(line.strip())
+			m4 = self.RE_NS4.match(line.strip())
 			if m4:
 				servers.append([int(x) for x in m4.group(1).split(".")])
 				continue
-			m6 = self._reNs6.match(line.strip())
+			m6 = self.RE_NS6.match(line.strip())
 			if m6:
 				servers.append(m6.group(1))
 		return servers
 
 	def save(self, ns: NameserverConfig, anyDhcpActive: bool):
-		lines = self._build(ns)
+		def build(ns: NameserverConfig) -> list[str]:
+			mode = ns.ipMode
+			v4 = ["nameserver " + ".".join(str(octet) for octet in x) for x in ns.servers if isinstance(x, list) and x != [0, 0, 0, 0]]
+			v6 = [f"nameserver {x}" for x in ns.servers if isinstance(x, str) and x]
+			if mode == 0:
+				nsLines = v4 + v6
+			elif mode == 1:
+				nsLines = v6 + v4
+			elif mode == 2:
+				nsLines = v4
+			else:
+				nsLines = v6
+			prefix: list[str] = []
+			if ns.rotate:
+				prefix.append("options rotate")
+			if ns.suffix:
+				prefix.append(f"domain {ns.suffix}")
+			return prefix + nsLines
+
+		lines = build(ns)
 		if not anyDhcpActive:
 			_writeLines(resolvFile, lines)
 		if ns.mode != "dhcp-router":
@@ -801,25 +691,6 @@ class NameserverFiles:
 			except OSError:
 				pass
 
-	def _build(self, ns: NameserverConfig) -> list[str]:
-		mode = ns.ipMode
-		v4 = ["nameserver " + ".".join(str(octet) for octet in x) for x in ns.servers if isinstance(x, list) and x != [0, 0, 0, 0]]
-		v6 = [f"nameserver {x}" for x in ns.servers if isinstance(x, str) and x]
-		if mode == 0:
-			nsLines = v4 + v6
-		elif mode == 1:
-			nsLines = v6 + v4
-		elif mode == 2:
-			nsLines = v4
-		else:
-			nsLines = v6
-		prefix: list[str] = []
-		if ns.rotate:
-			prefix.append("options rotate")
-		if ns.suffix:
-			prefix.append(f"domain {ns.suffix}")
-		return prefix + nsLines
-
 
 # ===========================================================================
 # WlanRuntime – shell command builders for WLAN operations
@@ -829,11 +700,11 @@ class WlanRuntime:
 	"""Builds shell command lists for WLAN bring-up / tear-down."""
 
 	def __init__(self, adapter: Adapter):
-		self._adapter = adapter
+		self.adapter = adapter
 
 	@property
 	def _iface(self) -> str:
-		return self._adapter.name
+		return self.adapter.name
 
 	def commandsActivate(self, conn: Connection) -> list[str]:
 		iface = self._iface
@@ -841,13 +712,13 @@ class WlanRuntime:
 		cmds.extend(self.commandsDeactivate())
 		cmds.append(f"{ifconfigBin} {iface} up || true")
 		if conn.wlan and conn.wlan.encryption != encNone:
-			if self._adapter.driverApi == apiBrcmWl:
-				cmds.extend(self._bcmUpCmds(conn))
+			if self.adapter.driverApi == apiBrcmWl:
+				cmds.extend(self.bcmUpCmds(conn))
 			else:
 				cmds.append(
-					f"{wpaSupplicantBin} -B -D {self._adapter.driverApi} "
-					f"-i{iface} -c{self._adapter.wpaConfPath} "
-					f"-P{self._adapter.wpaPidPath} || true"
+					f"{wpaSupplicantBin} -B -D {self.adapter.driverApi} "
+					f"-i{iface} -c{self.adapter.wpaConfPath} "
+					f"-P{self.adapter.wpaPidPath} || true"
 				)
 		elif conn.wlan:
 			cmds.append(f'iwconfig {iface} essid "{_reEscape(conn.wlan.ssid)}" || true')
@@ -862,7 +733,7 @@ class WlanRuntime:
 			f"ip addr flush dev {iface} scope global 2>/dev/null; true",
 		]
 
-	def _bcmUpCmds(self, conn: Connection) -> list[str]:
+	def bcmUpCmds(self, conn: Connection) -> list[str]:
 		wlan = conn.wlan
 		if wlan is None:
 			return []
@@ -871,7 +742,7 @@ class WlanRuntime:
 
 	def statusCommands(self) -> list[str]:
 		iface = self._iface
-		if self._adapter.driverApi == apiBrcmWl:
+		if self.adapter.driverApi == apiBrcmWl:
 			return [f"wl -i {iface} status"]
 		return [f"iwconfig {iface}"]
 
@@ -897,10 +768,6 @@ def _isWireless(iface: str) -> bool:
 	return False
 
 
-def _isBlacklisted(iface: str) -> bool:
-	return iface in ADAPTER_BLACKLIST
-
-
 def _parseIp4(text: str) -> list[int]:
 	try:
 		parts = [int(x) for x in text.split(".")]
@@ -921,7 +788,7 @@ class NetEventReader:
 	_RETRY_MS = 5000
 
 	def __init__(self, manager: NetworkManager):
-		self._manager = manager
+		self.manager = manager
 		self._sock = None
 		self._buf = b""
 		self._retryTimer = None
@@ -997,21 +864,21 @@ class NetEventReader:
 	def _dispatch(self, line: str):
 		if not line:
 			return
-		self._manager._log(f"NetEventReader: recv {line!r}")
+		self.manager.log(f"NetEventReader: recv {line!r}")
 		parts = line.split(",")
 		evt = parts[0]
 		if evt == "UPDATE":
-			self._manager._onNetinfoUpdate()
+			self.manager._onNetinfoUpdate()
 		elif evt == "LINK" and len(parts) == 4:
-			self._manager._onLinkChange(parts[1], parts[2] == "up", parts[3] == "up")
+			self.manager._onLinkChange(parts[1], parts[2] == "up", parts[3] == "up")
 		elif evt == "IP" and len(parts) == 3:
-			self._manager._onIpChange(parts[1], parts[2])
+			self.manager._onIpChange(parts[1], parts[2])
 		elif evt == "IFACE_ADD" and len(parts) == 2:
-			self._manager._onIfaceAdd(parts[1])
+			self.manager._onIfaceAdd(parts[1])
 		elif evt == "IFACE_REMOVE" and len(parts) == 2:
-			self._manager._onIfaceRemove(parts[1])
+			self.manager._onIfaceRemove(parts[1])
 		elif evt == "SCAN_TRIGGER" and len(parts) == 2:
-			self._manager._onScanTrigger(parts[1])
+			self.manager._onScanTrigger(parts[1])
 
 
 # Polls (up to 10 x 1s) until the hostname resolves to something other than
@@ -1061,51 +928,110 @@ CHANGE_GENERAL = 3           # anything else (IP/gateway/DNS/... changed)
 class NetworkManager:
 	"""Central access point for all network configuration."""
 
+	ADAPTER_BLACKLIST = frozenset((
+		"lo", "wifi0", "wmaster0", "sit0", "tap0", "tun0",
+		"wg0", "sys0", "p2p0", "tunl0", "ip6tnl0", "ip_vti0", "ip6_vti0",
+	))
+
+	LINKSPEED_BITS = {
+		"10baseT/Half": (0x01, "10 Mbps Half Duplex"),
+		"10baseT/Full": (0x02, "10 Mbps Full Duplex"),
+		"100baseT/Half": (0x04, "100 Mbps Half Duplex"),
+		"100baseT/Full": (0x08, "100 Mbps Full Duplex"),
+		"1000baseT/Half": (0x10, "1000 Mbps Half Duplex"),
+		"1000baseT/Full": (0x20, "1000 Mbps Full Duplex"),
+	}
+
 	def __init__(self):
 		self._debug = config.crash.debugNetwork.value
 		self.adapters: dict[str, Adapter] = {}
 		self.connections: dict[str, list[Connection]] = {}
 		self.nameserverConfig = NameserverConfig()
-		self._ifacesFile = InterfacesFile()
-		self._nsFiles = NameserverFiles()
-		self._pendingRestart = None
-		self._networkCheck = None
+		self.ifacesFile = InterfacesFile()
+		self.nsFiles = NameserverFiles()
+		self.pendingRestart = None
+		self.networkCheck = None
 		self.onAdaptersChanged: list[Callable] = []
 		self.load()
 		self._eventReader = NetEventReader(self)
 
-	def _log(self, msg: str):
+	def log(self, msg: str):
 		if self._debug:
 			print(f"[NetworkManager] {msg}")
 
 	# Called once by InitNetwork() during Enigma2 startup.
 	def startNetworkCheck(self):
-		self._networkCheck = NetworkCheck()
-		self._networkCheck.start()
+		self.networkCheck = NetworkCheck()
+		self.networkCheck.start()
 
 	# ------------------------------------------------------------------
 	# Loading
 	# ------------------------------------------------------------------
 
 	def load(self):
-		self._log("load(): starting full config/state load")
-		self._discoverAdapters()
-		self._loadInterfacesFile()
-		self._loadWpaSupplicantFiles()
-		self._nsFiles.load(self.nameserverConfig)
-		self._applyNetinfo()
-		self._log(f"load(): done, adapters={sorted(self.adapters.keys())}")
+		self.log("load(): starting full config/state load")
+		self.discoverAdapters()
+		self.loadInterfacesFile()
+		self.loadWpaSupplicantFiles()
+		self.nsFiles.load(self.nameserverConfig)
+		self.applyNetinfo()
+		self.log(f"load(): done, adapters={sorted(self.adapters.keys())}")
 
-	def _discoverAdapters(self):
+	def bcmConfPath(self, iface: str) -> str:
+		return f"/etc/wl.conf.{iface}"
+
+	def discoverAdapters(self):
+		def detectDriverApi(iface: str, module: str) -> str:
+			if exists(f"/tmp/bcm/{iface}"):
+				return apiBrcmWl
+			if module in ("brcm-systemport", "brcmfmac", "brcmsmac"):
+				return apiBrcmWl
+			if isdir(f"{sysfsNet}/{iface}/device/ieee80211"):
+				return apiNl80211
+			if module in ("ath_pci", "ath5k", "ar6k_wlan"):
+				return apiMadwifi
+			if module in ("rt73", "rt73usb", "rt3070sta", "rt2800usb"):
+				return apiRalink
+			if module == "zd1211b":
+				return apiZydas
+			if exists(procNetWireless):
+				try:
+					if f"{iface}:" in open(procNetWireless).read():
+						return apiWext
+				except OSError:
+					pass
+			return apiNl80211
+
+		def isBlacklisted(iface: str) -> bool:
+			return iface in self.ADAPTER_BLACKLIST
+
+		def detectModule(iface: str) -> str:
+			devDir = f"{sysfsNet}/{iface}/device"
+			modLink = f"{devDir}/driver/module"
+			if isdir(modLink):
+				return basename(realpath(modLink))
+			try:
+				for entry in listdir(devDir):
+					if entry.startswith("1-"):
+						deep = f"{devDir}/{entry}/driver/module"
+						if isdir(deep):
+							return basename(realpath(deep))
+				fallback = f"{devDir}/driver"
+				if isdir(fallback):
+					return basename(realpath(fallback))
+			except OSError:
+				pass
+			return ""
+
 		try:
-			names = [x for x in listdir(sysfsNet) if not _isBlacklisted(x)]
+			names = [x for x in listdir(sysfsNet) if not isBlacklisted(x)]
 		except OSError:
 			names = []
 
 		for name in names:
 			isWlan = _isWireless(name)
-			module = _detectModule(name)
-			api = _detectDriverApi(name, module)
+			module = detectModule(name)
+			api = detectDriverApi(name, module)
 			# Rediscovery (restartNetwork(), _onIfaceAdd()) replaces the Adapter
 			# object outright – carry its live netInfo over so it doesn't go
 			# blank until the next netinfo update arrives.
@@ -1127,10 +1053,10 @@ class NetworkManager:
 				pass
 			self.adapters[name] = adapter
 			self._detectWol(adapter)
-			self._log(f"_discoverAdapters(): {name} isWlan={isWlan} module={module} driverApi={api} up={netInfo.up}")
+			self.log(f"discoverAdapters(): {name} isWlan={isWlan} module={module} driverApi={api} up={netInfo.up}")
 
 	@staticmethod
-	# Detect WoL capability at startup. socketdaemon will refine via _applyNetinfo().
+	# Detect WoL capability at startup. socketdaemon will refine via applyNetinfo().
 	def _detectWol(adapter: Adapter):
 		if adapter.isWlan:
 			return
@@ -1144,10 +1070,10 @@ class NetworkManager:
 		except Exception:
 			pass
 
-	def _loadInterfacesFile(self):
-		self._ifacesFile.load()
-		parsed, autoIfaces, wakeOnWiFiIfaces = self._ifacesFile.parse()
-		self._log(f"_loadInterfacesFile(): autoIfaces={sorted(autoIfaces)} wakeOnWiFiIfaces={sorted(wakeOnWiFiIfaces)}")
+	def loadInterfacesFile(self):
+		self.ifacesFile.load()
+		parsed, autoIfaces, wakeOnWiFiIfaces = self.ifacesFile.parse()
+		self.log(f"loadInterfacesFile(): autoIfaces={sorted(autoIfaces)} wakeOnWiFiIfaces={sorted(wakeOnWiFiIfaces)}")
 		for iface, conns in parsed.items():
 			if iface not in self.adapters:
 				self.adapters[iface] = Adapter(
@@ -1160,7 +1086,7 @@ class NetworkManager:
 			if iface in wakeOnWiFiIfaces:
 				for conn in conns:
 					conn.wakeOnWiFi = True
-			self._log(f"_loadInterfacesFile(): {iface} adapterEnabled={self.adapters[iface].adapterEnabled} connections={len(conns)}")
+			self.log(f"loadInterfacesFile(): {iface} adapterEnabled={self.adapters[iface].adapterEnabled} connections={len(conns)}")
 		for iface, adapter in self.adapters.items():
 			if not self.connections.get(iface):
 				self.connections[iface] = [Connection(
@@ -1170,22 +1096,49 @@ class NetworkManager:
 					wlan=WiFiConfig() if adapter.isWlan else None,
 				)]
 
-	def _loadWpaSupplicantFiles(self):
+	def loadWpaSupplicantFiles(self):
+
+		legacyEncMap: dict[str, str] = {
+			"unencrypted": encNone,
+			"none": encNone,
+			"wep": encWep,
+			"wpa": encWpa,
+			"wpa/wpa2": encWpaWpa2,
+			"wpa2": encWpa2,
+			"wpa3": encWpa3,
+		}
+
+		def bcmLoadWiFiConfig(iface: str) -> WiFiConfig:
+			wlan = WiFiConfig()
+			for line in _readLines(self.bcmConfPath(iface)):
+				line = line.strip()
+				if not line or line.startswith("#"):
+					continue
+				key, sep, value = line.partition("=")
+				key, value = key.strip(), value.strip()
+				if key == "ssid":
+					wlan.ssid = value
+				elif key == "method":
+					wlan.encryption = legacyEncMap.get(value.lower(), encNone)
+				elif key == "key":
+					wlan.key = value
+			return wlan
+
 		for iface, adapter in self.adapters.items():
 			if not adapter.isWlan:
 				continue
 			if adapter.driverApi == apiBrcmWl:
-				self._mergeWiFiConfig(iface, _bcmLoadWiFiConfig(iface))
+				self.mergeWiFiConfig(iface, bcmLoadWiFiConfig(iface))
 			else:
 				wpf = WpaSupplicantFile(iface)
 				if not wpf.exists():
-					self._log(f"_loadWpaSupplicantFiles(): {iface} no {wpf.path}")
+					self.log(f"loadWpaSupplicantFiles(): {iface} no {wpf.path}")
 					continue
 				for wlan in wpf.parse():
-					self._log(f"_loadWpaSupplicantFiles(): {iface} ssid={wlan.ssid!r} disabled={wlan.disabled} encryption={wlan.encryption}")
-					self._mergeWiFiConfig(iface, wlan)
+					self.log(f"loadWpaSupplicantFiles(): {iface} ssid={wlan.ssid!r} disabled={wlan.disabled} encryption={wlan.encryption}")
+					self.mergeWiFiConfig(iface, wlan)
 
-	def _mergeWiFiConfig(self, iface: str, wlan: WiFiConfig):
+	def mergeWiFiConfig(self, iface: str, wlan: WiFiConfig):
 		conns = self.getConnections(iface)
 		bySsid = {x.wlan.ssid: x for x in conns if x.wlan and x.wlan.ssid}
 		if wlan.ssid in bySsid:
@@ -1207,7 +1160,51 @@ class NetworkManager:
 	# ------------------------------------------------------------------
 
 	def save(self) -> bool:
-		self._log("save(): starting")
+		def bcmSaveWlanConfig(iface: str, wlan: WiFiConfig) -> bool:
+			encStr = {
+				encNone: "None", encWep: "WEP", encWpa: "WPA",
+				encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
+			}.get(wlan.encryption, "None")
+			return _writeLines(self.bcmConfPath(iface), [
+				f"ssid={wlan.ssid}",
+				f"method={encStr}",
+				f"key={wlan.key}",
+			])
+
+		# ===========================================================================
+		# WLAN configStrings (interfaces pre-up / pre-down)
+		# ===========================================================================
+
+		def buildWlanConfigStrings(adapter: Adapter, conn: Connection) -> str:
+			if not conn.isWlan or not conn.wlan:
+				return ""
+
+			iface = adapter.name
+			wlan = conn.wlan
+			api = adapter.driverApi
+			lines: list[str] = []
+
+			if api == apiBrcmWl:
+				encStr = {
+					encNone: "NONE", encWep: "WEP", encWpa: "WPA",
+					encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
+				}.get(wlan.encryption, "NONE")
+				lines.append(f"pre-up {wlConfigScript} -m {encStr} -k {wlan.key} -s \"{_reEscape(wlan.ssid)}\" || true")
+				lines.append(f"pre-up {ifconfigBin} {iface} up || true")
+				lines.append(f"pre-up iwconfig {iface} essid \"{_reEscape(wlan.ssid)}\" || true")
+				lines.append(f"post-down {wlConfigScript} -m NONE || true")
+			else:
+				driverFlags = f"-D {api}" if api != apiNl80211 else ""
+				lines.append(f"pre-up {ifconfigBin} {iface} up || true")
+				if wlan.encryption != encNone:
+					lines.append(f"pre-up {wpaSupplicantBin} -i{iface} -c{adapter.wpaConfPath} -B {driverFlags} -P{adapter.wpaPidPath} || true")
+				else:
+					lines.append(f"pre-up iwconfig {iface} essid \"{_reEscape(wlan.ssid)}\" || true")
+				lines.append(f"pre-down {wpaCliBin} -i{iface} terminate 2>/dev/null; true")
+
+			return "\n".join(lines)
+
+		self.log("save(): starting")
 		ok = True
 		for iface, adapter in self.adapters.items():
 			if adapter.isWlan:
@@ -1231,7 +1228,7 @@ class NetworkManager:
 				# (non-SSID) placeholder's WifiConfig is always empty and must
 				# not be used to build pre-up/pre-down commands.
 				if conn.wlan and conn.wlan.ssid:
-					cs = _buildWlanConfigStrings(adapter, conn)
+					cs = buildWlanConfigStrings(adapter, conn)
 					conn.extraLines = [x for x in cs.splitlines() if x] if cs else []
 
 		# For WLAN: write exactly ONE base block to interfaces (IP/DHCP/DNS/WOL/WWOL,
@@ -1261,8 +1258,8 @@ class NetworkManager:
 					conn.enabled = adapter.adapterEnabled
 				connMap[iface] = conns
 		adapterEnabledMap = {iface: adapter.adapterEnabled for iface, adapter in self.adapters.items()}
-		self._log(f"save(): adapterEnabledMap={adapterEnabledMap}")
-		ok = self._ifacesFile.save(connMap, adapterEnabledMap) and ok
+		self.log(f"save(): adapterEnabledMap={adapterEnabledMap}")
+		ok = self.ifacesFile.save(connMap, adapterEnabledMap) and ok
 
 		for iface, adapter in self.adapters.items():
 			if not adapter.isWlan:
@@ -1274,22 +1271,22 @@ class NetworkManager:
 			wlanConfigs = [x.wlan for x in conns if x.wlan is not None and x.wlan.ssid]
 			if not wlanConfigs:
 				continue
-			self._log(f"save(): {iface} writing {len(wlanConfigs)} wlan profile(s): " + ", ".join(f"{w.ssid!r}(disabled={w.disabled})" for w in wlanConfigs))
+			self.log(f"save(): {iface} writing {len(wlanConfigs)} wlan profile(s): " + ", ".join(f"{w.ssid!r}(disabled={w.disabled})" for w in wlanConfigs))
 			if adapter.driverApi == apiBrcmWl:
 				active = self.activeConnection(iface)
 				if active and active.wlan:
-					ok = _bcmSaveWlanConfig(iface, active.wlan) and ok
+					ok = bcmSaveWlanConfig(iface, active.wlan) and ok
 			else:
 				wpf = WpaSupplicantFile(iface)
 				wpf.ensureDir()
 				ok = wpf.save(wlanConfigs) and ok
 
 		anyDhcp = any(conn.dhcp for conns in connMap.values() for conn in conns if conn.enabled)
-		self._nsFiles.save(self.nameserverConfig, anyDhcp)
+		self.nsFiles.save(self.nameserverConfig, anyDhcp)
 		# The caller applies whatever the changed config needs next (ifup/ifdown,
 		# a full restart, ...) – the network is about to change, so plugins stop now.
 		self._notifyNetworkPlugins(False)
-		self._log(f"save(): done, ok={ok}")
+		self.log(f"save(): done, ok={ok}")
 		return ok
 
 	# ------------------------------------------------------------------
@@ -1318,20 +1315,20 @@ class NetworkManager:
 
 	# Restart via socketdaemon NETRESTART;
 	def restartNetwork(self, iface: str = "", callback: Callable | None = None):
-		self._log(f"restartNetwork(): iface={iface or 'all'}")
+		self.log(f"restartNetwork(): iface={iface or 'all'}")
 
 		def _done(retval: int = 0):
-			self._log(f"restartNetwork(): {iface or 'all'} done, retval={retval}")
-			# _discoverAdapters() rebuilds each Adapter from scratch (dataclass
+			self.log(f"restartNetwork(): {iface or 'all'} done, retval={retval}")
+			# discoverAdapters() rebuilds each Adapter from scratch (dataclass
 			# defaults, so adapterEnabled=False) – restore the persisted config
 			# on top, same as load() does at startup. self.connections is a
-			# separate dict, untouched by _discoverAdapters().
-			self._discoverAdapters()
-			self._loadInterfacesFile()
-			self._loadWpaSupplicantFiles()
+			# separate dict, untouched by discoverAdapters().
+			self.discoverAdapters()
+			self.loadInterfacesFile()
+			self.loadWpaSupplicantFiles()
 			if callback:
 				callback()
-		self._pendingRestart = ServiceAction.netrestart(_done, iface=iface)
+		self.pendingRestart = ServiceAction.netrestart(_done, iface=iface)
 
 	# ------------------------------------------------------------------
 	# Accessors
@@ -1384,12 +1381,12 @@ class NetworkManager:
 	def removeConnection(self, iface: str, ssid: str) -> bool:
 		conns = self.connections.get(iface)
 		if not conns:
-			self._log(f"removeConnection(): {iface} not found")
+			self.log(f"removeConnection(): {iface} not found")
 			return False
 		before = len(conns)
 		self.connections[iface] = [x for x in conns if not (x.wlan and x.wlan.ssid == ssid)]
 		removed = len(self.connections[iface]) < before
-		self._log(f"removeConnection(): {iface} ssid={ssid!r} removed={removed}")
+		self.log(f"removeConnection(): {iface} ssid={ssid!r} removed={removed}")
 		return removed
 
 	def setNameservers(self, servers: list):
@@ -1451,25 +1448,25 @@ class NetworkManager:
 		adapter = self.adapters.get(iface)
 		if adapter and not adapter.isWlan:
 			def _lanUp(retval: int):
-				self._log(f"activateInterface(): {iface} (LAN) ifup retval={retval}")
+				self.log(f"activateInterface(): {iface} (LAN) ifup retval={retval}")
 				self._notifyNetworkPlugins(True)
 				if callback:
 					callback(retval == 0)
-			self._log(f"activateInterface(): {iface} (LAN) ifup")
-			self._pendingRestart = ServiceAction.ifup(iface, _lanUp)
+			self.log(f"activateInterface(): {iface} (LAN) ifup")
+			self.pendingRestart = ServiceAction.ifup(iface, _lanUp)
 			return
 
 		def _wlanUp(retval: bool = True):
-			self._log(f"activateInterface(): {iface} (WLAN) done")
+			self.log(f"activateInterface(): {iface} (WLAN) done")
 			self._notifyNetworkPlugins(True)
 			if callback:
 				callback(True)
 		try:
 			cmds = self.activateCommands(iface)
-			self._log(f"activateInterface(): {iface} (WLAN) commands={cmds}")
+			self.log(f"activateInterface(): {iface} (WLAN) commands={cmds}")
 			Console().eBatch(cmds, lambda result: _wlanUp(), debug=True)
 		except Exception as e:
-			self._log(f"activateInterface(): {iface} (WLAN) failed: {e}")
+			self.log(f"activateInterface(): {iface} (WLAN) failed: {e}")
 			if callback:
 				callback(False)
 
@@ -1496,7 +1493,7 @@ class NetworkManager:
 			cmds.append(f"{wpaCliBin} -i{iface} reassociate")
 		else:
 			cmds.extend(WlanRuntime(adapter).commandsActivate(targetConn))
-		self._log(f"switchWlanConnection(): {iface} ssid={targetConn.wlan.ssid if targetConn.wlan else '?'!r} viaWpaCli={viaWpaCli} cmds={cmds}")
+		self.log(f"switchWlanConnection(): {iface} ssid={targetConn.wlan.ssid if targetConn.wlan else '?'!r} viaWpaCli={viaWpaCli} cmds={cmds}")
 		return cmds
 
 	def getWlanNetworkList(self, iface: str) -> list[str]:
@@ -1505,7 +1502,7 @@ class NetworkManager:
 	def wpaSupplicantRunning(self, iface: str) -> bool:
 		adapter = self.adapters.get(iface)
 		running = exists(adapter.wpaCtrlPath) if adapter else False
-		self._log(f"wpaSupplicantRunning(): {iface} = {running}")
+		self.log(f"wpaSupplicantRunning(): {iface} = {running}")
 		return running
 
 	def getWlanStatus(self, iface: str) -> dict:
@@ -1520,8 +1517,8 @@ class NetworkManager:
 				if sep:
 					result[key.strip()] = val.strip()
 		except Exception as e:
-			self._log(f"getWlanStatus(): {iface} wpa_cli failed: {e}")
-		self._log(f"getWlanStatus(): {iface} = {result}")
+			self.log(f"getWlanStatus(): {iface} wpa_cli failed: {e}")
+		self.log(f"getWlanStatus(): {iface} = {result}")
 		return result
 
 	def setBgscan(self, iface: str, bgscan: str):
@@ -1616,7 +1613,7 @@ class NetworkManager:
 		if adapter is None or adapter.isWlan:
 			return choices
 		mask = adapter.netInfo.linkSupported
-		for _ethtoolMode, (bits, label) in _LINKSPEED_BITS.items():
+		for _ethtoolMode, (bits, label) in self.LINKSPEED_BITS.items():
 			if mask & bits:
 				choices.append((f"{bits:#04x}", label))
 		return choices
@@ -1648,7 +1645,7 @@ class NetworkManager:
 				pass
 
 	# Update adapter runtime state from /var/run/netinfo without a full rescan.
-	def _applyNetinfo(self):
+	def applyNetinfo(self):
 		try:
 			with open(netinfoPath, encoding="utf-8") as fh:
 				info = json.loads(fh.read())
@@ -1702,12 +1699,12 @@ class NetworkManager:
 					adapter.canWakeOnLan = True
 
 	def _onNetinfoUpdate(self):
-		self._log("_onNetinfoUpdate()")
-		self._applyNetinfo()
+		self.log("_onNetinfoUpdate()")
+		self.applyNetinfo()
 		self._notifyAdaptersChanged()
 
 	def _onLinkChange(self, iface: str, up: bool, running: bool):
-		self._log(f"_onLinkChange(): {iface} up={up} running={running}")
+		self.log(f"_onLinkChange(): {iface} up={up} running={running}")
 		adapter = self.adapters.get(iface)
 		if adapter:
 			netInfo = adapter.netInfo
@@ -1731,7 +1728,7 @@ class NetworkManager:
 		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_INFO, timeout=4, customIcon=icon)
 
 	def _onIpChange(self, iface: str, ipPrefix: str):
-		self._log(f"_onIpChange(): {iface} ipPrefix={ipPrefix}")
+		self.log(f"_onIpChange(): {iface} ipPrefix={ipPrefix}")
 		adapter = self.adapters.get(iface)
 		if adapter:
 			adapter.netInfo.ip = _parseIp4(ipPrefix.split("/")[0])
@@ -1746,7 +1743,7 @@ class NetworkManager:
 				conn := self.activeConnection(iface)
 			) is not None and (conn.dhcp or conn.gateway != [0, 0, 0, 0])
 		]
-		self._log(f"checkConnectionInternet(): candidates={candidates}")
+		self.log(f"checkConnectionInternet(): candidates={candidates}")
 		if not candidates:
 			callback({})
 			return
@@ -1758,7 +1755,7 @@ class NetworkManager:
 			results[iface] = ok
 			remaining[0] -= 1
 			if remaining[0] == 0:
-				self._log(f"checkConnectionInternet(): results={results}")
+				self.log(f"checkConnectionInternet(): results={results}")
 				callback(results)
 
 		def _fallbackDone(iface: str, exitCode: int):
@@ -1774,23 +1771,23 @@ class NetworkManager:
 			ServiceAction.ping(iface, "8.8.8.8", lambda ec, iface=iface: _primaryDone(iface, ec))
 
 	def _onIfaceAdd(self, iface: str):
-		self._log(f"_onIfaceAdd(): {iface}")
+		self.log(f"_onIfaceAdd(): {iface}")
 		if iface not in self.adapters:
-			# Same reasoning as restartNetwork(): _discoverAdapters() alone
+			# Same reasoning as restartNetwork(): discoverAdapters() alone
 			# resets adapterEnabled to its dataclass default – restore the
 			# persisted config on top (e.g. a re-plugged USB WiFi dongle).
-			self._discoverAdapters()
-			self._loadInterfacesFile()
-			self._loadWpaSupplicantFiles()
+			self.discoverAdapters()
+			self.loadInterfacesFile()
+			self.loadWpaSupplicantFiles()
 		self._notifyAdaptersChanged()
 
 	def _onIfaceRemove(self, iface: str):
-		self._log(f"_onIfaceRemove(): {iface}")
+		self.log(f"_onIfaceRemove(): {iface}")
 		self.adapters.pop(iface, None)
 		self._notifyAdaptersChanged()
 
 	def _onScanTrigger(self, iface: str):
-		self._log(f"_onScanTrigger(): {iface}")
+		self.log(f"_onScanTrigger(): {iface}")
 		pass  # placeholder: trigger wpa_cli scan when WLAN comes up
 
 

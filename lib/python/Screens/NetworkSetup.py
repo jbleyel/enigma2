@@ -402,16 +402,16 @@ class DnsSettings(Setup):
 class InformationNetworkConnection(InformationBase):
 	def __init__(self, session, conn, adapter):
 		InformationBase.__init__(self, session)
-		self._conn = conn
-		self._adapter = adapter
+		self.conn = conn
+		self.adapter = adapter
 		title = _("Network Connection Information") if conn is not None else _("Network Adapter Information")
 		self.setTitle(title)
 		self.skinName.insert(0, "InformationNetworkConnection")
 		self["key_green"] = StaticText(_("Refresh"))
 
 	def displayInformation(self):
-		conn = self._conn
-		adapter = self._adapter
+		conn = self.conn
+		adapter = self.adapter
 		info = []
 
 		if conn is not None:
@@ -496,8 +496,9 @@ class NetworkOverview(Screen):
 	comes from the profile list only while it has focus: None while an
 	adapter row is current, set while a connection (Wi-Fi profile) row is."""
 
-	OVERVIEW_ICON_LAN = "\uea5a"   # settings_ethernet
-	OVERVIEW_ICON_WIFI = "\ue9fe"  # wifi
+	GLYPH_LAN = "\uea5a"   # settings_ethernet
+	GLYPH_WIFI = "\ue9fe"  # wifi
+	GLYPH_INET = "\uEA5B"  # globe
 
 	OVERVIEW_COLOR_GOOD = gRGB(0x0000CC00).argb()  # green – connected
 	OVERVIEW_COLOR_BAD = gRGB(0x00CC0000).argb()   # red   – LAN without link
@@ -523,8 +524,9 @@ class NetworkOverview(Screen):
 		"IpAddress": 7,
 		"Gateway": 8,
 		"Speed": 9,
+		"InetGlyph": 10,
 	}
-	INDEX_ADAPTER = 10
+	INDEX_ADAPTER = 11
 
 	# Position 0 is data[0], the <rowtemplate> selector (see OVERVIEW_TEMPLATE_*) –
 	# reserved here (not a real field) so indexNames still covers 0..len-1
@@ -541,47 +543,50 @@ class NetworkOverview(Screen):
 	}
 	INDEX_CONNECTION = 8
 
+	TEXT_KNOWN_NETWORKS = _("Known Wireless Networks")
+
 	skin = """
 	<screen name="NetworkOverview" title="Network Overview" position="center,center" size="1220,660" resolution="1280,720">
 		<widget source="adaptersLabel" render="Label" position="10,8" size="400,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center" />
 		<widget source="adapterList" render="Listbox" position="10,42" size="1200,282" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="enigma2icons;34,Regular;24,Regular;18" itemHeight="70" colors="#0000CC00,#00CC0000,#00808080">
+			<template name="Default" fonts="enigma2icons;34,Regular;24,Regular;18,enigma2icons;20" itemHeight="60" colors="#0000CC00,#00CC0000,#00808080">
 				<rowtemplate>
-					<text index="Mac" position="490,0" size="190,70" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="IpAddress" position="690,0" size="140,70" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Gateway" position="840,0" size="140,70" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Speed" position="990,0" size="200,70" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Mac" position="490,0" size="190,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="IpAddress" position="690,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Gateway" position="840,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Speed" position="990,0" size="200,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 				</rowtemplate>
 				<rowtemplate>
-					<text index="AdapterGlyph" position="14,10" size="46,50" font="0" horizontalAlignment="center" verticalAlignment="center" />
-					<text index="AdapterName" position="74,8" size="230,30" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="AdapterKind" position="74,38" size="230,26" font="2" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="StatusText" position="320,0" size="160,70" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColor" />
-					<text index="Mac" position="490,0" size="190,70" font="2" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="IpAddress" position="690,0" size="140,70" font="2" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Gateway" position="840,0" size="140,70" font="2" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Speed" position="990,0" size="200,70" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="AdapterGlyph" position="14,7" size="46,46" font="0" horizontalAlignment="center" verticalAlignment="center" />
+					<text index="AdapterName" position="74,6" size="230,26" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="AdapterKind" position="74,32" size="230,22" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="InetGlyph" position="280,20" size="20,20" font="3" horizontalAlignment="center" verticalAlignment="center" />
+					<text index="StatusText" position="320,0" size="160,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColor" />
+					<text index="Mac" position="490,0" size="190,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="IpAddress" position="690,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Gateway" position="840,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Speed" position="990,0" size="200,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
 				</rowtemplate>
 			</template>
 		</widget>
-		<widget source="profilesLabel" render="Label" position="10,340" size="700,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center" />
-		<widget source="profileList" render="Listbox" position="10,374" size="1200,168" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="Regular;22,Regular;18" itemHeight="56" colors="#0000CC00,#00CC0000,#00808080">
+		<widget source="knownNetworksLabel" render="Label" position="10,340" size="700,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center" />
+		<widget source="knownNetworksList" render="Listbox" position="10,374" size="1200,168" scrollbarMode="showOnDemand">
+			<template name="Default" fonts="Regular;22,Regular;18" itemHeight="50" colors="#0000CC00,#00CC0000,#00808080">
 				<rowtemplate>
-					<text index="Ssid" position="20,0" size="280,56" font="0" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Bssid" position="310,0" size="220,56" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Frequency" position="540,0" size="120,56" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Channel" position="670,0" size="140,56" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Encryption" position="820,0" size="190,56" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="StatusText" position="1020,0" size="180,56" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Ssid" position="20,0" size="280,50" font="0" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Bssid" position="310,0" size="220,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Frequency" position="540,0" size="120,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Channel" position="670,0" size="140,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Encryption" position="820,0" size="190,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="StatusText" position="1020,0" size="180,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 				</rowtemplate>
 				<rowtemplate>
-					<text index="Ssid" position="20,0" size="280,56" font="0" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Bssid" position="310,0" size="220,56" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Frequency" position="540,0" size="120,56" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Channel" position="670,0" size="140,56" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Encryption" position="820,0" size="190,56" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="StatusText" position="1020,0" size="180,56" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColor" />
+					<text index="Ssid" position="20,0" size="280,50" font="0" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Bssid" position="310,0" size="220,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Frequency" position="540,0" size="120,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Channel" position="670,0" size="140,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Encryption" position="820,0" size="190,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="StatusText" position="1020,0" size="180,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColor" />
 				</rowtemplate>
 			</template>
 		</widget>
@@ -608,17 +613,18 @@ class NetworkOverview(Screen):
 
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
+		self.skinName = "AA"
 		self.setTitle(_("Network Overview"))
-		self["adaptersLabel"] = StaticText(_("Adapters"))
-		self["profilesLabel"] = StaticText(_("Wireless Profiles"))
+		self["adaptersLabel"] = StaticText(_("Interfaces"))
+		self["knownNetworksLabel"] = StaticText(self.TEXT_KNOWN_NETWORKS)
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText("")
 		self["key_yellow"] = StaticText("")
 		self["adapterList"] = List([], indexNames=self.ADAPTER_INDEX_NAMES)
-		self["profileList"] = List([], indexNames=self.PROFILE_INDEX_NAMES)
-		self.currentList = "adapterList"  # "adapterList" | "profileList" – which list up/down/OK/green/etc. act on
+		self["knownNetworksList"] = List([], indexNames=self.PROFILE_INDEX_NAMES)
+		self.currentList = "adapterList"  # "adapterList" | "knownNetworksList" – which list up/down/OK/green/etc. act on
 		self["adapterList"].onSelectionChanged.append(self.updateProfiles)
-		self["profileList"].onSelectionChanged.append(self.updateKeyGreen)
+		self["knownNetworksList"].onSelectionChanged.append(self.updateKeyGreen)
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions", "InfoActions", "NavigationActions"], {
 			"ok": (self.keyOK, _("Open settings for the selected item")),
 			"cancel": (self.close, _("Close network overview")),
@@ -635,27 +641,42 @@ class NetworkOverview(Screen):
 		}, prio=0, description=_("Network Overview Actions"))
 		self.onLayoutFinish.append(self.layoutFinished)
 		networkManager.onAdaptersChanged.append(self.buildAdapters)
+		self.internetChecked = False
+		self.internetResult = None
+		self.onShown.append(self.checkInternet)
 		self.onClose.append(lambda: networkManager.onAdaptersChanged.remove(self.buildAdapters) if self.buildAdapters in networkManager.onAdaptersChanged else None)
 
 	def layoutFinished(self):
 		self["adapterList"].enableAutoNavigation(False)
-		self["profileList"].enableAutoNavigation(False)
+		self["adapterList"].setLockFirstRow(True)
+		self["knownNetworksList"].enableAutoNavigation(False)
+		self["knownNetworksList"].setLockFirstRow(True)
 		self.buildAdapters()
 		self.setListFocus("adapterList")
 
 	def setListFocus(self, sourceName: str):
 		self.currentList = sourceName
 		self["adapterList"].selectionEnabled(sourceName == "adapterList")
-		self["profileList"].selectionEnabled(sourceName == "profileList")
+		self["knownNetworksList"].selectionEnabled(sourceName == "knownNetworksList")
 		self.updateKeyGreen()
 
+	def checkInternet(self):
+		def checkInternetCallback(result):
+			if hasattr(self, "internetResult"):
+				self.internetResult = result
+				self.buildAdapters()
+				self.internetChecked = True
+
+		if not self.internetChecked:
+			networkManager.checkConnectionInternet(callback=checkInternetCallback)
+
 	def keyLeft(self):
-		if self.currentList == "profileList":
+		if self.currentList == "knownNetworksList":
 			self.setListFocus("adapterList")
 
 	def keyRight(self):
-		if self.currentList == "adapterList" and self["profileList"].count():
-			self.setListFocus("profileList")
+		if self.currentList == "adapterList" and self["knownNetworksList"].count():
+			self.setListFocus("knownNetworksList")
 
 	def keyUp(self):
 		self[self.currentList].goLineUp()
@@ -668,8 +689,8 @@ class NetworkOverview(Screen):
 		return entry[self.INDEX_ADAPTER] if entry is not None else None
 
 	def currentConnection(self) -> Connection | None:
-		if self.currentList == "profileList":
-			entry = self["profileList"].getCurrent()
+		if self.currentList == "knownNetworksList":
+			entry = self["knownNetworksList"].getCurrent()
 			return entry[self.INDEX_CONNECTION] if entry is not None else None
 		else:
 			return None
@@ -717,6 +738,7 @@ class NetworkOverview(Screen):
 				_("IP Address"),     # IpAddress
 				_("Gateway"),        # Gateway
 				_("Speed"),          # Speed
+				None,                # InetGlyph
 				None,                # -> INDEX_ADAPTER
 			)
 
@@ -736,9 +758,12 @@ class NetworkOverview(Screen):
 				speed = f"{net.bitrateBps // 1000000} Mbit/s" if net.bitrateBps else "—"
 			else:
 				speed = formatNetworkSpeed(net.speed) if net.speed > 0 else "—"
+
+			internet = adapter.adapterEnabled and self.internetResult and self.internetResult.get(adapter.name)
+			inetGlyph = self.GLYPH_INET if internet else ""
 			return (
 				self.OVERVIEW_TEMPLATE_ROW,
-				self.OVERVIEW_ICON_WIFI if adapter.isWlan else self.OVERVIEW_ICON_LAN,  # AdapterGlyph
+				self.GLYPH_WIFI if adapter.isWlan else self.GLYPH_LAN,  # AdapterGlyph
 				adapter.name,                                                 # AdapterName
 				kind,                                                         # AdapterKind
 				statusText,                                                   # StatusText
@@ -747,6 +772,7 @@ class NetworkOverview(Screen):
 				_ip4Str(net.ip) or "—",                                  # IpAddress
 				_ip4Str(net.gateway) or "—",                             # Gateway
 				speed,                                                        # Speed
+				inetGlyph,                                                    # InetGlyph
 				adapter,                                                      # -> INDEX_ADAPTER
 			)
 
@@ -767,7 +793,7 @@ class NetworkOverview(Screen):
 		return [conn for conn in networkManager.getConnections(adapter.name) if conn.wlan and conn.wlan.ssid]
 
 	def updateProfiles(self):
-		good, _bad, idle = self.overviewColors("profileList")
+		good, _bad, idle = self.overviewColors("knownNetworksList")
 
 		def buildOverviewProfileHeaderRow() -> tuple:
 			"""First row of the profile listbox, rendered via <rowtemplate> #0 – column
@@ -816,20 +842,20 @@ class NetworkOverview(Screen):
 
 		adapter = self.currentAdapter()
 		if adapter is None or not adapter.isWlan:
-			self["profileList"].setList([])
-			self["profilesLabel"].setText(_("Wireless Profiles"))
+			self["knownNetworksList"].setList([])
+			self["knownNetworksLabel"].setText(self.TEXT_KNOWN_NETWORKS)
 		else:
 			profiles = self.overviewWlanProfiles(adapter)
 			rows = [buildOverviewProfileRow(conn, adapter) for conn in profiles]
 			hasRows = bool(rows)
 			if hasRows:
 				rows.insert(0, buildOverviewProfileHeaderRow())
-			self["profileList"].setList(rows)
-			self.markHeaderNotSelectable("profileList")
+			self["knownNetworksList"].setList(rows)
+			self.markHeaderNotSelectable("knownNetworksList")
 			if hasRows:
-				self["profileList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
-			self["profilesLabel"].setText(f"{_('Wireless Profiles')} · {adapter.name} · {len(profiles)}")
-		if self.currentList == "profileList" and not self["profileList"].count():
+				self["knownNetworksList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
+			self["knownNetworksLabel"].setText(f"{self.TEXT_KNOWN_NETWORKS} · {adapter.name} · {len(profiles)}")
+		if self.currentList == "knownNetworksList" and not self["knownNetworksList"].count():
 			self.setListFocus("adapterList")
 		else:
 			self.updateKeyGreen()
@@ -851,19 +877,17 @@ class NetworkOverview(Screen):
 
 	def keyGreen(self):
 		adapter = self.currentAdapter()
-		if adapter is None:
-			return
-		conn = self.currentConnection()
-		if conn is None or not adapter.isWlan:
-			self.toggleAdapter(adapter)
-		else:
-			self._activateWlanConnection(conn, adapter)
+		if adapter:
+			conn = self.currentConnection()
+			if conn is None or not adapter.isWlan:
+				self.toggleAdapter(adapter)
+			else:
+				self._activateWlanConnection(conn, adapter)
 
 	def keyInfo(self):
 		adapter = self.currentAdapter()
-		if adapter is None:
-			return
-		self.session.open(InformationNetworkConnection, self.currentConnection(), adapter)
+		if adapter:
+			self.session.open(InformationNetworkConnection, self.currentConnection(), adapter)
 
 	def updateKeyGreen(self):
 		adapter = self.currentAdapter()
@@ -881,9 +905,8 @@ class NetworkOverview(Screen):
 
 	def keyMenu(self):
 		adapter = self.currentAdapter()
-		if adapter is None:
-			return
-		self.showContextMenu(self.currentConnection(), adapter)
+		if adapter:
+			self.showContextMenu(self.currentConnection(), adapter)
 
 	def keyYellow(self):
 		if networkManager.adapters:
@@ -1057,9 +1080,9 @@ class NetworkAdapterSetup(Setup):
 	"""Setup screen for one Adapter's IP config, Wake-on-LAN/WiFi and link speed."""
 
 	def __init__(self, session, adapter: Adapter):
-		self._adapter = adapter
-		self._conn = networkManager.getBaseConnection(adapter.name)
-		self._buildConfigObjects()
+		self.adapter = adapter
+		self.conn = networkManager.getBaseConnection(adapter.name)
+		self.buildConfigObjects()
 		Setup.__init__(self, session=session, setup="NetworkAdapter")
 		self.setTitle(_("Network Adapter Settings – %s") % adapter.name)
 		self["key_info"] = StaticText(_("Info"))
@@ -1068,11 +1091,11 @@ class NetworkAdapterSetup(Setup):
 		}, prio=0)
 
 	def keyShowInfo(self):
-		self.session.open(InformationNetworkConnection, self._conn, self._adapter)
+		self.session.open(InformationNetworkConnection, self.conn, self.adapter)
 
-	def _buildConfigObjects(self):
-		adapter = self._adapter
-		conn = self._conn
+	def buildConfigObjects(self):
+		adapter = self.adapter
+		conn = self.conn
 
 		self.cfgEnabled = NoSave(ConfigYesNo(default=adapter.adapterEnabled))
 		self.cfgIpMode = NoSave(ConfigSelection(
@@ -1120,8 +1143,8 @@ class NetworkAdapterSetup(Setup):
 		self.cfgWowOnly = NoSave(ConfigYesNo(default=conn.wakeOnWiFi and not adapter.adapterEnabled))
 
 	def keySave(self):
-		adapter = self._adapter
-		conn = self._conn
+		adapter = self.adapter
+		conn = self.conn
 
 		# Snapshot the fields that matter for connectivity before we overwrite
 		# them, so we know afterwards whether this needs a full restart
@@ -1207,9 +1230,9 @@ class NetworkConnectionWiFi(Setup):
 	)
 
 	def __init__(self, session, conn: Connection, adapter: Adapter):
-		self._conn = conn
-		self._adapter = adapter
-		self._buildConfigObjects()
+		self.conn = conn
+		self.adapter = adapter
+		self.buildConfigObjects()
 		Setup.__init__(self, session=session, setup="NetworkConnectionWiFi")
 		self.setTitle(_("Wi-Fi Connection Settings – %s") % conn.adapter)
 		self["key_info"] = StaticText(_("Info"))
@@ -1218,12 +1241,11 @@ class NetworkConnectionWiFi(Setup):
 		}, prio=0)
 
 	def keyShowInfo(self):
-		self.session.open(InformationNetworkConnection, self._conn, self._adapter)
+		self.session.open(InformationNetworkConnection, self.conn, self.adapter)
 
-	def _buildConfigObjects(self):
-		conn = self._conn
-		adapter = self._adapter
-
+	def buildConfigObjects(self):
+		conn = self.conn
+		adapter = self.adapter
 		self.cfgEnabled = NoSave(ConfigYesNo(default=conn.enabled))
 
 		wlanConns = [x for x in networkManager.getConnections(adapter.name) if x.isWlan and x.wlan and x.wlan.ssid]
@@ -1255,8 +1277,8 @@ class NetworkConnectionWiFi(Setup):
 		self.cfgKey = NoSave(ConfigPassword(default=wlan.key, fixed_size=False))
 
 	def keySave(self):
-		conn = self._conn
-		adapter = self._adapter
+		conn = self.conn
+		adapter = self.adapter
 
 		conn.enabled = self.cfgEnabled.value
 		if self._hasMultiplePriorities:
@@ -1292,12 +1314,7 @@ class NetworkConnectionWiFi(Setup):
 		if ip:
 			self.close((False, True, ip))
 		else:
-			self.session.openWithCallback(
-				self.wifiRetryChoice,
-				MessageBox,
-				_("Could not verify the Wi-Fi connection.\n\nDo you want to change the settings again?"),
-				type=MessageBox.TYPE_YESNO,
-			)
+			self.session.openWithCallback(self.wifiRetryChoice, MessageBox, _("Could not verify the Wi-Fi connection.\n\nDo you want to change the settings again?"), type=MessageBox.TYPE_YESNO)
 
 	def wifiRetryChoice(self, retry):
 		if not retry:
@@ -1442,7 +1459,7 @@ class NetworkWiFiScanScreen(Screen):
 				self.scanning = False
 				if isinstance(results, bytes):
 					results = results.decode("UTF-8", errors="replace")
-				for accessPoint in self._parseIwlist(results):
+				for accessPoint in self.parseIwlist(results):
 					self.accessPoints[accessPoint.bssid] = accessPoint
 				if self.accessPoints:
 					accessPointList = []
@@ -1478,7 +1495,7 @@ class NetworkWiFiScanScreen(Screen):
 			else:
 				self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=startScanCallback)
 
-	def _parseIwlist(self, raw: str) -> list[ScanResult]:
+	def parseIwlist(self, raw: str) -> list[ScanResult]:
 		results: list[ScanResult] = []
 		current: ScanResult | None = None
 
@@ -1553,53 +1570,53 @@ class NetworkWiFiActivator(Screen):
 
 	def __init__(self, session, conn: Connection, adapter: Adapter):
 		Screen.__init__(self, session)
-		self._conn = conn
-		self._adapter = adapter
-		self._serviceAction = None
-		self._pollTimer = None
-		self._closeTimer = None
-		self._pollCount = 0
+		self.conn = conn
+		self.adapter = adapter
+		self.serviceAction = None
+		self.pollTimer = None
+		self.closeTimer = None
+		self.pollCount = 0
 		self["status"] = Label(_("Connecting…"))
-		self.onLayoutFinish.append(self._start)
+		self.onLayoutFinish.append(self.start)
 
-	def _start(self):
+	def start(self):
+		def connectedCb(retval: int):
+			if retval != 0:
+				self["status"].setText(self.diagnoseFailure())
+				self.scheduleClose(6000, "")
+				return
+			self.pollCount = 0
+			self["status"].setText(_("Waiting for IP address…"))
+			self.pollTimer = eTimer()
+			self.pollTimer.callback.append(self.checkIp)
+			self.pollTimer.start(self._pollIntervalMs, True)
+
 		self["status"].setText(_("Connecting…"))
-		self._serviceAction = ServiceAction.wlanActivate(self._adapter.name, self._connectedCb)
+		self.serviceAction = ServiceAction.wlanActivate(self.adapter.name, connectedCb)
 
-	def _connectedCb(self, retval: int):
-		if retval != 0:
-			self["status"].setText(self._diagnoseFailure())
-			self._scheduleClose(6000, "")
-			return
-		self._pollCount = 0
-		self["status"].setText(_("Waiting for IP address…"))
-		self._pollTimer = eTimer()
-		self._pollTimer.callback.append(self._checkIp)
-		self._pollTimer.start(self._pollIntervalMs, True)
-
-	def _checkIp(self):
-		iface = self._adapter.name
-		self._pollCount += 1
-		ip = self._getKernelIp(iface)
+	def checkIp(self):
+		iface = self.adapter.name
+		self.pollCount += 1
+		ip = self.getKernelIp(iface)
 		if ip and ip not in ("0.0.0.0", ""):
-			self._pollTimer.stop()
-			ssid = self._conn.wlan.ssid if self._conn.wlan else iface
+			self.pollTimer.stop()
+			ssid = self.conn.wlan.ssid if self.conn.wlan else iface
 			self["status"].setText(_("Connected to '%s'\nIP: %s") % (ssid, ip))
-			self._scheduleClose(2500, ip)
-		elif self._pollCount >= self._pollMaxAttempts:
-			self._pollTimer.stop()
-			self["status"].setText(self._diagnoseFailure())
-			self._scheduleClose(6000, "")
+			self.scheduleClose(2500, ip)
+		elif self.pollCount >= self._pollMaxAttempts:
+			self.pollTimer.stop()
+			self["status"].setText(self.diagnoseFailure())
+			self.scheduleClose(6000, "")
 		else:
-			self._pollTimer.start(self._pollIntervalMs, True)
+			self.pollTimer.start(self._pollIntervalMs, True)
 
-	def _diagnoseFailure(self) -> str:
+	def diagnoseFailure(self) -> str:
 		"""Best-effort explanation of *why* the connection attempt failed, based on
 		wpa_supplicant's association state (wpa_cli status) – distinguishes a
 		missing/unreachable AP, a wrong key, and DHCP-only failures instead of a
 		single generic "failed" message."""
-		iface = self._adapter.name
-		ssid = self._conn.wlan.ssid if self._conn.wlan else iface
+		iface = self.adapter.name
+		ssid = self.conn.wlan.ssid if self.conn.wlan else iface
 		if not networkManager.wpaSupplicantRunning(iface):
 			reason = _("Could not connect to '%s'.\nWi-Fi driver (wpa_supplicant) did not start – check your Wi-Fi settings.") % ssid
 		else:
@@ -1615,17 +1632,17 @@ class NetworkWiFiActivator(Screen):
 		return reason + "\n" + _("Configuration saved – will retry automatically at next boot.")
 
 	@staticmethod
-	def _getKernelIp(iface: str) -> str:
+	def getKernelIp(iface: str) -> str:
 		addrs = netifaces.ifaddresses(iface)
 		result = ""
 		if netifaces.AF_INET in addrs:
 			result = addrs[netifaces.AF_INET][0].get("addr", "")
 		return result
 
-	def _scheduleClose(self, delayMs: int, ip: str):
-		self._closeTimer = eTimer()
-		self._closeTimer.callback.append(lambda: self.close(ip))
-		self._closeTimer.start(delayMs, True)
+	def scheduleClose(self, delayMs: int, ip: str):
+		self.closeTimer = eTimer()
+		self.closeTimer.callback.append(lambda: self.close(ip))
+		self.closeTimer.start(delayMs, True)
 
 
 # ===========================================================================
@@ -1638,26 +1655,26 @@ class NetworkWiFiAddFlow:
 	@staticmethod
 	def start(session, adapter: Adapter | None = None, callback=None):
 		if adapter is not None:
-			NetworkWiFiAddFlow._openScan(session, adapter, callback)
+			NetworkWiFiAddFlow.openScan(session, adapter, callback)
 		else:
 			wlanAdapters = [x for x in networkManager.adapters.values() if x.isWlan]
 			if not wlanAdapters:
 				session.showWarning(_("No Wi-Fi adapter found."))
 			elif len(wlanAdapters) == 1:
-				NetworkWiFiAddFlow._openScan(session, wlanAdapters[0], callback)
+				NetworkWiFiAddFlow.openScan(session, wlanAdapters[0], callback)
 			else:
-				NetworkWiFiAddFlow._pickAdapter(session, wlanAdapters, callback)
+				NetworkWiFiAddFlow.pickAdapter(session, wlanAdapters, callback)
 
 	@staticmethod
-	def _openScan(session, adapter: Adapter, callback):
-		def _scanned(result: ScanResult | None):
+	def openScan(session, adapter: Adapter, callback):
+		def scanned(result: ScanResult | None):
 			if result is None:
 				if callback:
 					callback()
 				return
 			conn = scanResultToConnection(result, adapter.name)
 
-			def _setupDone(*result):
+			def setupDone(*result):
 				# NetworkConnectionWiFi.close() shape varies: no args (cancel), a bare
 				# bool, or a (recursive, saved, ip) tuple (see setupClosed).
 				# For Wi-Fi, "ip" is the address NetworkWiFiActivator already verified,
@@ -1675,21 +1692,21 @@ class NetworkWiFiAddFlow:
 						networkManager.save()
 				if callback:
 					callback(ip)
-			session.openWithCallback(_setupDone, NetworkConnectionWiFi, conn, adapter)
-		session.openWithCallback(_scanned, NetworkWiFiScanScreen, adapter)
+			session.openWithCallback(setupDone, NetworkConnectionWiFi, conn, adapter)
+		session.openWithCallback(scanned, NetworkWiFiScanScreen, adapter)
 
 	@staticmethod
-	def _pickAdapter(session, adapters: list[Adapter], callback):
+	def pickAdapter(session, adapters: list[Adapter], callback):
 		choices = [(x.name, x) for x in adapters]
 
-		def _chosen(adapter):
+		def chosen(adapter):
 			if not adapter:
 				if callback:
 					callback()
 				return
-			NetworkWiFiAddFlow._openScan(session, adapter, callback)
+			NetworkWiFiAddFlow.openScan(session, adapter, callback)
 
-		session.openWithCallback(_chosen, MessageBox, _("Select Wi-Fi adapter"), type=MessageBox.TYPE_YESNO, list=choices)
+		session.openWithCallback(chosen, MessageBox, _("Select Wi-Fi adapter"), type=MessageBox.TYPE_YESNO, list=choices)
 
 
 # ===========================================================================
@@ -1799,7 +1816,6 @@ class NetworkTest(Screen):
 		self.start()
 
 	def start(self):
-
 		def setRow(idx: int, state: str, result: str, detail: str):
 			glyph, color = self.STATES[state]
 			row = list(self.rows[idx])
