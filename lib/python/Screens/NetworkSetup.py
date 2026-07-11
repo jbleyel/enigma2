@@ -2,7 +2,7 @@
 NetworkSetup.py – Network connection screens for Enigma2 / OpenATV
 
 Screens:
-	NetworkOverview             – adapters + Wi-Fi profiles, two XmlMultiContent listboxes
+	NetworkOverview             – adapters + Wi-Fi connections, two XmlMultiContent listboxes
 	NetworkAdapterSetup         – per-adapter DHCP/IP/DNS/WOL/WWOL/link speed (interfaces file)
 	NetworkConnectionWiFi       – per-SSID profile settings (wpa_supplicant.conf only)
 	DnsSettings                 – global system DNS (config.usage.dns.*, networkManager)
@@ -485,16 +485,16 @@ class InformationNetworkConnection(InformationBase):
 
 
 # ===========================================================================
-# NetworkOverview – adapters (top list) + Wi-Fi profiles of the selected
+# NetworkOverview – adapters (top list) + Wi-Fi connections of the selected
 # adapter (bottom list), as two independent XmlMultiContent listboxes rather
-# than a single indented tree – LAN never gets a profile row of its own.
+# than a single indented tree – LAN never gets a connection row of its own.
 # ===========================================================================
 
 
 class NetworkOverview(Screen):
-	"""Adapters on top, Wi-Fi profiles of the selected adapter below. 'conn'
-	comes from the profile list only while it has focus: None while an
-	adapter row is current, set while a connection (Wi-Fi profile) row is."""
+	"""Adapters on top, Wi-Fi connections of the selected adapter below. 'conn'
+	comes from the connection list only while it has focus: None while an
+	adapter row is current, set while a connection row is."""
 
 	GLYPH_LAN = "\uea5a"   # settings_ethernet
 	GLYPH_WIFI = "\ue9fe"  # wifi
@@ -502,7 +502,7 @@ class NetworkOverview(Screen):
 
 	OVERVIEW_COLOR_GOOD = gRGB(0x0000CC00).argb()  # green – connected
 	OVERVIEW_COLOR_BAD = gRGB(0x00CC0000).argb()   # red   – LAN without link
-	OVERVIEW_COLOR_IDLE = gRGB(0x00808080).argb()  # gray  – disabled / not associated / saved profile
+	OVERVIEW_COLOR_IDLE = gRGB(0x00808080).argb()  # gray  – disabled / not associated / saved connection
 
 	# data[0] of every row selects which <rowtemplate> renders it (see setTemplates()/
 	# selectTemplate() in elistboxcontent.cpp) – it does not shift the other fields'
@@ -531,7 +531,7 @@ class NetworkOverview(Screen):
 	# Position 0 is data[0], the <rowtemplate> selector (see OVERVIEW_TEMPLATE_*) –
 	# reserved here (not a real field) so indexNames still covers 0..len-1
 	# contiguously, which XmlMultiContent's index-name bounds check requires.
-	PROFILE_INDEX_NAMES = {
+	CONNECTION_INDEX_NAMES = {
 		"_rowTemplate": 0,
 		"Ssid": 1,
 		"Bssid": 2,
@@ -548,7 +548,7 @@ class NetworkOverview(Screen):
 	skin = """
 	<screen name="NetworkOverview" title="Network Overview" position="center,center" size="1220,660" resolution="1280,720">
 		<widget source="adaptersLabel" render="Label" position="10,8" size="400,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center" />
-		<widget source="adapterList" render="Listbox" position="10,42" size="1200,282" scrollbarMode="showOnDemand">
+		<widget source="adapterList" render="Listbox" position="10,42" size="1200,300" scrollbarMode="showOnDemand">
 			<template name="Default" fonts="enigma2icons;34,Regular;24,Regular;18,enigma2icons;20" itemHeight="60" colors="#0000CC00,#00CC0000,#00808080">
 				<rowtemplate>
 					<text index="Mac" position="490,0" size="190,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
@@ -570,23 +570,23 @@ class NetworkOverview(Screen):
 			</template>
 		</widget>
 		<widget source="knownNetworksLabel" render="Label" position="10,340" size="700,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center" />
-		<widget source="knownNetworksList" render="Listbox" position="10,374" size="1200,168" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="Regular;22,Regular;18" itemHeight="50" colors="#0000CC00,#00CC0000,#00808080">
+		<widget source="knownNetworksList" render="Listbox" position="10,374" size="1200,160" scrollbarMode="showOnDemand">
+			<template name="Default" fonts="Regular;22,Regular;18" itemHeight="40" colors="#0000CC00,#00CC0000,#00808080">
 				<rowtemplate>
-					<text index="Ssid" position="20,0" size="280,50" font="0" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Bssid" position="310,0" size="220,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Frequency" position="540,0" size="120,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Channel" position="670,0" size="140,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Encryption" position="820,0" size="190,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="StatusText" position="1020,0" size="180,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Ssid" position="20,0" size="280,40" font="0" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Bssid" position="310,0" size="220,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Frequency" position="540,0" size="120,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Channel" position="670,0" size="140,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Encryption" position="820,0" size="190,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="StatusText" position="1020,0" size="180,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 				</rowtemplate>
 				<rowtemplate>
-					<text index="Ssid" position="20,0" size="280,50" font="0" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Bssid" position="310,0" size="220,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Frequency" position="540,0" size="120,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Channel" position="670,0" size="140,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Encryption" position="820,0" size="190,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="StatusText" position="1020,0" size="180,50" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColor" />
+					<text index="Ssid" position="20,0" size="280,40" font="0" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Bssid" position="310,0" size="220,40" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Frequency" position="540,0" size="120,40" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Channel" position="670,0" size="140,40" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Encryption" position="820,0" size="190,40" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="StatusText" position="1020,0" size="180,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColor" />
 				</rowtemplate>
 			</template>
 		</widget>
@@ -620,22 +620,24 @@ class NetworkOverview(Screen):
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText("")
 		self["key_yellow"] = StaticText("")
+		self["key_menu"] = StaticText(_("MENU"))
+		self["key_info"] = StaticText(_("INFO"))
 		self["adapterList"] = List([], indexNames=self.ADAPTER_INDEX_NAMES)
-		self["knownNetworksList"] = List([], indexNames=self.PROFILE_INDEX_NAMES)
+		self["knownNetworksList"] = List([], indexNames=self.CONNECTION_INDEX_NAMES)
 		self.currentList = "adapterList"  # "adapterList" | "knownNetworksList" – which list up/down/OK/green/etc. act on
-		self["adapterList"].onSelectionChanged.append(self.updateProfiles)
+		self["adapterList"].onSelectionChanged.append(self.updateConnections)
 		self["knownNetworksList"].onSelectionChanged.append(self.updateKeyGreen)
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions", "InfoActions", "NavigationActions"], {
 			"ok": (self.keyOK, _("Open settings for the selected item")),
 			"cancel": (self.close, _("Close network overview")),
 			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
 			"red": (self.close, _("Close network overview")),
-			"green": (self.keyGreen, _("Activate/Deactivate adapter or Wi-Fi profile")),
+			"green": (self.keyGreen, _("Activate/Deactivate adapter or Wi-Fi connection")),
 			"yellow": (self.keyYellow, _("Add a new WiFi connection")),
 			"info": (self.keyInfo, _("Show network connection info")),
 			"menu": (self.keyMenu, _("Open context menu for the selected item")),
 			"left": (self.keyLeft, _("Jump to the adapter list")),
-			"right": (self.keyRight, _("Jump to the Wi-Fi profile list")),
+			"right": (self.keyRight, _("Jump to the Wi-Fi connection list")),
 			"up": (self.keyUp, _("Move up")),
 			"down": (self.keyDown, _("Move down")),
 		}, prio=0, description=_("Network Overview Actions"))
@@ -717,7 +719,7 @@ class NetworkOverview(Screen):
 		# .master.content (the eListboxPythonMultiContent) is only created once
 		# setList() has run at least once on this source, so this must run
 		# right after – not from onLayoutFinish, which would be too late for
-		# the very first buildAdapters() -> updateProfiles() -> currentAdapter().
+		# the very first buildAdapters() -> updateConnections() -> currentAdapter().
 		self[sourceName].master.content.setSelectableFunc(isOverviewRowSelectable)
 
 	def buildAdapters(self):
@@ -784,19 +786,19 @@ class NetworkOverview(Screen):
 		self.markHeaderNotSelectable("adapterList")
 		if hasRows:
 			self["adapterList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
-		self.updateProfiles()
+		self.updateConnections()
 		text = _("Add Wi-Fi") if any(x.isWlan for x in networkManager.adapters.values()) else ""
 		self["key_yellow"].setText(text)
 		self["actions"].setEnabledAction("yellow", text != "")
 
-	def overviewWlanProfiles(self, adapter: Adapter) -> list[Connection]:
+	def overviewWlanConnections(self, adapter: Adapter) -> list[Connection]:
 		return [conn for conn in networkManager.getConnections(adapter.name) if conn.wlan and conn.wlan.ssid]
 
-	def updateProfiles(self):
+	def updateConnections(self):
 		good, _bad, idle = self.overviewColors("knownNetworksList")
 
-		def buildOverviewProfileHeaderRow() -> tuple:
-			"""First row of the profile listbox, rendered via <rowtemplate> #0 – column
+		def buildOverviewConnectionHeaderRow() -> tuple:
+			"""First row of the connection listbox, rendered via <rowtemplate> #0 – column
 			titles, not selectable (see isOverviewRowSelectable). All texts are a
 			static grey in the skin, so unlike the data row's StatusText this one
 			doesn't need a real StatusColor."""
@@ -812,19 +814,19 @@ class NetworkOverview(Screen):
 				None,            # -> INDEX_CONNECTION
 			)
 
-		def buildOverviewProfileRow(conn: Connection, adapter: Adapter) -> tuple:
-			"""Row for the Wi-Fi profile listbox. BSSID/frequency/channel are only known
-			while this profile is the one currently associated – wpa_supplicant.conf
-			doesn't persist them for profiles that aren't connected right now."""
+		def buildOverviewConnectionRow(conn: Connection, adapter: Adapter) -> tuple:
+			"""Row for the Wi-Fi connection listbox. BSSID/frequency/channel are only known
+			while this connection is the one currently associated – wpa_supplicant.conf
+			doesn't persist them for connections that aren't connected right now."""
 			ssid = conn.wlan.ssid
 			net = adapter.netInfo
 			isLive = net.link and net.ssid == ssid
 			if isLive:
 				statusText, statusColor = _("Connected"), good
 			elif conn.enabled:
-				# Configured as the active profile, just not associated right now
+				# Configured as the active connection, just not associated right now
 				# (e.g. the adapter itself is off) – distinct from a genuinely
-				# disabled profile, which toggleAdapter() must never touch.
+				# disabled connection, which toggleAdapter() must never touch.
 				statusText, statusColor = _("Saved"), idle
 			else:
 				statusText, statusColor = _("Disabled"), idle
@@ -845,16 +847,16 @@ class NetworkOverview(Screen):
 			self["knownNetworksList"].setList([])
 			self["knownNetworksLabel"].setText(self.TEXT_KNOWN_NETWORKS)
 		else:
-			profiles = self.overviewWlanProfiles(adapter)
-			rows = [buildOverviewProfileRow(conn, adapter) for conn in profiles]
+			connections = self.overviewWlanConnections(adapter)
+			rows = [buildOverviewConnectionRow(conn, adapter) for conn in connections]
 			hasRows = bool(rows)
 			if hasRows:
-				rows.insert(0, buildOverviewProfileHeaderRow())
+				rows.insert(0, buildOverviewConnectionHeaderRow())
 			self["knownNetworksList"].setList(rows)
 			self.markHeaderNotSelectable("knownNetworksList")
 			if hasRows:
 				self["knownNetworksList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
-			self["knownNetworksLabel"].setText(f"{self.TEXT_KNOWN_NETWORKS} · {adapter.name} · {len(profiles)}")
+			self["knownNetworksLabel"].setText(f"{self.TEXT_KNOWN_NETWORKS} · {adapter.name} · {len(connections)}")
 		if self.currentList == "knownNetworksList" and not self["knownNetworksList"].count():
 			self.setListFocus("adapterList")
 		else:
@@ -866,7 +868,7 @@ class NetworkOverview(Screen):
 			return
 		conn = self.currentConnection()
 		if conn is None:
-			# Adapter row (LAN, or WLAN with no/unselected profile row) –
+			# Adapter row (LAN, or WLAN with no/unselected connection row) –
 			# DHCP/IP/DNS/WOL/WWOL/link speed all live on the adapter now.
 			self.openAdapterSetup(adapter)
 		else:
@@ -898,8 +900,8 @@ class NetworkOverview(Screen):
 			if conn is None or not adapter.isWlan:
 				text = _("Deactivate") if adapter.adapterEnabled else _("Activate")
 			else:
-				profiles = self.overviewWlanProfiles(adapter)
-				text = _("Activate") if len(profiles) > 1 and not conn.enabled else ""
+				connections = self.overviewWlanConnections(adapter)
+				text = _("Activate") if len(connections) > 1 and not conn.enabled else ""
 		self["key_green"].setText(text)
 		self["actions"].setEnabledAction("green", text != "")
 
@@ -1059,8 +1061,8 @@ class NetworkOverview(Screen):
 		else:
 			applyLanChange(adapter.name, CHANGE_ADAPTER_ENABLED, done)
 
-	# Green button on a WLAN profile row: switch to this profile (never a
-	# toggle – deactivating the active profile happens via the context menu).
+	# Green button on a WLAN connection row: switch to this connection (never a
+	# toggle – deactivating the active connection happens via the context menu).
 	def _activateWlanConnection(self, conn: Connection, adapter: Adapter):
 		for other in networkManager.getConnections(adapter.name):
 			other.enabled = (other is conn)

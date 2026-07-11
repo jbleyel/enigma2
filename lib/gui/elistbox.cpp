@@ -421,7 +421,7 @@ void eListbox::updateScrollBar()
 
 			m_scrollbar_calcsize = setScrollbarPosition();
 
-			if (entries > effectiveMaxRows() || m_scrollbar_mode == showLeftAlways)
+			if (entries > m_max_rows || m_scrollbar_mode == showLeftAlways)
 			{
 				m_scrollbar->show();
 				scrollbarvisible = true;
@@ -432,7 +432,7 @@ void eListbox::updateScrollBar()
 				scrollbarvisible = false;
 			}
 		}
-		else if (entries > maxItems || m_scrollbar_mode == showAlways)
+		else if (entries > ((m_orientation == orHorizontal) ? m_max_columns : m_max_rows) || m_scrollbar_mode == showAlways)
 		{
 			if (m_orientation == orHorizontal)
 			{
