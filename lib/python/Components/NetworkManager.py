@@ -1042,6 +1042,18 @@ class NetworkCheck:
 
 
 # ===========================================================================
+# What changed as a result of a save() call – the caller already knows this
+# (it's the one making the change), so it passes the right code to
+# NetworkSetup.applyLanChange() itself instead of save() trying to guess it.
+# ===========================================================================
+
+CHANGE_NONE = 0              # nothing that needs activating changed
+CHANGE_WPA_SUPPLICANT = 1    # only wpa_supplicant config changed
+CHANGE_ADAPTER_ENABLED = 2   # only adapter/connection enable state changed (LAN)
+CHANGE_GENERAL = 3           # anything else (IP/gateway/DNS/... changed)
+
+
+# ===========================================================================
 # NetworkManager – central singleton
 # ===========================================================================
 

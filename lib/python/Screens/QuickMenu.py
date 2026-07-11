@@ -351,8 +351,8 @@ class QuickMenu(Screen, ProtectedScreen):
 				self.session.open(NetworkConnectionSetup, conn, adapter)
 
 		def networkAdapterSelection():
-			from Screens.NetworkSetup import NetworkConnections
-			self.session.open(NetworkConnections)
+			from Screens.NetworkSetup import NetworkOverview
+			self.session.open(NetworkOverview)
 
 		adapters, activeInterface = getNetworkInterfaces()
 		self.subList = []

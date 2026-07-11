@@ -2010,7 +2010,6 @@ class TemplateParser:
 			"pixmap": self.collectAttributes,
 			"progress": self.collectAttributes,
 			"rectangle": self.collectAttributes,
-			"shape": self.collectAttributes,
 			"panel": self.processPanel
 		}
 

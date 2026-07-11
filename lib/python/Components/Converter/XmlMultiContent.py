@@ -3,35 +3,6 @@ from enigma import eListboxPythonMultiContent
 from skin import SkinContext, SkinContextStack, TemplateParser, parseFont, parsePadding
 from Components.Converter.StringList import StringList
 
-# Default stroke width in pixels for shapes built without an explicit strokeWidth
-# (e.g. via the skin's "shapeStroke" template attribute).
-SHAPE_STROKE_WIDTH = 6
-
-# Each TYPE_RECTS rect field is an (fraction, pixelOffset) pair, resolved in C++
-# at paint time as round(fraction * dimension) + pixelOffset. That lets a shape
-# stay centered/full-length relative to the item's actual size while still using
-# a fixed pixel stroke width, without Python ever needing to know that size.
-
-
-def buildShapeRects(name, strokeWidth=SHAPE_STROKE_WIDTH):
-	half = strokeWidth / 2.0
-	center = (0.5, -half)         # centered offset along the cross axis
-	toFar = (0.5, half)           # from the centered stroke to the far edge
-	thickness = (0.0, strokeWidth)  # fixed pixel thickness, independent of item size
-	full = (1.0, 0.0)             # full dimension
-	zero = (0.0, 0.0)
-	vertical_full = (center, zero, thickness, full)    # branch: full-height vertical bar
-	vertical_half = (center, zero, thickness, toFar)   # lastchild: vertical bar down to the branch point
-	horizontal = (center, center, toFar, thickness)    # the rightward branch stub, both shapes
-	match name:
-		case "branch":  # tree connector "├": vertical line spans the full height
-			return [vertical_full, horizontal]
-		case "lastchild":  # tree connector "└": vertical line stops at the branch
-			return [vertical_half, horizontal]
-		case _:
-			print(f"[XmlMultiContent] Error: Unknown shape name '{name}'!")
-			return None
-
 
 class MultiContentTemplateParser(TemplateParser):
 	_KNOWN_TEMPLATE_ATTRS = {"name", "fonts", "itemWidth", "itemHeight"}
@@ -110,6 +81,113 @@ class MultiContentTemplateParser(TemplateParser):
 					print(modesItems[modeName])
 			return modes, modesItems
 
+		def parseRowTemplates(template):
+			# 'rowtemplate' children pick a row's rendering via data[0] (see setTemplates()/
+			# selectTemplate() in elistboxcontent.cpp) rather than via the widget's 'style'.
+			# Unlike 'mode', they don't support a per-entry itemWidth/itemHeight override.
+			rowTemplatesItems = []
+			for rowtemplate in template.findall("rowtemplate"):
+				items = []
+				context = SkinContextStack()
+				context.x = 0
+				context.y = 0
+				context.w = self.itemWidth
+				context.h = self.itemHeight
+				context.scale = self.scale
+				context = SkinContext(context, "0,0", f"{self.itemWidth},{self.itemHeight}")
+				for element in list(rowtemplate):
+					processor = self.processors.get(element.tag, self.processNone)
+					newItems = processor(element, context)
+					if newItems:
+						items += newItems
+				newItems = []
+				for item in items:
+					itemsAttibutes = {}
+					for name, value in item.items():
+						itemsAttibutes[name] = int(value) if name == "font" else value
+					newItems.append(itemsAttibutes)
+				rowTemplatesItems.append(newItems)
+			return rowTemplatesItems
+
+		def buildModeData(items):
+			modeData = []
+			for item in items:
+				index = item.get("index", "-1")
+				if index.isdigit() or index == "-1":
+					index = int(index)
+				elif self.indexNames:
+					index = self.indexNames.get(index, -1)
+					if index < 0 or index >= len(self.indexNames):
+						print(f"[XmlMultiContent] Error: Index name must resolve to a number between 0 and {len(self.indexNames) - 1} inclusive!")
+				else:
+					index = -1
+					print("[XmlMultiContent] Error: Index must be a list item number!")
+				pos = item.get("position")
+				size = item.get("size")
+				backgroundColor = parseIndexColor(item.get("backgroundColor"))
+				backgroundColorSelected = parseIndexColor(item.get("backgroundColorSelected"))
+				borderColor = parseIndexColor(item.get("borderColor"))
+				borderColorSelected = parseIndexColor(item.get("borderColorSelected"))
+				borderWidth = int(item.get("borderWidth", "0"))
+				cornerRadius, cornerEdges = item.get("_radius", (0, 0))
+				flags = item.get("_flags", 0)
+				match item["type"]:
+					case "text":
+						padding = parsePadding("padding", item.get("padding", "0,0,0,0"))
+						padding = self.scalePadding(padding)
+						textBorderColor = parseIndexColor(item.get("textBorderColor"))
+						textBorderWidth = int(item.get("textBorderWidth", "0"))
+						foregroundColorSelected = parseIndexColor(item.get("foregroundColorSelected"))
+						foregroundColor = parseIndexColor(item.get("foregroundColor"))
+						font = int(item.get("font", 0))
+						# 'format' is not consumed here — it's collected for the screen to read
+						# back (like additionalTemplateAttributes) and apply itself when it
+						# builds each row's data, since the named values it references (e.g.
+						# adapterName, busName) only exist in the screen's own row-build code.
+						formatString = item.get("format")
+						if formatString:
+							self.templateDataFormats[item.get("index")] = formatString
+						if index == -1:
+							index = item.get("text", "")
+						modeData.append((eListboxPythonMultiContent.TYPE_TEXT, pos[0], pos[1], size[0], size[1], font or 0, flags, index, foregroundColor, foregroundColorSelected, backgroundColor, backgroundColorSelected, borderWidth, borderColor, cornerRadius, cornerEdges, textBorderWidth, textBorderColor, padding[0], padding[1], padding[2], padding[3]))
+					case "pixmap":
+						padding = parsePadding("padding", item.get("padding", "0,0,0,0"))
+						padding = self.scalePadding(padding)
+						if index == -1:
+							index = item.get("pixmap", "")
+						pixmapType = item.get("pixmapType", eListboxPythonMultiContent.TYPE_PIXMAP)
+						pixmapFlags = item.get("pixmapFlags", 0)
+						modeData.append((pixmapType, pos[0], pos[1], size[0], size[1], self.resolvePixmap(index), backgroundColor, backgroundColorSelected, pixmapFlags, cornerRadius, cornerEdges, padding[0], padding[1], padding[2], padding[3]))
+					case "rectangle":
+						gradientDirection, gradientAlpha, gradientStart, gradientEnd, gradientMid, gradientStartSelected, gradientEndSelected, gradientMidSelected = item.get("_gradient", (0, 0, None, None, None, None, None, None))
+						if gradientDirection:
+							if gradientAlpha:
+								modeData.append((eListboxPythonMultiContent.TYPE_LINEAR_GRADIENT_ALPHABLEND, pos[0], pos[1], size[0], size[1], gradientDirection, gradientStart, gradientMid, gradientEnd, gradientStartSelected, gradientMidSelected, gradientEndSelected, cornerRadius, cornerEdges))
+							else:
+								modeData.append((eListboxPythonMultiContent.TYPE_LINEAR_GRADIENT, pos[0], pos[1], size[0], size[1], gradientDirection, gradientStart, gradientMid, gradientEnd, gradientStartSelected, gradientMidSelected, gradientEndSelected, cornerRadius, cornerEdges))
+						else:
+							modeData.append((eListboxPythonMultiContent.TYPE_RECT, pos[0], pos[1], size[0], size[1], backgroundColor, backgroundColorSelected, borderWidth, borderColor, borderColorSelected, cornerRadius, cornerEdges))
+					case "progress":
+						if index == -1:
+							index = None
+						foregroundColorSelected = parseIndexColor(item.get("foregroundColorSelected", None))
+						foregroundColor = parseIndexColor(item.get("foregroundColor", None))
+						gradientDirection, gradientAlpha, gradientStart, gradientEnd, gradientMid, gradientStartSelected, gradientEndSelected, gradientMidSelected = item.get("_gradient", (0, 0, None, None, None, None, None, None))
+						modeData.append((eListboxPythonMultiContent.TYPE_PROGRESS, pos[0], pos[1], size[0], size[1], index, borderWidth, foregroundColor, foregroundColorSelected, borderColor, gradientStart, gradientMid, gradientEnd, gradientStartSelected, gradientMidSelected, gradientEndSelected, cornerRadius, cornerEdges))
+			maxX = 0
+			maxIndexX = -1
+			for modeItemIndex, modeItem in enumerate(modeData):
+				if (modeItem[1] + modeItem[3]) > maxX:
+					maxX = modeItem[1] + modeItem[3]
+					maxIndexX = modeItemIndex
+
+			if maxIndexX != -1:
+				modeItem = list(modeData[maxIndexX])
+				if modeItem[0] == eListboxPythonMultiContent.TYPE_TEXT:
+					modeItem[3] = -modeItem[3]
+					modeData[maxIndexX] = tuple(modeItem)
+			return modeData
+
 		self.template = {}
 		self.template["modes"] = {}
 		self.template["fonts"] = []
@@ -128,96 +206,11 @@ class MultiContentTemplateParser(TemplateParser):
 					for modeName, modeProperties in templateModes.items():
 						modeItemWidth = modeProperties.get("itemWidth")
 						modeItemHeight = modeProperties.get("itemHeight")
-						modeData = []
-						for item in modesItems[modeName]:
-							index = item.get("index", "-1")
-							if index.isdigit() or index == "-1":
-								index = int(index)
-							elif self.indexNames:
-								index = self.indexNames.get(index, -1)
-								if index < 0 or index >= len(self.indexNames):
-									print(f"[XmlMultiContent] Error: Index name must resolve to a number between 0 and {len(self.indexNames) - 1} inclusive!")
-							else:
-								index = -1
-								print("[XmlMultiContent] Error: Index must be a list item number!")
-							pos = item.get("position")
-							size = item.get("size")
-							backgroundColor = parseIndexColor(item.get("backgroundColor"))
-							backgroundColorSelected = parseIndexColor(item.get("backgroundColorSelected"))
-							borderColor = parseIndexColor(item.get("borderColor"))
-							borderColorSelected = parseIndexColor(item.get("borderColorSelected"))
-							borderWidth = int(item.get("borderWidth", "0"))
-							cornerRadius, cornerEdges = item.get("_radius", (0, 0))
-							flags = item.get("_flags", 0)
-							match item["type"]:
-								case "text":
-									padding = parsePadding("padding", item.get("padding", "0,0,0,0"))
-									padding = self.scalePadding(padding)
-									textBorderColor = parseIndexColor(item.get("textBorderColor"))
-									textBorderWidth = int(item.get("textBorderWidth", "0"))
-									foregroundColorSelected = parseIndexColor(item.get("foregroundColorSelected"))
-									foregroundColor = parseIndexColor(item.get("foregroundColor"))
-									font = int(item.get("font", 0))
-									# 'format' is not consumed here — it's collected for the screen to read
-									# back (like additionalTemplateAttributes) and apply itself when it
-									# builds each row's data, since the named values it references (e.g.
-									# adapterName, busName) only exist in the screen's own row-build code.
-									formatString = item.get("format")
-									if formatString:
-										self.templateDataFormats[item.get("index")] = formatString
-									if index == -1:
-										index = item.get("text", "")
-									modeData.append((eListboxPythonMultiContent.TYPE_TEXT, pos[0], pos[1], size[0], size[1], font or 0, flags, index, foregroundColor, foregroundColorSelected, backgroundColor, backgroundColorSelected, borderWidth, borderColor, cornerRadius, cornerEdges, textBorderWidth, textBorderColor, padding[0], padding[1], padding[2], padding[3]))
-								case "pixmap":
-									padding = parsePadding("padding", item.get("padding", "0,0,0,0"))
-									padding = self.scalePadding(padding)
-									if index == -1:
-										index = item.get("pixmap", "")
-									pixmapType = item.get("pixmapType", eListboxPythonMultiContent.TYPE_PIXMAP)
-									pixmapFlags = item.get("pixmapFlags", 0)
-									modeData.append((pixmapType, pos[0], pos[1], size[0], size[1], self.resolvePixmap(index), backgroundColor, backgroundColorSelected, pixmapFlags, cornerRadius, cornerEdges, padding[0], padding[1], padding[2], padding[3]))
-								case "rectangle":
-									gradientDirection, gradientAlpha, gradientStart, gradientEnd, gradientMid, gradientStartSelected, gradientEndSelected, gradientMidSelected = item.get("_gradient", (0, 0, None, None, None, None, None, None))
-									if gradientDirection:
-										if gradientAlpha:
-											modeData.append((eListboxPythonMultiContent.TYPE_LINEAR_GRADIENT_ALPHABLEND, pos[0], pos[1], size[0], size[1], gradientDirection, gradientStart, gradientMid, gradientEnd, gradientStartSelected, gradientMidSelected, gradientEndSelected, cornerRadius, cornerEdges))
-										else:
-											modeData.append((eListboxPythonMultiContent.TYPE_LINEAR_GRADIENT, pos[0], pos[1], size[0], size[1], gradientDirection, gradientStart, gradientMid, gradientEnd, gradientStartSelected, gradientMidSelected, gradientEndSelected, cornerRadius, cornerEdges))
-									else:
-										modeData.append((eListboxPythonMultiContent.TYPE_RECT, pos[0], pos[1], size[0], size[1], backgroundColor, backgroundColorSelected, borderWidth, borderColor, borderColorSelected, cornerRadius, cornerEdges))
-								case "shape":
-									shapeName = item.get("name")
-									foregroundColorSelected = parseIndexColor(item.get("foregroundColorSelected"))
-									foregroundColor = parseIndexColor(item.get("foregroundColor"))
-									if index != -1:  # dynamic: the row provides the fractional rect list (or None) at this index
-										rects = index
-									elif shapeName:  # static: same shape for every row
-										rects = buildShapeRects(shapeName, self.shapeStroke)
-									else:
-										print("[XmlMultiContent] Error: 'shape' requires either an 'index' or a 'name' attribute!")
-										rects = None
-									modeData.append((eListboxPythonMultiContent.TYPE_RECTS, pos[0], pos[1], size[0], size[1], rects, foregroundColor, foregroundColorSelected))
-								case "progress":
-									if index == -1:
-										index = None
-									foregroundColorSelected = parseIndexColor(item.get("foregroundColorSelected", None))
-									foregroundColor = parseIndexColor(item.get("foregroundColor", None))
-									gradientDirection, gradientAlpha, gradientStart, gradientEnd, gradientMid, gradientStartSelected, gradientEndSelected, gradientMidSelected = item.get("_gradient", (0, 0, None, None, None, None, None, None))
-									modeData.append((eListboxPythonMultiContent.TYPE_PROGRESS, pos[0], pos[1], size[0], size[1], index, borderWidth, foregroundColor, foregroundColorSelected, borderColor, gradientStart, gradientMid, gradientEnd, gradientStartSelected, gradientMidSelected, gradientEndSelected, cornerRadius, cornerEdges))
-						maxX = 0
-						maxIndexX = -1
-						for modeItemIndex, modeItem in enumerate(modeData):
-							if (modeItem[1] + modeItem[3]) > maxX:
-								maxX = modeItem[1] + modeItem[3]
-								maxIndexX = modeItemIndex
-
-						if maxIndexX != -1:
-							modeItem = list(modeData[maxIndexX])
-							if modeItem[0] == eListboxPythonMultiContent.TYPE_TEXT:
-								modeItem[3] = -modeItem[3]
-								modeData[maxIndexX] = tuple(modeItem)
-
+						modeData = buildModeData(modesItems[modeName])
 						self.template["modes"][modeName] = ((modeItemWidth, modeItemHeight), modeData)
+					rowTemplatesItems = parseRowTemplates(template)
+					if rowTemplatesItems:
+						self.template["rowTemplates"] = [buildModeData(items) for items in rowTemplatesItems]
 		except Exception as err:
 			# TODO: DEBUG: Remove the following two lines before publication.
 			import traceback
@@ -232,7 +225,7 @@ class XmlMultiContent(StringList, MultiContentTemplateParser):
 		StringList.__init__(self, args)
 		MultiContentTemplateParser.__init__(self)
 		self.activeStyle = None
-		self.activeTemplate = "Default"  # This value string is used in the UI.
+		self.activeTemplate = None  # None (not "Default"): forces the first changed() call to run the "template changed" branch even when self.source.template is itself "Default".
 		self.dom = args.get("dom")
 		if self.dom is not None:
 			self.scale = args.get("scale")
@@ -248,6 +241,22 @@ class XmlMultiContent(StringList, MultiContentTemplateParser):
 				if templateName != self.activeTemplate:
 					self.activeTemplate = templateName
 					self.readTemplate(self.activeTemplate)
+					rowTemplates = self.template.get("rowTemplates")
+					if hasattr(self.content, "setTemplates"):  # older enigma2 builds don't have this C++ method yet
+						self.content.setTemplates(rowTemplates if rowTemplates else None)
+					elif rowTemplates:
+						print("[XmlMultiContent] Error: 'rowtemplate' needs an enigma2 build with eListboxPythonMultiContent.setTemplates()!")
+					if rowTemplates:
+						selectionEnabled = self.template.get("selectionEnabled")
+						scrollbarMode = self.template.get("scrollbarMode")
+						itemWidth, itemHeight = self.scaleWithHeight(self.itemWidth, self.itemHeight)
+						self.content.setItemWidth(itemWidth)
+						self.content.setItemHeight(itemHeight)
+						if selectionEnabled is not None:
+							self.selectionEnabled = selectionEnabled
+						if scrollbarMode is not None:
+							self.scrollbarMode = scrollbarMode
+						return
 				style = self.source.style
 				if style == self.activeStyle:
 					return
@@ -278,8 +287,8 @@ class XmlMultiContent(StringList, MultiContentTemplateParser):
 				self.source.templateDataFormats = self.templateDataFormats
 				if "fonts" not in self.template:
 					print("[XmlMultiContent] Error: All templates must include a 'fonts' entry!")
-				if "modes" not in self.template:
-					print("[XmlMultiContent] Error: All templates must include a 'mode' entry!")
+				if not self.template.get("modes") and not self.template.get("rowTemplates"):
+					print("[XmlMultiContent] Error: All templates must include a 'mode' or 'rowtemplate' entry!")
 
 			self.content = eListboxPythonMultiContent()
 			for index, font in enumerate(self.template["fonts"]):  # Setup fonts (also given by source).

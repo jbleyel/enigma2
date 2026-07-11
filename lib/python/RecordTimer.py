@@ -5,12 +5,11 @@ from os.path import exists, isdir, realpath, ismount
 from threading import Thread, Timer as ThreadTimer
 from time import ctime, localtime, strftime, time
 
-from enigma import eEPGCache, eTimer, getBestPlayableServiceReference, eStreamServer, eServiceEventEnums, eServiceReference, iRecordableService, quitMainloop, eActionMap, setPreferredTuner, pNavigation
+from enigma import eActionMap, eEPGCache, eServiceEventEnums, eServiceReference, eStreamServer, eTimer, getBestPlayableServiceReference, iRecordableService, quitMainloop, pNavigation, setPreferredTuner
 
 import NavigationInstance
 from timer import Timer, TimerEntry
 from Components.config import config
-from Components.Task import job_manager
 #from Components.DataBaseAPI import moviedb
 from Components.Harddisk import findMountPoint
 import Components.RecordingConfig
@@ -18,6 +17,7 @@ Components.RecordingConfig.InitRecordingConfig()
 from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Components.ScrambledRecordings import ScrambledRecordings
 from Components.TimerSanityCheck import TimerSanityCheck
+from Components.Task import job_manager
 from Components.UsageConfig import defaultMoviePath, calcFrontendPriorityIntval
 from Screens.MessageBox import MessageBox
 import Screens.Standby
@@ -1076,25 +1076,25 @@ class RecordTimerEntry(TimerEntry):
 				print("[RecordTimer] Reset wakeup state.")
 		wasRecTimerWakeup = False
 
-	def waitForJobsThenShutdown(self):
-		self._shutdownTimer.stop()
-		if job_manager.getPendingJobs() and self._shutdownTimerMaxRetry > 0:
-			print(f"[RecordTimer] waitForJobsThenShutdown. MaxRetry:{self._shutdownTimerMaxRetry}")
-			self._shutdownTimerMaxRetry -= 1
-			self._shutdownTimer.start(1000, True)
-		else:
-			print("[RecordTimer] quitMainloop (jobs done).")
-			quitMainloop(1)
-
 	def checkForJobsThenShutdown(self):
-		if job_manager.getPendingJobs():
-			self._shutdownTimerMaxRetry = 100
-			self._shutdownTimer = eTimer()
-			self._shutdownTimer.callback.append(self.waitForJobsThenShutdown)
-			self._shutdownTimer.start(1000, True)
-			return True
-		else:
+		def waitForJobsThenShutdown():
+			self.shutdownTimer.stop()
+			if job_manager.getPendingJobs() and self.shutdownTimerMaxRetry > 0:
+				print(f"[RecordTimer] waitForJobsThenShutdown. MaxRetry:{self.shutdownTimerMaxRetry}")
+				self.shutdownTimerMaxRetry -= 1
+				self.shutdownTimer.start(1000, True)
+			else:
+				print("[RecordTimer] quitMainloop (jobs done).")
+				quitMainloop(1)
+
+		if not job_manager.getPendingJobs():
 			quitMainloop(1)
+		else:
+			self.shutdownTimerMaxRetry = 100
+			self.shutdownTimer = eTimer()
+			self.shutdownTimer.callback.append(waitForJobsThenShutdown)
+			self.shutdownTimer.start(1000, True)
+			return True
 
 	def getNextActivation(self, getNextStbPowerOn=False):
 		self.isStillRecording = False

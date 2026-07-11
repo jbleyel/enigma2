@@ -15,7 +15,6 @@ from Screens.FlashExpander import MOUNT_DEVICE, MOUNT_MOUNTPOINT, MOUNT_FILESYST
 from Screens.HarddiskSetup import HarddiskSelection
 from Screens.HelpMenu import ShowRemoteControl
 from Screens.MessageBox import MessageBox
-from Screens.Processing import Processing
 from Screens.Standby import TryQuitMainloop, QUIT_RESTART
 from Screens.VideoWizard import VideoWizard
 from Screens.Wizard import wizardManager, Wizard
@@ -29,8 +28,8 @@ config.misc.wizardLanguageEnabled = ConfigBoolean(default=True)
 
 
 class StartWizard(Wizard, ShowRemoteControl):
-	_nwPollIntervalMs = 1500
-	_nwPollMaxAttempts = 12  # 18 s total
+	nwPollIntervalMs = 1500
+	nwPollMaxAttempts = 12  # 18 s total
 
 	def __init__(self, session, silent=True, showSteps=False, neededTag=None):
 		self.xmlfile = ["startwizard.xml"]
@@ -51,9 +50,8 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self.setTitle(_("Start Wizard"))
 		self.nwSelectedIface = None
 		self.nwIpFound = ""
-		self._nwPollTimer = None
-		self._nwPollCount = 0
-		self._nwSetupSaved = False
+		self.nwPollTimer = None
+		self.nwPollCount = 0
 
 	def markDone(self):
 		# Setup remote control, all STBs have same settings except dm8000 which uses a different setting.
@@ -252,26 +250,69 @@ class StartWizard(Wizard, ShowRemoteControl):
 	def nwIfaceSelected(self, value):
 		self.nwSelectedIface = None if value == "skip" else value
 
-	def nwIfaceMoved(self):
+	def nwIfaceMoved(self):  # This function is a nofunc but needed in the Wizzard
 		pass
 
 	def nwAdvanceFromSelect(self):
-		if self.nwSelectedIface is None:
-			self.currStep = self.getStepWithID("network")
-		else:
-			self.currStep = self.getStepWithID("nwconfig")
+		self.currStep = self.getStepWithID("network" if self.nwSelectedIface is None else "nwconfig")
 		self.afterAsyncCode()
 
 	def nwOpenSetup(self):
+
+		def nwPollIp():
+			try:
+				import netifaces
+				addrs = netifaces.ifaddresses(self.nwSelectedIface or "")
+				ip = addrs.get(netifaces.AF_INET, [{}])[0].get("addr", "")
+				if ip and ip != "0.0.0.0":
+					self.nwIpFound = ip
+					self.nwDone()
+					return
+			except Exception:
+				pass
+			self.nwPollCount += 1
+			if self.nwPollCount >= self.nwPollMaxAttempts:
+				self.nwDone()
+				return
+			self.nwPollTimer.start(self.nwPollIntervalMs, True)
+
+		def nwStartIpPoll():
+			self.nwPollCount = 0
+			self.nwIpFound = ""
+			if self.nwPollTimer:
+				self.nwPollTimer.stop()
+			self.nwPollTimer = eTimer()
+			self.nwPollTimer.callback.append(nwPollIp)
+			# Check immediately instead of waiting a full interval first – activateInterface()
+			# already waited for ifup/DHCP, so the IP is often already there.
+			nwPollIp()
+
+		def nwWlanDone(ip=""):
+			print("[NW-WIZ] nwWlanDone called, ip=%s" % ip)
+			# NetworkConnectionSetup already ran NetworkWiFiActivator (ifup + wpa_supplicant
+			# + IP poll) and reports the result here, so there is nothing left to activate
+			# or poll for – activateInterface() again would just redo work on an adapter
+			# that is already up (or already given up on).
+			self.nwIpFound = ip
+			self.nwDone()
+
+		def nwLanSetupDone(saved=False):
+			print("[NW-WIZ] nwLanSetupDone: saved=%s" % saved)
+			# NetworkConnectionSetup.keySave() already called networkManager.save(),
+			# which now applies whatever the LAN adapter needs (ifup/ifdown, or a
+			# full restart) itself based on what actually changed – nothing left
+			# to activate here, just wait for the resulting IP.
+			nwStartIpPoll()
+
 		try:
 			from Components.NetworkManager import networkManager, Connection
 			adapter = networkManager.adapters.get(self.nwSelectedIface) if self.nwSelectedIface else None
 			if adapter is None:
-				self._nwDone()
+				self.nwDone()
 				return
 			if adapter.isWlan:
 				from Screens.NetworkSetup import NetworkWiFiAddFlow
-				NetworkWiFiAddFlow.start(self.session, adapter=adapter, callback=self._nwWlanDone)
+				NetworkWiFiAddFlow.start(self.session, adapter=adapter, callback=nwWlanDone)
 			else:
 				from Screens.NetworkSetup import NetworkConnectionSetup
 				if adapter.connections:
@@ -279,80 +320,23 @@ class StartWizard(Wizard, ShowRemoteControl):
 				else:
 					conn = Connection(adapter=adapter.name, name=_("LAN"), enabled=True, dhcp=True)
 					adapter.connections.append(conn)
-				self.session.openWithCallback(self._nwLanSetupDone, NetworkConnectionSetup, conn, adapter)
+				self.session.openWithCallback(nwLanSetupDone, NetworkConnectionSetup, conn, adapter)
 			print("[NW-WIZ] nwOpenSetup: openWithCallback returned, updateValues_in_onShown=%s" % (self.updateValues in self.onShown))
 		except Exception as e:
-			print("[NW-WIZ] nwOpenSetup: EXCEPTION %s -> _nwDone" % e)
-			self._nwDone()
+			print("[NW-WIZ] nwOpenSetup: EXCEPTION %s -> nwDone" % e)
+			self.nwDone()
 
-	def _nwLanSetupDone(self, saved=False):
-		print("[NW-WIZ] _nwLanSetupDone: saved=%s currStep=%s codeAfter=%s updateValues_in_onShown=%s" % (saved, self.currStep, self.codeAfter, self.updateValues in self.onShown))
-		self._nwSetupSaved = saved
-		self.nwActivateAndPoll()
-
-	def _nwWlanDone(self, ip=""):
-		print("[NW-WIZ] _nwWlanDone called, ip=%s" % ip)
-		# NetworkConnectionSetup already ran NetworkWiFiActivator (ifup + wpa_supplicant
-		# + IP poll) and reports the result here, so there is nothing left to activate
-		# or poll for – activateInterface() again would just redo work on an adapter
-		# that is already up (or already given up on).
-		self.nwIpFound = ip
-		self._nwDone()
-
-	def nwActivateAndPoll(self):
-		if Processing.instance:
-			Processing.instance.setDescription(_("Please wait, activating network connection..."))
-			Processing.instance.showProgress(endless=True)
-		if self._nwSetupSaved:
-			try:
-				from Components.NetworkManager import networkManager
-				networkManager.activateInterface(self.nwSelectedIface, lambda ok: self._nwStartIpPoll())
-			except Exception:
-				self._nwStartIpPoll()
-		else:
-			self._nwStartIpPoll()
-
-	def _nwStartIpPoll(self):
-		self._nwPollCount = 0
-		self.nwIpFound = ""
-		if self._nwPollTimer:
-			self._nwPollTimer.stop()
-		self._nwPollTimer = eTimer()
-		self._nwPollTimer.callback.append(self._nwPollIp)
-		# Check immediately instead of waiting a full interval first – activateInterface()
-		# already waited for ifup/DHCP, so the IP is often already there.
-		self._nwPollIp()
-
-	def _nwPollIp(self):
-		try:
-			import netifaces
-			addrs = netifaces.ifaddresses(self.nwSelectedIface or "")
-			ip = addrs.get(netifaces.AF_INET, [{}])[0].get("addr", "")
-			if ip and ip != "0.0.0.0":
-				self.nwIpFound = ip
-				self._nwDone()
-				return
-		except Exception:
-			pass
-		self._nwPollCount += 1
-		if self._nwPollCount >= self._nwPollMaxAttempts:
-			self._nwDone()
-			return
-		self._nwPollTimer.start(self._nwPollIntervalMs, True)
-
-	def _nwDone(self):
-		if self._nwPollTimer:
-			self._nwPollTimer.stop()
-			self._nwPollTimer = None
-		if Processing.instance:
-			Processing.instance.hideProgress()
+	def nwDone(self):
+		if self.nwPollTimer:
+			self.nwPollTimer.stop()
+			self.nwPollTimer = None
 		self.currStep = self.getStepWithID("nwstatus") + 1
 		self.updateValues()
 
 	def nwShowStatus(self):
-		if self._nwPollTimer:
-			self._nwPollTimer.stop()
-			self._nwPollTimer = None
+		if self.nwPollTimer:
+			self.nwPollTimer.stop()
+			self.nwPollTimer = None
 		if self.nwIpFound:
 			self["text"].setText(_("Network connected successfully.\n\nInterface: %s\nIP address: %s") % (self.nwSelectedIface or "", self.nwIpFound))
 		else:
