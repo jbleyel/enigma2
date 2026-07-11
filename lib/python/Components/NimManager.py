@@ -419,7 +419,7 @@ class SecConfigure:
 				if not self.NimManager.getSatListForNim(slotid):
 					config.Nims[slotid].dvbs.configMode.value = "nothing"
 					config.Nims[slotid].dvbs.configMode.save()
-					if advanced.unicableconnected.value:
+					if hasattr(advanced, "unicableconnected") and advanced.unicableconnected.value:
 						advanced.unicableconnected.value = False
 						advanced.unicableconnected.save()
 						advanced.unicableconnectedTo.save_forced = False

@@ -1556,8 +1556,10 @@ class NimSelection(Screen):
 										text += " / " + UNICABLE_CHOICES().get(uni, uni)
 								except AttributeError:
 									pass
-						if nimConfig.advanced.unicableconnected.value and nimConfig.advanced.unicableconnectedTo.value.isdigit():
-							text += " / " + _("Connected to") + " " + nimmanager.getNimDescription(int(nimConfig.advanced.unicableconnectedTo.value))
+						unicableConnected = nimConfig.advanced.content.items.get("unicableconnected")
+						unicableConnectedTo = nimConfig.advanced.content.items.get("unicableconnectedTo")
+						if unicableConnected is not None and unicableConnectedTo is not None and unicableConnected.value and unicableConnectedTo.value.isdigit():
+							text += " / " + _("Connected to") + " " + nimmanager.getNimDescription(int(unicableConnectedTo.value))
 						configuredSatellites = nimmanager.getSatListForNim(slotid)
 						rotorSatellites = nimmanager.getRotorSatListForNim(slotid)
 						if int(nimConfig.advanced.sat[3607].lnb.value) != 0 and nimConfig.connectedTo.value.isdigit():
