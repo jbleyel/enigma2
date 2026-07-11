@@ -53,9 +53,8 @@ RESULT eRamServicePlay::startTimeshift() {
 	recorder->replaceThread(ram_rec);
 	m_record->setTargetFD(-1);
 
-	// Access points remain enabled so eRamRecorder can tag ring-buffer blocks
-	// with I-frame flags, allowing findNearestAccessPoint() to snap seeks to
-	// clean boundaries. No .ap file is written (m_structure_write_fd stays -1).
+	// Keep parser metadata enabled so RAM timeshift exposes the same live .sc
+	// timing hints that disk timeshift provides to eDVBTSTools.
 
 	m_record->connectEvent(sigc::mem_fun(*this, &eRamServicePlay::recordEvent), m_con_record_event);
 
@@ -69,9 +68,10 @@ RESULT eRamServicePlay::startTimeshift() {
 		}
 	}
 
-	// Use /tmp/ram_timeshift as the base path; write an empty .ap sentinel
-	// so tstools doesn't log ENOENT warnings.
+	// Use /tmp/ram_timeshift as the base path; the empty .ap sentinel keeps
+	// streaminfo loading alive while .sc is updated by the recorder.
 	m_timeshift_file = "/tmp/ram_timeshift";
+	m_record->setTargetFilename(m_timeshift_file);
 	CFile::writeStr("/tmp/ram_timeshift.ap", "");
 	m_timeshift_enabled = 1;
 	updateTimeshiftPids();
@@ -87,6 +87,7 @@ RESULT eRamServicePlay::startTimeshift() {
 		m_record = 0;
 		m_ram_ring.reset();
 		::unlink("/tmp/ram_timeshift.ap");
+		::unlink("/tmp/ram_timeshift.sc");
 		m_timeshift_file.clear();
 		m_timeshift_enabled = 0;
 		return sret;
@@ -215,6 +216,7 @@ RESULT eRamServicePlay::stopTimeshift(bool swToLive) {
 	CFile::writeStr("/proc/stb/lcd/symbol_record", "0");
 
 	::unlink("/tmp/ram_timeshift.ap");
+	::unlink("/tmp/ram_timeshift.sc");
 	m_timeshift_file.clear();
 
 	if (swToLive)
