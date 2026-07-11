@@ -13,8 +13,8 @@ eRamServicePlay::eRamServicePlay(const eServiceReference& ref, eDVBService* serv
 	m_ram_recorder = nullptr;
 	m_frozen_play_position = 0;
 
-	// At least 32 MB or delay_seconds * 2.5 MB (~20 Mbit/s average bitrate).
-	int cap_mb = std::max(32, (int)(delay_seconds * 2.5));
+	// At least 32 MB or delay_seconds * 3.5 MB (~20 Mbit/s average bitrate).
+	int cap_mb = std::max(32, (int)(delay_seconds * 3.5));
 	m_capacity_bytes = (size_t)cap_mb * 1024 * 1024;
 	eDebug("[eRamServicePlay] cap=%dMB", cap_mb);
 }
