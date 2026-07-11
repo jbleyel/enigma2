@@ -1253,6 +1253,12 @@ class NetworkManager:
 				baseConn.extraLines = activeWpa.extraLines if activeWpa else []
 				connMap[iface] = [baseConn]
 			else:
+				# adapterEnabled is the master switch here too – NetworkAdapterSetup
+				# only sets it, not conn.enabled directly, so keep them in sync or
+				# _serialiseConnection() would only comment out the "auto" line and
+				# leave the iface/address/dns lines active.
+				for conn in conns:
+					conn.enabled = adapter.adapterEnabled
 				connMap[iface] = conns
 		adapterEnabledMap = {iface: adapter.adapterEnabled for iface, adapter in self.adapters.items()}
 		self._log(f"save(): adapterEnabledMap={adapterEnabledMap}")

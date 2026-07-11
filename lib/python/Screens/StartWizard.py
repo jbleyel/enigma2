@@ -49,6 +49,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self["HelpWindow"].hide()
 		self.setTitle(_("Start Wizard"))
 		self.nwSelectedIface = None
+		self.nwWifiScanOnly = False
 		self.nwIpFound = ""
 		self.nwPollTimer = None
 		self.nwPollCount = 0
@@ -242,13 +243,26 @@ class StartWizard(Wizard, ShowRemoteControl):
 				name = networkManager.getFriendlyAdapterName(iface)
 				desc = networkManager.getFriendlyAdapterDescription(iface)
 				result.append(("%s  %s  (%s)  –  %s" % (typeLabel, name, iface, desc), iface))
+				# Once the adapter itself is configured and enabled, offer picking
+				# a Wi-Fi network as a separate step – scanning before the adapter
+				# is even enabled leaves the user stuck with no way to finish.
+				if adapter.isWlan and adapter.adapterEnabled:
+					result.append((_("Scan for Wi-Fi networks – %s") % name, "wifiscan:%s" % iface))
 		except Exception:
 			pass
 		result.append((_("Skip network setup"), "skip"))
 		return result
 
 	def nwIfaceSelected(self, value):
-		self.nwSelectedIface = None if value == "skip" else value
+		if value == "skip":
+			self.nwSelectedIface = None
+			self.nwWifiScanOnly = False
+		elif value.startswith("wifiscan:"):
+			self.nwSelectedIface = value[len("wifiscan:"):]
+			self.nwWifiScanOnly = True
+		else:
+			self.nwSelectedIface = value
+			self.nwWifiScanOnly = False
 
 	def nwIfaceMoved(self):  # This function is a nofunc but needed in the Wizzard
 		pass
@@ -296,13 +310,23 @@ class StartWizard(Wizard, ShowRemoteControl):
 			self.nwIpFound = ip
 			self.nwDone()
 
-		def nwLanSetupDone(saved=False):
-			print("[NW-WIZ] nwLanSetupDone: saved=%s" % saved)
+		def nwAdapterSetupDone(saved=False):
+			# NetworkAdapterSetup.close()'s shape varies (bare bool, or a
+			# (recursive, saved) tuple – see NetworkOverview.setupClosed()), and
+			# we don't act on the value here anyway, so just log it safely.
+			print(f"[NW-WIZ] nwAdapterSetupDone: saved={saved!r}")
 			# NetworkAdapterSetup.keySave() already called networkManager.save(),
-			# which now applies whatever the LAN adapter needs (ifup/ifdown, or a
-			# full restart) itself based on what actually changed – nothing left
-			# to activate here, just wait for the resulting IP.
-			nwStartIpPoll()
+			# which now applies whatever the adapter needs (ifup/ifdown, or a
+			# full restart) itself based on what actually changed.
+			if adapter.isWlan:
+				# No SSID chosen yet (that's the separate "Scan for Wi-Fi
+				# networks" entry in nwListInterfaces()) – wpa_supplicant isn't
+				# running, so DHCP can't get an IP. Polling here would just run
+				# out the clock for nothing.
+				self.nwIpFound = ""
+				self.nwDone()
+			else:
+				nwStartIpPoll()
 
 		try:
 			from Components.NetworkManager import networkManager
@@ -310,12 +334,12 @@ class StartWizard(Wizard, ShowRemoteControl):
 			if adapter is None:
 				self.nwDone()
 				return
-			if adapter.isWlan:
+			if adapter.isWlan and self.nwWifiScanOnly:
 				from Screens.NetworkSetup import NetworkWiFiAddFlow
 				NetworkWiFiAddFlow.start(self.session, adapter=adapter, callback=nwWlanDone)
 			else:
 				from Screens.NetworkSetup import NetworkAdapterSetup
-				self.session.openWithCallback(nwLanSetupDone, NetworkAdapterSetup, adapter)
+				self.session.openWithCallback(nwAdapterSetupDone, NetworkAdapterSetup, adapter)
 			print("[NW-WIZ] nwOpenSetup: openWithCallback returned, updateValues_in_onShown=%s" % (self.updateValues in self.onShown))
 		except Exception as e:
 			print("[NW-WIZ] nwOpenSetup: EXCEPTION %s -> nwDone" % e)
