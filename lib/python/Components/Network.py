@@ -56,13 +56,14 @@ class NetworkCompat:
 		adapter = networkManager.getAdapter(iface)
 		if adapter is None:
 			return None
+		net = adapter.netInfo
 		conn = networkManager.getActiveConnection(iface)
 		attrMap = {
-			"up": lambda: adapter.kernelUp,
-			"ip": lambda: adapter.kernelIp,
-			"netmask": lambda: adapter.kernelNetmask,
-			"gateway": lambda: adapter.kernelGateway,
-			"bcast": lambda: adapter.kernelBcast,
+			"up": lambda: net.up,
+			"ip": lambda: net.ip,
+			"netmask": lambda: net.netmask,
+			"gateway": lambda: net.gateway,
+			"bcast": lambda: net.bcast,
 			"mac": lambda: adapter.mac,
 			"dhcp": lambda: (conn.dhcp if conn else True),
 			"preup": lambda: (conn.extraLines[0] if conn and conn.extraLines else False),
@@ -168,12 +169,13 @@ class NetworkCompat:
 		result = {}
 		ns = list(networkManager.nameserverConfig.servers)
 		for iface, adapter in networkManager.adapters.items():
-			conn = adapter.activeConnection()
+			net = adapter.netInfo
+			conn = networkManager.activeConnection(iface)
 			result[iface] = {
-				"up": adapter.kernelUp,
-				"ip": list(adapter.kernelIp),
-				"netmask": list(adapter.kernelNetmask),
-				"gateway": list(adapter.kernelGateway),
+				"up": net.up,
+				"ip": list(net.ip),
+				"netmask": list(net.netmask),
+				"gateway": list(net.gateway),
 				"mac": adapter.mac,
 				"dhcp": conn.dhcp if conn else True,
 				"dns-nameservers": ns,

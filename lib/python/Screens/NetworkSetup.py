@@ -3,7 +3,8 @@ NetworkSetup.py – Network connection screens for Enigma2 / OpenATV
 
 Screens:
 	NetworkOverview             – adapters + Wi-Fi profiles, two XmlMultiContent listboxes
-	NetworkConnectionSetup      – Setup subclass for one Connection (BLUE → per-connection DNS)
+	NetworkAdapterSetup         – per-adapter DHCP/IP/DNS/WOL/WWOL/link speed (interfaces file)
+	NetworkConnectionWiFi       – per-SSID profile settings (wpa_supplicant.conf only)
 	DnsSettings                 – global system DNS (config.usage.dns.*, networkManager)
 	ScanResult                  – dataclass for one iwlist scan result
 	NetworkWiFiScanScreen       – live iwlist scan, sorted by signal strength
@@ -156,9 +157,8 @@ class DnsSettings(Setup):
 	def _defaultGw(self) -> list[int]:
 		result = [0, 0, 0, 0]
 		for iface in sorted(networkManager.adapters.keys()):
-			adapter = networkManager.adapters[iface]
-			if adapter.kernelUp:
-				conn = adapter.activeConnection()
+			if networkManager.adapters[iface].netInfo.up:
+				conn = networkManager.activeConnection(iface)
 				if conn:
 					result = list(conn.gateway)
 					break
@@ -417,8 +417,6 @@ class InformationNetworkConnection(InformationBase):
 		if conn is not None:
 			info.append(formatLine("S", _("Network Connection")))
 			info.append(formatLine("P1", _("Interface"), adapter.name))
-			if conn.isWlan:
-				info.append(formatLine("P1", _("Profile name"), conn.name))
 			info.append(formatLine("P1", _("Enabled"), _("Yes") if conn.enabled else _("No")))
 			if conn.isWlan:
 				info.append(formatLine("P1", _("Priority"), str(conn.priority)))
@@ -437,50 +435,51 @@ class InformationNetworkConnection(InformationBase):
 			if conn.dnsServers:
 				info.append(formatLine("P1", "DNS", ", ".join(conn.dnsServers)))
 
+		net = adapter.netInfo
 		info.append("")
 		info.append(formatLine("S", _("Live Status")))
 		if adapter.isWlan:
-			info.append(formatLine("P1", _("Associated SSID"), adapter.kernelSsid or "-"))
-			if adapter.kernelBssid:
-				info.append(formatLine("P1", _("AP (BSSID)"), adapter.kernelBssid))
-			if adapter.kernelFreqMhz:
-				ch = f"  CH {adapter.kernelChannel}" if adapter.kernelChannel else ""
-				info.append(formatLine("P1", _("Frequency"), f"{adapter.kernelFreqMhz} MHz{ch}"))
-			if adapter.kernelBitrateBps:
-				info.append(formatLine("P1", _("TX rate"), f"{adapter.kernelBitrateBps / 1_000_000:.1f} Mbps"))
-			if adapter.kernelSignal:
-				info.append(formatLine("P1", _("Signal"), f"{adapter.kernelSignal} dBm"))
+			info.append(formatLine("P1", _("Associated SSID"), net.ssid or "-"))
+			if net.bssid:
+				info.append(formatLine("P1", _("AP (BSSID)"), net.bssid))
+			if net.freqMhz:
+				ch = f"  CH {net.channel}" if net.channel else ""
+				info.append(formatLine("P1", _("Frequency"), f"{net.freqMhz} MHz{ch}"))
+			if net.bitrateBps:
+				info.append(formatLine("P1", _("TX rate"), f"{net.bitrateBps / 1_000_000:.1f} Mbps"))
+			if net.signal:
+				info.append(formatLine("P1", _("Signal"), f"{net.signal} dBm"))
 		else:
-			info.append(formatLine("P1", _("Link"), _("Yes") if adapter.kernelLink else _("No")))
-			if adapter.kernelSpeed > 0:
+			info.append(formatLine("P1", _("Link"), _("Yes") if net.link else _("No")))
+			if net.speed > 0:
 				duplexLabels = {
 					"full": _("Full duplex"),
 					"half": _("Half duplex")
 				}
-				info.append(formatLine("P1", _("Speed"), f"{formatNetworkSpeed(adapter.kernelSpeed)} {duplexLabels.get(adapter.kernelDuplex, adapter.kernelDuplex)}"))
-			if adapter.kernelPort:
-				info.append(formatLine("P1", _("Port"), adapter.kernelPort))
-			if adapter.kernelTransceiver:
-				info.append(formatLine("P1", _("Transceiver"), adapter.kernelTransceiver))
-			if adapter.kernelLink:
-				info.append(formatLine("P1", _("Auto-negotiation"), _("Yes") if adapter.kernelAutoneg else _("No")))
+				info.append(formatLine("P1", _("Speed"), f"{formatNetworkSpeed(net.speed)} {duplexLabels.get(net.duplex, net.duplex)}"))
+			if net.port:
+				info.append(formatLine("P1", _("Port"), net.port))
+			if net.transceiver:
+				info.append(formatLine("P1", _("Transceiver"), net.transceiver))
+			if net.link:
+				info.append(formatLine("P1", _("Auto-negotiation"), _("Yes") if net.autoneg else _("No")))
 
-		ip4 = adapter.kernelIp
+		ip4 = net.ip
 		if ip4 and ip4 != [0, 0, 0, 0]:
 			info.append(formatLine("P1", _("IPv4 address"), ".".join(str(x) for x in ip4)))
-		for entry in adapter.kernelIp6:
+		for entry in net.ip6:
 			addr = entry.get("addr", "")
 			prefix = entry.get("prefix", "")
 			if addr:
 				info.append(formatLine("P1", _("IPv6 address"), f"{addr}/{prefix}"))
 
-		if adapter.kernelDriver or adapter.kernelHwId:
+		if net.driver or net.hwId:
 			info.append("")
 			info.append(formatLine("S", _("Hardware")))
-			if adapter.kernelDriver:
-				info.append(formatLine("P1", _("Driver"), adapter.kernelDriver))
-			if adapter.kernelHwId:
-				info.append(formatLine("P1", _("HW ID"), adapter.kernelHwId))
+			if net.driver:
+				info.append(formatLine("P1", _("Driver"), net.driver))
+			if net.hwId:
+				info.append(formatLine("P1", _("HW ID"), net.hwId))
 
 		self["information"].setText("\n".join(info))
 
@@ -723,19 +722,20 @@ class NetworkOverview(Screen):
 
 		def buildOverviewAdapterRow(adapter: Adapter) -> tuple:
 			"""Row for the adapter listbox. Same template for LAN and WLAN – no per-type extra line."""
+			net = adapter.netInfo
 			kind = _("Wireless Adapter") if adapter.isWlan else _("Ethernet Adapter")
 			if not adapter.adapterEnabled:
 				statusText, statusColor = _("Disabled"), idle
-			elif adapter.kernelLink:
+			elif net.link:
 				statusText, statusColor = _("Connected"), good
 			elif adapter.isWlan:
 				statusText, statusColor = _("Not Connected"), idle
 			else:
 				statusText, statusColor = _("Cable Unplugged"), bad
 			if adapter.isWlan:
-				speed = f"{adapter.kernelBitrateBps // 1000000} Mbit/s" if adapter.kernelBitrateBps else "—"
+				speed = f"{net.bitrateBps // 1000000} Mbit/s" if net.bitrateBps else "—"
 			else:
-				speed = formatNetworkSpeed(adapter.kernelSpeed) if adapter.kernelSpeed > 0 else "—"
+				speed = formatNetworkSpeed(net.speed) if net.speed > 0 else "—"
 			return (
 				self.OVERVIEW_TEMPLATE_ROW,
 				self.OVERVIEW_ICON_WIFI if adapter.isWlan else self.OVERVIEW_ICON_LAN,  # AdapterGlyph
@@ -744,8 +744,8 @@ class NetworkOverview(Screen):
 				statusText,                                                   # StatusText
 				statusColor,                                                  # StatusColor
 				adapter.mac.upper(),                                          # Mac
-				_ip4Str(adapter.kernelIp) or "—",                        # IpAddress
-				_ip4Str(adapter.kernelGateway) or "—",                   # Gateway
+				_ip4Str(net.ip) or "—",                                  # IpAddress
+				_ip4Str(net.gateway) or "—",                             # Gateway
 				speed,                                                        # Speed
 				adapter,                                                      # -> INDEX_ADAPTER
 			)
@@ -764,7 +764,7 @@ class NetworkOverview(Screen):
 		self["actions"].setEnabledAction("yellow", text != "")
 
 	def overviewWlanProfiles(self, adapter: Adapter) -> list[Connection]:
-		return [conn for conn in adapter.connections if conn.wlan and conn.wlan.ssid]
+		return [conn for conn in networkManager.getConnections(adapter.name) if conn.wlan and conn.wlan.ssid]
 
 	def updateProfiles(self):
 		good, _bad, idle = self.overviewColors("profileList")
@@ -791,15 +791,23 @@ class NetworkOverview(Screen):
 			while this profile is the one currently associated – wpa_supplicant.conf
 			doesn't persist them for profiles that aren't connected right now."""
 			ssid = conn.wlan.ssid
-			isLive = adapter.kernelLink and adapter.kernelSsid == ssid
-			statusText = _("Connected") if isLive else _("Saved")
-			statusColor = good if isLive else idle
+			net = adapter.netInfo
+			isLive = net.link and net.ssid == ssid
+			if isLive:
+				statusText, statusColor = _("Connected"), good
+			elif conn.enabled:
+				# Configured as the active profile, just not associated right now
+				# (e.g. the adapter itself is off) – distinct from a genuinely
+				# disabled profile, which toggleAdapter() must never touch.
+				statusText, statusColor = _("Saved"), idle
+			else:
+				statusText, statusColor = _("Disabled"), idle
 			return (
 				self.OVERVIEW_TEMPLATE_ROW,
 				ssid,                                                                                     # Ssid
-				adapter.kernelBssid.upper() if isLive and adapter.kernelBssid else "—",               # Bssid
-				f"{adapter.kernelFreqMhz / 1000:.2f} GHz" if isLive and adapter.kernelFreqMhz else "—",  # Frequency
-				str(adapter.kernelChannel) if isLive and adapter.kernelChannel else "—",              # Channel
+				net.bssid.upper() if isLive and net.bssid else "—",                                 # Bssid
+				f"{net.freqMhz / 1000:.2f} GHz" if isLive and net.freqMhz else "—",                  # Frequency
+				str(net.channel) if isLive and net.channel else "—",                                 # Channel
 				encryptionLabels.get(conn.wlan.encryption, lambda: "")(),                                  # Encryption
 				statusText,                                                                               # StatusText
 				statusColor,                                                                              # StatusColor
@@ -831,11 +839,11 @@ class NetworkOverview(Screen):
 		if adapter is None:
 			return
 		conn = self.currentConnection()
-		if conn is None and not adapter.isWlan:
-			# LAN has no profile row of its own – its single Connection is
-			# reached straight from the adapter row.
-			conn = adapter.connections[0] if adapter.connections else None
-		if conn is not None:
+		if conn is None:
+			# Adapter row (LAN, or WLAN with no/unselected profile row) –
+			# DHCP/IP/DNS/WOL/WWOL/link speed all live on the adapter now.
+			self.openAdapterSetup(adapter)
+		else:
 			self.openSetup(conn, adapter)
 
 	def keyCloseRecursive(self):
@@ -900,7 +908,7 @@ class NetworkOverview(Screen):
 					if conn.isWlan and conn.wlan:
 						networkManager.removeConnection(adapter.name, conn.wlan.ssid)
 					else:
-						adapter.connections = [x for x in adapter.connections if x is not conn]
+						networkManager.connections[adapter.name] = [x for x in networkManager.getConnections(adapter.name) if x is not conn]
 					networkManager.save()
 					if conn.isWlan:
 						self.buildAdapters()
@@ -921,19 +929,21 @@ class NetworkOverview(Screen):
 		def openWlanScan(self, iface: str):
 			def wlanScanDone(self, result: ScanResult | None, adapter: Adapter):
 					if result:
-						self.session.openWithCallback(self.setupClosed, NetworkConnectionSetup, scanResultToConnection(result, adapter.name), adapter)
+						self.session.openWithCallback(self.setupClosed, NetworkConnectionWiFi, scanResultToConnection(result, adapter.name), adapter)
 			adapter = networkManager.getAdapter(iface)
 			if adapter is not None and adapter.isWlan:
 				self.session.openWithCallback(lambda result: wlanScanDone(result, adapter), NetworkWiFiScanScreen, adapter)
 
 		def openWlanManual(self, adapter: Adapter):
 			conn = Connection(adapter=adapter.name, name=_("New Wi-Fi"), dhcp=True, enabled=False, wlan=WiFiConfig())
-			self.session.openWithCallback(self.setupClosed, NetworkConnectionSetup, conn, adapter)
+			self.session.openWithCallback(self.setupClosed, NetworkConnectionWiFi, conn, adapter)
 
 		if choice:
 			action = choice
 			if action == "setup":
 				self.openSetup(conn, adapter)
+			elif action == "adapterSetup":
+				self.openAdapterSetup(adapter)
 			elif action == "toggle":
 				self.toggleConnection(conn, adapter)
 			elif action == "toggleAdapter":
@@ -952,6 +962,7 @@ class NetworkOverview(Screen):
 	def showContextMenu(self, conn: Connection | None, adapter: Adapter):
 		if conn is None:
 			menu = [
+				(_("Adapter settings"), "adapterSetup"),
 				(_("Disable adapter") if adapter.adapterEnabled else _("Enable adapter"), "toggleAdapter"),
 				(_("Network test"), "test"),
 				(_("Restart adapter"), "restartAdapter"),
@@ -982,32 +993,33 @@ class NetworkOverview(Screen):
 			self.keyCloseRecursive()
 
 	def openSetup(self, conn: Connection, adapter: Adapter):
-		self.session.openWithCallback(self.setupClosed, NetworkConnectionSetup, conn, adapter)
+		self.session.openWithCallback(self.setupClosed, NetworkConnectionWiFi, conn, adapter)
+
+	def openAdapterSetup(self, adapter: Adapter):
+		self.session.openWithCallback(self.setupClosed, NetworkAdapterSetup, adapter)
 
 	def toggleAdapter(self, adapter: Adapter):
 		adapter.adapterEnabled = not adapter.adapterEnabled
 		if not adapter.isWlan:
-			for conn in adapter.connections:
+			for conn in networkManager.getConnections(adapter.name):
 				conn.enabled = adapter.adapterEnabled
 		networkManager.save()
 
 		def done():
 			self.buildAdapters()
 			self.session.showInfo(_("Network adapter enabled") if adapter.adapterEnabled else _("Network adapter disabled"))
-		if adapter.isWlan:
-			done()
-		else:
-			applyLanChange(adapter.name, CHANGE_ADAPTER_ENABLED, done)
+		applyLanChange(adapter.name, CHANGE_ADAPTER_ENABLED, done)
 
 	def toggleConnection(self, conn: Connection, adapter: Adapter):
 		if adapter.isWlan:
+			conns = networkManager.getConnections(adapter.name)
 			if conn.enabled:
-				for other in adapter.connections:
+				for other in conns:
 					other.enabled = False
 			else:
-				for other in adapter.connections:
+				for other in conns:
 					other.enabled = (other is conn)
-			adapter.adapterEnabled = any(x.enabled for x in adapter.connections)
+			adapter.adapterEnabled = any(x.enabled for x in conns)
 		else:
 			conn.enabled = not conn.enabled
 			adapter.adapterEnabled = conn.enabled
@@ -1027,7 +1039,7 @@ class NetworkOverview(Screen):
 	# Green button on a WLAN profile row: switch to this profile (never a
 	# toggle – deactivating the active profile happens via the context menu).
 	def _activateWlanConnection(self, conn: Connection, adapter: Adapter):
-		for other in adapter.connections:
+		for other in networkManager.getConnections(adapter.name):
 			other.enabled = (other is conn)
 		adapter.adapterEnabled = True
 		networkManager.save()
@@ -1036,32 +1048,20 @@ class NetworkOverview(Screen):
 
 
 # ===========================================================================
-# NetworkConnectionSetup – Screen 2 (Setup subclass)
+# NetworkAdapterSetup – per-adapter settings (DHCP/IP/DNS/WOL/WWOL/link speed),
+# written to /etc/network/interfaces. Same screen for LAN and WLAN adapters;
+# operates on the adapter's base Connection (networkManager.getBaseConnection).
 # ===========================================================================
 
-class NetworkConnectionSetup(Setup):
-	"""Setup screen for one Connection."""
+class NetworkAdapterSetup(Setup):
+	"""Setup screen for one Adapter's IP config, Wake-on-LAN/WiFi and link speed."""
 
-	RANK_LABELS = (
-		_("1st (Highest)"),
-		_("2nd"),
-		_("3rd"),
-		_("4th"),
-		_("5th"),
-		_("6th"),
-		_("7th"),
-		_("8th"),
-		_("9th"),
-		_("10th (Lowest)"),
-	)
-
-	def __init__(self, session, conn: Connection, adapter: Adapter):
-		self._conn = conn
+	def __init__(self, session, adapter: Adapter):
 		self._adapter = adapter
+		self._conn = networkManager.getBaseConnection(adapter.name)
 		self._buildConfigObjects()
-		xmlSection = "NetworkWiFi" if conn.isWlan else "NetworkLAN"
-		Setup.__init__(self, session=session, setup=xmlSection)
-		self.setTitle(_("Network Connection Settings – %s") % conn.adapter)
+		Setup.__init__(self, session=session, setup="NetworkAdapter")
+		self.setTitle(_("Network Adapter Settings – %s") % adapter.name)
 		self["key_info"] = StaticText(_("Info"))
 		self["blueActions"] = HelpableActionMap(self, ["InfoActions"], {
 			"info": (self.keyShowInfo, _("Show network connection info"))
@@ -1071,32 +1071,10 @@ class NetworkConnectionSetup(Setup):
 		self.session.open(InformationNetworkConnection, self._conn, self._adapter)
 
 	def _buildConfigObjects(self):
+		adapter = self._adapter
 		conn = self._conn
-		adapter = self._adapter  # noqa
 
-		self.cfgName = NoSave(ConfigText(default=conn.name, fixed_size=False))
-		self.cfgEnabled = NoSave(ConfigYesNo(default=conn.enabled))
-		if conn.isWlan:
-			wlanConns = [x for x in adapter.connections if x.isWlan and x.wlan and x.wlan.ssid]
-			if not any(x is conn for x in wlanConns):
-				wlanConns = wlanConns + [conn]
-			self._hasMultiplePriorities = len(wlanConns) > 1
-			if self._hasMultiplePriorities:
-				self._wlanConnsSorted = sorted(wlanConns, key=lambda wlanConn: wlanConn.priority, reverse=True)
-				currentRank = next((idx + 1 for idx, x in enumerate(self._wlanConnsSorted) if x is conn), 1)
-				rankChoices = [(x + 1, self.RANK_LABELS[x] if x < len(self.RANK_LABELS) else _("%d.") % (x + 1)) for x in range(len(wlanConns))]
-				self.cfgPriority = NoSave(ConfigSelection(choices=rankChoices, default=currentRank))
-			else:
-				self._wlanConnsSorted = []
-				self.cfgPriority = NoSave(ConfigNumber(default=conn.priority))
-		else:
-			self._hasMultiplePriorities = False
-			self._wlanConnsSorted = []
-			self.cfgPriority = NoSave(ConfigNumber(default=conn.priority))
-		self.cfgDhcp = NoSave(ConfigYesNo(default=conn.dhcp))
-		self.cfgIp = NoSave(ConfigIP(default=conn.ip))
-		self.cfgNetmask = NoSave(ConfigIP(default=conn.netmask))
-		self.cfgGateway = NoSave(ConfigIP(default=conn.gateway))
+		self.cfgEnabled = NoSave(ConfigYesNo(default=adapter.adapterEnabled))
 		self.cfgIpMode = NoSave(ConfigSelection(
 			default=conn.ipMode,
 			choices=[
@@ -1105,33 +1083,26 @@ class NetworkConnectionSetup(Setup):
 				(2, _("IPv4 and IPv6")),
 			]
 		))
+		self.cfgDhcp = NoSave(ConfigYesNo(default=conn.dhcp))
+		self.cfgIp = NoSave(ConfigIP(default=conn.ip))
+		self.cfgNetmask = NoSave(ConfigIP(default=conn.netmask))
+		self.cfgGateway = NoSave(ConfigIP(default=conn.gateway))
 
-		encryptionChoices = [
-			(encNone, _("None")),
-			(encWep, "WEP"),
-			(encWpa, "WPA"),
-			(encWpa2, "WPA2"),
-		]
-		if BoxInfo.getItem("wpa3") or (conn.isWlan and conn.wlan and conn.wlan.encryption == encWpa3):
-			encryptionChoices.append((encWpa3, "WPA3"))
-
-		if conn.isWlan and conn.wlan:
-			wlan = conn.wlan
-			self.cfgSsid = NoSave(ConfigText(default=wlan.ssid, fixed_size=False))
-			self.cfgHidden = NoSave(ConfigYesNo(default=wlan.hidden))
-			self.cfgEncryption = NoSave(ConfigSelection(choices=encryptionChoices, default=wlan.encryption))
-			self.cfgKey = NoSave(ConfigPassword(default=wlan.key, fixed_size=False))
-		else:
-			self.cfgSsid = NoSave(ConfigText(default="", fixed_size=False))
-			self.cfgHidden = NoSave(ConfigYesNo(default=False))
-			self.cfgEncryption = NoSave(ConfigSelection(choices=encryptionChoices, default=encNone))
-			self.cfgKey = NoSave(ConfigPassword(default="", fixed_size=False))
+		# Per-adapter DNS (inline, replaces separate DNS setup screen)
+		hasOwn = bool(conn.dnsServers)
+		self.cfgDnsOverride = NoSave(ConfigYesNo(default=hasOwn))
+		dnsV4 = [x for x in conn.dnsServers if isinstance(x, list)]
+		dnsV6 = [x for x in conn.dnsServers if isinstance(x, str)]
+		self.cfgDns1v4 = NoSave(ConfigIP(default=dnsV4[0] if len(dnsV4) > 0 else [0, 0, 0, 0]))
+		self.cfgDns2v4 = NoSave(ConfigIP(default=dnsV4[1] if len(dnsV4) > 1 else [0, 0, 0, 0]))
+		self.cfgDns1v6 = NoSave(ConfigText(default=dnsV6[0] if len(dnsV6) > 0 else "", fixed_size=False))
+		self.cfgDns2v6 = NoSave(ConfigText(default=dnsV6[1] if len(dnsV6) > 1 else "", fixed_size=False))
 
 		# Wake-on-LAN (LAN adapters only, when hardware supports it)
 		self.cfgWakeOnLan = NoSave(ConfigYesNo(default=conn.wakeOnLan != "off"))
 
 		# Forced link speed (LAN adapters only)
-		if not conn.isWlan:
+		if not adapter.isWlan:
 			linkSpeedChoices = networkManager.getSupportedLinkSpeeds(adapter.name)
 			currentLinkSpeed = networkManager.getLinkSpeed(adapter.name)
 			if currentLinkSpeed not in dict(linkSpeedChoices):
@@ -1145,43 +1116,21 @@ class NetworkConnectionSetup(Setup):
 		# Wake-on-WiFi (Broadcom wlan3 only)
 		# cfgWakeOnWiFi: WoW while normally active (activate=True)
 		# cfgWowOnly:    WoW only, no normal connection (activate=False)
-		self.cfgWakeOnWiFi = NoSave(ConfigYesNo(default=conn.wakeOnWiFi and conn.enabled))
-		self.cfgWowOnly = NoSave(ConfigYesNo(default=conn.wakeOnWiFi and not conn.enabled))
-
-		# Per-connection DNS (inline, replaces separate DNS setup screen)
-		hasOwn = bool(conn.dnsServers)
-		self.cfgDnsOverride = NoSave(ConfigYesNo(default=hasOwn))
-		dnsV4 = [x for x in conn.dnsServers if isinstance(x, list)]
-		dnsV6 = [x for x in conn.dnsServers if isinstance(x, str)]
-		self.cfgDns1v4 = NoSave(ConfigIP(default=dnsV4[0] if len(dnsV4) > 0 else [0, 0, 0, 0]))
-		self.cfgDns2v4 = NoSave(ConfigIP(default=dnsV4[1] if len(dnsV4) > 1 else [0, 0, 0, 0]))
-		self.cfgDns1v6 = NoSave(ConfigText(default=dnsV6[0] if len(dnsV6) > 0 else "", fixed_size=False))
-		self.cfgDns2v6 = NoSave(ConfigText(default=dnsV6[1] if len(dnsV6) > 1 else "", fixed_size=False))
+		self.cfgWakeOnWiFi = NoSave(ConfigYesNo(default=conn.wakeOnWiFi and adapter.adapterEnabled))
+		self.cfgWowOnly = NoSave(ConfigYesNo(default=conn.wakeOnWiFi and not adapter.adapterEnabled))
 
 	def keySave(self):
-		conn = self._conn
 		adapter = self._adapter
+		conn = self._conn
 
-		# Snapshot the fields that matter for LAN connectivity before we
-		# overwrite them, so we know afterwards whether this needs a full
-		# restart (settings changed) or just ifup/ifdown (enable state only).
-		wasEnabled = conn.enabled
-		wasGeneral = None
-		wasLinkSpeed = None
-		if not conn.isWlan:
-			wasGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers), conn.wakeOnLan)
-			wasLinkSpeed = networkManager.getLinkSpeed(adapter.name)
+		# Snapshot the fields that matter for connectivity before we overwrite
+		# them, so we know afterwards whether this needs a full restart
+		# (settings changed) or just ifup/ifdown (enable state only).
+		wasEnabled = adapter.adapterEnabled
+		wasGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers), conn.wakeOnLan)
+		wasLinkSpeed = networkManager.getLinkSpeed(adapter.name)
 
-		conn.name = self.cfgName.value
-		conn.enabled = self.cfgEnabled.value
-		if self._hasMultiplePriorities:
-			chosenRank = self.cfgPriority.value
-			others = [x for x in self._wlanConnsSorted if x is not conn]
-			newOrder = others[:chosenRank - 1] + [conn] + others[chosenRank - 1:]
-			for idx, wlanConn in enumerate(newOrder):
-				wlanConn.priority = (len(newOrder) - idx) * 10
-		else:
-			conn.priority = int(self.cfgPriority.value)
+		adapter.adapterEnabled = self.cfgEnabled.value
 		conn.dhcp = self.cfgDhcp.value
 		conn.ipMode = self.cfgIpMode.value
 
@@ -1204,16 +1153,8 @@ class NetworkConnectionSetup(Setup):
 					servers.append(textValue)
 			conn.dnsServers = servers
 
-		if conn.isWlan and conn.wlan:
-			wlan = conn.wlan
-			wlan.ssid = self.cfgSsid.value.strip()
-			wlan.hidden = self.cfgHidden.value
-			wlan.encryption = self.cfgEncryption.value
-			if wlan.encryption != encNone:
-				wlan.key = self.cfgKey.value
-
 		# Apply Wake-on-LAN via ethtool + optional /proc path
-		if not conn.isWlan and adapter.canWakeOnLan:
+		if not adapter.isWlan and adapter.canWakeOnLan:
 			newWolMode = "g" if self.cfgWakeOnLan.value else "off"
 			if newWolMode != conn.wakeOnLan:
 				cmds = networkManager.setWakeOnLanCommands(adapter.name, newWolMode)
@@ -1221,38 +1162,129 @@ class NetworkConnectionSetup(Setup):
 					Console().eBatch(cmds, lambda result: None, debug=False)
 
 		# Apply Wake-on-WiFi (Broadcom)
-		if conn.isWlan and adapter.canWakeOnWiFi:
-			conn.wakeOnWiFi = self.cfgWakeOnWiFi.value if conn.enabled else self.cfgWowOnly.value
+		if adapter.isWlan and adapter.canWakeOnWiFi:
+			conn.wakeOnWiFi = self.cfgWakeOnWiFi.value if adapter.adapterEnabled else self.cfgWowOnly.value
 			cmds = networkManager.setWakeOnWiFiCommands(adapter.name, conn.wakeOnWiFi)
 			if cmds:
 				Console().eBatch(cmds, lambda result: None, debug=False)
 
 		# Apply forced link speed (LAN adapters only)
-		if not conn.isWlan:
+		if not adapter.isWlan:
 			networkManager.setLinkSpeed(adapter.name, self.cfgLinkSpeed.value)
 
-		if not any(x is conn for x in adapter.connections):
-			adapter.connections.append(conn)
-		if conn.isWlan:
-			if conn.enabled:
-				adapter.adapterEnabled = True
-		else:
-			adapter.adapterEnabled = conn.enabled
 		networkManager.save()
-		if conn.isWlan:
-			if conn.enabled:
-				self.session.openWithCallback(self.wifiConnectionVerified, NetworkWiFiActivator, conn, adapter)
-			else:
-				self.close((False, True))
+
+		nowGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers), conn.wakeOnLan)
+		if nowGeneral != wasGeneral or self.cfgLinkSpeed.value != wasLinkSpeed:
+			change = CHANGE_GENERAL
+		elif adapter.adapterEnabled != wasEnabled:
+			change = CHANGE_ADAPTER_ENABLED
 		else:
-			nowGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers), conn.wakeOnLan)
-			if nowGeneral != wasGeneral or self.cfgLinkSpeed.value != wasLinkSpeed:
-				change = CHANGE_GENERAL
-			elif conn.enabled != wasEnabled:
-				change = CHANGE_ADAPTER_ENABLED
-			else:
-				change = CHANGE_NONE
-			applyLanChange(adapter.name, change, lambda: self.close((False, True)))
+			change = CHANGE_NONE
+		applyLanChange(adapter.name, change, lambda: self.close((False, True)))
+
+
+# ===========================================================================
+# NetworkConnectionWiFi – one Wi-Fi profile (SSID). Only what's actually
+# written to wpa_supplicant.conf: SSID, hidden, encryption, key, priority,
+# enabled (disabled=). DHCP/IP/DNS/WOL/WWOL live on NetworkAdapterSetup.
+# ===========================================================================
+
+class NetworkConnectionWiFi(Setup):
+	"""Setup screen for one Wi-Fi profile (SSID)."""
+
+	RANK_LABELS = (
+		_("1st (Highest)"),
+		_("2nd"),
+		_("3rd"),
+		_("4th"),
+		_("5th"),
+		_("6th"),
+		_("7th"),
+		_("8th"),
+		_("9th"),
+		_("10th (Lowest)"),
+	)
+
+	def __init__(self, session, conn: Connection, adapter: Adapter):
+		self._conn = conn
+		self._adapter = adapter
+		self._buildConfigObjects()
+		Setup.__init__(self, session=session, setup="NetworkConnectionWiFi")
+		self.setTitle(_("Wi-Fi Connection Settings – %s") % conn.adapter)
+		self["key_info"] = StaticText(_("Info"))
+		self["blueActions"] = HelpableActionMap(self, ["InfoActions"], {
+			"info": (self.keyShowInfo, _("Show network connection info"))
+		}, prio=0)
+
+	def keyShowInfo(self):
+		self.session.open(InformationNetworkConnection, self._conn, self._adapter)
+
+	def _buildConfigObjects(self):
+		conn = self._conn
+		adapter = self._adapter
+
+		self.cfgEnabled = NoSave(ConfigYesNo(default=conn.enabled))
+
+		wlanConns = [x for x in networkManager.getConnections(adapter.name) if x.isWlan and x.wlan and x.wlan.ssid]
+		if not any(x is conn for x in wlanConns):
+			wlanConns = wlanConns + [conn]
+		self._hasMultiplePriorities = len(wlanConns) > 1
+		if self._hasMultiplePriorities:
+			self._wlanConnsSorted = sorted(wlanConns, key=lambda wlanConn: wlanConn.priority, reverse=True)
+			currentRank = next((idx + 1 for idx, x in enumerate(self._wlanConnsSorted) if x is conn), 1)
+			rankChoices = [(x + 1, self.RANK_LABELS[x] if x < len(self.RANK_LABELS) else _("%d.") % (x + 1)) for x in range(len(wlanConns))]
+			self.cfgPriority = NoSave(ConfigSelection(choices=rankChoices, default=currentRank))
+		else:
+			self._wlanConnsSorted = []
+			self.cfgPriority = NoSave(ConfigNumber(default=conn.priority))
+
+		encryptionChoices = [
+			(encNone, _("None")),
+			(encWep, "WEP"),
+			(encWpa, "WPA"),
+			(encWpa2, "WPA2"),
+		]
+		if BoxInfo.getItem("wpa3") or (conn.wlan and conn.wlan.encryption == encWpa3):
+			encryptionChoices.append((encWpa3, "WPA3"))
+
+		wlan = conn.wlan
+		self.cfgSsid = NoSave(ConfigText(default=wlan.ssid, fixed_size=False))
+		self.cfgHidden = NoSave(ConfigYesNo(default=wlan.hidden))
+		self.cfgEncryption = NoSave(ConfigSelection(choices=encryptionChoices, default=wlan.encryption))
+		self.cfgKey = NoSave(ConfigPassword(default=wlan.key, fixed_size=False))
+
+	def keySave(self):
+		conn = self._conn
+		adapter = self._adapter
+
+		conn.enabled = self.cfgEnabled.value
+		if self._hasMultiplePriorities:
+			chosenRank = self.cfgPriority.value
+			others = [x for x in self._wlanConnsSorted if x is not conn]
+			newOrder = others[:chosenRank - 1] + [conn] + others[chosenRank - 1:]
+			for idx, wlanConn in enumerate(newOrder):
+				wlanConn.priority = (len(newOrder) - idx) * 10
+		else:
+			conn.priority = int(self.cfgPriority.value)
+
+		wlan = conn.wlan
+		wlan.ssid = self.cfgSsid.value.strip()
+		wlan.hidden = self.cfgHidden.value
+		wlan.encryption = self.cfgEncryption.value
+		if wlan.encryption != encNone:
+			wlan.key = self.cfgKey.value
+
+		conns = networkManager.getConnections(adapter.name)
+		if not any(x is conn for x in conns):
+			conns.append(conn)
+		if conn.enabled:
+			adapter.adapterEnabled = True
+		networkManager.save()
+		if conn.enabled:
+			self.session.openWithCallback(self.wifiConnectionVerified, NetworkWiFiActivator, conn, adapter)
+		else:
+			self.close((False, True))
 
 	def wifiConnectionVerified(self, ip=""):
 		# NetworkWiFiActivator closes with the IP it found, or "" if the
@@ -1359,6 +1391,7 @@ class NetworkWiFiScanScreen(Screen):
 
 	def __init__(self, session, adapter: Adapter):
 		Screen.__init__(self, session, enableHelp=True)
+		self.skinName = "AA"
 		self.adapterObj = adapter
 		self.adapter = adapter.name
 		self.setTitle(_("Wi-Fi Scan – %s") % self.adapter)
@@ -1440,7 +1473,7 @@ class NetworkWiFiScanScreen(Screen):
 		if not self.scanning:
 			self.scanning = True
 			self["description"].setText(_("Scanning…"))
-			if self.adapterObj.kernelUp:
+			if self.adapterObj.netInfo.up:
 				startScanCallback(None, 0)
 			else:
 				self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=startScanCallback)
@@ -1625,7 +1658,7 @@ class NetworkWiFiAddFlow:
 			conn = scanResultToConnection(result, adapter.name)
 
 			def _setupDone(*result):
-				# NetworkConnectionSetup.close() shape varies: no args (cancel), a bare
+				# NetworkConnectionWiFi.close() shape varies: no args (cancel), a bare
 				# bool, or a (recursive, saved, ip) tuple (see setupClosed).
 				# For Wi-Fi, "ip" is the address NetworkWiFiActivator already verified,
 				# or "" if the connection could not be verified.
@@ -1636,12 +1669,13 @@ class NetworkWiFiAddFlow:
 				else:
 					saved = bool(result[0]) if result else False
 				if saved:
-					if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in adapter.connections):
-						adapter.connections.append(conn)
+					conns = networkManager.getConnections(adapter.name)
+					if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in conns):
+						conns.append(conn)
 						networkManager.save()
 				if callback:
 					callback(ip)
-			session.openWithCallback(_setupDone, NetworkConnectionSetup, conn, adapter)
+			session.openWithCallback(_setupDone, NetworkConnectionWiFi, conn, adapter)
 		session.openWithCallback(_scanned, NetworkWiFiScanScreen, adapter)
 
 	@staticmethod
@@ -1800,7 +1834,7 @@ class NetworkTest(Screen):
 			pingRow(self.ROW_INTERNET, "1.1.1.1", self.T_REACHABLE, self.T_UNREACHABLE, "1.1.1.1", testDns)
 
 		def testGateway():
-			gw = _ip4Str(adapter.kernelGateway) if adapter and adapter.kernelGateway else ""
+			gw = _ip4Str(net.gateway) if net.gateway else ""
 			if not gw:
 				setRow(self.ROW_GATEWAY, self.STATE_SKIP, self.T_NO_GATEWAY, "")
 				testInternet()
@@ -1808,10 +1842,10 @@ class NetworkTest(Screen):
 				pingRow(self.ROW_GATEWAY, gw, self.T_REACHABLE, self.T_UNREACHABLE, gw, testInternet)
 
 		def testIp():
-			ip = adapter.kernelIp or []
+			ip = net.ip or []
 			ipStr = ".".join(str(x) for x in ip) if ip else ""
 			if ipStr and ipStr != "0.0.0.0":
-				conn = adapter.activeConnection()
+				conn = networkManager.activeConnection(self.iface)
 				hint = "DHCP" if (conn and conn.dhcp) else self.T_STATIC
 				setRow(self.ROW_IP, self.STATE_OK, ipStr, hint)
 			else:
@@ -1820,15 +1854,15 @@ class NetworkTest(Screen):
 
 		def testLink():
 			if adapter.isWlan:
-				ssid = adapter.kernelSsid or ""
+				ssid = net.ssid or ""
 				if ssid:
-					sig = f"{adapter.kernelSignal} dBm" if adapter.kernelSignal else ""
+					sig = f"{net.signal} dBm" if net.signal else ""
 					setRow(self.ROW_LINK, self.STATE_OK, self.T_ASSOCIATED, f"{ssid}  {sig}".strip())
 				else:
 					setRow(self.ROW_LINK, self.STATE_FAIL, self.T_NOT_ASSOC, "")
 			else:
-				if adapter.kernelLink:
-					speed = f"{adapter.kernelSpeed} Mbps" if adapter.kernelSpeed > 0 else ""
+				if net.link:
+					speed = f"{net.speed} Mbps" if net.speed > 0 else ""
 					setRow(self.ROW_LINK, self.STATE_OK, self.T_CONNECTED, speed)
 				else:
 					setRow(self.ROW_LINK, self.STATE_FAIL, self.T_DISCONNECTED, "")
@@ -1837,6 +1871,7 @@ class NetworkTest(Screen):
 		adapterName = networkManager.getFriendlyAdapterName(self.iface)
 		self.setTitle(_("Network Test – %s") % adapterName)
 		adapter = networkManager.adapters.get(self.iface)
+		net = networkManager.getNetInfo(self.iface)
 		isWlan = adapter.isWlan if adapter else False
 		labels = [
 			_("Adapter"),
@@ -1850,7 +1885,7 @@ class NetworkTest(Screen):
 		self.rows = [(glyph, label, "", "", color) for label in labels]
 		self["list"].setList(list(self.rows))
 		if adapter:
-			setRow(self.ROW_ADAPTER, self.STATE_OK, networkManager.getFriendlyAdapterName(self.iface), adapter.kernelDriver or "")
+			setRow(self.ROW_ADAPTER, self.STATE_OK, networkManager.getFriendlyAdapterName(self.iface), net.driver or "")
 			testLink()
 		else:
 			setRow(self.ROW_ADAPTER, self.STATE_FAIL, self.T_NOT_FOUND, "")

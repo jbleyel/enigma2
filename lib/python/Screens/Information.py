@@ -1020,58 +1020,59 @@ class InformationNetwork(InformationBase):
 		info.append(formatLine("S0S", _("Hostname"), hostname))
 		for interface in sorted(networkManager.adapters.keys()):
 			adapter = networkManager.adapters[interface]
+			net = adapter.netInfo
 			info.append("")
 			info.append(formatLine("S", _("Interface '%s'") % interface, _("WLAN / Wi-Fi") if adapter.isWlan else _("LAN")))
-			info.append(formatLine("P1", _("Status"), (_("Up / Active") if adapter.kernelUp else _("Down / Inactive"))))
-			if adapter.kernelUp:
-				if adapter.kernelIp != [0, 0, 0, 0]:
-					info.append(formatLine("P1", _("IP address"), ".".join(str(x) for x in adapter.kernelIp)))
-				if adapter.kernelNetmask != [0, 0, 0, 0]:
-					info.append(formatLine("P1", _("Netmask"), ".".join(str(x) for x in adapter.kernelNetmask)))
-				if adapter.kernelGateway != [0, 0, 0, 0]:
-					info.append(formatLine("P1", _("Gateway"), ".".join(str(x) for x in adapter.kernelGateway)))
-				if adapter.kernelBcast != [0, 0, 0, 0]:
-					info.append(formatLine("P1", _("Broadcast address"), ".".join(str(x) for x in adapter.kernelBcast)))
-				for ip6 in adapter.kernelIp6:
+			info.append(formatLine("P1", _("Status"), (_("Up / Active") if net.up else _("Down / Inactive"))))
+			if net.up:
+				if net.ip != [0, 0, 0, 0]:
+					info.append(formatLine("P1", _("IP address"), ".".join(str(x) for x in net.ip)))
+				if net.netmask != [0, 0, 0, 0]:
+					info.append(formatLine("P1", _("Netmask"), ".".join(str(x) for x in net.netmask)))
+				if net.gateway != [0, 0, 0, 0]:
+					info.append(formatLine("P1", _("Gateway"), ".".join(str(x) for x in net.gateway)))
+				if net.bcast != [0, 0, 0, 0]:
+					info.append(formatLine("P1", _("Broadcast address"), ".".join(str(x) for x in net.bcast)))
+				for ip6 in net.ip6:
 					info.append(formatLine("P1", _("IPv6 address"), ip6.get("addr", "")))
 					info.append(formatLine("P3V2", _("Scope"), ip6.get("scope", "").capitalize()))
 				if adapter.mac:
 					info.append(formatLine("P1", _("MAC address"), adapter.mac))
-				if adapter.kernelMtu:
-					info.append(formatLine("P1", _("MTU"), adapter.kernelMtu))
+				if net.mtu:
+					info.append(formatLine("P1", _("MTU"), net.mtu))
 				if adapter.isWlan:
-					if adapter.kernelSsid:
-						info.append(formatLine("P1", _("SSID"), adapter.kernelSsid))
-						connection = next((x for x in adapter.connections if x.wlan and x.wlan.ssid == adapter.kernelSsid), None)
+					if net.ssid:
+						info.append(formatLine("P1", _("SSID"), net.ssid))
+						connection = next((x for x in networkManager.getConnections(interface) if x.wlan and x.wlan.ssid == net.ssid), None)
 						if connection:
 							label = encryptionLabels.get(connection.wlan.encryption)
 							info.append(formatLine("P1", _("Encryption"), label() if label else connection.wlan.encryption))
-					if adapter.kernelBssid:
-						info.append(formatLine("P1", _("Access point"), adapter.kernelBssid))
-					if adapter.kernelFreqMhz:
-						info.append(formatLine("P1", _("Frequency"), f"{adapter.kernelFreqMhz} MHz"))
-					if adapter.kernelChannel:
-						info.append(formatLine("P1", _("Channel"), adapter.kernelChannel))
-					if adapter.kernelBitrateBps:
-						info.append(formatLine("P1", _("Bitrate"), f"{adapter.kernelBitrateBps // 1000000} Mbps"))
-					if adapter.kernelSignal:
-						info.append(formatLine("P1", _("Signal strength"), f"{adapter.kernelSignal} dBm"))
+					if net.bssid:
+						info.append(formatLine("P1", _("Access point"), net.bssid))
+					if net.freqMhz:
+						info.append(formatLine("P1", _("Frequency"), f"{net.freqMhz} MHz"))
+					if net.channel:
+						info.append(formatLine("P1", _("Channel"), net.channel))
+					if net.bitrateBps:
+						info.append(formatLine("P1", _("Bitrate"), f"{net.bitrateBps // 1000000} Mbps"))
+					if net.signal:
+						info.append(formatLine("P1", _("Signal strength"), f"{net.signal} dBm"))
 				else:
-					if adapter.kernelSpeed > 0:
-						info.append(formatLine("P1", _("Speed"), f"{adapter.kernelSpeed} Mbps"))
-					if adapter.kernelDuplex:
-						info.append(formatLine("P1", _("Duplex"), _(adapter.kernelDuplex.capitalize())))
-					if adapter.kernelTransceiver:
-						info.append(formatLine("P1", _("Transceiver"), _(adapter.kernelTransceiver.capitalize())))
-					info.append(formatLine("P1", _("Link detected"), (_("Yes") if adapter.kernelLink else _("No"))))
-				if adapter.kernelBus:
-					info.append(formatLine("P1", _("Bus"), adapter.kernelBus.upper()))
-				if adapter.kernelDriver:
-					info.append(formatLine("P1", _("Driver"), adapter.kernelDriver))
-			if adapter.kernelRxBytes or adapter.kernelTxBytes:
+					if net.speed > 0:
+						info.append(formatLine("P1", _("Speed"), f"{net.speed} Mbps"))
+					if net.duplex:
+						info.append(formatLine("P1", _("Duplex"), _(net.duplex.capitalize())))
+					if net.transceiver:
+						info.append(formatLine("P1", _("Transceiver"), _(net.transceiver.capitalize())))
+					info.append(formatLine("P1", _("Link detected"), (_("Yes") if net.link else _("No"))))
+				if net.bus:
+					info.append(formatLine("P1", _("Bus"), net.bus.upper()))
+				if net.driver:
+					info.append(formatLine("P1", _("Driver"), net.driver))
+			if net.rxBytes or net.txBytes:
 				info.append("")
-				info.append(formatLine("P1", _("Bytes received"), "%d (%s)" % (adapter.kernelRxBytes, scaleNumber(adapter.kernelRxBytes, style="Iec", format="%.1f"))))
-				info.append(formatLine("P1", _("Bytes sent"), "%d (%s)" % (adapter.kernelTxBytes, scaleNumber(adapter.kernelTxBytes, style="Iec", format="%.1f"))))
+				info.append(formatLine("P1", _("Bytes received"), "%d (%s)" % (net.rxBytes, scaleNumber(net.rxBytes, style="Iec", format="%.1f"))))
+				info.append(formatLine("P1", _("Bytes sent"), "%d (%s)" % (net.txBytes, scaleNumber(net.txBytes, style="Iec", format="%.1f"))))
 		info += self.geolocationData
 		self["information"].setText("\n".join(info))
 

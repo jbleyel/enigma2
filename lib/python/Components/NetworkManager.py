@@ -53,7 +53,7 @@ ifconfigBin = "/sbin/ifconfig"
 ifupBin = "/sbin/ifup"
 ifdownBin = "/sbin/ifdown"
 wpaSupplicantBin = "/usr/sbin/wpa_supplicant"
-wpaCliBin = "/usr/bin/wpa_cli"
+wpaCliBin = "/usr/sbin/wpa_cli"
 ethtoolBin = "/usr/sbin/ethtool"
 socketDaemonPath = "/var/run/daemon.socket"
 netEventSocketPath = "/var/run/daemon_net.socket"
@@ -144,7 +144,6 @@ class WiFiConfig:
 	key: str = ""
 	wepKeyType: str = "ASCII"    # "ASCII" | "HEX"
 	wpaId: int | None = None
-	idStr: str = ""      # wpa_supplicant id_str – persists the user-defined profile name
 	disabled: bool = False  # wpa_supplicant disabled=1
 	# Background scan – enables auto-roaming between known networks.
 	# Format: "simple:<shortInterval>:<signalThreshold>:<longInterval>"
@@ -191,8 +190,44 @@ class Connection:
 
 
 @dataclass
+class NetInfo:
+	"""Live/kernel state for one interface – refreshed from socketdaemon's
+	/var/run/netinfo JSON, sysfs and /proc/net/dev. Never persisted, held
+	directly on Adapter.netInfo (a plain field, not a lookup)."""
+
+	up: bool = False
+	link: bool = False   # physical link (cable/WLAN association)
+	ip: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
+	netmask: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
+	gateway: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
+	bcast: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
+	ip6: list = field(default_factory=list)  # [{"addr": "…", "prefix": 64}, …]
+	speed: int = -1        # LAN only, Mbps; -1 = unknown
+	duplex: str = ""       # LAN only: "full" | "half" | ""
+	port: str = ""         # LAN only: "TP" | "MII" | "FIBRE" | …
+	transceiver: str = ""  # LAN only: "internal" | "external"
+	autoneg: bool = False  # LAN only
+	linkSupported: int = 0  # LAN only, ETHTOOL SUPPORTED_* bitmask from socketdaemon
+	ssid: str = ""         # WLAN only
+	bssid: str = ""        # WLAN only, AP MAC address
+	freqMhz: int = 0       # WLAN only, channel frequency in MHz
+	channel: int = 0       # WLAN only, channel number
+	bitrateBps: int = 0    # WLAN only, TX bitrate in bps
+	signal: int = 0        # WLAN only, dBm
+	driver: str = ""       # kernel module name (e.g. "r8168", "mt76x2u")
+	hwId: str = ""         # "VVVV:DDDD" PCI or USB vendor:product hex
+	bus: str = ""          # physical bus from socketdaemon (e.g. "usb", "pci", "platform")
+	wolSupported: int = 0  # ethtool WoL bitmask; 0 = not supported
+	rxBytes: int = 0       # /proc/net/dev counter
+	txBytes: int = 0       # /proc/net/dev counter
+	mtu: int = 0
+
+
+@dataclass
 class Adapter:
-	"""Physical network interface as discovered in /sys/class/net."""
+	"""Physical network interface identity/config, as discovered in
+	/sys/class/net, plus its live NetInfo. Holds no Connections (see
+	NetworkManager.connections) – those are linked only via adapter name."""
 
 	name: str
 	mac: str = ""
@@ -204,38 +239,7 @@ class Adapter:
 	wolProcPath: str = ""
 	wolProcType: str = ""
 	adapterEnabled: bool = False  # "auto <iface>" in /etc/network/interfaces
-	kernelUp: bool = False
-	kernelLink: bool = False   # physical link (cable/WLAN association)
-	kernelIp: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
-	kernelNetmask: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
-	kernelGateway: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
-	kernelBcast: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
-	kernelSpeed: int = -1        # LAN only, Mbps; -1 = unknown
-	kernelDuplex: str = ""       # LAN only: "full" | "half" | ""
-	kernelPort: str = ""         # LAN only: "TP" | "MII" | "FIBRE" | …
-	kernelTransceiver: str = ""  # LAN only: "internal" | "external"
-	kernelAutoneg: bool = False  # LAN only
-	kernelLinkSupported: int = 0  # LAN only, ETHTOOL SUPPORTED_* bitmask from socketdaemon
-	kernelSsid: str = ""         # WLAN only
-	kernelBssid: str = ""        # WLAN only, AP MAC address
-	kernelFreqMhz: int = 0       # WLAN only, channel frequency in MHz
-	kernelChannel: int = 0       # WLAN only, channel number
-	kernelBitrateBps: int = 0    # WLAN only, TX bitrate in bps
-	kernelSignal: int = 0        # WLAN only, dBm
-	kernelIp6: list = field(default_factory=list)  # [{"addr": "…", "prefix": 64}, …]
-	kernelDriver: str = ""       # kernel module name (e.g. "r8168", "mt76x2u")
-	kernelHwId: str = ""         # "VVVV:DDDD" PCI or USB vendor:product hex
-	kernelBus: str = ""          # physical bus from socketdaemon (e.g. "usb", "pci", "platform")
-	kernelWolSupported: int = 0  # ethtool WoL bitmask; 0 = not supported
-	kernelRxBytes: int = 0       # /proc/net/dev counter
-	kernelTxBytes: int = 0       # /proc/net/dev counter
-	kernelMtu: int = 0
-	connections: list[Connection] = field(default_factory=list)
-
-	# Highest-priority enabled connection.
-	def activeConnection(self) -> Connection | None:
-		enabled = [x for x in self.connections if x.enabled]
-		return max(enabled, key=lambda conn: conn.priority, default=None)
+	netInfo: NetInfo = field(default_factory=NetInfo)
 
 	@property
 	def wpaConfPath(self) -> str:
@@ -593,7 +597,6 @@ def _wpaDictToWlanConfig(fields: dict[str, str], blockId: int) -> WiFiConfig:
 		key=fields.get("psk", fields.get("wep_key0", "")),
 		bgscan=fields.get("bgscan", "simple:30:-70:3600"),
 		wpaId=blockId,
-		idStr=fields.get("id_str", ""),
 		disabled=fields.get("disabled", "0") == "1",
 	)
 
@@ -630,8 +633,6 @@ def _wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
 		lines.append("\tproto=RSN")
 		lines.append(f'\tpsk="{wlan.key}"')
 
-	if wlan.idStr:
-		lines.append(f'\tid_str="{wlan.idStr}"')
 	if wlan.disabled:
 		lines.append("\tdisabled=1")
 	lines.append("}")
@@ -1063,6 +1064,7 @@ class NetworkManager:
 	def __init__(self):
 		self._debug = config.crash.debugNetwork.value
 		self.adapters: dict[str, Adapter] = {}
+		self.connections: dict[str, list[Connection]] = {}
 		self.nameserverConfig = NameserverConfig()
 		self._ifacesFile = InterfacesFile()
 		self._nsFiles = NameserverFiles()
@@ -1104,6 +1106,10 @@ class NetworkManager:
 			isWlan = _isWireless(name)
 			module = _detectModule(name)
 			api = _detectDriverApi(name, module)
+			# Rediscovery (restartNetwork(), _onIfaceAdd()) replaces the Adapter
+			# object outright – carry its live netInfo over so it doesn't go
+			# blank until the next netinfo update arrives.
+			existing = self.adapters.get(name)
 			adapter = Adapter(
 				name=name,
 				isWlan=isWlan,
@@ -1111,15 +1117,17 @@ class NetworkManager:
 				driverApi=api,
 				canWakeOnWiFi=_canWakeOnWiFi(name),
 				mac=fileReadLine(f"{sysfsNet}/{name}/address", default=""),
+				netInfo=existing.netInfo if existing else NetInfo(),
 			)
+			netInfo = adapter.netInfo
 			try:
 				flags = int(open(f"{sysfsNet}/{name}/flags").read().strip(), 16)
-				adapter.kernelUp = bool(flags & 1)
+				netInfo.up = bool(flags & 1)
 			except OSError:
 				pass
 			self.adapters[name] = adapter
 			self._detectWol(adapter)
-			self._log(f"_discoverAdapters(): {name} isWlan={isWlan} module={module} driverApi={api} kernelUp={adapter.kernelUp}")
+			self._log(f"_discoverAdapters(): {name} isWlan={isWlan} module={module} driverApi={api} up={netInfo.up}")
 
 	@staticmethod
 	# Detect WoL capability at startup. socketdaemon will refine via _applyNetinfo().
@@ -1147,15 +1155,15 @@ class NetworkManager:
 					isWlan=_isWirelessName(iface),
 					driverApi=apiNl80211,
 				)
-			self.adapters[iface].connections = conns
+			self.connections[iface] = conns
 			self.adapters[iface].adapterEnabled = iface in autoIfaces
 			if iface in wakeOnWiFiIfaces:
 				for conn in conns:
 					conn.wakeOnWiFi = True
 			self._log(f"_loadInterfacesFile(): {iface} adapterEnabled={self.adapters[iface].adapterEnabled} connections={len(conns)}")
 		for iface, adapter in self.adapters.items():
-			if not adapter.connections:
-				adapter.connections = [Connection(
+			if not self.connections.get(iface):
+				self.connections[iface] = [Connection(
 					adapter=iface,
 					name=iface,
 					dhcp=True,
@@ -1167,7 +1175,7 @@ class NetworkManager:
 			if not adapter.isWlan:
 				continue
 			if adapter.driverApi == apiBrcmWl:
-				self._mergeWiFiConfig(adapter, _bcmLoadWiFiConfig(iface))
+				self._mergeWiFiConfig(iface, _bcmLoadWiFiConfig(iface))
 			else:
 				wpf = WpaSupplicantFile(iface)
 				if not wpf.exists():
@@ -1175,22 +1183,19 @@ class NetworkManager:
 					continue
 				for wlan in wpf.parse():
 					self._log(f"_loadWpaSupplicantFiles(): {iface} ssid={wlan.ssid!r} disabled={wlan.disabled} encryption={wlan.encryption}")
-					self._mergeWiFiConfig(adapter, wlan)
+					self._mergeWiFiConfig(iface, wlan)
 
-	@staticmethod
-	def _mergeWiFiConfig(adapter: Adapter, wlan: WiFiConfig):
-		bySsid = {x.wlan.ssid: x for x in adapter.connections if x.wlan and x.wlan.ssid}
-		profileName = wlan.idStr if wlan.idStr else wlan.ssid
+	def _mergeWiFiConfig(self, iface: str, wlan: WiFiConfig):
+		conns = self.getConnections(iface)
+		bySsid = {x.wlan.ssid: x for x in conns if x.wlan and x.wlan.ssid}
 		if wlan.ssid in bySsid:
 			conn = bySsid[wlan.ssid]
 			conn.wlan = wlan
 			conn.enabled = not wlan.disabled
-			if wlan.idStr:
-				conn.name = profileName
 		else:
-			adapter.connections.append(Connection(
-				adapter=adapter.name,
-				name=profileName,
+			conns.append(Connection(
+				adapter=iface,
+				name=wlan.ssid,
 				dhcp=True,
 				enabled=not wlan.disabled,
 				priority=wlan.wpaId or 0,
@@ -1212,16 +1217,16 @@ class NetworkManager:
 			# stale/unsupported setting from a previously parsed file.
 			# canWakeOnLan alone is not proof: it's also set from a generic
 			# per-model /proc control path (_detectWol) that may exist even
-			# when the NIC chip has no real WoL support. kernelWolSupported
+			# when the NIC chip has no real WoL support. wolSupported
 			# is the actual ethtool-reported capability bitmask.
-			activeConn = adapter.activeConnection()
-			hwSupportsWol = adapter.canWakeOnLan and adapter.kernelWolSupported != 0
+			activeConn = self.activeConnection(iface)
+			hwSupportsWol = adapter.canWakeOnLan and adapter.netInfo.wolSupported != 0
 			mode = activeConn.wakeOnLan if (activeConn and hwSupportsWol) else "off"
 			self._updateWolPreup(adapter, mode)
 		for iface, adapter in self.adapters.items():
 			if not adapter.isWlan:
 				continue
-			for conn in adapter.connections:
+			for conn in self.getConnections(iface):
 				# Only real SSID profiles carry a usable wlan config; the base
 				# (non-SSID) placeholder's WifiConfig is always empty and must
 				# not be used to build pre-up/pre-down commands.
@@ -1229,34 +1234,26 @@ class NetworkManager:
 					cs = _buildWlanConfigStrings(adapter, conn)
 					conn.extraLines = [x for x in cs.splitlines() if x] if cs else []
 
-		# For WLAN: write exactly ONE base block to interfaces (IP config + pre-up/pre-down).
-		# SSID connections are managed exclusively via wpa_supplicant.conf.
-		# Multiple base connections can accumulate from legacy files — collapse to one.
+		# For WLAN: write exactly ONE base block to interfaces (IP/DHCP/DNS/WOL/WWOL,
+		# edited directly on this base Connection via NetworkAdapterSetup). SSID
+		# connections are managed exclusively via wpa_supplicant.conf and only
+		# contribute their pre-up/pre-down commands (extraLines) here.
 		connMap = {}
 		for iface, adapter in self.adapters.items():
+			conns = self.getConnections(iface)
 			if adapter.isWlan:
-				baseConns = [x for x in adapter.connections if not (x.wlan and x.wlan.ssid)]
-				if baseConns:
-					enabled = [x for x in baseConns if x.enabled]
-					baseConn = enabled[0] if enabled else baseConns[0]
-					# Sync base connection enabled with active SSID state.
-					# Exception: WoW-Only mode keeps base enabled so the iface stanza stays active.
-					wpaConns = [x for x in adapter.connections if x.wlan and x.wlan.ssid]
-					if wpaConns:
-						wowOnly = any(x.wakeOnWiFi and not x.enabled for x in wpaConns)
-						baseConn.enabled = wowOnly or any(x.enabled for x in wpaConns)
-						# The base connection is the only one written to
-						# /etc/network/interfaces, so it must carry the
-						# active SSID's pre-up/pre-down commands.
-						activeWpa = max((x for x in wpaConns if x.enabled), key=lambda conn: conn.priority, default=None)
-						baseConn.extraLines = activeWpa.extraLines if activeWpa else []
-					else:
-						baseConn.extraLines = []
-					connMap[iface] = [baseConn]
-				else:
-					connMap[iface] = []
+				baseConn = self.getBaseConnection(iface)
+				# adapterEnabled is the master switch, except WoW-Only mode keeps
+				# the iface stanza written (for its wowl pre-up hooks) even while
+				# the adapter is otherwise off.
+				wowOnly = baseConn.wakeOnWiFi and not adapter.adapterEnabled
+				baseConn.enabled = adapter.adapterEnabled or wowOnly
+				wpaConns = [x for x in conns if x.wlan and x.wlan.ssid]
+				activeWpa = max((x for x in wpaConns if x.enabled), key=lambda conn: conn.priority, default=None)
+				baseConn.extraLines = activeWpa.extraLines if activeWpa else []
+				connMap[iface] = [baseConn]
 			else:
-				connMap[iface] = adapter.connections
+				connMap[iface] = conns
 		adapterEnabledMap = {iface: adapter.adapterEnabled for iface, adapter in self.adapters.items()}
 		self._log(f"save(): adapterEnabledMap={adapterEnabledMap}")
 		ok = self._ifacesFile.save(connMap, adapterEnabledMap) and ok
@@ -1264,17 +1261,16 @@ class NetworkManager:
 		for iface, adapter in self.adapters.items():
 			if not adapter.isWlan:
 				continue
-			for conn in adapter.connections:
-				if conn.wlan is not None and conn.name and conn.name != conn.wlan.ssid:
-					conn.wlan.idStr = conn.name
+			conns = self.getConnections(iface)
+			for conn in conns:
 				if conn.wlan is not None and conn.wlan.ssid:
 					conn.wlan.disabled = not conn.enabled
-			wlanConfigs = [x.wlan for x in adapter.connections if x.wlan is not None and x.wlan.ssid]
+			wlanConfigs = [x.wlan for x in conns if x.wlan is not None and x.wlan.ssid]
 			if not wlanConfigs:
 				continue
 			self._log(f"save(): {iface} writing {len(wlanConfigs)} wlan profile(s): " + ", ".join(f"{w.ssid!r}(disabled={w.disabled})" for w in wlanConfigs))
 			if adapter.driverApi == apiBrcmWl:
-				active = adapter.activeConnection()
+				active = self.activeConnection(iface)
 				if active and active.wlan:
 					ok = _bcmSaveWlanConfig(iface, active.wlan) and ok
 			else:
@@ -1282,9 +1278,11 @@ class NetworkManager:
 				wpf.ensureDir()
 				ok = wpf.save(wlanConfigs) and ok
 
-		anyDhcp = any(conn.dhcp for adapter in self.adapters.values() for conn in adapter.connections if conn.enabled)
+		anyDhcp = any(conn.dhcp for conns in connMap.values() for conn in conns if conn.enabled)
 		self._nsFiles.save(self.nameserverConfig, anyDhcp)
-		self._notifyNetworkPlugins(True)
+		# The caller applies whatever the changed config needs next (ifup/ifdown,
+		# a full restart, ...) – the network is about to change, so plugins stop now.
+		self._notifyNetworkPlugins(False)
 		self._log(f"save(): done, ok={ok}")
 		return ok
 
@@ -1296,7 +1294,7 @@ class NetworkManager:
 		adapter = self.adapters.get(iface)
 		if not adapter:
 			return []
-		conn = adapter.activeConnection()
+		conn = self.activeConnection(iface)
 		if not conn:
 			return [f"{ifupBin} {iface}"]
 		if adapter.isWlan:
@@ -1318,7 +1316,13 @@ class NetworkManager:
 
 		def _done(retval: int = 0):
 			self._log(f"restartNetwork(): {iface or 'all'} done, retval={retval}")
+			# _discoverAdapters() rebuilds each Adapter from scratch (dataclass
+			# defaults, so adapterEnabled=False) – restore the persisted config
+			# on top, same as load() does at startup. self.connections is a
+			# separate dict, untouched by _discoverAdapters().
 			self._discoverAdapters()
+			self._loadInterfacesFile()
+			self._loadWpaSupplicantFiles()
 			if callback:
 				callback()
 		self._pendingRestart = ServiceAction.netrestart(_done, iface=iface)
@@ -1330,30 +1334,55 @@ class NetworkManager:
 	def getAdapter(self, iface: str) -> Adapter | None:
 		return self.adapters.get(iface)
 
-	def getConnections(self, iface: str) -> list[Connection]:
+	def getNetInfo(self, iface: str) -> NetInfo:
 		adapter = self.adapters.get(iface)
-		return adapter.connections if adapter else []
+		return adapter.netInfo if adapter else NetInfo()
+
+	def getConnections(self, iface: str) -> list[Connection]:
+		return self.connections.setdefault(iface, [])
+
+	# Highest-priority enabled connection for this adapter.
+	def activeConnection(self, iface: str) -> Connection | None:
+		enabled = [x for x in self.getConnections(iface) if x.enabled]
+		return max(enabled, key=lambda conn: conn.priority, default=None)
+
+	# The non-SSID placeholder Connection that carries IP config (DHCP/IP/
+	# netmask/gateway/DNS) and WOL/WWOL – the only Connection ever written to
+	# /etc/network/interfaces for a WLAN adapter. For LAN, simply the (only)
+	# Connection. Created on demand if it doesn't exist yet.
+	def getBaseConnection(self, iface: str) -> Connection:
+		conns = self.getConnections(iface)
+		if not conns:
+			adapter = self.adapters.get(iface)
+			isWlan = adapter.isWlan if adapter else _isWirelessName(iface)
+			base = Connection(adapter=iface, name=iface, dhcp=True, wlan=WiFiConfig() if isWlan else None)
+			conns.append(base)
+			return base
+		base = next((x for x in conns if not (x.wlan and x.wlan.ssid)), None)
+		if base is None:
+			adapter = self.adapters.get(iface)
+			isWlan = adapter.isWlan if adapter else _isWirelessName(iface)
+			base = Connection(adapter=iface, name=iface, dhcp=True, wlan=WiFiConfig() if isWlan else None)
+			conns.append(base)
+		return base
 
 	def getActiveConnection(self, iface: str) -> Connection | None:
-		adapter = self.adapters.get(iface)
-		return adapter.activeConnection() if adapter else None
+		return self.activeConnection(iface)
 
 	def getWlanConnections(self, iface: str) -> list[Connection]:
 		return [x for x in self.getConnections(iface) if x.isWlan]
 
 	def addConnection(self, conn: Connection):
-		adapter = self.adapters.get(conn.adapter)
-		if adapter:
-			adapter.connections.append(conn)
+		self.getConnections(conn.adapter).append(conn)
 
 	def removeConnection(self, iface: str, ssid: str) -> bool:
-		adapter = self.adapters.get(iface)
-		if not adapter:
+		conns = self.connections.get(iface)
+		if not conns:
 			self._log(f"removeConnection(): {iface} not found")
 			return False
-		before = len(adapter.connections)
-		adapter.connections = [x for x in adapter.connections if not (x.wlan and x.wlan.ssid == ssid)]
-		removed = len(adapter.connections) < before
+		before = len(conns)
+		self.connections[iface] = [x for x in conns if not (x.wlan and x.wlan.ssid == ssid)]
+		removed = len(self.connections[iface]) < before
 		self._log(f"removeConnection(): {iface} ssid={ssid!r} removed={removed}")
 		return removed
 
@@ -1383,10 +1412,26 @@ class NetworkManager:
 		return _("Ethernet network interface")
 
 	# Fire WHERE_NETWORKCONFIG_READ plugins – but ONLY when at least one
+	# adapter already has a working IP (skips pointless notifications e.g.
+	# before any interface has ever come up).
+	#
+	# reason=False: the network config is about to change – plugins must
+	#   stop their internal services (they'd otherwise keep running against
+	#   a socket/IP that's going away).
+	# reason=True: the change is done, the network is available again –
+	#   plugins (re)start.
+	#
+	# Example (OpenWebif, Plugins/Extensions/OpenWebif/plugin.py):
+	#   PluginDescriptor(where=[PluginDescriptor.WHERE_NETWORKCONFIG_READ], fnc=IfUpIfDown)
+	#   def IfUpIfDown(reason, **kwargs):
+	#       if reason is True:
+	#           HttpdStart(global_session)
+	#       else:
+	#           HttpdStop(global_session)
 	def _notifyNetworkPlugins(self, reason: bool):
 		active = any(
-			x.kernelUp and any(octet != 0 for octet in x.kernelIp)
-			for x in self.adapters.values()
+			net.up and any(octet != 0 for octet in net.ip)
+			for net in (adapter.netInfo for adapter in self.adapters.values())
 		)
 		if not active:
 			return
@@ -1401,7 +1446,7 @@ class NetworkManager:
 		if adapter and not adapter.isWlan:
 			def _lanUp(retval: int):
 				self._log(f"activateInterface(): {iface} (LAN) ifup retval={retval}")
-				self._notifyNetworkPlugins(False)
+				self._notifyNetworkPlugins(True)
 				if callback:
 					callback(retval == 0)
 			self._log(f"activateInterface(): {iface} (LAN) ifup")
@@ -1410,7 +1455,7 @@ class NetworkManager:
 
 		def _wlanUp(retval: bool = True):
 			self._log(f"activateInterface(): {iface} (WLAN) done")
-			self._notifyNetworkPlugins(False)
+			self._notifyNetworkPlugins(True)
 			if callback:
 				callback(True)
 		try:
@@ -1431,7 +1476,7 @@ class NetworkManager:
 		adapter = self.adapters.get(iface)
 		if adapter is None or not adapter.isWlan:
 			return []
-		others = [x for x in adapter.connections if x is not targetConn]
+		others = [x for x in self.getConnections(iface) if x is not targetConn]
 		maxOther = max((x.priority for x in others), default=0)
 		targetConn.priority = maxOther + 10
 		cmds: list[str] = []
@@ -1506,14 +1551,14 @@ class NetworkManager:
 		if adapter.wolProcPath and exists(adapter.wolProcPath):
 			procVal = (adapter.wolProcType.replace("enabled", "disabled") if mode == "off" else adapter.wolProcType) or ("0" if mode == "off" else "enabled")
 			cmds.append(f"echo '{procVal}' > {adapter.wolProcPath}")
-		conn = adapter.activeConnection()
+		conn = self.activeConnection(iface)
 		if conn:
 			conn.wakeOnLan = mode
 		self._updateWolPreup(adapter, mode)
 		return cmds
 
 	def _updateWolPreup(self, adapter: Adapter, mode: str):
-		conn = adapter.activeConnection()
+		conn = self.activeConnection(adapter.name)
 		if conn is None:
 			return
 		tag = f"pre-up {ethtoolBin} -s {adapter.name} wol "
@@ -1525,12 +1570,11 @@ class NetworkManager:
 	# Wake-on-WiFi
 	# ------------------------------------------------------------------
 
-	def setWakeOnWifiCommands(self, iface: str, enable: bool) -> list[str]:
+	def setWakeOnWiFiCommands(self, iface: str, enable: bool) -> list[str]:
 		adapter = self.adapters.get(iface)
-		if adapter is None or not adapter.canWakeOnWifi:
+		if adapter is None or not adapter.canWakeOnWiFi:
 			return []
-		for conn in adapter.connections:
-			conn.wakeOnWiFi = enable
+		self.getBaseConnection(iface).wakeOnWiFi = enable
 		cmds: list[str] = []
 		if enable:
 			cmds.append(f"wl -i {iface} wowl 0x100")
@@ -1544,21 +1588,17 @@ class NetworkManager:
 		return cmds
 
 	def _updateWowPreup(self, adapter: Adapter, enable: bool):
-		baseConn = next((x for x in adapter.connections if not (x.wlan and x.wlan.ssid)), None)
-		if baseConn is None:
-			return
+		baseConn = self.getBaseConnection(adapter.name)
 		iface = adapter.name
 		baseConn.extraLines = [x for x in baseConn.extraLines if "wowl" not in x]
 		if enable:
 			baseConn.extraLines.insert(0, f"pre-up wl -i {iface} wowl_activate || true")
 			baseConn.extraLines.insert(0, f"pre-up wl -i {iface} wowl 0x100 || true")
 
-	def getWakeOnWifi(self, iface: str) -> bool:
-		adapter = self.adapters.get(iface)
-		if adapter is None:
+	def getWakeOnWiFi(self, iface: str) -> bool:
+		if iface not in self.adapters:
 			return False
-		conn = adapter.activeConnection()
-		return conn.wakeOnWiFi if conn else False
+		return self.getBaseConnection(iface).wakeOnWiFi
 
 	# ------------------------------------------------------------------
 	# Link speed (forced, non-auto-negotiated)
@@ -1569,7 +1609,7 @@ class NetworkManager:
 		adapter = self.adapters.get(iface)
 		if adapter is None or adapter.isWlan:
 			return choices
-		mask = adapter.kernelLinkSupported
+		mask = adapter.netInfo.linkSupported
 		for _ethtoolMode, (bits, label) in _LINKSPEED_BITS.items():
 			if mask & bits:
 				choices.append((f"{bits:#04x}", label))
@@ -1613,45 +1653,46 @@ class NetworkManager:
 			adapter = self.adapters.get(iface)
 			if adapter is None:
 				continue
-			adapter.kernelUp = data.get("up", False)
+			netInfo = adapter.netInfo
+			netInfo.up = data.get("up", False)
 			ip4 = data.get("ip4", "")
 			if ip4:
-				adapter.kernelIp = _parseIp4(ip4)
+				netInfo.ip = _parseIp4(ip4)
 				mask = data.get("mask", "")
 				if mask:
-					adapter.kernelNetmask = _parseIp4(mask)
+					netInfo.netmask = _parseIp4(mask)
 				gw = data.get("gw", "")
 				if gw:
-					adapter.kernelGateway = _parseIp4(gw)
+					netInfo.gateway = _parseIp4(gw)
 				brd = data.get("brd", "")
 				if brd:
-					adapter.kernelBcast = _parseIp4(brd)
-			adapter.kernelDriver = data.get("driver", "")
-			adapter.kernelHwId = data.get("hw_id", "")
-			adapter.kernelBus = data.get("bus", "")
-			adapter.kernelRxBytes = data.get("rx_bytes", 0)
-			adapter.kernelTxBytes = data.get("tx_bytes", 0)
-			adapter.kernelMtu = data.get("mtu", 0)
-			adapter.kernelIp6 = data.get("ip6", [])
+					netInfo.bcast = _parseIp4(brd)
+			netInfo.driver = data.get("driver", "")
+			netInfo.hwId = data.get("hw_id", "")
+			netInfo.bus = data.get("bus", "")
+			netInfo.rxBytes = data.get("rx_bytes", 0)
+			netInfo.txBytes = data.get("tx_bytes", 0)
+			netInfo.mtu = data.get("mtu", 0)
+			netInfo.ip6 = data.get("ip6", [])
 			if adapter.isWlan:
-				adapter.kernelSsid = data.get("ssid", "")
-				adapter.kernelLink = adapter.kernelUp and bool(adapter.kernelSsid)  # link = up and associated to AP
-				adapter.kernelBssid = data.get("bssid", "")
-				adapter.kernelFreqMhz = data.get("freq_mhz", 0)
-				adapter.kernelChannel = data.get("channel", 0)
-				adapter.kernelBitrateBps = data.get("bitrate_bps", 0)
-				adapter.kernelSignal = data.get("signal_dbm", 0)
+				netInfo.ssid = data.get("ssid", "")
+				netInfo.link = netInfo.up and bool(netInfo.ssid)  # link = up and associated to AP
+				netInfo.bssid = data.get("bssid", "")
+				netInfo.freqMhz = data.get("freq_mhz", 0)
+				netInfo.channel = data.get("channel", 0)
+				netInfo.bitrateBps = data.get("bitrate_bps", 0)
+				netInfo.signal = data.get("signal_dbm", 0)
 			else:
-				adapter.kernelLink = adapter.kernelUp and data.get("link", False)
-				adapter.kernelSpeed = data.get("speed", -1)
-				adapter.kernelDuplex = data.get("duplex", "")
-				adapter.kernelPort = data.get("port", "")
-				adapter.kernelTransceiver = data.get("transceiver", "")
-				adapter.kernelAutoneg = data.get("autoneg", False)
-				adapter.kernelLinkSupported = data.get("link_supported", 0)
+				netInfo.link = netInfo.up and data.get("link", False)
+				netInfo.speed = data.get("speed", -1)
+				netInfo.duplex = data.get("duplex", "")
+				netInfo.port = data.get("port", "")
+				netInfo.transceiver = data.get("transceiver", "")
+				netInfo.autoneg = data.get("autoneg", False)
+				netInfo.linkSupported = data.get("link_supported", 0)
 				wol = data.get("wol_supported", 0)
 				if wol:
-					adapter.kernelWolSupported = wol
+					netInfo.wolSupported = wol
 					adapter.canWakeOnLan = True
 
 	def _onNetinfoUpdate(self):
@@ -1663,15 +1704,16 @@ class NetworkManager:
 		self._log(f"_onLinkChange(): {iface} up={up} running={running}")
 		adapter = self.adapters.get(iface)
 		if adapter:
-			adapter.kernelUp = up
+			netInfo = adapter.netInfo
+			netInfo.up = up
 			if adapter.isWlan:
 				# WLAN link = up and associated to AP; only clear here (on not-running or
 				# not-up) — actually setting it True happens on the next netinfo update.
 				if not running or not up:
-					adapter.kernelLink = False
-					adapter.kernelSsid = ""
+					netInfo.link = False
+					netInfo.ssid = ""
 			else:
-				adapter.kernelLink = up and running
+				netInfo.link = up and running
 				self._showToast(iface, running)
 		self._notifyAdaptersChanged()
 
@@ -1686,7 +1728,7 @@ class NetworkManager:
 		self._log(f"_onIpChange(): {iface} ipPrefix={ipPrefix}")
 		adapter = self.adapters.get(iface)
 		if adapter:
-			adapter.kernelIp = _parseIp4(ipPrefix.split("/")[0])
+			adapter.netInfo.ip = _parseIp4(ipPrefix.split("/")[0])
 		self._notifyAdaptersChanged()
 
 	# Ping 8.8.8.8 (fallback 1.1.1.1) for each adapter that has physical link
@@ -1694,8 +1736,8 @@ class NetworkManager:
 		candidates = [
 			iface
 			for iface, adapter in self.adapters.items()
-			if adapter.kernelLink and (
-				conn := adapter.activeConnection()
+			if adapter.netInfo.link and (
+				conn := self.activeConnection(iface)
 			) is not None and (conn.dhcp or conn.gateway != [0, 0, 0, 0])
 		]
 		self._log(f"checkConnectionInternet(): candidates={candidates}")
@@ -1728,7 +1770,12 @@ class NetworkManager:
 	def _onIfaceAdd(self, iface: str):
 		self._log(f"_onIfaceAdd(): {iface}")
 		if iface not in self.adapters:
+			# Same reasoning as restartNetwork(): _discoverAdapters() alone
+			# resets adapterEnabled to its dataclass default – restore the
+			# persisted config on top (e.g. a re-plugged USB WiFi dongle).
 			self._discoverAdapters()
+			self._loadInterfacesFile()
+			self._loadWpaSupplicantFiles()
 		self._notifyAdaptersChanged()
 
 	def _onIfaceRemove(self, iface: str):

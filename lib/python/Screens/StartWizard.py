@@ -289,7 +289,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 
 		def nwWlanDone(ip=""):
 			print("[NW-WIZ] nwWlanDone called, ip=%s" % ip)
-			# NetworkConnectionSetup already ran NetworkWiFiActivator (ifup + wpa_supplicant
+			# NetworkConnectionWiFi already ran NetworkWiFiActivator (ifup + wpa_supplicant
 			# + IP poll) and reports the result here, so there is nothing left to activate
 			# or poll for – activateInterface() again would just redo work on an adapter
 			# that is already up (or already given up on).
@@ -298,14 +298,14 @@ class StartWizard(Wizard, ShowRemoteControl):
 
 		def nwLanSetupDone(saved=False):
 			print("[NW-WIZ] nwLanSetupDone: saved=%s" % saved)
-			# NetworkConnectionSetup.keySave() already called networkManager.save(),
+			# NetworkAdapterSetup.keySave() already called networkManager.save(),
 			# which now applies whatever the LAN adapter needs (ifup/ifdown, or a
 			# full restart) itself based on what actually changed – nothing left
 			# to activate here, just wait for the resulting IP.
 			nwStartIpPoll()
 
 		try:
-			from Components.NetworkManager import networkManager, Connection
+			from Components.NetworkManager import networkManager
 			adapter = networkManager.adapters.get(self.nwSelectedIface) if self.nwSelectedIface else None
 			if adapter is None:
 				self.nwDone()
@@ -314,13 +314,8 @@ class StartWizard(Wizard, ShowRemoteControl):
 				from Screens.NetworkSetup import NetworkWiFiAddFlow
 				NetworkWiFiAddFlow.start(self.session, adapter=adapter, callback=nwWlanDone)
 			else:
-				from Screens.NetworkSetup import NetworkConnectionSetup
-				if adapter.connections:
-					conn = adapter.connections[0]
-				else:
-					conn = Connection(adapter=adapter.name, name=_("LAN"), enabled=True, dhcp=True)
-					adapter.connections.append(conn)
-				self.session.openWithCallback(nwLanSetupDone, NetworkConnectionSetup, conn, adapter)
+				from Screens.NetworkSetup import NetworkAdapterSetup
+				self.session.openWithCallback(nwLanSetupDone, NetworkAdapterSetup, adapter)
 			print("[NW-WIZ] nwOpenSetup: openWithCallback returned, updateValues_in_onShown=%s" % (self.updateValues in self.onShown))
 		except Exception as e:
 			print("[NW-WIZ] nwOpenSetup: EXCEPTION %s -> nwDone" % e)

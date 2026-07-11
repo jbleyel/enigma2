@@ -43,8 +43,9 @@ class InstallWizard(ConfigListScreen, Screen):
 				isFound = False
 				for name, adapter in (networkManager.adapters.items() if networkManager is not None else {}.items()):
 					if not adapter.isWlan:
-						if adapter.kernelUp:
-							self.ipConfigEntry = ConfigIP(default=list(adapter.kernelIp))
+						net = adapter.netInfo
+						if net.up:
+							self.ipConfigEntry = ConfigIP(default=list(net.ip))
 							networkManager.checkConnectionInternet(checkNetworkCallback)
 							isFound = True
 						else:
