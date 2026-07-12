@@ -90,7 +90,7 @@ struct eListboxStyleSetted
 	bool separator_color : 1;
 	bool header_color : 1;
 	bool wrap : 1;
-	bool shift : 1;
+	bool shrink : 1;
 };
 
 struct eListboxStyle
@@ -171,7 +171,7 @@ public:
 		showLeftAlways,
 		showTopOnDemand,
 		showTopAlways,
-		showOnDemandShift,
+		showOnDemandShrink,
 	};
 
 	enum

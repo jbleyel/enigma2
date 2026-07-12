@@ -792,7 +792,7 @@ def parseScrollbarMode(value):
 		"showLeftAlways": eListbox.showLeftAlways,
 		"showTopOnDemand": eListbox.showTopOnDemand,
 		"showTopAlways": eListbox.showTopAlways,
-		"showOnDemandShift": eListbox.showOnDemandShift,
+		"showOnDemandShrink": eListbox.showOnDemandShrink,
 	}
 	return parseOptions(options, "scrollbarMode", value, eListbox.showOnDemand)
 
