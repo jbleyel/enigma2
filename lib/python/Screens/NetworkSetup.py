@@ -40,7 +40,7 @@ from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
 from Screens.ChoiceBox import ChoiceBox
-from Screens.Information import InformationNetwork
+from Screens.Information import InformationNetwork as InformationNetworkOriginal
 from Screens.MessageBox import MessageBox
 from Screens.Processing import Processing
 from Screens.Screen import Screen
@@ -294,82 +294,60 @@ class DnsSettings(Setup):
 	# DNSCrypt TOML helpers
 	# ------------------------------------------------------------------
 
-	def _tomlBool(self, val):
-		return "true" if bool(val) else "false"
-
-	def _tomlStr(self, val):
-		return '"' + str(val).replace("\\", "\\\\").replace('"', '\\"') + '"'
-
-	def _tomlInt(self, val, default=0):
-		try:
-			result = str(int(val))
-		except Exception:
-			result = str(int(default))
-		return result
-
-	def _replaceKeyLine(self, line, key, newRhs, foundSet):
-		ls = line.lstrip()
-		indent = line[:len(line) - len(ls)]
-		result = line
-		if ls.startswith(f"{key} ") or ls.startswith(f"{key}=") or ls.startswith(f"#{key} ") or ls.startswith(f"#{key}="):
-			foundSet.add(key)
-			result = f"{indent}{key} = {newRhs}"
-		return result
-
-	def _findGlobalEnd(self, lines):
-		result = len(lines)
-		for idx, line in enumerate(lines):
-			stripped = line.lstrip()
-			if stripped.startswith("[") and stripped.rstrip().endswith("]") and not stripped.startswith("#"):
-				result = idx
-				break
-		return result
-
-	def _insertGlobalKey(self, lines, key, rhs, anchorKeys, foundSet):
-		if key in foundSet:
-			return
-		endGlobal = self._findGlobalEnd(lines)
-		insertAt = None
-		for idx in range(endGlobal):
-			stripped = lines[idx].lstrip()
-			for anchor in anchorKeys:
-				if stripped.startswith(f"{anchor} ") or stripped.startswith(f"{anchor}=") or stripped.startswith(f"#{anchor} ") or stripped.startswith(f"#{anchor}="):
-					insertAt = idx + 1
-		lines.insert(insertAt if insertAt is not None else endGlobal, f"{key} = {rhs}")
-		foundSet.add(key)
-
-	def _findSectionRange(self, lines, sectionName):
-		start = None
-		result = None
-		for idx, line in enumerate(lines):
-			stripped = line.lstrip()
-			if stripped.startswith("[") and stripped.rstrip().endswith("]") and not stripped.startswith("#"):
-				name = stripped.strip()[1:-1].strip()
-				if start is None and name == sectionName:
-					start = idx + 1
-					continue
-				if start is not None:
-					result = (start, idx)
-					break
-		if result is None:
-			result = (start, len(lines)) if start is not None else (None, None)
-		return result
-
-	def _insertSectionKey(self, lines, sectionName, key, rhs, anchorKeys, foundSet):
-		token = f"{sectionName}.{key}"
-		if token not in foundSet:
-			start, end = self._findSectionRange(lines, sectionName)
-			if start is not None:
-				insertAt = None
-				for idx in range(start, end):
-					stripped = lines[idx].lstrip()
-					for anchor in anchorKeys:
-						if stripped.startswith(f"{anchor} ") or stripped.startswith(f"{anchor}=") or stripped.startswith(f"#{anchor} ") or stripped.startswith(f"#{anchor}="):
-							insertAt = idx + 1
-				lines.insert(insertAt if insertAt is not None else end, f"{key} = {rhs}")
-				foundSet.add(token)
-
 	def writeDnsCryptToml(self):
+		def insertSectionKey(lines, sectionName, key, rhs, anchorKeys, foundSet):
+			def findSectionRange(lines, sectionName):
+				start = None
+				result = None
+				for idx, line in enumerate(lines):
+					stripped = line.lstrip()
+					if stripped.startswith("[") and stripped.rstrip().endswith("]") and not stripped.startswith("#"):
+						name = stripped.strip()[1:-1].strip()
+						if start is None and name == sectionName:
+							start = idx + 1
+							continue
+						if start is not None:
+							result = (start, idx)
+							break
+				if result is None:
+					result = (start, len(lines)) if start is not None else (None, None)
+				return result
+
+			token = f"{sectionName}.{key}"
+			if token not in foundSet:
+				start, end = findSectionRange(lines, sectionName)
+				if start is not None:
+					insertAt = None
+					for idx in range(start, end):
+						stripped = lines[idx].lstrip()
+						for anchor in anchorKeys:
+							if stripped.startswith(f"{anchor} ") or stripped.startswith(f"{anchor}=") or stripped.startswith(f"#{anchor} ") or stripped.startswith(f"#{anchor}="):
+								insertAt = idx + 1
+					lines.insert(insertAt if insertAt is not None else end, f"{key} = {rhs}")
+					foundSet.add(token)
+
+		def tomlBool(val):
+			return "true" if bool(val) else "false"
+
+		def tomlStr(val):
+			return '"' + str(val).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+		def tomlInt(val, default=0):
+			try:
+				result = str(int(val))
+			except Exception:
+				result = str(int(default))
+			return result
+
+		def replaceKeyLine(line, key, newRhs, foundSet):
+			ls = line.lstrip()
+			indent = line[:len(line) - len(ls)]
+			result = line
+			if ls.startswith(f"{key} ") or ls.startswith(f"{key}=") or ls.startswith(f"#{key} ") or ls.startswith(f"#{key}="):
+				foundSet.add(key)
+				result = f"{indent}{key} = {newRhs}"
+			return result
+
 		tomlPath = "/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
 		oldLines = fileReadLines(tomlPath, source=MODULE_NAME)
 		if not oldLines:
@@ -384,37 +362,37 @@ class DnsSettings(Setup):
 				newLines.append(line)
 				continue
 			if currentSection is None:
-				line = self._replaceKeyLine(line, "ipv4_servers", self._tomlBool(config.usage.dnsMode.value != 3), found)
-				line = self._replaceKeyLine(line, "ipv6_servers", self._tomlBool(config.usage.dnsMode.value != 2), found)
-				line = self._replaceKeyLine(line, "dnscrypt_servers", self._tomlBool(config.usage.DNSCryptProtocol.value), found)
-				line = self._replaceKeyLine(line, "doh_servers", self._tomlBool(config.usage.DNSCryptDoH.value), found)
-				line = self._replaceKeyLine(line, "odoh_servers", self._tomlBool(config.usage.DNSCryptODoH.value), found)
-				line = self._replaceKeyLine(line, "require_dnssec", self._tomlBool(config.usage.DNSCryptDNSSEC.value), found)
-				line = self._replaceKeyLine(line, "require_nolog", self._tomlBool(config.usage.DNSCryptNoLog.value), found)
-				line = self._replaceKeyLine(line, "require_nofilter", self._tomlBool(config.usage.DNSCryptNoFilter.value), found)
-				line = self._replaceKeyLine(line, "cache", self._tomlBool(config.usage.DNSCryptCache.value), found)
+				line = replaceKeyLine(line, "ipv4_servers", tomlBool(config.usage.dnsMode.value != 3), found)
+				line = replaceKeyLine(line, "ipv6_servers", tomlBool(config.usage.dnsMode.value != 2), found)
+				line = replaceKeyLine(line, "dnscrypt_servers", tomlBool(config.usage.DNSCryptProtocol.value), found)
+				line = replaceKeyLine(line, "doh_servers", tomlBool(config.usage.DNSCryptDoH.value), found)
+				line = replaceKeyLine(line, "odoh_servers", tomlBool(config.usage.DNSCryptODoH.value), found)
+				line = replaceKeyLine(line, "require_dnssec", tomlBool(config.usage.DNSCryptDNSSEC.value), found)
+				line = replaceKeyLine(line, "require_nolog", tomlBool(config.usage.DNSCryptNoLog.value), found)
+				line = replaceKeyLine(line, "require_nofilter", tomlBool(config.usage.DNSCryptNoFilter.value), found)
+				line = replaceKeyLine(line, "cache", tomlBool(config.usage.DNSCryptCache.value), found)
 				newLines.append(line)
 				continue
 			if currentSection == "monitoring_ui":
 				for attr, key, val in [
-					("DNSCryptUI", "enabled", self._tomlBool(config.usage.DNSCryptUI.value)),
-					(None, "listen_address", self._tomlStr(f"0.0.0.0:{self._tomlInt(config.usage.DNSCryptPort.value, 9012)}")),
-					("DNSCryptUsername", "username", self._tomlStr(config.usage.DNSCryptUsername.value.strip())),
-					("DNSCryptPassword", "password", self._tomlStr(config.usage.DNSCryptPassword.value.strip())),
-					("DNSCryptPrivacy", "privacy_level", self._tomlInt(config.usage.DNSCryptPrivacy.value, 1)),
+					("DNSCryptUI", "enabled", tomlBool(config.usage.DNSCryptUI.value)),
+					(None, "listen_address", tomlStr(f"0.0.0.0:{tomlInt(config.usage.DNSCryptPort.value, 9012)}")),
+					("DNSCryptUsername", "username", tomlStr(config.usage.DNSCryptUsername.value.strip())),
+					("DNSCryptPassword", "password", tomlStr(config.usage.DNSCryptPassword.value.strip())),
+					("DNSCryptPrivacy", "privacy_level", tomlInt(config.usage.DNSCryptPrivacy.value, 1)),
 				]:
 					tmpFound = set()
-					line2 = self._replaceKeyLine(line, key, val, tmpFound)
+					line2 = replaceKeyLine(line, key, val, tmpFound)
 					if key in tmpFound:
 						found.add(f"monitoring_ui.{key}")
 						line = line2
 			newLines.append(line)
 
-		self._insertSectionKey(newLines, "monitoring_ui", "enabled", self._tomlBool(config.usage.DNSCryptUI.value), ["enabled"], found)
-		self._insertSectionKey(newLines, "monitoring_ui", "listen_address", self._tomlStr(f"0.0.0.0:{self._tomlInt(config.usage.DNSCryptPort.value, 9012)}"), ["enabled", "listen_address"], found)
-		self._insertSectionKey(newLines, "monitoring_ui", "username", self._tomlStr(config.usage.DNSCryptUsername.value.strip()), ["listen_address", "username"], found)
-		self._insertSectionKey(newLines, "monitoring_ui", "password", self._tomlStr(config.usage.DNSCryptPassword.value.strip()), ["username", "password"], found)
-		self._insertSectionKey(newLines, "monitoring_ui", "privacy_level", self._tomlInt(config.usage.DNSCryptPrivacy.value, 1), ["password", "privacy_level"], found)
+		insertSectionKey(newLines, "monitoring_ui", "enabled", tomlBool(config.usage.DNSCryptUI.value), ["enabled"], found)
+		insertSectionKey(newLines, "monitoring_ui", "listen_address", tomlStr(f"0.0.0.0:{tomlInt(config.usage.DNSCryptPort.value, 9012)}"), ["enabled", "listen_address"], found)
+		insertSectionKey(newLines, "monitoring_ui", "username", tomlStr(config.usage.DNSCryptUsername.value.strip()), ["listen_address", "username"], found)
+		insertSectionKey(newLines, "monitoring_ui", "password", tomlStr(config.usage.DNSCryptPassword.value.strip()), ["username", "password"], found)
+		insertSectionKey(newLines, "monitoring_ui", "privacy_level", tomlInt(config.usage.DNSCryptPrivacy.value, 1), ["password", "privacy_level"], found)
 
 		tmpPath = f"{tomlPath}.tmp"
 		fileWriteLines(tmpPath, newLines)
@@ -423,13 +401,13 @@ class DnsSettings(Setup):
 
 
 # ===========================================================================
-# InformationNetworkAdapter – scrollable info screen for adapter / connection
+# InformationNetwork – Subclass of the InformationNetwork
 # ===========================================================================
 
 
-class InformationNetworkAdapter(InformationNetwork):
+class InformationNetwork(InformationNetworkOriginal):
 	def __init__(self, session, adapter, conn):
-		InformationNetwork.__init__(self, session)
+		InformationNetworkOriginal.__init__(self, session)
 		self.conn = conn
 		self.adapter = adapter
 		#self["geolocationActions"].setEnabled(False)
@@ -437,7 +415,7 @@ class InformationNetworkAdapter(InformationNetwork):
 		self["key_green"] = StaticText(_("Refresh"))
 
 	def displayInformation(self):
-		InformationNetwork.displayInformation(self, selectedAdapter=self.adapter)
+		InformationNetworkOriginal.displayInformation(self, selectedAdapter=self.adapter)
 
 
 # ===========================================================================
@@ -598,17 +576,47 @@ class NetworkOverview(Screen):
 			"down": (self.keyDown, _("Move down")),
 		}, prio=0, description=_("Network Overview Actions"))
 		self.onLayoutFinish.append(self.layoutFinished)
-		networkManager.onAdaptersChanged.append(self.buildAdapters)
 		self.internetChecked = False
 		self.internetResult = None
 		self.onShown.append(self.checkInternet)
-		self.onClose.append(lambda: networkManager.onAdaptersChanged.remove(self.buildAdapters) if self.buildAdapters in networkManager.onAdaptersChanged else None)
+		networkManager.onAdaptersChanged.append(self.refreshAdapters)
+
+		def doClose():
+			networkManager.onAdaptersChanged.remove(self.refreshAdapters)
+		self.onClose.append(doClose)
+
+	def refreshAdapters(self):
+		# TODO
+		# oldGateways = {x[self.INDEX_ADAPTER].name: x[self.INDEX_ADAPTER].netInfo.gateway for x in self["adapterList"].getList()}
+		# newAdapters = [networkManager.adapters[iface] for iface in sorted(networkManager.adapters.keys())]
+		gatewayChanged = False  # any(x.netInfo.gateway != oldGateways.get(x.name) for x in newAdapters)
+		if not gatewayChanged:
+			adapterIndex = self["adapterList"].getCurrentIndex() if self["adapterList"].count() else -1
+			networkIndex = self["knownNetworksList"].getCurrentIndex() if self["knownNetworksList"].count() else -1
+			self.buildAdapters()
+			try:
+				if adapterIndex != -1:
+					self["adapterList"].setCurrentIndex(adapterIndex)
+			except Exception:
+				pass
+			if self.currentList == self["knownNetworksList"]:
+				try:
+					if networkIndex != -1:
+						self["knownNetworksList"].setCurrentIndex(networkIndex)
+				except Exception:
+					pass
+		else:
+			self.internetResult = None
+			self.internetChecked = False
+			self.checkInternet()
 
 	def layoutFinished(self):
 		self["adapterList"].enableAutoNavigation(False)
 		self["adapterList"].setLockFirstRow(True)
 		self["knownNetworksList"].enableAutoNavigation(False)
 		self["knownNetworksList"].setLockFirstRow(True)
+		self.markHeaderNotSelectable("adapterList")
+		self.markHeaderNotSelectable("knownNetworksList")
 		self.buildAdapters()
 		self.setListFocus("adapterList")
 
@@ -622,7 +630,7 @@ class NetworkOverview(Screen):
 		def checkInternetCallback(result):
 			if hasattr(self, "internetResult"):
 				self.internetResult = result
-				self.buildAdapters()
+				self.refreshAdapters()
 				self.internetChecked = True
 
 		if not self.internetChecked:
@@ -739,7 +747,6 @@ class NetworkOverview(Screen):
 		if hasRows:
 			rows.insert(0, buildOverviewAdapterHeaderRow())
 		self["adapterList"].setList(rows)
-		self.markHeaderNotSelectable("adapterList")
 		if hasRows:
 			self["adapterList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
 		self.updateConnections()
@@ -809,7 +816,6 @@ class NetworkOverview(Screen):
 			if hasRows:
 				rows.insert(0, buildOverviewConnectionHeaderRow())
 			self["knownNetworksList"].setList(rows)
-			self.markHeaderNotSelectable("knownNetworksList")
 			if hasRows:
 				self["knownNetworksList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
 			self["knownNetworksLabel"].setText(f"{self.TEXT_KNOWN_NETWORKS} · {adapter.name} · {len(connections)}")
@@ -845,7 +851,7 @@ class NetworkOverview(Screen):
 	def keyInfo(self):
 		adapter = self.currentAdapter()
 		if adapter:
-			self.session.open(InformationNetworkAdapter, adapter, self.currentConnection())
+			self.session.open(InformationNetwork, adapter, self.currentConnection())
 
 	def updateKeyGreen(self):
 		adapter = self.currentAdapter()
@@ -907,15 +913,15 @@ class NetworkOverview(Screen):
 				self.buildAdapters()
 			networkManager.restartNetwork(iface=adapter.name, callback=done)
 
-		def openWlanScan(self, iface: str):
-			def wlanScanDone(self, result: ScanResult | None, adapter: Adapter):
+		def openWlanScan(iface: str):
+			def wlanScanDone(result: ScanResult | None, adapter: Adapter):
 					if result:
 						self.session.openWithCallback(self.setupClosed, NetworkConnectionWiFi, scanResultToConnection(result, adapter.name), adapter)
 			adapter = networkManager.getAdapter(iface)
 			if adapter is not None and adapter.isWlan:
 				self.session.openWithCallback(lambda result: wlanScanDone(result, adapter), NetworkWiFiScanScreen, adapter)
 
-		def openWlanManual(self, adapter: Adapter):
+		def openWlanManual(adapter: Adapter):
 			conn = Connection(adapter=adapter.name, name=_("New Wi-Fi"), dhcp=True, enabled=False, wlan=WiFiConfig())
 			self.session.openWithCallback(self.setupClosed, NetworkConnectionWiFi, conn, adapter)
 
@@ -1041,6 +1047,7 @@ class NetworkAdapterSetup(Setup):
 		self.adapter = adapter
 		self.conn = networkManager.getBaseConnection(adapter.name)
 		self.buildConfigObjects()
+		self.haveWakeOnLan = BoxInfo.getItem("wol") and BoxInfo.getItem("WakeOnLAN")
 		Setup.__init__(self, session=session, setup="NetworkAdapter")
 		self.setTitle(_("Network Adapter Settings – %s") % adapter.name)
 		self["key_info"] = StaticText(_("Info"))
@@ -1049,7 +1056,7 @@ class NetworkAdapterSetup(Setup):
 		}, prio=0)
 
 	def keyShowInfo(self):
-		self.session.open(InformationNetworkAdapter, self.adapter, self.conn)
+		self.session.open(InformationNetwork, self.adapter, self.conn)
 
 	def buildConfigObjects(self):
 		adapter = self.adapter
@@ -1086,9 +1093,6 @@ class NetworkAdapterSetup(Setup):
 		self.cfgDns1v6 = NoSave(ConfigText(default=dnsV6[0] if len(dnsV6) > 0 else "", fixed_size=False))
 		self.cfgDns2v6 = NoSave(ConfigText(default=dnsV6[1] if len(dnsV6) > 1 else "", fixed_size=False))
 
-		# Wake-on-LAN (LAN adapters only, when hardware supports it)
-		self.cfgWakeOnLan = NoSave(ConfigYesNo(default=conn.wakeOnLan != "off"))
-
 		# Forced link speed (LAN adapters only)
 		if not adapter.isWlan:
 			linkSpeedChoices = networkManager.getSupportedLinkSpeeds(adapter.name)
@@ -1115,7 +1119,7 @@ class NetworkAdapterSetup(Setup):
 		# them, so we know afterwards whether this needs a full restart
 		# (settings changed) or just ifup/ifdown (enable state only).
 		wasEnabled = adapter.adapterEnabled
-		wasGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers), conn.wakeOnLan)
+		wasGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers))
 		wasLinkSpeed = networkManager.getLinkSpeed(adapter.name)
 		wasMetric = adapter.metric if self.hasMetric else None
 
@@ -1142,14 +1146,6 @@ class NetworkAdapterSetup(Setup):
 					servers.append(textValue)
 			conn.dnsServers = servers
 
-		# Apply Wake-on-LAN via ethtool + optional /proc path
-		if not adapter.isWlan and adapter.canWakeOnLan:
-			newWolMode = "g" if self.cfgWakeOnLan.value else "off"
-			if newWolMode != conn.wakeOnLan:
-				cmds = networkManager.setWakeOnLanCommands(adapter.name, newWolMode)
-				if cmds:
-					Console().eBatch(cmds, lambda result: None, debug=False)
-
 		# Apply Wake-on-WiFi (Broadcom)
 		if adapter.isWlan and adapter.canWakeOnWiFi:
 			conn.wakeOnWiFi = self.cfgWakeOnWiFi.value if adapter.adapterEnabled else self.cfgWowOnly.value
@@ -1175,7 +1171,7 @@ class NetworkAdapterSetup(Setup):
 		# factor into `change` – it's just a route preference for e2-route-metric
 		# to pick up, not something that needs the adapter itself ifup/ifdown'd
 		# or restarted.
-		nowGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers), conn.wakeOnLan)
+		nowGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers))
 		if nowGeneral != wasGeneral or self.cfgLinkSpeed.value != wasLinkSpeed:
 			change = CHANGE_GENERAL
 		elif adapter.adapterEnabled != wasEnabled:
@@ -1219,7 +1215,7 @@ class NetworkConnectionWiFi(Setup):
 		}, prio=0)
 
 	def keyShowInfo(self):
-		self.session.open(InformationNetworkAdapter, self.adapter, self.conn)
+		self.session.open(InformationNetwork, self.adapter, self.conn)
 
 	def buildConfigObjects(self):
 		conn = self.conn
@@ -1835,7 +1831,7 @@ class NetworkTest(Screen):
 
 			def done(exitCode: int):
 				ok = exitCode == 0
-				if self.generation != gen:
+				if not hasattr(self, "generation") or self.generation != gen:
 					return
 				setRow(row, self.STATE_OK if ok else self.STATE_FAIL, okText if ok else failText, detail)
 				nextFn()
@@ -1847,7 +1843,7 @@ class NetworkTest(Screen):
 
 			def done(exitCode: int):
 				ok = exitCode == 0
-				if self.generation != gen:
+				if not hasattr(self, "generation") or self.generation != gen:
 					return
 				setRow(self.ROW_DNS, self.STATE_OK if ok else self.STATE_FAIL, self.T_CONFIRMED if ok else self.T_UNCONFIRMED, "google.com")
 			ServiceAction.resolve("google.com", done)

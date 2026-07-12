@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 import json
 from os import listdir, makedirs, remove
 from os.path import basename, exists, isdir, realpath
-from re import compile, match, search
+from re import compile, match
 from shutil import copy2
 import socket
 from subprocess import check_output, DEVNULL
@@ -54,7 +54,6 @@ ifupBin = "/sbin/ifup"
 ifdownBin = "/sbin/ifdown"
 wpaSupplicantBin = "/usr/sbin/wpa_supplicant"
 wpaCliBin = "/usr/sbin/wpa_cli"
-ethtoolBin = "/usr/sbin/ethtool"
 socketDaemonPath = "/var/run/daemon.socket"
 netEventSocketPath = "/var/run/daemon_net.socket"
 netinfoPath = "/var/run/netinfo"
@@ -143,7 +142,6 @@ class Connection:
 	dnsServers: list = field(default_factory=list)   # [int,int,int,int] | "::addr"
 	extraLines: list[str] = field(default_factory=list)
 	wlan: WiFiConfig | None = None
-	wakeOnLan: str = "off"       # "off" | "g" | "u" | "b"
 	wakeOnWiFi: bool = False
 
 	@property
@@ -188,7 +186,6 @@ class NetInfo:
 	driver: str = ""       # kernel module name (e.g. "r8168", "mt76x2u")
 	hwId: str = ""         # "VVVV:DDDD" PCI or USB vendor:product hex
 	bus: str = ""          # physical bus from socketdaemon (e.g. "usb", "pci", "platform")
-	wolSupported: int = 0  # ethtool WoL bitmask; 0 = not supported
 	rxBytes: int = 0       # /proc/net/dev counter
 	txBytes: int = 0       # /proc/net/dev counter
 	mtu: int = 0
@@ -206,9 +203,6 @@ class Adapter:
 	module: str = ""
 	driverApi: str = apiNl80211
 	canWakeOnWiFi: bool = False
-	canWakeOnLan: bool = False
-	wolProcPath: str = ""
-	wolProcType: str = ""
 	adapterEnabled: bool = False  # False -> every line of this adapter's stanza in /etc/network/interfaces is commented out with "# " (see serialiseConnection()), not just "auto <iface>"
 	netInfo: NetInfo = field(default_factory=NetInfo)
 
@@ -410,15 +404,7 @@ class InterfacesFile:
 					if ip:
 						current.dnsServers.append(ip)
 			elif kw in ("pre-up", "pre-down", "post-up", "post-down", "up", "down"):
-				# The ethtool Wake-on-LAN pre-up is regenerated from
-				# conn.wakeOnLan on save (gated on hardware support), not
-				# carried over verbatim – otherwise a stale line would
-				# survive forever even if WoL is unsupported/disabled.
-				wolTag = f"pre-up {ethtoolBin} -s {current.adapter} wol "
-				if line.startswith(wolTag) and line.endswith(" || true"):
-					current.wakeOnLan = line[len(wolTag):-len(" || true")].strip()
-				else:
-					current.extraLines.append(raw.strip())
+				current.extraLines.append(raw.strip())
 
 		return result, autoIfaces, wakeOnWiFiIfaces
 
@@ -1067,23 +1053,7 @@ class NetworkManager:
 			except OSError:
 				pass
 			self.adapters[name] = adapter
-			self.detectWol(adapter)
 			self.log(f"discoverAdapters(): {name} isWlan={isWlan} module={module} driverApi={api} up={netInfo.up}")
-
-	@staticmethod
-	# Detect WoL capability at startup. socketdaemon will refine via applyNetinfo().
-	def detectWol(adapter: Adapter):
-		if adapter.isWlan:
-			return
-		try:
-			proc = BoxInfo.getItem("WakeOnLAN")
-			procType = BoxInfo.getItem("WakeOnLANType")
-			if proc and exists(proc):
-				adapter.canWakeOnLan = True
-				adapter.wolProcPath = proc
-				adapter.wolProcType = (procType or {}).get(True, "enabled")
-		except Exception:
-			pass
 
 	def loadInterfacesFile(self):
 		self.ifacesFile.load()
@@ -1254,20 +1224,6 @@ class NetworkManager:
 		self.log("save(): starting")
 		ok = True
 		for iface, adapter in self.adapters.items():
-			if adapter.isWlan:
-				continue
-			# Only emit the ethtool WoL pre-up if the hardware actually
-			# supports it and it's actually turned on – never carry over a
-			# stale/unsupported setting from a previously parsed file.
-			# canWakeOnLan alone is not proof: it's also set from a generic
-			# per-model /proc control path (detectWol) that may exist even
-			# when the NIC chip has no real WoL support. wolSupported
-			# is the actual ethtool-reported capability bitmask.
-			activeConn = self.activeConnection(iface)
-			hwSupportsWol = adapter.canWakeOnLan and adapter.netInfo.wolSupported != 0
-			mode = activeConn.wakeOnLan if (activeConn and hwSupportsWol) else "off"
-			self.updateWolPreup(adapter, mode)
-		for iface, adapter in self.adapters.items():
 			if not adapter.isWlan:
 				continue
 			for conn in self.getConnections(iface):
@@ -1371,6 +1327,15 @@ class NetworkManager:
 			self.discoverAdapters()
 			self.loadInterfacesFile()
 			self.loadWpaSupplicantFiles()
+			# discoverAdapters() deliberately carries the *old* netInfo (incl.
+			# gateway/ip/mask) over so the UI doesn't go blank while waiting –
+			# but that means it's stale until refreshed. The daemon does push an
+			# "UPDATE" event over the socket eventually (-> applyNetinfo() via
+			# onNetinfoUpdate()), but that's async and may lag behind this
+			# callback, so re-read /var/run/netinfo synchronously right now too
+			# instead of leaving old values (e.g. a gateway eth0 no longer has)
+			# on screen until whenever that event happens to arrive.
+			self.applyNetinfo()
 			# The network just came back – restart plugins that were stopped
 			# earlier (e.g. OpenWebif). iface=iface mirrors applyAdapterChange()'s
 			# reason=False call further up the chain: if another adapter kept
@@ -1607,41 +1572,6 @@ class NetworkManager:
 		self.setBgscan(iface, presets.get(mode, mode))
 
 	# ------------------------------------------------------------------
-	# Wake-on-LAN
-	# ------------------------------------------------------------------
-
-	def getWakeOnLan(self, iface: str) -> str:
-		try:
-			out = check_output([ethtoolBin, iface], stderr=DEVNULL, timeout=2).decode(errors="replace")
-			match = search(r"Wake-on:\s*(\S+)", out)
-			return match.group(1) if match else "off"
-		except Exception:
-			return "off"
-
-	def setWakeOnLanCommands(self, iface: str, mode: str) -> list[str]:
-		adapter = self.adapters.get(iface)
-		if adapter is None or adapter.isWlan:
-			return []
-		cmds: list[str] = [f"{ethtoolBin} -s {iface} wol {mode}"]
-		if adapter.wolProcPath and exists(adapter.wolProcPath):
-			procVal = (adapter.wolProcType.replace("enabled", "disabled") if mode == "off" else adapter.wolProcType) or ("0" if mode == "off" else "enabled")
-			cmds.append(f"echo '{procVal}' > {adapter.wolProcPath}")
-		conn = self.activeConnection(iface)
-		if conn:
-			conn.wakeOnLan = mode
-		self.updateWolPreup(adapter, mode)
-		return cmds
-
-	def updateWolPreup(self, adapter: Adapter, mode: str):
-		conn = self.activeConnection(adapter.name)
-		if conn is None:
-			return
-		tag = f"pre-up {ethtoolBin} -s {adapter.name} wol "
-		conn.extraLines = [x for x in conn.extraLines if not x.startswith(tag)]
-		if mode != "off":
-			conn.extraLines.insert(0, f"{tag}{mode} || true")
-
-	# ------------------------------------------------------------------
 	# Wake-on-WiFi
 	# ------------------------------------------------------------------
 
@@ -1763,6 +1693,7 @@ class NetworkManager:
 				pass
 
 	# Update adapter runtime state from /var/run/netinfo without a full rescan.
+
 	def applyNetinfo(self):
 		try:
 			with open(netinfoPath, encoding="utf-8") as fh:
@@ -1776,18 +1707,19 @@ class NetworkManager:
 				continue
 			netInfo = adapter.netInfo
 			netInfo.up = data.get("up", False)
+			# Always assign, with an explicit empty default when the field is
+			# absent – "only assign if truthy" left stale values in place (e.g.
+			# eth0's gateway from before a restart survived even after netinfo
+			# reported no gateway for eth0 anymore, since the field was simply
+			# never touched instead of being cleared).
 			ip4 = data.get("ip4", "")
-			if ip4:
-				netInfo.ip = _parseIp4(ip4)
-				mask = data.get("mask", "")
-				if mask:
-					netInfo.netmask = _parseIp4(mask)
-				gw = data.get("gw", "")
-				if gw:
-					netInfo.gateway = _parseIp4(gw)
-				brd = data.get("brd", "")
-				if brd:
-					netInfo.bcast = _parseIp4(brd)
+			netInfo.ip = _parseIp4(ip4) if ip4 else [0, 0, 0, 0]
+			mask = data.get("mask", "")
+			netInfo.netmask = _parseIp4(mask) if mask else [0, 0, 0, 0]
+			gw = data.get("gw", "")
+			netInfo.gateway = _parseIp4(gw) if gw else [0, 0, 0, 0]
+			brd = data.get("brd", "")
+			netInfo.bcast = _parseIp4(brd) if brd else [0, 0, 0, 0]
 			netInfo.driver = data.get("driver", "")
 			netInfo.hwId = data.get("hw_id", "")
 			netInfo.bus = data.get("bus", "")
@@ -1811,10 +1743,6 @@ class NetworkManager:
 				netInfo.transceiver = data.get("transceiver", "")
 				netInfo.autoneg = data.get("autoneg", False)
 				netInfo.linkSupported = data.get("link_supported", 0)
-				wol = data.get("wol_supported", 0)
-				if wol:
-					netInfo.wolSupported = wol
-					adapter.canWakeOnLan = True
 
 	def onNetinfoUpdate(self):
 		self.log("onNetinfoUpdate()")
