@@ -1326,6 +1326,9 @@ class NetworkManager:
 			self.discoverAdapters()
 			self.loadInterfacesFile()
 			self.loadWpaSupplicantFiles()
+			# The network just came back – restart plugins that save()'s
+			# _notifyNetworkPlugins(False) stopped earlier (e.g. OpenWebif).
+			self._notifyNetworkPlugins(True)
 			if callback:
 				callback()
 		self.pendingRestart = ServiceAction.netrestart(_done, iface=iface)
@@ -1414,9 +1417,17 @@ class NetworkManager:
 			return f"{adapter.module or 'Unknown'} {_('wireless network interface')}"
 		return _("Ethernet network interface")
 
-	# Fire WHERE_NETWORKCONFIG_READ plugins – but ONLY when at least one
-	# adapter already has a working IP (skips pointless notifications e.g.
-	# before any interface has ever come up).
+	# Fire WHERE_NETWORKCONFIG_READ plugins unconditionally – save()/
+	# applyLanChange() only ever run from user-initiated UI actions, never
+	# during early boot, so there's no "too early" case to guard against here.
+	# An earlier version skipped the call unless some adapter's *current*
+	# netInfo already showed a real IP, but that's exactly the state that's
+	# in flux because of the change being notified about (e.g. on disable,
+	# netInfo may still show the old "up" state, or on enable it may not
+	# have caught up yet via the async socketdaemon event) – so it silently
+	# dropped notifications in both directions. Plugins (e.g. OpenWebif's
+	# HttpdStart/HttpdStop) are idempotent and expected to handle redundant
+	# calls cheaply.
 	#
 	# reason=False: the network config is about to change – plugins must
 	#   stop their internal services (they'd otherwise keep running against
@@ -1432,17 +1443,16 @@ class NetworkManager:
 	#       else:
 	#           HttpdStop(global_session)
 	def _notifyNetworkPlugins(self, reason: bool):
-		active = any(
-			net.up and any(octet != 0 for octet in net.ip)
-			for net in (adapter.netInfo for adapter in self.adapters.values())
-		)
-		if not active:
-			return
+		self.log(f"_notifyNetworkPlugins(): reason={reason} states=" + ", ".join(
+			f"{iface}(up={adapter.netInfo.up}, ip={adapter.netInfo.ip})" for iface, adapter in self.adapters.items()
+		))
 		try:
+			notified = [str(plugin) for plugin in plugins.getPlugins(PluginDescriptor.WHERE_NETWORKCONFIG_READ)]
+			self.log(f"_notifyNetworkPlugins(): calling {notified} with reason={reason}")
 			for plugin in plugins.getPlugins(PluginDescriptor.WHERE_NETWORKCONFIG_READ):
 				plugin(reason=reason)
-		except Exception:
-			pass
+		except Exception as e:
+			self.log(f"_notifyNetworkPlugins(): EXCEPTION {e}")
 
 	def activateInterface(self, iface, callback=None):
 		adapter = self.adapters.get(iface)

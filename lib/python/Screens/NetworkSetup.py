@@ -82,12 +82,23 @@ def applyLanChange(iface: str, change: int, callback):
 		Processing.instance.hideProgress()
 		callback()
 
+	def doneIfUp(*_args):
+		# restartNetwork() already notifies plugins itself (it needs to re-run
+		# discoverAdapters()/applyNetinfo() first); plain ifup doesn't refresh
+		# adapter state on its own, so do it here – otherwise a plugin that
+		# save()'s _notifyNetworkPlugins(False) stopped (e.g. OpenWebif) never
+		# comes back up after just enabling an adapter. ifdown needs no
+		# matching call here: save()'s reason=False already told plugins to
+		# stop, and that's the correct final state after a disable.
+		networkManager._notifyNetworkPlugins(True)
+		done(*_args)
+
 	if change == CHANGE_GENERAL:
 		networkManager.restartNetwork(iface=iface, callback=done)
 	elif change == CHANGE_ADAPTER_ENABLED:
 		adapter = networkManager.adapters.get(iface)
 		if adapter and adapter.adapterEnabled:
-			ServiceAction.ifup(iface, done)
+			ServiceAction.ifup(iface, doneIfUp)
 		else:
 			ServiceAction.ifdown(iface, done)
 	else:

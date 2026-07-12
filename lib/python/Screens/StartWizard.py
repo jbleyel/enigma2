@@ -233,9 +233,10 @@ class StartWizard(Wizard, ShowRemoteControl):
 	# Network setup steps.
 	#
 	# nwifaceselect (adapter list) → nwconfig (NetworkAdapterSetup) → either:
-	#   - LAN: nwstatus/nwdns (poll for an IP, show the result)
-	#   - WLAN, activated on save: Wi-Fi scan + connection setup, then back
-	#     to nwifaceselect (looping so several adapters can be configured)
+	#   - LAN: poll for an IP, then skip past nwstatus straight to nwdns
+	#   - WLAN, activated on save: Wi-Fi scan + connection setup, then land on
+	#     nwstatus to show the result (Continue → nwdns, or Configure another
+	#     interface → back to nwifaceselect)
 	#   - WLAN, not activated on save: straight back to nwifaceselect
 	# ------------------------------------------------------------------
 
@@ -296,10 +297,10 @@ class StartWizard(Wizard, ShowRemoteControl):
 		def nwWifiFlowDone(ip=""):
 			# NetworkConnectionWiFi already ran NetworkWiFiActivator (ifup + wpa_supplicant
 			# + IP poll) and reports the result here, so there is nothing left to activate
-			# or poll for. Regardless of the outcome, go back to the adapter list so the
-			# user can configure another interface or finish.
+			# or poll for. Show the result on the status step, same as the LAN path.
 			print("[NW-WIZ] nwWifiFlowDone called, ip=%s" % ip)
-			self.nwBackToList()
+			self.nwIpFound = ip
+			self.nwShowStatusStep()
 
 		def nwAdapterSetupDone(saved=False):
 			# NetworkAdapterSetup.keySave() closes with (False, True); keyCancel()
@@ -338,6 +339,13 @@ class StartWizard(Wizard, ShowRemoteControl):
 			self.nwPollTimer.stop()
 			self.nwPollTimer = None
 		self.currStep = self.getStepWithID("nwifaceselect")
+		self.updateValues()
+
+	def nwShowStatusStep(self):
+		if self.nwPollTimer:
+			self.nwPollTimer.stop()
+			self.nwPollTimer = None
+		self.currStep = self.getStepWithID("nwstatus")
 		self.updateValues()
 
 	def nwDone(self):
