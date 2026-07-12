@@ -1012,7 +1012,7 @@ class InformationNetwork(InformationBase):
 			if callable(callback):
 				callback()
 
-	def displayInformation(self):
+	def displayInformation(self, selectedAdapter=None):
 		info = []
 		info.append(formatLine("H", _("Network information for %s %s") % getBoxDisplayName()))
 		info.append("")
@@ -1020,6 +1020,8 @@ class InformationNetwork(InformationBase):
 		info.append(formatLine("S0S", _("Hostname"), hostname))
 		for interface in sorted(networkManager.adapters.keys()):
 			adapter = networkManager.adapters[interface]
+			if selectedAdapter and selectedAdapter != adapter:
+				continue
 			net = adapter.netInfo
 			info.append("")
 			info.append(formatLine("S", _("Interface '%s'") % interface, _("WLAN / Wi-Fi") if adapter.isWlan else _("LAN")))

@@ -132,7 +132,7 @@ class Connection:
 
 	adapter: str = ""
 	name: str = ""
-	enabled: bool = False        # "auto <iface>" in /etc/network/interfaces
+	enabled: bool = False        # False -> every line of this connection's stanza in /etc/network/interfaces is commented out with "# " (see serialiseConnection()), not just "auto <iface>"
 	priority: int = 0            # higher = preferred; also wpa_supplicant priority
 	dhcp: bool = True
 	ip: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
@@ -209,7 +209,7 @@ class Adapter:
 	canWakeOnLan: bool = False
 	wolProcPath: str = ""
 	wolProcType: str = ""
-	adapterEnabled: bool = False  # "auto <iface>" in /etc/network/interfaces
+	adapterEnabled: bool = False  # False -> every line of this adapter's stanza in /etc/network/interfaces is commented out with "# " (see serialiseConnection()), not just "auto <iface>"
 	netInfo: NetInfo = field(default_factory=NetInfo)
 
 	@property
@@ -505,15 +505,15 @@ class WpaSupplicantFile:
 		self.iface = iface
 		self.path = f"{wpaSupplicantDir}/wpa_supplicant.{iface}.conf"
 		self._writePath = self.path
-		self._raw: list[str] = _readLines(self.path)
-		self._header: list[str] = self._extractHeader()
+		self.raw: list[str] = _readLines(self.path)
+		self.header: list[str] = self.extractHeader()
 
 	def exists(self) -> bool:
 		return exists(self.path)
 
-	def _extractHeader(self) -> list[str]:
+	def extractHeader(self) -> list[str]:
 		header: list[str] = []
-		for line in self._raw:
+		for line in self.raw:
 			if line.strip().startswith("network"):
 				break
 			header.append(line)
@@ -525,7 +525,7 @@ class WpaSupplicantFile:
 		depth = 0
 		blockId = 0
 
-		for line in self._raw:
+		for line in self.raw:
 			stripped = line.strip()
 			if stripped.startswith("#"):
 				continue
@@ -540,7 +540,7 @@ class WpaSupplicantFile:
 				key, sep, value = stripped.partition("=")
 				current[key.strip()] = value.strip().strip('"')
 			if depth <= 0 and current is not None:
-				wlan = _wpaDictToWlanConfig(current, blockId)
+				wlan = wpaDictToWlanConfig(current, blockId)
 				if wlan.ssid:
 					configs.append(wlan)
 				blockId += 1
@@ -550,12 +550,12 @@ class WpaSupplicantFile:
 		return configs
 
 	def serialise(self, configs: list[WiFiConfig]) -> list[str]:
-		header = self._header if self._header else list(self.WPA_DEFAULT_HEADER)
+		header = self.header if self.header else list(self.WPA_DEFAULT_HEADER)
 		lines: list[str] = list(header)
 		if lines and lines[-1].strip():
 			lines.append("")
 		for idx, wlan in enumerate(configs):
-			lines.extend(_wlanConfigToWpaBlock(wlan, idx))
+			lines.extend(wlanConfigToWpaBlock(wlan, idx))
 			lines.append("")
 		return lines
 
@@ -566,7 +566,7 @@ class WpaSupplicantFile:
 		makedirs(wpaSupplicantDir, exist_ok=True)
 
 
-def _wpaDictToWlanConfig(fields: dict[str, str], blockId: int) -> WiFiConfig:
+def wpaDictToWlanConfig(fields: dict[str, str], blockId: int) -> WiFiConfig:
 	keyMgmt = fields.get("key_mgmt", "NONE").upper()
 	proto = fields.get("proto", "").upper()
 	pairwise = fields.get("pairwise", "").upper()
@@ -591,7 +591,7 @@ def _wpaDictToWlanConfig(fields: dict[str, str], blockId: int) -> WiFiConfig:
 	)
 
 
-def _wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
+def wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
 	lines = ["network={"]
 	lines.append(f'\tssid="{wlan.ssid}"')
 	if wlan.hidden:
@@ -639,11 +639,7 @@ def _wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
 # ===========================================================================
 
 
-def _canWakeOnWiFi(iface: str) -> bool:
-	return iface == "wlan3" and bool(BoxInfo.getItem("wwol"))
-
-
-def _reEscape(text: str) -> str:
+def reEscape(text: str) -> str:
 	return text.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`")
 
 
@@ -734,7 +730,7 @@ class WlanRuntime:
 					f"-P{self.adapter.wpaPidPath} || true"
 				)
 		elif conn.wlan:
-			cmds.append(f'iwconfig {iface} essid "{_reEscape(conn.wlan.ssid)}" || true')
+			cmds.append(f'iwconfig {iface} essid "{reEscape(conn.wlan.ssid)}" || true')
 		cmds.append(f"{ifupBin} {iface}")
 		return cmds
 
@@ -751,7 +747,7 @@ class WlanRuntime:
 		if wlan is None:
 			return []
 		encStr = {encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2", encWpaWpa2: "WPA2"}.get(wlan.encryption, "NONE")
-		return [f"{wlConfigScript} -m {encStr} -k {wlan.key} -s \"{_reEscape(wlan.ssid)}\" || true"]
+		return [f"{wlConfigScript} -m {encStr} -k {wlan.key} -s \"{reEscape(wlan.ssid)}\" || true"]
 
 	def statusCommands(self) -> list[str]:
 		iface = self._iface
@@ -1039,6 +1035,9 @@ class NetworkManager:
 				pass
 			return ""
 
+		def canWakeOnWiFi(iface: str) -> bool:
+			return iface == "wlan3" and bool(BoxInfo.getItem("wwol"))
+
 		try:
 			names = [x for x in listdir(sysfsNet) if not isBlacklisted(x)]
 		except OSError:
@@ -1057,7 +1056,7 @@ class NetworkManager:
 				isWlan=isWlan,
 				module=module,
 				driverApi=api,
-				canWakeOnWiFi=_canWakeOnWiFi(name),
+				canWakeOnWiFi=canWakeOnWiFi(name),
 				mac=fileReadLine(f"{sysfsNet}/{name}/address", default=""),
 				netInfo=existing.netInfo if existing else NetInfo(),
 			)
@@ -1175,18 +1174,50 @@ class NetworkManager:
 	# Saving
 	# ------------------------------------------------------------------
 
-	def save(self) -> bool:
-		def bcmSaveWlanConfig(iface: str, wlan: WiFiConfig) -> bool:
-			encStr = {
-				encNone: "None", encWep: "WEP", encWpa: "WPA",
-				encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
-			}.get(wlan.encryption, "None")
-			return _writeLines(self.bcmConfPath(iface), [
-				f"ssid={wlan.ssid}",
-				f"method={encStr}",
-				f"key={wlan.key}",
-			])
+	def bcmSaveWlanConfig(self, iface: str, wlan: WiFiConfig) -> bool:
+		encStr = {
+			encNone: "None", encWep: "WEP", encWpa: "WPA",
+			encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
+		}.get(wlan.encryption, "None")
+		return _writeLines(self.bcmConfPath(iface), [
+			f"ssid={wlan.ssid}",
+			f"method={encStr}",
+			f"key={wlan.key}",
+		])
 
+	# Write wpa_supplicant.conf (or the Broadcom wl config) for one adapter's –
+	# or, if onlyIface is None, every WLAN adapter's – Wi-Fi SSID profiles.
+	# Deliberately does NOT touch /etc/network/interfaces: NetworkConnectionWiFi
+	# (adding/editing/toggling a single SSID) calls this directly so saving one
+	# profile never triggers an adapter-level ifup/ifdown/restart – that only
+	# happens through NetworkAdapterSetup/applyAdapterChange(), which call the
+	# full save() below instead.
+	def saveWifiProfiles(self, onlyIface: str | None = None) -> bool:
+		ok = True
+		ifaces = [onlyIface] if onlyIface else list(self.adapters.keys())
+		for iface in ifaces:
+			adapter = self.adapters.get(iface)
+			if not adapter or not adapter.isWlan:
+				continue
+			conns = self.getConnections(iface)
+			for conn in conns:
+				if conn.wlan is not None and conn.wlan.ssid:
+					conn.wlan.disabled = not conn.enabled
+			wlanConfigs = [x.wlan for x in conns if x.wlan is not None and x.wlan.ssid]
+			if not wlanConfigs:
+				continue
+			self.log(f"saveWifiProfiles(): {iface} writing {len(wlanConfigs)} wlan profile(s): " + ", ".join(f"{w.ssid!r}(disabled={w.disabled})" for w in wlanConfigs))
+			if adapter.driverApi == apiBrcmWl:
+				active = self.activeConnection(iface)
+				if active and active.wlan:
+					ok = self.bcmSaveWlanConfig(iface, active.wlan) and ok
+			else:
+				wpf = WpaSupplicantFile(iface)
+				wpf.ensureDir()
+				ok = wpf.save(wlanConfigs) and ok
+		return ok
+
+	def save(self) -> bool:
 		# ===========================================================================
 		# WLAN configStrings (interfaces pre-up / pre-down)
 		# ===========================================================================
@@ -1205,9 +1236,9 @@ class NetworkManager:
 					encNone: "NONE", encWep: "WEP", encWpa: "WPA",
 					encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
 				}.get(wlan.encryption, "NONE")
-				lines.append(f"pre-up {wlConfigScript} -m {encStr} -k {wlan.key} -s \"{_reEscape(wlan.ssid)}\" || true")
+				lines.append(f"pre-up {wlConfigScript} -m {encStr} -k {wlan.key} -s \"{reEscape(wlan.ssid)}\" || true")
 				lines.append(f"pre-up {ifconfigBin} {iface} up || true")
-				lines.append(f"pre-up iwconfig {iface} essid \"{_reEscape(wlan.ssid)}\" || true")
+				lines.append(f"pre-up iwconfig {iface} essid \"{reEscape(wlan.ssid)}\" || true")
 				lines.append(f"post-down {wlConfigScript} -m NONE || true")
 			else:
 				driverFlags = f"-D {api}" if api != apiNl80211 else ""
@@ -1215,7 +1246,7 @@ class NetworkManager:
 				if wlan.encryption != encNone:
 					lines.append(f"pre-up {wpaSupplicantBin} -i{iface} -c{adapter.wpaConfPath} -B {driverFlags} -P{adapter.wpaPidPath} || true")
 				else:
-					lines.append(f"pre-up iwconfig {iface} essid \"{_reEscape(wlan.ssid)}\" || true")
+					lines.append(f"pre-up iwconfig {iface} essid \"{reEscape(wlan.ssid)}\" || true")
 				lines.append(f"pre-down {wpaCliBin} -i{iface} terminate 2>/dev/null; true")
 
 			return "\n".join(lines)
@@ -1261,8 +1292,20 @@ class NetworkManager:
 				# the adapter is otherwise off.
 				wowOnly = baseConn.wakeOnWiFi and not adapter.adapterEnabled
 				baseConn.enabled = adapter.adapterEnabled or wowOnly
+				# The wpa_supplicant pre-up/pre-down lines must always be written
+				# whenever at least one Wi-Fi profile is configured, regardless of
+				# whether that profile is individually enabled – for nl80211 they're
+				# generic (just "start wpa_supplicant against wpa_supplicant.conf",
+				# not tied to any one SSID) and enabling/disabling is handled
+				# entirely by serialiseConnection()'s connPfx comment-out (driven
+				# by baseConn.enabled above), the same way LAN/WLAN adapters and
+				# individual SSID profiles in wpa_supplicant.conf are switched
+				# on/off by commenting, not by omitting lines. Gating this on
+				# `.enabled` used to mean: no enabled SSID -> extraLines=[] -> the
+				# whole wpa_supplicant pre-up line silently disappears from
+				# interfaces -> wpa_supplicant never starts on ifup at all.
 				wpaConns = [x for x in conns if x.wlan and x.wlan.ssid]
-				activeWpa = max((x for x in wpaConns if x.enabled), key=lambda conn: conn.priority, default=None)
+				activeWpa = max(wpaConns, key=lambda conn: conn.priority, default=None)
 				baseConn.extraLines = activeWpa.extraLines if activeWpa else []
 				connMap[iface] = [baseConn]
 			else:
@@ -1276,26 +1319,7 @@ class NetworkManager:
 		adapterEnabledMap = {iface: adapter.adapterEnabled for iface, adapter in self.adapters.items()}
 		self.log(f"save(): adapterEnabledMap={adapterEnabledMap}")
 		ok = self.ifacesFile.save(connMap, adapterEnabledMap) and ok
-
-		for iface, adapter in self.adapters.items():
-			if not adapter.isWlan:
-				continue
-			conns = self.getConnections(iface)
-			for conn in conns:
-				if conn.wlan is not None and conn.wlan.ssid:
-					conn.wlan.disabled = not conn.enabled
-			wlanConfigs = [x.wlan for x in conns if x.wlan is not None and x.wlan.ssid]
-			if not wlanConfigs:
-				continue
-			self.log(f"save(): {iface} writing {len(wlanConfigs)} wlan profile(s): " + ", ".join(f"{w.ssid!r}(disabled={w.disabled})" for w in wlanConfigs))
-			if adapter.driverApi == apiBrcmWl:
-				active = self.activeConnection(iface)
-				if active and active.wlan:
-					ok = bcmSaveWlanConfig(iface, active.wlan) and ok
-			else:
-				wpf = WpaSupplicantFile(iface)
-				wpf.ensureDir()
-				ok = wpf.save(wlanConfigs) and ok
+		ok = self.saveWifiProfiles() and ok
 
 		anyDhcp = any(conn.dhcp for conns in connMap.values() for conn in conns if conn.enabled)
 		self.nsFiles.save(self.nameserverConfig, anyDhcp)

@@ -40,7 +40,7 @@ from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
 from Screens.ChoiceBox import ChoiceBox
-from Screens.Information import InformationBase, formatLine
+from Screens.Information import InformationNetwork
 from Screens.MessageBox import MessageBox
 from Screens.Processing import Processing
 from Screens.Screen import Screen
@@ -423,93 +423,21 @@ class DnsSettings(Setup):
 
 
 # ===========================================================================
-# InformationNetworkConnection – scrollable info screen for one connection
+# InformationNetworkAdapter – scrollable info screen for adapter / connection
 # ===========================================================================
 
 
-class InformationNetworkConnection(InformationBase):
-	def __init__(self, session, conn, adapter):
-		InformationBase.__init__(self, session)
+class InformationNetworkAdapter(InformationNetwork):
+	def __init__(self, session, adapter, conn):
+		InformationNetwork.__init__(self, session)
 		self.conn = conn
 		self.adapter = adapter
-		title = _("Network Connection Information") if conn is not None else _("Network Adapter Information")
-		self.setTitle(title)
-		self.skinName.insert(0, "InformationNetworkConnection")
+		#self["geolocationActions"].setEnabled(False)
+		#self["key_yellow"].setText("")
 		self["key_green"] = StaticText(_("Refresh"))
 
 	def displayInformation(self):
-		conn = self.conn
-		adapter = self.adapter
-		info = []
-
-		if conn is not None:
-			info.append(formatLine("S", _("Network Connection")))
-			info.append(formatLine("P1", _("Interface"), adapter.name))
-			info.append(formatLine("P1", _("Enabled"), _("Yes") if conn.enabled else _("No")))
-			if conn.isWlan:
-				info.append(formatLine("P1", _("Priority"), str(conn.priority)))
-
-			info.append("")
-			info.append(formatLine("S", _("Configuration")))
-			if conn.isWlan and conn.wlan:
-				info.append(formatLine("P1", _("SSID"), conn.wlan.ssid or "-"))
-				encLabel = _ENC_SHORT.get(conn.wlan.encryption, conn.wlan.encryption) if conn.wlan.encryption else _("None")
-				info.append(formatLine("P1", _("Encryption"), encLabel))
-			info.append(formatLine("P1", "DHCP", _("Yes") if conn.dhcp else _("No")))
-			if not conn.dhcp:
-				info.append(formatLine("P1", _("IP address"), ".".join(str(x) for x in conn.ip)))
-				info.append(formatLine("P1", _("Netmask"), ".".join(str(x) for x in conn.netmask)))
-				info.append(formatLine("P1", _("Gateway"), ".".join(str(x) for x in conn.gateway)))
-			if conn.dnsServers:
-				info.append(formatLine("P1", "DNS", ", ".join(conn.dnsServers)))
-
-		net = adapter.netInfo
-		info.append("")
-		info.append(formatLine("S", _("Live Status")))
-		if adapter.isWlan:
-			info.append(formatLine("P1", _("Associated SSID"), net.ssid or "-"))
-			if net.bssid:
-				info.append(formatLine("P1", _("AP (BSSID)"), net.bssid))
-			if net.freqMhz:
-				ch = f"  CH {net.channel}" if net.channel else ""
-				info.append(formatLine("P1", _("Frequency"), f"{net.freqMhz} MHz{ch}"))
-			if net.bitrateBps:
-				info.append(formatLine("P1", _("TX rate"), f"{net.bitrateBps / 1_000_000:.1f} Mbps"))
-			if net.signal:
-				info.append(formatLine("P1", _("Signal"), f"{net.signal} dBm"))
-		else:
-			info.append(formatLine("P1", _("Link"), _("Yes") if net.link else _("No")))
-			if net.speed > 0:
-				duplexLabels = {
-					"full": _("Full duplex"),
-					"half": _("Half duplex")
-				}
-				info.append(formatLine("P1", _("Speed"), f"{formatNetworkSpeed(net.speed)} {duplexLabels.get(net.duplex, net.duplex)}"))
-			if net.port:
-				info.append(formatLine("P1", _("Port"), net.port))
-			if net.transceiver:
-				info.append(formatLine("P1", _("Transceiver"), net.transceiver))
-			if net.link:
-				info.append(formatLine("P1", _("Auto-negotiation"), _("Yes") if net.autoneg else _("No")))
-
-		ip4 = net.ip
-		if ip4 and ip4 != [0, 0, 0, 0]:
-			info.append(formatLine("P1", _("IPv4 address"), ".".join(str(x) for x in ip4)))
-		for entry in net.ip6:
-			addr = entry.get("addr", "")
-			prefix = entry.get("prefix", "")
-			if addr:
-				info.append(formatLine("P1", _("IPv6 address"), f"{addr}/{prefix}"))
-
-		if net.driver or net.hwId:
-			info.append("")
-			info.append(formatLine("S", _("Hardware")))
-			if net.driver:
-				info.append(formatLine("P1", _("Driver"), net.driver))
-			if net.hwId:
-				info.append(formatLine("P1", _("HW ID"), net.hwId))
-
-		self["information"].setText("\n".join(info))
+		InformationNetwork.displayInformation(self, selectedAdapter=self.adapter)
 
 
 # ===========================================================================
@@ -917,7 +845,7 @@ class NetworkOverview(Screen):
 	def keyInfo(self):
 		adapter = self.currentAdapter()
 		if adapter:
-			self.session.open(InformationNetworkConnection, self.currentConnection(), adapter)
+			self.session.open(InformationNetworkAdapter, adapter, self.currentConnection())
 
 	def updateKeyGreen(self):
 		adapter = self.currentAdapter()
@@ -1121,7 +1049,7 @@ class NetworkAdapterSetup(Setup):
 		}, prio=0)
 
 	def keyShowInfo(self):
-		self.session.open(InformationNetworkConnection, self.conn, self.adapter)
+		self.session.open(InformationNetworkAdapter, self.adapter, self.conn)
 
 	def buildConfigObjects(self):
 		adapter = self.adapter
@@ -1291,7 +1219,7 @@ class NetworkConnectionWiFi(Setup):
 		}, prio=0)
 
 	def keyShowInfo(self):
-		self.session.open(InformationNetworkConnection, self.conn, self.adapter)
+		self.session.open(InformationNetworkAdapter, self.adapter, self.conn)
 
 	def buildConfigObjects(self):
 		conn = self.conn
@@ -1352,7 +1280,9 @@ class NetworkConnectionWiFi(Setup):
 			conns.append(conn)
 		if conn.enabled:
 			adapter.adapterEnabled = True
-		networkManager.save()
+		# Only wpa_supplicant.conf, never /etc/network/interfaces – saving one
+		# SSID profile must not trigger an adapter-level ifup/ifdown/restart.
+		networkManager.saveWifiProfiles(adapter.name)
 		if conn.enabled:
 			self.session.openWithCallback(self.wifiConnectionVerified, NetworkWiFiActivator, conn, adapter)
 		else:
@@ -1412,7 +1342,13 @@ class ScanResult:
 
 
 def scanResultToConnection(scanResult: ScanResult, iface: str) -> Connection:
-	return Connection(adapter=iface, name=scanResult.ssid, dhcp=True, enabled=False, priority=0, wlan=WiFiConfig(ssid=scanResult.ssid, encryption=scanResult.encryption))
+	# enabled=True: the user is actively picking this network from the scan to
+	# use it now. NetworkConnectionWiFi's "Enabled" field defaults to this
+	# value, so a plain scan -> enter password -> Save (without touching that
+	# field) used to save a *disabled* profile – save()'s interfaces-file
+	# writer only emits the wpa_supplicant pre-up lines for an enabled
+	# connection, so wpa_supplicant never started and Wi-Fi stayed dead.
+	return Connection(adapter=iface, name=scanResult.ssid, dhcp=True, enabled=True, priority=0, wlan=WiFiConfig(ssid=scanResult.ssid, encryption=scanResult.encryption))
 
 
 # ===========================================================================
@@ -1641,6 +1577,18 @@ class NetworkWiFiActivator(Screen):
 			self.pollTimer.callback.append(self.checkIp)
 			self.pollTimer.start(self._pollIntervalMs, True)
 
+		# wlanActivate() below runs "wlanactivator start <iface>" directly
+		# (ifconfig up + wpa_supplicant against wpa_supplicant.conf) – it does
+		# NOT go through ifup/etc/network/interfaces. NetworkConnectionWiFi's
+		# save only wrote wpa_supplicant.conf (saveWifiProfiles(), deliberately
+		# not touching interfaces), so if the adapter itself was never enabled
+		# before, its stanza in interfaces is still fully commented out. Without
+		# this, the connection would appear to work right now but not survive
+		# a reboot/restart, since ifup would never bring wlan0 up at all.
+		if not self.adapter.adapterEnabled:
+			self.adapter.adapterEnabled = True
+			networkManager.save()
+
 		self["status"].setText(_("Connecting…"))
 		self.serviceAction = ServiceAction.wlanActivate(self.adapter.name, connectedCb)
 
@@ -1747,7 +1695,7 @@ class NetworkWiFiAddFlow:
 					conns = networkManager.getConnections(adapter.name)
 					if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in conns):
 						conns.append(conn)
-						networkManager.save()
+						networkManager.saveWifiProfiles(adapter.name)
 				if callback:
 					callback(ip)
 			session.openWithCallback(setupDone, NetworkConnectionWiFi, conn, adapter)
@@ -1911,7 +1859,11 @@ class NetworkTest(Screen):
 			gw = _ip4Str(net.gateway) if net.gateway else ""
 			if not gw:
 				setRow(self.ROW_GATEWAY, self.STATE_SKIP, self.T_NO_GATEWAY, "")
-				testInternet()
+				# No gateway means no route out – the Internet ping can't
+				# succeed, so skip it instead of waiting out a guaranteed
+				# timeout. DNS still runs (e.g. a local/cached resolver may work).
+				setRow(self.ROW_INTERNET, self.STATE_SKIP, self.T_NA, "")
+				testDns()
 			else:
 				pingRow(self.ROW_GATEWAY, gw, self.T_REACHABLE, self.T_UNREACHABLE, gw, testInternet)
 
