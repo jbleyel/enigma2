@@ -39,6 +39,7 @@ from Components.config import ConfigIP, ConfigNumber, ConfigPassword, ConfigSele
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
+from Screens.ChoiceBox import ChoiceBox
 from Screens.Information import InformationBase, formatLine
 from Screens.MessageBox import MessageBox
 from Screens.Processing import Processing
@@ -66,14 +67,33 @@ def _ip4Str(addr: list) -> str:
 	return "" if joined == "0.0.0.0" else joined
 
 
-# Apply the minimal action a LAN adapter needs after networkManager.save()
-# (nothing / ifup-ifdown / full restart), with a visible progress indicator
-# while it runs, then call callback(). The caller passes `change` because it
-# already knows what it just changed – save() itself stays a plain writer.
-def applyLanChange(iface: str, change: int, callback):
+# Apply the minimal action an adapter (LAN or WLAN) needs after
+# networkManager.save() (nothing / ifup-ifdown / full restart), with a
+# visible progress indicator while it runs, then call callback(). The caller
+# passes `change` because it already knows what it just changed – save()
+# itself stays a plain writer.
+def applyAdapterChange(iface: str, change: int, callback):
 	if change == CHANGE_NONE:
+		# Nothing is actually going to happen to the network, so don't touch
+		# plugins either – save() used to unconditionally call
+		# notifyNetworkPlugins(False) on every save regardless of `change`,
+		# which stopped plugins (e.g. OpenWebif) even for a no-op Save with
+		# nothing to bring back up afterward, leaving them stopped for good.
 		callback()
 		return
+
+	# The network is genuinely about to change (ifup/ifdown/restart below) –
+	# tell plugins to stop now. Every notifyNetworkPlugins(False) here MUST be
+	# paired with exactly one matching notifyNetworkPlugins(True) once that
+	# same change has finished applying (doneNotify below for ifup/ifdown, or
+	# inside restartNetwork() itself for CHANGE_GENERAL) – regardless of
+	# whether this was an enable or a disable, so a plugin that was stopped
+	# never gets left stopped forever. iface=iface: if another adapter is
+	# already up, the box stays reachable through it, so this specific
+	# adapter's change doesn't need to bounce plugins at all – but that
+	# decision is symmetric for both the False and the True call, so pairing
+	# still holds (both fire, or both are skipped).
+	networkManager.notifyNetworkPlugins(False, iface=iface)
 
 	Processing.instance.setDescription(_("Please wait..."))
 	Processing.instance.showProgress(endless=True)
@@ -82,15 +102,12 @@ def applyLanChange(iface: str, change: int, callback):
 		Processing.instance.hideProgress()
 		callback()
 
-	def doneIfUp(*_args):
-		# restartNetwork() already notifies plugins itself (it needs to re-run
-		# discoverAdapters()/applyNetinfo() first); plain ifup doesn't refresh
-		# adapter state on its own, so do it here – otherwise a plugin that
-		# save()'s notifyNetworkPlugins(False) stopped (e.g. OpenWebif) never
-		# comes back up after just enabling an adapter. ifdown needs no
-		# matching call here: save()'s reason=False already told plugins to
-		# stop, and that's the correct final state after a disable.
-		networkManager.notifyNetworkPlugins(True)
+	def doneNotify(*_args):
+		# restartNetwork() (CHANGE_GENERAL) notifies plugins itself (it needs
+		# to re-run discoverAdapters()/applyNetinfo() first); plain ifup/ifdown
+		# don't refresh adapter state on their own, so do it here for both –
+		# matching the notifyNetworkPlugins(False) above.
+		networkManager.notifyNetworkPlugins(True, iface=iface)
 		done(*_args)
 
 	if change == CHANGE_GENERAL:
@@ -98,9 +115,9 @@ def applyLanChange(iface: str, change: int, callback):
 	elif change == CHANGE_ADAPTER_ENABLED:
 		adapter = networkManager.adapters.get(iface)
 		if adapter and adapter.adapterEnabled:
-			ServiceAction.ifup(iface, doneIfUp)
+			ServiceAction.ifup(iface, doneNotify)
 		else:
-			ServiceAction.ifdown(iface, done)
+			ServiceAction.ifdown(iface, doneNotify)
 	else:
 		done()
 
@@ -949,7 +966,7 @@ class NetworkOverview(Screen):
 					if conn.isWlan:
 						self.buildAdapters()
 					else:
-						applyLanChange(adapter.name, CHANGE_GENERAL, self.buildAdapters)
+						applyAdapterChange(adapter.name, CHANGE_GENERAL, self.buildAdapters)
 
 			self.session.openWithCallback(lambda confirmed: doDelete(confirmed, conn, adapter), MessageBox, _("Delete network connection '%s'?") % self.connLabel(conn, adapter), type=MessageBox.TYPE_YESNO)
 
@@ -975,7 +992,7 @@ class NetworkOverview(Screen):
 			self.session.openWithCallback(self.setupClosed, NetworkConnectionWiFi, conn, adapter)
 
 		if choice:
-			action = choice
+			action = choice[1]
 			if action == "setup":
 				self.openSetup(conn, adapter)
 			elif action == "adapterSetup":
@@ -1015,7 +1032,7 @@ class NetworkOverview(Screen):
 		if adapter.isWlan:
 			menu.append((_("Scan for Wi-Fi networks"), "scan"))
 			menu.append((_("Add Wi-Fi manually"), "addManual"))
-		self.session.openWithCallback(lambda choice: self.contextCb(choice, conn, adapter), MessageBox, title, type=MessageBox.TYPE_YESNO, list=menu)
+		self.session.openWithCallback(lambda choice: self.contextCb(choice, conn, adapter), ChoiceBox, windowTitle=title, choiceList=menu)
 
 	def setupClosed(self, *result):
 		if len(result) == 1 and isinstance(result[0], tuple):
@@ -1044,7 +1061,7 @@ class NetworkOverview(Screen):
 		def done():
 			self.buildAdapters()
 			self.session.showInfo(_("Network adapter enabled") if adapter.adapterEnabled else _("Network adapter disabled"))
-		applyLanChange(adapter.name, CHANGE_ADAPTER_ENABLED, done)
+		applyAdapterChange(adapter.name, CHANGE_ADAPTER_ENABLED, done)
 
 	def toggleConnection(self, conn: Connection, adapter: Adapter):
 		if adapter.isWlan:
@@ -1070,7 +1087,7 @@ class NetworkOverview(Screen):
 		if adapter.isWlan:
 			done()
 		else:
-			applyLanChange(adapter.name, CHANGE_ADAPTER_ENABLED, done)
+			applyAdapterChange(adapter.name, CHANGE_ADAPTER_ENABLED, done)
 
 	# Green button on a WLAN connection row: switch to this connection (never a
 	# toggle – deactivating the active connection happens via the context menu).
@@ -1172,6 +1189,7 @@ class NetworkAdapterSetup(Setup):
 		wasEnabled = adapter.adapterEnabled
 		wasGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers), conn.wakeOnLan)
 		wasLinkSpeed = networkManager.getLinkSpeed(adapter.name)
+		wasMetric = adapter.metric if self.hasMetric else None
 
 		adapter.adapterEnabled = self.cfgEnabled.value
 		conn.dhcp = self.cfgDhcp.value
@@ -1215,8 +1233,20 @@ class NetworkAdapterSetup(Setup):
 		if not adapter.isWlan:
 			networkManager.setLinkSpeed(adapter.name, self.cfgLinkSpeed.value)
 
+		# Apply route metric (e2-route-metric). Was built into the config list
+		# (buildConfigObjects()) but never actually written out on save.
+		if self.hasMetric and self.cfgMetric.value != wasMetric:
+			if adapter.isWlan:
+				networkManager.setRouteMetrics(wlanMetric=self.cfgMetric.value)
+			else:
+				networkManager.setRouteMetrics(lanMetric=self.cfgMetric.value)
+
 		networkManager.save()
 
+		# Metric alone (self.cfgMetric, applied above) deliberately does NOT
+		# factor into `change` – it's just a route preference for e2-route-metric
+		# to pick up, not something that needs the adapter itself ifup/ifdown'd
+		# or restarted.
 		nowGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers), conn.wakeOnLan)
 		if nowGeneral != wasGeneral or self.cfgLinkSpeed.value != wasLinkSpeed:
 			change = CHANGE_GENERAL
@@ -1224,7 +1254,7 @@ class NetworkAdapterSetup(Setup):
 			change = CHANGE_ADAPTER_ENABLED
 		else:
 			change = CHANGE_NONE
-		applyLanChange(adapter.name, change, lambda: self.close((False, True)))
+		applyAdapterChange(adapter.name, change, lambda: self.close((False, True)))
 
 
 # ===========================================================================
@@ -1692,7 +1722,15 @@ class NetworkWiFiAddFlow:
 				if callback:
 					callback()
 				return
-			conn = scanResultToConnection(result, adapter.name)
+			# Reuse the existing profile if this SSID is already configured (e.g.
+			# already in wpa_supplicant.conf) instead of building a fresh, blank
+			# Connection – otherwise NetworkConnectionWiFi.keySave()'s identity
+			# check (`x is conn`) doesn't recognise it as the same profile, appends
+			# a second Connection with the same SSID, and both get written to
+			# wpa_supplicant.conf as separate network={} blocks, so the existing
+			# one's key/priority/enabled state is effectively ignored.
+			existing = next((x for x in networkManager.getConnections(adapter.name) if x.wlan and x.wlan.ssid == result.ssid), None)
+			conn = existing if existing is not None else scanResultToConnection(result, adapter.name)
 
 			def setupDone(*result):
 				# NetworkConnectionWiFi.close() shape varies: no args (cancel), a bare

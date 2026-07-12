@@ -925,7 +925,7 @@ class NetworkCheck:
 # ===========================================================================
 # What changed as a result of a save() call – the caller already knows this
 # (it's the one making the change), so it passes the right code to
-# NetworkSetup.applyLanChange() itself instead of save() trying to guess it.
+# NetworkSetup.applyAdapterChange() itself instead of save() trying to guess it.
 # ===========================================================================
 
 CHANGE_NONE = 0              # nothing that needs activating changed
@@ -1299,9 +1299,14 @@ class NetworkManager:
 
 		anyDhcp = any(conn.dhcp for conns in connMap.values() for conn in conns if conn.enabled)
 		self.nsFiles.save(self.nameserverConfig, anyDhcp)
-		# The caller applies whatever the changed config needs next (ifup/ifdown,
-		# a full restart, ...) – the network is about to change, so plugins stop now.
-		self.notifyNetworkPlugins(False)
+		# save() only writes config files now – it doesn't know whether the
+		# caller is actually going to apply anything afterward (a plain Save
+		# with no changes is a no-op), so it no longer calls
+		# notifyNetworkPlugins(False) itself. That's applyAdapterChange()'s job
+		# (NetworkSetup.py), paired with the matching reason=True once the
+		# change has actually applied – otherwise a plugin (e.g. OpenWebif)
+		# got stopped on every save and never came back if nothing else
+		# happened to restart it.
 		self.log(f"save(): done, ok={ok}")
 		return ok
 
@@ -1342,9 +1347,11 @@ class NetworkManager:
 			self.discoverAdapters()
 			self.loadInterfacesFile()
 			self.loadWpaSupplicantFiles()
-			# The network just came back – restart plugins that save()'s
-			# notifyNetworkPlugins(False) stopped earlier (e.g. OpenWebif).
-			self.notifyNetworkPlugins(True)
+			# The network just came back – restart plugins that were stopped
+			# earlier (e.g. OpenWebif). iface=iface mirrors applyAdapterChange()'s
+			# reason=False call further up the chain: if another adapter kept
+			# the box reachable, that call was skipped, so this one is too.
+			self.notifyNetworkPlugins(True, iface=iface)
 			if callback:
 				callback()
 		self.pendingRestart = ServiceAction.netrestart(done, iface=iface)
@@ -1433,17 +1440,24 @@ class NetworkManager:
 			return f"{adapter.module or 'Unknown'} {_('wireless network interface')}"
 		return _("Ethernet network interface")
 
-	# Fire WHERE_NETWORKCONFIG_READ plugins unconditionally – save()/
-	# applyLanChange() only ever run from user-initiated UI actions, never
-	# during early boot, so there's no "too early" case to guard against here.
-	# An earlier version skipped the call unless some adapter's *current*
-	# netInfo already showed a real IP, but that's exactly the state that's
-	# in flux because of the change being notified about (e.g. on disable,
-	# netInfo may still show the old "up" state, or on enable it may not
-	# have caught up yet via the async socketdaemon event) – so it silently
-	# dropped notifications in both directions. Plugins (e.g. OpenWebif's
-	# HttpdStart/HttpdStop) are idempotent and expected to handle redundant
-	# calls cheaply.
+	# Fire WHERE_NETWORKCONFIG_READ plugins – save()/applyAdapterChange() only ever
+	# run from user-initiated UI actions, never during early boot, so there's
+	# no "too early" case to guard against here. An earlier version skipped
+	# the call unless some adapter's *current* netInfo already showed a real
+	# IP, but that's exactly the state that's in flux because of the change
+	# being notified about (e.g. on disable, netInfo may still show the old
+	# "up" state, or on enable it may not have caught up yet via the async
+	# socketdaemon event) – so it silently dropped notifications in both
+	# directions. Plugins (e.g. OpenWebif's HttpdStart/HttpdStop) are
+	# idempotent and expected to handle redundant calls cheaply.
+	#
+	# `iface`, when given, is the ONE adapter actually being changed – if some
+	# OTHER adapter is already up with a real IP, the box stays reachable
+	# through it regardless of what happens to `iface`, so there's nothing
+	# for plugins to stop/restart (e.g. disabling wlan0 while eth0 is up and
+	# serving OpenWebif shouldn't bounce OpenWebif). Checking *other* adapters
+	# this way is safe against the staleness problem above, since their
+	# netInfo isn't the one in flux.
 	#
 	# reason=False: the network config is about to change – plugins must
 	#   stop their internal services (they'd otherwise keep running against
@@ -1458,10 +1472,18 @@ class NetworkManager:
 	#           HttpdStart(global_session)
 	#       else:
 	#           HttpdStop(global_session)
-	def notifyNetworkPlugins(self, reason: bool):
-		self.log(f"notifyNetworkPlugins(): reason={reason} states=" + ", ".join(
-			f"{iface}(up={adapter.netInfo.up}, ip={adapter.netInfo.ip})" for iface, adapter in self.adapters.items()
+	def notifyNetworkPlugins(self, reason: bool, iface: str = ""):
+		self.log(f"notifyNetworkPlugins(): reason={reason} iface={iface!r} states=" + ", ".join(
+			f"{other}(up={adapter.netInfo.up}, ip={adapter.netInfo.ip})" for other, adapter in self.adapters.items()
 		))
+		if iface:
+			otherAdapterUp = any(
+				adapter.netInfo.up and any(octet != 0 for octet in adapter.netInfo.ip)
+				for other, adapter in self.adapters.items() if other != iface
+			)
+			if otherAdapterUp:
+				self.log(f"notifyNetworkPlugins(): {iface} changed but another adapter is still up -> skipped")
+				return
 		try:
 			notified = [str(plugin) for plugin in plugins.getPlugins(PluginDescriptor.WHERE_NETWORKCONFIG_READ)]
 			self.log(f"notifyNetworkPlugins(): calling {notified} with reason={reason}")

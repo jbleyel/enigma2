@@ -354,7 +354,13 @@ class StartWizard(Wizard, ShowRemoteControl):
 		if self.nwPollTimer:
 			self.nwPollTimer.stop()
 			self.nwPollTimer = None
-		self.currStep = self.getStepWithID("nwifaceselect")
+		# getStepWithID()/findStepByName() returns the enumerate() index (0-based),
+		# one less than the step's real 1-based key in self.wizard – every other
+		# caller in this framework (nwDone() below, afterAsyncCode()) adds this
+		# same +1 to compensate. Omitting it here landed on the *previous* step
+		# (nwconfig) instead of nwifaceselect, which re-ran nwOpenSetup() and
+		# reopened NetworkAdapterSetup – looked like an infinite loop.
+		self.currStep = self.getStepWithID("nwifaceselect") + 1
 		self.updateValues()
 
 	def nwShowStatusStep(self):
@@ -362,7 +368,8 @@ class StartWizard(Wizard, ShowRemoteControl):
 		if self.nwPollTimer:
 			self.nwPollTimer.stop()
 			self.nwPollTimer = None
-		self.currStep = self.getStepWithID("nwstatus")
+		# See the +1 note in nwBackToList() above – same off-by-one compensation.
+		self.currStep = self.getStepWithID("nwstatus") + 1
 		self.updateValues()
 
 	def nwDone(self):
