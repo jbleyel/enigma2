@@ -15,7 +15,6 @@
 		<list type="dynamic" source="nwListInterfaces" evaluation="nwIfaceSelected" onselect="nwIfaceMoved" />
 		<code>
 self.nwSelectedIface = None
-self.nwWifiScanOnly = False
 self.nwIpFound = ""
 		</code>
 		<code pos="after" async="yes">
