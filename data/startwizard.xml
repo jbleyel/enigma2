@@ -16,6 +16,7 @@
 		<code>
 self.nwSelectedIface = None
 self.nwIpFound = ""
+self.nwSubFlowActive = False
 		</code>
 		<code pos="after" async="yes">
 self.nwAdvanceFromSelect()

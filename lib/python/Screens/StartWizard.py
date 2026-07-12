@@ -52,6 +52,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self.nwIpFound = ""
 		self.nwPollTimer = None
 		self.nwPollCount = 0
+		self.nwSubFlowActive = False
 
 	def markDone(self):
 		# Setup remote control, all STBs have same settings except dm8000 which uses a different setting.
@@ -299,6 +300,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 			# + IP poll) and reports the result here, so there is nothing left to activate
 			# or poll for. Show the result on the status step, same as the LAN path.
 			print("[NW-WIZ] nwWifiFlowDone called, ip=%s" % ip)
+			self.nwSubFlowActive = False
 			self.nwIpFound = ip
 			self.nwShowStatusStep()
 
@@ -313,13 +315,26 @@ class StartWizard(Wizard, ShowRemoteControl):
 				if saved and adapter.adapterEnabled:
 					# The adapter was just activated – jump straight into the Wi-Fi
 					# scan/connect flow instead of leaving the user stuck with an
-					# enabled adapter and no SSID configured.
+					# enabled adapter and no SSID configured. Each screen in this
+					# chain (scan → connection setup → activator) opens itself from
+					# within the previous one's close callback, and Session.close()
+					# briefly restores this Wizard as the current dialog in between
+					# (see the comment in StartEnigma.Session.close()) – long enough
+					# to re-fire onShown/updateValues() on the "nwconfig" step and
+					# reopen NetworkAdapterSetup, which looks like an infinite loop.
+					# nwSubFlowActive blocks that spurious re-entry until the whole
+					# Wi-Fi flow really is done.
+					self.nwSubFlowActive = True
 					from Screens.NetworkSetup import NetworkWiFiAddFlow
 					NetworkWiFiAddFlow.start(self.session, adapter=adapter, callback=nwWifiFlowDone)
 				else:
 					self.nwBackToList()
 			else:
 				nwStartIpPoll()
+
+		if self.nwSubFlowActive:
+			print("[NW-WIZ] nwOpenSetup: spurious re-entry while Wi-Fi sub-flow is active -> ignored")
+			return
 
 		try:
 			from Components.NetworkManager import networkManager
@@ -335,6 +350,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 			self.nwDone()
 
 	def nwBackToList(self):
+		self.nwSubFlowActive = False
 		if self.nwPollTimer:
 			self.nwPollTimer.stop()
 			self.nwPollTimer = None
@@ -342,6 +358,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self.updateValues()
 
 	def nwShowStatusStep(self):
+		self.nwSubFlowActive = False
 		if self.nwPollTimer:
 			self.nwPollTimer.stop()
 			self.nwPollTimer = None
@@ -349,6 +366,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self.updateValues()
 
 	def nwDone(self):
+		self.nwSubFlowActive = False
 		if self.nwPollTimer:
 			self.nwPollTimer.stop()
 			self.nwPollTimer = None

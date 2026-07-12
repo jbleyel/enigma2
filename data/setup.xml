@@ -620,6 +620,7 @@
 					<item level="0" text="Default gateway" description="Enter the IP address to use as a gateway to other networks for this adapter. Typically this is the IP address of your router.">self.cfgGateway</item>
 				</if>
 			</if>
+			<item level="1" text="Metric" description="Enter the route metric for this adapter. When multiple adapters are active, the one with the lowest metric is preferred for the default route." conditional="self.hasMetric">self.cfgMetric</item>
 			<item level="1" text="DNS override" description="When enabled, specify custom DNS servers for this adapter instead of the global DNS servers.">self.cfgDnsOverride</item>
 			<if conditional="self.cfgDnsOverride.value">
 				<if conditional="self.cfgIpMode.value != 1">

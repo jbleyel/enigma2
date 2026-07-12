@@ -86,11 +86,11 @@ def applyLanChange(iface: str, change: int, callback):
 		# restartNetwork() already notifies plugins itself (it needs to re-run
 		# discoverAdapters()/applyNetinfo() first); plain ifup doesn't refresh
 		# adapter state on its own, so do it here – otherwise a plugin that
-		# save()'s _notifyNetworkPlugins(False) stopped (e.g. OpenWebif) never
+		# save()'s notifyNetworkPlugins(False) stopped (e.g. OpenWebif) never
 		# comes back up after just enabling an adapter. ifdown needs no
 		# matching call here: save()'s reason=False already told plugins to
 		# stop, and that's the correct final state after a disable.
-		networkManager._notifyNetworkPlugins(True)
+		networkManager.notifyNetworkPlugins(True)
 		done(*_args)
 
 	if change == CHANGE_GENERAL:
@@ -1123,6 +1123,13 @@ class NetworkAdapterSetup(Setup):
 		self.cfgIp = NoSave(ConfigIP(default=conn.ip))
 		self.cfgNetmask = NoSave(ConfigIP(default=conn.netmask))
 		self.cfgGateway = NoSave(ConfigIP(default=conn.gateway))
+
+		# Route metric (only while the e2-route-metric daemon config exists
+		# and more than one adapter is present – that's the only situation
+		# where more than one gateway, and thus a metric, is relevant)
+		currentMetric = adapter.metric
+		self.hasMetric = currentMetric is not None and len(networkManager.adapters) > 1
+		self.cfgMetric = NoSave(ConfigSelection(choices=networkManager.ROUTE_METRIC_CHOICES, default=currentMetric if currentMetric is not None else (600 if adapter.isWlan else 100)))
 
 		# Per-adapter DNS (inline, replaces separate DNS setup screen)
 		hasOwn = bool(conn.dnsServers)
