@@ -49,7 +49,7 @@ from skin import parseColor
 from Tools.Conversions import formatNetworkSpeed
 from Tools.Directories import SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 from Tools.ServiceAction import ServiceAction
-from Components.NetworkManager import Adapter, Connection, WiFiConfig, networkManager, encNone, encWep, encWpa, encWpa2, encWpa3, encryptionLabels, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_GENERAL
+from Components.NetworkManager import Adapter, Connection, WiFiConfig, networkManager, apiBrcmWl, encNone, encWep, encWpa, encWpa2, encWpa3, encryptionLabels, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_GENERAL
 
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -1240,8 +1240,9 @@ class NetworkConnectionWiFi(Setup):
 			(encWpa, "WPA"),
 			(encWpa2, "WPA2"),
 		]
-		if BoxInfo.getItem("wpa3") or (conn.wlan and conn.wlan.encryption == encWpa3):
-			encryptionChoices.append((encWpa3, "WPA3"))
+		# WPA3/SAE disabled for now – the Broadcom "wl" driver (brcm-wl) can't do it.
+		# if BoxInfo.getItem("wpa3") or (conn.wlan and conn.wlan.encryption == encWpa3):
+		# 	encryptionChoices.append((encWpa3, "WPA3"))
 
 		wlan = conn.wlan
 		self.cfgSsid = NoSave(ConfigText(default=wlan.ssid, fixed_size=False))
@@ -1468,13 +1469,19 @@ class NetworkWiFiScanScreen(Screen):
 
 			self.console.ePopen(("/sbin/iwlist", "/sbin/iwlist", self.adapter, "scanning"), callback=scanCompleteCallback)
 
+		def ifUpCallback(results: str, retVal: int, extraArgs=None):
+			if self.adapterObj.driverApi == apiBrcmWl:
+				self.console.ePopen(("/usr/bin/wl", "/usr/bin/wl", "up"), callback=startScanCallback)
+			else:
+				startScanCallback(None, 0)
+
 		if not self.scanning:
 			self.scanning = True
 			self["description"].setText(_("Scanning…"))
 			if self.adapterObj.netInfo.up:
-				startScanCallback(None, 0)
+				ifUpCallback(None, 0)
 			else:
-				self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=startScanCallback)
+				self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=ifUpCallback)
 
 	def parseIwlist(self, raw: str) -> list[ScanResult]:
 		results: list[ScanResult] = []
@@ -1488,7 +1495,7 @@ class NetworkWiFiScanScreen(Screen):
 		reEncOff = re.compile(r"Encryption key:off")
 		reIeWpa1 = re.compile(r"IE:.*WPA Version 1", re.IGNORECASE)
 		reIeWpa2 = re.compile(r"IE:.*WPA2|IE:.*RSN", re.IGNORECASE)
-		reIeWpa3 = re.compile(r"IE:.*SAE|IE:.*WPA3", re.IGNORECASE)
+		# reIeWpa3 = re.compile(r"IE:.*SAE|IE:.*WPA3", re.IGNORECASE)  # WPA3/SAE disabled for now
 
 		for line in raw.splitlines():
 			line = line.strip()
@@ -1512,13 +1519,10 @@ class NetworkWiFiScanScreen(Screen):
 				qVal, qMax = int(match.group(1)), int(match.group(2))
 				current.signalPct = int(qVal * 100 / qMax) if qMax else 0
 				current.signalDbm = int(match.group(3))
-			if reIeWpa3.search(line):
-				current.encryption = encWpa3
+			# WPA3/SAE detection disabled for now – the Broadcom "wl" driver (brcm-wl) can't do it.
+			if reIeWpa2.search(line):
+				current.encryption = encWpa2
 				current.encDetails = line
-			elif reIeWpa2.search(line):
-				if current.encryption != encWpa3:
-					current.encryption = encWpa2
-					current.encDetails = line
 			elif reIeWpa1.search(line):
 				if current.encryption == encNone:
 					current.encryption = encWpa

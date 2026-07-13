@@ -1,0 +1,131 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          wlconfignew
+# Required-Start:
+# Required-Stop:
+# Default-Start:
+# Default-Stop:
+# Short-Description: Configure a Broadcom "wl" WLAN interface from its wpa_supplicant.conf
+### END INIT INFO
+
+set -eu
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+
+WL="/usr/bin/wl"
+IFACE=""
+WPA_CONF=""
+
+while getopts "i:c:" opt; do
+  case "$opt" in
+    i) IFACE="$OPTARG" ;;
+    c) WPA_CONF="$OPTARG" ;;
+    *)
+      echo "Usage: $0 -i<iface> -c<wpa_supplicant.conf>" >&2
+      exit 2
+      ;;
+  esac
+done
+
+case "$IFACE" in
+  wlan[0-9]*) ;;
+  *)
+    echo "Usage: $0 -i<iface> -c<wpa_supplicant.conf>" >&2
+    exit 2
+    ;;
+esac
+
+if [ -z "$WPA_CONF" ] || [ ! -f "$WPA_CONF" ]; then
+  echo "No wpa_supplicant config found at '$WPA_CONF'" >&2
+  exit 1
+fi
+
+# Extract the first enabled network={...} block as "key=value" lines.
+# Quotes are kept so callers can tell an ASCII value from a bare hex one.
+BLOCK="$(awk '
+  /^[[:space:]]*network[[:space:]]*=?[[:space:]]*\{/ { inblock=1; buf=""; disabled=0; next }
+  inblock && /^[[:space:]]*\}/ {
+    if (!disabled && buf != "") { printf "%s", buf; exit }
+    inblock=0; buf=""; next
+  }
+  inblock {
+    line=$0
+    sub(/^[[:space:]]+/, "", line)
+    sub(/[[:space:]]+$/, "", line)
+    if (line ~ /^disabled[[:space:]]*=[[:space:]]*1/) disabled=1
+    if (line != "") buf = buf line "\n"
+  }
+' "$WPA_CONF")"
+
+if [ -z "$BLOCK" ]; then
+  echo "No enabled network block found in $WPA_CONF" >&2
+  exit 1
+fi
+
+get_field() {
+  printf '%s\n' "$BLOCK" | sed -n "s/^$1=//p" | head -n1
+}
+
+strip_quotes() {
+  val="$1"
+  case "$val" in
+    \"*\") val="${val#\"}"; val="${val%\"}" ;;
+  esac
+  printf '%s' "$val"
+}
+
+ascii_to_hex() {
+  printf '%s' "$1" | od -An -tx1 | tr -d ' \n'
+}
+
+RAW_SSID="$(get_field ssid)"
+RAW_KEY_MGMT="$(get_field key_mgmt)"
+RAW_PROTO="$(get_field proto)"
+RAW_PSK="$(get_field psk)"
+RAW_WEP="$(get_field wep_key0)"
+
+SSID="$(strip_quotes "$RAW_SSID")"
+[ -n "$SSID" ] || { echo "network block in $WPA_CONF has no ssid" >&2; exit 1; }
+
+KEY_MGMT="$(printf '%s' "${RAW_KEY_MGMT:-NONE}" | tr '[:lower:]' '[:upper:]')"
+PROTO="$(printf '%s' "${RAW_PROTO:-}" | tr '[:lower:]' '[:upper:]')"
+
+"$WL" down >/dev/null 2>&1 || true
+"$WL" up
+
+case "$KEY_MGMT" in
+  *SAE*)
+    echo "key_mgmt=$KEY_MGMT (WPA3-SAE) is not supported by the Broadcom wl driver" >&2
+    exit 1
+    ;;
+  *WPA*)
+    PSK="$(strip_quotes "$RAW_PSK")"
+    [ -n "$PSK" ] || { echo "key_mgmt=$KEY_MGMT but no psk set in $WPA_CONF" >&2; exit 1; }
+    "$WL" wsec 4
+    "$WL" set_pmk "$PSK"
+    if [ "$PROTO" = "WPA" ]; then
+      "$WL" join "$SSID" amode wpapsk
+    else
+      "$WL" join "$SSID" amode wpa2psk
+    fi
+    ;;
+  NONE)
+    if [ -n "$RAW_WEP" ]; then
+      case "$RAW_WEP" in
+        \"*\") WEP_KEY="$(ascii_to_hex "$(strip_quotes "$RAW_WEP")")" ;;
+        *) WEP_KEY="$RAW_WEP" ;;
+      esac
+      "$WL" wsec 1
+      "$WL" join "$SSID" key "0:${WEP_KEY}" amode openshared
+    else
+      "$WL" wsec 0
+      "$WL" join "$SSID" amode open
+    fi
+    ;;
+  *)
+    echo "Unsupported key_mgmt '$KEY_MGMT' in $WPA_CONF" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

@@ -48,7 +48,8 @@ nameserverFile = "/etc/enigma2/nameserversdns.conf"
 wpaSupplicantDir = "/etc"
 sysfsNet = "/sys/class/net"
 procNetWireless = "/proc/net/wireless"
-wlConfigScript = "/usr/sbin/wl-config.sh"
+wlConfigScript = "/usr/bin/wlconfignew"
+wlBin = "/usr/bin/wl"
 ifconfigBin = "/sbin/ifconfig"
 ifupBin = "/sbin/ifup"
 ifdownBin = "/sbin/ifdown"
@@ -707,15 +708,15 @@ class WlanRuntime:
 		cmds: list[str] = []
 		cmds.extend(self.commandsDeactivate())
 		cmds.append(f"{ifconfigBin} {iface} up || true")
-		if conn.wlan and conn.wlan.encryption != encNone:
-			if self.adapter.driverApi == apiBrcmWl:
-				cmds.extend(self.bcmUpCmds(conn))
-			else:
-				cmds.append(
-					f"{wpaSupplicantBin} -B -D {self.adapter.driverApi} "
-					f"-i{iface} -c{self.adapter.wpaConfPath} "
-					f"-P{self.adapter.wpaPidPath} || true"
-				)
+		if self.adapter.driverApi == apiBrcmWl:
+			if conn.wlan:
+				cmds.append(f"{wlConfigScript} -i{iface} -c{self.adapter.wpaConfPath} || true")
+		elif conn.wlan and conn.wlan.encryption != encNone:
+			cmds.append(
+				f"{wpaSupplicantBin} -B -D {self.adapter.driverApi} "
+				f"-i{iface} -c{self.adapter.wpaConfPath} "
+				f"-P{self.adapter.wpaPidPath} || true"
+			)
 		elif conn.wlan:
 			cmds.append(f'iwconfig {iface} essid "{reEscape(conn.wlan.ssid)}" || true')
 		cmds.append(f"{ifupBin} {iface}")
@@ -729,17 +730,10 @@ class WlanRuntime:
 			f"ip addr flush dev {iface} scope global 2>/dev/null; true",
 		]
 
-	def bcmUpCmds(self, conn: Connection) -> list[str]:
-		wlan = conn.wlan
-		if wlan is None:
-			return []
-		encStr = {encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2", encWpaWpa2: "WPA2"}.get(wlan.encryption, "NONE")
-		return [f"{wlConfigScript} -m {encStr} -k {wlan.key} -s \"{reEscape(wlan.ssid)}\" || true"]
-
 	def statusCommands(self) -> list[str]:
 		iface = self._iface
 		if self.adapter.driverApi == apiBrcmWl:
-			return [f"wl -i {iface} status"]
+			return [f"{wlBin} -i {iface} status"]
 		return [f"iwconfig {iface}"]
 
 
@@ -974,9 +968,6 @@ class NetworkManager:
 		self.applyNetinfo()
 		self.log(f"load(): done, adapters={sorted(self.adapters.keys())}")
 
-	def bcmConfPath(self, iface: str) -> str:
-		return f"/etc/wl.conf.{iface}"
-
 	def discoverAdapters(self):
 		def detectDriverApi(iface: str, module: str) -> str:
 			if exists(f"/tmp/bcm/{iface}"):
@@ -1081,46 +1072,16 @@ class NetworkManager:
 				)]
 
 	def loadWpaSupplicantFiles(self):
-
-		legacyEncMap: dict[str, str] = {
-			"unencrypted": encNone,
-			"none": encNone,
-			"wep": encWep,
-			"wpa": encWpa,
-			"wpa/wpa2": encWpaWpa2,
-			"wpa2": encWpa2,
-			"wpa3": encWpa3,
-		}
-
-		def bcmLoadWiFiConfig(iface: str) -> WiFiConfig:
-			wlan = WiFiConfig()
-			for line in _readLines(self.bcmConfPath(iface)):
-				line = line.strip()
-				if not line or line.startswith("#"):
-					continue
-				key, sep, value = line.partition("=")
-				key, value = key.strip(), value.strip()
-				if key == "ssid":
-					wlan.ssid = value
-				elif key == "method":
-					wlan.encryption = legacyEncMap.get(value.lower(), encNone)
-				elif key == "key":
-					wlan.key = value
-			return wlan
-
 		for iface, adapter in self.adapters.items():
 			if not adapter.isWlan:
 				continue
-			if adapter.driverApi == apiBrcmWl:
-				self.mergeWiFiConfig(iface, bcmLoadWiFiConfig(iface))
-			else:
-				wpf = WpaSupplicantFile(iface)
-				if not wpf.exists():
-					self.log(f"loadWpaSupplicantFiles(): {iface} no {wpf.path}")
-					continue
-				for wlan in wpf.parse():
-					self.log(f"loadWpaSupplicantFiles(): {iface} ssid={wlan.ssid!r} disabled={wlan.disabled} encryption={wlan.encryption}")
-					self.mergeWiFiConfig(iface, wlan)
+			wpf = WpaSupplicantFile(iface)
+			if not wpf.exists():
+				self.log(f"loadWpaSupplicantFiles(): {iface} no {wpf.path}")
+				continue
+			for wlan in wpf.parse():
+				self.log(f"loadWpaSupplicantFiles(): {iface} ssid={wlan.ssid!r} disabled={wlan.disabled} encryption={wlan.encryption}")
+				self.mergeWiFiConfig(iface, wlan)
 
 	def mergeWiFiConfig(self, iface: str, wlan: WiFiConfig):
 		conns = self.getConnections(iface)
@@ -1143,18 +1104,7 @@ class NetworkManager:
 	# Saving
 	# ------------------------------------------------------------------
 
-	def bcmSaveWlanConfig(self, iface: str, wlan: WiFiConfig) -> bool:
-		encStr = {
-			encNone: "None", encWep: "WEP", encWpa: "WPA",
-			encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
-		}.get(wlan.encryption, "None")
-		return _writeLines(self.bcmConfPath(iface), [
-			f"ssid={wlan.ssid}",
-			f"method={encStr}",
-			f"key={wlan.key}",
-		])
-
-	# Write wpa_supplicant.conf (or the Broadcom wl config) for one adapter's –
+	# Write wpa_supplicant.conf for one adapter's –
 	# or, if onlyIface is None, every WLAN adapter's – Wi-Fi SSID profiles.
 	# Deliberately does NOT touch /etc/network/interfaces: NetworkConnectionWiFi
 	# (adding/editing/toggling a single SSID) calls this directly so saving one
@@ -1176,14 +1126,9 @@ class NetworkManager:
 			if not wlanConfigs:
 				continue
 			self.log(f"saveWifiProfiles(): {iface} writing {len(wlanConfigs)} wlan profile(s): " + ", ".join(f"{w.ssid!r}(disabled={w.disabled})" for w in wlanConfigs))
-			if adapter.driverApi == apiBrcmWl:
-				active = self.activeConnection(iface)
-				if active and active.wlan:
-					ok = self.bcmSaveWlanConfig(iface, active.wlan) and ok
-			else:
-				wpf = WpaSupplicantFile(iface)
-				wpf.ensureDir()
-				ok = wpf.save(wlanConfigs) and ok
+			wpf = WpaSupplicantFile(iface)
+			wpf.ensureDir()
+			ok = wpf.save(wlanConfigs) and ok
 		return ok
 
 	def save(self) -> bool:
@@ -1201,14 +1146,9 @@ class NetworkManager:
 			lines: list[str] = []
 
 			if api == apiBrcmWl:
-				encStr = {
-					encNone: "NONE", encWep: "WEP", encWpa: "WPA",
-					encWpa2: "WPA2", encWpaWpa2: "WPA2", encWpa3: "WPA2",
-				}.get(wlan.encryption, "NONE")
-				lines.append(f"pre-up {wlConfigScript} -m {encStr} -k {wlan.key} -s \"{reEscape(wlan.ssid)}\" || true")
 				lines.append(f"pre-up {ifconfigBin} {iface} up || true")
-				lines.append(f"pre-up iwconfig {iface} essid \"{reEscape(wlan.ssid)}\" || true")
-				lines.append(f"post-down {wlConfigScript} -m NONE || true")
+				lines.append(f"pre-up {wlConfigScript} -i{iface} -c{adapter.wpaConfPath} || true")
+				lines.append(f"post-down {wlBin} down || true")
 			else:
 				driverFlags = f"-D {api}" if api != apiNl80211 else ""
 				lines.append(f"pre-up {ifconfigBin} {iface} up || true")
