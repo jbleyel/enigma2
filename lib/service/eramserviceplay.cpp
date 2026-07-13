@@ -155,9 +155,8 @@ void eRamServicePlay::onRecoveryPaused() {
 		return;
 
 	pts_t decoder_pts = 0;
-	if (m_decoder->getPTS(0, decoder_pts) != 0)
-		if (m_decoder->getPTS(1, decoder_pts) != 0)
-			return;
+	if ((m_decoder->getPTS(0, decoder_pts) != 0) && (m_decoder->getPTS(1, decoder_pts) != 0))
+		return;
 
 	decoder_pts &= 0x1FFFFFFFF;
 	m_frozen_play_position = pts_delta(decoder_pts, first_pts);
@@ -177,7 +176,7 @@ void eRamServicePlay::recordEvent(int event) {
 // edge (normal — wait for data). Suppress switchToLive() in both cases.
 void eRamServicePlay::serviceEventTimeshift(int event) {
 	if (event == eDVBServicePMTHandler::eventEOF) {
-		eDebug("[eRamServicePlay] ignoring eventEOF — watchdog handles lap/live-edge");
+		eTrace("[eRamServicePlay] ignoring eventEOF — watchdog handles lap/live-edge");
 		return;
 	}
 	eDVBServicePlay::serviceEventTimeshift(event);
@@ -230,7 +229,7 @@ RESULT eRamServicePlay::seekTo(pts_t to) {
 	// Seek disabled for RAM timeshift to prevent issues with 4K channels
 	// and to offload PCR history searches. Does not affect PRS.
 	if (m_timeshift_active && m_ram_recorder) {
-		eDebug("[eRamServicePlay] seekTo: disabled on RAM timeshift");
+		eTrace("[eRamServicePlay] seekTo: disabled on RAM timeshift");
 		return -1;
 	}
 	return eDVBServicePlay::seekTo(to);
@@ -240,7 +239,7 @@ RESULT eRamServicePlay::seekRelative(int direction, pts_t to) {
 	// Seek disabled for RAM timeshift to prevent issues with 4K channels
 	// and to offload PCR history searches. Does not affect PRS.
 	if (m_timeshift_active && m_ram_recorder) {
-		eDebug("[eRamServicePlay] seekRelative: disabled on RAM timeshift");
+		eTrace("[eRamServicePlay] seekRelative: disabled on RAM timeshift");
 		return -1;
 	}
 	return eDVBServicePlay::seekRelative(direction, to);
