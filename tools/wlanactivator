@@ -24,6 +24,17 @@ validate_iface() {
   esac
 }
 
+# Mirrors NetworkManager.py's detectDriverApi(): Broadcom "wl" adapters are
+# driven by wlconfignew (via the interfaces pre-up line), never wpa_supplicant.
+is_brcm_wl() {
+  [ -e "/tmp/bcm/${IFACE}" ] && return 0
+  module="$(basename "$(readlink -f "/sys/class/net/${IFACE}/device/driver/module" 2>/dev/null)" 2>/dev/null || true)"
+  case "$module" in
+    brcm-systemport|brcmfmac|brcmsmac) return 0 ;;
+  esac
+  return 1
+}
+
 do_start() {
   validate_iface
   WPA_CONF="/etc/wpa_supplicant.${IFACE}.conf"
@@ -39,8 +50,10 @@ do_start() {
   ifdown "${IFACE}" 2>/dev/null || true
   ip addr flush dev "${IFACE}" scope global 2>/dev/null || true
 
-  # start wpa_supplicant only if a config file was written
-  if [ -f "$WPA_CONF" ]; then
+  # start wpa_supplicant only if a config file was written, and only for
+  # non-Broadcom adapters – brcm-wl is brought up by ifup's pre-up line
+  # (wlconfignew, via the "wl" tool) below instead.
+  if ! is_brcm_wl && [ -f "$WPA_CONF" ]; then
     wpa_supplicant -B -D nl80211,wext -i"${IFACE}" -c"${WPA_CONF}" -P"${WPA_PID}"
     # give wpa_supplicant a moment to associate before ifup
     sleep 1

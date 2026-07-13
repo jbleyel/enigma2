@@ -1274,11 +1274,20 @@ class NetworkConnectionWiFi(Setup):
 		conns = networkManager.getConnections(adapter.name)
 		if not any(x is conn for x in conns):
 			conns.append(conn)
+		wasEnabled = adapter.adapterEnabled
 		if conn.enabled:
 			adapter.adapterEnabled = True
 		# Only wpa_supplicant.conf, never /etc/network/interfaces – saving one
 		# SSID profile must not trigger an adapter-level ifup/ifdown/restart.
 		networkManager.saveWifiProfiles(adapter.name)
+		if not wasEnabled and adapter.adapterEnabled:
+			# The adapter itself was off before this save – its stanza in
+			# interfaces is still fully commented out (or missing the pre-up/
+			# post-down lines entirely). Write it now so the connection survives
+			# a reboot/restart, not just the live activation below. Must happen
+			# here, before wasEnabled's only reader (NetworkWiFiActivator) sees
+			# adapter.adapterEnabled already flipped to True.
+			networkManager.save()
 		if conn.enabled:
 			self.session.openWithCallback(self.wifiConnectionVerified, NetworkWiFiActivator, conn, adapter)
 		else:
@@ -1578,16 +1587,12 @@ class NetworkWiFiActivator(Screen):
 
 		# wlanActivate() below runs "wlanactivator start <iface>" directly
 		# (ifconfig up + wpa_supplicant against wpa_supplicant.conf) – it does
-		# NOT go through ifup/etc/network/interfaces. NetworkConnectionWiFi's
-		# save only wrote wpa_supplicant.conf (saveWifiProfiles(), deliberately
-		# not touching interfaces), so if the adapter itself was never enabled
-		# before, its stanza in interfaces is still fully commented out. Without
-		# this, the connection would appear to work right now but not survive
-		# a reboot/restart, since ifup would never bring wlan0 up at all.
-		if not self.adapter.adapterEnabled:
-			self.adapter.adapterEnabled = True
-			networkManager.save()
-
+		# NOT go through ifup/etc/network/interfaces. Writing interfaces for a
+		# previously-disabled adapter (so the connection survives a reboot, not
+		# just this live activation) is NetworkConnectionWiFi.keySave()'s job –
+		# it must happen there, before adapter.adapterEnabled gets flipped to
+		# True, or the "was it already enabled" check is meaningless by the
+		# time this screen opens.
 		self["status"].setText(_("Connecting…"))
 		self.serviceAction = ServiceAction.wlanActivate(self.adapter.name, connectedCb)
 
