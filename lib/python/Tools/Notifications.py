@@ -3,7 +3,6 @@ from Screens.MessageBox import MessageBox
 
 notifications = []
 
-
 notificationAdded = []
 
 # notifications which are currently on screen (and might be closed by similiar notifications)
@@ -99,35 +98,35 @@ def AddModalNotification(text, timeout=-1, list=None, default=True, typeIcon=Non
 class NotificationCenter:
 
 	def __init__(self):
-		self._modalDialog = None
-		self._modalQueue = []
-		self._modalCallback = None
-		self._nextModalTimer = None
+		self.modalDialog = None
+		self.modalQueue = []
+		self.modalCallback = None
+		self.nextModalTimer = None
 
 	def setup(self, session):
 		self.session = session
-		self._modalDialog = session.instantiateDialog(MessageBox, "", enableInput=False, skinName="MessageBoxModal")
-		self._modalDialog.setAnimationMode(0)
-		self._modalDialog.hide()
-		self._nextModalTimer = eTimer()
-		self._nextModalTimer.callback.append(self._showNextModal)
+		self.modalDialog = session.instantiateDialog(MessageBox, "", enableInput=False, skinName="MessageBoxModal")
+		self.modalDialog.setAnimationMode(0)
+		self.modalDialog.hide()
+		self.nextModalTimer = eTimer()
+		self.nextModalTimer.callback.append(self.showNextModal)
 
 	def addModalNotification(self, text, timeout=-1, list=None, default=True, typeIcon=None, windowTitle=None, callback=None):
-		if not self._modalDialog:
+		if not self.modalDialog:
 			print("[NotificationCenter] addModalNotification: not yet set up, notification dropped.")
 			return
 		if typeIcon is None:
 			typeIcon = MessageBox.TYPE_YESNO
-		self._modalQueue.append((text, timeout, list, default, typeIcon, windowTitle, callback))
-		if not self._modalDialog.shown and not (self._nextModalTimer and self._nextModalTimer.isActive()):
-			self._showNextModal()
+		self.modalQueue.append((text, timeout, list, default, typeIcon, windowTitle, callback))
+		if not self.modalDialog.shown and not (self.nextModalTimer and self.nextModalTimer.isActive()):
+			self.showNextModal()
 
-	def _showNextModal(self):
-		if not self._modalQueue or not self._modalDialog:
+	def showNextModal(self):
+		if not self.modalQueue or not self.modalDialog:
 			return
-		text, timeout, list_, default, typeIcon, windowTitle, callback = self._modalQueue.pop(0)
-		self._modalCallback = callback
-		dialog = self._modalDialog
+		text, timeout, list_, default, typeIcon, windowTitle, callback = self.modalQueue.pop(0)
+		self.modalCallback = callback
+		dialog = self.modalDialog
 		dialog.text = text
 		dialog["text"].setText(text)
 		dialog.typeIcon = typeIcon
@@ -152,20 +151,20 @@ class NotificationCenter:
 		dialog.baseTitle = dialog.windowTitle
 		dialog.activeTitle = dialog.windowTitle
 		dialog.reloadLayout()
-		dialog.close = self._onModalAnswer
+		dialog.close = self.onModalAnswer
 		dialog.show()
 
-	def _onModalAnswer(self, *retval):
-		dialog = self._modalDialog
+	def onModalAnswer(self, *retval):
+		dialog = self.modalDialog
 		if dialog.enableInput:
 			dialog["actions"].execEnd()
 		dialog.hide()
-		callback = self._modalCallback
-		self._modalCallback = None
+		callback = self.modalCallback
+		self.modalCallback = None
 		if callback and callable(callback):
 			callback(*retval)
-		if self._modalQueue:
-			self._nextModalTimer.start(500, True)
+		if self.modalQueue:
+			self.nextModalTimer.start(500, True)
 
 
 notificationCenter = NotificationCenter()

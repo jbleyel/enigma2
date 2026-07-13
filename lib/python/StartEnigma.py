@@ -189,8 +189,8 @@ class Session:
 		# dialog below it must stay visible: pushCurrent()/execEnd()
 		# has hidden it, so show it again. It keeps painting but gets
 		# no input focus.
-		if self.dialog_stack and getattr(dialog, "instance", None) and dialog.instance.isModal():
-			self.dialog_stack[-1][0].show()
+		# if self.dialog_stack and getattr(dialog, "instance", None) and dialog.instance.isModal():
+		#	self.dialog_stack[-1][0].show()
 		self.execBegin()
 		return dialog
 

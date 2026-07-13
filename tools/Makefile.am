@@ -1,4 +1,4 @@
-bin_SCRIPTS = enigma2.sh
+bin_SCRIPTS = enigma2.sh wlconfignew
 lib_LTLIBRARIES = libopen.la
 
 initddir = $(sysconfdir)/init.d
