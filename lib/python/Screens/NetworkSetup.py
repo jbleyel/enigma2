@@ -585,27 +585,28 @@ class NetworkOverview(Screen):
 		self.onClose.append(doClose)
 
 	def refreshAdapters(self):
-		oldGateways = {x[self.INDEX_ADAPTER].name: x[self.INDEX_ADAPTER].netInfo.gateway for x in self["adapterList"].getList()}
-		newGateways = {name: adapter.netInfo.gateway for name, adapter in networkManager.adapters.items()}
-		gatewayChanged = oldGateways != newGateways
-		if not gatewayChanged:
-			adapterIndex = self["adapterList"].getCurrentIndex() if self["adapterList"].count() else -1
-			networkIndex = self["knownNetworksList"].getCurrentIndex() if self["knownNetworksList"].count() else -1
-			self.buildAdapters()
-			try:
-				if adapterIndex != -1:
-					self["adapterList"].setCurrentIndex(adapterIndex)
-			except Exception:
-				pass
-			if self.currentList == self["knownNetworksList"]:
+		if "adapterList" in self:
+			oldGateways = {x[self.INDEX_ADAPTER].name: x[self.INDEX_ADAPTER].netInfo.gateway for x in self["adapterList"].getList() if x[self.INDEX_ADAPTER] is not None}
+			newGateways = {name: adapter.netInfo.gateway for name, adapter in networkManager.adapters.items()}
+			gatewayChanged = oldGateways != newGateways
+			if not gatewayChanged:
+				adapterIndex = self["adapterList"].getCurrentIndex() if self["adapterList"].count() else -1
+				networkIndex = self["knownNetworksList"].getCurrentIndex() if self["knownNetworksList"].count() else -1
+				self.buildAdapters()
 				try:
-					if networkIndex != -1:
-						self["knownNetworksList"].setCurrentIndex(networkIndex)
+					if adapterIndex != -1:
+						self["adapterList"].setCurrentIndex(adapterIndex)
 				except Exception:
 					pass
-		else:
-			self.internetChecked = False
-			self.checkInternet()
+				if self.currentList == self["knownNetworksList"]:
+					try:
+						if networkIndex != -1:
+							self["knownNetworksList"].setCurrentIndex(networkIndex)
+					except Exception:
+						pass
+			else:
+				self.internetChecked = False
+				self.checkInternet()
 
 	def layoutFinished(self):
 		self["adapterList"].enableAutoNavigation(False)
@@ -1042,7 +1043,7 @@ class NetworkAdapterSetup(Setup):
 		self.adapter = adapter
 		self.conn = networkManager.getBaseConnection(adapter.name)
 		self.buildConfigObjects()
-		self.haveWakeOnLan = adapter.name == "eth0" and BoxInfo.getItem("wol") and BoxInfo.getItem("WakeOnLAN")
+		self.hasWakeOnLan = adapter.name == "eth0" and BoxInfo.getItem("wol") and BoxInfo.getItem("WakeOnLAN")
 		Setup.__init__(self, session=session, setup="NetworkAdapter")
 		self.setTitle(_("Network Adapter Settings – %s") % adapter.name)
 		self["key_info"] = StaticText(_("Info"))
@@ -1175,7 +1176,7 @@ class NetworkAdapterSetup(Setup):
 			change = CHANGE_NONE
 		applyAdapterChange(adapter.name, change, lambda: self.close((False, True)))
 
-		if self.haveWakeOnLan:
+		if self.hasWakeOnLan:
 			config.network.wol.save()
 
 

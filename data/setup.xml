@@ -620,7 +620,7 @@
 					<item level="0" text="Default gateway" description="Enter the IP address to use as a gateway to other networks for this adapter. Typically this is the IP address of your router.">self.cfgGateway</item>
 				</if>
 			</if>
-			<item level="1" text="Metric" description="Enter the route metric for this adapter. When multiple adapters are active, the one with the lowest metric is preferred for the default route." conditional="self.hasMetric">self.cfgMetric</item>
+			<item level="1" text="Network metric" description="Select the network metric for this adapter. When multiple adapters are active, the one with the lowest network metric is used as the default route for network traffic." conditional="self.hasMetric">self.cfgMetric</item> 
 			<item level="1" text="DNS override" description="When enabled, specify custom DNS servers for this adapter instead of the global DNS servers.">self.cfgDnsOverride</item>
 			<if conditional="self.cfgDnsOverride.value">
 				<if conditional="self.cfgIpMode.value != 1">
@@ -633,7 +633,7 @@
 				</if>
 			</if>
 			<if conditional="not self.adapter.isWlan">
-				<item level="1" text="Wake-on-LAN" description="When enabled, allow the receiver to be powered on by a remote Wake-on-LAN network signal (Magic Packet)." conditional="self.haveWakeOnLan">config.network.wol</item>
+				<item level="1" text="Wake-on-LAN" description="When enabled, allow the receiver to be powered on by a remote Wake-on-LAN network signal (Magic Packet)." conditional="self.hasWakeOnLan">config.network.wol</item>
 				<item level="2" text="Link speed" description="Force a specific network link speed/duplex mode instead of auto-negotiation. Only change this if you have a specific reason to - an incorrect setting can break network connectivity." conditional="self._hasLinkSpeedChoices">self.cfgLinkSpeed</item>
 			<else />
 				<item level="1" text="Wake-on-WiFi" description="When enabled, keep the Wi-Fi adapter in low-power scan mode during Standby to allow the receiver to be powered on by a remote network signal (Magic Packet)." requires="wwol" conditional="self.cfgEnabled.value">self.cfgWakeOnWiFi</item>
@@ -711,15 +711,15 @@
 	<setup key="Picon" title="Picon Settings" showOpenWebif="yes">
 		<item level="0" text="Picon mode" description="Select the mode for picon path selection and resolution. 'Legacy' represents the previous mode of operation.">config.picon.mode</item>
 		<if conditional="config.picon.mode.value == 1">
-			<item level="0" text="Picon path %s" description="Path for picon set %s." data="1">config.picon.set0.path</item>
-			<item level="0" text="Picon path %s" description="Path for picon set %s." data="2" conditional="config.picon.set0.path.value">config.picon.set1.path</item>
-			<item level="0" text="Picon path %s" description="Path for picon set %s." data="3" conditional="config.picon.set1.path.value">config.picon.set2.path</item>
-			<item level="0" text="Picon path %s" description="Path for picon set %s." data="4" conditional="config.picon.set2.path.value">config.picon.set3.path</item>
-			<item level="0" text="Picon path %s" description="Path for picon set %s." data="5" conditional="config.picon.set3.path.value">config.picon.set4.path</item>
-			<item level="0" text="InfoBar picon set" description="Select the Picon path, from above, to be used for InfoBar picons.">config.picon.infobar</item>IS: The values should be "Picon path x" to match the labels used in the list above.
-			<item level="0" text="Channel Selection picon set" description="Select the Picon path, from above, to be used for Channel Selection picons.">config.picon.channelselection</item>
-			<item level="0" text="Front panel/Display picon set" description="Select the Picon path, from above, to be used for Front panel/Display picons.">config.picon.display</item>
-			<item level="0" text="OpenWebif picon set" description="Select the Picon path, from above, to be used for OpenWebif picons.">config.picon.openwebif</item>
+			<item level="0" text="Picon set %s" description="Path to picon set %s." data="1">config.picon.set0.path</item>
+			<item level="0" text="Picon set %s" description="Path to picon set %s." data="2" conditional="config.picon.set0.path.value">config.picon.set1.path</item>
+			<item level="0" text="Picon set %s" description="Path to picon set %s." data="3" conditional="config.picon.set1.path.value">config.picon.set2.path</item>
+			<item level="0" text="Picon set %s" description="Path to picon set %s." data="4" conditional="config.picon.set2.path.value">config.picon.set3.path</item>
+			<item level="0" text="Picon set %s" description="Path to picon set %s." data="5" conditional="config.picon.set3.path.value">config.picon.set4.path</item>
+			<item level="0" text="InfoBar picon set" description="Select the Picon set path, from the option(s) above, to be used for InfoBar picons.">config.picon.infobar</item>IS: The values should be "Picon path x" to match the labels used in the list above.
+			<item level="0" text="Channel Selection picon set" description="Select the Picon set path, from the option(s) above, to be used for Channel Selection picons.">config.picon.channelselection</item>
+			<item level="0" text="Front panel/Display picon set" description="Select the Picon set path, from the option(s) above, to be used for Front panel/Display picons.">config.picon.display</item>
+			<item level="0" text="OpenWebif picon set" description="Select the Picon set path, from the option(s) above, to be used for OpenWebif picons.">config.picon.openwebif</item>
 		</if>
 	</setup>
 	<setup key="Playback" title="Playback Settings">
