@@ -577,7 +577,6 @@ class NetworkOverview(Screen):
 		}, prio=0, description=_("Network Overview Actions"))
 		self.onLayoutFinish.append(self.layoutFinished)
 		self.internetChecked = False
-		self.internetResult = None
 		self.onShown.append(self.checkInternet)
 		networkManager.onAdaptersChanged.append(self.refreshAdapters)
 
@@ -586,10 +585,9 @@ class NetworkOverview(Screen):
 		self.onClose.append(doClose)
 
 	def refreshAdapters(self):
-		# TODO
-		# oldGateways = {x[self.INDEX_ADAPTER].name: x[self.INDEX_ADAPTER].netInfo.gateway for x in self["adapterList"].getList()}
-		# newAdapters = [networkManager.adapters[iface] for iface in sorted(networkManager.adapters.keys())]
-		gatewayChanged = False  # any(x.netInfo.gateway != oldGateways.get(x.name) for x in newAdapters)
+		oldGateways = {x[self.INDEX_ADAPTER].name: x[self.INDEX_ADAPTER].netInfo.gateway for x in self["adapterList"].getList()}
+		newGateways = {name: adapter.netInfo.gateway for name, adapter in networkManager.adapters.items()}
+		gatewayChanged = oldGateways != newGateways
 		if not gatewayChanged:
 			adapterIndex = self["adapterList"].getCurrentIndex() if self["adapterList"].count() else -1
 			networkIndex = self["knownNetworksList"].getCurrentIndex() if self["knownNetworksList"].count() else -1
@@ -606,7 +604,6 @@ class NetworkOverview(Screen):
 				except Exception:
 					pass
 		else:
-			self.internetResult = None
 			self.internetChecked = False
 			self.checkInternet()
 
@@ -627,11 +624,9 @@ class NetworkOverview(Screen):
 		self.updateKeyGreen()
 
 	def checkInternet(self):
-		def checkInternetCallback(result):
-			if hasattr(self, "internetResult"):
-				self.internetResult = result
-				self.refreshAdapters()
-				self.internetChecked = True
+		def checkInternetCallback():
+			self.internetChecked = True
+			self.refreshAdapters()
 
 		if not self.internetChecked:
 			networkManager.checkConnectionInternet(callback=checkInternetCallback)
@@ -725,7 +720,7 @@ class NetworkOverview(Screen):
 			else:
 				speed = formatNetworkSpeed(net.speed) if net.speed > 0 else "—"
 
-			internet = adapter.adapterEnabled and self.internetResult and self.internetResult.get(adapter.name)
+			internet = adapter.adapterEnabled and adapter.hasInternet
 			inetGlyph = self.GLYPH_INET if internet else ""
 			return (
 				self.OVERVIEW_TEMPLATE_ROW,
@@ -1047,7 +1042,7 @@ class NetworkAdapterSetup(Setup):
 		self.adapter = adapter
 		self.conn = networkManager.getBaseConnection(adapter.name)
 		self.buildConfigObjects()
-		self.haveWakeOnLan = BoxInfo.getItem("wol") and BoxInfo.getItem("WakeOnLAN")
+		self.haveWakeOnLan = adapter.name == "eth0" and BoxInfo.getItem("wol") and BoxInfo.getItem("WakeOnLAN")
 		Setup.__init__(self, session=session, setup="NetworkAdapter")
 		self.setTitle(_("Network Adapter Settings – %s") % adapter.name)
 		self["key_info"] = StaticText(_("Info"))
@@ -1179,6 +1174,9 @@ class NetworkAdapterSetup(Setup):
 		else:
 			change = CHANGE_NONE
 		applyAdapterChange(adapter.name, change, lambda: self.close((False, True)))
+
+		if self.haveWakeOnLan:
+			config.network.wol.save()
 
 
 # ===========================================================================

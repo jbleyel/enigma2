@@ -205,6 +205,7 @@ class Adapter:
 	canWakeOnWiFi: bool = False
 	adapterEnabled: bool = False  # False -> every line of this adapter's stanza in /etc/network/interfaces is commented out with "# " (see serialiseConnection()), not just "auto <iface>"
 	netInfo: NetInfo = field(default_factory=NetInfo)
+	hasInternet: bool | None = None  # None = not checked (yet) by NetworkManager.checkConnectionInternet()
 
 	@property
 	def wpaConfPath(self) -> str:
@@ -850,12 +851,6 @@ class NetEventReader:
 		self._retryTimer = None
 		self._connect()
 
-	# TODO: During Wi-Fi association retries the daemon can fire bursts of several
-	# LINK/SCAN_TRIGGER/UPDATE events within a few milliseconds (driver flapping).
-	# Each is processed immediately below, causing redundant adapter updates/GUI
-	# refreshes. Debounce this: buffer incoming events and only actually process
-	# them once no further event has arrived within X ms, instead of acting on
-	# every single line as it comes in.
 	def _dispatch(self, line: str):
 		if not line:
 			return
@@ -931,6 +926,8 @@ class NetworkManager:
 	ROUTE_METRIC_FILE = "/etc/default/e2-route-metric"
 	ROUTE_METRIC_CHOICES = [(x, str(x)) for x in range(100, 901, 100)]
 
+	NETINFO_UPDATE_DEBOUNCE_MS = 250  # coalesce bursts of "UPDATE" events from socketdaemon into one apply/notify
+
 	LINKSPEED_BITS = {
 		"10baseT/Half": (0x01, "10 Mbps Half Duplex"),
 		"10baseT/Full": (0x02, "10 Mbps Full Duplex"),
@@ -950,6 +947,8 @@ class NetworkManager:
 		self.pendingRestart = None
 		self.networkCheck = None
 		self.onAdaptersChanged: list[Callable] = []
+		self.netinfoUpdateTimer = eTimer()
+		self.netinfoUpdateTimer.callback.append(self.onNetinfoUpdateDebounced)
 		self.load()
 		self._eventReader = NetEventReader(self)
 
@@ -1746,6 +1745,10 @@ class NetworkManager:
 
 	def onNetinfoUpdate(self):
 		self.log("onNetinfoUpdate()")
+		self.netinfoUpdateTimer.start(self.NETINFO_UPDATE_DEBOUNCE_MS, True)
+
+	def onNetinfoUpdateDebounced(self):
+		self.log("onNetinfoUpdate(): debounced")
 		self.applyNetinfo()
 		self.notifyAdaptersChanged()
 
@@ -1761,12 +1764,15 @@ class NetworkManager:
 				if not running or not up:
 					netInfo.link = False
 					netInfo.ssid = ""
-			else:
-				netInfo.link = up and running
-				self.showToast(iface, running)
+				# The daemon always sends an UPDATE right after LINK (same read
+				# cycle), which is debounced in onNetinfoUpdate() – skip the
+				# immediate notify here so WLAN association flapping doesn't
+				# cause a GUI refresh per flap.
+				return
+			netInfo.link = up and running
+			self.showToast(iface, running)
 		self.notifyAdaptersChanged()
 
-	# TODO: Wenn der user an der Config was ändert oder wenn man was an den Socket als Befehl schickt sollte dieser Toast nicht kommen.
 	def showToast(self, iface: str, up: bool):
 		from Screens.Toast import Toast
 		text = _("Network cable connected (%s)") % iface if up else _("Network cable disconnected (%s)") % iface
@@ -1780,8 +1786,12 @@ class NetworkManager:
 			adapter.netInfo.ip = _parseIp4(ipPrefix.split("/")[0])
 		self.notifyAdaptersChanged()
 
-	# Ping 8.8.8.8 (fallback 1.1.1.1) for each adapter that has physical link
-	def checkConnectionInternet(self, callback: Callable[[dict[str, bool]], None]):
+	# Ping 8.8.8.8 (fallback 1.1.1.1) for each adapter that has physical link.
+	# Writes the result directly to Adapter.hasInternet; callback() is called
+	# once, with no arguments, when all candidates have been checked.
+	def checkConnectionInternet(self, callback: Callable[[], None]):
+		for adapter in self.adapters.values():
+			adapter.hasInternet = False
 		candidates = [
 			iface
 			for iface, adapter in self.adapters.items()
@@ -1791,18 +1801,18 @@ class NetworkManager:
 		]
 		self.log(f"checkConnectionInternet(): candidates={candidates}")
 		if not candidates:
-			callback({})
+			callback()
 			return
 
-		results: dict[str, bool] = {}
 		remaining = [len(candidates)]
 
 		def onResult(iface: str, ok: bool):
-			results[iface] = ok
+			self.adapters[iface].hasInternet = ok
 			remaining[0] -= 1
 			if remaining[0] == 0:
+				results = {iface: self.adapters[iface].hasInternet for iface in candidates}
 				self.log(f"checkConnectionInternet(): results={results}")
-				callback(results)
+				callback()
 
 		def fallbackDone(iface: str, exitCode: int):
 			onResult(iface, exitCode == 0)

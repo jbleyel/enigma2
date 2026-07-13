@@ -23,8 +23,8 @@ class InstallWizard(ConfigListScreen, Screen):
 	STATE_SOFTCAM = 2
 
 	def __init__(self, session, args=None):
-		def checkNetworkCallback(results):
-			if any(results.values()):
+		def checkNetworkCallback():
+			if any(adapter.hasInternet for adapter in networkManager.adapters.values()):
 				config.misc.installwizard.hasnetwork.value = True
 			self.createMenu()
 
