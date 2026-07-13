@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 from os import F_OK, access
 from os.path import exists
@@ -608,9 +609,9 @@ class SecConfigure:
 					sec.setCommandOrder(order_map[currCO])
 
 				if dm == "1_2":
-					latitude = currLnb.latitude.float
+					latitude = currLnb.latitude.float if isinstance(currLnb.latitude, ConfigFloat) else 50.767
 					sec.setLatitude(latitude)
-					longitude = currLnb.longitude.float
+					longitude = currLnb.longitude.float if isinstance(currLnb.longitude, ConfigFloat) else 5.1
 					sec.setLongitude(longitude)
 					if currLnb.latitudeOrientation.value == "north":
 						sec.setLaDirection(rotorParam.NORTH)
@@ -1997,6 +1998,38 @@ def InitNimManager(nimmgr, update_slots=None):
 	advanced_lnb_fast_turning_btime = mktime(datetime(1970, 1, 1, 7, 0).timetuple())
 	advanced_lnb_fast_turning_etime = mktime(datetime(1970, 1, 1, 19, 0).timetuple())
 
+	def lnbTemplateValue(template, name, default):
+		if isinstance(template, ConfigSubsection):
+			configElement = template.content.items.get(name)
+			if configElement is not None and not isinstance(configElement, ConfigNothing) and hasattr(configElement, "value"):
+				return deepcopy(configElement.value)
+		return deepcopy(default)
+
+	def lnbTemplateSequenceValue(template, name, default, limits):
+		value = lnbTemplateValue(template, name, default)
+		if not isinstance(value, (list, tuple)) or len(value) != len(limits):
+			return deepcopy(default)
+		try:
+			return [min(max(int(item), limits[index][0]), limits[index][1]) for index, item in enumerate(value)]
+		except (TypeError, ValueError):
+			return deepcopy(default)
+
+	def lnbTemplateListValue(template, name, index, default):
+		if isinstance(template, ConfigSubsection):
+			configList = template.content.items.get(name)
+			if isinstance(configList, ConfigSubList) and index < len(configList) and hasattr(configList[index], "value"):
+				return deepcopy(configList[index].value)
+		return deepcopy(default)
+
+	def lnbTemplateProduct(template, configName, manufacturer):
+		if isinstance(template, ConfigSubsection):
+			manufacturerDict = template.content.items.get(configName)
+			manufacturerConfig = manufacturerDict.get(manufacturer) if isinstance(manufacturerDict, ConfigSubDict) else None
+			product = manufacturerConfig.content.items.get("product") if isinstance(manufacturerConfig, ConfigSubsection) else None
+			if product is not None and hasattr(product, "value"):
+				return product.value
+		return None
+
 	def configLOFChanged(configElement):
 		if configElement.value == "unicable":
 			x = configElement.slot_id
@@ -2004,11 +2037,16 @@ def InitNimManager(nimmgr, update_slots=None):
 			nim = config.Nims[x].dvbs
 			lnbs = nim.advanced.lnb
 			section = lnbs[lnb]
+			template = getattr(configElement, "lnb_template", None)
 			if isinstance(section.unicable, ConfigNothing):
 				if lnb == 1 or lnb > maxFixedLnbPositions:
-					section.unicable = ConfigSelection(UNICABLE_CHOICES(), unicable_choices_default)
+					unicableChoices = UNICABLE_CHOICES()
 				else:
-					section.unicable = ConfigSelection(choices={"unicable_matrix": _("Unicable Matrix"), "unicable_user": "Unicable " + _("User defined")}, default="unicable_matrix")
+					unicableChoices = {"unicable_matrix": _("Unicable Matrix"), "unicable_user": "Unicable " + _("User defined")}
+				defaultUnicable = lnbTemplateValue(template, "unicable", unicable_choices_default)
+				if defaultUnicable not in unicableChoices:
+					defaultUnicable = "unicable_matrix" if lnb != 1 and lnb <= maxFixedLnbPositions else unicable_choices_default
+				section.unicable = ConfigSelection(unicableChoices, defaultUnicable)
 
 			def fillUnicableConf(sectionDict, unicableproducts, vco_null_check, defaultProduct=None, defaultSlot=0):
 				for manufacturer in unicableproducts:
@@ -2070,40 +2108,43 @@ def InitNimManager(nimmgr, update_slots=None):
 							products_valide_append(article)
 					if len(products_valide) == 0:
 						products_valide_append("None")
-					tmp.product = ConfigSelection(choices=products_valide, default=products_valide[0])
+					productDefault = defaultProduct if defaultProduct in products_valide else products_valide[0]
+					tmp.product = ConfigSelection(choices=products_valide, default=productDefault)
 					sectionDict[manufacturer] = tmp
-					if defaultProduct and defaultProduct in products_valide:
-						tmp.product.value = defaultProduct
-						# default scr needs to be fixed
-						#if defaultSlot and len(tmp.vco[defaultProduct]) >= int(defaultSlot):
-						#	tmp.scr[defaultProduct].value = str(defaultSlot)
+					# default scr needs to be fixed
+					#if defaultSlot and len(tmp.vco[productDefault]) >= int(defaultSlot):
+					#	tmp.scr[productDefault].value = str(defaultSlot)
 
 			print("[NimManager] MATRIX")
 			section.unicableMatrix = ConfigSubDict()
 			defaultSlot = rootDefaults.get("slotnr", None)
-			default = rootDefaults.get("unicable_matrix_manufacturer_default", UnicableMatrixManufacturers[0]) if defaultSlot else UnicableMatrixManufacturers[0]
-			defaultProduct = rootDefaults.get("unicable_matrix_product", None) if defaultSlot else None
+			default = rootDefaults.get("unicable_matrix_manufacturer_default", UnicableMatrixManufacturers[0]) if defaultSlot else lnbTemplateValue(template, "unicableMatrixManufacturer", UnicableMatrixManufacturers[0])
+			if default not in UnicableMatrixManufacturers:
+				default = UnicableMatrixManufacturers[0]
+			defaultProduct = rootDefaults.get("unicable_matrix_product", None) if defaultSlot else lnbTemplateProduct(template, "unicableMatrix", default)
 			section.unicableMatrixManufacturer = ConfigSelection(UnicableMatrixManufacturers, default)
 			fillUnicableConf(section.unicableMatrix, unicablematrixproducts, True, defaultProduct, defaultSlot)
 			print("[NimManager] LNB")
 			section.unicableLnb = ConfigSubDict()
 			defaultSlot = rootDefaults.get("slotnr", None)
-			default = rootDefaults.get("unicable_lnb_manufacturer_default", UnicableLnbManufacturers[0]) if defaultSlot else UnicableLnbManufacturers[0]
-			defaultProduct = rootDefaults.get("unicable_lnb_product", None) if defaultSlot else None
+			default = rootDefaults.get("unicable_lnb_manufacturer_default", UnicableLnbManufacturers[0]) if defaultSlot else lnbTemplateValue(template, "unicableLnbManufacturer", UnicableLnbManufacturers[0])
+			if default not in UnicableLnbManufacturers:
+				default = UnicableLnbManufacturers[0]
+			defaultProduct = rootDefaults.get("unicable_lnb_product", None) if defaultSlot else lnbTemplateProduct(template, "unicableLnb", default)
 			section.unicableLnbManufacturer = ConfigSelection(UnicableLnbManufacturers, default)
 			fillUnicableConf(section.unicableLnb, unicablelnbproducts, False, defaultProduct, defaultSlot)
 			# TODO satpositions for satcruser
-			section.bootuptimeuser = ConfigInteger(default=2700, limits=(0, 15000))
-			section.dictionuser = ConfigSelection(advanced_lnb_diction_user_choices, default="EN50494")
-			section.satcruserEN50494 = ConfigSelection(advanced_lnb_satcr_user_choicesEN50494, default="1")
-			section.satcruserEN50607 = ConfigSelection(advanced_lnb_satcr_user_choicesEN50607, default="1")
+			section.bootuptimeuser = ConfigInteger(default=lnbTemplateValue(template, "bootuptimeuser", 2700), limits=(0, 15000))
+			section.dictionuser = ConfigSelection(advanced_lnb_diction_user_choices, default=lnbTemplateValue(template, "dictionuser", "EN50494"))
+			section.satcruserEN50494 = ConfigSelection(advanced_lnb_satcr_user_choicesEN50494, default=lnbTemplateValue(template, "satcruserEN50494", "1"))
+			section.satcruserEN50607 = ConfigSelection(advanced_lnb_satcr_user_choicesEN50607, default=lnbTemplateValue(template, "satcruserEN50607", "1"))
 			tmpEN50494 = ConfigSubList()
-			for i in (1284, 1400, 1516, 1632, 1748, 1864, 1980, 2096):
-				tmpEN50494.append(ConfigInteger(default=i, limits=(950, 2150)))
+			for index, frequency in enumerate((1284, 1400, 1516, 1632, 1748, 1864, 1980, 2096)):
+				tmpEN50494.append(ConfigInteger(default=lnbTemplateListValue(template, "satcrvcouserEN50494", index, frequency), limits=(950, 2150)))
 			section.satcrvcouserEN50494 = tmpEN50494
 			tmpEN50607 = ConfigSubList()
-			for i in (1210, 1420, 1680, 2040, 984, 1020, 1056, 1092, 1128, 1164, 1256, 1292, 1328, 1364, 1458, 1494, 1530, 1566, 1602, 1638, 1716, 1752, 1788, 1824, 1860, 1896, 1932, 1968, 2004, 2076, 2112, 2148):
-				tmpEN50607.append(ConfigInteger(default=i, limits=(950, 2150)))
+			for index, frequency in enumerate((1210, 1420, 1680, 2040, 984, 1020, 1056, 1092, 1128, 1164, 1256, 1292, 1328, 1364, 1458, 1494, 1530, 1566, 1602, 1638, 1716, 1752, 1788, 1824, 1860, 1896, 1932, 1968, 2004, 2076, 2112, 2148)):
+				tmpEN50607.append(ConfigInteger(default=lnbTemplateListValue(template, "satcrvcouserEN50607", index, frequency), limits=(950, 2150)))
 			section.satcrvcouserEN50607 = tmpEN50607
 			nim.advanced.unicableconnected = ConfigYesNo(default=False)
 			nim.advanced.unicableconnectedTo = ConfigSelection([(str(id), nimmgr.getNimDescription(id)) for id in nimmgr.getNimListOfType("DVB-S") if id != x])
@@ -2118,27 +2159,28 @@ def InitNimManager(nimmgr, update_slots=None):
 				# txt = _("Misconfigured unicable connection from tuner %(tuner1)s to tuner %(tuner2)s!\nTuner %(tuner1)s option \"connected to\" are disabled now") % locals()
 				txt = _("Misconfigured unicable connection from tuner %s to tuner %s!\nTuner %s option \"connected to\" are disabled now") % (chr(int(x) + ord("A")), chr(int(nim.advanced.unicableconnectedTo.saved_value) + ord("A")), chr(int(x) + ord("A")),)
 				Notifications.AddPopup(txt, type=MessageBox.TYPE_ERROR, timeout=0, id="UnicableConnectionFailed")
-			section.unicableTuningAlgo = ConfigSelection([("reliable", _("reliable")), ("traditional", _("traditional (fast)")), ("reliable_retune", _("reliable, retune")), ("traditional_retune", _("traditional (fast), retune"))], default="reliable_retune")
-			section.powerInserter = ConfigYesNo(default=False)
+			section.unicableTuningAlgo = ConfigSelection([("reliable", _("reliable")), ("traditional", _("traditional (fast)")), ("reliable_retune", _("reliable, retune")), ("traditional_retune", _("traditional (fast), retune"))], default=lnbTemplateValue(template, "unicableTuningAlgo", "reliable_retune"))
+			section.powerInserter = ConfigYesNo(default=lnbTemplateValue(template, "powerInserter", False))
 			if rootDefaults.get("slotnr", None):
 				section.unicable.value = rootDefaults.get("unicable_choices_default", unicable_choices_default)
 
 	def configDiSEqCModeChanged(configElement):
 		section = configElement.section
+		template = getattr(configElement, "lnb_template", None)
 		if configElement.value == "1_2" and isinstance(section.longitude, ConfigNothing):
-			section.longitude = ConfigFloat(default=[5, 100], limits=[(0, 359), (0, 999)])
-			section.longitudeOrientation = ConfigSelection(longitude_orientation_choices, "east")
-			section.latitude = ConfigFloat(default=[50, 767], limits=[(0, 359), (0, 999)])
-			section.latitudeOrientation = ConfigSelection(latitude_orientation_choices, "north")
-			section.tuningstepsize = ConfigFloat(default=[0, 360], limits=[(0, 9), (0, 999)])
-			section.rotorPositions = ConfigInteger(default=99, limits=[1, 999])
-			section.turningspeedH = ConfigFloat(default=[2, 3], limits=[(0, 9), (0, 9)])
-			section.turningspeedV = ConfigFloat(default=[1, 7], limits=[(0, 9), (0, 9)])
-			section.powerMeasurement = ConfigYesNo(default=True)
-			section.powerThreshold = ConfigInteger(default=15, limits=(0, 100))
-			section.turningSpeed = ConfigSelection(turning_speed_choices, "fast")
-			section.fastTurningBegin = ConfigDateTime(default=advanced_lnb_fast_turning_btime, formatstring=_("%H:%M"), increment=600)
-			section.fastTurningEnd = ConfigDateTime(default=advanced_lnb_fast_turning_etime, formatstring=_("%H:%M"), increment=600)
+			section.longitude = ConfigFloat(default=lnbTemplateSequenceValue(template, "longitude", [5, 100], [(0, 359), (0, 999)]), limits=[(0, 359), (0, 999)])
+			section.longitudeOrientation = ConfigSelection(longitude_orientation_choices, lnbTemplateValue(template, "longitudeOrientation", "east"))
+			section.latitude = ConfigFloat(default=lnbTemplateSequenceValue(template, "latitude", [50, 767], [(0, 359), (0, 999)]), limits=[(0, 359), (0, 999)])
+			section.latitudeOrientation = ConfigSelection(latitude_orientation_choices, lnbTemplateValue(template, "latitudeOrientation", "north"))
+			section.tuningstepsize = ConfigFloat(default=lnbTemplateSequenceValue(template, "tuningstepsize", [0, 360], [(0, 9), (0, 999)]), limits=[(0, 9), (0, 999)])
+			section.rotorPositions = ConfigInteger(default=lnbTemplateValue(template, "rotorPositions", 99), limits=[1, 999])
+			section.turningspeedH = ConfigFloat(default=lnbTemplateSequenceValue(template, "turningspeedH", [2, 3], [(0, 9), (0, 9)]), limits=[(0, 9), (0, 9)])
+			section.turningspeedV = ConfigFloat(default=lnbTemplateSequenceValue(template, "turningspeedV", [1, 7], [(0, 9), (0, 9)]), limits=[(0, 9), (0, 9)])
+			section.powerMeasurement = ConfigYesNo(default=lnbTemplateValue(template, "powerMeasurement", True))
+			section.powerThreshold = ConfigInteger(default=lnbTemplateValue(template, "powerThreshold", 15), limits=(0, 100))
+			section.turningSpeed = ConfigSelection(turning_speed_choices, lnbTemplateValue(template, "turningSpeed", "fast"))
+			section.fastTurningBegin = ConfigDateTime(default=lnbTemplateValue(template, "fastTurningBegin", advanced_lnb_fast_turning_btime), formatstring=_("%H:%M"), increment=600)
+			section.fastTurningEnd = ConfigDateTime(default=lnbTemplateValue(template, "fastTurningEnd", advanced_lnb_fast_turning_etime), formatstring=_("%H:%M"), increment=600)
 
 	def configLNBChanged(configElement):
 		x = configElement.slot_id
@@ -2146,41 +2188,58 @@ def InitNimManager(nimmgr, update_slots=None):
 		lnb = int(configElement.value[0] if isinstance(configElement.value, tuple) else configElement.value)
 		lnbs = nim.advanced.lnb
 		if lnb and lnb not in lnbs:
+			# LNB 1 is a better starting point than the generic defaults for another position
+			# on the same installation. A saved LNB remains independent and is never migrated.
+			useLnb1Template = 1 < lnb <= maxFixedLnbPositions and str(configElement.saved_value) != str(lnb) and str(lnb) not in lnbs.stored_values
+			template = lnbs.get(1) if useLnb1Template and isinstance(lnbs.get(1), ConfigSubsection) else None
+			if template is not None:
+				print(f"[NimManager] Using LNB 1 as initial settings template for LNB {lnb}.")
 			section = lnbs[lnb] = ConfigSubsection()
-			section.lofl = ConfigInteger(default=9750, limits=(0, 99999))
-			section.lofh = ConfigInteger(default=10600, limits=(0, 99999))
-			section.threshold = ConfigInteger(default=11700, limits=(0, 99999))
-			section.increased_voltage = ConfigYesNo(False)
+			section.lofl = ConfigInteger(default=lnbTemplateValue(template, "lofl", 9750), limits=(0, 99999))
+			section.lofh = ConfigInteger(default=lnbTemplateValue(template, "lofh", 10600), limits=(0, 99999))
+			section.threshold = ConfigInteger(default=lnbTemplateValue(template, "threshold", 11700), limits=(0, 99999))
+			section.increased_voltage = ConfigYesNo(default=lnbTemplateValue(template, "increased_voltage", False))
 			section.toneburst = ConfigSelection(advanced_lnb_toneburst_choices, "none")
 			section.longitude = ConfigNothing()
 			if maxFixedLnbPositions < lnb < maxFixedLnbPositions + MAX_LNB_WILDCARDS:
 				tmp = ConfigSelection(advanced_lnb_allsat_diseqcmode_choices, "1_2")
 				tmp.section = section
+				tmp.lnb_template = template
 				configDiSEqCModeChanged(tmp)
 			else:
 				diseqcChoices = advanced_lnb_satposdepends_diseqcmode_choices if lnb == maxFixedLnbPositions + MAX_LNB_WILDCARDS else advanced_lnb_diseqcmode_choices
-				tmp = ConfigSelection(diseqcChoices, "none")
+				diseqcDefault = lnbTemplateValue(template, "diseqcMode", "none")
+				if diseqcDefault not in {choice[0] for choice in diseqcChoices}:
+					diseqcDefault = "none"
+				tmp = ConfigSelection(diseqcChoices, diseqcDefault)
 				tmp.section = section
+				tmp.lnb_template = template
 				tmp.addNotifier(configDiSEqCModeChanged)
 			section.diseqcMode = tmp
 			section.commitedDiseqcCommand = ConfigSelection(advanced_lnb_csw_choices)
-			section.fastDiseqc = ConfigYesNo(False)
-			section.sequenceRepeat = ConfigYesNo(False)
-			section.commandOrder1_0 = ConfigSelection(advanced_lnb_commandOrder1_0_choices, "ct")
-			section.commandOrder = ConfigSelection(advanced_lnb_commandOrder_choices, "ct")
+			section.fastDiseqc = ConfigYesNo(default=lnbTemplateValue(template, "fastDiseqc", False))
+			section.sequenceRepeat = ConfigYesNo(default=lnbTemplateValue(template, "sequenceRepeat", False))
+			section.commandOrder1_0 = ConfigSelection(advanced_lnb_commandOrder1_0_choices, lnbTemplateValue(template, "commandOrder1_0", "ct"))
+			section.commandOrder = ConfigSelection(advanced_lnb_commandOrder_choices, lnbTemplateValue(template, "commandOrder", "ct"))
 			section.uncommittedDiseqcCommand = ConfigSelection(advanced_lnb_ucsw_choices)
-			section.diseqcRepeats = ConfigSelection(advanced_lnb_diseqc_repeat_choices, "none")
-			section.prio = ConfigSelection(prio_list, "-1")
+			section.diseqcRepeats = ConfigSelection(advanced_lnb_diseqc_repeat_choices, lnbTemplateValue(template, "diseqcRepeats", "none"))
+			section.prio = ConfigSelection(prio_list, lnbTemplateValue(template, "prio", "-1"))
 			section.unicable = ConfigNothing()
 			section.unicableUseLnb1UserBand = ConfigYesNo(default=False)
-			section.unicable_use_pin = ConfigYesNo(default=False)
-			section.unicable_pin = ConfigInteger(default=0, limits=(0, 255))
+			section.unicable_use_pin = ConfigYesNo(default=lnbTemplateValue(template, "unicable_use_pin", False))
+			section.unicable_pin = ConfigInteger(default=lnbTemplateValue(template, "unicable_pin", 0), limits=(0, 255))
 			section.unicablePosition = ConfigInteger(default=0, limits=(0, 64))
-			tmp = ConfigSelection(LNB_CHOICES(), lnb_choices_default)
+			lofDefault = lnbTemplateValue(template, "lof", lnb_choices_default)
+			if lofDefault not in LNB_CHOICES():
+				lofDefault = lnb_choices_default
+			tmp = ConfigSelection(LNB_CHOICES(), lofDefault)
 			tmp.slot_id = x
 			tmp.lnb_id = lnb
+			tmp.lnb_template = template
 			tmp.addNotifier(configLOFChanged, initial_call=False)
 			section.lof = tmp
+			if tmp.value == "unicable" and isinstance(section.unicable, ConfigNothing):
+				configLOFChanged(tmp)
 			if rootDefaults.get("slotnr", None):
 				section.lof.value = rootDefaults.get("lnb_choices_default", lnb_choices_default)
 

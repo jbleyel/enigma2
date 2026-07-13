@@ -139,7 +139,6 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 		self.nimConfig = self.nim.config
 		self.tunerTemplateSource = None
 		self.tunerTemplateSnapshot = []
-		self.tunerTemplateValue = None
 		self.applyCableTerrestrialTemplate()
 		self.inputPowerSlot = inputPowerSlotForNim(slotid)
 		self.resourceManager = eDVBResourceManager.getInstance()
@@ -211,8 +210,6 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 				self.copyTemplateSection(getattr(sourceConfig, sectionName), getattr(self.nimConfig, sectionName))
 			self.tunerTemplateSource = sourceNim.slot
 			sourceName = sourceNim.slot_name
-			self.tunerTemplateValue = ConfigReadOnlyValue()
-			self.tunerTemplateValue.setChoices([(sourceName, sourceName)], default=sourceName)
 			print(f"[SatConfig] Using {sourceName} as DVB-C/T settings template for {self.nim.slot_name}.")
 			break
 
@@ -694,8 +691,6 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 		self.adaptConfigModeChoices()
 		print("[SatConfig] Creating setup.")
 		self.list = []
-		if self.tunerTemplateSource is not None:
-			self.list.append(getConfigListEntry(_("Settings template"), self.tunerTemplateValue, _("The initial DVB-C/DVB-T settings were copied from this identical tuner. Saving creates an independent configuration.")))
 		self.multiType = None
 		self.hybridTunerMode = None
 		self.diseqcModeEntry = None
