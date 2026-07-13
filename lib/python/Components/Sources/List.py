@@ -280,7 +280,6 @@ to generate HTML."""
 
 	# These hacks protect code that was modified to use the previous up/down hack!   These methods should be found and removed from all code.
 	#
-
 	def selectPrevious(self):
 		self.goLineUp()
 

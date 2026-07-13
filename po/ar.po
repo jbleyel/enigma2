@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenATV Enigma2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-22 11:12+0000\n"
+"POT-Creation-Date: 2026-07-12 13:00+0000\n"
 "PO-Revision-Date: 2026-03-18 21:46+0000\n"
 "Last-Translator: Abdulelah Aqeil <dr.romantic@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/openatv/enigma2-7-0-po/ar/>\n"
@@ -785,10 +785,6 @@ msgstr[4] "%d + %d + %d دقيقة"
 msgstr[5] "%d + %d + %d دقيقة"
 
 #, python-format
-msgid "%d DMIPS per core"
-msgstr "%d عملية حسابية DIMPS لكل نواة"
-
-#, python-format
 msgid "%d DMIPS with %d cores"
 msgstr "%d عملية حسابية (DMIPS) بواسطة %d نواة"
 
@@ -835,6 +831,10 @@ msgstr[2] "%d ساعة"
 msgstr[3] "%d ساعات"
 msgstr[4] "%d ساعة"
 msgstr[5] "%d ساعة"
+
+#, python-format
+msgid "%d Hz"
+msgstr ""
 
 #, python-format
 msgid "%d MB"
@@ -1305,6 +1305,10 @@ msgstr "الضبط - %s"
 #, python-format
 msgid "%s Browser Manage Actions"
 msgstr "%s إجراءات إدارة المتصفح"
+
+#, python-format
+msgid "%s DMIPS per core"
+msgstr ""
 
 #, python-format
 msgid "%s GHz"
@@ -1852,6 +1856,9 @@ msgstr "AC3 بالإضافة إلى تحويل الترميز"
 msgid "AC3plus transcoding"
 msgstr ""
 
+msgid "AC4"
+msgstr ""
+
 #
 msgid "AFL"
 msgstr "AFL"
@@ -2170,8 +2177,8 @@ msgstr "أختار ملفات/مجلدات النسخه الاحتياطيه"
 msgid "Add legacy LEFT/RIGHT actions"
 msgstr "إضافة إجراءات اليسار/اليمين القديمة"
 
-msgid "Add slots"
-msgstr "إضافة المزيد من الخانات"
+msgid "Add more slots"
+msgstr ""
 
 msgid "Add new CCcam line"
 msgstr "إضافة سطر CCcam جديد"
@@ -2212,6 +2219,9 @@ msgstr "إضافة خدمة إلى AutoCam"
 
 msgid "Add services to this bouquet?"
 msgstr "إضافة خدمات إلى هذه الباقة؟"
+
+msgid "Add slots"
+msgstr "إضافة المزيد من الخانات"
 
 msgid "Add the current directory as a bookmark"
 msgstr ""
@@ -2320,7 +2330,7 @@ msgstr "أفريقيا"
 msgid "After Event"
 msgstr "بعد الحدث"
 
-msgid "After PowerLost"
+msgid "After Power Lost"
 msgstr "بعد انقطاع الكهرباء"
 
 #
@@ -2703,17 +2713,11 @@ msgstr "هل أنت متأكد أنك تريد حذف كل السجلات الم
 msgid "Are you sure you want to delete the EPG data from:\n"
 msgstr "هل أنت متأكد من أنك تريد حذف بيانات دليل البرامج EPG من:\n"
 
-msgid "Are you sure you want to delete this image?"
-msgstr "هل أنت متأكد أنك تريد حذف هذه الصورة؟"
-
 msgid "Are you sure you want to delete this log:\n"
 msgstr "هل أنت متأكد من أنك تريد حذف هذا السجل:\n"
 
 msgid "Are you sure you want to delete this?"
 msgstr "هل أنت متأكد أنك تريد حذف هذا؟"
-
-msgid "Disable Chkroot Multiboot?"
-msgstr "هل أنت متأكد من أنك تريد تعطيل الاقلاع المتعدد من تشكروت (Chkroot Multiboot)؟"
 
 msgid "Are you sure you want to exit this wizard?"
 msgstr "هل أنت متأكد أنك تريد الخروج من نافذه التطبيق المساعد هذه؟"
@@ -3330,6 +3334,9 @@ msgstr "معلومات الذاكرة"
 msgid "Benchmark information for %s %s"
 msgstr "معلومات الذاكرة لجهاز %s %s"
 
+msgid "Benchmarks"
+msgstr ""
+
 msgid "Bengali"
 msgstr ""
 
@@ -3783,6 +3790,9 @@ msgstr "الدنمارك"
 msgid "CPU brand"
 msgstr ""
 
+msgid "CPU memory clock"
+msgstr ""
+
 msgid "CPU priority for scripts"
 msgstr ""
 
@@ -3819,6 +3829,9 @@ msgid "Calculate file hashes/checksums"
 msgstr ""
 
 msgid "Calculating benchmark..."
+msgstr ""
+
+msgid "Calculating clock..."
 msgstr ""
 
 msgid "Calculating rating..."
@@ -4265,6 +4278,9 @@ msgstr "شاشة اختيار القناة"
 msgid "Channel Selection Settings"
 msgstr "إعدادات اختيار القناة"
 
+msgid "Channel Selection picon set"
+msgstr ""
+
 #
 msgid "Channel buttons"
 msgstr "أزرار القناة"
@@ -4478,10 +4494,10 @@ msgstr ""
 msgid "Choose the option to correct invalid EPG data."
 msgstr "اختر الخيار لتصحيح بيانات دليل البرامج EPG غير الصحيحة."
 
-msgid "Choose the skin to be used for the graphical user interface (GUI). Press 'GREEN' to activate the skin."
+msgid "Choose the skin to be used for the LCD/front panel interface. Press 'GREEN' to activate the skin."
 msgstr ""
 
-msgid "Choose the skin to be used for the LCD/front panel interface. Press 'GREEN' to activate the skin."
+msgid "Choose the skin to be used for the graphical user interface (GUI). Press 'GREEN' to activate the skin."
 msgstr ""
 
 msgid "Choose the style/order in which items are displayed in help windows."
@@ -4819,9 +4835,6 @@ msgstr ""
 
 msgid "Compressed bits/pixel"
 msgstr ""
-
-msgid "Config"
-msgstr "ضبط"
 
 #, python-format
 msgid "Config file %s saved."
@@ -6319,9 +6332,6 @@ msgstr "التاخير قبل بدء تكرار المفتاح:"
 msgid "Delay before sequence repeat"
 msgstr "تأخير قبل تكرار التسلسل"
 
-msgid "Delay between CEC commands when sending a series of commands. Some devices require this delay for correct functioning, usually between 50-150ms."
-msgstr ""
-
 msgid "Delay between DiSEqC commands"
 msgstr "التأخير بين أوامر الدايزك"
 
@@ -6441,9 +6451,6 @@ msgstr ""
 msgid "Delete only highlighted file"
 msgstr ""
 
-msgid "Empty or Wipe the highlighted slot"
-msgstr ""
-
 msgid "Delete play list entry"
 msgstr "حذف قائمة التشغيل المدخلة"
 
@@ -6484,6 +6491,9 @@ msgstr ""
 
 #, python-format
 msgid "Delete these %d directories/files?"
+msgstr ""
+
+msgid "Delete this slot?"
 msgstr ""
 
 msgid "Delete this tag"
@@ -6536,7 +6546,7 @@ msgstr ""
 msgid "Descramble in Standby finished"
 msgstr ""
 
-msgid "Descramble recordings before Shutdown"
+msgid "Descramble recordings before Deep Standby"
 msgstr ""
 
 msgid "Descramble start time"
@@ -6728,6 +6738,9 @@ msgstr "تعطيل القوائم المتحركة"
 
 msgid "Disable Chkroot"
 msgstr ""
+
+msgid "Disable Chkroot Multiboot?"
+msgstr "هل أنت متأكد من أنك تريد تعطيل الاقلاع المتعدد من تشكروت (Chkroot Multiboot)؟"
 
 msgid "Disable FCC during recordings"
 msgstr ""
@@ -7498,6 +7511,9 @@ msgstr "فارغ"
 
 msgid "Empty file"
 msgstr "ملف فارغ"
+
+msgid "Empty or Wipe the highlighted slot"
+msgstr ""
 
 msgid "Emulator"
 msgstr "محاكى"
@@ -8764,6 +8780,9 @@ msgstr "دايزك سريع"
 msgid "Fast Scan"
 msgstr ""
 
+msgid "Fast Skin Reload"
+msgstr ""
+
 #
 msgid "Fast epoch"
 msgstr "عصر السرعة"
@@ -9263,6 +9282,9 @@ msgid "Front USB"
 msgstr ""
 
 msgid "Front USB 3.0"
+msgstr ""
+
+msgid "Front panel/Display picon set"
 msgstr ""
 
 msgid "Front processor version"
@@ -9956,9 +9978,6 @@ msgstr "Hops:"
 msgid "Horizontal"
 msgstr "أفقي"
 
-msgid "Horizontal icons"
-msgstr "ايقونات افقية"
-
 msgid "Horizontal menu"
 msgstr "قائمة أفقية"
 
@@ -10001,7 +10020,7 @@ msgstr ""
 msgid "Hours Minutes Seconds"
 msgstr ""
 
-msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels."
+msgid "How to release the hardware decoder when switching to software descrambling. 'Quick' releases immediately (faster zapping). 'Normal' performs a clean shutdown first (more stable on some boxes). 'Aggressive' performs a full descrambler reset between encrypted channels."
 msgstr ""
 
 msgid "Http(s) stream start delay"
@@ -10517,6 +10536,9 @@ msgstr ""
 #, fuzzy
 msgid "InfoBar front end data source"
 msgstr "مصدر بيانات الواجهة الأمامية في شريط المعلومات"
+
+msgid "InfoBar picon set"
+msgstr ""
 
 #
 msgid "Information"
@@ -11081,32 +11103,32 @@ msgstr ""
 msgid "LCN style QuickSelect entry selection"
 msgstr ""
 
-msgid "LED Brightness"
-msgstr ""
-
-msgid "LED Color"
-msgstr ""
-
 msgid "LED Deep Standby"
 msgstr "إضاءة وضع الاستعداد"
 
-msgid "LED Idle Brightness"
-msgstr ""
-
-msgid "LED Idle Color"
+msgid "LED Deep Standby color"
 msgstr ""
 
 msgid "LED Normal"
 msgstr "الإضاءة الطبيعية"
 
-msgid "LED Settings"
+msgid "LED Running brightness"
 msgstr ""
 
-msgid "LED Shutdown Color"
+msgid "LED Running color"
+msgstr ""
+
+msgid "LED Settings"
 msgstr ""
 
 msgid "LED Standby"
 msgstr "إضاءة الاستعداد"
+
+msgid "LED Standby brightness"
+msgstr ""
+
+msgid "LED Standby color"
+msgstr ""
 
 msgid "LED brightness during Deep Standby."
 msgstr ""
@@ -11116,9 +11138,6 @@ msgstr ""
 
 msgid "LED brightness during normal operations."
 msgstr "سطوع الـ LED أثناء التشغيل العادي."
-
-msgid "LED color during Deep Standby."
-msgstr ""
 
 msgid "LIRC remote"
 msgstr ""
@@ -11258,6 +11277,9 @@ msgstr ""
 
 msgid "Left, wrapped"
 msgstr "اليسار, مغظى"
+
+msgid "Legacy"
+msgstr ""
 
 msgid "Legacy mode"
 msgstr "الوضع القديم"
@@ -11440,6 +11462,9 @@ msgid "Load unlinked user bouquets"
 msgstr "تحميل باقات المستخدم غير المرتبطة"
 
 msgid "Loading information, please wait..."
+msgstr ""
+
+msgid "Loading skin..."
 msgstr ""
 
 msgid "Loading slot information, please wait..."
@@ -12295,7 +12320,13 @@ msgstr ""
 msgid "Move job queued."
 msgstr ""
 
+msgid "Move left a item"
+msgstr ""
+
 msgid "Move only highlighted file"
+msgstr ""
+
+msgid "Move right a item"
 msgstr ""
 
 msgid "Move the current bookmark down"
@@ -12347,6 +12378,9 @@ msgstr "حرك مؤشر النص إلى الحرف الأخير"
 msgid "Move these directories/files?"
 msgstr ""
 
+msgid "Move to first item / screen"
+msgstr ""
+
 msgid "Move to first line"
 msgstr ""
 
@@ -12358,6 +12392,9 @@ msgstr ""
 
 msgid "Move to home of list"
 msgstr "الانتقال إلى القائمة الرئيسية"
+
+msgid "Move to last item / screen"
+msgstr ""
 
 msgid "Move to last line"
 msgstr ""
@@ -13836,6 +13873,9 @@ msgstr "الشبكة الإفتراضية OpenVPN"
 msgid "OpenViX Packages"
 msgstr ""
 
+msgid "OpenWebif picon set"
+msgstr ""
+
 msgid "Opera"
 msgstr ""
 
@@ -13862,6 +13902,9 @@ msgid "Option to disable picons on the InfoBar."
 msgstr ""
 
 msgid "Option to enable the hardware Standby timer."
+msgstr ""
+
+msgid "Optional delay between CEC commands when sending a series of commands. Leave disabled unless a device requires slower transmission."
 msgstr ""
 
 msgid "Optional parameter"
@@ -14184,6 +14227,9 @@ msgstr ""
 msgid "Path '%s' missing!"
 msgstr ""
 
+msgid "Path to picon set %s."
+msgstr ""
+
 msgid "Pause"
 msgstr "ايقاف"
 
@@ -14286,10 +14332,22 @@ msgstr "الايقونة"
 msgid "Picon Packages"
 msgstr ""
 
+msgid "Picon Settings"
+msgstr ""
+
 msgid "Picon and service name"
 msgstr ""
 
 msgid "Picon install location"
+msgstr ""
+
+msgid "Picon mode"
+msgstr ""
+
+msgid "Picon path %s"
+msgstr ""
+
+msgid "Picon set mode"
 msgstr ""
 
 msgid "Picon width"
@@ -15811,6 +15869,9 @@ msgstr ""
 msgid "Reload blacklists"
 msgstr "إعادة تحميل القوائم السوداء"
 
+msgid "Reload the skin without restarting the GUI when switching skins."
+msgstr ""
+
 msgid "Reloading EPG Cache..."
 msgstr "إعادة تحميل ذاكرة التخزين المؤقتة لدليل البرامج الإلكترونية..."
 
@@ -16032,13 +16093,13 @@ msgstr ""
 msgid "Rename slot '%s' (leave empty to reset):"
 msgstr ""
 
+msgid "Rename the highlighted slot"
+msgstr ""
+
 msgid "Rename the proposed file to be created"
 msgstr ""
 
 msgid "Rename the selected service"
-msgstr ""
-
-msgid "Rename the highlighted slot"
 msgstr ""
 
 msgid "Rename this tag"
@@ -17063,9 +17124,6 @@ msgstr ""
 msgid "Select 'Yes' the keep the InfoBar displayed, with no timeout, while media playback is paused."
 msgstr ""
 
-msgid "When enabled, allow each storage device detected to be automatically exported as a Samba share."
-msgstr ""
-
 msgid "Select 'Yes' to allow the VPS to adjust recording timers based on broadcast Program Delivery Control (PDC) data. For this to work the service must provide reliable event PDC data."
 msgstr ""
 
@@ -17334,6 +17392,9 @@ msgid "Select Location"
 msgstr ""
 
 msgid "Select Media Location"
+msgstr ""
+
+msgid "Select Picon Directory"
 msgstr ""
 
 msgid "Select Playback Location"
@@ -17645,6 +17706,18 @@ msgstr ""
 msgid "Select the No / False response"
 msgstr ""
 
+msgid "Select the Picon path, from above, to be used for Channel Selection picons."
+msgstr ""
+
+msgid "Select the Picon path, from above, to be used for Front panel/Display picons."
+msgstr ""
+
+msgid "Select the Picon path, from above, to be used for InfoBar picons."
+msgstr ""
+
+msgid "Select the Picon path, from above, to be used for OpenWebif picons."
+msgstr ""
+
 #, python-format
 msgid "Select the Softcam for '%s'"
 msgstr ""
@@ -17676,9 +17749,6 @@ msgstr ""
 msgid "Select the Yes / True response"
 msgstr ""
 
-msgid "Select the mode of access, Read/Write or Read Only, applied to all automatically exported Samba shares."
-msgstr ""
-
 #, python-format
 msgid "Select the action for '%s'"
 msgstr ""
@@ -17686,10 +17756,22 @@ msgstr ""
 msgid "Select the action to perform when the timer ends."
 msgstr ""
 
+msgid "Select the action to take when the EnergySaver timer activates."
+msgstr "اختر نوع إيقاف التشغيل المرغوب عند تفعيل مؤقت حفظ الطاقة."
+
+msgid "Select the action to take when the SleepTimer activates."
+msgstr "اختيار نوع إيقاف التشغيل المرغوب عند تفعيل مؤقت النوم."
+
 msgid "Select the amount of time to wait, after a task error, before trying to run the task again."
 msgstr ""
 
 msgid "Select the animation speed of the button indicators in the help screens. 'Disabled' turns off animation so that indicators jump between buttons."
+msgstr ""
+
+msgid "Select the brightness of the front panel LED when the receiver is Running."
+msgstr ""
+
+msgid "Select the brightness of the front panel LED when the receiver is in Standby."
 msgstr ""
 
 msgid "Select the cardserver to be used from the list of available cardservers."
@@ -17703,6 +17785,15 @@ msgstr ""
 
 msgid "Select the character or action under the keyboard cursor"
 msgstr "حدد الحرف أو الإجراء أسفل مؤشر لوحة المفاتيح"
+
+msgid "Select the color of the front panel power LED when the receiver is Running. This option also allows the LED to be deactivated/turned off."
+msgstr ""
+
+msgid "Select the color of the front panel power LED when the receiver is in Deep Standby."
+msgstr ""
+
+msgid "Select the color of the front panel power LED when the receiver is in Standby. This option also allows the LED to be deactivated/turned off."
+msgstr ""
 
 msgid "Select the color to be used for the AI-Powered Translation text."
 msgstr ""
@@ -17779,7 +17870,7 @@ msgstr ""
 msgid "Select the display design for menus."
 msgstr ""
 
-msgid "Select the display options for each menu entry item. If menu numbers are available then the number buttons can be used to select the numbered menu entries directly."
+msgid "Select the display options for each menu entry item. If menu numbers are available, then the number buttons can be used to select the numbered menu entries directly."
 msgstr ""
 
 msgid "Select the display sequence of previously visited services."
@@ -17849,6 +17940,12 @@ msgid "Select the manufacturer of your SCR device. If the manufacturer is not li
 msgstr ""
 
 msgid "Select the method of restoring screen resolution and framebuffer when leaving teletext."
+msgstr ""
+
+msgid "Select the mode for picon path selection and resolution. 'Legacy' represents the previous mode of operation."
+msgstr ""
+
+msgid "Select the mode of access, Read/Write or Read Only, applied to all automatically exported Samba shares."
 msgstr ""
 
 msgid "Select the model number of your Unicable device. If the model number is not listed, set 'SCR' to 'User defined' and enter the device parameters manually according to its specifications."
@@ -18018,12 +18115,6 @@ msgstr ""
 msgid "Select the type of keyboard connected to the %s %s."
 msgstr "اختيار نوع لوحة المفاتيح المرتبطة بـ %s %s."
 
-msgid "Select the type of shutdown desired when the EnergySaver timer activates."
-msgstr "اختر نوع إيقاف التشغيل المرغوب عند تفعيل مؤقت حفظ الطاقة."
-
-msgid "Select the type of shutdown desired when the SleepTimer activates."
-msgstr "اختيار نوع إيقاف التشغيل المرغوب عند تفعيل مؤقت النوم."
-
 msgid "Select the type of this timer."
 msgstr ""
 
@@ -18058,7 +18149,7 @@ msgstr "حدد ما يجب فعله بعد انتهاء انطلق المؤقت.
 msgid "Select what should be done when the %s %s was boot-up, normal playing or goto Standby."
 msgstr "حدد ما يجب فعله عند تشغيل %s %s أو تشغيله بشكل عادي أو الانتقال إلى وضع الاستعداد."
 
-msgid "Select what should be done when the %s %s was shutdown incorrectly, or after the Power was lost."
+msgid "Select what should be done when the %s %s was shut down incorrectly, or after power was lost."
 msgstr "حدد ما يجب فعله عند إيقاف تشغيل %s %s بشكل غير صحيح، أو بعد انقطاع الطاقة."
 
 #, fuzzy
@@ -18095,6 +18186,9 @@ msgstr "حدد ما إذا كان ينبغي تحويل مسارات الصوت 
 
 msgid "Select whether AC3 audio tracks should be downmixed to stereo."
 msgstr "اختر ما إذا كان ينبغي تخفيض المسارات الصوتية من طراز AC3 إلى ستريو."
+
+msgid "Select whether AC4 (Dolby Atmos) audio tracks should be passed through to the AVR, downmixed to stereo, or auto-routed based on HDMI sink capability."
+msgstr ""
 
 msgid "Select whether DTS channel audio tracks should be downmixed or transcoded."
 msgstr "اختر ما إذا كان ينبغي تخفيض المسارات الصوتية من طراز DTS إلى ستريو."
@@ -18444,6 +18538,10 @@ msgstr ""
 msgid "Set MIN CPU frequency for cores 2, 3, 4 and 5"
 msgstr ""
 
+#, python-format
+msgid "Set Path %s"
+msgstr ""
+
 msgid "Set Scaling governor"
 msgstr ""
 
@@ -18588,7 +18686,7 @@ msgstr ""
 msgid "Set the time to hide the InfoBar."
 msgstr ""
 
-msgid "Set the time to wait for execute the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, Scheduler, SleepTimer etc."
+msgid "Set the time to wait before executing the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, Scheduler, SleepTimer etc."
 msgstr ""
 
 msgid "Set the top left location of the busy spinner. The coordinates are scaled such that the top left is at (0,0) and the bottom right is at (1260,700). Note that the position is the top left of the spinner and not the centre of the spinner."
@@ -18632,7 +18730,7 @@ msgstr ""
 msgid "Set to 'Disabled' to replace underscore characters, '_', in file and directory names with spaces."
 msgstr ""
 
-msgid "Set to 'Enabled' to descramble queued scrambled recordings in Standby before shutting down."
+msgid "Set to 'Enabled' to descramble queued scrambled recordings in Standby before Deep Standby."
 msgstr ""
 
 msgid "Set to 'Enabled' to descramble queued scrambled recordings in Standby."
@@ -24051,6 +24149,9 @@ msgstr "ماذا تريد ان تبحث ؟"
 msgid "What do you want to set as the default movie location?"
 msgstr ""
 
+msgid "What do you want to set as the picon location?"
+msgstr ""
+
 msgid "What would you like to do with the archive file:"
 msgstr ""
 
@@ -24104,6 +24205,9 @@ msgstr ""
 #, fuzzy
 msgid "When enabled, a warning will be displayed and the user will get an option to stop or to continue the time shift."
 msgstr "عند التمكين، سيتم عرض تحذير وسيحصل المستخدم على خيار للتوقف أو لمتابعة التحكم الزمني في وقت البث المباشر."
+
+msgid "When enabled, allow each storage device detected to be automatically exported as a Samba share."
+msgstr ""
 
 msgid "When enabled, authentication is required to watch http streams."
 msgstr "عند التمكين، يلزم المصادقة لمشاهدة روابط قنوات التدفق."
@@ -25420,9 +25524,6 @@ msgstr ""
 msgid "softcams"
 msgstr ""
 
-msgid "standard"
-msgstr "قياسي"
-
 msgid "start cut here"
 msgstr "أبدأ القطع هنا"
 
@@ -25564,6 +25665,22 @@ msgstr "نعم (احتفظ بالفيدز)"
 
 msgid "®"
 msgstr "®"
+
+#, python-format
+#~ msgid "%d DMIPS per core"
+#~ msgstr "%d عملية حسابية DIMPS لكل نواة"
+
+#~ msgid "Config"
+#~ msgstr "ضبط"
+
+#~ msgid "Horizontal icons"
+#~ msgstr "ايقونات افقية"
+
+#~ msgid "standard"
+#~ msgstr "قياسي"
+
+#~ msgid "Are you sure you want to delete this image?"
+#~ msgstr "هل أنت متأكد أنك تريد حذف هذه الصورة؟"
 
 #, fuzzy
 #~ msgid "Wake up your AV Receiver from Standby"
