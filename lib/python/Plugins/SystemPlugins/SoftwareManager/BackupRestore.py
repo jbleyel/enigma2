@@ -47,7 +47,7 @@ def InitConfig():
 		"/etc/openvpn/", "/etc/ipsec.conf", "/etc/ipsec.secrets", "/etc/ipsec.user", "/etc/strongswan.conf", "/etc/vtuner.conf",
 		"/etc/default/crond", "/etc/dropbear/", "/etc/default/dropbear", "/home/", "/etc/samba/", "/etc/fstab", "/etc/inadyn.conf",
 		"/etc/network/interfaces", "/etc/wpa_supplicant.conf", "/etc/wpa_supplicant.ath0.conf", "/etc/ciplus/", "/etc/udev/known_devices",
-		"/etc/wpa_supplicant.wlan0.conf", "/etc/wpa_supplicant.wlan1.conf", "/etc/resolv.conf", "/etc/enigma2/nameserversdns.conf", "/etc/default_gw", "/etc/hostname", "/etc/hosts", "/etc/epgimport/", "/etc/exports",
+		"/etc/resolv.conf", "/etc/enigma2/nameserversdns.conf", "/etc/default_gw", "/etc/hostname", "/etc/hosts", "/etc/epgimport/", "/etc/exports",
 		"/etc/enigmalight.conf", "/etc/enigma2/volume.xml", "/etc/enigma2/ci_auth_slot_0.bin", "/etc/enigma2/ci_auth_slot_1.bin", "/etc/PrivateKey.key",
 		"/usr/lib/enigma2/python/Plugins/Extensions/VMC/DB/",
 		"/usr/lib/enigma2/python/Plugins/Extensions/VMC/youtv.pwd",
@@ -67,6 +67,7 @@ def InitConfig():
 		eEnv.resolve("${datadir}/enigma2/keymap.usr"),
 		eEnv.resolve("${datadir}/enigma2/keymap_usermod.xml")]\
 		+ eEnv_resolve_multi("${sysconfdir}/opkg/*-secret-feed.conf")\
+		+ eEnv_resolve_multi("/etc/wpa_supplicant.wlan*.conf")\
 		+ eEnv_resolve_multi("${datadir}/enigma2/*/mySkin_off")\
 		+ eEnv_resolve_multi("${datadir}/enigma2/*/mySkin")\
 		+ eEnv_resolve_multi("${datadir}/enigma2/*/skin_user_*.xml")\
