@@ -1158,37 +1158,30 @@ class NetworkManager:
 		# WLAN configStrings (interfaces pre-up / pre-down)
 		# ===========================================================================
 
-		def buildWlanConfigStrings(adapter: Adapter, conn: Connection) -> str:
-			if not conn.isWlan or not conn.wlan:
-				return ""
-
+		def buildWlanConfigStrings(adapter: Adapter) -> list[str]:
+			# Generic wpa_supplicant startup for this adapter – NOT tied to any
+			# particular Wi-Fi profile. wpa_supplicant.conf represents open
+			# networks itself (key_mgmt=NONE), so it always starts wpa_supplicant,
+			# even against a config with zero network{} blocks (it just stays
+			# idle until a profile is added), and never falls back to iwconfig.
 			iface = adapter.name
-			wlan = conn.wlan
 			api = adapter.driverApi
-			lines: list[str] = []
-
 			driverFlags = f"-D {api}" if api != apiNl80211 else ""
-			lines.append(f"pre-up {ifconfigBin} {iface} up || true")
-			if wlan.encryption != encNone:
-				lines.append(f"pre-up {wpaSupplicantBin} -i{iface} -c{adapter.wpaConfPath} -B {driverFlags} -P{adapter.wpaPidPath} || true")
-			else:
-				lines.append(f"pre-up iwconfig {iface} essid \"{reEscape(wlan.ssid)}\" || true")
-			lines.append(f"pre-down {wpaCliBin} -i{iface} terminate 2>/dev/null; true")
-
-			return "\n".join(lines)
+			return [
+				f"pre-up {ifconfigBin} {iface} up || true",
+				f"pre-up {wpaSupplicantBin} -i{iface} -c{adapter.wpaConfPath} -B {driverFlags} -P{adapter.wpaPidPath} || true",
+				f"pre-down {wpaCliBin} -i{iface} terminate 2>/dev/null; true",
+			]
 
 		self.log("save(): starting")
 		ok = True
 		for iface, adapter in self.adapters.items():
 			if not adapter.isWlan:
 				continue
+			cs = buildWlanConfigStrings(adapter)
 			for conn in self.getConnections(iface):
-				# Only real SSID profiles carry a usable wlan config; the base
-				# (non-SSID) placeholder's WifiConfig is always empty and must
-				# not be used to build pre-up/pre-down commands.
-				if conn.wlan and conn.wlan.ssid:
-					cs = buildWlanConfigStrings(adapter, conn)
-					conn.extraLines = [x for x in cs.splitlines() if x] if cs else []
+				if conn.wlan:
+					conn.extraLines = list(cs)
 
 		# For WLAN: write exactly ONE base block to interfaces (IP/DHCP/DNS/WOL/WWOL,
 		# edited directly on this base Connection via NetworkAdapterSetup). SSID
@@ -1204,21 +1197,17 @@ class NetworkManager:
 				# the adapter is otherwise off.
 				wowOnly = baseConn.wakeOnWiFi and not adapter.adapterEnabled
 				baseConn.enabled = adapter.adapterEnabled or wowOnly
-				# The wpa_supplicant pre-up/pre-down lines must always be written
-				# whenever at least one Wi-Fi profile is configured, regardless of
-				# whether that profile is individually enabled – for nl80211 they're
-				# generic (just "start wpa_supplicant against wpa_supplicant.conf",
-				# not tied to any one SSID) and enabling/disabling is handled
-				# entirely by serialiseConnection()'s connPfx comment-out (driven
-				# by baseConn.enabled above), the same way LAN/WLAN adapters and
-				# individual SSID profiles in wpa_supplicant.conf are switched
-				# on/off by commenting, not by omitting lines. Gating this on
-				# `.enabled` used to mean: no enabled SSID -> extraLines=[] -> the
-				# whole wpa_supplicant pre-up line silently disappears from
-				# interfaces -> wpa_supplicant never starts on ifup at all.
-				wpaConns = [x for x in conns if x.wlan and x.wlan.ssid]
-				activeWpa = max(wpaConns, key=lambda conn: conn.priority, default=None)
-				baseConn.extraLines = activeWpa.extraLines if activeWpa else []
+				# The wpa_supplicant pre-up/pre-down lines are a property of the
+				# adapter, not of whatever Wi-Fi profiles happen to be configured
+				# right now – interfaces only needs to know how to bring the iface
+				# up, not what to join. wpa_supplicant starts fine (and just stays
+				# idle) against a wpa_supplicant.conf with zero network{} blocks,
+				# so this must NOT depend on conns/wpaConns being non-empty:
+				# gating it on that used to mean an empty or unreadable profile
+				# list -> extraLines=[] -> the whole wpa_supplicant pre-up line
+				# silently disappears from interfaces -> wpa_supplicant never
+				# starts on ifup at all, even though the adapter is enabled.
+				baseConn.extraLines = buildWlanConfigStrings(adapter)
 				connMap[iface] = [baseConn]
 			else:
 				# adapterEnabled is the master switch here too – NetworkAdapterSetup
