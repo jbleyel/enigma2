@@ -379,7 +379,7 @@ class InterfacesFile:
 							ipMode=1,
 							ipv6Dhcp=mode == "dhcp",
 							enabled=not disabled,
-							wlan=WiFiConfig() if _isWirelessName(iface) else None,
+							wlan=WiFiConfig() if isWirelessName(iface) else None,
 						)
 						result.setdefault(iface, []).append(conn)
 						current = conn
@@ -401,7 +401,7 @@ class InterfacesFile:
 						ipMode=0,
 						ipv6Dhcp=False,
 						enabled=not disabled,
-						wlan=WiFiConfig() if _isWirelessName(iface) else None,
+						wlan=WiFiConfig() if isWirelessName(iface) else None,
 					)
 					result.setdefault(iface, []).append(conn)
 				conn.dhcp = mode == "dhcp"
@@ -749,21 +749,18 @@ class WlanRuntime:
 # Interface detection helpers
 # ===========================================================================
 
-def _isWirelessName(iface: str) -> bool:
+def readNetinfoInterfaces() -> dict:
+	"""Raw "interfaces" dict from socketdaemon's /var/run/netinfo, {} if missing/invalid."""
+	try:
+		with open(netinfoPath, encoding="utf-8") as fh:
+			info = json.loads(fh.read())
+	except (OSError, json.JSONDecodeError):
+		return {}
+	return info.get("interfaces", {})
+
+
+def isWirelessName(iface: str) -> bool:
 	return bool(match(r"(wlan|ath|ra|wl)\d+", iface))
-
-
-def _isWireless(iface: str) -> bool:
-	if _isWirelessName(iface):
-		return True
-	if isdir(f"{sysfsNet}/{iface}/wireless"):
-		return True
-	if exists(procNetWireless):
-		try:
-			return f"{iface}:" in open(procNetWireless).read()
-		except OSError:
-			pass
-	return False
 
 
 def _parseIp4(text: str) -> list[int]:
@@ -1000,8 +997,10 @@ class NetworkManager:
 					pass
 			return apiNl80211
 
+		vpnNames = {name for name, data in readNetinfoInterfaces().items() if data.get("type") == "vpn"}
+
 		def isBlacklisted(iface: str) -> bool:
-			return iface in self.ADAPTER_BLACKLIST
+			return iface in self.ADAPTER_BLACKLIST or iface in vpnNames
 
 		def detectModule(iface: str) -> str:
 			devDir = f"{sysfsNet}/{iface}/device"
@@ -1029,8 +1028,20 @@ class NetworkManager:
 		except OSError:
 			names = []
 
+		def isWireless(iface: str) -> bool:
+			if isWirelessName(iface):
+				return True
+			if isdir(f"{sysfsNet}/{iface}/wireless"):
+				return True
+			if exists(procNetWireless):
+				try:
+					return f"{iface}:" in open(procNetWireless).read()
+				except OSError:
+					pass
+			return False
+
 		for name in names:
-			isWlan = _isWireless(name)
+			isWlan = isWireless(name)
 			module = detectModule(name)
 			api = detectDriverApi(name, module)
 			# Rediscovery (restartNetwork(), onIfaceAdd()) replaces the Adapter
@@ -1064,7 +1075,7 @@ class NetworkManager:
 			if iface not in self.adapters:
 				self.adapters[iface] = Adapter(
 					name=iface,
-					isWlan=_isWirelessName(iface),
+					isWlan=isWirelessName(iface),
 					driverApi=apiNl80211,
 				)
 			self.connections[iface] = conns
@@ -1317,14 +1328,14 @@ class NetworkManager:
 		conns = self.getConnections(iface)
 		if not conns:
 			adapter = self.adapters.get(iface)
-			isWlan = adapter.isWlan if adapter else _isWirelessName(iface)
+			isWlan = adapter.isWlan if adapter else isWirelessName(iface)
 			base = Connection(adapter=iface, name=iface, dhcp=True, wlan=WiFiConfig() if isWlan else None)
 			conns.append(base)
 			return base
 		base = next((x for x in conns if not (x.wlan and x.wlan.ssid)), None)
 		if base is None:
 			adapter = self.adapters.get(iface)
-			isWlan = adapter.isWlan if adapter else _isWirelessName(iface)
+			isWlan = adapter.isWlan if adapter else isWirelessName(iface)
 			base = Connection(adapter=iface, name=iface, dhcp=True, wlan=WiFiConfig() if isWlan else None)
 			conns.append(base)
 		return base
@@ -1640,12 +1651,7 @@ class NetworkManager:
 	# Update adapter runtime state from /var/run/netinfo without a full rescan.
 
 	def applyNetinfo(self):
-		try:
-			with open(netinfoPath, encoding="utf-8") as fh:
-				info = json.loads(fh.read())
-		except (OSError, json.JSONDecodeError):
-			info = {}
-		ifaces = info.get("interfaces", {})
+		ifaces = readNetinfoInterfaces()
 		self.vpnInterfaces = {
 			iface: VpnInfo(
 				name=iface,
