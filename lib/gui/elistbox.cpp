@@ -32,14 +32,14 @@ bool eListbox::defaultWrapAround = eListbox::DefaultWrapAround;
 int eListbox::defaultHorizontalAlignment = -1;
 int eListbox::defaultVerticalAlignment = -1;
 
-static int listboxMaxItemsForSpace(int space, int item, int spacing, bool reserveOuterSpacing)
+static int listboxMaxItemsForSpace(int space, int item, int spacing)
 {
 	if (space <= 0 || item <= 0)
 		return 0;
 	if (spacing <= 0)
 		return space / item;
 
-	int count = reserveOuterSpacing ? space / (item + spacing) : (space + spacing) / (item + spacing);
+	int count = (space + spacing) / (item + spacing);
 	if (!count && space >= item)
 		count = 1;
 	return count;
@@ -332,7 +332,7 @@ int eListbox::setScrollbarPosition()
 				y += (m_style.m_selection_height - m_itemheight) / 2;
 			}
 
-			if (m_item_alignment & itemVertialAlignJustify)
+			if (m_item_alignment & itemVerticalAlignJustify)
 			{
 				height -= (y * 2);
 			}
@@ -853,8 +853,7 @@ void eListbox::recalcSize()
 		if (m_content)
 			m_content->setSize(eSize(m_itemwidth, m_itemheight));
 		int w = size().width();
-		const bool reserveOuterSpacing = (m_item_alignment & (itemHorizontalAlignCenter | itemHorizontalAlignRight)) && !(m_item_alignment & itemHorizontalAlignJustify);
-		m_max_columns = listboxMaxItemsForSpace(w, m_itemwidth, m_spacing.x(), reserveOuterSpacing);
+		m_max_columns = listboxMaxItemsForSpace(w, m_itemwidth, m_spacing.x());
 		if (m_style.m_selection_zoom > 1.0)
 		{
 			int item_w_zoom = (m_style.m_selection_width) - m_spacing.x();
@@ -873,10 +872,8 @@ void eListbox::recalcSize()
 		int w = size().width() - xscrollBar;
 		int h = size().height();
 
-		const bool reserveOuterXSpacing = (m_item_alignment & (itemHorizontalAlignCenter | itemHorizontalAlignRight)) && !(m_item_alignment & itemHorizontalAlignJustify);
-		const bool reserveOuterYSpacing = (m_item_alignment & (itemVertialAlignMiddle | itemVertialAlignBottom)) && !(m_item_alignment & itemVertialAlignJustify);
-		m_max_columns = listboxMaxItemsForSpace(w, m_itemwidth, m_spacing.x(), reserveOuterXSpacing);
-		m_max_rows = listboxMaxItemsForSpace(h, m_itemheight, m_spacing.y(), reserveOuterYSpacing);
+		m_max_columns = listboxMaxItemsForSpace(w, m_itemwidth, m_spacing.x());
+		m_max_rows = listboxMaxItemsForSpace(h, m_itemheight, m_spacing.y());
 
 		if (m_style.m_selection_zoom > 1.0)
 		{
@@ -975,11 +972,11 @@ void eListbox::recalcSizeAlignment(bool scrollbarVisible)
 		if (yfullSpace > m_y_itemSpace)
 		{
 			yOffset = scrollbarTopSpace;
-			if (m_item_alignment & itemVertialAlignMiddle)
+			if (m_item_alignment & itemVerticalAlignMiddle)
 				yOffset = ((yfullSpace - m_y_itemSpace) / 2) + scrollbarTopSpace;
-			if (m_item_alignment & itemVertialAlignBottom)
+			if (m_item_alignment & itemVerticalAlignBottom)
 				yOffset = (yfullSpace - m_y_itemSpace) + scrollbarTopSpace;
-			if (m_item_alignment & itemVertialAlignJustify)
+			if ((m_item_alignment & itemVerticalAlignJustify) && m_max_rows > 1)
 			{
 				m_y_itemSpace = m_style.m_selection_height + ((m_max_rows - 1) * m_itemheight);
 				int yspace = (yfullSpace - m_y_itemSpace) / (m_max_rows - 1);
