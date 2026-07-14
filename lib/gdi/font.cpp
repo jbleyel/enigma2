@@ -894,13 +894,15 @@ int eTextPara::renderString(const char *string, int rflags, int border, int mark
 								i += 1 + codeidx;
 							}
 							else
-							{
-								activate_colorreset = true;
-								activate_newcolor = false;
 								i++;
-							}
 							break;
 						}
+						case 'C':
+							activate_colorreset = true;
+							activate_newcolor = false;
+							isprintable = 0;
+							++i;
+							break;
 						default:
 						;
 					}
