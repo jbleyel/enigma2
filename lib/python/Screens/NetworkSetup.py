@@ -49,7 +49,7 @@ from skin import parseColor
 from Tools.Conversions import formatNetworkSpeed
 from Tools.Directories import SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 from Tools.ServiceAction import ServiceAction
-from Components.NetworkManager import Adapter, Connection, WiFiConfig, networkManager, apiBrcmWl, encNone, encWep, encWpa, encWpa2, encWpa3, encryptionLabels, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_GENERAL
+from Components.NetworkManager import Adapter, Connection, WiFiConfig, networkManager, encNone, encWep, encWpa, encWpa2, encWpa3, encryptionLabels, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_GENERAL
 
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -1274,16 +1274,6 @@ class NetworkConnectionWiFi(Setup):
 		conns = networkManager.getConnections(adapter.name)
 		if not any(x is conn for x in conns):
 			conns.append(conn)
-		if conn.enabled and adapter.driverApi == apiBrcmWl:
-			# Broadcom's "wl" tool only ever configures one network at a time
-			# (wl.conf.<iface> holds a single ssid/method/key, unlike
-			# wpa_supplicant.conf which can list several enabled profiles for
-			# nl80211 to roam between) – so enabling this one must disable
-			# every sibling, or activeConnection() picking "the" active one
-			# for wl.conf would be ambiguous.
-			for other in conns:
-				if other is not conn:
-					other.enabled = False
 		wasEnabled = adapter.adapterEnabled
 		if conn.enabled:
 			adapter.adapterEnabled = True
@@ -1489,7 +1479,7 @@ class NetworkWiFiScanScreen(Screen):
 			self.console.ePopen(("/sbin/iwlist", "/sbin/iwlist", self.adapter, "scanning"), callback=scanCompleteCallback)
 
 		def ifUpCallback(results: str, retVal: int, extraArgs=None):
-			if self.adapterObj.driverApi == apiBrcmWl:
+			if self.adapterObj.isBroadcomWl:
 				self.console.ePopen(("/usr/bin/wl", "/usr/bin/wl", "up"), callback=startScanCallback)
 			else:
 				startScanCallback(None, 0)

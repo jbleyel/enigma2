@@ -48,8 +48,6 @@ nameserverFile = "/etc/enigma2/nameserversdns.conf"
 wpaSupplicantDir = "/etc"
 sysfsNet = "/sys/class/net"
 procNetWireless = "/proc/net/wireless"
-wlConfigScript = "/usr/bin/wlconfignew"
-wlBin = "/usr/bin/wl"
 ifconfigBin = "/sbin/ifconfig"
 ifupBin = "/sbin/ifup"
 ifdownBin = "/sbin/ifdown"
@@ -97,7 +95,6 @@ apiWext = "wext"
 apiMadwifi = "madwifi"
 apiRalink = "ralink"
 apiZydas = "zydas"
-apiBrcmWl = "brcm-wl"
 
 
 # ===========================================================================
@@ -203,6 +200,7 @@ class Adapter:
 	isWlan: bool = False
 	module: str = ""
 	driverApi: str = apiNl80211
+	isBroadcomWl: bool = False  # has the vendor "wl" tool available (needed to kick iwlist scans alive)
 	canWakeOnWiFi: bool = False
 	adapterEnabled: bool = False  # False -> every line of this adapter's stanza in /etc/network/interfaces is commented out with "# " (see serialiseConnection()), not just "auto <iface>"
 	netInfo: NetInfo = field(default_factory=NetInfo)
@@ -618,29 +616,6 @@ def wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
 
 
 # ===========================================================================
-# Broadcom wl-config format – wlconfignew only ever configures ONE network
-# (whichever the user currently has selected/active), unlike wpa_supplicant.conf
-# which holds every saved profile. Kept as a small standalone ssid=/method=/key=
-# file, same as the original vendor wl-config.sh expected.
-# ===========================================================================
-
-def bcmConfPath(iface: str) -> str:
-	return f"/etc/wl.conf.{iface}"
-
-
-def writeBcmWlanConfig(iface: str, wlan: WiFiConfig) -> bool:
-	encStr = {
-		encNone: "None", encWep: "wep", encWpa: "wpa",
-		encWpa2: "wpa2", encWpaWpa2: "wpa2", encWpa3: "wpa2",
-	}.get(wlan.encryption, "None")
-	return _writeLines(bcmConfPath(iface), [
-		f"ssid={wlan.ssid}",
-		f"method={encStr}",
-		f"key={wlan.key}",
-	])
-
-
-# ===========================================================================
 # Driver / module detection
 # ===========================================================================
 
@@ -726,11 +701,7 @@ class WlanRuntime:
 		cmds: list[str] = []
 		cmds.extend(self.commandsDeactivate())
 		cmds.append(f"{ifconfigBin} {iface} up || true")
-		if self.adapter.driverApi == apiBrcmWl:
-			if conn.wlan:
-				writeBcmWlanConfig(iface, conn.wlan)
-				cmds.append(f"{wlConfigScript} -i{iface} -c{bcmConfPath(iface)} || true")
-		elif conn.wlan and conn.wlan.encryption != encNone:
+		if conn.wlan and conn.wlan.encryption != encNone:
 			cmds.append(
 				f"{wpaSupplicantBin} -B -D {self.adapter.driverApi} "
 				f"-i{iface} -c{self.adapter.wpaConfPath} "
@@ -750,10 +721,7 @@ class WlanRuntime:
 		]
 
 	def statusCommands(self) -> list[str]:
-		iface = self._iface
-		if self.adapter.driverApi == apiBrcmWl:
-			return [f"{wlBin} -i {iface} status"]
-		return [f"iwconfig {iface}"]
+		return [f"iwconfig {self._iface}"]
 
 
 # ===========================================================================
@@ -988,11 +956,12 @@ class NetworkManager:
 		self.log(f"load(): done, adapters={sorted(self.adapters.keys())}")
 
 	def discoverAdapters(self):
+		def isBroadcomWl(iface: str, module: str) -> bool:
+			return exists(f"/tmp/bcm/{iface}") or module in ("brcm-systemport", "brcmfmac", "brcmsmac")
+
 		def detectDriverApi(iface: str, module: str) -> str:
-			if exists(f"/tmp/bcm/{iface}"):
-				return apiBrcmWl
-			if module in ("brcm-systemport", "brcmfmac", "brcmsmac"):
-				return apiBrcmWl
+			if isBroadcomWl(iface, module):
+				return apiWext
 			if isdir(f"{sysfsNet}/{iface}/device/ieee80211"):
 				return apiNl80211
 			if module in ("ath_pci", "ath5k", "ar6k_wlan"):
@@ -1051,6 +1020,7 @@ class NetworkManager:
 				isWlan=isWlan,
 				module=module,
 				driverApi=api,
+				isBroadcomWl=isBroadcomWl(name, module),
 				canWakeOnWiFi=canWakeOnWiFi(name),
 				mac=fileReadLine(f"{sysfsNet}/{name}/address", default=""),
 				netInfo=existing.netInfo if existing else NetInfo(),
@@ -1148,10 +1118,6 @@ class NetworkManager:
 			wpf = WpaSupplicantFile(iface)
 			wpf.ensureDir()
 			ok = wpf.save(wlanConfigs) and ok
-			if adapter.driverApi == apiBrcmWl:
-				active = self.activeConnection(iface)
-				if active and active.wlan:
-					ok = writeBcmWlanConfig(iface, active.wlan) and ok
 		return ok
 
 	def save(self) -> bool:
@@ -1168,18 +1134,13 @@ class NetworkManager:
 			api = adapter.driverApi
 			lines: list[str] = []
 
-			if api == apiBrcmWl:
-				lines.append(f"pre-up {ifconfigBin} {iface} up || true")
-				lines.append(f"pre-up {wlConfigScript} -i{iface} -c{bcmConfPath(iface)} || true")
-				lines.append(f"post-down {wlBin} down || true")
+			driverFlags = f"-D {api}" if api != apiNl80211 else ""
+			lines.append(f"pre-up {ifconfigBin} {iface} up || true")
+			if wlan.encryption != encNone:
+				lines.append(f"pre-up {wpaSupplicantBin} -i{iface} -c{adapter.wpaConfPath} -B {driverFlags} -P{adapter.wpaPidPath} || true")
 			else:
-				driverFlags = f"-D {api}" if api != apiNl80211 else ""
-				lines.append(f"pre-up {ifconfigBin} {iface} up || true")
-				if wlan.encryption != encNone:
-					lines.append(f"pre-up {wpaSupplicantBin} -i{iface} -c{adapter.wpaConfPath} -B {driverFlags} -P{adapter.wpaPidPath} || true")
-				else:
-					lines.append(f"pre-up iwconfig {iface} essid \"{reEscape(wlan.ssid)}\" || true")
-				lines.append(f"pre-down {wpaCliBin} -i{iface} terminate 2>/dev/null; true")
+				lines.append(f"pre-up iwconfig {iface} essid \"{reEscape(wlan.ssid)}\" || true")
+			lines.append(f"pre-down {wpaCliBin} -i{iface} terminate 2>/dev/null; true")
 
 			return "\n".join(lines)
 
