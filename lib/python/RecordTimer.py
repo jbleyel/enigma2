@@ -953,7 +953,6 @@ class RecordTimerEntry(TimerEntry):
 			if self.failed:
 				return True
 			if self.justplay:
-				Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 				if Screens.Standby.inStandby:
 					if self.precondition == 1:
 						self.log(11, "In standby, zap timer ignored (running only).")
@@ -968,7 +967,6 @@ class RecordTimerEntry(TimerEntry):
 				elif self.precondition == 2:
 					self.log(11, "Not in standby, zap timer ignored (standby only).")
 				elif config.recording.confirmZapDelay.value and InfoBar and InfoBar.instance:
-					Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 					self.log(11, "Asking user before zapping.")
 					message = _("A zap timer wants to switch the channel.\nDo you want to zap now?\n")
 					AddModalNotification(text=message, timeout=config.recording.confirmZapDelay.value, default=True, windowTitle=_("Zap"), callback=self.zapTimerCB)
@@ -1082,7 +1080,7 @@ class RecordTimerEntry(TimerEntry):
 			if job_manager.getPendingJobs() and self.shutdownTimerMaxRetry > 0:
 				print(f"[RecordTimer] waitForJobsThenShutdown. MaxRetry:{self.shutdownTimerMaxRetry}")
 				self.shutdownTimerMaxRetry -= 1
-				self.shutdownTimer.start(1000, True)
+				self.shutdownTimer.start(5000, True)
 			else:
 				print("[RecordTimer] quitMainloop (jobs done).")
 				quitMainloop(1)
@@ -1093,7 +1091,7 @@ class RecordTimerEntry(TimerEntry):
 			self.shutdownTimerMaxRetry = 100
 			self.shutdownTimer = eTimer()
 			self.shutdownTimer.callback.append(waitForJobsThenShutdown)
-			self.shutdownTimer.start(1000, True)
+			self.shutdownTimer.start(5000, True)
 			return True
 
 	def getNextActivation(self, getNextStbPowerOn=False):
@@ -1458,6 +1456,7 @@ class RecordTimerEntry(TimerEntry):
 	def zapTimerCB(self, answer):
 		if answer:
 			self.log(11, "User confirmed zap timer.")
+			Screens.Standby.TVinStandby.skipHdmiCecNow("zaptimer")
 			NavigationInstance.instance.isMovieplayerActive()
 			if InfoBar and InfoBar.instance and InfoBar.instance.servicelist:
 				InfoBar.instance.servicelist.performZap(self.service_ref.ref)

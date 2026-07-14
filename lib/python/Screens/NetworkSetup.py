@@ -1448,7 +1448,6 @@ class NetworkWiFiScanScreen(Screen):
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Select"))
 		self["key_yellow"] = StaticText(_("Rescan"))
-		self["key_blue"] = StaticText("")
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
 			"ok": (self.keySelect, _("Use selected Wi-Fi network")),
 			"cancel": (self.keyClose, _("Close")),
