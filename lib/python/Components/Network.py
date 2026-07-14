@@ -147,6 +147,25 @@ class NetworkCompat:
 		except Exception:
 			callback(0)
 
+	def getNameserverList(self) -> list:
+		return list(networkManager.nameserverConfig.servers)
+
+	def clearNameservers(self):
+		networkManager.nameserverConfig.servers = []
+
+	def addNameserver(self, nameserver):
+		if nameserver not in networkManager.nameserverConfig.servers:
+			networkManager.nameserverConfig.servers.append(nameserver)
+
+	def removeNameserver(self, nameserver):
+		if nameserver in networkManager.nameserverConfig.servers:
+			networkManager.nameserverConfig.servers.remove(nameserver)
+
+	def changeNameserver(self, oldNameserver, newNameserver):
+		servers = networkManager.nameserverConfig.servers
+		if oldNameserver in servers:
+			servers[servers.index(oldNameserver)] = newNameserver
+
 	def onRemoteRootFS(self) -> bool:
 		try:
 			for parts in getProcMounts():

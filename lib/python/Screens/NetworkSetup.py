@@ -433,6 +433,7 @@ class NetworkOverview(Screen):
 	GLYPH_LAN = "\uea5a"   # settings_ethernet
 	GLYPH_WIFI = "\ue9fe"  # wifi
 	GLYPH_INET = "\uEA5B"  # globe
+	GLYPH_VPN = "\ue9af"   # vpn_key
 
 	OVERVIEW_COLOR_GOOD = gRGB(0x0000CC00).argb()  # green – connected
 	OVERVIEW_COLOR_BAD = gRGB(0x00CC0000).argb()   # red   – LAN without link
@@ -750,7 +751,7 @@ class NetworkOverview(Screen):
 				statusText, statusColor = _("Down"), bad
 			return (
 				self.OVERVIEW_TEMPLATE_ROW,
-				"",                       # AdapterGlyph
+				self.GLYPH_VPN,           # AdapterGlyph
 				vpn.name,                 # AdapterName
 				_("VPN"),                 # AdapterKind
 				statusText,               # StatusText
