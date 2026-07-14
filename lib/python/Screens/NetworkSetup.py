@@ -49,7 +49,7 @@ from skin import parseColor
 from Tools.Conversions import formatNetworkSpeed
 from Tools.Directories import SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 from Tools.ServiceAction import ServiceAction
-from Components.NetworkManager import Adapter, Connection, WiFiConfig, networkManager, encNone, encWep, encWpa, encWpa2, encWpa3, encryptionLabels, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_GENERAL
+from Components.NetworkManager import Adapter, Connection, VpnInfo, WiFiConfig, networkManager, encNone, encWep, encWpa, encWpa2, encWpa3, encryptionLabels, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_GENERAL
 
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -738,7 +738,33 @@ class NetworkOverview(Screen):
 				adapter,                                                      # -> INDEX_ADAPTER
 			)
 
+		def buildOverviewVpnRow(vpn: VpnInfo) -> tuple:
+			"""Row for a VPN interface (e.g. wg0) – display only, never configurable
+			here (ADAPTER_BLACKLIST'd, no /etc/network/interfaces stanza). INDEX_ADAPTER
+			is None so OK/green/menu/info all no-op via the existing is-None guards."""
+			if vpn.up and vpn.link:
+				statusText, statusColor = _("Connected"), good
+			elif vpn.up:
+				statusText, statusColor = _("Up"), idle
+			else:
+				statusText, statusColor = _("Down"), bad
+			return (
+				self.OVERVIEW_TEMPLATE_ROW,
+				"",                       # AdapterGlyph
+				vpn.name,                 # AdapterName
+				_("VPN"),                 # AdapterKind
+				statusText,               # StatusText
+				statusColor,              # StatusColor
+				vpn.mac.upper(),          # Mac
+				_ip4Str(vpn.ip) or "—",   # IpAddress
+				"—",                      # Gateway
+				"—",                      # Speed
+				"",                       # InetGlyph
+				None,                     # -> INDEX_ADAPTER
+			)
+
 		rows = [buildOverviewAdapterRow(networkManager.adapters[iface]) for iface in sorted(networkManager.adapters.keys())]
+		rows += [buildOverviewVpnRow(networkManager.vpnInterfaces[iface]) for iface in sorted(networkManager.vpnInterfaces.keys())]
 		hasRows = bool(rows)
 		if hasRows:
 			rows.insert(0, buildOverviewAdapterHeaderRow())

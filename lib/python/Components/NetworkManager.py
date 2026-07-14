@@ -190,6 +190,27 @@ class NetInfo:
 
 
 @dataclass
+class VpnInfo:
+	"""Read-only snapshot of one "type": "vpn" interface (e.g. "wg0") from
+	socketdaemon's /var/run/netinfo JSON – display only. VPN interfaces are
+	ADAPTER_BLACKLIST'd and never become an Adapter: no /etc/network/interfaces
+	stanza, no configuration UI, nothing writable here."""
+
+	name: str
+	up: bool = False
+	running: bool = False
+	mac: str = ""
+	rxBytes: int = 0
+	txBytes: int = 0
+	mtu: int = 0
+	ip: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
+	netmask: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
+	prefix: int = 0
+	bcast: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
+	link: bool = False
+
+
+@dataclass
 class Adapter:
 	"""Physical network interface identity/config, as discovered in
 	/sys/class/net, plus its live NetInfo. Holds no Connections (see
@@ -922,6 +943,7 @@ class NetworkManager:
 		self._debug = config.crash.debugNetwork.value
 		self.adapters: dict[str, Adapter] = {}
 		self.connections: dict[str, list[Connection]] = {}
+		self.vpnInterfaces: dict[str, VpnInfo] = {}
 		self.nameserverConfig = NameserverConfig()
 		self.ifacesFile = InterfacesFile()
 		self.nsFiles = NameserverFiles()
@@ -1624,6 +1646,23 @@ class NetworkManager:
 		except (OSError, json.JSONDecodeError):
 			info = {}
 		ifaces = info.get("interfaces", {})
+		self.vpnInterfaces = {
+			iface: VpnInfo(
+				name=iface,
+				up=data.get("up", False),
+				running=data.get("running", False),
+				mac=data.get("mac", ""),
+				rxBytes=data.get("rx_bytes", 0),
+				txBytes=data.get("tx_bytes", 0),
+				mtu=data.get("mtu", 0),
+				ip=_parseIp4(data.get("ip4", "")) if data.get("ip4") else [0, 0, 0, 0],
+				netmask=_parseIp4(data.get("mask", "")) if data.get("mask") else [0, 0, 0, 0],
+				prefix=data.get("prefix4", 0),
+				bcast=_parseIp4(data.get("brd", "")) if data.get("brd") else [0, 0, 0, 0],
+				link=data.get("link", False),
+			)
+			for iface, data in ifaces.items() if data.get("type") == "vpn"
+		}
 		for iface, data in ifaces.items():
 			adapter = self.adapters.get(iface)
 			if adapter is None:
