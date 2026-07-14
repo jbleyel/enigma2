@@ -5,7 +5,7 @@
 # Required-Stop:
 # Default-Start:
 # Default-Stop:
-# Short-Description: Configure a Broadcom "wl" WLAN interface from its wpa_supplicant.conf
+# Short-Description: Configure a Broadcom "wl" WLAN interface from its wl.conf.<iface> (ssid/method/key)
 ### END INIT INFO
 
 set -eu
@@ -14,14 +14,14 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin"
 
 WL="/usr/bin/wl"
 IFACE=""
-WPA_CONF=""
+CONF=""
 
 while getopts "i:c:" opt; do
   case "$opt" in
     i) IFACE="$OPTARG" ;;
-    c) WPA_CONF="$OPTARG" ;;
+    c) CONF="$OPTARG" ;;
     *)
-      echo "Usage: $0 -i<iface> -c<wpa_supplicant.conf>" >&2
+      echo "Usage: $0 -i<iface> -c<wl.conf.iface>" >&2
       exit 2
       ;;
   esac
@@ -30,102 +30,78 @@ done
 case "$IFACE" in
   wlan[0-9]*) ;;
   *)
-    echo "Usage: $0 -i<iface> -c<wpa_supplicant.conf>" >&2
+    echo "Usage: $0 -i<iface> -c<wl.conf.iface>" >&2
     exit 2
     ;;
 esac
 
-if [ -z "$WPA_CONF" ] || [ ! -f "$WPA_CONF" ]; then
-  echo "No wpa_supplicant config found at '$WPA_CONF'" >&2
+if [ -z "$CONF" ] || [ ! -f "$CONF" ]; then
+  echo "No wl config found at '$CONF'" >&2
   exit 1
 fi
 
-# Extract the first enabled network={...} block as "key=value" lines.
-# Quotes are kept so callers can tell an ASCII value from a bare hex one.
-BLOCK="$(awk '
-  /^[[:space:]]*network[[:space:]]*=?[[:space:]]*\{/ { inblock=1; buf=""; disabled=0; next }
-  inblock && /^[[:space:]]*\}/ {
-    if (!disabled && buf != "") { printf "%s", buf; exit }
-    inblock=0; buf=""; next
-  }
-  inblock {
-    line=$0
-    sub(/^[[:space:]]+/, "", line)
-    sub(/[[:space:]]+$/, "", line)
-    if (line ~ /^disabled[[:space:]]*=[[:space:]]*1/) disabled=1
-    if (line != "") buf = buf line "\n"
-  }
-' "$WPA_CONF")"
+# wl.conf.<iface> is a plain "key=value" file with exactly one network:
+#   ssid=...
+#   method=...   (None, wep, wpa, wpa2)
+#   key=...
+METHOD="None"
+SSID=""
+KEY=""
 
-if [ -z "$BLOCK" ]; then
-  echo "No enabled network block found in $WPA_CONF" >&2
-  exit 1
-fi
-
-get_field() {
-  printf '%s\n' "$BLOCK" | sed -n "s/^$1=//p" | head -n1
-}
-
-strip_quotes() {
-  val="$1"
-  case "$val" in
-    \"*\") val="${val#\"}"; val="${val%\"}" ;;
+while IFS='=' read -r key value; do
+  case "$key" in
+    ssid) SSID="$value" ;;
+    method) METHOD="$value" ;;
+    key) KEY="$value" ;;
   esac
-  printf '%s' "$val"
-}
+done < "$CONF"
 
-ascii_to_hex() {
-  printf '%s' "$1" | od -An -tx1 | tr -d ' \n'
-}
+if [ -z "$SSID" ]; then
+  echo "No ssid set in $CONF" >&2
+  exit 1
+fi
 
-RAW_SSID="$(get_field ssid)"
-RAW_KEY_MGMT="$(get_field key_mgmt)"
-RAW_PROTO="$(get_field proto)"
-RAW_PSK="$(get_field psk)"
-RAW_WEP="$(get_field wep_key0)"
+# ifconfig up already ran as the previous pre-up command; give the driver the
+# same settle time the original vendor wl-config.sh relied on.
+sleep 0.1
 
-SSID="$(strip_quotes "$RAW_SSID")"
-[ -n "$SSID" ] || { echo "network block in $WPA_CONF has no ssid" >&2; exit 1; }
-
-KEY_MGMT="$(printf '%s' "${RAW_KEY_MGMT:-NONE}" | tr '[:lower:]' '[:upper:]')"
-PROTO="$(printf '%s' "${RAW_PROTO:-}" | tr '[:lower:]' '[:upper:]')"
-
-"$WL" down >/dev/null 2>&1 || true
+"$WL" wowl_clear
 "$WL" up
+"$WL" auth 2
+"$WL" infra 1
 
-case "$KEY_MGMT" in
-  *SAE*)
-    echo "key_mgmt=$KEY_MGMT (WPA3-SAE) is not supported by the Broadcom wl driver" >&2
-    exit 1
+case "$METHOD" in
+  wep)
+    "$WL" wsec 1
+    "$WL" wpa_auth 0
+    "$WL" addwep 0 "$KEY"
     ;;
-  *WPA*)
-    PSK="$(strip_quotes "$RAW_PSK")"
-    [ -n "$PSK" ] || { echo "key_mgmt=$KEY_MGMT but no psk set in $WPA_CONF" >&2; exit 1; }
-    "$WL" wsec 4
-    "$WL" set_pmk "$PSK"
-    if [ "$PROTO" = "WPA" ]; then
-      "$WL" join "$SSID" amode wpapsk
-    else
-      "$WL" join "$SSID" amode wpa2psk
-    fi
+  wpa)
+    "$WL" wsec 6
+    "$WL" wpa_auth 4
+    "$WL" sup_wpa 1
+    "$WL" set_pmk "$KEY"
     ;;
-  NONE)
-    if [ -n "$RAW_WEP" ]; then
-      case "$RAW_WEP" in
-        \"*\") WEP_KEY="$(ascii_to_hex "$(strip_quotes "$RAW_WEP")")" ;;
-        *) WEP_KEY="$RAW_WEP" ;;
-      esac
-      "$WL" wsec 1
-      "$WL" join "$SSID" key "0:${WEP_KEY}" amode openshared
-    else
-      "$WL" wsec 0
-      "$WL" join "$SSID" amode open
-    fi
+  wpa2)
+    "$WL" wsec 6
+    "$WL" wpa_auth 128
+    "$WL" sup_wpa 1
+    "$WL" set_pmk "$KEY"
     ;;
   *)
-    echo "Unsupported key_mgmt '$KEY_MGMT' in $WPA_CONF" >&2
-    exit 1
+    "$WL" wsec 0
+    "$WL" wpa_auth 0
     ;;
 esac
+
+"$WL" ssid "$SSID"
+
+count=1
+while [ "$count" -le 10 ]; do
+  count=$((count + 1))
+  status="$("$WL" status 2>/dev/null | cut -c1-4)"
+  [ "$status" = "SSID" ] && break
+  sleep 0.5
+done
 
 exit 0

@@ -618,8 +618,26 @@ def wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
 
 
 # ===========================================================================
-# Broadcom wl-config format
+# Broadcom wl-config format – wlconfignew only ever configures ONE network
+# (whichever the user currently has selected/active), unlike wpa_supplicant.conf
+# which holds every saved profile. Kept as a small standalone ssid=/method=/key=
+# file, same as the original vendor wl-config.sh expected.
 # ===========================================================================
+
+def bcmConfPath(iface: str) -> str:
+	return f"/etc/wl.conf.{iface}"
+
+
+def writeBcmWlanConfig(iface: str, wlan: WiFiConfig) -> bool:
+	encStr = {
+		encNone: "None", encWep: "wep", encWpa: "wpa",
+		encWpa2: "wpa2", encWpaWpa2: "wpa2", encWpa3: "wpa2",
+	}.get(wlan.encryption, "None")
+	return _writeLines(bcmConfPath(iface), [
+		f"ssid={wlan.ssid}",
+		f"method={encStr}",
+		f"key={wlan.key}",
+	])
 
 
 # ===========================================================================
@@ -710,7 +728,8 @@ class WlanRuntime:
 		cmds.append(f"{ifconfigBin} {iface} up || true")
 		if self.adapter.driverApi == apiBrcmWl:
 			if conn.wlan:
-				cmds.append(f"{wlConfigScript} -i{iface} -c{self.adapter.wpaConfPath} || true")
+				writeBcmWlanConfig(iface, conn.wlan)
+				cmds.append(f"{wlConfigScript} -i{iface} -c{bcmConfPath(iface)} || true")
 		elif conn.wlan and conn.wlan.encryption != encNone:
 			cmds.append(
 				f"{wpaSupplicantBin} -B -D {self.adapter.driverApi} "
@@ -1129,6 +1148,10 @@ class NetworkManager:
 			wpf = WpaSupplicantFile(iface)
 			wpf.ensureDir()
 			ok = wpf.save(wlanConfigs) and ok
+			if adapter.driverApi == apiBrcmWl:
+				active = self.activeConnection(iface)
+				if active and active.wlan:
+					ok = writeBcmWlanConfig(iface, active.wlan) and ok
 		return ok
 
 	def save(self) -> bool:
@@ -1147,7 +1170,7 @@ class NetworkManager:
 
 			if api == apiBrcmWl:
 				lines.append(f"pre-up {ifconfigBin} {iface} up || true")
-				lines.append(f"pre-up {wlConfigScript} -i{iface} -c{adapter.wpaConfPath} || true")
+				lines.append(f"pre-up {wlConfigScript} -i{iface} -c{bcmConfPath(iface)} || true")
 				lines.append(f"post-down {wlBin} down || true")
 			else:
 				driverFlags = f"-D {api}" if api != apiNl80211 else ""

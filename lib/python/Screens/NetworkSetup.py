@@ -1274,6 +1274,16 @@ class NetworkConnectionWiFi(Setup):
 		conns = networkManager.getConnections(adapter.name)
 		if not any(x is conn for x in conns):
 			conns.append(conn)
+		if conn.enabled and adapter.driverApi == apiBrcmWl:
+			# Broadcom's "wl" tool only ever configures one network at a time
+			# (wl.conf.<iface> holds a single ssid/method/key, unlike
+			# wpa_supplicant.conf which can list several enabled profiles for
+			# nl80211 to roam between) – so enabling this one must disable
+			# every sibling, or activeConnection() picking "the" active one
+			# for wl.conf would be ambiguous.
+			for other in conns:
+				if other is not conn:
+					other.enabled = False
 		wasEnabled = adapter.adapterEnabled
 		if conn.enabled:
 			adapter.adapterEnabled = True
