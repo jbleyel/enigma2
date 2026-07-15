@@ -19,9 +19,9 @@ class PiconSettings(Setup):
 		self.updateButtons()
 
 	def keyYellow(self):
-		if not config.picon.set4.path.value:
+		if not config.picon.set3.path.value:
 			newPath = None
-			for index in range(1, 5):
+			for index in range(1, 4):
 				path = getattr(config.picon, f"set{index}").path
 				if not path.value:
 					path.value = getattr(config.picon, f"set{index - 1}").path.value
@@ -33,7 +33,7 @@ class PiconSettings(Setup):
 
 	def keyBlue(self):
 		settings = (config.picon.infobar, config.picon.channelselection, config.picon.display, config.picon.openwebif)
-		for index in range(4, 0, -1):
+		for index in range(3, 0, -1):
 			path = getattr(config.picon, f"set{index}").path
 			if path.value:
 				if any(setting.value == index for setting in settings):
@@ -44,8 +44,16 @@ class PiconSettings(Setup):
 					self.updateButtons()
 				break
 
+	def keySave(self):
+		for index in range(4):
+			path = getattr(config.picon, f"set{index}").path.value
+			if path and not isdir(path):
+				self.setFootnote(_("Directory '%s' does not exist!") % path)
+				return
+		Setup.keySave(self)
+
 	def updateButtons(self):
-		yellowText = "" if config.picon.set4.path.value else _("Add Path")
+		yellowText = "" if config.picon.set3.path.value else _("Add Path")
 		blueText = _("Remove Path") if config.picon.set1.path.value else ""
 		self["key_yellow"].setText(yellowText)
 		self["key_blue"].setText(blueText)
@@ -54,7 +62,7 @@ class PiconSettings(Setup):
 
 	def keySelect(self):
 		current = self.getCurrentItem()
-		paths = [getattr(config.picon, f"set{i}").path for i in range(5)]
+		paths = [getattr(config.picon, f"set{i}").path for i in range(4)]
 		if current in paths:
 			self.openLocationBox(current)
 		else:
@@ -88,7 +96,7 @@ class PiconSettings(Setup):
 
 	def pathStatus(self):
 		current = self.getCurrentItem()
-		paths = [getattr(config.picon, f"set{i}").path for i in range(5)]
+		paths = [getattr(config.picon, f"set{i}").path for i in range(4)]
 		if current in paths:
 			path = self.getCurrentValue()
 			if not isdir(path):
@@ -96,6 +104,6 @@ class PiconSettings(Setup):
 			else:
 				footnote = ""
 			self.setFootnote(footnote)
-			choices = [(x, _("Picon path %s") % (x + 1)) for x in range(5) if x == 0 or getattr(config.picon, f"set{x}").path.value]
+			choices = [(x, _("Picon path %s") % (x + 1)) for x in range(4) if x == 0 or getattr(config.picon, f"set{x}").path.value]
 			for cfg in (config.picon.infobar, config.picon.channelselection, config.picon.display, config.picon.openwebif):
 				cfg.setChoices(choices)
