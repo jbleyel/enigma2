@@ -7,7 +7,7 @@ from enigma import eDVBDB, eDVBResourceManager, eStreamServer, eTimer, getLinked
 
 from Components.ActionMap import ActionMap
 from Components.Button import Button
-from Components.config import ConfigBoolean, ConfigNothing, ConfigYesNo, ConfigSelection, config, configfile, getConfigListEntry
+from Components.config import ConfigBoolean, ConfigNothing, ConfigSelection, config, configfile, getConfigListEntry
 from Components.ConfigList import ConfigListScreen
 from Components.International import international
 from Components.Label import Label
@@ -32,10 +32,10 @@ class ConfigReadOnlyValue(ConfigSelection):
 	def isChanged(self):
 		return False
 
-	def save(self):
+	def save(self):  # Overwrite to force read only
 		pass
 
-	def cancel(self):
+	def cancel(self):  # Overwrite to force read only
 		pass
 
 
@@ -249,8 +249,7 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 		value = _("Not available") if power < 0 else f"{power} mA"
 		if self.inputPowerValue.value != value:
 			self.inputPowerValue.setChoices([(value, value)], default=value)
-			if self.inputPowerEntry:
-				self["config"].invalidate(self.inputPowerEntry)
+			self["config"].invalidate(self.inputPowerEntry)
 
 	def addInputPowerEntry(self):
 		self.inputPowerEntry = getConfigListEntry(_("Measured current"), self.inputPowerValue, _("Current supplied to the LNB and positioner."))
