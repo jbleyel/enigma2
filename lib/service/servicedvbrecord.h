@@ -96,6 +96,15 @@ private:
 			/* eit updates */
 	void gotNewEvent(int error);
 	void saveCutlist();
+
+			/* eit retry, filled in when the initial saveEventToFile() in prepare() fails
+			   because the event isn't in the EPG cache yet; retried from gotNewEvent()
+			   once new EIT data for this service arrives */
+	std::string m_eitFilename;
+	eServiceReferenceDVB m_eitRef;
+	int m_eitEventId;
+	time_t m_eitBegTime;
+	time_t m_eitEndTime;
 };
 
 #endif
