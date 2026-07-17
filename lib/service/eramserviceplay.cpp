@@ -136,7 +136,14 @@ void eRamServicePlay::checkLapAndSeek() {
 
 	// Align up to 188-byte packet boundary for clean decode.
 	off_t safe = min_off + (188 - min_off % 188) % 188;
-	eDebug("[eRamServicePlay] watchdog: lap at %lld, jumping to min_off=%lld", (long long)lapped_at, (long long)safe);
+
+	// Prefer the nearest tagged access point (I-frame) at or after min_off,
+	// so decoding restarts on a clean boundary instead of mid-GOP
+	// (avoids picture artifacts until the next I-frame arrives).
+	off_t ap = m_ram_ring->findNearestAccessPoint(min_off);
+	if (ap >= 0)
+		safe = ap;
+	eDebug("[eRamServicePlay] watchdog: lap at %lld, jumping to %lld (min_off=%lld)", (long long)lapped_at, (long long)safe, (long long)min_off);
 
 	ePtr<iDVBPVRChannel> pvr_channel;
 	if (m_service_handler_timeshift.getPVRChannel(pvr_channel) == 0)
