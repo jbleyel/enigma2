@@ -1541,6 +1541,7 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 
 	m_state = stIdle;
 	m_gstdot = eSimpleConfig::getBool("config.crash.gstdot", false);
+	m_gst_playbin = NULL;
 	m_is_dash_pipeline = false;
 	m_dash_demux = NULL;
 	m_dash_audio_selector = NULL;
