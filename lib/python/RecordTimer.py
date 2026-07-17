@@ -966,6 +966,8 @@ class RecordTimerEntry(TimerEntry):
 					self.wasInStandby = True
 				elif self.precondition == 2:
 					self.log(11, "Not in standby, zap timer ignored (standby only).")
+				elif (currentServiceRef := NavigationInstance.instance.getCurrentlyPlayingServiceReference()) and currentServiceRef.toCompareString() == self.service_ref.ref.toCompareString():
+					self.log(11, "Already on target service, zap timer ignored.")
 				elif config.recording.confirmZapDelay.value and InfoBar and InfoBar.instance:
 					self.log(11, "Asking user before zapping.")
 					message = _("A zap timer wants to switch the channel.\nDo you want to zap now?\n")

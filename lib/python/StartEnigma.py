@@ -233,31 +233,13 @@ class Session:
 				callback()
 		Toast.instance.doShutdown()
 
-	def reloadDialogs(self):
+	def reloadDialogs(self, exclude=None):
 		for dialog in self.allDialogs:
+			if exclude and id(dialog) in exclude:
+				continue
 			print(f"[reloadDialogs] dialog={dialog.__class__.__name__} desktop={hasattr(dialog, 'desktop')}")
 			if hasattr(dialog, "desktop"):
-				print(f"[reloadDialogs]   deleteGUIScreen")
-				dialog.deleteGUIScreen()
-				if hasattr(dialog, "additionalWidgets"):
-					print(f"[reloadDialogs]   additionalWidgets={len(dialog.additionalWidgets)}")
-					for w in dialog.additionalWidgets:
-						if hasattr(w, "instance") and w.instance:
-							w.instance.hide()
-					dialog.additionalWidgets = []
-				if hasattr(dialog, "renderer"):
-					print(f"[reloadDialogs]   renderer={len(dialog.renderer)}")
-					for r in dialog.renderer:
-						if r.source:
-							r.source.disconnect(r)
-						if hasattr(r, "instance") and r.instance:
-							r.instance.hide()
-					dialog.renderer = []
-				print(f"[reloadDialogs]   readSkin skinName={dialog.skinName}")
-				readSkin(dialog, None, dialog.skinName, dialog.desktop)
-				print(f"[reloadDialogs]   applySkin")
-				dialog.applySkin()
-				print(f"[reloadDialogs]   done")
+				dialog.reloadSkin()
 
 	def showInfo(self, text, timeout=4):
 		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_INFO, timeout=timeout)
