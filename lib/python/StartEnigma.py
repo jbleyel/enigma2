@@ -235,10 +235,29 @@ class Session:
 
 	def reloadDialogs(self):
 		for dialog in self.allDialogs:
+			print(f"[reloadDialogs] dialog={dialog.__class__.__name__} desktop={hasattr(dialog, 'desktop')}")
 			if hasattr(dialog, "desktop"):
-				oldDesktop = dialog.desktop
-				readSkin(dialog, None, dialog.skinName, oldDesktop)
+				print(f"[reloadDialogs]   deleteGUIScreen")
+				dialog.deleteGUIScreen()
+				if hasattr(dialog, "additionalWidgets"):
+					print(f"[reloadDialogs]   additionalWidgets={len(dialog.additionalWidgets)}")
+					for w in dialog.additionalWidgets:
+						if hasattr(w, "instance") and w.instance:
+							w.instance.hide()
+					dialog.additionalWidgets = []
+				if hasattr(dialog, "renderer"):
+					print(f"[reloadDialogs]   renderer={len(dialog.renderer)}")
+					for r in dialog.renderer:
+						if r.source:
+							r.source.disconnect(r)
+						if hasattr(r, "instance") and r.instance:
+							r.instance.hide()
+					dialog.renderer = []
+				print(f"[reloadDialogs]   readSkin skinName={dialog.skinName}")
+				readSkin(dialog, None, dialog.skinName, dialog.desktop)
+				print(f"[reloadDialogs]   applySkin")
 				dialog.applySkin()
+				print(f"[reloadDialogs]   done")
 
 	def showInfo(self, text, timeout=4):
 		Toast.instance.showToast(text=text, toasttype=Toast.TYPE_INFO, timeout=timeout)
