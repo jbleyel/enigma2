@@ -20,6 +20,8 @@ eDVBServiceRecord::eDVBServiceRecord(const eServiceReferenceDVB &ref, bool isstr
 {
 	CONNECT(m_service_handler.serviceEvent, eDVBServiceRecord::serviceEvent);
 	CONNECT(m_event_handler.m_eit_changed, eDVBServiceRecord::gotNewEvent);
+	m_eit_retry_timer = eTimer::create(eApp);
+	CONNECT(m_eit_retry_timer->timeout, eDVBServiceRecord::retryEitSave);
 	m_state = stateIdle;
 	m_want_record = 0;
 	m_record_ecm = false;
@@ -188,13 +190,14 @@ RESULT eDVBServiceRecord::prepare(const char *filename, time_t begTime, time_t e
 				fname += "eit";
 				if (eEPGCache::getInstance()->saveEventToFile(fname.c_str(), ref, eit_event_id, begTime, endTime))
 				{
-					/* event not yet in EPG cache (recording started before tuning); retry once new EIT data arrives */
-					eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), retrying on next EIT update", fname.c_str(), eit_event_id);
+					/* event not yet in EPG cache (recording started before tuning); retry once, 30s later */
+					eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), retrying in 30s", fname.c_str(), eit_event_id);
 					m_eitFilename = fname;
 					m_eitRef = ref;
 					m_eitEventId = eit_event_id;
 					m_eitBegTime = begTime;
 					m_eitEndTime = endTime;
+					m_eit_retry_timer->start(30000, true);
 				}
 			}
 		}
@@ -225,6 +228,7 @@ RESULT eDVBServiceRecord::start(bool simulate)
 
 RESULT eDVBServiceRecord::stop()
 {
+	m_eit_retry_timer->stop();
 	m_eitFilename.clear();
 
 	if (!m_simulate)
@@ -826,22 +830,20 @@ void eDVBServiceRecord::gotNewEvent(int /*error*/)
 
 	m_last_event_id = event_id;
 
-	if (!m_eitFilename.empty()) {
-		if (!eEPGCache::getInstance()->saveEventToFile(m_eitFilename.c_str(), m_eitRef, m_eitEventId, m_eitBegTime, m_eitEndTime))
-		{
-			eDebug("[eDVBServiceRecord] saveEventToFile succeeded for %s (event_id %04x)", m_eitFilename.c_str(), m_eitEventId);
-			m_eitFilename.clear();
-		}
-		else if (eDVBLocalTimeHandler::getInstance()->nowTime() >= m_eitEndTime)
-		{
-			eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), event has ended, giving up", m_eitFilename.c_str(), m_eitEventId);
-			m_eitFilename.clear();
-		}
-		else
-			eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), retrying on next EIT update", m_eitFilename.c_str(), m_eitEventId);
-	}
-
 	m_event((iRecordableService*)this, evNewEventInfo);
+}
+
+void eDVBServiceRecord::retryEitSave()
+{
+	if (m_eitFilename.empty())
+		return;
+
+	if (!eEPGCache::getInstance()->saveEventToFile(m_eitFilename.c_str(), m_eitRef, m_eitEventId, m_eitBegTime, m_eitEndTime))
+		eDebug("[eDVBServiceRecord] saveEventToFile succeeded for %s (event_id %04x)", m_eitFilename.c_str(), m_eitEventId);
+	else
+		eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), giving up", m_eitFilename.c_str(), m_eitEventId);
+
+	m_eitFilename.clear();
 }
 
 void eDVBServiceRecord::saveCutlist()
