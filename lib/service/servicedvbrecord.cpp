@@ -827,9 +827,18 @@ void eDVBServiceRecord::gotNewEvent(int /*error*/)
 	m_last_event_id = event_id;
 
 	if (!m_eitFilename.empty()) {
-		if (eEPGCache::getInstance()->saveEventToFile(m_eitFilename.c_str(), m_eitRef, m_eitEventId, m_eitBegTime, m_eitEndTime))
-			eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x)", m_eitFilename.c_str(), m_eitEventId);
-		m_eitFilename.clear();
+		if (!eEPGCache::getInstance()->saveEventToFile(m_eitFilename.c_str(), m_eitRef, m_eitEventId, m_eitBegTime, m_eitEndTime))
+		{
+			eDebug("[eDVBServiceRecord] saveEventToFile succeeded for %s (event_id %04x)", m_eitFilename.c_str(), m_eitEventId);
+			m_eitFilename.clear();
+		}
+		else if (eDVBLocalTimeHandler::getInstance()->nowTime() >= m_eitEndTime)
+		{
+			eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), event has ended, giving up", m_eitFilename.c_str(), m_eitEventId);
+			m_eitFilename.clear();
+		}
+		else
+			eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), retrying on next EIT update", m_eitFilename.c_str(), m_eitEventId);
 	}
 
 	m_event((iRecordableService*)this, evNewEventInfo);
