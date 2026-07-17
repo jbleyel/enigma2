@@ -3240,7 +3240,7 @@ int eServiceMP3::selectAudioStream(int i, bool skipAudioFix) {
 			g_signal_emit_by_name(m_gst_playbin, "get-audio-pad", i, &pad);
 			GstCaps* caps = gst_pad_get_current_caps(pad);
 			gst_object_unref(pad);
-			if (caps) {
+			if (caps && !gst_caps_is_empty(caps)) {
 				GstStructure* str = gst_caps_get_structure(caps, 0);
 				const gchar* g_type = gst_structure_get_name(str);
 				audiotype_t apidtype = gstCheckAudioPad(str);
@@ -3763,8 +3763,11 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 						continue;
 					GstCaps* caps = gst_pad_get_current_caps(pad);
 					gst_object_unref(pad);
-					if (!caps)
+					if (!caps || gst_caps_is_empty(caps)) {
+						if (caps)
+							gst_caps_unref(caps);
 						continue;
+					}
 					GstStructure* str = gst_caps_get_structure(caps, 0);
 					const gchar* g_type = gst_structure_get_name(str);
 					// eDebug("[eServiceMP3] AUDIO STRUCT=%s", g_type);
