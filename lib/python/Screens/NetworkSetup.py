@@ -478,14 +478,14 @@ class NetworkOverview(Screen):
 	}
 	INDEX_CONNECTION = 8
 
-	TEXT_KNOWN_NETWORKS = _("Known Wireless Networks")
+	TEXT_SAVED_NETWORKS = _("Saved Wireless Networks")
 
 	skin = """
 	<screen name="NetworkOverview" title="Network Overview" position="center,center" size="1220,660" resolution="1280,720">
-		<widget source="adaptersLabel" render="Label" position="10,8" size="400,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center" />
-		<widget source="adapterList" render="Listbox" position="10,42" size="1200,300" scrollbarMode="showOnDemand">
+		<widget source="adapterList" render="Listbox" position="10,8" size="1200,300" scrollbarMode="showOnDemand">
 			<template name="Default" fonts="enigma2icons;34,Regular;24,Regular;18,enigma2icons;20" itemHeight="60" colors="#0000CC00,#00CC0000,#00808080">
 				<rowtemplate>
+					<text index="AdapterName" position="14,0" size="470,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 					<text index="Mac" position="490,0" size="190,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 					<text index="IpAddress" position="690,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 					<text index="Gateway" position="840,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
@@ -504,8 +504,8 @@ class NetworkOverview(Screen):
 				</rowtemplate>
 			</template>
 		</widget>
-		<widget source="knownNetworksLabel" render="Label" position="10,340" size="700,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center" />
-		<widget source="knownNetworksList" render="Listbox" position="10,374" size="1200,160" scrollbarMode="showOnDemand">
+		<widget source="networksLabel" render="Label" position="10,340" size="700,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center" />
+		<widget source="networksList" render="Listbox" position="10,374" size="1200,160" scrollbarMode="showOnDemand">
 			<template name="Default" fonts="Regular;22,Regular;18" itemHeight="40" colors="#0000CC00,#00CC0000,#00808080">
 				<rowtemplate>
 					<text index="Ssid" position="20,0" size="280,40" font="0" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
@@ -550,18 +550,17 @@ class NetworkOverview(Screen):
 		Screen.__init__(self, session, enableHelp=True)
 		self.skinName = "AA"
 		self.setTitle(_("Network Overview"))
-		self["adaptersLabel"] = StaticText(_("Interfaces"))
-		self["knownNetworksLabel"] = StaticText(self.TEXT_KNOWN_NETWORKS)
+		self["networksLabel"] = StaticText(self.TEXT_SAVED_NETWORKS)
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText("")
 		self["key_yellow"] = StaticText("")
 		self["key_menu"] = StaticText(_("MENU"))
 		self["key_info"] = StaticText(_("INFO"))
 		self["adapterList"] = List([], indexNames=self.ADAPTER_INDEX_NAMES)
-		self["knownNetworksList"] = List([], indexNames=self.CONNECTION_INDEX_NAMES)
-		self.currentList = "adapterList"  # "adapterList" | "knownNetworksList" – which list up/down/OK/green/etc. act on
+		self["networksList"] = List([], indexNames=self.CONNECTION_INDEX_NAMES)
+		self.currentList = "adapterList"  # "adapterList" | "networksList" – which list up/down/OK/green/etc. act on
 		self["adapterList"].onSelectionChanged.append(self.updateConnections)
-		self["knownNetworksList"].onSelectionChanged.append(self.updateKeyGreen)
+		self["networksList"].onSelectionChanged.append(self.updateKeyGreen)
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions", "InfoActions", "NavigationActions"], {
 			"ok": (self.keyOK, _("Open settings for the selected item")),
 			"cancel": (self.close, _("Close network overview")),
@@ -592,17 +591,17 @@ class NetworkOverview(Screen):
 			gatewayChanged = oldGateways != newGateways
 			if not gatewayChanged:
 				adapterIndex = self["adapterList"].getCurrentIndex() if self["adapterList"].count() else -1
-				networkIndex = self["knownNetworksList"].getCurrentIndex() if self["knownNetworksList"].count() else -1
+				networkIndex = self["networksList"].getCurrentIndex() if self["networksList"].count() else -1
 				self.buildAdapters()
 				try:
 					if adapterIndex != -1:
 						self["adapterList"].setCurrentIndex(adapterIndex)
 				except Exception:
 					pass
-				if self.currentList == self["knownNetworksList"]:
+				if self.currentList == self["networksList"]:
 					try:
 						if networkIndex != -1:
-							self["knownNetworksList"].setCurrentIndex(networkIndex)
+							self["networksList"].setCurrentIndex(networkIndex)
 					except Exception:
 						pass
 			else:
@@ -612,17 +611,17 @@ class NetworkOverview(Screen):
 	def layoutFinished(self):
 		self["adapterList"].enableAutoNavigation(False)
 		self["adapterList"].setLockFirstRow(True)
-		self["knownNetworksList"].enableAutoNavigation(False)
-		self["knownNetworksList"].setLockFirstRow(True)
+		self["networksList"].enableAutoNavigation(False)
+		self["networksList"].setLockFirstRow(True)
 		self.markHeaderNotSelectable("adapterList")
-		self.markHeaderNotSelectable("knownNetworksList")
+		self.markHeaderNotSelectable("networksList")
 		self.buildAdapters()
 		self.setListFocus("adapterList")
 
 	def setListFocus(self, sourceName: str):
 		self.currentList = sourceName
 		self["adapterList"].selectionEnabled(sourceName == "adapterList")
-		self["knownNetworksList"].selectionEnabled(sourceName == "knownNetworksList")
+		self["networksList"].selectionEnabled(sourceName == "networksList")
 		self.updateKeyGreen()
 
 	def checkInternet(self):
@@ -634,12 +633,12 @@ class NetworkOverview(Screen):
 			networkManager.checkConnectionInternet(callback=checkInternetCallback)
 
 	def keyLeft(self):
-		if self.currentList == "knownNetworksList":
+		if self.currentList == "networksList":
 			self.setListFocus("adapterList")
 
 	def keyRight(self):
-		if self.currentList == "adapterList" and self["knownNetworksList"].count():
-			self.setListFocus("knownNetworksList")
+		if self.currentList == "adapterList" and self["networksList"].count():
+			self.setListFocus("networksList")
 
 	def keyUp(self):
 		self[self.currentList].goLineUp()
@@ -652,8 +651,8 @@ class NetworkOverview(Screen):
 		return entry[self.INDEX_ADAPTER] if entry is not None else None
 
 	def currentConnection(self) -> Connection | None:
-		if self.currentList == "knownNetworksList":
-			entry = self["knownNetworksList"].getCurrent()
+		if self.currentList == "networksList":
+			entry = self["networksList"].getCurrent()
 			return entry[self.INDEX_CONNECTION] if entry is not None else None
 		else:
 			return None
@@ -663,7 +662,7 @@ class NetworkOverview(Screen):
 		as OVERVIEW_COLOR_GOOD/BAD/IDLE), falling back to those class defaults
 		if the skin doesn't set one. additionalTemplateAttributes is populated
 		by XmlMultiContent from any template attribute it doesn't itself know
-		about (see its _KNOWN_TEMPLATE_ATTRS)."""
+		about."""
 		colors = self[sourceName].additionalTemplateAttributes.get("colors")
 		if not colors:
 			return self.OVERVIEW_COLOR_GOOD, self.OVERVIEW_COLOR_BAD, self.OVERVIEW_COLOR_IDLE
@@ -687,13 +686,13 @@ class NetworkOverview(Screen):
 		good, bad, idle = self.overviewColors("adapterList")
 
 		def buildOverviewAdapterHeaderRow() -> tuple:
-			"""First row of the adapter listbox, rendered via <rowtemplate> #0 – column
-			titles for the Mac/IpAddress/Gateway/Speed columns only, not selectable
-			(see isOverviewRowSelectable)."""
+			"""First row of the adapter listbox, rendered via <rowtemplate> #0 – the
+			"Interfaces" section title (via AdapterName) plus column titles for the
+			Mac/IpAddress/Gateway/Speed columns, not selectable (see isOverviewRowSelectable)."""
 			return (
 				self.OVERVIEW_TEMPLATE_HEADER,
 				None,                # AdapterGlyph
-				None,                # AdapterName
+				_("Adapters"),       # AdapterName
 				None,                # AdapterKind
 				None,                # StatusText
 				None,                # StatusColor
@@ -781,7 +780,7 @@ class NetworkOverview(Screen):
 		return [conn for conn in networkManager.getConnections(adapter.name) if conn.wlan and conn.wlan.ssid]
 
 	def updateConnections(self):
-		good, _bad, idle = self.overviewColors("knownNetworksList")
+		good, _bad, idle = self.overviewColors("networksList")
 
 		def buildOverviewConnectionHeaderRow() -> tuple:
 			"""First row of the connection listbox, rendered via <rowtemplate> #0 – column
@@ -813,7 +812,7 @@ class NetworkOverview(Screen):
 				# Configured as the active connection, just not associated right now
 				# (e.g. the adapter itself is off) – distinct from a genuinely
 				# disabled connection, which toggleAdapter() must never touch.
-				statusText, statusColor = _("Saved"), idle
+				statusText, statusColor = _("Not Connected"), idle
 			else:
 				statusText, statusColor = _("Disabled"), idle
 			return (
@@ -830,19 +829,19 @@ class NetworkOverview(Screen):
 
 		adapter = self.currentAdapter()
 		if adapter is None or not adapter.isWlan:
-			self["knownNetworksList"].setList([])
-			self["knownNetworksLabel"].setText(self.TEXT_KNOWN_NETWORKS)
+			self["networksList"].setList([])
+			self["networksLabel"].setText(self.TEXT_SAVED_NETWORKS)
 		else:
 			connections = self.overviewWlanConnections(adapter)
 			rows = [buildOverviewConnectionRow(conn, adapter) for conn in connections]
 			hasRows = bool(rows)
 			if hasRows:
 				rows.insert(0, buildOverviewConnectionHeaderRow())
-			self["knownNetworksList"].setList(rows)
+			self["networksList"].setList(rows)
 			if hasRows:
-				self["knownNetworksList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
-			self["knownNetworksLabel"].setText(f"{self.TEXT_KNOWN_NETWORKS} · {adapter.name} · {len(connections)}")
-		if self.currentList == "knownNetworksList" and not self["knownNetworksList"].count():
+				self["networksList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
+			self["networksLabel"].setText(f"{self.TEXT_SAVED_NETWORKS} · {adapter.name} · {len(connections)}")
+		if self.currentList == "networksList" and not self["networksList"].count():
 			self.setListFocus("adapterList")
 		else:
 			self.updateKeyGreen()
@@ -981,11 +980,11 @@ class NetworkOverview(Screen):
 		else:
 			menu = [
 				(_("Settings"), "setup"),
-				(_("Disable connection") if conn.enabled else _("Enable connection"), "toggle"),
+				(_("Disable network") if conn.enabled else _("Enable network"), "toggle"),
 				(_("Network test"), "test"),
-				(_("Delete network connection"), "delete"),
+				(_("Delete network"), "delete"),
 			]
-			title = _("Network connection: %s") % self.connLabel(conn, adapter)
+			title = _("Network: %s") % self.connLabel(conn, adapter)
 		if adapter.isWlan:
 			menu.append((_("Scan for Wi-Fi networks"), "scan"))
 			menu.append((_("Add Wi-Fi manually"), "addManual"))

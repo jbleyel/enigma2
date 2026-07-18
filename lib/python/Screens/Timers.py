@@ -1554,7 +1554,7 @@ class RecordTimerEdit(Setup):
 		self.timerPrecondition = ConfigSelection(default=self.timer.precondition, choices=[
 			(0, _("Always")),
 			(1, _("Running only")),
-			(2, _("Standby only")),
+			(2, _("(Deep) Standby only")),
 		])
 		self.timerFallback = ConfigYesNo(default=self.timer.external_prev)
 		for callback in onRecordTimerCreate:

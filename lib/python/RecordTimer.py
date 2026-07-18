@@ -446,7 +446,7 @@ class RecordTimer(Timer):
 				continue
 			if forWakeup and timer.precondition == 1:  # Running only: don't wake from deep standby.
 				continue
-			if not forWakeup and timer.precondition == 2:  # Standby only: don't prevent going to standby.
+			if not forWakeup and timer.precondition == 2:  # (Deep) Standby only: don't prevent going to standby.
 				continue
 			return timer.begin
 		return -1
