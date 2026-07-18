@@ -178,19 +178,23 @@ std::string fontRenderClass::AddFont(const std::string &filename, const std::str
 	return n->face;
 }
 
-void clearFonts()
+void fontRenderClass::ClearFonts()
 {
-	fontRenderClass *instance = fontRenderClass::getInstance();
 	singleLock s(ftlock);
-	for (auto &entry : instance->fontMap)
+	for (auto &entry : fontMap)
 	{
-		FTC_Manager_RemoveFaceID(instance->cacheManager, (FTC_FaceID)entry.second);
+		FTC_Manager_RemoveFaceID(cacheManager, (FTC_FaceID)entry.second);
 		delete entry.second;
 	}
-	instance->fontMap.clear();
-	instance->fontFacesCacheValid = false;
+	fontMap.clear();
+	fontFacesCacheValid = false;
 	eTextPara::setReplacementFont("");
 	eTextPara::setFallbackFont("");
+}
+
+void clearFonts()
+{
+	fontRenderClass::getInstance()->ClearFonts();
 }
 
 fontRenderClass::fontListEntry::~fontListEntry() = default;
