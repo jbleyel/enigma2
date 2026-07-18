@@ -504,7 +504,9 @@ class NetworkOverview(Screen):
 				</rowtemplate>
 			</template>
 		</widget>
-		<widget source="networksLabel" render="Label" position="10,340" size="700,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center" />
+		<widget source="networksLabel" render="Label" position="10,340" size="700,30" font="Regular;20" foregroundColor="grey" transparent="1" halign="left" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
 		<widget source="networksList" render="Listbox" position="10,374" size="1200,160" scrollbarMode="showOnDemand">
 			<template name="Default" fonts="Regular;22,Regular;18" itemHeight="40" colors="#0000CC00,#00CC0000,#00808080">
 				<rowtemplate>
@@ -550,7 +552,7 @@ class NetworkOverview(Screen):
 		Screen.__init__(self, session, enableHelp=True)
 		self.skinName = "AA"
 		self.setTitle(_("Network Overview"))
-		self["networksLabel"] = StaticText(self.TEXT_SAVED_NETWORKS)
+		self["networksLabel"] = StaticText("")  # shown via ConditionalShowHide once updateConnections() picks a WLAN adapter
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText("")
 		self["key_yellow"] = StaticText("")
@@ -598,7 +600,7 @@ class NetworkOverview(Screen):
 						self["adapterList"].setCurrentIndex(adapterIndex)
 				except Exception:
 					pass
-				if self.currentList == self["networksList"]:
+				if self.currentList == "networksList":
 					try:
 						if networkIndex != -1:
 							self["networksList"].setCurrentIndex(networkIndex)
@@ -830,7 +832,7 @@ class NetworkOverview(Screen):
 		adapter = self.currentAdapter()
 		if adapter is None or not adapter.isWlan:
 			self["networksList"].setList([])
-			self["networksLabel"].setText(self.TEXT_SAVED_NETWORKS)
+			self["networksLabel"].setText("")  # hidden via ConditionalShowHide – only relevant for a WLAN adapter
 		else:
 			connections = self.overviewWlanConnections(adapter)
 			rows = [buildOverviewConnectionRow(conn, adapter) for conn in connections]
@@ -1020,7 +1022,7 @@ class NetworkOverview(Screen):
 		networkManager.save()
 
 		def done():
-			self.buildAdapters()
+			self.refreshAdapters()
 			self.session.showInfo(_("Network adapter enabled") if adapter.adapterEnabled else _("Network adapter disabled"))
 		applyAdapterChange(adapter.name, CHANGE_ADAPTER_ENABLED, done)
 
@@ -1040,9 +1042,9 @@ class NetworkOverview(Screen):
 		networkManager.save()
 
 		def done():
-			self.buildAdapters()
+			self.refreshAdapters()
 			if adapter.isWlan and conn.enabled:
-				self.session.openWithCallback(lambda *_: self.buildAdapters(), NetworkWiFiActivator, conn, adapter)
+				self.session.openWithCallback(lambda *_: self.refreshAdapters(), NetworkWiFiActivator, conn, adapter)
 			else:
 				self.session.showInfo(_("Network connection enabled") if conn.enabled else _("Network connection disabled"))
 		if adapter.isWlan:
@@ -1057,8 +1059,8 @@ class NetworkOverview(Screen):
 			other.enabled = (other is conn)
 		adapter.adapterEnabled = True
 		networkManager.save()
-		self.buildAdapters()
-		self.session.openWithCallback(lambda *_: self.buildAdapters(), NetworkWiFiActivator, conn, adapter)
+		self.refreshAdapters()
+		self.session.openWithCallback(lambda *_: self.refreshAdapters(), NetworkWiFiActivator, conn, adapter)
 
 
 # ===========================================================================
@@ -1650,8 +1652,8 @@ class NetworkWiFiActivator(Screen):
 	attempt fails or times out."""
 
 	skin = """
-	<screen name="NetworkWiFiActivator" title="Connecting…" position="center,center" size="500,180" resolution="1280,720">
-		<widget name="status" position="10,10" size="480,160" font="Regular;22" halign="center" valign="center" />
+	<screen name="NetworkWiFiActivator" title="Connecting…" position="center,center" size="500,190" resolution="1280,720">
+		<widget name="status" position="10,10" size="480,170" font="Regular;22" halign="center" valign="center" />
 	</screen>"""
 
 	_pollIntervalMs = 1500
@@ -1661,21 +1663,30 @@ class NetworkWiFiActivator(Screen):
 		Screen.__init__(self, session)
 		self.conn = conn
 		self.adapter = adapter
+		self.ssid = conn.wlan.ssid if conn.wlan else adapter.name
 		self.serviceAction = None
 		self.pollTimer = None
 		self.closeTimer = None
 		self.pollCount = 0
-		self["status"] = Label(_("Connecting…"))
+		self.setTitle(_("Connecting – %s") % adapter.name)
+		self["status"] = Label()
+		self.setStatus(_("Connecting…"))
 		self.onLayoutFinish.append(self.start)
+
+	# All status updates go through here so every message stays anchored to
+	# which connection (SSID) and adapter it's actually about – there's only
+	# ever the one "status" label in this screen.
+	def setStatus(self, text: str):
+		self["status"].setText(_("%s  (%s)\n\n%s") % (self.ssid, self.adapter.name, text))
 
 	def start(self):
 		def connectedCb(retval: int):
 			if retval != 0:
-				self["status"].setText(self.diagnoseFailure())
+				self.setStatus(self.diagnoseFailure())
 				self.scheduleClose(6000, "")
 				return
 			self.pollCount = 0
-			self["status"].setText(_("Waiting for IP address…"))
+			self.setStatus(_("Waiting for IP address…"))
 			self.pollTimer = eTimer()
 			self.pollTimer.callback.append(self.checkIp)
 			self.pollTimer.start(self._pollIntervalMs, True)
@@ -1688,7 +1699,7 @@ class NetworkWiFiActivator(Screen):
 		# it must happen there, before adapter.adapterEnabled gets flipped to
 		# True, or the "was it already enabled" check is meaningless by the
 		# time this screen opens.
-		self["status"].setText(_("Connecting…"))
+		self.setStatus(_("Connecting…"))
 		self.serviceAction = ServiceAction.wlanActivate(self.adapter.name, connectedCb)
 
 	def checkIp(self):
@@ -1697,12 +1708,11 @@ class NetworkWiFiActivator(Screen):
 		ip = self.getKernelIp(iface)
 		if ip and ip not in ("0.0.0.0", ""):
 			self.pollTimer.stop()
-			ssid = self.conn.wlan.ssid if self.conn.wlan else iface
-			self["status"].setText(_("Connected to '%s'\nIP: %s") % (ssid, ip))
+			self.setStatus(_("Connected.\nIP: %s") % ip)
 			self.scheduleClose(2500, ip)
 		elif self.pollCount >= self._pollMaxAttempts:
 			self.pollTimer.stop()
-			self["status"].setText(self.diagnoseFailure())
+			self.setStatus(self.diagnoseFailure())
 			self.scheduleClose(6000, "")
 		else:
 			self.pollTimer.start(self._pollIntervalMs, True)
@@ -1711,21 +1721,21 @@ class NetworkWiFiActivator(Screen):
 		"""Best-effort explanation of *why* the connection attempt failed, based on
 		wpa_supplicant's association state (wpa_cli status) – distinguishes a
 		missing/unreachable AP, a wrong key, and DHCP-only failures instead of a
-		single generic "failed" message."""
+		single generic "failed" message. The SSID/adapter is already shown by
+		setStatus()'s header, so these messages don't repeat it."""
 		iface = self.adapter.name
-		ssid = self.conn.wlan.ssid if self.conn.wlan else iface
 		if not networkManager.wpaSupplicantRunning(iface):
-			reason = _("Could not connect to '%s'.\nWi-Fi driver (wpa_supplicant) did not start – check your Wi-Fi settings.") % ssid
+			reason = _("Could not connect.\nWi-Fi driver (wpa_supplicant) did not start – check your Wi-Fi settings.")
 		else:
 			state = networkManager.getWlanStatus(iface).get("wpa_state", "")
 			if state == "COMPLETED":
-				reason = _("Connected to '%s', but no IP address was received.\nCheck your router's DHCP settings.") % ssid
+				reason = _("Connected, but no IP address was received.\nCheck your router's DHCP settings.")
 			elif state in ("4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
-				reason = _("Could not connect to '%s'.\nWrong Wi-Fi password?") % ssid
+				reason = _("Could not connect.\nWrong Wi-Fi password?")
 			elif state in ("SCANNING", "DISCONNECTED", "INACTIVE", ""):
-				reason = _("Access point '%s' not found.\nCheck that it is in range and the SSID is correct.") % ssid
+				reason = _("Access point not found.\nCheck that it is in range and the SSID is correct.")
 			else:
-				reason = _("Could not connect to '%s' (status: %s).") % (ssid, state)
+				reason = _("Could not connect (status: %s).") % state
 		return reason + "\n" + _("Configuration saved – will retry automatically at next boot.")
 
 	@staticmethod
