@@ -112,6 +112,7 @@ class WiFiConfig:
 	key: str = ""
 	wepKeyType: str = "ASCII"    # "ASCII" | "HEX"
 	wpaId: int | None = None
+	priority: int = 0       # wpa_supplicant priority= (higher = preferred), synced from Connection.priority on save
 	disabled: bool = False  # wpa_supplicant disabled=1
 	# Background scan – enables auto-roaming between known networks.
 	# Format: "simple:<shortInterval>:<signalThreshold>:<longInterval>"
@@ -561,8 +562,8 @@ class WpaSupplicantFile:
 		lines: list[str] = list(header)
 		if lines and lines[-1].strip():
 			lines.append("")
-		for idx, wlan in enumerate(configs):
-			lines.extend(wlanConfigToWpaBlock(wlan, idx))
+		for wlan in configs:
+			lines.extend(wlanConfigToWpaBlock(wlan))
 			lines.append("")
 		return lines
 
@@ -587,6 +588,11 @@ def wpaDictToWlanConfig(fields: dict[str, str], blockId: int) -> WiFiConfig:
 	else:
 		enc = encNone
 
+	try:
+		priority = int(fields.get("priority", "0"))
+	except ValueError:
+		priority = 0
+
 	return WiFiConfig(
 		ssid=fields.get("ssid", ""),
 		hidden=fields.get("scan_ssid", "0") == "1",
@@ -594,16 +600,17 @@ def wpaDictToWlanConfig(fields: dict[str, str], blockId: int) -> WiFiConfig:
 		key=fields.get("psk", fields.get("wep_key0", "")),
 		bgscan=fields.get("bgscan", "simple:30:-70:3600"),
 		wpaId=blockId,
+		priority=priority,
 		disabled=fields.get("disabled", "0") == "1",
 	)
 
 
-def wlanConfigToWpaBlock(wlan: WiFiConfig, blockId: int) -> list[str]:
+def wlanConfigToWpaBlock(wlan: WiFiConfig) -> list[str]:
 	lines = ["network={"]
 	lines.append(f'\tssid="{wlan.ssid}"')
 	if wlan.hidden:
 		lines.append("\tscan_ssid=1")
-	lines.append(f"\tpriority={blockId}")
+	lines.append(f"\tpriority={wlan.priority}")
 	if wlan.bgscan:
 		lines.append(f'\tbgscan="{wlan.bgscan}"')
 
@@ -1112,13 +1119,14 @@ class NetworkManager:
 			conn = bySsid[wlan.ssid]
 			conn.wlan = wlan
 			conn.enabled = not wlan.disabled
+			conn.priority = wlan.priority
 		else:
 			conns.append(Connection(
 				adapter=iface,
 				name=wlan.ssid,
 				dhcp=True,
 				enabled=not wlan.disabled,
-				priority=wlan.wpaId or 0,
+				priority=wlan.priority,
 				wlan=wlan,
 			))
 
@@ -1133,7 +1141,7 @@ class NetworkManager:
 	# profile never triggers an adapter-level ifup/ifdown/restart – that only
 	# happens through NetworkAdapterSetup/applyAdapterChange(), which call the
 	# full save() below instead.
-	def saveWifiProfiles(self, onlyIface: str | None = None) -> bool:
+	def saveWpaSupplicant(self, onlyIface: str | None = None) -> bool:
 		ok = True
 		ifaces = [onlyIface] if onlyIface else list(self.adapters.keys())
 		for iface in ifaces:
@@ -1144,14 +1152,27 @@ class NetworkManager:
 			for conn in conns:
 				if conn.wlan is not None and conn.wlan.ssid:
 					conn.wlan.disabled = not conn.enabled
+					conn.wlan.priority = conn.priority
 			wlanConfigs = [x.wlan for x in conns if x.wlan is not None and x.wlan.ssid]
 			if not wlanConfigs:
 				continue
-			self.log(f"saveWifiProfiles(): {iface} writing {len(wlanConfigs)} wlan profile(s): " + ", ".join(f"{w.ssid!r}(disabled={w.disabled})" for w in wlanConfigs))
+			self.log(f"saveWpaSupplicant(): {iface} writing {len(wlanConfigs)} wlan profile(s): " + ", ".join(f"{w.ssid!r}(disabled={w.disabled})" for w in wlanConfigs))
 			wpf = WpaSupplicantFile(iface)
 			wpf.ensureDir()
 			ok = wpf.save(wlanConfigs) and ok
+			self.reconfigureWifi(iface)
 		return ok
+
+	# Tell an already-running wpa_supplicant to re-read wpa_supplicant.conf –
+	# without this, a priority reorder or disabling a profile via
+	# saveWpaSupplicant() only takes effect after the next restart, since
+	# wpa_supplicant never re-reads its config file on its own. A no-op if
+	# wpa_supplicant isn't running for iface yet (nothing live to update).
+	def reconfigureWifi(self, iface: str) -> None:
+		if not self.wpaSupplicantRunning(iface):
+			return
+		self.log(f"reconfigureWifi(): {iface}")
+		Console().ePopen(f"{wpaCliBin} -i{iface} reconfigure 2>/dev/null; true")
 
 	def save(self) -> bool:
 		# ===========================================================================
@@ -1220,7 +1241,7 @@ class NetworkManager:
 		adapterEnabledMap = {iface: adapter.adapterEnabled for iface, adapter in self.adapters.items()}
 		self.log(f"save(): adapterEnabledMap={adapterEnabledMap}")
 		ok = self.ifacesFile.save(connMap, adapterEnabledMap) and ok
-		ok = self.saveWifiProfiles() and ok
+		ok = self.saveWpaSupplicant() and ok
 
 		anyDhcp = any(conn.dhcp for conns in connMap.values() for conn in conns if conn.enabled)
 		self.nsFiles.save(self.nameserverConfig, anyDhcp)

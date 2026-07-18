@@ -49,7 +49,7 @@ from skin import parseColor
 from Tools.Conversions import formatNetworkSpeed
 from Tools.Directories import SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 from Tools.ServiceAction import ServiceAction
-from Components.NetworkManager import Adapter, Connection, VpnInfo, WiFiConfig, networkManager, encNone, encWep, encWpa, encWpa2, encWpa3, encryptionLabels, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_GENERAL
+from Components.NetworkManager import Adapter, Connection, VpnInfo, WiFiConfig, networkManager, encNone, encWep, encWpa, encWpa2, encWpa3, encryptionLabels, wpaCliBin, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_GENERAL
 
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -981,9 +981,14 @@ class NetworkOverview(Screen):
 			menu = [
 				(_("Settings"), "setup"),
 				(_("Disable network") if conn.enabled else _("Enable network"), "toggle"),
-				(_("Network test"), "test"),
-				(_("Delete network"), "delete"),
 			]
+			if not adapter.isWlan or conn.enabled:
+				# A WLAN row's "Network test" would otherwise test whatever SSID is
+				# actually associated right now (NetworkTest only ever looks at the
+				# adapter's live state, not this specific conn) – misleading for a
+				# saved-but-inactive profile, so only offer it for the active one.
+				menu.append((_("Network test"), "test"))
+			menu.append((_("Delete network"), "delete"))
 			title = _("Network: %s") % self.connLabel(conn, adapter)
 		if adapter.isWlan:
 			menu.append((_("Scan for Wi-Fi networks"), "scan"))
@@ -1305,7 +1310,7 @@ class NetworkConnectionWiFi(Setup):
 			adapter.adapterEnabled = True
 		# Only wpa_supplicant.conf, never /etc/network/interfaces – saving one
 		# SSID profile must not trigger an adapter-level ifup/ifdown/restart.
-		networkManager.saveWifiProfiles(adapter.name)
+		networkManager.saveWpaSupplicant(adapter.name)
 		if not wasEnabled and adapter.adapterEnabled:
 			# The adapter itself was off before this save – its stanza in
 			# interfaces is still fully commented out (or missing the pre-up/
@@ -1470,50 +1475,67 @@ class NetworkWiFiScanScreen(Screen):
 		self.close(None)
 
 	def keyStartScan(self):
-		def startScanCallback(results: str, retVal: int, extraArgs=None):
-			def scanCompleteCallback(results: str, retVal: int, extraArgs=None):
-				self.scanning = False
-				if isinstance(results, bytes):
-					results = results.decode("UTF-8", errors="replace")
-				for accessPoint in self.parseIwlist(results):
-					self.accessPoints[accessPoint.bssid] = accessPoint
-				if self.accessPoints:
-					accessPointList = []
-					for accessPoint in sorted(self.accessPoints.values(), key=lambda ap: -ap.signalPct):
-						accessPointList.append((
-							f"{accessPoint.ssid}  ({accessPoint.bssid})",  # Name.
-							accessPoint.ssid,  # SSID.
-							accessPoint.bssid,  # BSSID.
-							self.STRENGTH_GLYPHS[min(accessPoint.signalBars, 4)],  # Glyph.
-							f"{accessPoint.signalPct}%  ({accessPoint.signalDbm} dBm)",  # Strength.
-							f"{accessPoint.signalPct}%",  # Percent.
-							f"{accessPoint.signalDbm} dBm",  # dBM.
-							accessPoint.encLabel,  # Encryption.
-							f"Ch-{accessPoint.channel}  ({accessPoint.frequency})",  # ChannelFrequency.
-							f"Ch-{accessPoint.channel}",  # Channel.
-							accessPoint.frequency,  # Frequency.
-							accessPoint  # AccessPoint data record.
-						))
-					self["list"].setList(accessPointList)
-					count = len(self.accessPoints)
-					self["description"].setText(ngettext("%d network found.", "%d networks found.", count) % count)
-				else:
-					self["list"].setList([])
-					self["description"].setText(_("No networks found."))
-
-			self.console.ePopen(("/sbin/iwlist", "/sbin/iwlist", self.adapter, "scanning"), callback=scanCompleteCallback)
-
-		def ifUpCallback(results: str, retVal: int, extraArgs=None):
-			if self.adapterObj.isBroadcomWl:
-				self.console.ePopen(("/usr/bin/wl", "/usr/bin/wl", "up"), callback=startScanCallback)
+		def finishScan(results, parser):
+			self.scanning = False
+			if isinstance(results, bytes):
+				results = results.decode("UTF-8", errors="replace")
+			for accessPoint in parser(results or ""):
+				self.accessPoints[accessPoint.bssid] = accessPoint
+			if self.accessPoints:
+				accessPointList = []
+				for accessPoint in sorted(self.accessPoints.values(), key=lambda ap: -ap.signalPct):
+					accessPointList.append((
+						f"{accessPoint.ssid}  ({accessPoint.bssid})",  # Name.
+						accessPoint.ssid,  # SSID.
+						accessPoint.bssid,  # BSSID.
+						self.STRENGTH_GLYPHS[min(accessPoint.signalBars, 4)],  # Glyph.
+						f"{accessPoint.signalPct}%  ({accessPoint.signalDbm} dBm)",  # Strength.
+						f"{accessPoint.signalPct}%",  # Percent.
+						f"{accessPoint.signalDbm} dBm",  # dBM.
+						accessPoint.encLabel,  # Encryption.
+						f"Ch-{accessPoint.channel}  ({accessPoint.frequency})",  # ChannelFrequency.
+						f"Ch-{accessPoint.channel}",  # Channel.
+						accessPoint.frequency,  # Frequency.
+						accessPoint  # AccessPoint data record.
+					))
+				self["list"].setList(accessPointList)
+				count = len(self.accessPoints)
+				self["description"].setText(ngettext("%d network found.", "%d networks found.", count) % count)
 			else:
-				startScanCallback(None, 0)
+				self["list"].setList([])
+				self["description"].setText(_("No networks found."))
+
+		def scanViaIwlist(results=None, retVal=0, extraArgs=None):
+			self.console.ePopen(("/sbin/iwlist", "/sbin/iwlist", self.adapter, "scanning"), callback=lambda r, rv, ea=None: finishScan(r, self.parseIwlist))
+
+		def scanViaWpaCli():
+			# wpa_supplicant already owns the radio for this iface (it's associated
+			# to a network) – a concurrent "iwlist scanning" ioctl typically fails
+			# with "Device or resource busy" on nl80211 drivers in that state, so
+			# route the scan through wpa_supplicant's own control interface instead.
+			def scanResultsCallback(results, retVal, extraArgs=None):
+				finishScan(results, self.parseWpaCliScanResults)
+
+			def triggerScanCallback(results=None, retVal=0, extraArgs=None):
+				self.scanTimer = eTimer()
+				self.scanTimer.callback.append(lambda: self.console.ePopen((wpaCliBin, wpaCliBin, "-i", self.adapter, "scan_results"), callback=scanResultsCallback))
+				self.scanTimer.start(3000, True)
+
+			self.console.ePopen((wpaCliBin, wpaCliBin, "-i", self.adapter, "scan"), callback=triggerScanCallback)
+
+		def ifUpCallback(results=None, retVal=0, extraArgs=None):
+			if networkManager.wpaSupplicantRunning(self.adapter):
+				scanViaWpaCli()
+			elif self.adapterObj.isBroadcomWl:
+				self.console.ePopen(("/usr/bin/wl", "/usr/bin/wl", "up"), callback=scanViaIwlist)
+			else:
+				scanViaIwlist()
 
 		if not self.scanning:
 			self.scanning = True
 			self["description"].setText(_("Scanning…"))
 			if self.adapterObj.netInfo.up:
-				ifUpCallback(None, 0)
+				ifUpCallback()
 			else:
 				self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=ifUpCallback)
 
@@ -1568,6 +1590,54 @@ class NetworkWiFiScanScreen(Screen):
 				current.encryption = encNone
 
 		return sorted((x for x in results if x.ssid), key=lambda x: -x.signalPct)
+
+	@staticmethod
+	def channelFromFreq(freqMhz: int) -> int:
+		if freqMhz == 2484:
+			return 14
+		if 2412 <= freqMhz <= 2472:
+			return (freqMhz - 2407) // 5
+		if 5000 <= freqMhz <= 5900:
+			return (freqMhz - 5000) // 5
+		return 0
+
+	# "wpa_cli scan_results" output: one tab-separated line per AP –
+	# "bssid / frequency / signal level / flags / ssid" (no quality/percent,
+	# unlike iwlist – signalDbm is converted to a percentage below).
+	def parseWpaCliScanResults(self, raw: str) -> list[ScanResult]:
+		results: list[ScanResult] = []
+		reBssid = re.compile(r"^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$")
+		for line in raw.splitlines():
+			fields = line.strip().split("\t")
+			if len(fields) < 5 or not reBssid.match(fields[0]):
+				continue
+			bssid, freqStr, signalStr, flags, ssid = fields[0], fields[1], fields[2], fields[3], fields[4]
+			if not ssid:
+				continue
+			try:
+				freqMhz = int(freqStr)
+				signalDbm = int(signalStr)
+			except ValueError:
+				continue
+			if "WPA2" in flags or "RSN" in flags:
+				encryption = encWpa2
+			elif "WPA" in flags:
+				encryption = encWpa
+			elif "WEP" in flags:
+				encryption = encWep
+			else:
+				encryption = encNone
+			results.append(ScanResult(
+				ssid=ssid,
+				bssid=bssid,
+				frequency=f"{freqMhz / 1000:.3f} GHz",
+				channel=self.channelFromFreq(freqMhz),
+				signalDbm=signalDbm,
+				signalPct=max(0, min(100, 2 * (signalDbm + 100))),
+				encryption=encryption,
+				encDetails=flags,
+			))
+		return sorted(results, key=lambda x: -x.signalPct)
 
 
 # ===========================================================================
@@ -1724,7 +1794,7 @@ class NetworkWiFiAddFlow:
 					conns = networkManager.getConnections(adapter.name)
 					if not any(x.wlan and x.wlan.ssid == (conn.wlan.ssid if conn.wlan else "") for x in conns):
 						conns.append(conn)
-						networkManager.saveWifiProfiles(adapter.name)
+						networkManager.saveWpaSupplicant(adapter.name)
 				if callback:
 					callback(ip)
 			session.openWithCallback(setupDone, NetworkConnectionWiFi, conn, adapter)
