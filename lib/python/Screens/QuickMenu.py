@@ -73,13 +73,25 @@ class QuickMenu(Screen, ProtectedScreen):
 		Screen.__init__(self, session, enableHelp=True, mandatoryWidgets=["mainlist"])
 		ProtectedScreen.__init__(self)
 		self.setTitle(_("Quick Launch Menu"))
-		self["key_red"] = StaticText(_("Exit"))
+		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("System Info"))
 		self["key_yellow"] = StaticText(_("Devices"))
 		self["description"] = Label()
 		self["summary_description"] = StaticText("")
-		self["mainlist"] = List()
-		self["sublist"] = List()
+		indexNames = {
+			"Name": 0,
+			"Summary": 1,
+			"Image": 2,
+			"Index": 3,
+			"Description": 4
+		}
+		self["mainlist"] = List([], indexNames=indexNames)
+		indexNames = {
+			"Name": 0,
+			"Summary": 1,
+			"Description": 2
+		}
+		self["sublist"] = List([], indexNames=indexNames)
 		self["mainlist"].onSelectionChanged.append(self.selectionMainChanged)
 		self["sublist"].onSelectionChanged.append(self.selectionSubChanged)
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "NavigationActions", "ColorActions"], {
@@ -147,10 +159,10 @@ class QuickMenu(Screen, ProtectedScreen):
 			self.keyRight()
 
 	def keyDistributionInformation(self):
-		self.openScreen("Information", screenName="DistributionInformation")
+		self.openScreen("Information", screenName="InformationDistribution")
 
 	def keyStorageInformation(self):
-		self.openScreen("Information", screenName="StorageInformation")
+		self.openScreen("Information", screenName="InformationStorage")
 
 	def keyTop(self):
 		self.selectedList.goTop()
@@ -197,7 +209,7 @@ class QuickMenu(Screen, ProtectedScreen):
 			icon = LoadPixmap(resolveFilename(SCOPE_SKIN, f"icons/{pngname}.png"))
 			if icon is None:
 				icon = LoadPixmap(resolveFilename(SCOPE_SKIN, "icons/default.png"))
-			return (name, description, icon, itemIndex, longDescription)
+			return (name, description, icon, str(itemIndex), longDescription)
 
 		self.menu = 0
 		self.mainList = []
@@ -214,7 +226,7 @@ class QuickMenu(Screen, ProtectedScreen):
 		self["mainlist"].setList([(x[0], x[1], x[2]) for x in self.mainList])
 
 	def selectMainItem(self):
-		match self.mainList[self["mainlist"].getCurrentIndex()][3]:
+		match int(self.mainList[self["mainlist"].getCurrentIndex()][3]):
 			case 0:
 				self.subMenuSoftware()
 			case 1:

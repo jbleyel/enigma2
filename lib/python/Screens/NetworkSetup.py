@@ -430,10 +430,10 @@ class NetworkOverview(Screen):
 	comes from the connection list only while it has focus: None while an
 	adapter row is current, set while a connection row is."""
 
-	GLYPH_LAN = "\uea5a"   # settings_ethernet
-	GLYPH_WIFI = "\ue9fe"  # wifi
+	GLYPH_LAN = "\uEA5A"   # settings_ethernet
+	GLYPH_WIFI = "\uE9FE"  # wifi
 	GLYPH_INET = "\uEA5B"  # globe
-	GLYPH_VPN = "\ue9af"   # vpn_key
+	GLYPH_VPN = "\uE9AF"   # vpn_key
 
 	OVERVIEW_COLOR_GOOD = gRGB(0x0000CC00).argb()  # green – connected
 	OVERVIEW_COLOR_BAD = gRGB(0x00CC0000).argb()   # red   – LAN without link
@@ -452,14 +452,14 @@ class NetworkOverview(Screen):
 		"_rowTemplate": 0,
 		"AdapterGlyph": 1,
 		"AdapterName": 2,
-		"AdapterKind": 3,
+		"AdapterType": 3,
 		"StatusText": 4,
 		"StatusColor": 5,
-		"Mac": 6,
-		"IpAddress": 7,
+		"MAC": 6,
+		"IPAddress": 7,
 		"Gateway": 8,
 		"Speed": 9,
-		"InetGlyph": 10,
+		"InternetGlyph": 10,
 	}
 	INDEX_ADAPTER = 11
 
@@ -468,8 +468,8 @@ class NetworkOverview(Screen):
 	# contiguously, which XmlMultiContent's index-name bounds check requires.
 	CONNECTION_INDEX_NAMES = {
 		"_rowTemplate": 0,
-		"Ssid": 1,
-		"Bssid": 2,
+		"SSID": 1,
+		"BSSID": 2,
 		"Frequency": 3,
 		"Channel": 4,
 		"Encryption": 5,
@@ -486,19 +486,19 @@ class NetworkOverview(Screen):
 			<template name="Default" fonts="enigma2icons;34,Regular;24,Regular;18,enigma2icons;20" itemHeight="60" colors="#0000CC00,#00CC0000,#00808080">
 				<rowtemplate>
 					<text index="AdapterName" position="14,0" size="470,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Mac" position="490,0" size="190,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="IpAddress" position="690,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="MAC" position="490,0" size="190,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="IPAddress" position="690,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 					<text index="Gateway" position="840,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 					<text index="Speed" position="990,0" size="200,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 				</rowtemplate>
 				<rowtemplate>
 					<text index="AdapterGlyph" position="14,7" size="46,46" font="0" horizontalAlignment="center" verticalAlignment="center" />
 					<text index="AdapterName" position="74,6" size="230,26" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="AdapterKind" position="74,32" size="230,22" font="2" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="InetGlyph" position="280,20" size="20,20" font="3" horizontalAlignment="center" verticalAlignment="center" />
+					<text index="AdapterType" position="74,32" size="230,22" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="InternetGlyph" position="280,20" size="20,20" font="3" horizontalAlignment="center" verticalAlignment="center" />
 					<text index="StatusText" position="320,0" size="160,60" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColor" />
-					<text index="Mac" position="490,0" size="190,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="IpAddress" position="690,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="MAC" position="490,0" size="190,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="IPAddress" position="690,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
 					<text index="Gateway" position="840,0" size="140,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
 					<text index="Speed" position="990,0" size="200,60" font="2" horizontalAlignment="left" verticalAlignment="center" />
 				</rowtemplate>
@@ -510,16 +510,16 @@ class NetworkOverview(Screen):
 		<widget source="networksList" render="Listbox" position="10,374" size="1200,160" scrollbarMode="showOnDemand">
 			<template name="Default" fonts="Regular;22,Regular;18" itemHeight="40" colors="#0000CC00,#00CC0000,#00808080">
 				<rowtemplate>
-					<text index="Ssid" position="20,0" size="280,40" font="0" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Bssid" position="310,0" size="220,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="SSID" position="20,0" size="280,40" font="0" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="BSSID" position="310,0" size="220,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 					<text index="Frequency" position="540,0" size="120,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 					<text index="Channel" position="670,0" size="140,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 					<text index="Encryption" position="820,0" size="190,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 					<text index="StatusText" position="1020,0" size="180,40" font="1" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 				</rowtemplate>
 				<rowtemplate>
-					<text index="Ssid" position="20,0" size="280,40" font="0" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Bssid" position="310,0" size="220,40" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="SSID" position="20,0" size="280,40" font="0" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="BSSID" position="310,0" size="220,40" font="1" horizontalAlignment="left" verticalAlignment="center" />
 					<text index="Frequency" position="540,0" size="120,40" font="1" horizontalAlignment="left" verticalAlignment="center" />
 					<text index="Channel" position="670,0" size="140,40" font="1" horizontalAlignment="left" verticalAlignment="center" />
 					<text index="Encryption" position="820,0" size="190,40" font="1" horizontalAlignment="left" verticalAlignment="center" />
@@ -550,7 +550,6 @@ class NetworkOverview(Screen):
 
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
-		self.skinName = "AA"
 		self.setTitle(_("Network Overview"))
 		self["networksLabel"] = StaticText("")  # shown via ConditionalShowHide once updateConnections() picks a WLAN adapter
 		self["key_red"] = StaticText(_("Close"))
@@ -590,8 +589,15 @@ class NetworkOverview(Screen):
 		if "adapterList" in self:
 			oldGateways = {x[self.INDEX_ADAPTER].name: x[self.INDEX_ADAPTER].netInfo.gateway for x in self["adapterList"].getList() if x[self.INDEX_ADAPTER] is not None}
 			newGateways = {name: adapter.netInfo.gateway for name, adapter in networkManager.adapters.items()}
-			gatewayChanged = oldGateways != newGateways
-			if not gatewayChanged:
+			if oldGateways != newGateways:
+				self.internetChecked = False
+				self.checkInternet()
+				return
+			oldRows = self["adapterList"].getList()
+			newRows = self.buildAdapterRows()
+			if len(oldRows) != len(newRows):
+				# Structural change (adapter/VPN added or removed) – row indices shift, so
+				# a per-row diff can't be trusted. Fall back to the full rebuild.
 				adapterIndex = self["adapterList"].getCurrentIndex() if self["adapterList"].count() else -1
 				networkIndex = self["networksList"].getCurrentIndex() if self["networksList"].count() else -1
 				self.buildAdapters()
@@ -607,8 +613,10 @@ class NetworkOverview(Screen):
 					except Exception:
 						pass
 			else:
-				self.internetChecked = False
-				self.checkInternet()
+				for index, (oldRow, newRow) in enumerate(zip(oldRows, newRows)):
+					if oldRow != newRow:
+						self["adapterList"].updateEntry(index, newRow)
+				self.updateConnections(preserveSelection=True)
 
 	def layoutFinished(self):
 		self["adapterList"].enableAutoNavigation(False)
@@ -684,7 +692,7 @@ class NetworkOverview(Screen):
 		# the very first buildAdapters() -> updateConnections() -> currentAdapter().
 		self[sourceName].master.content.setSelectableFunc(isOverviewRowSelectable)
 
-	def buildAdapters(self):
+	def buildAdapterRows(self) -> list[tuple]:
 		good, bad, idle = self.overviewColors("adapterList")
 
 		def buildOverviewAdapterHeaderRow() -> tuple:
@@ -694,15 +702,15 @@ class NetworkOverview(Screen):
 			return (
 				self.OVERVIEW_TEMPLATE_HEADER,
 				None,                # AdapterGlyph
-				_("Adapters"),       # AdapterName
-				None,                # AdapterKind
-				None,                # StatusText
+				_("Adapter"),        # AdapterName
+				None,                # AdapterType
+				_("Status"),         # StatusText
 				None,                # StatusColor
-				_("MAC Address"),    # Mac
-				_("IP Address"),     # IpAddress
+				_("MAC Address"),    # MAC
+				_("IP Address"),     # IPAddress
 				_("Gateway"),        # Gateway
 				_("Speed"),          # Speed
-				None,                # InetGlyph
+				None,                # InternetGlyph
 				None,                # -> INDEX_ADAPTER
 			)
 
@@ -767,9 +775,13 @@ class NetworkOverview(Screen):
 
 		rows = [buildOverviewAdapterRow(networkManager.adapters[iface]) for iface in sorted(networkManager.adapters.keys())]
 		rows += [buildOverviewVpnRow(networkManager.vpnInterfaces[iface]) for iface in sorted(networkManager.vpnInterfaces.keys())]
-		hasRows = bool(rows)
-		if hasRows:
+		if rows:
 			rows.insert(0, buildOverviewAdapterHeaderRow())
+		return rows
+
+	def buildAdapters(self):
+		rows = self.buildAdapterRows()
+		hasRows = bool(rows)
 		self["adapterList"].setList(rows)
 		if hasRows:
 			self["adapterList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
@@ -781,7 +793,7 @@ class NetworkOverview(Screen):
 	def overviewWlanConnections(self, adapter: Adapter) -> list[Connection]:
 		return [conn for conn in networkManager.getConnections(adapter.name) if conn.wlan and conn.wlan.ssid]
 
-	def updateConnections(self):
+	def buildConnectionRows(self, adapter: Adapter | None) -> tuple[list[Connection], list[tuple]]:
 		good, _bad, idle = self.overviewColors("networksList")
 
 		def buildOverviewConnectionHeaderRow() -> tuple:
@@ -829,19 +841,36 @@ class NetworkOverview(Screen):
 				conn,                                                                                     # -> INDEX_CONNECTION
 			)
 
+		if adapter is None or not adapter.isWlan:
+			return [], []
+		connections = self.overviewWlanConnections(adapter)
+		rows = [buildOverviewConnectionRow(conn, adapter) for conn in connections]
+		if rows:
+			rows.insert(0, buildOverviewConnectionHeaderRow())
+		return connections, rows
+
+	def updateConnections(self, preserveSelection: bool = False):
+		"""Rebuilds the connection list for the currently selected adapter. By default
+		(adapter selection actually changed) this resets the cursor to the first row.
+		Called from refreshAdapters()'s periodic poll with preserveSelection=True instead,
+		which diffs against the current rows and only touches changed ones via
+		updateEntry() – so the user's cursor in networksList isn't reset every poll."""
 		adapter = self.currentAdapter()
+		connections, rows = self.buildConnectionRows(adapter)
 		if adapter is None or not adapter.isWlan:
 			self["networksList"].setList([])
 			self["networksLabel"].setText("")  # hidden via ConditionalShowHide – only relevant for a WLAN adapter
 		else:
-			connections = self.overviewWlanConnections(adapter)
-			rows = [buildOverviewConnectionRow(conn, adapter) for conn in connections]
-			hasRows = bool(rows)
-			if hasRows:
-				rows.insert(0, buildOverviewConnectionHeaderRow())
-			self["networksList"].setList(rows)
-			if hasRows:
-				self["networksList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
+			if preserveSelection and len(rows) == self["networksList"].count():
+				oldRows = self["networksList"].getList()
+				for index, (oldRow, newRow) in enumerate(zip(oldRows, rows)):
+					if oldRow != newRow:
+						self["networksList"].updateEntry(index, newRow)
+			else:
+				hasRows = bool(rows)
+				self["networksList"].setList(rows)
+				if hasRows:
+					self["networksList"].index = 1  # setList() resets the cursor to 0 (the header) – skip past it
 			self["networksLabel"].setText(f"{self.TEXT_SAVED_NETWORKS} · {adapter.name} · {len(connections)}")
 		if self.currentList == "networksList" and not self["networksList"].count():
 			self.setListFocus("adapterList")
@@ -984,12 +1013,6 @@ class NetworkOverview(Screen):
 				(_("Settings"), "setup"),
 				(_("Disable network") if conn.enabled else _("Enable network"), "toggle"),
 			]
-			if not adapter.isWlan or conn.enabled:
-				# A WLAN row's "Network test" would otherwise test whatever SSID is
-				# actually associated right now (NetworkTest only ever looks at the
-				# adapter's live state, not this specific conn) – misleading for a
-				# saved-but-inactive profile, so only offer it for the active one.
-				menu.append((_("Network test"), "test"))
 			menu.append((_("Delete network"), "delete"))
 			title = _("Network: %s") % self.connLabel(conn, adapter)
 		if adapter.isWlan:
@@ -1432,7 +1455,6 @@ class NetworkWiFiScanScreen(Screen):
 
 	def __init__(self, session, adapter: Adapter):
 		Screen.__init__(self, session, enableHelp=True)
-		self.skinName = "AA"
 		self.adapterObj = adapter
 		self.adapter = adapter.name
 		self.setTitle(_("Wi-Fi Scan – %s") % self.adapter)
@@ -1708,8 +1730,8 @@ class NetworkWiFiActivator(Screen):
 		ip = self.getKernelIp(iface)
 		if ip and ip not in ("0.0.0.0", ""):
 			self.pollTimer.stop()
-			self.setStatus(_("Connected.\nIP: %s") % ip)
-			self.scheduleClose(2500, ip)
+			self.setStatus(_("Connected, IP address: %s") % ip)
+			self.scheduleClose(4000, ip)
 		elif self.pollCount >= self._pollMaxAttempts:
 			self.pollTimer.stop()
 			self.setStatus(self.diagnoseFailure())
@@ -1889,12 +1911,12 @@ class NetworkTest(Screen):
 	}
 
 	T_NOT_FOUND = _("Not found")
-	T_NA = _("N/a")
+	T_NA = _("N/A")
 	T_ASSOCIATED = _("Associated")
 	T_NOT_ASSOC = _("Not associated")
 	T_CONNECTED = _("Connected")
 	T_DISCONNECTED = _("Disconnected")
-	T_NO_ADDRESS = _("No address")
+	T_NO_ADDRESS = _("No IP address")
 	T_NO_GATEWAY = _("No gateway")
 	T_PINGING = _("Pinging…")
 	T_REACHABLE = _("Reachable")
@@ -1924,7 +1946,11 @@ class NetworkTest(Screen):
 			"red": (self.close, _("Close network test")),
 			"green": (self.keyRestart, _("Restart test")),
 		}, prio=0, description=_("Network Test Actions"))
-		self.onLayoutFinish.append(self.start)
+		self.onLayoutFinish.append(self.layoutFinished)
+
+	def layoutFinished(self):
+		self["list"].enableAutoNavigation(False)
+		self.start()
 
 	def keyRestart(self):
 		self.generation += 1
