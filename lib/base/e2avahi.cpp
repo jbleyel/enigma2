@@ -1,4 +1,5 @@
 #include "e2avahi.h"
+#include "e2networkservicebrowser.h"
 #include "ebase.h"
 #include <avahi-common/error.h>
 #include <avahi-client/client.h>
@@ -114,6 +115,13 @@ inline bool operator!=(const AvahiBrowserEntry& lhs, const AvahiBrowserEntry& rh
 { return !(lhs == rhs); }
 typedef std::list<AvahiBrowserEntry> AvahiBrowserEntryList;
 static AvahiBrowserEntryList avahi_browsers;
+
+/* eNetworkServiceBrowser instances currently start()ed. Kept here (not inside
+ * the class) purely so the existing avahi_client_try_register_all()/
+ * avahi_client_reset_all() lifecycle hooks below can (re)register them
+ * whenever the avahi client (re)connects, same as for avahi_services/avahi_browsers. */
+typedef std::list<eNetworkServiceBrowser*> NetworkServiceBrowserList;
+static NetworkServiceBrowserList networkservice_browsers;
 
 static void avahi_group_callback(AvahiEntryGroup *group,
 		AvahiEntryGroupState state, void *d)
@@ -246,6 +254,54 @@ static void avahi_browser_try_register(AvahiBrowserEntry *entry)
 	}
 }
 
+/* Friend of eNetworkServiceBrowser (declared in e2networkservicebrowser.h). */
+void e2avahi_networkservicebrowser_try_register_all()
+{
+	for (NetworkServiceBrowserList::iterator it = networkservice_browsers.begin();
+		it != networkservice_browsers.end(); ++it)
+	{
+		for (std::vector<std::string>::iterator t = (*it)->m_serviceTypes.begin();
+			t != (*it)->m_serviceTypes.end(); ++t)
+		{
+			(*it)->tryRegister(*t);
+		}
+	}
+}
+
+/* Friend of eNetworkServiceBrowser. */
+void e2avahi_networkservicebrowser_reset_all()
+{
+	for (NetworkServiceBrowserList::iterator it = networkservice_browsers.begin();
+		it != networkservice_browsers.end(); ++it)
+	{
+		for (std::map<std::string, AvahiServiceBrowser*>::iterator b = (*it)->m_browsers.begin();
+			b != (*it)->m_browsers.end(); ++b)
+		{
+			if (b->second)
+				avahi_service_browser_free(b->second);
+		}
+		(*it)->m_browsers.clear();
+		/* Keep m_instances/m_allForNow as-is - they'll be superseded once the
+		 * client reconnects and browsing resumes, same "stale until refreshed"
+		 * approach the Python-side registry uses (see doc section 4.3). */
+	}
+}
+
+/* Friend of eNetworkServiceBrowser. Used from e2avahi_close(): avahi_client_free()
+ * already freed every AvahiServiceBrowser/AvahiServiceResolver owned by the
+ * client, so this only drops our now-dangling pointers, never calls
+ * avahi_service_browser_free() on them again. */
+void e2avahi_networkservicebrowser_clear_all()
+{
+	for (NetworkServiceBrowserList::iterator it = networkservice_browsers.begin();
+		it != networkservice_browsers.end(); ++it)
+	{
+		(*it)->m_browsers.clear();
+		(*it)->m_instances.clear();
+		(*it)->m_allForNow.clear();
+	}
+}
+
 static void avahi_client_try_register_all()
 {
 	for (AvahiServiceEntryList::iterator it = avahi_services.begin();
@@ -258,6 +314,7 @@ static void avahi_client_try_register_all()
 	{
 		avahi_browser_try_register(&(*it));
 	}
+	e2avahi_networkservicebrowser_try_register_all();
 }
 
 static void avahi_client_reset_all()
@@ -280,6 +337,7 @@ static void avahi_client_reset_all()
 			it->browser = NULL;
 		}
 	}
+	e2avahi_networkservicebrowser_reset_all();
 }
 
 static void avahi_client_callback(AvahiClient *client, AvahiClientState state, void *d)
@@ -419,6 +477,7 @@ void e2avahi_close()
 		{
 			it->group = NULL;
 		}
+		e2avahi_networkservicebrowser_clear_all();
 	}
 }
 
@@ -449,4 +508,284 @@ void e2avahi_resolve_cancel(const char* service_type, E2AvahiResolveCallback cal
 		it->browser = NULL;
 	}
 	avahi_browsers.erase(it);
+}
+
+
+/* eNetworkServiceBrowser ---------------------------------------------- */
+
+DEFINE_REF(eNetworkServiceBrowser);
+
+eNetworkServiceBrowser::eNetworkServiceBrowser():
+	m_started(false), m_failed(false), m_backoffMs(0)
+{
+	m_restartTimer = eTimer::create(eApp);
+	CONNECT(m_restartTimer->timeout, eNetworkServiceBrowser::restartTimeout);
+}
+
+eNetworkServiceBrowser::~eNetworkServiceBrowser()
+{
+	stop();
+}
+
+void eNetworkServiceBrowser::addServiceType(const char *serviceType)
+{
+	if (!serviceType || !*serviceType)
+		return;
+	for (std::vector<std::string>::iterator it = m_serviceTypes.begin();
+		it != m_serviceTypes.end(); ++it)
+	{
+		if (*it == serviceType)
+			return; /* already added */
+	}
+	m_serviceTypes.push_back(serviceType);
+	if (m_started)
+		tryRegister(serviceType);
+}
+
+void eNetworkServiceBrowser::start()
+{
+	if (m_started)
+		return;
+	m_started = true;
+	networkservice_browsers.push_back(this);
+	for (std::vector<std::string>::iterator it = m_serviceTypes.begin();
+		it != m_serviceTypes.end(); ++it)
+	{
+		tryRegister(*it);
+	}
+}
+
+void eNetworkServiceBrowser::stop()
+{
+	if (!m_started)
+		return;
+	m_restartTimer->stop();
+	for (std::map<std::string, AvahiServiceBrowser*>::iterator it = m_browsers.begin();
+		it != m_browsers.end(); ++it)
+	{
+		if (it->second)
+			avahi_service_browser_free(it->second);
+	}
+	m_browsers.clear();
+	m_instances.clear();
+	m_allForNow.clear();
+	m_failed = false;
+	m_backoffMs = 0;
+	networkservice_browsers.remove(this);
+	m_started = false;
+}
+
+void eNetworkServiceBrowser::tryRegister(const std::string &serviceType)
+{
+	if (m_browsers.count(serviceType) && m_browsers[serviceType])
+		return; /* already registered */
+
+	if ((!avahi_client) || (avahi_client_get_state(avahi_client) != AVAHI_CLIENT_S_RUNNING))
+	{
+		eDebug("[eNetworkServiceBrowser] Not running yet, cannot browse for type %s.", serviceType.c_str());
+		return; /* retried from e2avahi_networkservicebrowser_try_register_all() once running */
+	}
+
+	AvahiServiceBrowser *browser = avahi_service_browser_new(avahi_client,
+		AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
+		serviceType.c_str(), NULL, (AvahiLookupFlags)0,
+		avahiBrowserCallback, this);
+	if (!browser)
+	{
+		eWarning("[eNetworkServiceBrowser] avahi_service_browser_new failed for %s: %s",
+			serviceType.c_str(), avahi_strerror(avahi_client_errno(avahi_client)));
+		return;
+	}
+	m_browsers[serviceType] = browser;
+	m_backoffMs = 0; /* successful (re)registration resets the FAILURE backoff */
+}
+
+void eNetworkServiceBrowser::scheduleRestart()
+{
+	if (m_backoffMs < 1000)
+		m_backoffMs = 1000;
+	else if (m_backoffMs < 30000)
+		m_backoffMs *= 2;
+	m_restartTimer->start(m_backoffMs, true);
+}
+
+void eNetworkServiceBrowser::restartTimeout()
+{
+	for (std::vector<std::string>::iterator it = m_serviceTypes.begin();
+		it != m_serviceTypes.end(); ++it)
+	{
+		tryRegister(*it);
+	}
+}
+
+eNetworkServiceBrowser::InstanceKey eNetworkServiceBrowser::makeKey(int interfaceIndex, int protocol,
+	const char *name, const char *type, const char *domain)
+{
+	/* interfaceIndex+protocol+name+type+domain uniquely identifies one
+	 * service instance (see doc section 4.16) - the name alone is not enough,
+	 * e.g. the same NAS can show up once per interface. */
+	char buf[512];
+	snprintf(buf, sizeof(buf), "%d:%d:%s:%s:%s", interfaceIndex, protocol,
+		name ? name : "", type ? type : "", domain ? domain : "");
+	return std::string(buf);
+}
+
+void eNetworkServiceBrowser::avahiBrowserCallback(AvahiServiceBrowser *browser,
+	AvahiIfIndex iface, AvahiProtocol proto, AvahiBrowserEvent event,
+	const char *name, const char *type, const char *domain,
+	AvahiLookupResultFlags flags, void *userdata)
+{
+	((eNetworkServiceBrowser*)userdata)->handleBrowserEvent(
+		browser, (int)iface, (int)proto, event, name, type, domain, flags);
+}
+
+void eNetworkServiceBrowser::avahiResolverCallback(AvahiServiceResolver *resolver,
+	AvahiIfIndex iface, AvahiProtocol proto, AvahiResolverEvent event,
+	const char *name, const char *type, const char *domain,
+	const char *hostName, const AvahiAddress *address, uint16_t port,
+	AvahiStringList *txt, AvahiLookupResultFlags flags, void *userdata)
+{
+	((eNetworkServiceBrowser*)userdata)->handleResolverEvent(
+		(int)iface, (int)proto, event, name, type, domain, hostName, address, port, txt, flags);
+	avahi_service_resolver_free(resolver);
+}
+
+void eNetworkServiceBrowser::handleBrowserEvent(AvahiServiceBrowser *browser, int interfaceIndex, int protocol,
+	AvahiBrowserEvent event, const char *name, const char *type, const char *domain,
+	AvahiLookupResultFlags flags)
+{
+	switch (event)
+	{
+	case AVAHI_BROWSER_NEW:
+		eDebug("[eNetworkServiceBrowser] Resolving '%s' of type '%s'", name, type);
+		avahi_service_resolver_new(avahi_client, (AvahiIfIndex)interfaceIndex,
+			(AvahiProtocol)protocol, name, type, domain,
+			AVAHI_PROTO_UNSPEC, (AvahiLookupFlags)0,
+			avahiResolverCallback, this);
+		break;
+	case AVAHI_BROWSER_REMOVE:
+	{
+		eDebug("[eNetworkServiceBrowser] REMOVE '%s' of type '%s' in domain '%s'", name, type, domain);
+		InstanceKey key = makeKey(interfaceIndex, protocol, name, type, domain);
+		m_instances.erase(key);
+		changed();
+		break;
+	}
+	case AVAHI_BROWSER_ALL_FOR_NOW:
+		m_allForNow[type] = true;
+		changed();
+		break;
+	case AVAHI_BROWSER_FAILURE:
+	{
+		eWarning("[eNetworkServiceBrowser] browser failure for type '%s': %s", type,
+			avahi_strerror(avahi_client_errno(avahi_service_browser_get_client(browser))));
+		/* Don't call avahi_service_browser_free() here - same as the existing
+		 * avahi_browser_callback() above, which also just drops the reference
+		 * on AVAHI_BROWSER_FAILURE instead of freeing it. */
+		m_browsers.erase(type);
+		m_failed = true;
+		scheduleRestart();
+		changed();
+		break;
+	}
+	case AVAHI_BROWSER_CACHE_EXHAUSTED:
+		break;
+	}
+}
+
+void eNetworkServiceBrowser::handleResolverEvent(int interfaceIndex, int protocol,
+	AvahiResolverEvent event, const char *name, const char *type, const char *domain,
+	const char *hostName, const AvahiAddress *address, unsigned short port,
+	AvahiStringList *txt, AvahiLookupResultFlags flags)
+{
+	if (event != AVAHI_RESOLVER_FOUND)
+	{
+		eDebug("[eNetworkServiceBrowser] Failed to resolve '%s' of type '%s'", name, type);
+		return;
+	}
+	if (flags & (AVAHI_LOOKUP_RESULT_LOCAL | AVAHI_LOOKUP_RESULT_OUR_OWN))
+		return; /* skip our own announced services, same as the existing e2avahi_resolve() path */
+
+	eDebug("[eNetworkServiceBrowser] ADD '%s' of type '%s' at %s:%u", name, type, hostName, port);
+
+	Instance inst;
+	inst.interfaceIndex = interfaceIndex;
+	inst.protocol = protocol;
+	inst.serviceName = name ? name : "";
+	inst.serviceType = type ? type : "";
+	inst.domain = domain ? domain : "";
+	inst.hostname = hostName ? hostName : "";
+	inst.port = port;
+
+	if (address)
+	{
+		char addrbuf[AVAHI_ADDRESS_STR_MAX];
+		if (avahi_address_snprint(addrbuf, sizeof(addrbuf), address))
+			inst.addresses.push_back(addrbuf);
+	}
+
+	for (AvahiStringList *l = txt; l; l = avahi_string_list_get_next(l))
+	{
+		char *key = NULL, *value = NULL;
+		size_t valueSize = 0;
+		if (avahi_string_list_get_pair(l, &key, &value, &valueSize) == 0)
+		{
+			inst.txt.push_back(std::make_pair(
+				std::string(key ? key : ""),
+				value ? std::string(value, valueSize) : std::string()));
+		}
+		avahi_free(key);
+		avahi_free(value);
+	}
+
+	InstanceKey key = makeKey(interfaceIndex, protocol, name, type, domain);
+	m_instances[key] = inst;
+	changed();
+}
+
+PyObject *eNetworkServiceBrowser::getServices()
+{
+	ePyObject ret = PyList_New(m_instances.size());
+	int idx = 0;
+	for (std::map<InstanceKey, Instance>::iterator it = m_instances.begin();
+		it != m_instances.end(); ++it, ++idx)
+	{
+		Instance &s = it->second;
+
+		PyObject *addrs = PyList_New(s.addresses.size());
+		for (size_t i = 0; i < s.addresses.size(); i++)
+			PyList_SET_ITEM(addrs, i, PyUnicode_FromString(s.addresses[i].c_str()));
+
+		PyObject *txt = PyDict_New();
+		for (size_t i = 0; i < s.txt.size(); i++)
+		{
+			PyObject *value = PyUnicode_FromString(s.txt[i].second.c_str());
+			PyDict_SetItemString(txt, s.txt[i].first.c_str(), value);
+			Py_DECREF(value);
+		}
+
+		PyObject *d = PyDict_New();
+		PyObject *name = PyUnicode_FromString(s.serviceName.c_str());
+		PyObject *stype = PyUnicode_FromString(s.serviceType.c_str());
+		PyObject *domain = PyUnicode_FromString(s.domain.c_str());
+		PyObject *hostname = PyUnicode_FromString(s.hostname.c_str());
+		PyObject *port = PyLong_FromLong(s.port);
+		PyObject *iface = PyLong_FromLong(s.interfaceIndex);
+		PyObject *proto = PyUnicode_FromString(s.protocol == AVAHI_PROTO_INET6 ? "inet6" : "inet");
+		PyDict_SetItemString(d, "name", name);
+		PyDict_SetItemString(d, "type", stype);
+		PyDict_SetItemString(d, "domain", domain);
+		PyDict_SetItemString(d, "hostname", hostname);
+		PyDict_SetItemString(d, "addresses", addrs);
+		PyDict_SetItemString(d, "port", port);
+		PyDict_SetItemString(d, "interface", iface);
+		PyDict_SetItemString(d, "protocol", proto);
+		PyDict_SetItemString(d, "txt", txt);
+		Py_DECREF(name); Py_DECREF(stype); Py_DECREF(domain); Py_DECREF(hostname);
+		Py_DECREF(port); Py_DECREF(iface); Py_DECREF(proto);
+		Py_DECREF(addrs); Py_DECREF(txt);
+
+		PyList_SET_ITEM(ret, idx, d);
+	}
+	return ret;
 }

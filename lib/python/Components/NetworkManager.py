@@ -906,6 +906,146 @@ class NetworkCheck:
 
 
 # ===========================================================================
+# AvahiProvider – mDNS/DNS-SD discovery provider (SMB/NFS hosts) for
+# NetworkMounts, backed by the eNetworkServiceBrowser SWIG class
+# (lib/base/e2networkservicebrowser.h). Not started automatically - only
+# instantiated on demand by whoever needs SMB/NFS host discovery, so plain
+# Enigma2 sessions that never open NetworkMounts never touch Avahi for this.
+# ===========================================================================
+
+# Internal discovery/data-model protocol name -> mDNS service type. "smb" is
+# the name used everywhere outside actual mount execution; "cifs" only shows
+# up as the Linux mount type once a share is actually mounted.
+AVAHI_SERVICE_TYPES = {
+	"smb": "_smb._tcp",
+	"nfs": "_nfs._tcp",
+}
+
+
+class AvahiProvider:
+	"""Discovery provider: browses mDNS/DNS-SD for SMB/NFS hosts and reports
+	normalized observations to onObservation subscribers. Knows nothing about
+	the GUI or about share enumeration - that is a separate, later step,
+	triggered explicitly by whoever consumes these observations (see the
+	standby-safety rule in the NetworkMounts concept: discovery itself never
+	touches a NAS's shares or disks, only its mDNS announcement)."""
+
+	def __init__(self, protocols=("smb", "nfs")):
+		self._serviceTypes = tuple(AVAHI_SERVICE_TYPES[p] for p in protocols)
+		self._typeToProtocol = {AVAHI_SERVICE_TYPES[p]: p for p in protocols}
+		self._browser = None
+		self._started = False
+		self.onObservation: list[Callable] = []
+
+	def start(self):
+		if self._started:
+			return
+		from enigma import eNetworkServiceBrowser
+		self._browser = eNetworkServiceBrowser()
+		for serviceType in self._serviceTypes:
+			self._browser.addServiceType(serviceType)
+		self._browser.changed.append(self._changed)
+		self._browser.start()
+		self._started = True
+
+	def stop(self):
+		if not self._started:
+			return
+		# .remove() on a PSignal-exposed signal doesn't work at the C++ layer
+		# (see Screens/Console.py's dataAvail/appClosed for the same issue) -
+		# clear the whole subscriber list instead. Safe here since nothing but
+		# self._changed ever subscribes to this browser instance's signal.
+		del self._browser.changed[:]
+		self._browser.stop()
+		self._browser = None
+		self._started = False
+
+	def _changed(self):
+		# eNetworkServiceBrowser.changed carries no payload - re-read the full
+		# snapshot and re-dispatch it. Cheap: it's an in-memory list of dicts,
+		# not a network round-trip (see doc section 30.2.3/4.3).
+		for entry in self._browser.getServices():
+			self._dispatch(entry)
+
+	def _dispatch(self, entry: dict):
+		# entry["protocol"] from getServices() is the IP address family
+		# ("inet"/"inet6"), not the share protocol - keep it under a
+		# different key so it doesn't collide with our own "protocol"
+		# (smb/nfs, see AVAHI_SERVICE_TYPES).
+		observation = {
+			"source": "avahi",
+			"protocol": self._typeToProtocol.get(entry["type"], entry["type"]),
+			"name": entry["name"],
+			"hostname": entry["hostname"],
+			"addresses": entry["addresses"],
+			"addressFamily": entry["protocol"],
+			"port": entry["port"],
+			"interface": entry["interface"],
+			"domain": entry["domain"],
+			"txt": entry["txt"],
+		}
+		for callback in self.onObservation:
+			callback(observation)
+
+
+# ===========================================================================
+# DiscoveryManager – owns and coordinates discovery providers. Currently just
+# AvahiProvider; WSD/Neighbor/Portscan/Manual providers get added here as
+# they're built (see NETWORK_BROWSER_PLUGIN_V5.md section 3.1/5). Not a
+# HostRegistry yet - no dedup/merge, just fans provider observations out to
+# subscribers.
+#
+# Runs one bounded discovery pass per boot (start() ... DEFAULT_RUN_MS later,
+# auto-stop) instead of staying on permanently - there's no NetworkMounts
+# consumer yet to justify a permanently-running background provider. Once a
+# real Discovery screen exists it can call start()/stop() itself (e.g. from
+# onShown/onClose) for on-demand live results instead of relying on the
+# boot-time pass; that doesn't need any change here, start()/stop() are
+# idempotent and safe to call again at any time.
+# ===========================================================================
+
+class DiscoveryManager:
+	DEFAULT_RUN_MS = 30000  # one discovery pass per boot runs this long, then auto-stops
+
+	def __init__(self):
+		self._providers = []
+		self._started = False
+		self.onObservation: list[Callable] = []
+		self._stopTimer = eTimer()
+		self._stopTimer.callback.append(self.stop)
+		self._addProvider(AvahiProvider())
+
+	def _addProvider(self, provider):
+		provider.onObservation.append(self._onObservation)
+		self._providers.append(provider)
+
+	def start(self, runMs: int | None = DEFAULT_RUN_MS):
+		if self._started:
+			return
+		for provider in self._providers:
+			provider.start()
+		self._started = True
+		self._stopTimer.stop()
+		if runMs:
+			self._stopTimer.start(runMs, True)
+
+	def stop(self):
+		self._stopTimer.stop()
+		if not self._started:
+			return
+		for provider in self._providers:
+			provider.stop()
+		self._started = False
+
+	def _onObservation(self, observation):
+		for callback in self.onObservation:
+			callback(observation)
+
+
+discoveryManager = DiscoveryManager()
+
+
+# ===========================================================================
 # What changed as a result of a save() call – the caller already knows this
 # (it's the one making the change), so it passes the right code to
 # NetworkSetup.applyAdapterChange() itself instead of save() trying to guess it.
