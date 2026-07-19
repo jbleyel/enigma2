@@ -185,12 +185,6 @@ class Session:
 			dialog = self.current_dialog = self.instantiateDialog(screen, *arguments, **kwargs)
 		dialog.isTmp = True
 		dialog.callback = None
-		# If the new dialog is modal (skin attribute modal="1"), the
-		# dialog below it must stay visible: pushCurrent()/execEnd()
-		# has hidden it, so show it again. It keeps painting but gets
-		# no input focus.
-		# if self.dialog_stack and getattr(dialog, "instance", None) and dialog.instance.isModal():
-		#	self.dialog_stack[-1][0].show()
 		self.execBegin()
 		return dialog
 
@@ -237,7 +231,7 @@ class Session:
 		for dialog in self.allDialogs:
 			if exclude and id(dialog) in exclude:
 				continue
-			print(f"[reloadDialogs] dialog={dialog.__class__.__name__} desktop={hasattr(dialog, 'desktop')}")
+			# print(f"[reloadDialogs] dialog={dialog.__class__.__name__} desktop={hasattr(dialog, 'desktop')}")
 			if hasattr(dialog, "desktop"):
 				dialog.reloadSkin()
 

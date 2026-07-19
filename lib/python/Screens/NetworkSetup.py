@@ -1949,6 +1949,7 @@ class NetworkTest(Screen):
 		self.onLayoutFinish.append(self.layoutFinished)
 
 	def layoutFinished(self):
+		self["list"].master.content.setSelectableFunc(lambda *_: False)
 		self["list"].enableAutoNavigation(False)
 		self.start()
 

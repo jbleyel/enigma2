@@ -368,16 +368,13 @@ class Screen(dict):
 				val.GUIdelete()
 
 	def reloadSkin(self):
-		print("[reloadSkin] DEBUG deleteGUIScreen")
 		self.deleteGUIScreen()
 		if hasattr(self, "additionalWidgets"):
-			print(f"[reloadSkin] DEBUG  additionalWidgets={len(self.additionalWidgets)}")
 			for w in self.additionalWidgets:
 				if hasattr(w, "instance") and w.instance:
 					w.instance.hide()
 			self.additionalWidgets = []
 		if hasattr(self, "renderer"):
-			print(f"[reloadSkin] DEBUG renderer={len(self.renderer)}")
 			for r in self.renderer:
 				r.disconnectAll()
 				if hasattr(r, "instance") and r.instance:
@@ -386,15 +383,11 @@ class Screen(dict):
 		from types import CodeType
 		self.onLayoutFinish = [m for m in self.onLayoutFinish if not isinstance(m, CodeType)]
 		self.onContentChanged = [m for m in self.onContentChanged if not isinstance(m, CodeType)]
-		print(f"[reloadSkin] DEBUG readSkin skinName={self.skinName}")
 		readSkin(self, None, self.skinName, self.desktop)
-		print("[reloadSkin] DEBUG applySkin")
 		self.applySkin()
-		print("[reloadSkin] DEBUG trigger changed")
 		for r in self.renderer:
 			if hasattr(r, "instance") and r.instance:
 				r.changed((r.CHANGED_DEFAULT,))
-		print("[reloadSkin] DEBUG done")
 
 	def createSummary(self):
 		return None

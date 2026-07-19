@@ -944,18 +944,14 @@ class AvahiProvider:
 		self._browser = eNetworkServiceBrowser()
 		for serviceType in self._serviceTypes:
 			self._browser.addServiceType(serviceType)
-		self._browser.changed.append(self._changed)
+		self._browser.changed.get().append(self._changed)
 		self._browser.start()
 		self._started = True
 
 	def stop(self):
 		if not self._started:
 			return
-		# .remove() on a PSignal-exposed signal doesn't work at the C++ layer
-		# (see Screens/Console.py's dataAvail/appClosed for the same issue) -
-		# clear the whole subscriber list instead. Safe here since nothing but
-		# self._changed ever subscribes to this browser instance's signal.
-		del self._browser.changed[:]
+		self._browser.changed.get().remove(self._changed)
 		self._browser.stop()
 		self._browser = None
 		self._started = False
@@ -984,6 +980,7 @@ class AvahiProvider:
 			"domain": entry["domain"],
 			"txt": entry["txt"],
 		}
+		print("AvahiProvider observation", observation)
 		for callback in self.onObservation:
 			callback(observation)
 
