@@ -700,7 +700,8 @@ void eNetworkServiceBrowser::handleResolverEvent(int interfaceIndex, int protoco
 {
 	if (event != AVAHI_RESOLVER_FOUND)
 	{
-		eDebug("[eNetworkServiceBrowser] Failed to resolve '%s' of type '%s'", name, type);
+		eDebug("[eNetworkServiceBrowser] Failed to resolve '%s' of type '%s': %s", name, type,
+			avahi_strerror(avahi_client_errno(avahi_client)));
 		return;
 	}
 	if (flags & (AVAHI_LOOKUP_RESULT_LOCAL | AVAHI_LOOKUP_RESULT_OUR_OWN))
