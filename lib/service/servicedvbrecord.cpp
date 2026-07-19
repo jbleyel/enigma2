@@ -191,7 +191,7 @@ RESULT eDVBServiceRecord::prepare(const char *filename, time_t begTime, time_t e
 				if (eEPGCache::getInstance()->saveEventToFile(fname.c_str(), ref, eit_event_id, begTime, endTime))
 				{
 					/* event not yet in EPG cache (recording started before tuning); retry once, 30s later */
-					eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), retrying in 30s", fname.c_str(), eit_event_id);
+					eTrace("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), retrying in 30s", fname.c_str(), eit_event_id);
 					m_eitFilename = fname;
 					m_eitRef = ref;
 					m_eitEventId = eit_event_id;
@@ -839,9 +839,9 @@ void eDVBServiceRecord::retryEitSave()
 		return;
 
 	if (!eEPGCache::getInstance()->saveEventToFile(m_eitFilename.c_str(), m_eitRef, m_eitEventId, m_eitBegTime, m_eitEndTime))
-		eDebug("[eDVBServiceRecord] saveEventToFile succeeded for %s (event_id %04x)", m_eitFilename.c_str(), m_eitEventId);
+		eTrace("[eDVBServiceRecord] saveEventToFile succeeded for %s (event_id %04x)", m_eitFilename.c_str(), m_eitEventId);
 	else
-		eDebug("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), giving up", m_eitFilename.c_str(), m_eitEventId);
+		eTrace("[eDVBServiceRecord] saveEventToFile failed for %s (event_id %04x), giving up", m_eitFilename.c_str(), m_eitEventId);
 
 	m_eitFilename.clear();
 }
