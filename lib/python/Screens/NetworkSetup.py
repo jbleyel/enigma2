@@ -21,14 +21,13 @@ Coding conventions (OpenATV):
 
 from __future__ import annotations
 
-import re
-import netifaces
-
 from dataclasses import dataclass
+from ipaddress import ip_address
+from netifaces import ifaddresses, AF_INET
+
 from os import rename
 from os.path import exists
-
-from ipaddress import ip_address
+from re import compile, IGNORECASE
 
 from enigma import eTimer, gRGB
 
@@ -53,13 +52,6 @@ from Components.NetworkManager import Adapter, Connection, VpnInfo, WiFiConfig, 
 
 
 MODULE_NAME = __name__.split(".")[-1]
-
-
-# ---------------------------------------------------------------------------
-# Display helpers
-# ---------------------------------------------------------------------------
-
-_ENC_SHORT = {encNone: "open", encWep: "WEP", encWpa: "WPA", encWpa2: "WPA2", encWpa3: "WPA3"}
 
 
 def _ip4Str(addr: list) -> str:
@@ -533,7 +525,10 @@ class NetworkOverview(Screen):
 		<widget source="key_green" render="Label" position="200,e-50" size="180,40" backgroundColor="key_green" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_yellow" render="Label" position="390,e-50" size="180,40" backgroundColor="key_yellow" conditional="key_yellow" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+		<widget source="key_yellow" render="Label" position="390,e-50" size="180,40" backgroundColor="key_yellow" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_blue" render="Label" position="580,e-50" size="180,40" backgroundColor="key_blue" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
 		<widget source="key_menu" render="Label" position="e-300,e-50" size="90,40" backgroundColor="key_back" font="Regular;20" conditional="key_help" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
@@ -549,33 +544,47 @@ class NetworkOverview(Screen):
 	"""
 
 	def __init__(self, session):
+
+		def greeHelp():
+			return _("LCN style QuickSelect entry selection") if config.usage.show_channel_jump_in_servicelist.value == "quick" else _("SMS style QuickSelect entry selection")
+
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Network Overview"))
 		self["networksLabel"] = StaticText("")  # shown via ConditionalShowHide once updateConnections() picks a WLAN adapter
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText("")
 		self["key_yellow"] = StaticText("")
+		self["key_blue"] = StaticText("")
 		self["key_menu"] = StaticText(_("MENU"))
 		self["key_info"] = StaticText(_("INFO"))
 		self["adapterList"] = List([], indexNames=self.ADAPTER_INDEX_NAMES)
 		self["networksList"] = List([], indexNames=self.CONNECTION_INDEX_NAMES)
 		self.currentList = "adapterList"  # "adapterList" | "networksList" – which list up/down/OK/green/etc. act on
 		self["adapterList"].onSelectionChanged.append(self.updateConnections)
-		self["networksList"].onSelectionChanged.append(self.updateKeyGreen)
+		self["networksList"].onSelectionChanged.append(self.updateButtons)
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions", "InfoActions", "NavigationActions"], {
 			"ok": (self.keyOK, _("Open settings for the selected item")),
-			"cancel": (self.close, _("Close network overview")),
+			"cancel": (self.close, _("Close the screen")),
 			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
-			"red": (self.close, _("Close network overview")),
-			"green": (self.keyGreen, _("Activate/Deactivate adapter or Wi-Fi connection")),
+			"red": (self.close, _("Close the screen")),
+			"green": (self.keyGreen, greeHelp),  # _("Activate/Deactivate adapter or Wi-Fi connection")),
 			"yellow": (self.keyYellow, _("Add a new WiFi connection")),
-			"info": (self.keyInfo, _("Show network connection info")),
+			"blue": (self.keyBlue, _("Connect to the WiFi network")),
+			"info": (self.keyInfo, _("Show Adapter info")),
 			"menu": (self.keyMenu, _("Open context menu for the selected item")),
-			"left": (self.keyLeft, _("Jump to the adapter list")),
-			"right": (self.keyRight, _("Jump to the Wi-Fi connection list")),
+			"left": (self.keyLeft, _("Jump to the Adapter list")),
+			"right": (self.keyRight, _("Jump to the saved Wi-Fi networks list")),
+			"top": (self.keyTop, _("Move to first line / screen")),
+			"pageUp": (self.keyPageUp, _("Move up a screen")),
 			"up": (self.keyUp, _("Move up")),
+			# "first": (self.keyFirst, _("Jump to first item in list or the start of text")),
+			# "last": (self.keyLast, _("Jump to last item in list or the end of text")),
 			"down": (self.keyDown, _("Move down")),
+			"pageDown": (self.keyPageDown, _("Move down a screen")),
+			"bottom": (self.keyBottom, _("Move to last line / screen"))
+
 		}, prio=0, description=_("Network Overview Actions"))
+
 		self.onLayoutFinish.append(self.layoutFinished)
 		self.internetChecked = False
 		self.onShown.append(self.checkInternet)
@@ -632,7 +641,7 @@ class NetworkOverview(Screen):
 		self.currentList = sourceName
 		self["adapterList"].selectionEnabled(sourceName == "adapterList")
 		self["networksList"].selectionEnabled(sourceName == "networksList")
-		self.updateKeyGreen()
+		self.updateButtons()
 
 	def checkInternet(self):
 		def checkInternetCallback():
@@ -650,11 +659,23 @@ class NetworkOverview(Screen):
 		if self.currentList == "adapterList" and self["networksList"].count():
 			self.setListFocus("networksList")
 
+	def keyTop(self):
+		self[self.currentList].goTop()
+
+	def keyPageUp(self):
+		self[self.currentList].goPageUp()
+
 	def keyUp(self):
 		self[self.currentList].goLineUp()
 
 	def keyDown(self):
 		self[self.currentList].goLineDown()
+
+	def keyPageDown(self):
+		self[self.currentList].goPageDown()
+
+	def keyBottom(self):
+		self[self.currentList].goBottom()
 
 	def currentAdapter(self) -> Adapter | None:
 		entry = self["adapterList"].getCurrent()
@@ -875,7 +896,7 @@ class NetworkOverview(Screen):
 		if self.currentList == "networksList" and not self["networksList"].count():
 			self.setListFocus("adapterList")
 		else:
-			self.updateKeyGreen()
+			self.updateButtons()
 
 	def keyOK(self):
 		adapter = self.currentAdapter()
@@ -895,30 +916,47 @@ class NetworkOverview(Screen):
 	def keyGreen(self):
 		adapter = self.currentAdapter()
 		if adapter:
-			conn = self.currentConnection()
-			if conn is None or not adapter.isWlan:
+			if self.currentList == "adapterList":
 				self.toggleAdapter(adapter)
 			else:
-				self._activateWlanConnection(conn, adapter)
+				conn = self.currentConnection()
+				if conn:
+					self.toggleConnection(conn, adapter)
 
 	def keyInfo(self):
-		adapter = self.currentAdapter()
-		if adapter:
-			self.session.open(InformationNetwork, adapter, self.currentConnection())
+		if self.currentList == "adapterList":
+			adapter = self.currentAdapter()
+			if adapter:
+				self.session.open(InformationNetwork, adapter, self.currentConnection())
 
-	def updateKeyGreen(self):
+	def isConnectionLive(self, conn: Connection, adapter: Adapter) -> bool:
+		"""True if conn is the WLAN connection the adapter is currently associated
+		with – same check as buildOverviewConnectionRow()'s isLive."""
+		return adapter.netInfo.link and adapter.netInfo.ssid == conn.wlan.ssid
+
+	def updateButtons(self):
 		adapter = self.currentAdapter()
-		if adapter is None:
-			text = ""
-		else:
-			conn = self.currentConnection()
-			if conn is None or not adapter.isWlan:
-				text = _("Deactivate") if adapter.adapterEnabled else _("Activate")
+		blueText = ""
+		greenText = ""
+		infoText = ""
+		if adapter:
+			if self.currentList == "adapterList":
+				infoText = "INFO"
+				if adapter:
+					greenText = _("Deactivate") if adapter.adapterEnabled else _("Activate")
 			else:
-				connections = self.overviewWlanConnections(adapter)
-				text = _("Activate") if len(connections) > 1 and not conn.enabled else ""
-		self["key_green"].setText(text)
-		self["actions"].setEnabledAction("green", text != "")
+				conn = self.currentConnection()
+				greenText = _("Disable") if conn.enabled else _("Enable")
+				if conn.enabled and not self.isConnectionLive(conn, adapter):
+					blueText = _("Connect")
+		self["key_green"].setText(greenText)
+		self["key_blue"].setText(blueText)
+		self["key_info"].setText(infoText)
+		self["actions"].setEnabledAction("green", greenText != "")
+		self["actions"].setEnabledAction("blue", blueText != "")
+		self["actions"].setEnabledAction("info", infoText != "")
+		self["actions"].setEnabledAction("left", infoText != "")
+		self["actions"].setEnabledAction("right", adapter and infoText == "")
 
 	def keyMenu(self):
 		adapter = self.currentAdapter()
@@ -933,9 +971,29 @@ class NetworkOverview(Screen):
 				preselected = adapter if adapter is not None and adapter.isWlan else None
 				NetworkWiFiAddFlow.start(self.session, adapter=preselected, callback=lambda *_: self.buildAdapters())
 
+	def keyBlue(self):
+		conn = self.currentConnection()
+		adapter = self.currentAdapter()
+		if adapter and conn and conn.enabled and not self.isConnectionLive(conn, adapter):
+			def done(extraArgs):
+				self.session.showInfo(_("Please wait, Connecting to '%s'") % conn.wlan.ssid)
+
+			cmds = [
+				f"{wpaCliBin} -i{adapter.name} select_network {conn.wlan.wpaId}",
+				f"{wpaCliBin} -i{adapter.name} reassociate",
+			]
+			Console().eBatch(cmds, done, debug=True)
+
 	def connLabel(self, conn: Connection, adapter: Adapter) -> str:
+		encShort = {
+			encNone: "open",
+			encWep: "WEP",
+			encWpa: "WPA",
+			encWpa2: "WPA2",
+			encWpa3: "WPA3"
+		}
 		if conn.isWlan and conn.wlan and conn.wlan.ssid:
-			result = f"{conn.adapter}  │  {conn.wlan.ssid}  [{_ENC_SHORT.get(conn.wlan.encryption, conn.wlan.encryption)}]"
+			result = f"{conn.adapter}  │  {conn.wlan.ssid}  [{encShort.get(conn.wlan.encryption, conn.wlan.encryption)}]"
 		else:
 			mode = "DHCP" if conn.dhcp else conn.ipStr()
 			result = f"{conn.adapter}  │  {mode}"
@@ -1567,15 +1625,15 @@ class NetworkWiFiScanScreen(Screen):
 		results: list[ScanResult] = []
 		current: ScanResult | None = None
 
-		reCell = re.compile(r"Cell \d+ - Address:\s*([0-9A-Fa-f:]{17})")
-		reSsid = re.compile(r'ESSID:"(.*?)"')
-		reFreq = re.compile(r"Frequency:([\d.]+ \w+Hz).*?Channel:?\s*(\d+)?")
-		reQuality = re.compile(r"Quality=(\d+)/(\d+)\s+Signal level=(-?\d+) dBm")
-		reEncOn = re.compile(r"Encryption key:on")
-		reEncOff = re.compile(r"Encryption key:off")
-		reIeWpa1 = re.compile(r"IE:.*WPA Version 1", re.IGNORECASE)
-		reIeWpa2 = re.compile(r"IE:.*WPA2|IE:.*RSN", re.IGNORECASE)
-		# reIeWpa3 = re.compile(r"IE:.*SAE|IE:.*WPA3", re.IGNORECASE)  # WPA3/SAE disabled for now
+		reCell = compile(r"Cell \d+ - Address:\s*([0-9A-Fa-f:]{17})")
+		reSsid = compile(r'ESSID:"(.*?)"')
+		reFreq = compile(r"Frequency:([\d.]+ \w+Hz).*?Channel:?\s*(\d+)?")
+		reQuality = compile(r"Quality=(\d+)/(\d+)\s+Signal level=(-?\d+) dBm")
+		reEncOn = compile(r"Encryption key:on")
+		reEncOff = compile(r"Encryption key:off")
+		reIeWpa1 = compile(r"IE:.*WPA Version 1", IGNORECASE)
+		reIeWpa2 = compile(r"IE:.*WPA2|IE:.*RSN", IGNORECASE)
+		# reIeWpa3 = compile(r"IE:.*SAE|IE:.*WPA3", IGNORECASE)  # WPA3/SAE disabled for now
 
 		for line in raw.splitlines():
 			line = line.strip()
@@ -1630,7 +1688,7 @@ class NetworkWiFiScanScreen(Screen):
 	# unlike iwlist – signalDbm is converted to a percentage below).
 	def parseWpaCliScanResults(self, raw: str) -> list[ScanResult]:
 		results: list[ScanResult] = []
-		reBssid = re.compile(r"^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$")
+		reBssid = compile(r"^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$")
 		for line in raw.splitlines():
 			fields = line.strip().split("\t")
 			if len(fields) < 5 or not reBssid.match(fields[0]):
@@ -1694,6 +1752,7 @@ class NetworkWiFiActivator(Screen):
 		self["status"] = Label()
 		self.setStatus(_("Connecting…"))
 		self.onLayoutFinish.append(self.start)
+		print(f"[NetworkWiFiActivator] DEBUG __init__: iface={adapter.name} ssid={self.ssid!r}")
 
 	# All status updates go through here so every message stays anchored to
 	# which connection (SSID) and adapter it's actually about – there's only
@@ -1703,6 +1762,7 @@ class NetworkWiFiActivator(Screen):
 
 	def start(self):
 		def connectedCb(retval: int):
+			print(f"[NetworkWiFiActivator] DEBUG connectedCb: iface={self.adapter.name} retval={retval}")
 			if retval != 0:
 				self.setStatus(self.diagnoseFailure())
 				self.scheduleClose(6000, "")
@@ -1722,12 +1782,21 @@ class NetworkWiFiActivator(Screen):
 		# True, or the "was it already enabled" check is meaningless by the
 		# time this screen opens.
 		self.setStatus(_("Connecting…"))
+		print(f"[NetworkWiFiActivator] DEBUG start: dispatching wlanActivate for iface={self.adapter.name}")
 		self.serviceAction = ServiceAction.wlanActivate(self.adapter.name, connectedCb)
 
 	def checkIp(self):
+		def getKernelIp(iface: str) -> str:
+			addrs = ifaddresses(iface)
+			result = ""
+			if AF_INET in addrs:
+				result = addrs[AF_INET][0].get("addr", "")
+			return result
+
 		iface = self.adapter.name
 		self.pollCount += 1
-		ip = self.getKernelIp(iface)
+		ip = getKernelIp(iface)
+		print(f"[NetworkWiFiActivator] DEBUG checkIp: iface={iface} attempt={self.pollCount}/{self._pollMaxAttempts} ip={ip!r}")
 		if ip and ip not in ("0.0.0.0", ""):
 			self.pollTimer.stop()
 			self.setStatus(_("Connected, IP address: %s") % ip)
@@ -1746,10 +1815,13 @@ class NetworkWiFiActivator(Screen):
 		single generic "failed" message. The SSID/adapter is already shown by
 		setStatus()'s header, so these messages don't repeat it."""
 		iface = self.adapter.name
-		if not networkManager.wpaSupplicantRunning(iface):
+		running = networkManager.wpaSupplicantRunning(iface)
+		print(f"[NetworkWiFiActivator] DEBUG diagnoseFailure: iface={iface} wpaSupplicantRunning={running}")
+		if not running:
 			reason = _("Could not connect.\nWi-Fi driver (wpa_supplicant) did not start – check your Wi-Fi settings.")
 		else:
 			state = networkManager.getWlanStatus(iface).get("wpa_state", "")
+			print(f"[NetworkWiFiActivator] DEBUG diagnoseFailure: iface={iface} wpa_state={state!r}")
 			if state == "COMPLETED":
 				reason = _("Connected, but no IP address was received.\nCheck your router's DHCP settings.")
 			elif state in ("4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
@@ -1760,18 +1832,19 @@ class NetworkWiFiActivator(Screen):
 				reason = _("Could not connect (status: %s).") % state
 		return reason + "\n" + _("Configuration saved – will retry automatically at next boot.")
 
-	@staticmethod
-	def getKernelIp(iface: str) -> str:
-		addrs = netifaces.ifaddresses(iface)
-		result = ""
-		if netifaces.AF_INET in addrs:
-			result = addrs[netifaces.AF_INET][0].get("addr", "")
-		return result
-
 	def scheduleClose(self, delayMs: int, ip: str):
+		print(f"[NetworkWiFiActivator] DEBUG scheduleClose: iface={self.adapter.name} delayMs={delayMs} ip={ip!r}")
+
+		def doClose():
+			print(f"[NetworkWiFiActivator] DEBUG scheduleClose: firing close() now for iface={self.adapter.name} ip={ip!r}")
+			self.close(ip)
 		self.closeTimer = eTimer()
-		self.closeTimer.callback.append(lambda: self.close(ip))
+		self.closeTimer.callback.append(doClose)
 		self.closeTimer.start(delayMs, True)
+
+	def close(self, *args, **kwargs):
+		print(f"[NetworkWiFiActivator] DEBUG close: iface={self.adapter.name} args={args}")
+		return Screen.close(self, *args, **kwargs)
 
 
 # ===========================================================================

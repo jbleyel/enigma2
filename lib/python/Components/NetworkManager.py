@@ -1610,32 +1610,6 @@ class NetworkManager:
 			if callback:
 				callback(False)
 
-	# ------------------------------------------------------------------
-	# WLAN switch
-	# ------------------------------------------------------------------
-
-	# Manually activate a specific WLAN Connection via wpa_cli or full bring-up.
-	def switchWlanConnection(self, iface: str, targetConn: Connection) -> list[str]:
-		adapter = self.adapters.get(iface)
-		if adapter is None or not adapter.isWlan:
-			return []
-		others = [x for x in self.getConnections(iface) if x is not targetConn]
-		maxOther = max((x.priority for x in others), default=0)
-		targetConn.priority = maxOther + 10
-		cmds: list[str] = []
-		wpaId = targetConn.wlan.wpaId if targetConn.wlan else None
-		ctrl = adapter.wpaCtrlPath
-		viaWpaCli = exists(ctrl) and wpaId is not None
-		if viaWpaCli:
-			cmds.append(f"{wpaCliBin} -i{iface} disable_network all 2>/dev/null; true")
-			cmds.append(f"{wpaCliBin} -i{iface} enable_network {wpaId}")
-			cmds.append(f"{wpaCliBin} -i{iface} select_network {wpaId}")
-			cmds.append(f"{wpaCliBin} -i{iface} reassociate")
-		else:
-			cmds.extend(WlanRuntime(adapter).commandsActivate(targetConn))
-		self.log(f"switchWlanConnection(): {iface} ssid={targetConn.wlan.ssid if targetConn.wlan else '?'!r} viaWpaCli={viaWpaCli} cmds={cmds}")
-		return cmds
-
 	def getWlanNetworkList(self, iface: str) -> list[str]:
 		return [f"{wpaCliBin} -i{iface} list_networks"]
 

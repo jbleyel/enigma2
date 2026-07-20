@@ -1,4 +1,5 @@
 from os.path import isfile
+from types import CodeType
 
 from enigma import eRCInput, eStack, eTimer, eWindow, getDesktop
 
@@ -370,24 +371,23 @@ class Screen(dict):
 	def reloadSkin(self):
 		self.deleteGUIScreen()
 		if hasattr(self, "additionalWidgets"):
-			for w in self.additionalWidgets:
-				if hasattr(w, "instance") and w.instance:
-					w.instance.hide()
+			for widget in self.additionalWidgets:
+				if hasattr(widget, "instance") and widget.instance:
+					widget.instance.hide()
 			self.additionalWidgets = []
 		if hasattr(self, "renderer"):
-			for r in self.renderer:
-				r.disconnectAll()
-				if hasattr(r, "instance") and r.instance:
-					r.GUIdelete()
+			for renderer in self.renderer:
+				renderer.disconnectAll()
+				if hasattr(renderer, "instance") and renderer.instance:
+					renderer.GUIdelete()
 			self.renderer = []
-		from types import CodeType
-		self.onLayoutFinish = [m for m in self.onLayoutFinish if not isinstance(m, CodeType)]
-		self.onContentChanged = [m for m in self.onContentChanged if not isinstance(m, CodeType)]
+		self.onLayoutFinish = [x for x in self.onLayoutFinish if not isinstance(x, CodeType)]
+		self.onContentChanged = [x for x in self.onContentChanged if not isinstance(x, CodeType)]
 		readSkin(self, None, self.skinName, self.desktop)
 		self.applySkin()
-		for r in self.renderer:
-			if hasattr(r, "instance") and r.instance:
-				r.changed((r.CHANGED_DEFAULT,))
+		for renderer in self.renderer:
+			if hasattr(renderer, "instance") and renderer.instance:
+				renderer.changed((renderer.CHANGED_DEFAULT,))
 
 	def createSummary(self):
 		return None
