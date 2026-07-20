@@ -721,13 +721,13 @@ class NetworkSambaSetup(Setup):
 		inGlobal = False
 		for index, line in enumerate(self.smbConf):
 			line = line.strip()
-			if line.startswith("[").endswith("]"):
+			if line.startswith("[") and line.endswith("]"):
 				inGlobal = line[1:-1].lower() == "global"
 				continue
-			if inGlobal:
+			if inGlobal and "=" in line:
 				self.globalLine = index
 				key, value = [x.strip() for x in line.split("=", 1)]
-				comment = key.startswith(["#", ";"])
+				comment = key.startswith(("#", ";"))
 				match key.lstrip("#;").lstrip().lower():
 					case "workgroup":
 						self.workgroupLine = index
@@ -744,15 +744,16 @@ class NetworkSambaSetup(Setup):
 	def keySave(self):
 		if self.workgroupLine:
 			if self.workgroup.isChanged():
-				self.smbConf[self.workgroupLine] = f"\t{"; " if self.workgroup.value == self.workgroup.default else ""}workgroup = {self.workgroup.value}"
+				self.smbConf[self.workgroupLine] = f"\tworkgroup = {self.workgroup.value}"
 		elif self.globalLine and self.workgroup.value != self.workgroup.default:
 			self.smbConf.insert(self.globalLine, f"\tworkgroup = {self.workgroup.value}")
 			self.globalLine += 1
+		value = "yes" if self.guest.value else "no"
 		if self.guestLine:
 			if self.guest.isChanged():
-				self.smbConf[self.guestLine] = f"\t{"; " if self.guest.value == self.guest.default else ""}guest ok = {self.guest.value}"
+				self.smbConf[self.guestLine] = f"\tguest ok = {value}"
 		elif self.globalLine and self.guest.value != self.guest.default:
-			self.smbConf.insert(self.globalLine, f"\tguest ok = {self.guest.value}")
+			self.smbConf.insert(self.globalLine, f"\tguest ok = {value}")
 		if fileWriteLines(self.SMBCONF, self.smbConf, source=MODULE_NAME):
 			print("Error")
 		Setup.keySave(self)
