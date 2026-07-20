@@ -372,10 +372,10 @@ class QuickMenu(Screen, ProtectedScreen):
 		if activeInterface is not None:  # Show only if there is already a adapter up.
 			self.subList.append(self.quickSubMenuEntryComponent(_("Network Interface"), _("Setup interface"), _("Setup network. Here you can setup DHCP, IP, DNS"), callback=networkInterface))
 		self.subList.append(self.quickSubMenuEntryComponent(_("Network Restart"), _("Restart network to with current setup"), _("Restart network and remount connections"), screen="RestartNetwork"))
-		self.subList.append(self.quickSubMenuEntryComponent(_("Network Services"), _("Setup Network Services"), _("Setup Network Services (Samba, Ftp, NFS, ...)"), screen="NetworkServces", screenName="NetworkServicesSetup"))
-		self.subList.append(self.quickSubMenuEntryComponent(_("MiniDLNA"), _("Setup MiniDLNA"), _("Setup MiniDLNA"), screen="NetworkServces", screenName="NetworkMiniDLNASetup"))
-		self.subList.append(self.quickSubMenuEntryComponent(_("Inadyn"), _("Setup Inadyn"), _("Setup Inadyn"), screen="NetworkServces", screenName="NetworkInadynSetup"))
-		self.subList.append(self.quickSubMenuEntryComponent(_("uShare"), _("Setup uShare"), _("Setup uShare"), screen="NetworkServces", screenName="NetworkuShareSetup"))
+		self.subList.append(self.quickSubMenuEntryComponent(_("Network Services"), _("Setup Network Services"), _("Setup Network Services (Samba, Ftp, NFS, ...)"), screen="NetworkServices", screenName="NetworkServicesSetup"))
+		self.subList.append(self.quickSubMenuEntryComponent(_("MiniDLNA"), _("Setup MiniDLNA"), _("Setup MiniDLNA"), screen="NetworkServices", screenName="NetworkMiniDLNASetup"))
+		self.subList.append(self.quickSubMenuEntryComponent(_("Inadyn"), _("Setup Inadyn"), _("Setup Inadyn"), screen="NetworkServices", screenName="NetworkInadynSetup"))
+		self.subList.append(self.quickSubMenuEntryComponent(_("uShare"), _("Setup uShare"), _("Setup uShare"), screen="NetworkServices", screenName="NetworkuShareSetup"))
 		self.setSubList()
 
 	def subMenuAVSetup(self):  # A/V Settings Menu.
