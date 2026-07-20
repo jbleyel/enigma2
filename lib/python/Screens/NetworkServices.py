@@ -725,7 +725,8 @@ class NetworkSambaSetup(Setup):
 				inGlobal = line[1:-1].lower() == "global"
 				continue
 			if inGlobal and "=" in line:
-				self.globalLine = index
+				if self.globalLine == 0:
+					self.globalLine = index
 				key, value = [x.strip() for x in line.split("=", 1)]
 				comment = key.startswith(("#", ";"))
 				match key.lstrip("#;").lstrip().lower():
