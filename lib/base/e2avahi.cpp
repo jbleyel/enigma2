@@ -657,7 +657,8 @@ void eNetworkServiceBrowser::handleBrowserEvent(AvahiServiceBrowser *browser, in
 	switch (event)
 	{
 	case AVAHI_BROWSER_NEW:
-		eDebug("[eNetworkServiceBrowser] Resolving '%s' of type '%s'", name, type);
+		eDebug("[eNetworkServiceBrowser] Resolving '%s' of type '%s' on ifindex=%d proto=%s",
+			name, type, interfaceIndex, protocol == AVAHI_PROTO_INET6 ? "inet6" : "inet");
 		avahi_service_resolver_new(avahi_client, (AvahiIfIndex)interfaceIndex,
 			(AvahiProtocol)protocol, name, type, domain,
 			AVAHI_PROTO_UNSPEC, (AvahiLookupFlags)0,
@@ -700,7 +701,8 @@ void eNetworkServiceBrowser::handleResolverEvent(int interfaceIndex, int protoco
 {
 	if (event != AVAHI_RESOLVER_FOUND)
 	{
-		eDebug("[eNetworkServiceBrowser] Failed to resolve '%s' of type '%s': %s", name, type,
+		eDebug("[eNetworkServiceBrowser] Failed to resolve '%s' of type '%s' on ifindex=%d proto=%s: %s",
+			name, type, interfaceIndex, protocol == AVAHI_PROTO_INET6 ? "inet6" : "inet",
 			avahi_strerror(avahi_client_errno(avahi_client)));
 		return;
 	}

@@ -222,6 +222,8 @@ def loadSkin(filename, scope=SCOPE_SKINS, desktop=getDesktop(GUI_SKIN_ID), scree
 
 
 def reloadSkins():
+	for styleID in windowStyles:  # Reset window styles so a new skin without its own <windowstyle> doesn't inherit the previous skin's fonts/colors.
+		eWindowStyleManager.getInstance().setStyle(styleID, eWindowStyleSkinned())
 	domScreens.clear()
 	colors.clear()
 	colors.update({
