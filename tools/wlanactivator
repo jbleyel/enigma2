@@ -28,6 +28,14 @@ do_start() {
   validate_iface
   WPA_CONF="/etc/wpa_supplicant.${IFACE}.conf"
   WPA_PID="/var/run/wpa_supplicant-${IFACE}.pid"
+  NETID="${3:-}"
+  case "$NETID" in
+    '') ;;
+    *[!0-9]*)
+      echo "Invalid network id '$NETID' (must be numeric)" >&2
+      exit 2
+      ;;
+  esac
 
   # tear down any existing state
   wpa_cli -i"${IFACE}" terminate 2>/dev/null || true
@@ -44,6 +52,13 @@ do_start() {
     wpa_supplicant -B -D nl80211,wext -i"${IFACE}" -c"${WPA_CONF}" -P"${WPA_PID}"
     # give wpa_supplicant a moment to associate before ifup
     sleep 1
+    if [ -n "$NETID" ]; then
+      # Pin to exactly this saved network - select_network also disables
+      # every other enabled network for this run, so wpa_supplicant can't
+      # auto-pick/roam to a different saved SSID instead of the one the
+      # user actually chose.
+      wpa_cli -i"${IFACE}" select_network "$NETID" >/dev/null 2>&1 || true
+    fi
   fi
 
   ifup "${IFACE}"

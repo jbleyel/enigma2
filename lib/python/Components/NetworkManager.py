@@ -875,6 +875,13 @@ class NetEventReader:
 			self.manager.onIfaceRemove(parts[1])
 		elif evt == "SCAN_TRIGGER" and len(parts) == 2:
 			self.manager.onScanTrigger(parts[1])
+		elif evt == "NEIGH" and len(parts) == 8:
+			# NEIGH,<ADD|CHANGE|REMOVE>,<family>,<ifindex>,<iface>,<addr>,<lladdr>,<state>
+			# see NETWORK_BROWSER_PLUGIN_V5.md section 5.3/30.1
+			try:
+				self.manager.onNeighborChange(parts[1], int(parts[2]), int(parts[3]), parts[4], parts[5], parts[6], parts[7])
+			except ValueError:
+				self.manager.log(f"NetEventReader: malformed NEIGH line {line!r}")
 
 
 # Polls (up to 10 x 1s) until the hostname resolves to something other than
@@ -980,15 +987,55 @@ class AvahiProvider:
 			"domain": entry["domain"],
 			"txt": entry["txt"],
 		}
-		print("AvahiProvider observation", observation)
 		for callback in self.onObservation:
 			callback(observation)
 
 
 # ===========================================================================
-# DiscoveryManager – owns and coordinates discovery providers. Currently just
-# AvahiProvider; WSD/Neighbor/Portscan/Manual providers get added here as
-# they're built (see NETWORK_BROWSER_PLUGIN_V5.md section 3.1/5). Not a
+# NeighborProvider – relays ARP/NDP neighbor-table observations as discovery
+# candidates. See NETWORK_BROWSER_PLUGIN_V5.md section 5.3/30.1.
+#
+# Unlike AvahiProvider, this provider doesn't do any discovery work itself -
+# the socketdaemon's monitor_thread already reads the kernel neighbor table
+# continuously regardless of whether NetworkMounts is interested (see
+# nm_dump_neighbors()/RTM_NEWNEIGH in socketdaemon/main.c), and NetworkManager
+# already turns that into onNeighborObservation callbacks (onNeighborChange
+# above). start()/stop() here only toggle whether *this* provider is currently
+# subscribed to that already-flowing stream - same on-demand lifecycle and
+# same onObservation interface shape as AvahiProvider, so DiscoveryManager can
+# treat both uniformly.
+#
+# Observations are candidate hosts only, not confirmed service instances -
+# unlike Avahi's, they carry no "protocol" (a neighbor-table entry says
+# nothing about what, if anything, that host offers - see doc section 5.3).
+# ===========================================================================
+
+class NeighborProvider:
+	def __init__(self):
+		self._started = False
+		self.onObservation: list[Callable] = []
+
+	def start(self):
+		if self._started:
+			return
+		networkManager.onNeighborObservation.append(self._changed)
+		self._started = True
+
+	def stop(self):
+		if not self._started:
+			return
+		networkManager.onNeighborObservation.remove(self._changed)
+		self._started = False
+
+	def _changed(self, observation: dict):
+		for callback in self.onObservation:
+			callback(observation)
+
+
+# ===========================================================================
+# DiscoveryManager – owns and coordinates discovery providers. Currently
+# AvahiProvider and NeighborProvider; WSD/Portscan/Manual providers get added
+# here as they're built (see NETWORK_BROWSER_PLUGIN_V5.md section 3.1/5). Not a
 # HostRegistry yet - no dedup/merge, just fans provider observations out to
 # subscribers.
 #
@@ -1011,6 +1058,7 @@ class DiscoveryManager:
 		self._stopTimer = eTimer()
 		self._stopTimer.callback.append(self.stop)
 		self._addProvider(AvahiProvider())
+		self._addProvider(NeighborProvider())
 
 	def _addProvider(self, provider):
 		provider.onObservation.append(self._onObservation)
@@ -1091,6 +1139,7 @@ class NetworkManager:
 		self.pendingRestart = None
 		self.networkCheck = None
 		self.onAdaptersChanged: list[Callable] = []
+		self.onNeighborObservation: list[Callable] = []
 		self.netinfoUpdateTimer = eTimer()
 		self.netinfoUpdateTimer.callback.append(self.onNetinfoUpdateDebounced)
 		self.load()
@@ -1935,6 +1984,32 @@ class NetworkManager:
 	def onScanTrigger(self, iface: str):
 		self.log(f"onScanTrigger(): {iface}")
 		pass  # placeholder: trigger wpa_cli scan when WLAN comes up
+
+	# Dispatch entry point for NEIGH events from the socketdaemon (see
+	# NetEventReader._dispatch() above) - NetworkManager itself has no use for
+	# neighbor/ARP data, this only exists to fan it out to whoever does
+	# (the future NetworkMounts Neighbor-Provider, see
+	# NETWORK_BROWSER_PLUGIN_V5.md section 5.3). Normalizes into the same
+	# kind of observation dict shape AvahiProvider._dispatch() produces, minus
+	# "protocol" - a neighbor entry is just a candidate host, not yet known to
+	# offer any particular service.
+	def onNeighborChange(self, action: str, family: int, ifindex: int, iface: str, address: str, lladdr: str, state: str):
+		self.log(f"onNeighborChange(): {action} {address} lladdr={lladdr} iface={iface} state={state}")
+		observation = {
+			"source": "neighbor",
+			"action": action,       # "ADD" | "CHANGE" | "REMOVE"
+			"family": family,       # 4 | 6
+			"ifindex": ifindex,
+			"interface": iface,
+			"address": address,
+			"lladdr": lladdr,       # empty string for some REMOVE events, see socketdaemon main.c
+			"state": state,         # REACHABLE/STALE/DELAY/PROBE, or last-known state for REMOVE
+		}
+		for callback in self.onNeighborObservation:
+			try:
+				callback(observation)
+			except Exception:
+				pass
 
 
 # ===========================================================================

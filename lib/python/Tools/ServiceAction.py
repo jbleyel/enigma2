@@ -94,9 +94,14 @@ class ServiceAction:
         return cls(data)
 
     @classmethod
-    def wlanActivate(cls, iface: str, callback, timeout: int = 30000) -> "ServiceAction":
-        """WLANUP,<iface> → wlanactivator start <iface> → callback(exitCode)"""
-        cls._dispatch("WLANUP", iface, callback, timeout)
+    def wlanActivate(cls, iface: str, callback, networkId: "int | None" = None, timeout: int = 30000) -> "ServiceAction":
+        """WLANUP,<iface>[,<networkId>] → wlanactivator start <iface> [<networkId>] → callback(exitCode)
+
+        networkId pins wpa_supplicant to exactly that one saved network
+        instead of letting it auto-pick/roam among every enabled network in
+        wpa_supplicant.conf."""
+        data = f"{iface},{networkId}" if networkId is not None else iface
+        cls._dispatch("WLANUP", data, callback, timeout)
         return cls(iface)
 
     @classmethod
