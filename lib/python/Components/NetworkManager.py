@@ -1064,9 +1064,13 @@ class DiscoveryManager:
 		provider.onObservation.append(self._onObservation)
 		self._providers.append(provider)
 
+	# No early "if self._started: return" here - a caller that wants an
+	# unbounded live scan (runMs=None, e.g. a Discovery screen while it's
+	# open) must be able to cancel an already-running bounded pass's pending
+	# auto-stop (e.g. the boot-time DEFAULT_RUN_MS one), not just no-op
+	# against it. provider.start() is itself idempotent, so calling this
+	# again is always cheap.
 	def start(self, runMs: int | None = DEFAULT_RUN_MS):
-		if self._started:
-			return
 		for provider in self._providers:
 			provider.start()
 		self._started = True
