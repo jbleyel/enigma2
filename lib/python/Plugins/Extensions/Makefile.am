@@ -38,4 +38,6 @@ if S8100
 SUBDIRS += MiniTV
 endif
 
+SUBDIRS += GUITest FontBenchmark
+
 install_PYTHON = __init__.py

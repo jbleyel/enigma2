@@ -1938,9 +1938,7 @@ class NetworkManager:
 		candidates = [
 			iface
 			for iface, adapter in self.adapters.items()
-			if adapter.netInfo.link and (
-				conn := self.activeConnection(iface)
-			) is not None and (conn.dhcp or conn.gateway != [0, 0, 0, 0])
+			if adapter.netInfo.link and adapter.netInfo.gateway != [0, 0, 0, 0] and self.activeConnection(iface) is not None
 		]
 		self.log(f"checkConnectionInternet(): candidates={candidates}")
 		if not candidates:

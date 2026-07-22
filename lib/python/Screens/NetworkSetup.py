@@ -1707,9 +1707,9 @@ class NetworkWiFiActivator(Screen):
 	attempt fails or times out."""
 
 	skin = """
-	<screen name="NetworkWiFiActivator" title="Connecting…" position="center,center" size="500,230" resolution="1280,720">
-		<widget name="status" position="10,10" size="480,170" font="Regular;22" horizontalAlignment="center" verticalAlignment="center" />
-		<widget source="key_red" render="Label" position="10,190" size="480,30" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
+	<screen name="NetworkWiFiActivator" title="Connecting…" position="center,center" size="480,260" resolution="1280,720">
+		<widget name="status" position="10,10" size="e-20,e-70" font="Regular;22" horizontalAlignment="center" verticalAlignment="center" />
+		<widget source="key_red" render="Label" position="10,e-50" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" halign="center" noWrap="1" valign="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
 	</screen>"""

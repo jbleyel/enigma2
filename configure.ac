@@ -1002,6 +1002,8 @@ lib/python/Plugins/Extensions/QuadPip/Makefile
 lib/python/Plugins/Extensions/StreamlinkWrapper/Makefile
 lib/python/Plugins/Extensions/YTDLWrapper/Makefile
 lib/python/Plugins/Extensions/YTDLPWrapper/Makefile
+lib/python/Plugins/Extensions/FontBenchmark/Makefile
+lib/python/Plugins/Extensions/GUITest/Makefile
 lib/python/Plugins/SystemPlugins/Makefile
 lib/python/Plugins/SystemPlugins/AnimationSetup/Makefile
 lib/python/Plugins/SystemPlugins/AmlFRQ/Makefile

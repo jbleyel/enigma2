@@ -4,7 +4,7 @@ from re import sub
 from uuid import uuid4
 from xml.etree.ElementTree import Element, ElementTree, SubElement
 
-from enigma import eTimer
+from enigma import eTimer, gRGB
 
 from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigPassword, ConfigSelection, ConfigText, ConfigYesNo, NoSave
@@ -18,8 +18,7 @@ from Screens.InputBox import InputBox
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Screens.Setup import Setup
-from Tools.Directories import SCOPE_ACTIVE_SKIN, SCOPE_PLUGINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
-from Tools.LoadPixmap import LoadPixmap
+from Tools.Directories import fileReadLines, fileReadXML, fileWriteLines
 
 MODULE_NAME = __name__.split(".")[-1]
 
@@ -361,29 +360,56 @@ class NetworkMountDiscoveryScreen(Screen):
 	list/action/skin structure follows NetworkWiFiScanScreen
 	(Screens/NetworkSetup.py) - List/indexNames, HelpableActionMap,
 	Red/Green/Yellow/Blue keys, onShow starts the scan.
-	Icons are the old plugin's PNGs, referenced in place exactly like the
-	old code did (skin override in "networkbrowser/" first, else the old
-	plugin's own SystemPlugins/NetworkBrowser/icons/ as fallback) - a final
-	icon set is still undecided, nothing is duplicated into enigma2 core
-	for this.
+	Two <rowtemplate>s (see NetworkOverview in NetworkSetup.py for the same
+	multi-template/"_rowTemplate" selector pattern) - no pixmap icons, only
+	enigma2icons glyphs, same convention as the rest of NetworkSetup.py:
+	host rows show a glyph, then IP and name; share rows show the protocol
+	as text, a mounted/not-mounted glyph, the share name, and - once
+	already configured - its local automounts.xml path.
 	Standby-safety (doc section 6.1): share enumeration only runs when a
 	host is explicitly expanded (OK/Green on a host row) or re-expanded via
 	Rescan - never automatically for hosts that are merely listed."""
 
+	GLYPH_HOST = "\uE994"          # router
+	GLYPH_MOUNTED = "\uE914"       # check_circle - same glyph/meaning as NetworkSetup.py's STATE_OK
+	GLYPH_NOT_MOUNTED = "\uE918"   # cancel - same glyph/meaning as NetworkSetup.py's STATE_FAIL
+	COLOR_MOUNTED = gRGB(0x0000CC00).argb()    # green, matches NetworkSetup.py's STATE_OK
+	COLOR_NOT_MOUNTED = gRGB(0x00808080).argb()  # grey - "not configured yet" isn't an error
+
+	TEMPLATE_HOST = 0
+	TEMPLATE_SHARE = 1
+
+	# Position 0 is data[0], the <rowtemplate> selector (see TEMPLATE_* /
+	# elistboxcontent.cpp's selectTemplate(), same convention as
+	# NetworkOverview.ADAPTER_INDEX_NAMES in NetworkSetup.py) - reserved
+	# here (not a real field) so indexNames stays contiguous from 0.
+	INDEX_NAMES = {
+		"_rowTemplate": 0,
+		"Glyph": 1,          # host row: host glyph; share row: mounted/not-mounted glyph
+		"GlyphColor": 2,      # share row only
+		"IPAddress": 3,       # host row only
+		"Type": 4,            # share row only: "NFS"/"CIFS"
+		"Name": 5,            # host row: hostname; share row: share name
+		"LocalPath": 6,       # share row only, when already configured
+		"Data": 7,
+	}
+
 	skin = """
 	<screen name="NetworkMountDiscoveryScreen" title="Discover Network Shares" position="center,center" size="1080,465" resolution="1280,720">
-		<widget source="list" render="Listbox" position="0,0" size="1080,370">
-			<templates>
-				<template name="Default" fonts="Regular;22,Regular;18" itemHeight="44">
-					<mode name="default">
-						<pixmap index="Icon" position="4,6" size="32,32" alpha="blend" scale="centerScaled" />
-						<pixmap index="TreeIndent" position="44,10" size="24,24" alpha="blend" scale="centerScaled" />
-						<pixmap index="MountedIcon" position="76,10" size="24,24" alpha="blend" scale="centerScaled" />
-						<text index="Name" position="110,2" size="500,26" font="0" />
-						<text index="Detail" position="110,26" size="960,18" font="1" foregroundColor="grey" />
-					</mode>
-				</template>
-			</templates>
+		<widget source="list" render="Listbox" position="0,0" size="1080,370" scrollbarMode="showOnDemand">
+			<template name="Default" fonts="enigma2icons;28,Regular;22,Regular;18" itemHeight="44">
+				<rowtemplate>
+					<text index="Glyph" position="10,0" size="40,44" font="0" horizontalAlignment="center" verticalAlignment="center" />
+					<text index="IPAddress" position="60,0" size="220,44" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Name" position="290,0" size="770,44" font="1" horizontalAlignment="left" verticalAlignment="center" />
+				</rowtemplate>
+				<rowtemplate>
+					<text index="Type" position="60,0" size="80,44" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Glyph" position="150,0" size="40,44" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+GlyphColor" />
+					<text index="Name" position="200,0" size="350,44" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="LocalPath" position="560,0" size="500,44" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+				</rowtemplate>
+			</template>
 		</widget>
 		<eRectangle position="0,373" size="e,1" />
 		<widget name="description" position="0,378" size="e,52" font="Regular;20" verticalAlignment="top" horizontalAlignment="left" />
@@ -404,17 +430,6 @@ class NetworkMountDiscoveryScreen(Screen):
 		</widget>
 	</screen>"""
 
-	# Old plugin's icon filenames, looked up the same way it did: an active
-	# skin's own "networkbrowser/<name>" first, else the old plugin's
-	# bundled icon (only works if that plugin package is still installed -
-	# transitional until a real icon set is picked, see class docstring).
-	ICON_HOST = "host.png"
-	ICON_TREE_LINE = "verticalLine.png"
-	ICON_NFS = "i-nfs.png"
-	ICON_SMB = "i-smb.png"
-	ICON_MOUNTED = "ok.png"
-	ICON_NOT_MOUNTED = "cancel.png"
-
 	# Avahi's "smb"/"nfs" (see AVAHI_SERVICE_TYPES) vs. the mount protocol
 	# values NetworkMountSetup actually uses ("cifs"/"nfs") - shares found
 	# via enumeration are tagged "nfs"/"smb" the same way, mapped once here.
@@ -428,8 +443,7 @@ class NetworkMountDiscoveryScreen(Screen):
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Discover Network Shares"))
-		indexNames = {"Icon": 0, "TreeIndent": 1, "MountedIcon": 2, "Name": 3, "Detail": 4, "Data": 5}
-		self["list"] = List([], indexNames=indexNames)
+		self["list"] = List([], indexNames=self.INDEX_NAMES)
 		self["description"] = Label()
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Select"))
@@ -448,26 +462,13 @@ class NetworkMountDiscoveryScreen(Screen):
 		self.shares = {}         # address -> [share dict, ...]
 		self.shareState = {}     # address -> "loading" | "done" | "empty"
 		self.pendingProtocols = {}  # address -> {"nfs", "smb"} remaining
-		self.configuredShares = set()  # {(server, remotepath), ...} already in automounts.xml
+		self.configuredShares = {}  # (server, remotepath) -> local mount path, for already-configured shares
 		self.console = Console()
 		self.closed = False
-		self.hostIcon = self._loadIcon(self.ICON_HOST)
-		self.treeLineIcon = self._loadIcon(self.ICON_TREE_LINE)
-		self.nfsIcon = self._loadIcon(self.ICON_NFS)
-		self.smbIcon = self._loadIcon(self.ICON_SMB)
-		self.mountedIcon = self._loadIcon(self.ICON_MOUNTED)
-		self.notMountedIcon = self._loadIcon(self.ICON_NOT_MOUNTED)
 		self.refreshTimer = eTimer()
 		self.refreshTimer.callback.append(self.rebuildList)
 		self.onShow.append(self.startDiscovery)
 		self.onClose.append(self.stopDiscovery)
-
-	@staticmethod
-	def _loadIcon(name):
-		path = resolveFilename(SCOPE_ACTIVE_SKIN, f"networkbrowser/{name}")
-		if not exists(path):
-			path = resolveFilename(SCOPE_PLUGINS, f"SystemPlugins/NetworkBrowser/icons/{name}")
-		return LoadPixmap(cached=True, path=path) if exists(path) else None
 
 	# Runs discovery only while this screen is open (standby-safety rule,
 	# see doc section 3.2/6.1 - passive host discovery is fine to run
@@ -475,7 +476,8 @@ class NetworkMountDiscoveryScreen(Screen):
 	# runMs=None requests an unbounded live scan, overriding the bounded
 	# once-per-boot pass DiscoveryManager may already be running.
 	def startDiscovery(self):
-		self.configuredShares = {(mount.get("server"), (mount.get("remotepath") or "").lstrip("/")) for mount in NetworkMountRepository().load()}
+		repository = NetworkMountRepository()
+		self.configuredShares = {(mount.get("server"), (mount.get("remotepath") or "").lstrip("/")): repository.mountPointFor(mount) for mount in repository.load()}
 		discoveryManager.onObservation.append(self.onObservation)
 		discoveryManager.start(runMs=None)
 		self["description"].setText(_("Scanning…"))
@@ -631,22 +633,21 @@ class NetworkMountDiscoveryScreen(Screen):
 		entries = []
 		for host in sorted(self.hosts.values(), key=lambda h: (not h["protocols"], h["hostname"] or h["address"])):
 			address = host["address"]
-			protocolLabel = ", ".join(self.PROTOCOL_LABELS.get(protocol, protocol) for protocol in sorted(host["protocols"])) or _("candidate")
-			name = f'{host["hostname"]}  ( {address} )' if host["hostname"] else address
-			detail = "  ".join(part for part in (protocolLabel, host["interface"] or "", host["state"] or "") if part)
-			entries.append((self.hostIcon, None, None, name, detail, {"kind": "host", "address": address}))
+			name = host["hostname"] or address
+			entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", {"kind": "host", "address": address}))
 			if address not in self.expanded:
 				continue
 			state = self.shareState.get(address)
 			if state == "loading":
-				entries.append((None, self.treeLineIcon, None, _("Scanning for shares…"), "", {"kind": "status"}))
+				entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares…"), "", {"kind": "status"}))
 			elif state == "empty":
-				entries.append((None, self.treeLineIcon, None, _("No shares found."), "", {"kind": "status"}))
+				entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", {"kind": "status"}))
 			for share in self.shares.get(address, []):
-				protocolIcon = self.nfsIcon if share["protocol"] == "nfs" else self.smbIcon
-				configured = (address, share["path"].lstrip("/")) in self.configuredShares
-				mountedIcon = self.mountedIcon if configured else self.notMountedIcon
-				entries.append((protocolIcon, self.treeLineIcon, mountedIcon, share["name"], share["path"], dict(share, kind="share")))
+				typeLabel = self.PROTOCOL_LABELS.get(share["protocol"], share["protocol"])
+				localPath = self.configuredShares.get((address, share["path"].lstrip("/")))
+				glyph = self.GLYPH_MOUNTED if localPath else self.GLYPH_NOT_MOUNTED
+				glyphColor = self.COLOR_MOUNTED if localPath else self.COLOR_NOT_MOUNTED
+				entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", dict(share, kind="share")))
 		self["list"].setList(entries)
 		count = len(self.hosts)
 		self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning…"))
