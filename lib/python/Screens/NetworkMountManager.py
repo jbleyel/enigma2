@@ -370,7 +370,7 @@ class NetworkMountDiscoveryScreen(Screen):
 	host is explicitly expanded (OK/Green on a host row) or re-expanded via
 	Rescan - never automatically for hosts that are merely listed."""
 
-	GLYPH_HOST = "\uE994"          # router
+	GLYPH_HOST = "\uEA6D"          # host
 	GLYPH_MOUNTED = "\uE914"       # check_circle - same glyph/meaning as NetworkSetup.py's STATE_OK
 	GLYPH_NOT_MOUNTED = "\uE918"   # cancel - same glyph/meaning as NetworkSetup.py's STATE_FAIL
 	COLOR_MOUNTED = gRGB(0x0000CC00).argb()    # green, matches NetworkSetup.py's STATE_OK
@@ -485,7 +485,14 @@ class NetworkMountDiscoveryScreen(Screen):
 
 	def stopDiscovery(self):
 		self.closed = True
-		discoveryManager.onObservation.remove(self.onObservation)
+		self.refreshTimer.stop()
+		# .remove() raises ValueError if this instance's onObservation was
+		# never registered (e.g. discoveryClosed() ran before onShow ever
+		# fired) - must not skip stop()/killAll() below because of that.
+		try:
+			discoveryManager.onObservation.remove(self.onObservation)
+		except ValueError:
+			pass
 		discoveryManager.stop()
 		self.console.killAll()
 
@@ -555,7 +562,7 @@ class NetworkMountDiscoveryScreen(Screen):
 		self.console.ePopen((self.NFS_SHOWMOUNT_BIN, self.NFS_SHOWMOUNT_BIN, "-e", address), callback=lambda data, retVal, extra=None: self.onNfsResult(address, data, retVal))
 
 	def onNfsResult(self, address, data, retVal):
-		if self.closed:
+		if getattr(self, "closed", True):
 			return
 		if retVal == 0 and data:
 			for line in data.splitlines()[1:]:
@@ -574,7 +581,7 @@ class NetworkMountDiscoveryScreen(Screen):
 		self.console.ePopen((self.SMB_SMBCLIENT_BIN, self.SMB_SMBCLIENT_BIN, "-m", "SMB3", "-N", "-g", "-L", address), callback=lambda data, retVal, extra=None: self.onSmbResult(address, data, retVal))
 
 	def onSmbResult(self, address, data, retVal):
-		if self.closed:
+		if getattr(self, "closed", True):
 			return
 		if data:
 			for line in data.splitlines():
@@ -584,7 +591,7 @@ class NetworkMountDiscoveryScreen(Screen):
 		self.finishProtocol(address, "smb")
 
 	def finishProtocol(self, address, protocol):
-		if self.closed:
+		if getattr(self, "closed", True):
 			return
 		pending = self.pendingProtocols.get(address)
 		if pending is not None:
@@ -596,6 +603,12 @@ class NetworkMountDiscoveryScreen(Screen):
 	# -- discovery observations (hosts, not shares - see onObservation) --
 
 	def onObservation(self, observation):
+		# Defends against a stale registration outliving this screen (see
+		# stopDiscovery()'s comment): Screen teardown can clear this
+		# instance's __dict__ entirely, so even "self.closed" would itself
+		# raise AttributeError - getattr's default sidesteps that.
+		if getattr(self, "closed", True):
+			return
 		source = observation.get("source")
 		if source == "avahi":
 			protocol = observation.get("protocol")
@@ -628,7 +641,7 @@ class NetworkMountDiscoveryScreen(Screen):
 			self.refreshTimer.start(self.REFRESH_DEBOUNCE_MS, True)
 
 	def rebuildList(self):
-		if self.closed:
+		if getattr(self, "closed", True):
 			return
 		entries = []
 		for host in sorted(self.hosts.values(), key=lambda h: (not h["protocols"], h["hostname"] or h["address"])):

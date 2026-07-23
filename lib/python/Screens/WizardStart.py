@@ -16,7 +16,7 @@ from Screens.HarddiskSetup import HarddiskSelection
 from Screens.HelpMenu import ShowRemoteControl
 from Screens.MessageBox import MessageBox
 from Screens.Standby import TryQuitMainloop, QUIT_RESTART
-from Screens.VideoWizard import VideoWizard
+from Screens.WizardVideo import WizardVideo
 from Screens.Wizard import wizardManager, Wizard
 from Tools.Directories import fileReadLine, fileReadLines, fileWriteLines
 
@@ -27,7 +27,7 @@ config.misc.videowizardenabled = ConfigBoolean(default=True)
 config.misc.wizardLanguageEnabled = ConfigBoolean(default=True)
 
 
-class StartWizard(Wizard, ShowRemoteControl):
+class WizardStart(Wizard, ShowRemoteControl):
 	nwPollIntervalMs = 1500
 	nwPollMaxAttempts = 12  # 18 s total
 
@@ -35,6 +35,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self.xmlfile = ["startwizard.xml"]
 		Wizard.__init__(self, session, showSteps=False)
 		ShowRemoteControl.__init__(self)
+		self.skinName.insert(0, "StartWizard")
 		self.deviceData = {}
 		self.mountData = None
 		self.swapDevice = None
@@ -91,7 +92,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 			print("[FlashExpander] fstabUpdate DEBUG: Ending fstab:\n%s" % "\n".join(fstabNew))
 			messageBox.close()
 
-		print("[StartWizard] DEBUG createSwapFileFlashExpander")
+		print("[WizardStart] DEBUG createSwapFileFlashExpander")
 		messageBox = self.session.openWithCallback(messageBoxCallback, MessageBox, _("Please wait, swap is being created. This could take a few minutes to complete."), MessageBox.TYPE_INFO, enable_input=False, windowTitle=_("Create swap"))
 		fileName = join("/.FlashExpander", "swapfile")
 		commands = []
@@ -104,7 +105,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 	def createSwapFile(self, callback):
 		def getPathMountData(path):
 			mounts = fileReadLines("/proc/mounts", [], source=MODULE_NAME)
-			print("[StartWizard] getPathMountData DEBUG: path=%s." % path)
+			print("[WizardStart] getPathMountData DEBUG: path=%s." % path)
 			for mount in mounts:
 				data = mount.split()
 				if data[MOUNT_DEVICE] == path:
@@ -121,20 +122,20 @@ class StartWizard(Wizard, ShowRemoteControl):
 			return False
 
 		def creataSwapFileCallback(result=None, retVal=None, extraArgs=None):
-			print("[StartWizard] createSwapFile callback DEBUG: retVal=%s, result=%s" % (retVal, result))
+			print("[WizardStart] createSwapFile callback DEBUG: retVal=%s, result=%s" % (retVal, result))
 			if retVal not in (0, None) and not isSwapActive(fileName):
 				self.session.open(MessageBox, _("Creating or activating the swap file failed.\n\n%s") % (result or ""), type=MessageBox.TYPE_ERROR)
 				return
 			if callback and callable(callback):
 				callback()
 
-		print("[StartWizard] DEBUG createSwapFile: %s" % self.swapDevice)
+		print("[WizardStart] DEBUG createSwapFile: %s" % self.swapDevice)
 		fileName = "/.swap/swapfile"
 		path = self.deviceData[self.swapDevice][0]
 		self.mountData = getPathMountData(path)
 		if self.mountData:
 			fstab = fileReadLines("/etc/fstab", default=[], source=MODULE_NAME)
-			print("[StartWizard] fstabUpdate DEBUG: Starting fstab:\n%s" % "\n".join(fstab))
+			print("[WizardStart] fstabUpdate DEBUG: Starting fstab:\n%s" % "\n".join(fstab))
 			fstabNew = [line for line in fstab if "swap" not in line]
 			mountData = self.mountData[2]
 			line = " ".join(("UUID=%s" % self.swapDevice, "/.swap", mountData[MOUNT_FILESYSTEM], "defaults", "0", "0"))
@@ -142,10 +143,10 @@ class StartWizard(Wizard, ShowRemoteControl):
 			fstabNew.append("%s swap swap defaults 0 0" % fileName)
 			fstabNew.append("")
 			fileWriteLines("/etc/fstab", "\n".join(fstabNew), source=MODULE_NAME)
-			print("[StartWizard] fstabUpdate DEBUG: Ending fstab:\n%s" % "\n".join(fstabNew))
+			print("[WizardStart] fstabUpdate DEBUG: Ending fstab:\n%s" % "\n".join(fstabNew))
 			makedirs("/.swap", mode=0o755, exist_ok=True)
 			if isSwapActive(fileName):
-				print("[StartWizard] DEBUG: Swap already active, skipping swapon.")
+				print("[WizardStart] DEBUG: Swap already active, skipping swapon.")
 				if callback and callable(callback):
 					callback()
 				return
@@ -164,18 +165,18 @@ class StartWizard(Wizard, ShowRemoteControl):
 		for deviceID, deviceData in self.deviceData.items():
 			choiceList.append(("%s (%s)" % (deviceData[1], deviceData[0]), deviceID))
 		# DEBUG
-		print("[StartWizard] DEBUG swapDeviceList: %s" % str(choiceList))
+		print("[WizardStart] DEBUG swapDeviceList: %s" % str(choiceList))
 
 		if len(choiceList) == 0:
 			choiceList.append((_("No valid device detected - Press OK"), "."))
 		return choiceList
 
 	def swapDeviceSelectionMade(self, index):  # Called by startwizard.xml.
-		print("[StartWizard] swapDeviceSelectionMade DEBUG: index='%s'." % index)
+		print("[WizardStart] swapDeviceSelectionMade DEBUG: index='%s'." % index)
 		self.swapDeviceIndex = index
 
 	def swapDeviceSelectionMoved(self):  # Called by startwizard.xml.
-		print("[StartWizard] DEBUG swapDeviceSelectionMoved: %s" % self.selection)
+		print("[WizardStart] DEBUG swapDeviceSelectionMoved: %s" % self.selection)
 		self.swapDevice = self.selection
 
 	def readSwapDevices(self, callback=None):
@@ -190,14 +191,14 @@ class StartWizard(Wizard, ShowRemoteControl):
 					if disk:
 						uuids[disk] = (fileReadLine(join("/dev/uuid", fileName)), f"/dev/{fileName}")
 
-		print("[StartWizard] DEBUG readSwapDevices uuids", uuids)
+		print("[WizardStart] DEBUG readSwapDevices uuids", uuids)
 
 		for (name, hdd) in harddiskmanager.HDDList():
 			uuid, device = uuids.get(hdd.device, (None, None))
 			if uuid:
 				self.deviceData[uuid] = (device, name)
 
-		print("[StartWizard] DEBUG readSwapDevicesCallback: %s" % str(self.deviceData))
+		print("[WizardStart] DEBUG readSwapDevicesCallback: %s" % str(self.deviceData))
 		if callback and callable(callback):
 			callback()
 
@@ -243,22 +244,16 @@ class StartWizard(Wizard, ShowRemoteControl):
 
 	def nwListInterfaces(self):
 		result = []
-		try:
-			from Components.NetworkManager import networkManager
-			for iface, adapter in networkManager.adapters.items():
-				typeLabel = _("WLAN") if adapter.isWlan else _("LAN")
-				name = networkManager.getFriendlyAdapterName(iface)
-				desc = networkManager.getFriendlyAdapterDescription(iface)
-				result.append(("%s  %s  (%s)  –  %s" % (typeLabel, name, iface, desc), iface))
-		except Exception:
-			pass
+		from Components.NetworkManager import networkManager  # This import must be here to avoid cyclic import.
+		for interface, adapter in networkManager.adapters.items():
+			result.append(("%s  (%s)  –  %s" % (_("Wi-Fi") if adapter.isWlan else _("LAN"), interface, networkManager.getFriendlyAdapterDescription(interface)), interface))
 		result.append((_("Skip network setup"), "skip"))
 		return result
 
 	def nwIfaceSelected(self, value):
 		self.nwSelectedIface = None if value == "skip" else value
 
-	def nwIfaceMoved(self):  # This function is a nofunc but needed in the Wizzard
+	def nwIfaceMoved(self):  # This function can be redefined in the Wizard.
 		pass
 
 	def nwAdvanceFromSelect(self):
@@ -266,7 +261,6 @@ class StartWizard(Wizard, ShowRemoteControl):
 		self.afterAsyncCode()
 
 	def nwOpenSetup(self):
-
 		def nwPollIp():
 			try:
 				import netifaces
@@ -333,7 +327,7 @@ class StartWizard(Wizard, ShowRemoteControl):
 				nwStartIpPoll()
 
 		if self.nwSubFlowActive:
-			print("[NW-WIZ] nwOpenSetup: spurious re-entry while Wi-Fi sub-flow is active -> ignored")
+			print("[WizardStart] nwOpenSetup: Spurious re-entry while Wi-Fi sub-flow is active -> ignored!")
 			return
 
 		try:
@@ -344,9 +338,9 @@ class StartWizard(Wizard, ShowRemoteControl):
 				return
 			from Screens.NetworkSetup import NetworkAdapterSetup
 			self.session.openWithCallback(nwAdapterSetupDone, NetworkAdapterSetup, adapter)
-			print("[NW-WIZ] nwOpenSetup: openWithCallback returned, updateValues_in_onShown=%s" % (self.updateValues in self.onShown))
-		except Exception as e:
-			print("[NW-WIZ] nwOpenSetup: EXCEPTION %s -> nwDone" % e)
+			print("[WizardStart] nwOpenSetup: openWithCallback returned, updateValues_in_onShown=%s" % (self.updateValues in self.onShown))
+		except Exception as err:
+			print("[WizardStart] nwOpenSetup: EXCEPTION %s -> nwDone" % err)
 			self.nwDone()
 
 	def nwBackToList(self):
@@ -395,7 +389,7 @@ class WizardLanguage(Wizard, ShowRemoteControl):
 		self.xmlfile = ["wizardlanguage.xml"]
 		Wizard.__init__(self, session, showSteps=False)
 		ShowRemoteControl.__init__(self)
-		self.skinName = ["WizardLanguage", "StartWizard"]
+		self.skinName = ["WizardLanguage", "WizardStart", "StartWizard"]
 		self.oldLanguage = config.osd.language.value
 		self.mode = "720p"
 		self.modeList = [(mode[0], mode[0]) for mode in avSwitch.getModeList("HDMI")]
@@ -472,10 +466,10 @@ class WizardLanguage(Wizard, ShowRemoteControl):
 # StartEnigma.py#L528ff - RestoreSettings
 if config.misc.firstrun.value:
 	wizardManager.registerWizard(WizardLanguage, config.misc.wizardLanguageEnabled.value, priority=0)
-wizardManager.registerWizard(VideoWizard, config.misc.videowizardenabled.value, priority=1)
+wizardManager.registerWizard(WizardVideo, config.misc.videowizardenabled.value, priority=1)
 # wizardManager.registerWizard(LocaleWizard, config.misc.languageselected.value, priority=2)
 # FrontprocessorUpgrade FPUpgrade priority = 8
 # FrontprocessorUpgrade SystemMessage priority = 9
-wizardManager.registerWizard(StartWizard, config.misc.firstrun.value, priority=30)
-# StartWizard calls InstallWizard
+wizardManager.registerWizard(WizardStart, config.misc.firstrun.value, priority=30)
+# WizardStart calls WizardInstall
 # NetworkWizard priority = 25

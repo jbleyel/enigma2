@@ -16993,9 +16993,6 @@ msgstr ""
 msgid "Start/stop/select your cam, You need to install first a softcam"
 msgstr ""
 
-msgid "StartWizard"
-msgstr ""
-
 msgid "Starting Softcam"
 msgstr ""
 
@@ -19676,9 +19673,6 @@ msgid "VideoEnhancementPreview"
 msgstr ""
 
 msgid "VideoFinetune"
-msgstr ""
-
-msgid "VideoWizard"
 msgstr ""
 
 msgid "Videoclip"

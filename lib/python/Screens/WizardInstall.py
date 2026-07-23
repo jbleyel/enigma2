@@ -17,7 +17,7 @@ config.misc.installwizard.ipkgloaded = ConfigBoolean(default=False)
 config.misc.installwizard.channellistdownloaded = ConfigBoolean(default=False)
 
 
-class InstallWizard(ConfigListScreen, Screen):
+class WizardInstall(ConfigListScreen, Screen):
 	STATE_UPDATE = 0
 	STATE_CHANNELLIST = 1
 	STATE_SOFTCAM = 2
@@ -33,6 +33,7 @@ class InstallWizard(ConfigListScreen, Screen):
 
 		Screen.__init__(self, session)
 		ConfigListScreen.__init__(self, [])
+		self.skinName.insert(0, "InstallWizard")
 		self.mode = args
 		match args:
 			case self.STATE_UPDATE:
@@ -100,7 +101,7 @@ class InstallWizard(ConfigListScreen, Screen):
 
 	def run(self):
 		if self.mode == self.STATE_UPDATE and config.misc.installwizard.hasnetwork.value:
-			self.session.open(InstallWizardSmallBox)
+			self.session.open(WizardInstallSmallBox)
 		if self.mode == self.STATE_CHANNELLIST and self.enabled.value and self.channellist_type.value == "default":
 			config.misc.installwizard.channellistdownloaded.value = True
 			try:
@@ -112,9 +113,9 @@ class InstallWizard(ConfigListScreen, Screen):
 			eDVBDB.getInstance().reloadBouquets()
 
 
-class InstallWizardSmallBox(Screen):
+class WizardInstallSmallBox(Screen):
 	skin = """
-	<screen name="InstallWizardSmallBox" position="center,center" size="520,185" resolution="1280,720">
+	<screen name="WizardInstallSmallBox" position="center,center" size="520,185" resolution="1280,720">
 		<widget source="Title" render="Label" position="65,8" size="520,0" font="Regular;22" transparent="1"/>
 		<widget source="status" render="Label" position="75,10" size="435,55" font="Regular;22" transparent="1"/>
 	</screen>"""
@@ -122,6 +123,7 @@ class InstallWizardSmallBox(Screen):
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Small Box Preparation"))
+		self.skinName.insert(0, "InstallWizardSmallBox")
 		self["actions"] = HelpableActionMap(self, ["SelectCancelActions"], {
 			"cancel": (self.close, _("Close the screen")),
 			"select": (self.close, _("Close the screen"))
@@ -136,7 +138,7 @@ class InstallWizardSmallBox(Screen):
 		self.opkgComponent.runCommand(self.opkgComponent.CMD_REFRESH_INSTALL, {"arguments": ["packagegroup-openatv-small"], "lineMode": True})
 
 	def opkgCallback(self, event, parameter):
-		# print(f"[InstallWizard] opkgCallback DEBUG: event='{self.opkgComponent.getEventText(event)}', parameter='{parameter}'.")
+		# print(f"[WizardInstall] opkgCallback DEBUG: event='{self.opkgComponent.getEventText(event)}', parameter='{parameter}'.")
 		match event:
 			case self.opkgComponent.EVENT_REFRESH_DONE:
 				self["status"].setText(_("Installing package."))
