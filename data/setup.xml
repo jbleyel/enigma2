@@ -670,12 +670,18 @@
 		<item text="Protocol" description="SMB/CIFS (Windows-style shares) or NFS.">self.protocol</item>
 		<item text="Server" description="The hostname or IP address of the network share's server.">self.server</item>
 		<item text="Remote path" description="The remote share name (SMB) or exported path (NFS) on the server.">self.remotepath</item>
-		<item text="Mount mode" description="Autofs mounts on first access and is recommended for most setups; fstab mounts at boot; Direct is for manual mount/unmount only.">self.mode</item>
+		<item text="Mount mode" description="Autofs mounts on first access and is recommended for most setups; fstab mounts at boot.">self.mode</item>
 		<item text="Username" description="Username for the SMB share, if it requires authentication." conditional="self.protocol.value == 'cifs'">self.username</item>
 		<item text="Password" description="Password for the SMB share, if it requires authentication." conditional="self.protocol.value == 'cifs'">self.password</item>
 		<item level="2" text="Local share key" description="Advanced: the stable internal identifier used to build the local mount path. Leave empty to derive it automatically from the display name.">self.sharename</item>
-		<item level="2" text="Mount options" description="Advanced: raw mount options, comma-separated.">self.options</item>
+		<item level="2" text="Mount options" description="Advanced: extra raw mount options, comma-separated. Appended after the individual NFS options below, if set.">self.options</item>
 		<item level="2" text="NFS version" description="Advanced: force a specific NFS protocol version instead of automatic negotiation." conditional="self.protocol.value == 'nfs'">self.nfsVersion</item>
+		<item level="2" text="Read-only" description="Advanced: mount this NFS share read-only instead of read-write." conditional="self.protocol.value == 'nfs'">self.nfsReadOnly</item>
+		<item level="2" text="Use NFS file locking" description="Advanced: disable to add 'nolock' (no NLM locking, most compatible with older/simple NFS servers)." conditional="self.protocol.value == 'nfs'">self.nfsNoLock</item>
+		<item level="2" text="Read block size" description="Advanced: rsize mount option in bytes." conditional="self.protocol.value == 'nfs'">self.nfsRsize</item>
+		<item level="2" text="Write block size" description="Advanced: wsize mount option in bytes." conditional="self.protocol.value == 'nfs'">self.nfsWsize</item>
+		<item level="2" text="Timeout" description="Advanced: timeo mount option in tenths of a second - how long to wait for a response before retrying (or failing, with 'Give up if unreachable' below)." conditional="self.protocol.value == 'nfs'">self.nfsTimeo</item>
+		<item level="2" text="Give up if unreachable (soft mount)" description="Advanced: if enabled, file access returns an error once the server stops responding instead of retrying forever. Off (hard mount, default) is safer against silent data loss but can hang programs accessing this share while the server/NAS is unreachable." conditional="self.protocol.value == 'nfs'">self.nfsSoft</item>
 		<item level="2" text="Use as HDD replacement" description="Advanced: mount this share to /media/hdd itself instead of its own /media/net path. Only use this if the share is reliably available - see the mount mode description.">self.hddReplacement</item>
 	</setup>
 	<setup key="NetworkZeroTier" title="ZeroTier Settings">

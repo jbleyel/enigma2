@@ -27,8 +27,9 @@ from socket import AF_UNIX, SOCK_STREAM, gethostbyname, gethostname, socket
 from subprocess import DEVNULL, check_output
 from collections.abc import Callable
 from twisted.internet import reactor
+from twisted.internet.protocol import ClientFactory, Protocol
 
-from enigma import eTimer
+from enigma import eNetworkServiceBrowser, eTimer
 
 from Components.config import config
 from Components.Console import Console
@@ -55,6 +56,7 @@ wpaCliBin = "/usr/sbin/wpa_cli"
 socketDaemonPath = "/var/run/daemon.socket"
 netEventSocketPath = "/var/run/daemon_net.socket"
 netinfoPath = "/var/run/netinfo"
+netNeighborsPath = "/var/run/netneighbors"
 netrestarterBin = "/usr/sbin/netrestarter"
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -1512,6 +1514,24 @@ def readNetinfoInterfaces() -> dict:
 	return info.get("interfaces", {})
 
 
+def readNetNeighbors() -> list:
+	"""Raw "neighbors" list from socketdaemon's /var/run/netneighbors (the
+	authoritative ARP/NDP snapshot, see nm_dump_neighbors() in
+	socketdaemon/main.c), [] if missing/invalid. Only the daemon's initial
+	full-table dump plus its subsequent RTM_NEWNEIGH/DELNEIGH-driven
+	rewrites live here - NeighborProvider reads this once at start() to
+	seed candidates already in the kernel table before it subscribed to
+	NetworkManager.onNeighborObservation (see doc section 5.3: the
+	incremental event stream alone only reports changes from the moment of
+	connecting, not pre-existing entries)."""
+	try:
+		with open(netNeighborsPath, encoding="utf-8") as fd:
+			info = loads(fd.read())
+	except (OSError, JSONDecodeError):
+		return []
+	return info.get("neighbors", [])
+
+
 def isWirelessName(iface: str) -> bool:
 	return bool(match(r"(wlan|ath|ra|wl)\d+", iface))
 
@@ -1671,7 +1691,6 @@ class AvahiProvider:
 	def start(self):
 		if self.started:
 			return
-		from enigma import eNetworkServiceBrowser
 		self.browser = eNetworkServiceBrowser()
 		for serviceType in self.serviceTypes:
 			self.browser.addServiceType(serviceType)
@@ -1697,6 +1716,7 @@ class AvahiProvider:
 		# entry["protocol"] is the IP address family ("inet"/"inet6"), not
 		# the share protocol - keep it under a different key so it doesn't
 		# collide with our own "protocol" (smb/nfs).
+		networkManager.log(f"AvahiProvider: found {entry["name"]} / {entry["hostname"]}")
 		observation = {
 			"source": "avahi",
 			"protocol": self.typeToProtocol.get(entry["type"], entry["type"]),
@@ -1729,6 +1749,16 @@ class NeighborProvider:
 			return
 		networkManager.onNeighborObservation.append(self.changed)
 		self.started = True
+		# Seed with whatever was already in the kernel neighbor table before
+		# we started listening - the incremental event stream above only
+		# reports changes from this point on, see readNetNeighbors().
+		for entry in readNetNeighbors():
+			self.changed({
+				"source": "neighbor",
+				"action": "ADD",
+				"family": entry.get("family"),
+				"address": entry.get("address"),
+			})
 
 	def stop(self):
 		if not self.started:
@@ -1741,48 +1771,189 @@ class NeighborProvider:
 			callback(observation)
 
 
-# Owns and coordinates discovery providers (AvahiProvider, NeighborProvider).
-# Just fans provider observations out to subscribers, no dedup/merge. Runs
-# one bounded pass per boot (DEFAULT_RUN_MS), auto stopping - a Discovery
-# screen can call start()/stop() itself later for on-demand live results.
-class DiscoveryManager:
-	DEFAULT_RUN_MS = 30000  # one discovery pass per boot runs this long, then auto-stops
+# Probes a list of addresses for an open SMB port (445) - finds hosts that
+# don't speak mDNS (plain Windows file sharing, see doc section 5.4). Runs
+# here, not in the socketdaemon: no privilege needed, and it's a discovery
+# concern, not link/neighbor monitoring. Stateless - DiscoveryManager decides
+# which addresses to probe and when (see probeRemainingNeighbors()); this
+# just fires the connects and reports which ones answered.
+class PortProbeProvider:
+	SMB_PORT = 445
+	TIMEOUT = 3  # seconds, connect timeout
 
 	def __init__(self):
-		self.providers = []
+		self.onResult: list[Callable] = []  # callback(address) - only called on success
+
+	def probe(self, addresses):
+		for address in addresses:
+			factory = PortProbeFactory(lambda success, address=address: self.reportResult(address, success))
+			reactor.connectTCP(address, self.SMB_PORT, factory, timeout=self.TIMEOUT)
+
+	def reportResult(self, address, success):
+		if not success:
+			return
+		networkManager.log(f"PortProbeProvider: found SMB (port {self.SMB_PORT}) on {address}")
+		for callback in self.onResult:
+			callback(address)
+
+
+# Bare "is anything listening" probe for PortProbeProvider - reports success
+# once the TCP handshake completes, then immediately closes; reports failure
+# on refused/unreachable/timeout. Single attempt, no retry (ClientFactory
+# default; a ReconnectingClientFactory would retry, which is not wanted here).
+class PortProbeProtocol(Protocol):
+	def connectionMade(self):
+		self.factory.reportResult(True)
+		self.transport.loseConnection()
+
+
+class PortProbeFactory(ClientFactory):
+	protocol = PortProbeProtocol
+
+	def __init__(self, onResult):
+		self.onResult = onResult
+
+	def reportResult(self, success):
+		self.onResult(success)
+
+	def clientConnectionFailed(self, connector, reason):
+		self.onResult(False)
+
+
+# Owns discovery end to end and holds the one result that matters: hosts, a
+# plain {address: host} dict, host = {"address", "hostname", "protocols" (a
+# set, e.g. {"smb", "nfs"}), "source" ("avahi" | "neighbor" | "portprobe")}.
+# Rules (kept deliberately simple, no per-provider dedup/state-tracking to
+# reason about - see git history for the previous, more "clever" per-
+# candidate delayed-probe design that turned out to be too hard to follow):
+#   - Avahi hosts are always authoritative: an address ADD/CHANGE_ed by
+#     Avahi always sets source "avahi" and merges in hostname/protocol,
+#     even if a neighbor/portprobe entry already existed for it.
+#   - Neighbor-table addresses appear immediately as bare, protocol-less
+#     "neighbor" candidates (unless already known via Avahi).
+#   - Once per run, AVAHI_SETTLE_MS after start(), every neighbor address
+#     NOT already confirmed via Avahi gets port-445-probed exactly once, in
+#     one batch (probeRemainingNeighbors()) - not scanned continuously and
+#     not probed the instant a candidate appears, so Avahi (if it's going
+#     to announce that host at all) gets a real chance to do so first.
+#   - A successful probe adds/merges a "portprobe" host with protocol smb,
+#     unless Avahi has meanwhile made it "avahi" - that always wins.
+# Runs one bounded pass per boot (DEFAULT_RUN_MS), auto-stopping - a
+# Discovery screen can call start()/stop() itself later for on-demand live
+# results (see NetworkMountDiscoveryScreen).
+class DiscoveryManager:
+	DEFAULT_RUN_MS = 30000   # one discovery pass per boot runs this long, then auto-stops
+	AVAHI_SETTLE_MS = 5000   # head start for Avahi before probing the rest of the neighbor candidates
+
+	def __init__(self):
 		self.started = False
-		self.onObservation: list[Callable] = []
+		self.hosts = {}
+		self.neighborCandidates = set()
+		self.onChanged: list[Callable] = []  # callback() - no payload, re-read self.hosts
+		self.avahi = AvahiProvider()
+		self.neighbor = NeighborProvider()
+		self.portProbe = PortProbeProvider()
+		self.avahi.onObservation.append(self.onAvahiObservation)
+		self.neighbor.onObservation.append(self.onNeighborObservation)
+		self.portProbe.onResult.append(self.onPortProbeResult)
 		self.stopTimer = eTimer()
 		self.stopTimer.callback.append(self.stop)
-		self.addProvider(AvahiProvider())
-		self.addProvider(NeighborProvider())
-
-	def addProvider(self, provider):
-		provider.onObservation.append(self.onProviderObservation)
-		self.providers.append(provider)
+		self.settleTimer = eTimer()
+		self.settleTimer.callback.append(self.probeRemainingNeighbors)
 
 	# No early return on self.started - a caller wanting an unbounded scan
 	# (runMs=None) must be able to cancel an already-running bounded pass's
 	# auto-stop, not just no-op. provider.start() is idempotent anyway.
 	def start(self, runMs: int | None = DEFAULT_RUN_MS):
-		for provider in self.providers:
-			provider.start()
+		self.avahi.start()
+		self.neighbor.start()
 		self.started = True
 		self.stopTimer.stop()
 		if runMs:
 			self.stopTimer.start(runMs, True)
+		self.settleTimer.stop()
+		self.settleTimer.start(self.AVAHI_SETTLE_MS, True)
 
 	def stop(self):
 		self.stopTimer.stop()
+		self.settleTimer.stop()
 		if not self.started:
 			return
-		for provider in self.providers:
-			provider.stop()
+		self.avahi.stop()
+		self.neighbor.stop()
 		self.started = False
 
-	def onProviderObservation(self, observation):
-		for callback in self.onObservation:
-			callback(observation)
+	# Used by "rescan" actions to start over instead of piling onto stale
+	# results from a previous pass.
+	def reset(self):
+		self.hosts = {}
+		self.neighborCandidates = set()
+		self.notify()
+
+	@staticmethod
+	def newHost(address, source):
+		return {"address": address, "hostname": "", "protocols": set(), "source": source, "avahiShares": {}}
+
+	# Some NAS vendors (confirmed: Synology) register one _nfs._tcp/_smb._tcp
+	# service INSTANCE PER EXPORT/SHARE instead of one per host, encoding the
+	# share name in the instance name, e.g. "nas1 - NFS [Disk4]". This is not
+	# a standard, just a convention worth trying: if the name ends in
+	# "[...]", use the bracketed part as the share name, else fall back to
+	# the raw name. Keyed by full name in avahiShares to naturally dedupe
+	# repeat ADD events for the same instance.
+	@staticmethod
+	def parseAvahiShareName(name):
+		if name.endswith("]") and "[" in name:
+			return name[name.rindex("[") + 1:-1]
+		return name
+
+	def onAvahiObservation(self, observation):
+		protocol = observation.get("protocol")
+		hostname = observation.get("hostname") or ""
+		name = observation.get("name") or ""
+		for address in observation.get("addresses") or []:
+			host = self.hosts.setdefault(address, self.newHost(address, "avahi"))
+			host["source"] = "avahi"  # always leading, even if a neighbor/portprobe entry already existed
+			host["hostname"] = hostname or host["hostname"]
+			if protocol:
+				host["protocols"].add(protocol)
+				if protocol in ("nfs", "smb") and name:
+					host["avahiShares"][name] = {"protocol": protocol, "name": self.parseAvahiShareName(name), "fullName": name}
+		self.notify()
+
+	def onNeighborObservation(self, observation):
+		address = observation.get("address")
+		if not address or observation.get("family") != 4:
+			return
+		if observation.get("action") == "REMOVE":
+			self.neighborCandidates.discard(address)
+			return
+		self.neighborCandidates.add(address)
+		if address not in self.hosts:
+			self.hosts[address] = self.newHost(address, "neighbor")
+			self.notify()
+
+	def probeRemainingNeighbors(self):
+		pending = [address for address in self.neighborCandidates if self.hosts.get(address, {}).get("source") != "avahi"]
+		if pending:
+			self.portProbe.probe(pending)
+
+	def onPortProbeResult(self, address):
+		if not self.started:
+			return
+		# The address almost always already exists here as a bare "neighbor"
+		# entry (that's what made it a probe candidate) - setdefault()'s
+		# default is only used for a genuinely new key, so upgrade the
+		# source explicitly. Never downgrade an "avahi" entry, though.
+		host = self.hosts.setdefault(address, self.newHost(address, "portprobe"))
+		if host["source"] != "avahi":
+			host["source"] = "portprobe"
+		host["protocols"].add("smb")
+		self.notify()
+
+	def notify(self):
+		for callback in self.onChanged:
+			callback()
 
 
 discoveryManager = DiscoveryManager()

@@ -7,7 +7,7 @@ from xml.etree.ElementTree import Element, ElementTree, SubElement
 from enigma import eTimer, gRGB
 
 from Components.ActionMap import HelpableActionMap
-from Components.config import ConfigPassword, ConfigSelection, ConfigText, ConfigYesNo, NoSave
+from Components.config import ConfigNumber, ConfigPassword, ConfigSelection, ConfigText, ConfigYesNo, NoSave
 from Components.Console import Console
 from Components.Input import Input
 from Components.Label import Label
@@ -45,6 +45,17 @@ class NetworkMountRepository:
 	NORMALIZE_MODE = {"enigma2": "fstab", "old_enigma2": "fstab"}
 	PROTOCOLS = ("nfs", "cifs")
 
+	# automounts.xml may go away later (fstab/auto.network are the actual
+	# system-of-record for what mounts; the XML only adds a few extra
+	# fields - display name, hdd_replacement, the structured NFS options -
+	# on top). Both off for now - writing served no purpose once nothing
+	# reads it back, and reading was already off (load() merging an
+	# automounts.xml entry with its own fstab/auto.network-derived
+	# duplicate was the "mount shown twice" bug). Kept as flags rather than
+	# removing the code: reading may still be wanted back later.
+	READ_XML = False
+	WRITE_XML = False
+
 	AUTOMOUNTS_PATH = "/etc/enigma2/automounts.xml"
 	AUTO_NETWORK_PATH = "/etc/auto.network"
 	FSTAB_PATH = "/etc/fstab"
@@ -65,7 +76,7 @@ class NetworkMountRepository:
 				mode = self.NORMALIZE_MODE.get(wrapperMode, wrapperMode)
 				defaultDir = "/media/hdd/" if wrapperMode in ("autofs", "fstab") else "/exports/"
 				defaultOptions = "rw,nolock,tcp,utf8" if protocol == "nfs" else "rw,utf8"
-				return {
+				mount = {
 					"id": text("id") or f"{mode}:{protocol}:{sharename}",
 					"mode": mode,
 					"protocol": protocol,
@@ -80,20 +91,114 @@ class NetworkMountRepository:
 					"password": text("password") if protocol == "cifs" else "",
 					"nfsVersion": text("nfs_version") if protocol == "nfs" else "",
 				}
+				if protocol == "nfs":
+					# Structured NFS mount options (doc/user request: rw/ro, nolock,
+					# nfsvers (see nfsVersion above), rsize, wsize, timeo, soft all
+					# individually editable in Setup instead of buried in free text -
+					# see buildNfsOptions() below for how these become the actual
+					# mount.nfs option string).
+					mount["nfsReadOnly"] = text("nfs_readonly", "False") in ("True", "true", "1")
+					mount["nfsNoLock"] = text("nfs_nolock", "True") in ("True", "true", "1")
+					mount["nfsRsize"] = text("nfs_rsize", "8192")
+					mount["nfsWsize"] = text("nfs_wsize", "8192")
+					mount["nfsTimeo"] = text("nfs_timeo", "14")
+					mount["nfsSoft"] = text("nfs_soft", "False") in ("True", "true", "1")
+				mount["unmanaged"] = False
+				return mount
 			mounts = []
 			for protocol in self.PROTOCOLS:
 				for protoNode in node.findall(protocol):
 					for mountNode in protoNode.findall("mount"):
 						mounts.append(readMount(mountNode, wrapperMode, protocol))
 			return mounts
+
+		# automounts.xml isn't necessarily the full story - /etc/fstab and
+		# /etc/auto.network may contain NFS/CIFS lines that were never
+		# written by us (manually added, or left over from something else).
+		# Surface those too instead of silently hiding them, same idea as
+		# the "unmanaged" mounts from /proc/self/mountinfo in doc section
+		# 13.2. Synthesized entries get a stable id derived from their
+		# share identity (mode:protocol:server:remotepath) so re-loading
+		# doesn't keep minting new ones, and "unmanaged": True so callers
+		# can tell them apart from automounts.xml-tracked entries - editing
+		# and saving one adopts it into automounts.xml going forward, same
+		# as any other entry once it's in the returned list.
+		def parseFstabLine(line):
+			line = line.strip()
+			if not line or line.startswith("#"):
+				return None
+			fields = line.split()
+			if len(fields) < 4:
+				return None
+			device, mountpoint, fstype, options = fields[0], fields[1], fields[2], fields[3]
+			if fstype in ("nfs", "nfs4") and ":" in device:
+				protocol = "nfs"
+				server, remotepath = device.split(":", 1)
+				remotepath = remotepath.lstrip("/")
+			elif fstype == "cifs" and device.startswith("//") and "/" in device[2:]:
+				protocol = "cifs"
+				server, remotepath = device[2:].split("/", 1)
+			else:
+				return None
+			if not server or not remotepath:
+				return None
+			sharename = remotepath.rstrip("/").rsplit("/", 1)[-1] or mountpoint.rstrip("/").rsplit("/", 1)[-1] or "MEDIA"
+			return {
+				"id": f"fstab:{protocol}:{server}:{remotepath}", "mode": "fstab", "protocol": protocol,
+				"active": True, "hddReplacement": mountpoint.rstrip("/") == "/media/hdd",
+				"sharename": sharename, "displayName": "", "server": server, "remotepath": remotepath,
+				"options": options, "username": "", "password": "", "nfsVersion": "", "unmanaged": True,
+			}
+
+		def parseAutoNetworkLine(line):
+			line = line.strip()
+			if not line or line.startswith("#"):
+				return None
+			fields = line.split(None, 2)
+			if len(fields) < 3 or not fields[1].startswith("-fstype="):
+				return None
+			sharename, location = fields[0], fields[2]
+			typeAndOptions = fields[1][len("-fstype="):].split(",")
+			fstype, options = typeAndOptions[0], ",".join(typeAndOptions[1:])
+			if fstype == "nfs" and ":" in location:
+				protocol = "nfs"
+				server, remotepath = location.split(":", 1)
+				remotepath = remotepath.lstrip("/")
+			elif fstype == "cifs" and location.startswith("://") and "/" in location[3:]:
+				protocol = "cifs"
+				server, remotepath = location[3:].split("/", 1)
+			else:
+				return None
+			if not server or not remotepath:
+				return None
+			return {
+				"id": f"autofs:{protocol}:{server}:{remotepath}", "mode": "autofs", "protocol": protocol,
+				"active": True, "hddReplacement": False,
+				"sharename": sharename, "displayName": "", "server": server, "remotepath": remotepath,
+				"options": options, "username": "", "password": "", "nfsVersion": "", "unmanaged": True,
+			}
+
+		def mergeUnmanaged(mounts, path, parseLine):
+			known = {(mount["mode"], mount["protocol"], mount["server"], mount["remotepath"].lstrip("/")) for mount in mounts}
+			for line in fileReadLines(path, default=[], source=MODULE_NAME):
+				extra = parseLine(line)
+				if extra is None:
+					continue
+				key = (extra["mode"], extra["protocol"], extra["server"], extra["remotepath"].lstrip("/"))
+				if key not in known:
+					mounts.append(extra)
+					known.add(key)
+
 		mounts = []
-		root = fileReadXML(self.AUTOMOUNTS_PATH, default="<mountmanager></mountmanager>", source=MODULE_NAME)
-		if root is None:
-			return mounts
-		for wrapperMode in self.READ_MODE_WRAPPERS:
-			for modeNode in root.findall(wrapperMode):
-				mounts += readMode(modeNode, wrapperMode)
-		mounts += readMode(root, "old_enigma2")
+		if self.READ_XML:
+			root = fileReadXML(self.AUTOMOUNTS_PATH, default="<mountmanager></mountmanager>", source=MODULE_NAME)
+			if root is not None:
+				for wrapperMode in self.READ_MODE_WRAPPERS:
+					for modeNode in root.findall(wrapperMode):
+						mounts += readMode(modeNode, wrapperMode)
+				mounts += readMode(root, "old_enigma2")
+		mergeUnmanaged(mounts, self.FSTAB_PATH, parseFstabLine)
+		mergeUnmanaged(mounts, self.AUTO_NETWORK_PATH, parseAutoNetworkLine)
 		return mounts
 
 	def save(self, mounts):
@@ -131,19 +236,19 @@ class NetworkMountRepository:
 				options = mount.get("options") or ""
 				if mode == "autofs":
 					if protocol == "nfs":
-						autoNetworkLines.append(f"{sharename} -fstype=nfs,{self.sanitizeOptions(options, autofs=True)} {server}:/{remotepath}")
+						autoNetworkLines.append(f"{sharename} -fstype=nfs,{self.buildNfsOptions(mount)} {server}:/{remotepath}")
 					else:
 						username = (mount.get("username") or "").replace(" ", "\\ ")
 						password = (mount.get("password") or "").replace(" ", "\\ ")
-						autoNetworkLines.append(f"{sharename} -fstype=cifs,user={username},pass={password},{self.sanitizeOptions(options, cifs=True, autofs=True)} ://{server}/{remotepath}")
+						autoNetworkLines.append(f"{sharename} -fstype=cifs,user={username},pass={password},{self.sanitizeOptions(options)} ://{server}/{remotepath}")
 				elif mode == "fstab":
 					path = self.mountPointFor(mount)
 					if protocol == "nfs":
-						fstabLines.append(f"{server}:/{remotepath}\t{path}\tnfs\t_netdev,{self.sanitizeOptions(options, fstab=True)}\t0 0")
+						fstabLines.append(f"{server}:/{remotepath}\t{path}\tnfs\t_netdev,{self.buildNfsOptions(mount)}\t0 0")
 					else:
 						username = mount.get("username") or ""
 						password = mount.get("password") or ""
-						fstabLines.append(f"//{server}/{remotepath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.sanitizeOptions(options, cifs=True, fstab=True)}\t0 0")
+						fstabLines.append(f"//{server}/{remotepath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.sanitizeOptions(options)}\t0 0")
 
 			fileWriteLines(self.AUTO_NETWORK_PATH, autoNetworkLines, source=MODULE_NAME)
 			fileWriteLines(self.FSTAB_PATH, fstabLines, source=MODULE_NAME)
@@ -161,8 +266,15 @@ class NetworkMountRepository:
 			if protocol == "cifs":
 				SubElement(node, "username").text = str(mount.get("username") or "")
 				SubElement(node, "password").text = str(mount.get("password") or "")
-			elif mount.get("nfsVersion"):
-				SubElement(node, "nfs_version").text = str(mount.get("nfsVersion") or "")
+			else:
+				if mount.get("nfsVersion"):
+					SubElement(node, "nfs_version").text = str(mount.get("nfsVersion") or "")
+				SubElement(node, "nfs_readonly").text = "True" if mount.get("nfsReadOnly") else "False"
+				SubElement(node, "nfs_nolock").text = "True" if mount.get("nfsNoLock", True) else "False"
+				SubElement(node, "nfs_rsize").text = str(mount.get("nfsRsize") or "8192")
+				SubElement(node, "nfs_wsize").text = str(mount.get("nfsWsize") or "8192")
+				SubElement(node, "nfs_timeo").text = str(mount.get("nfsTimeo") or "14")
+				SubElement(node, "nfs_soft").text = "True" if mount.get("nfsSoft") else "False"
 
 		effective = []
 		for mount in mounts:
@@ -171,75 +283,64 @@ class NetworkMountRepository:
 				mode = "fstab"
 			effective.append((mount, mode))
 
-		root = Element("mountmanager")
-		groups = {}
-		for mount, mode in effective:
-			protocol = mount.get("protocol") or "nfs"
-			groups.setdefault(mode, {}).setdefault(protocol, []).append(mount)
-		for mode in self.WRITE_MODES:
-			if mode not in groups:
-				continue
-			modeNode = SubElement(root, mode)
-			for protocol in self.PROTOCOLS:
-				for mount in groups[mode].get(protocol, []):
-					writeMount(SubElement(modeNode, protocol), mount, protocol)
-		try:
-			ElementTree(root).write(self.AUTOMOUNTS_PATH, encoding="UTF-8", xml_declaration=True)
-			chmod(self.AUTOMOUNTS_PATH, 0o600)  # contains plaintext passwords, see above
-		except OSError as err:
-			print(f"[{MODULE_NAME}] Error writing '{self.AUTOMOUNTS_PATH}': {err}")
+		if self.WRITE_XML:
+			root = Element("mountmanager")
+			groups = {}
+			for mount, mode in effective:
+				protocol = mount.get("protocol") or "nfs"
+				groups.setdefault(mode, {}).setdefault(protocol, []).append(mount)
+			for mode in self.WRITE_MODES:
+				if mode not in groups:
+					continue
+				modeNode = SubElement(root, mode)
+				for protocol in self.PROTOCOLS:
+					for mount in groups[mode].get(protocol, []):
+						writeMount(SubElement(modeNode, protocol), mount, protocol)
+			try:
+				ElementTree(root).write(self.AUTOMOUNTS_PATH, encoding="UTF-8", xml_declaration=True)
+				chmod(self.AUTOMOUNTS_PATH, 0o600)  # contains plaintext passwords, see above
+			except OSError as err:
+				print(f"[{MODULE_NAME}] Error writing '{self.AUTOMOUNTS_PATH}': {err}")
 
 		writeMountFiles(effective)
 
+	# CIFS-only (NFS is built explicitly by buildNfsOptions() below, from
+	# structured per-field Setup values instead of free-text string
+	# mangling) - direct/enigma2 mode no longer exists (autofs/fstab are
+	# the only write modes, see WRITE_MODES), so unlike the old plugin's
+	# sanitizeOptions() there is no separate "direct mount" branch to keep:
+	# CIFS behaves the same for both autofs and fstab.
 	@staticmethod
-	# Direct port of the old plugin's sanitizeOptions() - same quirky
-	# per-protocol option-string building (nfsvers/rsize/wsize/proto/timeo
-	# defaults differ slightly between fstab and autofs, see AutoMount.py),
-	# kept as-is for compatibility with what mount/autofs actually expect.
-	def sanitizeOptions(self, origOptions, cifs=False, fstab=False, autofs=False):
+	def sanitizeOptions(origOptions):
 		options = (origOptions or "").strip()
 		options = options.replace("utf8", "iocharset=utf8")
-		if fstab:
-			if not options:
-				options = "rw"
-				if not cifs:
-					options += ",nfsvers=3,rsize=8192,wsize=8192,proto=tcp"
-			elif not cifs:
-				options += ",nfsvers=3"
-				if "rsize" not in options:
-					options += ",rsize=8192"
-				if "wsize" not in options:
-					options += ",wsize=8192"
-				if "tcp" not in options and "udp" not in options:
-					options += ",proto=tcp"
-				options += ",timeo=14,soft"
-		elif autofs:
-			if not options:
-				options = "rw"
-				if not cifs:
-					options += ",nfsvers=3,rsize=8192,wsize=8192"
-			elif not cifs:
-				options += ",nfsvers=3"
-				if "rsize" not in options:
-					options += ",rsize=8192"
-				if "wsize" not in options:
-					options += ",wsize=8192"
-				if "tcp" not in options and "udp" not in options:
-					options += ",proto=tcp"
-				options += ",timeo=14,soft"
-		else:
-			if not options:
-				options = "rw,rsize=8192,wsize=8192"
-				if not cifs:
-					options += ",proto=tcp"
-			elif not cifs:
-				if "rsize" not in options:
-					options += ",rsize=8192"
-				if "wsize" not in options:
-					options += ",wsize=8192"
-				if "tcp" not in options and "udp" not in options:
-					options += ",proto=tcp"
-		return options
+		return options or "rw"
+
+	# Builds the actual `mount.nfs`/autofs option string from the
+	# structured per-mount fields NetworkMountSetup exposes (rw/ro, nolock,
+	# nfsvers via nfsVersion, rsize, wsize, timeo, soft) instead of the old
+	# plugin's approach of pattern-matching/augmenting a free-text string.
+	# proto=tcp is always added (matches old plugin default, NFS over UDP
+	# isn't offered as an option). The free-text "options" field, if the
+	# user still put anything in it, is appended last for anything not
+	# covered by a dedicated field.
+	def buildNfsOptions(self, mount):
+		parts = ["ro" if mount.get("nfsReadOnly") else "rw"]
+		if mount.get("nfsNoLock", True):
+			parts.append("nolock")
+		parts.append("proto=tcp")
+		version = mount.get("nfsVersion") or ""
+		if version and version != "auto":
+			parts.append(f"nfsvers={version}")
+		parts.append(f"rsize={mount.get('nfsRsize') or 8192}")
+		parts.append(f"wsize={mount.get('nfsWsize') or 8192}")
+		parts.append(f"timeo={mount.get('nfsTimeo') or 14}")
+		if mount.get("nfsSoft"):
+			parts.append("soft")
+		extra = (mount.get("options") or "").strip()
+		if extra:
+			parts.append(extra)
+		return ",".join(parts)
 
 	def newId(self):
 		return f"mount-{uuid4().hex[:12]}"
@@ -288,6 +389,7 @@ class NetworkMountSetup(Setup):
 		("fstab", _("fstab (mount at boot)")),
 	)
 	NFS_VERSION_CHOICES = (("auto", _("Automatic")), ("3", "NFSv3"), ("4", "NFSv4"))
+	NFS_SIZE_CHOICES = (("8192", "8192"), ("32768", "32768"), ("65536", "65536"), ("131072", "131072"))
 
 	def __init__(self, session, mount=None):
 		self.repository = NetworkMountRepository()
@@ -307,6 +409,22 @@ class NetworkMountSetup(Setup):
 		self.sharename = NoSave(ConfigText(default=field("sharename"), fixed_size=False))
 		self.options = NoSave(ConfigText(default=field("options"), fixed_size=False))
 		self.nfsVersion = NoSave(ConfigSelection(default=field("nfsVersion", "auto") or "auto", choices=list(self.NFS_VERSION_CHOICES)))
+		# Structured NFS mount options - individually editable instead of
+		# only through the free-text "options" field above, see
+		# NetworkMountRepository.buildNfsOptions().
+		self.nfsReadOnly = NoSave(ConfigYesNo(default=field("nfsReadOnly", False)))
+		self.nfsNoLock = NoSave(ConfigYesNo(default=field("nfsNoLock", True)))
+		self.nfsRsize = NoSave(ConfigSelection(default=str(field("nfsRsize", "8192")) or "8192", choices=list(self.NFS_SIZE_CHOICES)))
+		self.nfsWsize = NoSave(ConfigSelection(default=str(field("nfsWsize", "8192")) or "8192", choices=list(self.NFS_SIZE_CHOICES)))
+		# timeo is in DECISECONDS (tenths of a second, mount.nfs(5)) - 14
+		# means 1.4s, matching the old plugin's hardcoded default.
+		self.nfsTimeo = NoSave(ConfigNumber(default=int(field("nfsTimeo", 14) or 14)))
+		# soft: give up and return an I/O error to the application after
+		# retimeo/retrans expire if the server doesn't respond. hard
+		# (default when this is off): keep retrying indefinitely, which is
+		# safer against silent data loss but can hang processes accessing
+		# the mount while the server/NAS is unreachable (e.g. asleep).
+		self.nfsSoft = NoSave(ConfigYesNo(default=field("nfsSoft", False)))
 		# hdd_replacement mounts /media/hdd itself instead of a dedicated
 		# /media/net/<sharename> path - risky if the share isn't reliably
 		# available, hence Expert-only, see doc section 10.3.
@@ -341,6 +459,12 @@ class NetworkMountSetup(Setup):
 			"username": self.username.value if self.protocol.value == "cifs" else "",
 			"password": self.password.value if self.protocol.value == "cifs" else "",
 			"nfsVersion": self.nfsVersion.value if self.protocol.value == "nfs" else "",
+			"nfsReadOnly": self.nfsReadOnly.value if self.protocol.value == "nfs" else False,
+			"nfsNoLock": self.nfsNoLock.value if self.protocol.value == "nfs" else True,
+			"nfsRsize": self.nfsRsize.value if self.protocol.value == "nfs" else "",
+			"nfsWsize": self.nfsWsize.value if self.protocol.value == "nfs" else "",
+			"nfsTimeo": self.nfsTimeo.value if self.protocol.value == "nfs" else "",
+			"nfsSoft": self.nfsSoft.value if self.protocol.value == "nfs" else False,
 			"hddReplacement": self.hddReplacement.value,
 		}
 		mounts = [existing for existing in self.repository.load() if existing.get("id") != mount["id"]]
@@ -457,7 +581,6 @@ class NetworkMountDiscoveryScreen(Screen):
 			"yellow": (self.keyRescan, _("Restart discovery")),
 			"blue": (self.keyManual, _("Enter a hostname or IP address manually")),
 		}, prio=0, description=_("Network Share Discovery Actions"))
-		self.hosts = {}
 		self.expanded = set()
 		self.shares = {}         # address -> [share dict, ...]
 		self.shareState = {}     # address -> "loading" | "done" | "empty"
@@ -478,7 +601,7 @@ class NetworkMountDiscoveryScreen(Screen):
 	def startDiscovery(self):
 		repository = NetworkMountRepository()
 		self.configuredShares = {(mount.get("server"), (mount.get("remotepath") or "").lstrip("/")): repository.mountPointFor(mount) for mount in repository.load()}
-		discoveryManager.onObservation.append(self.onObservation)
+		discoveryManager.onChanged.append(self.onHostsChanged)
 		discoveryManager.start(runMs=None)
 		self["description"].setText(_("Scanning…"))
 		self.rebuildList()
@@ -486,23 +609,25 @@ class NetworkMountDiscoveryScreen(Screen):
 	def stopDiscovery(self):
 		self.closed = True
 		self.refreshTimer.stop()
-		# .remove() raises ValueError if this instance's onObservation was
-		# never registered (e.g. discoveryClosed() ran before onShow ever
-		# fired) - must not skip stop()/killAll() below because of that.
+		# .remove() raises ValueError if this instance's onChanged callback
+		# was never registered (e.g. discoveryClosed() ran before onShow
+		# ever fired) - must not skip stop()/killAll() below because of that.
 		try:
-			discoveryManager.onObservation.remove(self.onObservation)
+			discoveryManager.onChanged.remove(self.onHostsChanged)
 		except ValueError:
 			pass
 		discoveryManager.stop()
 		self.console.killAll()
 
 	def keyRescan(self):
-		self.hosts = {}
+		discoveryManager.stop()
+		discoveryManager.reset()
 		self.expanded = set()
 		self.shares = {}
 		self.shareState = {}
 		self.pendingProtocols = {}
 		self["description"].setText(_("Scanning…"))
+		discoveryManager.start(runMs=None)
 		self.rebuildList()
 
 	def keyManual(self):
@@ -535,7 +660,7 @@ class NetworkMountDiscoveryScreen(Screen):
 		self.rebuildList()
 
 	def pickShare(self, share):
-		host = self.hosts.get(share["address"]) or {}
+		host = discoveryManager.hosts.get(share["address"]) or {}
 		self.close({
 			"address": share["address"],
 			"hostname": host.get("hostname") or "",
@@ -550,10 +675,35 @@ class NetworkMountDiscoveryScreen(Screen):
 		if self.shareState.get(address) == "loading":
 			return
 		self.shareState[address] = "loading"
-		self.shares[address] = []
+		# Seed with whatever Avahi already told us before showmount/smbclient
+		# even ran - some NAS vendors (confirmed: Synology) register one
+		# mDNS service instance per export/share, not per host, so the share
+		# name is already known at discovery time (see DiscoveryManager.
+		# parseAvahiShareName() in Components/NetworkManager.py). Shown
+		# immediately with an empty path, then mergeShare() below fills in
+		# the real path once/if the actual enumeration confirms it - this
+		# also covers NFSv4-only servers where showmount often returns
+		# nothing at all (doc section 6.3 "enumeration_unsupported").
+		host = discoveryManager.hosts.get(address) or {}
+		self.shares[address] = [
+			{"address": address, "protocol": info["protocol"], "name": info["name"], "path": "", "description": ""}
+			for info in (host.get("avahiShares") or {}).values()
+		]
 		self.pendingProtocols[address] = {"nfs", "smb"}
 		self.enumerateNfs(address)
 		self.enumerateSmb(address)
+
+	# Merges one confirmed share into self.shares[address]: updates a
+	# matching Avahi-seeded hint (same protocol/name, no path yet) in place
+	# instead of appending a duplicate row, else appends a new entry.
+	def mergeShare(self, address, protocol, name, path, description):
+		shares = self.shares.setdefault(address, [])
+		for share in shares:
+			if share["protocol"] == protocol and not share["path"] and share["name"].lower() == name.lower():
+				share["path"] = path
+				share["description"] = description or share["description"]
+				return
+		shares.append({"address": address, "protocol": protocol, "name": name, "path": path, "description": description})
 
 	def enumerateNfs(self, address):
 		if not exists(self.NFS_SHOWMOUNT_BIN):
@@ -571,7 +721,7 @@ class NetworkMountDiscoveryScreen(Screen):
 					continue
 				path = parts[0]
 				name = path.rsplit("/", 1)[-1] or path
-				self.shares.setdefault(address, []).append({"address": address, "protocol": "nfs", "name": name, "path": path, "description": ""})
+				self.mergeShare(address, "nfs", name, path, "")
 		self.finishProtocol(address, "nfs")
 
 	def enumerateSmb(self, address):
@@ -587,7 +737,7 @@ class NetworkMountDiscoveryScreen(Screen):
 			for line in data.splitlines():
 				parts = line.split("|")
 				if len(parts) == 3 and parts[0] == "Disk" and not parts[1].endswith("$"):
-					self.shares.setdefault(address, []).append({"address": address, "protocol": "smb", "name": parts[1], "path": parts[1], "description": parts[2]})
+					self.mergeShare(address, "smb", parts[1], parts[1], parts[2])
 		self.finishProtocol(address, "smb")
 
 	def finishProtocol(self, address, protocol):
@@ -600,42 +750,15 @@ class NetworkMountDiscoveryScreen(Screen):
 				self.shareState[address] = "done" if self.shares.get(address) else "empty"
 		self.rebuildList()
 
-	# -- discovery observations (hosts, not shares - see onObservation) --
+	# -- discovery (hosts, not shares - DiscoveryManager owns the merged
+	# host array; this screen just displays it, see discoveryManager.hosts) --
 
-	def onObservation(self, observation):
+	def onHostsChanged(self):
 		# Defends against a stale registration outliving this screen (see
 		# stopDiscovery()'s comment): Screen teardown can clear this
 		# instance's __dict__ entirely, so even "self.closed" would itself
 		# raise AttributeError - getattr's default sidesteps that.
 		if getattr(self, "closed", True):
-			return
-		source = observation.get("source")
-		if source == "avahi":
-			protocol = observation.get("protocol")
-			hostname = observation.get("hostname") or ""
-			interface = observation.get("interface")
-			for address in observation.get("addresses") or []:
-				host = self.hosts.setdefault(address, {"address": address, "hostname": "", "protocols": set(), "interface": interface, "state": ""})
-				host["hostname"] = hostname or host["hostname"]
-				host["interface"] = interface
-				if protocol:
-					host["protocols"].add(protocol)
-		elif source == "neighbor":
-			address = observation.get("address")
-			if not address:
-				return
-			if observation.get("action") == "REMOVE":
-				host = self.hosts.get(address)
-				# Only drop it if we don't also know it from Avahi - an
-				# actual mDNS-announced share is worth keeping even if the
-				# neighbor-table entry aged out.
-				if host and not host["protocols"]:
-					del self.hosts[address]
-				return
-			host = self.hosts.setdefault(address, {"address": address, "hostname": "", "protocols": set(), "interface": observation.get("interface"), "state": ""})
-			host["state"] = observation.get("state") or host["state"]
-			host["interface"] = observation.get("interface") or host["interface"]
-		else:
 			return
 		if not self.refreshTimer.isActive():
 			self.refreshTimer.start(self.REFRESH_DEBOUNCE_MS, True)
@@ -644,7 +767,7 @@ class NetworkMountDiscoveryScreen(Screen):
 		if getattr(self, "closed", True):
 			return
 		entries = []
-		for host in sorted(self.hosts.values(), key=lambda h: (not h["protocols"], h["hostname"] or h["address"])):
+		for host in sorted(discoveryManager.hosts.values(), key=lambda h: (not h["protocols"], h["hostname"] or h["address"])):
 			address = host["address"]
 			name = host["hostname"] or address
 			entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", {"kind": "host", "address": address}))
@@ -662,7 +785,7 @@ class NetworkMountDiscoveryScreen(Screen):
 				glyphColor = self.COLOR_MOUNTED if localPath else self.COLOR_NOT_MOUNTED
 				entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", dict(share, kind="share")))
 		self["list"].setList(entries)
-		count = len(self.hosts)
+		count = len(discoveryManager.hosts)
 		self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning…"))
 
 
