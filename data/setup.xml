@@ -684,6 +684,10 @@
 		<item level="2" text="Give up if unreachable (soft mount)" description="Advanced: if enabled, file access returns an error once the server stops responding instead of retrying forever. Off (hard mount, default) is safer against silent data loss but can hang programs accessing this share while the server/NAS is unreachable." conditional="self.protocol.value == 'nfs'">self.nfsSoft</item>
 		<item level="2" text="Use as HDD replacement" description="Advanced: mount this share to /media/hdd itself instead of its own /media/net path. Only use this if the share is reliably available - see the mount mode description.">self.hddReplacement</item>
 	</setup>
+	<setup key="NetworkShareCredentialsSetup" title="SMB Credentials">
+		<item text="Username" description="SMB username used to list this host's shares.">self.username</item>
+		<item text="Password" description="SMB password used to list this host's shares.">self.password</item>
+	</setup>
 	<setup key="NetworkZeroTier" title="ZeroTier Settings">
 		<item text="Network-ID" description="Enter the ZeroTier Network ID. The ID should be exactly 16 characters in length.">config.network.ZeroTierNetworkId</item>
 	</setup>

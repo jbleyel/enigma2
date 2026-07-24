@@ -1,9 +1,10 @@
-from os import chmod
+from json import JSONDecodeError, dumps, loads
+from os import chmod, remove
 from os.path import exists
+from pickle import load as pickleLoad
 from re import sub
+from tempfile import NamedTemporaryFile
 from uuid import uuid4
-from xml.etree.ElementTree import Element, ElementTree, SubElement
-
 from enigma import eTimer, gRGB
 
 from Components.ActionMap import HelpableActionMap
@@ -14,6 +15,7 @@ from Components.Label import Label
 from Components.NetworkManager import discoveryManager
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
+from Screens.ChoiceBox import ChoiceBox
 from Screens.InputBox import InputBox
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
@@ -24,37 +26,28 @@ MODULE_NAME = __name__.split(".")[-1]
 
 
 class NetworkMountRepository:
-	"""Reads/writes /etc/enigma2/automounts.xml - the same file and XML
-	format the old NetworkBrowser plugin's AutoMount.py used, so mounts it
-	configured keep working here and vice versa. The old format has 4
-	"mountusing" modes (root element is <mountmanager>):
-	- autofs / fstab / enigma2: <mountmanager><MODE><nfs|cifs><mount>...
-	- old_enigma2: bare <nfs|cifs><mount> directly under <mountmanager>,
-	only written by very old plugin versions.
-	Going forward only autofs and fstab are real, selectable modes here -
-	enigma2 and old_enigma2 entries are read fine for compatibility but
-	normalized to "fstab" on load, and never written back out as their own
-	wrapper again (save() only ever emits <autofs>/<fstab>).
-	Two elements not in the old format (<id>, <display_name>, and
-	<nfs_version> for nfs mounts) are written into each <mount> for our own
-	use; old parsers just ignore unknown child elements, so this stays
-	compatible both ways."""
+	"""Reads /etc/enigma2/automounts.xml - the exact XML format the old
+	NetworkBrowser plugin's AutoMount.py used (root <mountmanager>, 4
+	"mountusing" modes: autofs/fstab/enigma2 as <mountmanager><MODE><nfs|
+	cifs><mount>..., old_enigma2 as bare <nfs|cifs><mount> directly under
+	<mountmanager>). Read-only, and only for one-time migration of an
+	existing old-plugin config - we never write our own extended schema
+	into this file (nothing reads automounts.xml but us, and fstab/
+	auto.network, which this class also reads/writes directly, are the
+	actual system-of-record now). Only the fields the old plugin actually
+	wrote are parsed; no invented <id>/<display_name>/<nfs_*> elements."""
 
 	READ_MODE_WRAPPERS = ("autofs", "fstab", "enigma2")
 	WRITE_MODES = ("autofs", "fstab")
 	NORMALIZE_MODE = {"enigma2": "fstab", "old_enigma2": "fstab"}
 	PROTOCOLS = ("nfs", "cifs")
 
-	# automounts.xml may go away later (fstab/auto.network are the actual
-	# system-of-record for what mounts; the XML only adds a few extra
-	# fields - display name, hdd_replacement, the structured NFS options -
-	# on top). Both off for now - writing served no purpose once nothing
-	# reads it back, and reading was already off (load() merging an
+	# Off by default - see class docstring, only meant for an explicit
+	# migration pass. mount() shown twice was READ_XML merging an
 	# automounts.xml entry with its own fstab/auto.network-derived
-	# duplicate was the "mount shown twice" bug). Kept as flags rather than
-	# removing the code: reading may still be wanted back later.
+	# duplicate; kept as a flag rather than deleting the read path outright
+	# since migrating an existing old-plugin config still needs it.
 	READ_XML = False
-	WRITE_XML = False
 
 	AUTOMOUNTS_PATH = "/etc/enigma2/automounts.xml"
 	AUTO_NETWORK_PATH = "/etc/auto.network"
@@ -72,38 +65,28 @@ class NetworkMountRepository:
 					child = node.find(tag)
 					return child.text if child is not None and child.text is not None else default
 
-				sharename = text("sharename", "MEDIA")
 				mode = self.NORMALIZE_MODE.get(wrapperMode, wrapperMode)
-				defaultDir = "/media/hdd/" if wrapperMode in ("autofs", "fstab") else "/exports/"
-				defaultOptions = "rw,nolock,tcp,utf8" if protocol == "nfs" else "rw,utf8"
+				server = text("ip", "192.168.0.0")
+				remotepath = text("sharedir", "/media/hdd/" if wrapperMode in ("autofs", "fstab") else "/exports/")
+				sharename = text("sharename", "MEDIA")
 				mount = {
-					"id": text("id") or f"{mode}:{protocol}:{sharename}",
+					# No <id>/<display_name> in the old format - synthesize a
+					# stable id the same way the fstab/auto.network parsers
+					# below do, for the same reason (edit/delete identity).
+					"id": f"{mode}:{protocol}:{server}:{remotepath}",
 					"mode": mode,
 					"protocol": protocol,
 					"active": text("active", "False") in ("True", "true", "1"),
 					"hddReplacement": text("hdd_replacement", "False") in ("True", "true", "1"),
 					"sharename": sharename,
-					"displayName": text("display_name"),
-					"server": text("ip", "192.168.0.0"),
-					"remotepath": text("sharedir", defaultDir),
-					"options": text("options", defaultOptions),
+					"displayName": "",
+					"server": server,
+					"remotepath": remotepath,
+					"options": text("options", "rw,nolock,tcp,utf8" if protocol == "nfs" else "rw,utf8"),
 					"username": text("username", "guest") if protocol == "cifs" else "",
 					"password": text("password") if protocol == "cifs" else "",
-					"nfsVersion": text("nfs_version") if protocol == "nfs" else "",
+					"unmanaged": True,
 				}
-				if protocol == "nfs":
-					# Structured NFS mount options (doc/user request: rw/ro, nolock,
-					# nfsvers (see nfsVersion above), rsize, wsize, timeo, soft all
-					# individually editable in Setup instead of buried in free text -
-					# see buildNfsOptions() below for how these become the actual
-					# mount.nfs option string).
-					mount["nfsReadOnly"] = text("nfs_readonly", "False") in ("True", "true", "1")
-					mount["nfsNoLock"] = text("nfs_nolock", "True") in ("True", "true", "1")
-					mount["nfsRsize"] = text("nfs_rsize", "8192")
-					mount["nfsWsize"] = text("nfs_wsize", "8192")
-					mount["nfsTimeo"] = text("nfs_timeo", "14")
-					mount["nfsSoft"] = text("nfs_soft", "False") in ("True", "true", "1")
-				mount["unmanaged"] = False
 				return mount
 			mounts = []
 			for protocol in self.PROTOCOLS:
@@ -253,55 +236,12 @@ class NetworkMountRepository:
 			fileWriteLines(self.AUTO_NETWORK_PATH, autoNetworkLines, source=MODULE_NAME)
 			fileWriteLines(self.FSTAB_PATH, fstabLines, source=MODULE_NAME)
 
-		def writeMount(protoNode, mount, protocol):
-			node = SubElement(protoNode, "mount")
-			SubElement(node, "id").text = str(mount.get("id") or self.newId())
-			SubElement(node, "active").text = "True" if mount.get("active") else "False"
-			SubElement(node, "hdd_replacement").text = "True" if mount.get("hddReplacement") else "False"
-			SubElement(node, "ip").text = str(mount.get("server") or "")
-			SubElement(node, "sharename").text = str(mount.get("sharename") or "")
-			SubElement(node, "display_name").text = str(mount.get("displayName") or "")
-			SubElement(node, "sharedir").text = str(mount.get("remotepath") or "")
-			SubElement(node, "options").text = str(mount.get("options") or "")
-			if protocol == "cifs":
-				SubElement(node, "username").text = str(mount.get("username") or "")
-				SubElement(node, "password").text = str(mount.get("password") or "")
-			else:
-				if mount.get("nfsVersion"):
-					SubElement(node, "nfs_version").text = str(mount.get("nfsVersion") or "")
-				SubElement(node, "nfs_readonly").text = "True" if mount.get("nfsReadOnly") else "False"
-				SubElement(node, "nfs_nolock").text = "True" if mount.get("nfsNoLock", True) else "False"
-				SubElement(node, "nfs_rsize").text = str(mount.get("nfsRsize") or "8192")
-				SubElement(node, "nfs_wsize").text = str(mount.get("nfsWsize") or "8192")
-				SubElement(node, "nfs_timeo").text = str(mount.get("nfsTimeo") or "14")
-				SubElement(node, "nfs_soft").text = "True" if mount.get("nfsSoft") else "False"
-
 		effective = []
 		for mount in mounts:
 			mode = mount.get("mode")
 			if mode not in self.WRITE_MODES:
 				mode = "fstab"
 			effective.append((mount, mode))
-
-		if self.WRITE_XML:
-			root = Element("mountmanager")
-			groups = {}
-			for mount, mode in effective:
-				protocol = mount.get("protocol") or "nfs"
-				groups.setdefault(mode, {}).setdefault(protocol, []).append(mount)
-			for mode in self.WRITE_MODES:
-				if mode not in groups:
-					continue
-				modeNode = SubElement(root, mode)
-				for protocol in self.PROTOCOLS:
-					for mount in groups[mode].get(protocol, []):
-						writeMount(SubElement(modeNode, protocol), mount, protocol)
-			try:
-				ElementTree(root).write(self.AUTOMOUNTS_PATH, encoding="UTF-8", xml_declaration=True)
-				chmod(self.AUTOMOUNTS_PATH, 0o600)  # contains plaintext passwords, see above
-			except OSError as err:
-				print(f"[{MODULE_NAME}] Error writing '{self.AUTOMOUNTS_PATH}': {err}")
-
 		writeMountFiles(effective)
 
 	# CIFS-only (NFS is built explicitly by buildNfsOptions() below, from
@@ -370,6 +310,93 @@ class NetworkMountRepository:
 		except OSError:
 			pass
 		return False
+
+	# -- SMB share-enumeration credentials (NetworkMountDiscoveryScreen) --
+	# Separate from a mount's own username/password (used by the actual
+	# mount command, see NetworkMountSetup) - you need these to be able to
+	# LIST a host's shares before you've even picked one to mount. Kept in
+	# one shared JSON file, keyed by address (stable) rather than hostname
+	# (not always known). credentialsGet() falls back to the old plugin's
+	# own per-host <hostname>.cache pickle when nothing's here yet (see
+	# legacyCredentials()), so credentials entered via the old plugin still
+	# work without re-entering them.
+
+	SHARE_CREDENTIALS_PATH = "/etc/enigma2/network_share_credentials.json"
+
+	def credentialsLoad(self):
+		try:
+			with open(self.SHARE_CREDENTIALS_PATH, encoding="utf-8") as fd:
+				return loads(fd.read())
+		except (OSError, JSONDecodeError):
+			return {}
+
+	def credentialsGet(self, address, hostname=""):
+		entry = self.credentialsLoad().get(address)
+		if entry:
+			return entry
+		return self.legacyCredentials(hostname) if hostname else {}
+
+	def credentialsSave(self, address, username, password):
+		data = self.credentialsLoad()
+		if username or password:
+			data[address] = {"username": username, "password": password}
+		else:
+			data.pop(address, None)
+		try:
+			with open(self.SHARE_CREDENTIALS_PATH, "w", encoding="utf-8") as fd:
+				fd.write(dumps(data))
+			chmod(self.SHARE_CREDENTIALS_PATH, 0o600)  # contains plaintext passwords
+		except OSError as err:
+			print(f"[{MODULE_NAME}] Error writing '{self.SHARE_CREDENTIALS_PATH}': {err}")
+
+	def credentialsClear(self, address):
+		self.credentialsSave(address, "", "")
+
+	# Old plugin (NetworkBrowser/UserDialog.py) wrote one pickle file per
+	# host at /etc/enigma2/<hostname>.cache, {"username": ..., "password":
+	# ...}. Deliberately still read as pickle rather than converted - these
+	# files were written by that same plugin on this same box, so it's the
+	# same trust boundary as the rest of /etc/enigma2, not untrusted input.
+	@staticmethod
+	def legacyCredentials(hostname):
+		path = f"/etc/enigma2/{hostname.strip()}.cache"
+		try:
+			with open(path, "rb") as fd:
+				data = pickleLoad(fd)
+		except Exception:
+			return {}
+		if not isinstance(data, dict):
+			return {}
+		username = data.get("username", "")
+		password = data.get("password", "")
+		return {"username": username, "password": password} if username or password else {}
+
+	# Old plugin's cached nmap scan results (NetworkBrowser.py's
+	# networkbrowser.cache, pickled list of ["host", hostname, ip, mac]) -
+	# read-only migration aid, same idea as legacyCredentials(): don't throw
+	# away hostnames the old plugin already knew just because the new
+	# discovery pipeline (Avahi/neighbor-table/port-probe) hasn't announced
+	# them yet this run. Consumer decides how to use these (see
+	# NetworkMountDiscoveryScreen: used as a display-name hint for hosts
+	# already found live, not to inject possibly-stale/offline hosts as new
+	# rows outright).
+	NETWORKBROWSER_CACHE_PATH = "/etc/enigma2/networkbrowser.cache"
+
+	def legacyDiscoveredHosts(self):
+		try:
+			with open(self.NETWORKBROWSER_CACHE_PATH, "rb") as fd:
+				data = pickleLoad(fd)
+		except Exception:
+			return []
+		hosts = []
+		for entry in data if isinstance(data, list) else []:
+			if not isinstance(entry, (list, tuple)) or len(entry) < 4 or entry[0] != "host":
+				continue
+			hostname, address = entry[1], entry[2]
+			if not address:
+				continue
+			hosts.append({"address": address, "hostname": "" if hostname == address else hostname})
+		return hosts
 
 
 class NetworkMountSetup(Setup):
@@ -473,6 +500,28 @@ class NetworkMountSetup(Setup):
 		Setup.keySave(self)
 
 
+class NetworkShareCredentialsSetup(Setup):
+	"""Small standalone Setup screen (username/password, same ConfigText/
+	ConfigPassword + virtual-keyboard editing NetworkMountSetup already gets
+	for free from Setup) for one host's share-enumeration credentials (see
+	NetworkMountRepository.credentialsGet()/credentialsSave()) - opened from
+	NetworkMountDiscoveryScreen's MENU action on a host row."""
+
+	def __init__(self, session, address, repository):
+		self.address = address
+		self.repository = repository
+		hostname = discoveryManager.hosts.get(address, {}).get("hostname", "")
+		existing = repository.credentialsGet(address, hostname)
+		self.username = NoSave(ConfigText(default=existing.get("username", ""), fixed_size=False))
+		self.password = NoSave(ConfigPassword(default=existing.get("password", "")))
+		Setup.__init__(self, session=session, setup="NetworkShareCredentialsSetup")
+		self.setTitle(_("SMB Credentials for %s") % address)
+
+	def keySave(self):
+		self.repository.credentialsSave(self.address, self.username.value.strip(), self.password.value)
+		Setup.keySave(self)
+
+
 class NetworkMountDiscoveryScreen(Screen):
 	"""Host list with shares nested underneath, expand/collapse per host -
 	same tree shape as the old plugin's NetworkBrowser.py screen, rebuilt
@@ -549,6 +598,9 @@ class NetworkMountDiscoveryScreen(Screen):
 		<widget source="key_blue" render="Label" position="570,e-40" size="180,40" backgroundColor="key_blue" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
+		<widget source="key_menu" render="Label" position="e-180,e-40" size="100,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
+			<convert type="ConditionalShowHide" />
+		</widget>
 		<widget source="key_help" render="Label" position="e-80,e-40" size="80,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
@@ -573,19 +625,24 @@ class NetworkMountDiscoveryScreen(Screen):
 		self["key_green"] = StaticText(_("Select"))
 		self["key_yellow"] = StaticText(_("Rescan"))
 		self["key_blue"] = StaticText(_("Enter manually"))
-		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
+		self["key_menu"] = StaticText(_("Host actions"))
+		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions"], {
 			"ok": (self.keySelect, _("Expand/collapse the selected host, or use the selected share")),
 			"cancel": (self.keyClose, _("Close")),
 			"red": (self.keyClose, _("Close")),
 			"green": (self.keySelect, _("Expand/collapse the selected host, or use the selected share")),
 			"yellow": (self.keyRescan, _("Restart discovery")),
 			"blue": (self.keyManual, _("Enter a hostname or IP address manually")),
+			"menu": (self.keyMenu, _("Host actions - edit or clear stored SMB credentials")),
 		}, prio=0, description=_("Network Share Discovery Actions"))
 		self.expanded = set()
 		self.shares = {}         # address -> [share dict, ...]
 		self.shareState = {}     # address -> "loading" | "done" | "empty"
 		self.pendingProtocols = {}  # address -> {"nfs", "smb"} remaining
 		self.configuredShares = {}  # (server, remotepath) -> local mount path, for already-configured shares
+		self.repository = NetworkMountRepository()
+		self.legacyHostnames = {}  # address -> hostname, from the old plugin's networkbrowser.cache (see startDiscovery())
+		self.menuAddress = None
 		self.console = Console()
 		self.closed = False
 		self.refreshTimer = eTimer()
@@ -599,8 +656,11 @@ class NetworkMountDiscoveryScreen(Screen):
 	# runMs=None requests an unbounded live scan, overriding the bounded
 	# once-per-boot pass DiscoveryManager may already be running.
 	def startDiscovery(self):
-		repository = NetworkMountRepository()
-		self.configuredShares = {(mount.get("server"), (mount.get("remotepath") or "").lstrip("/")): repository.mountPointFor(mount) for mount in repository.load()}
+		self.configuredShares = {(mount.get("server"), (mount.get("remotepath") or "").lstrip("/")): self.repository.mountPointFor(mount) for mount in self.repository.load()}
+		# Hostname hint only, for hosts already found live this run (see
+		# rebuildList()) - not injected as new rows, they may be stale/
+		# offline by now.
+		self.legacyHostnames = {host["address"]: host["hostname"] for host in self.repository.legacyDiscoveredHosts() if host["hostname"]}
 		discoveryManager.onChanged.append(self.onHostsChanged)
 		discoveryManager.start(runMs=None)
 		self["description"].setText(_("Scanning…"))
@@ -638,6 +698,31 @@ class NetworkMountDiscoveryScreen(Screen):
 		if text:
 			self.close({"address": text, "hostname": "", "protocol": None, "remotepath": "", "sharename": ""})
 
+	def keyMenu(self):
+		current = self["list"].getCurrent()
+		if not current or current[-1].get("kind") != "host":
+			return
+		self.menuAddress = current[-1]["address"]
+		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Host actions"), list=[
+			(_("Edit SMB username/password"), "credentials"),
+			(_("Clear stored SMB credentials"), "clear_credentials"),
+		])
+
+	def menuChoiceClosed(self, choice=None):
+		if not choice:
+			return
+		if choice[1] == "credentials":
+			self.session.openWithCallback(self.credentialsClosed, NetworkShareCredentialsSetup, self.menuAddress, self.repository)
+		elif choice[1] == "clear_credentials":
+			self.repository.credentialsClear(self.menuAddress)
+			self.session.open(MessageBox, _("Stored SMB credentials deleted for this host."), MessageBox.TYPE_INFO, timeout=3)
+
+	def credentialsClosed(self, *args):
+		# Re-enumerate with the (possibly new) credentials if this host is
+		# currently expanded, so the share list picks them up right away.
+		if self.menuAddress in self.expanded:
+			self.startShareEnumeration(self.menuAddress)
+
 	def keySelect(self):
 		current = self["list"].getCurrent()
 		if not current:
@@ -654,10 +739,20 @@ class NetworkMountDiscoveryScreen(Screen):
 	def toggleExpand(self, address):
 		if address in self.expanded:
 			self.expanded.discard(address)
-		else:
-			self.expanded.add(address)
-			self.startShareEnumeration(address)
+			self.rebuildList()
+			return
+		self.expanded.add(address)
 		self.rebuildList()
+		# Anonymous smbclient -L is often refused/limited by real servers,
+		# so without credentials the SMB shares just silently don't show up
+		# - ask up front on first expand instead, same as the old plugin's
+		# UserDialog on the first attempt. Leaving it blank still proceeds
+		# (anonymous), it just asks again next time since nothing got saved.
+		hostname = discoveryManager.hosts.get(address, {}).get("hostname", "")
+		if self.repository.credentialsGet(address, hostname).get("username"):
+			self.startShareEnumeration(address)
+		else:
+			self.session.openWithCallback(lambda *args: self.startShareEnumeration(address), NetworkShareCredentialsSetup, address, self.repository)
 
 	def pickShare(self, share):
 		host = discoveryManager.hosts.get(share["address"]) or {}
@@ -728,9 +823,34 @@ class NetworkMountDiscoveryScreen(Screen):
 		if not exists(self.SMB_SMBCLIENT_BIN):
 			self.finishProtocol(address, "smb")
 			return
-		self.console.ePopen((self.SMB_SMBCLIENT_BIN, self.SMB_SMBCLIENT_BIN, "-m", "SMB3", "-N", "-g", "-L", address), callback=lambda data, retVal, extra=None: self.onSmbResult(address, data, retVal))
+		# Anonymous (-N) unless credentials were stored for this host (see
+		# NetworkMountRepository.credentialsGet()/keyMenu) - then use -A
+		# <credential-file>, per doc section 6.2: never the password in argv
+		# or via stdin, both leak it (argv: visible in the process list; a
+		# second stdin codepath is its own risk). File is written 0600 and
+		# removed again
+		# in onSmbResult() once the command has finished either way.
+		hostname = discoveryManager.hosts.get(address, {}).get("hostname", "")
+		credentials = self.repository.credentialsGet(address, hostname)
+		credentialFile = None
+		if credentials.get("username"):
+			credentialFile = NamedTemporaryFile(mode="w", prefix="smbcreds-", delete=False)
+			credentialFile.write(f"username={credentials['username']}\npassword={credentials.get('password', '')}\n")
+			credentialFile.close()
+			chmod(credentialFile.name, 0o600)
+			authArgs = ("-A", credentialFile.name)
+		else:
+			authArgs = ("-N",)
+		cmd = (self.SMB_SMBCLIENT_BIN, self.SMB_SMBCLIENT_BIN, "-m", "SMB3", "-g", *authArgs, "-L", address)
+		credentialPath = credentialFile.name if credentialFile else None
+		self.console.ePopen(cmd, callback=lambda data, retVal, extra=None: self.onSmbResult(address, data, retVal, credentialPath))
 
-	def onSmbResult(self, address, data, retVal):
+	def onSmbResult(self, address, data, retVal, credentialPath=None):
+		if credentialPath:
+			try:
+				remove(credentialPath)
+			except OSError:
+				pass
 		if getattr(self, "closed", True):
 			return
 		if data:
@@ -769,7 +889,7 @@ class NetworkMountDiscoveryScreen(Screen):
 		entries = []
 		for host in sorted(discoveryManager.hosts.values(), key=lambda h: (not h["protocols"], h["hostname"] or h["address"])):
 			address = host["address"]
-			name = host["hostname"] or address
+			name = host["hostname"] or self.legacyHostnames.get(address, "") or address
 			entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", {"kind": "host", "address": address}))
 			if address not in self.expanded:
 				continue
