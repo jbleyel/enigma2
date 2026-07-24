@@ -113,7 +113,7 @@ class NetworkCompat:
 	def deactivateInterface(self, ifaces, callback=None):
 		if isinstance(ifaces, str):
 			ifaces = [ifaces]
-		wlanIfaces = [x for x in ifaces if networkManager.getAdapter(x) and networkManager.getAdapter(x).isWlan]
+		wlanIfaces = [x for x in ifaces if networkManager.getAdapter(x) and networkManager.getAdapter(x).isWiFi]
 		lanIfaces = [x for x in ifaces if x not in wlanIfaces]
 		total = (1 if lanIfaces else 0) + len(wlanIfaces)
 		if total == 0:

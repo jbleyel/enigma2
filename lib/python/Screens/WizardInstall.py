@@ -43,7 +43,7 @@ class WizardInstall(ConfigListScreen, Screen):
 				self.configUpdate = ConfigSelection(default=0, choices={0: "Press OK to install"})
 				isFound = False
 				for name, adapter in (networkManager.adapters.items() if networkManager is not None else {}.items()):
-					if not adapter.isWlan:
+					if not adapter.isWiFi:
 						net = adapter.netInfo
 						if net.up:
 							self.ipConfigEntry = ConfigIP(default=list(net.ip))

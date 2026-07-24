@@ -346,7 +346,7 @@ class QuickMenu(Screen, ProtectedScreen):
 	def subMenuNetwork(self):  # Network Menu.
 		def getNetworkInterfaces():
 			adapters = [
-				(f"{'WLAN' if a.isWlan else 'LAN'} ({name})", name)
+				(f"{'Wi-Fi' if a.isWiFi else 'LAN'} ({name})", name)
 				for name, a in networkManager.adapters.items()
 			]
 			activeInterface = next(

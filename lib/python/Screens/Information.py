@@ -1013,7 +1013,7 @@ class InformationNetwork(InformationBase):
 				continue
 			net = adapter.netInfo
 			info.append("")
-			info.append(self.formatLine("S", _("Interface '%s'") % interface, _("WLAN / Wi-Fi") if adapter.isWlan else _("LAN")))
+			info.append(self.formatLine("S", _("Interface '%s'") % interface, _("Wi-Fi") if adapter.isWiFi else _("LAN")))
 			info.append(self.formatLine("P1", _("Status"), (_("Up / Active") if net.up else _("Down / Inactive"))))
 			if net.up:
 				if net.ip != [0, 0, 0, 0]:
@@ -1031,13 +1031,13 @@ class InformationNetwork(InformationBase):
 					info.append(self.formatLine("P1", _("MAC address"), adapter.mac))
 				if net.mtu:
 					info.append(self.formatLine("P1", _("MTU"), net.mtu))
-				if adapter.isWlan:
+				if adapter.isWiFi:
 					if net.ssid:
 						info.append(self.formatLine("P1", _("SSID"), net.ssid))
-						connection = next((x for x in networkManager.getConnections(interface) if x.wlan and x.wlan.ssid == net.ssid), None)
+						connection = next((x for x in networkManager.getConnections(interface) if x.wifi and x.wifi.ssid == net.ssid), None)
 						if connection:
-							label = encryptionLabels.get(connection.wlan.encryption)
-							info.append(self.formatLine("P1", _("Encryption"), label() if label else connection.wlan.encryption))
+							label = encryptionLabels.get(connection.wifi.encryption)
+							info.append(self.formatLine("P1", _("Encryption"), label() if label else connection.wifi.encryption))
 					if net.bssid:
 						info.append(self.formatLine("P1", _("Access point"), net.bssid))
 					if net.freqMhz:
