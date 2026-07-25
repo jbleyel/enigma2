@@ -666,7 +666,6 @@
 	</setup>
 	<setup key="NetworkMountSetup" title="Network Mount Setup">
 		<item text="Active" description="Enable or disable this network mount without deleting its definition.">self.active</item>
-		<item text="Display name" description="A friendly name shown in the mount list. Does not affect the actual mount path.">self.displayName</item>
 		<item text="Protocol" description="SMB/CIFS (Windows-style shares) or NFS.">self.protocol</item>
 		<item text="Server" description="The hostname or IP address of the network share's server.">self.server</item>
 		<item text="Remote path" description="The remote share name (SMB) or exported path (NFS) on the server.">self.remotepath</item>

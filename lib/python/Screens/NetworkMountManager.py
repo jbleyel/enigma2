@@ -1,7 +1,6 @@
-from json import JSONDecodeError, dumps, loads
 from os import chmod, remove
 from os.path import exists
-from pickle import load as pickleLoad
+from pickle import dump as pickleDump, load as pickleLoad
 from re import sub
 from tempfile import NamedTemporaryFile
 from uuid import uuid4
@@ -79,7 +78,6 @@ class NetworkMountRepository:
 					"active": text("active", "False") in ("True", "true", "1"),
 					"hddReplacement": text("hdd_replacement", "False") in ("True", "true", "1"),
 					"sharename": sharename,
-					"displayName": "",
 					"server": server,
 					"remotepath": remotepath,
 					"options": text("options", "rw,nolock,tcp,utf8" if protocol == "nfs" else "rw,utf8"),
@@ -129,7 +127,7 @@ class NetworkMountRepository:
 			return {
 				"id": f"fstab:{protocol}:{server}:{remotepath}", "mode": "fstab", "protocol": protocol,
 				"active": True, "hddReplacement": mountpoint.rstrip("/") == "/media/hdd",
-				"sharename": sharename, "displayName": "", "server": server, "remotepath": remotepath,
+				"sharename": sharename, "server": server, "remotepath": remotepath,
 				"options": options, "username": "", "password": "", "nfsVersion": "", "unmanaged": True,
 			}
 
@@ -157,7 +155,7 @@ class NetworkMountRepository:
 			return {
 				"id": f"autofs:{protocol}:{server}:{remotepath}", "mode": "autofs", "protocol": protocol,
 				"active": True, "hddReplacement": False,
-				"sharename": sharename, "displayName": "", "server": server, "remotepath": remotepath,
+				"sharename": sharename, "server": server, "remotepath": remotepath,
 				"options": options, "username": "", "password": "", "nfsVersion": "", "unmanaged": True,
 			}
 
@@ -314,54 +312,26 @@ class NetworkMountRepository:
 	# -- SMB share-enumeration credentials (NetworkMountDiscoveryScreen) --
 	# Separate from a mount's own username/password (used by the actual
 	# mount command, see NetworkMountSetup) - you need these to be able to
-	# LIST a host's shares before you've even picked one to mount. Kept in
-	# one shared JSON file, keyed by address (stable) rather than hostname
-	# (not always known). credentialsGet() falls back to the old plugin's
-	# own per-host <hostname>.cache pickle when nothing's here yet (see
-	# legacyCredentials()), so credentials entered via the old plugin still
-	# work without re-entering them.
+	# LIST a host's shares before you've even picked one to mount. Exactly
+	# the old plugin's own storage (NetworkBrowser/UserDialog.py): one
+	# pickle file per host at /etc/enigma2/<hostname>.cache, {"username":
+	# ..., "password": ...} - no separate new store, so credentials entered
+	# via the old plugin already work here, and vice versa. Deliberately
+	# still pickle, not converted - these files are written/read on this
+	# same box, same trust boundary as the rest of /etc/enigma2, not
+	# untrusted input. Keyed by hostname like the old plugin, so callers
+	# without a resolved hostname for a host can't use this at all - same
+	# limitation the old plugin had.
 
-	SHARE_CREDENTIALS_PATH = "/etc/enigma2/network_share_credentials.json"
-
-	def credentialsLoad(self):
-		try:
-			with open(self.SHARE_CREDENTIALS_PATH, encoding="utf-8") as fd:
-				return loads(fd.read())
-		except (OSError, JSONDecodeError):
-			return {}
-
-	def credentialsGet(self, address, hostname=""):
-		entry = self.credentialsLoad().get(address)
-		if entry:
-			return entry
-		return self.legacyCredentials(hostname) if hostname else {}
-
-	def credentialsSave(self, address, username, password):
-		data = self.credentialsLoad()
-		if username or password:
-			data[address] = {"username": username, "password": password}
-		else:
-			data.pop(address, None)
-		try:
-			with open(self.SHARE_CREDENTIALS_PATH, "w", encoding="utf-8") as fd:
-				fd.write(dumps(data))
-			chmod(self.SHARE_CREDENTIALS_PATH, 0o600)  # contains plaintext passwords
-		except OSError as err:
-			print(f"[{MODULE_NAME}] Error writing '{self.SHARE_CREDENTIALS_PATH}': {err}")
-
-	def credentialsClear(self, address):
-		self.credentialsSave(address, "", "")
-
-	# Old plugin (NetworkBrowser/UserDialog.py) wrote one pickle file per
-	# host at /etc/enigma2/<hostname>.cache, {"username": ..., "password":
-	# ...}. Deliberately still read as pickle rather than converted - these
-	# files were written by that same plugin on this same box, so it's the
-	# same trust boundary as the rest of /etc/enigma2, not untrusted input.
 	@staticmethod
-	def legacyCredentials(hostname):
-		path = f"/etc/enigma2/{hostname.strip()}.cache"
+	def credentialsPath(hostname):
+		return f"/etc/enigma2/{hostname.strip()}.cache"
+
+	def credentialsGet(self, hostname):
+		if not hostname:
+			return {}
 		try:
-			with open(path, "rb") as fd:
+			with open(self.credentialsPath(hostname), "rb") as fd:
 				data = pickleLoad(fd)
 		except Exception:
 			return {}
@@ -371,10 +341,29 @@ class NetworkMountRepository:
 		password = data.get("password", "")
 		return {"username": username, "password": password} if username or password else {}
 
+	def credentialsSave(self, hostname, username, password):
+		if not hostname:
+			return
+		path = self.credentialsPath(hostname)
+		try:
+			with open(path, "wb") as fd:
+				pickleDump({"username": username, "password": password}, fd, -1)
+			chmod(path, 0o600)  # contains a plaintext password
+		except OSError as err:
+			print(f"[{MODULE_NAME}] Error writing '{path}': {err}")
+
+	def credentialsClear(self, hostname):
+		if not hostname:
+			return
+		try:
+			remove(self.credentialsPath(hostname))
+		except OSError:
+			pass
+
 	# Old plugin's cached nmap scan results (NetworkBrowser.py's
 	# networkbrowser.cache, pickled list of ["host", hostname, ip, mac]) -
-	# read-only migration aid, same idea as legacyCredentials(): don't throw
-	# away hostnames the old plugin already knew just because the new
+	# read-only migration aid, same spirit as the credentials above: don't
+	# throw away hostnames the old plugin already knew just because the new
 	# discovery pipeline (Avahi/neighbor-table/port-probe) hasn't announced
 	# them yet this run. Consumer decides how to use these (see
 	# NetworkMountDiscoveryScreen: used as a display-name hint for hosts
@@ -410,14 +399,6 @@ class NetworkMountSetup(Setup):
 	Expert, same mechanism every other Setup screen in Enigma2 already uses -
 	no separate "Expert" toggle invented just for this screen."""
 
-	PROTOCOL_CHOICES = (("cifs", _("SMB / CIFS")), ("nfs", _("NFS")))
-	MODE_CHOICES = (
-		("autofs", _("Autofs (mount on first access)")),
-		("fstab", _("fstab (mount at boot)")),
-	)
-	NFS_VERSION_CHOICES = (("auto", _("Automatic")), ("3", "NFSv3"), ("4", "NFSv4"))
-	NFS_SIZE_CHOICES = (("8192", "8192"), ("32768", "32768"), ("65536", "65536"), ("131072", "131072"))
-
 	def __init__(self, session, mount=None):
 		self.repository = NetworkMountRepository()
 		self.mountId = mount.get("id") if mount else None
@@ -426,23 +407,34 @@ class NetworkMountSetup(Setup):
 			return mount.get(key, default) if mount else default
 
 		self.active = NoSave(ConfigYesNo(default=field("active", True)))
-		self.displayName = NoSave(ConfigText(default=field("displayName"), fixed_size=False))
-		self.protocol = NoSave(ConfigSelection(default=field("protocol", "cifs") or "cifs", choices=list(self.PROTOCOL_CHOICES)))
+		self.protocol = NoSave(ConfigSelection(default=field("protocol", "cifs") or "cifs", choices=[
+			("cifs", "SMB / CIFS"),
+			("nfs", "NFS")
+		]))
 		self.server = NoSave(ConfigText(default=field("server"), fixed_size=False))
 		self.remotepath = NoSave(ConfigText(default=field("remotepath"), fixed_size=False))
-		self.mode = NoSave(ConfigSelection(default=field("mode", "autofs") or "autofs", choices=list(self.MODE_CHOICES)))
+		self.mode = NoSave(ConfigSelection(default=field("mode", "autofs") or "autofs", choices=[
+			("autofs", _("Autofs (mount on first access)")),
+			("fstab", _("fstab (mount at boot)"))
+		]))
 		self.username = NoSave(ConfigText(default=field("username"), fixed_size=False))
 		self.password = NoSave(ConfigPassword(default=field("password")))
 		self.sharename = NoSave(ConfigText(default=field("sharename"), fixed_size=False))
 		self.options = NoSave(ConfigText(default=field("options"), fixed_size=False))
-		self.nfsVersion = NoSave(ConfigSelection(default=field("nfsVersion", "auto") or "auto", choices=list(self.NFS_VERSION_CHOICES)))
+		self.nfsVersion = NoSave(ConfigSelection(default=field("nfsVersion", "auto") or "auto", choices=[
+			("auto", _("Automatic")),
+			("3", "NFSv3"),
+			("4", "NFSv4")
+		]))
 		# Structured NFS mount options - individually editable instead of
 		# only through the free-text "options" field above, see
 		# NetworkMountRepository.buildNfsOptions().
 		self.nfsReadOnly = NoSave(ConfigYesNo(default=field("nfsReadOnly", False)))
 		self.nfsNoLock = NoSave(ConfigYesNo(default=field("nfsNoLock", True)))
-		self.nfsRsize = NoSave(ConfigSelection(default=str(field("nfsRsize", "8192")) or "8192", choices=list(self.NFS_SIZE_CHOICES)))
-		self.nfsWsize = NoSave(ConfigSelection(default=str(field("nfsWsize", "8192")) or "8192", choices=list(self.NFS_SIZE_CHOICES)))
+
+		NFS_SIZE_CHOICES = [("8192", "8192"), ("32768", "32768"), ("65536", "65536"), ("131072", "131072")]
+		self.nfsRsize = NoSave(ConfigSelection(default=str(field("nfsRsize", "8192")) or "8192", choices=NFS_SIZE_CHOICES))
+		self.nfsWsize = NoSave(ConfigSelection(default=str(field("nfsWsize", "8192")) or "8192", choices=NFS_SIZE_CHOICES))
 		# timeo is in DECISECONDS (tenths of a second, mount.nfs(5)) - 14
 		# means 1.4s, matching the old plugin's hardcoded default.
 		self.nfsTimeo = NoSave(ConfigNumber(default=int(field("nfsTimeo", 14) or 14)))
@@ -470,14 +462,13 @@ class NetworkMountSetup(Setup):
 			self.session.open(MessageBox, _("Server and remote path are required."), MessageBox.TYPE_ERROR, timeout=5)
 			return
 		# Stable local key: explicit (Expert field) if set, else derived from
-		# the display name, else from the server - never left empty, it's
-		# used to build the local mount path (see NetworkMountRepository.mountPointFor()).
-		sharename = self.sharename.value.strip() or sub(r"\W", "", self.displayName.value) or sub(r"\W", "", server)
+		# the server - never left empty, it's used to build the local mount
+		# path (see NetworkMountRepository.mountPointFor()).
+		sharename = self.sharename.value.strip() or sub(r"\W", "", server)
 		mount = {
 			"id": self.mountId or self.repository.newId(),
 			"active": self.active.value,
 			"sharename": sharename,
-			"displayName": self.displayName.value.strip(),
 			"server": server,
 			"remotepath": remotepath,
 			"protocol": self.protocol.value,
@@ -505,20 +496,22 @@ class NetworkShareCredentialsSetup(Setup):
 	ConfigPassword + virtual-keyboard editing NetworkMountSetup already gets
 	for free from Setup) for one host's share-enumeration credentials (see
 	NetworkMountRepository.credentialsGet()/credentialsSave()) - opened from
-	NetworkMountDiscoveryScreen's MENU action on a host row."""
+	NetworkMountDiscoveryScreen's MENU action on a host row. Keyed by
+	hostname, same as the old plugin's UserDialog - the caller resolves
+	that (falling back to the address if no hostname is known, see
+	NetworkMountDiscoveryScreen.hostnameFor())."""
 
-	def __init__(self, session, address, repository):
-		self.address = address
+	def __init__(self, session, hostname, repository):
+		self.hostname = hostname
 		self.repository = repository
-		hostname = discoveryManager.hosts.get(address, {}).get("hostname", "")
-		existing = repository.credentialsGet(address, hostname)
+		existing = repository.credentialsGet(hostname)
 		self.username = NoSave(ConfigText(default=existing.get("username", ""), fixed_size=False))
 		self.password = NoSave(ConfigPassword(default=existing.get("password", "")))
 		Setup.__init__(self, session=session, setup="NetworkShareCredentialsSetup")
-		self.setTitle(_("SMB Credentials for %s") % address)
+		self.setTitle(_("SMB Credentials for %s") % hostname)
 
 	def keySave(self):
-		self.repository.credentialsSave(self.address, self.username.value.strip(), self.password.value)
+		self.repository.credentialsSave(self.hostname, self.username.value.strip(), self.password.value)
 		Setup.keySave(self)
 
 
@@ -643,6 +636,7 @@ class NetworkMountDiscoveryScreen(Screen):
 		self.repository = NetworkMountRepository()
 		self.legacyHostnames = {}  # address -> hostname, from the old plugin's networkbrowser.cache (see startDiscovery())
 		self.menuAddress = None
+		self.menuHostname = None
 		self.console = Console()
 		self.closed = False
 		self.refreshTimer = eTimer()
@@ -698,11 +692,20 @@ class NetworkMountDiscoveryScreen(Screen):
 		if text:
 			self.close({"address": text, "hostname": "", "protocol": None, "remotepath": "", "sharename": ""})
 
+	# Credentials (NetworkMountRepository.credentialsGet() et al) are keyed
+	# by hostname, same as the old plugin - falls back to the address when
+	# no hostname is known for this host (live-discovered or from the old
+	# plugin's networkbrowser.cache, see startDiscovery()).
+	def hostnameFor(self, address):
+		host = discoveryManager.hosts.get(address) or {}
+		return host.get("hostname") or self.legacyHostnames.get(address, "") or address
+
 	def keyMenu(self):
 		current = self["list"].getCurrent()
 		if not current or current[-1].get("kind") != "host":
 			return
 		self.menuAddress = current[-1]["address"]
+		self.menuHostname = self.hostnameFor(self.menuAddress)
 		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Host actions"), list=[
 			(_("Edit SMB username/password"), "credentials"),
 			(_("Clear stored SMB credentials"), "clear_credentials"),
@@ -712,9 +715,9 @@ class NetworkMountDiscoveryScreen(Screen):
 		if not choice:
 			return
 		if choice[1] == "credentials":
-			self.session.openWithCallback(self.credentialsClosed, NetworkShareCredentialsSetup, self.menuAddress, self.repository)
+			self.session.openWithCallback(self.credentialsClosed, NetworkShareCredentialsSetup, self.menuHostname, self.repository)
 		elif choice[1] == "clear_credentials":
-			self.repository.credentialsClear(self.menuAddress)
+			self.repository.credentialsClear(self.menuHostname)
 			self.session.open(MessageBox, _("Stored SMB credentials deleted for this host."), MessageBox.TYPE_INFO, timeout=3)
 
 	def credentialsClosed(self, *args):
@@ -748,11 +751,11 @@ class NetworkMountDiscoveryScreen(Screen):
 		# - ask up front on first expand instead, same as the old plugin's
 		# UserDialog on the first attempt. Leaving it blank still proceeds
 		# (anonymous), it just asks again next time since nothing got saved.
-		hostname = discoveryManager.hosts.get(address, {}).get("hostname", "")
-		if self.repository.credentialsGet(address, hostname).get("username"):
+		hostname = self.hostnameFor(address)
+		if self.repository.credentialsGet(hostname).get("username"):
 			self.startShareEnumeration(address)
 		else:
-			self.session.openWithCallback(lambda *args: self.startShareEnumeration(address), NetworkShareCredentialsSetup, address, self.repository)
+			self.session.openWithCallback(lambda *args: self.startShareEnumeration(address), NetworkShareCredentialsSetup, hostname, self.repository)
 
 	def pickShare(self, share):
 		host = discoveryManager.hosts.get(share["address"]) or {}
@@ -828,10 +831,9 @@ class NetworkMountDiscoveryScreen(Screen):
 		# <credential-file>, per doc section 6.2: never the password in argv
 		# or via stdin, both leak it (argv: visible in the process list; a
 		# second stdin codepath is its own risk). File is written 0600 and
-		# removed again
-		# in onSmbResult() once the command has finished either way.
-		hostname = discoveryManager.hosts.get(address, {}).get("hostname", "")
-		credentials = self.repository.credentialsGet(address, hostname)
+		# removed again in onSmbResult() once the command has finished
+		# either way.
+		credentials = self.repository.credentialsGet(self.hostnameFor(address))
 		credentialFile = None
 		if credentials.get("username"):
 			credentialFile = NamedTemporaryFile(mode="w", prefix="smbcreds-", delete=False)
@@ -983,7 +985,6 @@ class NetworkMountManager(Screen):
 		mount = None
 		if picked:
 			mount = {
-				"displayName": picked.get("hostname") or picked.get("address") or "",
 				"server": picked.get("address") or "",
 			}
 			if picked.get("protocol"):
@@ -1006,7 +1007,7 @@ class NetworkMountManager(Screen):
 		self.mounts = self.repository.load()
 		self.mountList = []
 		for mount in self.mounts:
-			name = mount.get("displayName") or mount.get("sharename") or mount.get("id")
+			name = mount.get("sharename") or mount.get("id")
 			server = mount.get("server", "")
 			remotepath = mount.get("remotepath", "")
 			protocol = mount.get("protocol", "")
@@ -1054,7 +1055,7 @@ class NetworkMountManager(Screen):
 		current = self["mountlist"].getCurrent()
 		if current:
 			mount = current[self.LIST_DATA]
-			name = mount.get("displayName") or mount.get("sharename") or mount.get("id")
+			name = mount.get("sharename") or mount.get("id")
 			if self.repository.isMounted(mount):
 				self.session.open(MessageBox, _("This mount is currently active. Unmounting is not supported yet - only remove the definition, not the live mount."), MessageBox.TYPE_INFO, timeout=6)
 				return
