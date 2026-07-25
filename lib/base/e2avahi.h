@@ -5,7 +5,15 @@
 #include <lib/python/python.h>
 
 #ifndef SWIG
+#include <libsig_comp.h>
+#include <avahi-client/lookup.h>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 class eMainloop;
+class eTimer;
 
 /* Initialization and shutdown */
 void e2avahi_init(eMainloop* reactor);
