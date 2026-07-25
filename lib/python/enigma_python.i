@@ -47,7 +47,6 @@ is usually caused by not marking PSignals as immutable.
 #include <lib/base/message.h>
 #include <lib/base/modelinformation.h>
 #include <lib/base/e2avahi.h>
-#include <lib/base/e2networkservicebrowser.h>
 #include <lib/base/internetcheck.h>
 #include <lib/base/profile.h>
 #include <lib/network/serviceactionclient.h>
@@ -207,7 +206,6 @@ class iDVBChannelList   { protected: iDVBChannelList() {}   virtual ~iDVBChannel
 %include <lib/service/servicefs.h>
 %include <lib/service/service.h>
 %include <lib/base/e2avahi.h>
-%include <lib/base/e2networkservicebrowser.h>
 %include <lib/service/servicepeer.h>
 
 // TODO: embed these...

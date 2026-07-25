@@ -41,7 +41,6 @@ baseinclude_HEADERS = \
 	base/cfile.h \
 	base/console.h \
 	base/e2avahi.h \
-	base/e2networkservicebrowser.h \
 	base/ebase.h \
 	base/eenv.h \
 	base/eerror.h \

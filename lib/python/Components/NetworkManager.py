@@ -29,7 +29,7 @@ from collections.abc import Callable
 from twisted.internet import reactor
 from twisted.internet.protocol import ClientFactory, Protocol
 
-from enigma import eNetworkServiceBrowser, eTimer
+from enigma import e2avahi_set_debug, eNetworkServiceBrowser, eTimer
 
 from Components.config import config
 from Components.Console import Console
@@ -135,6 +135,7 @@ class NetworkManager:
 
 	def __init__(self):
 		self._debug = config.crash.debugNetwork.value
+		e2avahi_set_debug(self._debug)
 		self.adapters: dict[str, Adapter] = {}
 		self.connections: dict[str, list[Connection]] = {}
 		self.vpnInterfaces: dict[str, VpnInfo] = {}
@@ -1670,41 +1671,31 @@ class NetworkCheck:
 			print(f"[NetworkManager] NetworkCheck: Error {err}!")
 
 
-# "smb" is the name used everywhere outside actual mount execution; "cifs"
-# only shows up as the Linux mount type once a share is mounted.
-AVAHI_SERVICE_TYPES = {
-	"smb": "_smb._tcp",
-	"nfs": "_nfs._tcp",
-}
-
-
 # mDNS/DNS-SD discovery for SMB/NFS hosts (NetworkMounts). Not started
 # automatically, only on demand by whoever needs SMB/NFS discovery.
 class AvahiProvider:
-	def __init__(self, protocols=("smb", "nfs")):
-		self.serviceTypes = tuple(AVAHI_SERVICE_TYPES[p] for p in protocols)
-		self.typeToProtocol = {AVAHI_SERVICE_TYPES[p]: p for p in protocols}
+	def __init__(self):
+		self.typeToProtocol = {"_smb._tcp": "smb", "_nfs._tcp": "nfs"}
+		self.serviceTypes = tuple(self.typeToProtocol)
 		self.browser = None
 		self.started = False
 		self.onObservation: list[Callable] = []
 
 	def start(self):
-		if self.started:
-			return
-		self.browser = eNetworkServiceBrowser()
-		for serviceType in self.serviceTypes:
-			self.browser.addServiceType(serviceType)
-		self.browser.changed.get().append(self.changed)
-		self.browser.start()
-		self.started = True
+		if not self.started:
+			self.browser = eNetworkServiceBrowser()
+			for serviceType in self.serviceTypes:
+				self.browser.addServiceType(serviceType)
+			self.browser.changed.get().append(self.changed)
+			self.browser.start()
+			self.started = True
 
 	def stop(self):
-		if not self.started:
-			return
-		self.browser.changed.get().remove(self.changed)
-		self.browser.stop()
-		self.browser = None
-		self.started = False
+		if self.started:
+			self.browser.changed.get().remove(self.changed)
+			self.browser.stop()
+			self.browser = None
+			self.started = False
 
 	def changed(self):
 		# changed carries no payload - re-read the full snapshot and
@@ -1745,26 +1736,24 @@ class NeighborProvider:
 		self.onObservation: list[Callable] = []
 
 	def start(self):
-		if self.started:
-			return
-		networkManager.onNeighborObservation.append(self.changed)
-		self.started = True
-		# Seed with whatever was already in the kernel neighbor table before
-		# we started listening - the incremental event stream above only
-		# reports changes from this point on, see readNetNeighbors().
-		for entry in readNetNeighbors():
-			self.changed({
-				"source": "neighbor",
-				"action": "ADD",
-				"family": entry.get("family"),
-				"address": entry.get("address"),
-			})
+		if not self.started:
+			networkManager.onNeighborObservation.append(self.changed)
+			self.started = True
+			# Seed with whatever was already in the kernel neighbor table before
+			# we started listening - the incremental event stream above only
+			# reports changes from this point on, see readNetNeighbors().
+			for entry in readNetNeighbors():
+				self.changed({
+					"source": "neighbor",
+					"action": "ADD",
+					"family": entry.get("family"),
+					"address": entry.get("address"),
+				})
 
 	def stop(self):
-		if not self.started:
-			return
-		networkManager.onNeighborObservation.remove(self.changed)
-		self.started = False
+		if self.started:
+			networkManager.onNeighborObservation.remove(self.changed)
+			self.started = False
 
 	def changed(self, observation: dict):
 		for callback in self.onObservation:
@@ -1778,46 +1767,36 @@ class NeighborProvider:
 # which addresses to probe and when (see probeRemainingNeighbors()); this
 # just fires the connects and reports which ones answered.
 class PortProbeProvider:
-	SMB_PORT = 445
-	TIMEOUT = 3  # seconds, connect timeout
+	class PortProbeFactory(ClientFactory):
+		class PortProbeProtocol(Protocol):
+			def connectionMade(self):
+				self.factory.reportResult(True)
+				self.transport.loseConnection()
+
+		protocol = PortProbeProtocol
+
+		def __init__(self, onResult):
+			self.onResult = onResult
+
+		def reportResult(self, success):
+			self.onResult(success)
+
+		def clientConnectionFailed(self, connector, reason):
+			self.onResult(False)
 
 	def __init__(self):
 		self.onResult: list[Callable] = []  # callback(address) - only called on success
 
 	def probe(self, addresses):
 		for address in addresses:
-			factory = PortProbeFactory(lambda success, address=address: self.reportResult(address, success))
-			reactor.connectTCP(address, self.SMB_PORT, factory, timeout=self.TIMEOUT)
+			factory = self.PortProbeFactory(lambda success, address=address: self.reportResult(address, success))
+			reactor.connectTCP(address, 445, factory, timeout=3)
 
 	def reportResult(self, address, success):
-		if not success:
-			return
-		networkManager.log(f"PortProbeProvider: found SMB (port {self.SMB_PORT}) on {address}")
-		for callback in self.onResult:
-			callback(address)
-
-
-# Bare "is anything listening" probe for PortProbeProvider - reports success
-# once the TCP handshake completes, then immediately closes; reports failure
-# on refused/unreachable/timeout. Single attempt, no retry (ClientFactory
-# default; a ReconnectingClientFactory would retry, which is not wanted here).
-class PortProbeProtocol(Protocol):
-	def connectionMade(self):
-		self.factory.reportResult(True)
-		self.transport.loseConnection()
-
-
-class PortProbeFactory(ClientFactory):
-	protocol = PortProbeProtocol
-
-	def __init__(self, onResult):
-		self.onResult = onResult
-
-	def reportResult(self, success):
-		self.onResult(success)
-
-	def clientConnectionFailed(self, connector, reason):
-		self.onResult(False)
+		if success:
+			networkManager.log(f"PortProbeProvider: found SMB on {address}")
+			for callback in self.onResult:
+				callback(address)
 
 
 # Owns discovery end to end and holds the one result that matters: hosts, a
@@ -1877,11 +1856,10 @@ class DiscoveryManager:
 	def stop(self):
 		self.stopTimer.stop()
 		self.settleTimer.stop()
-		if not self.started:
-			return
-		self.avahi.stop()
-		self.neighbor.stop()
-		self.started = False
+		if self.started:
+			self.avahi.stop()
+			self.neighbor.stop()
+			self.started = False
 
 	# Used by "rescan" actions to start over instead of piling onto stale
 	# results from a previous pass.
@@ -1939,17 +1917,16 @@ class DiscoveryManager:
 			self.portProbe.probe(pending)
 
 	def onPortProbeResult(self, address):
-		if not self.started:
-			return
-		# The address almost always already exists here as a bare "neighbor"
-		# entry (that's what made it a probe candidate) - setdefault()'s
-		# default is only used for a genuinely new key, so upgrade the
-		# source explicitly. Never downgrade an "avahi" entry, though.
-		host = self.hosts.setdefault(address, self.newHost(address, "portprobe"))
-		if host["source"] != "avahi":
-			host["source"] = "portprobe"
-		host["protocols"].add("smb")
-		self.notify()
+		if self.started:
+			# The address almost always already exists here as a bare "neighbor"
+			# entry (that's what made it a probe candidate) - setdefault()'s
+			# default is only used for a genuinely new key, so upgrade the
+			# source explicitly. Never downgrade an "avahi" entry, though.
+			host = self.hosts.setdefault(address, self.newHost(address, "portprobe"))
+			if host["source"] != "avahi":
+				host["source"] = "portprobe"
+			host["protocols"].add("smb")
+			self.notify()
 
 	def notify(self):
 		for callback in self.onChanged:
