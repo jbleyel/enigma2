@@ -1,6 +1,6 @@
 from datetime import datetime
 from os import stat, statvfs
-from time import ctime, localtime, mktime, strftime, time
+from time import localtime, mktime, strftime, time
 
 from enigma import BT_SCALE, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, eEPGCache, eLabel, eListbox, eListboxPythonMultiContent, eSize, eTimer
 

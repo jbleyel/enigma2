@@ -3,7 +3,7 @@ from glob import glob
 from os import access, makedirs, listdir, stat, rename, remove, F_OK, R_OK, W_OK
 from os.path import exists, isdir, isfile, join
 
-from enigma import eTimer, eEnv, eConsoleAppContainer, eEPGCache
+from enigma import eEnv, eConsoleAppContainer, eEPGCache
 from Components.ActionMap import ActionMap, NumberActionMap, HelpableActionMap
 from Components.config import NoSave, configfile, ConfigSubsection, ConfigText, ConfigLocations
 from Components.config import config

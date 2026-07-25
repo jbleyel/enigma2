@@ -29,7 +29,7 @@
 
 from os.path import isfile
 from xml.etree.ElementTree import fromstring as xml_fromstring
-from enigma import ePicLoad, eListboxPythonMultiContent, eListbox, eRect, eTimer, gFont, RT_HALIGN_LEFT, RT_HALIGN_CENTER, RT_VALIGN_CENTER, RT_WRAP
+from enigma import ePicLoad, eListboxPythonMultiContent, eListbox, eRect, eTimer
 from skin import domScreens
 
 from Components.ActionMap import HelpableActionMap
@@ -43,15 +43,15 @@ from Plugins.Plugin import PluginDescriptor
 from Screens.HelpMenu import HelpableScreen
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
-from Tools.Directories import SCOPE_CONFIG, SCOPE_GUISKIN, SCOPE_PLUGIN, SCOPE_PLUGIN_ABSOLUTE, SCOPE_SKINS, resolveFilename
+from Tools.Directories import SCOPE_GUISKIN, SCOPE_PLUGIN_ABSOLUTE, resolveFilename
 from Tools.LoadPixmap import LoadPixmap
 from Tools.BoundFunction import boundFunction
-from Components.MultiContent import MultiContentEntryPixmapAlphaBlend, MultiContentEntryText, MultiContentEntryProgress, MultiContentEntryRectangle
+from Components.MultiContent import MultiContentEntryRectangle
 from Components.MenuList import MenuList
 from Components.ConfigList import ConfigList
 from Components.config import ConfigBoolean, ConfigNumber, ConfigSelection, ConfigText
 
-PLUGIN_VERSION_NUMBER = "18-Aug-2025"
+PLUGIN_VERSION_NUMBER = "25-07-2026"
 
 PLUGINPNG = LoadPixmap(cached=False, path=resolveFilename(SCOPE_GUISKIN, "icons/plugin.png"))
 
@@ -107,16 +107,11 @@ class GUITest(Screen, HelpableScreen):
 		</widget>
 	</screen>"""
 	# 	<widget source="tests" render="Listbox" position="400,80" size="830,420" backgroundColor="MenuBackground" backgroundColorSelected="MenuSelected" enableWrapAround="1" foregroundColor="MenuText" foregroundColorSelected="MenuTextSelected" scrollbarMode="showOnDemand" transparent="0">
-	# 		<convert type="TemplatedMultiContent">
-	# 			{
-	# 			"template":
-	# 				[
-	# 				MultiContentEntryText(pos = (20, 0), size = (790, 35), font = 0, flags = RT_HALIGN_LEFT | RT_VALIGN_CENTER, text = 0),
-	# 				],
-	# 			"fonts": [parseFont("MenuFont;25)],
-	# 			"itemHeight": 35
-	# 			}
-	# 		</convert>
+	# 		<template name="Default" fonts="MenuFont;25" itemHeight="35">
+	# 			<mode name="default">
+	# 				<text index="0" position="20,0" size="790,35" font="0" horizontalAlignment="left" verticalAlignment="center" />
+	# 			</mode>
+	# 		</template>
 	# 	</widget>
 
 	def __init__(self, session):
@@ -550,47 +545,32 @@ class GUITestScreen5(GUITestScreenBase):
 		<eLabel name="layer2" position="0,0" size="e,e" zPosition="-10" backgroundColor="#00888888" />
 
 		<widget source="glist" position="10,50" size="e-320,e-300" selectionZoomSize="154,135,1" borderWidth="0" borderColor="green" scrollbarLength="auto" itemGradientSelected="red,blue,horizontal,1" itemGradient="blue,green,vertical,1" itemCornerRadius="10" itemAlignment="center" cornerRadius="10" spacingColor="yellow" itemSpacing="10,10" render="Listbox" scrollbarOffset="0" scrollbarBorderWidth="2" scrollbarBorderColor="red" scrollbarMode="showAlways" listOrientation="grid" scrollbarScroll="byLine" scrollbarForegroundColor="blue" transparent="0">
-			<convert type="TemplatedMultiContent">
-				{
-					"template": [
-						MultiContentEntryRectangle(pos=(26, 9), size=(102,42),  backgroundColor=0x00000000, backgroundColorSelected=0x0000FF00, cornerRadius=8),
-						MultiContentEntryPixmapAlphaBlend(pos=(27, 10), size=(100, 40), png=2, flags=BT_SCALE),
-						MultiContentEntryText(pos=(1, 54), size=(152, 45), font=0, flags=RT_VALIGN_CENTER | RT_HALIGN_CENTER | RT_WRAP | RT_BLEND, text=0, backcolor=0x00000000, backcolor_sel=0x000000CC, cornerRadius=8),
-					],
-					"fonts": [gFont("Regular", 18),gFont("Regular", 14)],
-					"itemWidth" : 152,
-					"itemHeight" : 105
-				}
-			</convert>
+			<template name="Default" fonts="Regular;18,Regular;14" itemWidth="152" itemHeight="105">
+				<mode name="default">
+					<rectangle position="26,9" size="102,42" backgroundColor="#00000000" backgroundColorSelected="#0000FF00" cornerRadius="8" />
+					<pixmap index="2" position="27,10" size="100,40" alpha="blend" scale="scale" />
+					<text index="0" position="1,54" size="152,45" font="0" horizontalAlignment="center" verticalAlignment="center" wrap="on" flags="blend" backgroundColor="#00000000" backgroundColorSelected="#000000CC" cornerRadius="8" />
+				</mode>
+			</template>
 		</widget>
 		<widget source="hlist" position="e-300,390" size="280,250" selectionZoomSize="170,150,1" borderWidth="0" borderColor="green" scrollbarLength="auto" itemGradientSelected="red,blue,horizontal,1" itemGradient="blue,green,vertical,1" itemCornerRadius="10" itemAlignment="center" cornerRadius="10" spacingColor="yellow" itemSpacing="8,8" render="Listbox" scrollbarOffset="0" scrollbarBorderWidth="2" scrollbarBorderColor="red" scrollbarMode="showAlways" listOrientation="horizontal" scrollbarScroll="byLine" scrollbarForegroundColor="blue" transparent="1" enableWrapAround="1">
-			<convert type="TemplatedMultiContent">
-				{
-			"template": [
-				MultiContentEntryRectangle(pos=(0, 0), size=(160,140), backgroundColor=0x00003366, backgroundColorSelected=0x0033772b, cornerRadius=8, borderWidth=2, borderColor=0x0033772b),
-				MultiContentEntryRectangle(pos=(2, 2), size=(156,136), backgroundColor=0x00222222, backgroundColorSelected=0x002f2f2f, cornerRadius=8),
-				MultiContentEntryPixmapAlphaBlend(pos=(8, 8), size=(144, 72), png=2, cornerRadius=6, flags=BT_SCALE),
-				MultiContentEntryText(pos=(8, 84), size=(144, 48), font=0, flags=RT_VALIGN_CENTER | RT_HALIGN_CENTER | RT_WRAP | RT_BLEND, text=0, backcolor=0x00000000, backcolor_sel=0x000000CC),
-			],
-					"fonts": [gFont("Regular", 18),gFont("Regular", 14)],
-					"itemWidth" : 160,
-					"itemHeight" : 140
-				}
-			</convert>
+			<template name="Default" fonts="Regular;18,Regular;14" itemWidth="160" itemHeight="140">
+				<mode name="default">
+					<rectangle position="0,0" size="160,140" backgroundColor="#00003366" backgroundColorSelected="#0033772b" cornerRadius="8" borderWidth="2" borderColor="#0033772b" />
+					<rectangle position="2,2" size="156,136" backgroundColor="#00222222" backgroundColorSelected="#002f2f2f" cornerRadius="8" />
+					<pixmap index="2" position="8,8" size="144,72" alpha="blend" scale="scale" cornerRadius="6" />
+					<text index="0" position="8,84" size="144,48" font="0" horizontalAlignment="center" verticalAlignment="center" wrap="on" flags="blend" backgroundColor="#00000000" backgroundColorSelected="#000000CC" />
+				</mode>
+			</template>
 		</widget>
 		<widget source="vlist" position="e-300,50" size="280,320" selectionZoomSize="160,120,1" borderWidth="0" borderColor="green" scrollbarLength="auto" itemGradientSelected="red,blue,horizontal,1" itemGradient="blue,green,vertical,1" itemCornerRadius="10" itemAlignment="center" cornerRadius="10" spacingColor="yellow" itemSpacing="8,8" render="Listbox" scrollbarOffset="0" scrollbarBorderWidth="2" scrollbarBorderColor="red" scrollbarMode="showAlways" listOrientation="vertical" scrollbarScroll="byLine" scrollbarForegroundColor="blue" transparent="1" enableWrapAround="1">
-			<convert type="TemplatedMultiContent">
-				{
-					"template": [
-						MultiContentEntryRectangle(pos=(26, 8), size=(100,44), backgroundColor=0x00000000, backgroundColorSelected=0x0000FF00, cornerRadius=10),
-						MultiContentEntryPixmapAlphaBlend(pos=(27, 10), size=(100, 40), png=2, flags=BT_SCALE),
-						MultiContentEntryText(pos=(1, 58), size=(152, 42), font=0, flags=RT_VALIGN_CENTER | RT_HALIGN_CENTER | RT_WRAP | RT_BLEND, text=0, backcolor=0x00000000, backcolor_sel=0x000000CC, cornerRadius=8),
-					],
-					"fonts": [gFont("Regular", 18),gFont("Regular", 14)],
-					"itemWidth" : 152,
-					"itemHeight" : 105
-				}
-			</convert>
+			<template name="Default" fonts="Regular;18,Regular;14" itemWidth="152" itemHeight="105">
+				<mode name="default">
+					<rectangle position="26,8" size="100,44" backgroundColor="#00000000" backgroundColorSelected="#0000FF00" cornerRadius="10" />
+					<pixmap index="2" position="27,10" size="100,40" alpha="blend" scale="scale" />
+					<text index="0" position="1,58" size="152,42" font="0" horizontalAlignment="center" verticalAlignment="center" wrap="on" flags="blend" backgroundColor="#00000000" backgroundColorSelected="#000000CC" cornerRadius="8" />
+				</mode>
+			</template>
 		</widget>
 		<widget source="key_red" render="Label" position="0,e-40" size="180,40" backgroundColor="key_red" conditional="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center" zPosition="+2">
 			<convert type="ConditionalShowHide" />
@@ -879,56 +859,38 @@ class GUITestScreen8(GUITestScreenBase):
 		<eLabel position="10,368"  size="615,20" text="Vertical MultiContent" backgroundColor="#00222222" font="Regular;15" horizontalAlignment="left" verticalAlignment="center" />
 		<eLabel position="645,368" size="615,20" text="Grid MultiContent"     backgroundColor="#00222222" font="Regular;15" horizontalAlignment="left" verticalAlignment="center" />
 
-		<!-- bottom lists: TemplatedMultiContent (Satz 1) -->
+		<!-- bottom lists: XmlMultiContent (Satz 1) -->
 		<widget source="vlist1" render="Listbox" position="10,390" size="615,265" scrollbarMode="showOnDemand" scrollbarWidth="8" scrollText="direction=left,stepDelay=100,startDelay=0,endDelay=0,repeat=-1,stepSize=2,mode=roll">
-			<convert type="TemplatedMultiContent">
-				{
-					"template": [
-						MultiContentEntryRectangle(pos=(0, 0), size=(596, 38), backgroundColor=0x00334455, backgroundColorSelected=0x00556688),
-						MultiContentEntryText(pos=(6, 0), size=(578, 38), font=0, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER | 1024, text=0),
-					],
-					"fonts": [gFont("Regular", 22)],
-					"itemHeight": 38
-				}
-			</convert>
+			<template name="Default" fonts="Regular;22" itemHeight="38">
+				<mode name="default">
+					<rectangle position="0,0" size="596,38" backgroundColor="#00334455" backgroundColorSelected="#00556688" />
+					<text index="0" position="6,0" size="578,38" font="0" horizontalAlignment="left" verticalAlignment="center" flags="scroll" />
+				</mode>
+			</template>
 		</widget>
 		<widget source="vlist2" render="Listbox" position="10,390" size="615,265" scrollbarMode="showOnDemand" scrollbarWidth="8">
-			<convert type="TemplatedMultiContent">
-				{
-					"template": [
-						MultiContentEntryRectangle(pos=(0, 0), size=(596, 38), backgroundColor=0x00334455, backgroundColorSelected=0x00556688),
-						MultiContentEntryText(pos=(6, 0), size=(578, 38), font=0, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER | 1024, text=0),
-					],
-					"fonts": [gFont("Regular", 22)],
-					"itemHeight": 38
-				}
-			</convert>
+			<template name="Default" fonts="Regular;22" itemHeight="38">
+				<mode name="default">
+					<rectangle position="0,0" size="596,38" backgroundColor="#00334455" backgroundColorSelected="#00556688" />
+					<text index="0" position="6,0" size="578,38" font="0" horizontalAlignment="left" verticalAlignment="center" flags="scroll" />
+				</mode>
+			</template>
 		</widget>
 		<widget source="glist1" render="Listbox" position="645,390" size="615,265" listOrientation="grid" scrollbarMode="showOnDemand" scrollbarWidth="8" scrollText="direction=left,stepDelay=100,startDelay=0,endDelay=0,repeat=-1,stepSize=2,mode=roll">
-			<convert type="TemplatedMultiContent">
-				{
-					"template": [
-						MultiContentEntryRectangle(pos=(3, 3), size=(124, 74), backgroundColor=0x00334466, backgroundColorSelected=0x00556699, cornerRadius=8),
-						MultiContentEntryText(pos=(4, 43), size=(122, 34), font=0, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER | 1024, text=0),
-					],
-					"fonts": [gFont("Regular", 16)],
-					"itemWidth": 130,
-					"itemHeight": 80
-				}
-			</convert>
+			<template name="Default" fonts="Regular;16" itemWidth="130" itemHeight="80">
+				<mode name="default">
+					<rectangle position="3,3" size="124,74" backgroundColor="#00334466" backgroundColorSelected="#00556699" cornerRadius="8" />
+					<text index="0" position="4,43" size="122,34" font="0" horizontalAlignment="center" verticalAlignment="center" flags="scroll" />
+				</mode>
+			</template>
 		</widget>
 		<widget source="glist2" render="Listbox" position="645,390" size="615,265" listOrientation="grid" scrollbarMode="showOnDemand" scrollbarWidth="8">
-			<convert type="TemplatedMultiContent">
-				{
-					"template": [
-						MultiContentEntryRectangle(pos=(3, 3), size=(124, 74), backgroundColor=0x00334466, backgroundColorSelected=0x00556699, cornerRadius=8),
-						MultiContentEntryText(pos=(4, 43), size=(122, 34), font=0, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER | 1024, text=0),
-					],
-					"fonts": [gFont("Regular", 16)],
-					"itemWidth": 130,
-					"itemHeight": 80
-				}
-			</convert>
+			<template name="Default" fonts="Regular;16" itemWidth="130" itemHeight="80">
+				<mode name="default">
+					<rectangle position="3,3" size="124,74" backgroundColor="#00334466" backgroundColorSelected="#00556699" cornerRadius="8" />
+					<text index="0" position="4,43" size="122,34" font="0" horizontalAlignment="center" verticalAlignment="center" flags="scroll" />
+				</mode>
+			</template>
 		</widget>
 
 		<widget name="image" position="0,0" size="e,e" alphatest="off" scale="scale" transparent="0" zPosition="+1" />
@@ -1003,7 +965,7 @@ class GUITestScreen8(GUITestScreenBase):
 			# GUIComponent-based: .instance is the eListbox directly
 			self._lb[f"stringlist{suffix}"] = self[f"stringlist{suffix}"].instance
 			self._lb[f"configlist{suffix}"] = self[f"configlist{suffix}"].instance
-			# Source-based: List → TemplatedMultiContent (converter) → Listbox (renderer)
+			# Source-based: List → XmlMultiContent (converter) → Listbox (renderer)
 			for base in ("vlist", "glist"):
 				key = f"{base}{suffix}"
 				converter = self[key].downstream_elements

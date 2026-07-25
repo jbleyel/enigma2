@@ -3,6 +3,7 @@ from Components.Renderer.Renderer import Renderer
 from Tools.LoadPixmap import LoadPixmap
 from Tools.Directories import SCOPE_GUISKIN, resolveFilename, fileExists
 
+
 def getLogoPath(logoType, logoVersion):
 	def findLogo(logo):
 		return (f := resolveFilename(SCOPE_GUISKIN, logo)) and fileExists(f) and f or ""
@@ -13,15 +14,16 @@ def getLogoPath(logoType, logoVersion):
 		elif logoVersion == "medium":
 			pixAddon == "_medium"
 	if logoType == "model":
-		if (f := findLogo("logos/boxlogo%s.svg" % pixAddon)):
+		if (f := findLogo(f"logos/boxlogo{pixAddon}.svg")):
 			return f
-		elif (f := findLogo("logos/distrologo%s.svg" % pixAddon)):
+		elif (f := findLogo(f"logos/distrologo{pixAddon}.svg")):
 			return f
 	elif logoType == "brand":
-		return findLogo("logos/brandlogo%s.svg" % pixAddon)
+		return findLogo(f"logos/brandlogo{pixAddon}.svg")
 	elif logoType == "distro":
-		return findLogo("logos/distrologo%s.svg" % pixAddon)
+		return findLogo(f"logos/distrologo{pixAddon}.svg")
 	return ""
+
 
 def getDefaultLogo(logoType, width, height, halign):
 		if logoType == "model":
@@ -32,6 +34,7 @@ def getDefaultLogo(logoType, width, height, halign):
 			defaultLogoPath = resolveFilename(SCOPE_GUISKIN, "skinlogo.svg")
 
 		return detectAndFitPix(defaultLogoPath, width=width, height=height, align=halign)
+
 
 def detectAndFitPix(path, width, height, align):
 	align_enum = RT_HALIGN_CENTER
@@ -61,13 +64,14 @@ def setLogo(px, logoType, width, height, halign="center", logoVersion=""):
 		if defaultLogo:
 			px.setPixmap(defaultLogo)
 
+
 class BoxLogo(Renderer):
 	def __init__(self):
 		Renderer.__init__(self)
 		self.logoType = "model"
 		self.halign = "center"
 		self.logoVersion = ""
-		
+
 	GUI_WIDGET = ePixmap
 
 	def applySkin(self, desktop, parent):
@@ -79,7 +83,7 @@ class BoxLogo(Renderer):
 			elif attrib == "halign":
 				self.halign = value
 				attribs.remove((attrib, value))
-			elif attrib == "logoVersion": # can be large, medium. Defaults to small(not set)
+			elif attrib == "logoVersion":  # can be large, medium. Defaults to small(not set)
 				self.logoVersion = value
 				attribs.remove((attrib, value))
 		self.skinAttributes = attribs
@@ -87,9 +91,9 @@ class BoxLogo(Renderer):
 
 	def changed(self, what):
 		pass
-				
+
 	def onShow(self):
 		if self.instance:
-			x,y = self.position
-			print("LOGO PosX: %d" % (x))
+			x, y = self.position
+			print(f"LOGO PosX: {x}")
 			setLogo(self.instance, self.logoType, self.instance.size().width(), self.instance.size().height(), self.halign, self.logoVersion)

@@ -11,7 +11,6 @@ from urllib.request import urlopen
 from enigma import eAVControl, eDVBCSAEngine, eDVBFrontendParametersSatellite, eDVBResourceManager, eGetEnigmaDebugLvl, eRTSPStreamServer, eServiceCenter, eStreamServer, eTimer, getDesktop, getE2Rev, getGStreamerVersionString, iPlayableService, iServiceInformation
 
 from ServiceReference import ServiceReference
-from skin import parameters
 from Components.About import about
 from Components.ActionMap import HelpableActionMap
 from Components.config import config

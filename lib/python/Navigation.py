@@ -18,12 +18,12 @@ from Plugins.Plugin import PluginDescriptor
 from Screens.InfoBar import InfoBar, MoviePlayer
 from Screens.InfoBarGenerics import streamrelay
 from Screens.MessageBox import MessageBox
+
 import Screens.Standby
 from Tools.BoundFunction import boundFunction
 from Tools.Directories import fileWriteLine
 from Tools.StbHardware import getFPWasTimerWakeup
 from Tools.Notifications import AddPopup
-from traceback import print_stack
 
 MODULE_NAME = __name__.split(".")[-1]
 

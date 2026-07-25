@@ -144,7 +144,7 @@ def parse_existing(content):
 	"""Parse constants and strings blocks, return name -> text mapping."""
 	c_start = content.index(CONST_START) + len(CONST_START)
 	c_end = content.index(CONST_END)
-	const_block = content[c_start:c_end]
+	const_block = content[c_start:c_end]  # noqa F841
 
 	s_start = content.index(STR_START) + len(STR_START)
 	s_end = content.index(STR_END)
