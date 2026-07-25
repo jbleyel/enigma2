@@ -264,15 +264,32 @@ class NetworkMountRepository:
 	# covered by a dedicated field.
 	def buildNfsOptions(self, mount):
 		parts = ["ro" if mount.get("nfsReadOnly") else "rw"]
-		if mount.get("nfsNoLock", True):
+		# NFSv3 uses normal server-side (NLM) locking unless told otherwise -
+		# "nolock" is a deliberate legacy opt-in for servers without NLM, not
+		# a default (see .claude/NETWORK_MOUNT_SETUP_NOTES.md section 1).
+		# Named/defaulted the "positive" way (locking ON by default) to match
+		# the Setup field's "Use NFS file locking" label - the old
+		# "nfsNoLock" name meant True displayed as "Yes" while actually
+		# adding nolock (locking OFF), backwards from what the label said.
+		if not mount.get("nfsLocking", True):
 			parts.append("nolock")
 		parts.append("proto=tcp")
 		version = mount.get("nfsVersion") or ""
 		if version and version != "auto":
 			parts.append(f"nfsvers={version}")
-		parts.append(f"rsize={mount.get('nfsRsize') or 8192}")
-		parts.append(f"wsize={mount.get('nfsWsize') or 8192}")
-		parts.append(f"timeo={mount.get('nfsTimeo') or 14}")
+		# 0 means "Automatic" - the kernel/server negotiate a size resp.
+		# use their own default timeout, so it's omitted from the string
+		# entirely rather than forcing a fixed value (see
+		# .claude/NETWORK_MOUNT_SETUP_NOTES.md section 1/3).
+		rsize = mount.get("nfsRsize") or "0"
+		if str(rsize) != "0":
+			parts.append(f"rsize={rsize}")
+		wsize = mount.get("nfsWsize") or "0"
+		if str(wsize) != "0":
+			parts.append(f"wsize={wsize}")
+		timeo = mount.get("nfsTimeo") or 0
+		if timeo:
+			parts.append(f"timeo={timeo}")
 		if mount.get("nfsSoft"):
 			parts.append("soft")
 		extra = (mount.get("options") or "").strip()
@@ -430,14 +447,22 @@ class NetworkMountSetup(Setup):
 		# only through the free-text "options" field above, see
 		# NetworkMountRepository.buildNfsOptions().
 		self.nfsReadOnly = NoSave(ConfigYesNo(default=field("nfsReadOnly", False)))
-		self.nfsNoLock = NoSave(ConfigYesNo(default=field("nfsNoLock", True)))
+		# Named/defaulted the "positive" way to match the label ("Use NFS
+		# file locking", default Yes) - NFSv3 normally uses server-side (NLM)
+		# locking; disabling this adds "nolock", a deliberate legacy opt-in
+		# for servers without NLM, not a default (see NETWORK_MOUNT_SETUP_NOTES.md
+		# section 9).
+		self.nfsLocking = NoSave(ConfigYesNo(default=field("nfsLocking", True)))
 
-		NFS_SIZE_CHOICES = [("8192", "8192"), ("32768", "32768"), ("65536", "65536"), ("131072", "131072")]
-		self.nfsRsize = NoSave(ConfigSelection(default=str(field("nfsRsize", "8192")) or "8192", choices=NFS_SIZE_CHOICES))
-		self.nfsWsize = NoSave(ConfigSelection(default=str(field("nfsWsize", "8192")) or "8192", choices=NFS_SIZE_CHOICES))
-		# timeo is in DECISECONDS (tenths of a second, mount.nfs(5)) - 14
-		# means 1.4s, matching the old plugin's hardcoded default.
-		self.nfsTimeo = NoSave(ConfigNumber(default=int(field("nfsTimeo", 14) or 14)))
+		# "0" = Automatic (kernel/server negotiate a size) - not preset to a
+		# fixed value, see .claude/NETWORK_MOUNT_SETUP_NOTES.md section 1/2.
+		NFS_SIZE_CHOICES = [("0", _("Automatic")), ("8192", "8192"), ("32768", "32768"), ("65536", "65536"), ("131072", "131072")]
+		self.nfsRsize = NoSave(ConfigSelection(default=str(field("nfsRsize", "0")) or "0", choices=NFS_SIZE_CHOICES))
+		self.nfsWsize = NoSave(ConfigSelection(default=str(field("nfsWsize", "0")) or "0", choices=NFS_SIZE_CHOICES))
+		# timeo is in DECISECONDS (tenths of a second, mount.nfs(5)). 0 =
+		# Automatic (kernel default, effectively 600 = 60s over TCP) - not
+		# preset to the old plugin's 14 (1.4s, meant for UDP), see notes doc.
+		self.nfsTimeo = NoSave(ConfigNumber(default=int(field("nfsTimeo", 0) or 0)))
 		# soft: give up and return an I/O error to the application after
 		# retimeo/retrans expire if the server doesn't respond. hard
 		# (default when this is off): keep retrying indefinitely, which is
@@ -478,7 +503,7 @@ class NetworkMountSetup(Setup):
 			"password": self.password.value if self.protocol.value == "cifs" else "",
 			"nfsVersion": self.nfsVersion.value if self.protocol.value == "nfs" else "",
 			"nfsReadOnly": self.nfsReadOnly.value if self.protocol.value == "nfs" else False,
-			"nfsNoLock": self.nfsNoLock.value if self.protocol.value == "nfs" else True,
+			"nfsLocking": self.nfsLocking.value if self.protocol.value == "nfs" else True,
 			"nfsRsize": self.nfsRsize.value if self.protocol.value == "nfs" else "",
 			"nfsWsize": self.nfsWsize.value if self.protocol.value == "nfs" else "",
 			"nfsTimeo": self.nfsTimeo.value if self.protocol.value == "nfs" else "",
