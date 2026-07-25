@@ -5,7 +5,6 @@ driver_libenigma_driver_a_CXXFLAGS = $(LIBSDL_CFLAGS)
 driver_libenigma_driver_a_SOURCES = \
 	driver/avswitch.cpp \
 	driver/avcontrol.cpp \
-	driver/edb.cpp \
 	driver/etimezone.cpp \
 	driver/ehotplug_socket.cpp \
 	driver/inputhotplug.cpp \
@@ -19,7 +18,6 @@ driverincludedir = $(pkgincludedir)/lib/driver
 driverinclude_HEADERS = \
 	driver/avswitch.h \
 	driver/avcontrol.h \
-	driver/edb.h \
 	driver/etimezone.h \
 	driver/input_fake.h \
 	driver/ehotplug_socket.h \
