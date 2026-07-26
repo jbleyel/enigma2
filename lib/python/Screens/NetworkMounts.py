@@ -936,14 +936,14 @@ class NetworkMountDiscoveryScreen(Screen):
 		self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning…"))
 
 
-class NetworkMountManager(Screen):
+class NetworkMounts(Screen):
 	LIST_NAME = 0
 	LIST_DESCRIPTION = 1
 	LIST_STATUS = 2
 	LIST_DATA = 3
 
 	skin = """
-	<screen name="NetworkMountManager" title="Network Mount Manager" position="center,center" size="1080,465" resolution="1280,720">
+	<screen name="NetworkMounts" title="Network Mount Manager" position="center,center" size="1080,465" resolution="1280,720">
 		<widget source="mountlist" render="Listbox" position="0,0" size="1080,325">
 			<templates>
 				<template name="Default" fonts="Regular;22,Regular;18" itemHeight="50">
@@ -1087,10 +1087,10 @@ class NetworkMountManager(Screen):
 			self.session.openWithCallback(keyDeleteCallback, MessageBox, _("Do you really want to delete this network mount definition?\n%s") % name, MessageBox.TYPE_YESNO, default=False)
 
 	def createSummary(self):
-		return NetworkMountManagerSummary
+		return NetworkMountsSummary
 
 
-class NetworkMountManagerSummary(Screen):
+class NetworkMountsSummary(Screen):
 	def __init__(self, session, parent):
 		Screen.__init__(self, session, parent=parent)
 		self.skinName = "SetupSummary"
