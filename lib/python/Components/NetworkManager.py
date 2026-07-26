@@ -73,13 +73,14 @@ class Encryption(StrEnum):
 	WPA3 = "wpa3"
 
 
+# Deferred via lambda so translation happens at display time, not import time.
 encryptionLabels = {
-	Encryption.NONE: lambda: _("None"),  # Deferred via lambda so translation happens at display time, not import time.
-	Encryption.WEP: "WEP",
-	Encryption.WPA: "WPA",
-	Encryption.WPA2: "WPA2",
-	Encryption.WPA_WPA2: "WPA/WPA2",
-	Encryption.WPA3: "WPA3"
+	Encryption.NONE: lambda: _("None"),
+	Encryption.WEP: lambda: "WEP",
+	Encryption.WPA: lambda: "WPA",
+	Encryption.WPA2: lambda: "WPA2",
+	Encryption.WPA_WPA2: lambda: "WPA/WPA2",
+	Encryption.WPA3: lambda: "WPA3"
 }
 
 # Driver-API identifiers.
@@ -1760,13 +1761,16 @@ class NeighborProvider:
 			callback(observation)
 
 
-# Probes a list of addresses for an open SMB port (445) - finds hosts that
-# don't speak mDNS (plain Windows file sharing, see doc section 5.4). Runs
-# here, not in the socketdaemon: no privilege needed, and it's a discovery
-# concern, not link/neighbor monitoring. Stateless - DiscoveryManager decides
-# which addresses to probe and when (see probeRemainingNeighbors()); this
-# just fires the connects and reports which ones answered.
+# Probes a list of addresses for open SMB (445) / NFS (2049) ports - finds
+# hosts that don't speak mDNS (plain Windows file sharing / NFS exports, see
+# doc section 5.4). Runs here, not in the socketdaemon: no privilege needed,
+# and it's a discovery concern, not link/neighbor monitoring. Stateless -
+# DiscoveryManager decides which addresses to probe and when (see
+# probeRemainingNeighbors()); this just fires the connects and reports which
+# ones answered.
 class PortProbeProvider:
+	PORTS = {445: "smb", 2049: "nfs"}
+
 	class PortProbeFactory(ClientFactory):
 		class PortProbeProtocol(Protocol):
 			def connectionMade(self):
@@ -1785,18 +1789,19 @@ class PortProbeProvider:
 			self.onResult(False)
 
 	def __init__(self):
-		self.onResult: list[Callable] = []  # callback(address) - only called on success
+		self.onResult: list[Callable] = []  # callback(address, protocol) - only called on success
 
 	def probe(self, addresses):
 		for address in addresses:
-			factory = self.PortProbeFactory(lambda success, address=address: self.reportResult(address, success))
-			reactor.connectTCP(address, 445, factory, timeout=3)
+			for port, protocol in self.PORTS.items():
+				factory = self.PortProbeFactory(lambda success, address=address, protocol=protocol: self.reportResult(address, protocol, success))
+				reactor.connectTCP(address, port, factory, timeout=3)
 
-	def reportResult(self, address, success):
+	def reportResult(self, address, protocol, success):
 		if success:
-			networkManager.log(f"PortProbeProvider: found SMB on {address}")
+			networkManager.log(f"PortProbeProvider: found {protocol.upper()} on {address}")
 			for callback in self.onResult:
-				callback(address)
+				callback(address, protocol)
 
 
 # Owns discovery end to end and holds the one result that matters: hosts, a
@@ -1815,8 +1820,9 @@ class PortProbeProvider:
 #     one batch (probeRemainingNeighbors()) - not scanned continuously and
 #     not probed the instant a candidate appears, so Avahi (if it's going
 #     to announce that host at all) gets a real chance to do so first.
-#   - A successful probe adds/merges a "portprobe" host with protocol smb,
-#     unless Avahi has meanwhile made it "avahi" - that always wins.
+#   - A successful probe adds/merges a "portprobe" host with the matching
+#     protocol (smb/nfs), unless Avahi has meanwhile made it "avahi" - that
+#     always wins.
 # Runs one bounded pass per boot (DEFAULT_RUN_MS), auto-stopping - a
 # Discovery screen can call start()/stop() itself later for on-demand live
 # results (see NetworkMountDiscoveryScreen).
@@ -1916,7 +1922,7 @@ class DiscoveryManager:
 		if pending:
 			self.portProbe.probe(pending)
 
-	def onPortProbeResult(self, address):
+	def onPortProbeResult(self, address, protocol):
 		if self.started:
 			# The address almost always already exists here as a bare "neighbor"
 			# entry (that's what made it a probe candidate) - setdefault()'s
@@ -1925,7 +1931,7 @@ class DiscoveryManager:
 			host = self.hosts.setdefault(address, self.newHost(address, "portprobe"))
 			if host["source"] != "avahi":
 				host["source"] = "portprobe"
-			host["protocols"].add("smb")
+			host["protocols"].add(protocol)
 			self.notify()
 
 	def notify(self):
