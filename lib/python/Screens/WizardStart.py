@@ -296,7 +296,7 @@ class WizardStart(Wizard, ShowRemoteControl):
 			nwPollIp()
 
 		def nwWifiFlowDone(ip=""):
-			# NetworkConnectionWiFi already ran NetworkWiFiActivator (ifup + wpa_supplicant
+			# NetworkWiFi already ran NetworkWiFiActivator (ifup + wpa_supplicant
 			# + IP poll) and reports the result here, so there is nothing left to activate
 			# or poll for. Show the result on the status step, same as the LAN path.
 			print(f"[WizardStart] nwWifiFlowDone called, ip={ip}")

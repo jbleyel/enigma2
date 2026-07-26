@@ -4,7 +4,7 @@ NetworkSetup.py – Network connection screens for Enigma2 / OpenATV
 Screens:
 	NetworkOverview             – adapters + Wi-Fi connections, two XmlMultiContent listboxes
 	NetworkAdapterSetup         – per-adapter DHCP/IP/DNS/WOL/WWOL/link speed (interfaces file)
-	NetworkConnectionWiFi       – per-SSID profile settings (wpa_supplicant.conf only)
+	NetworkWiFi      		    – per-SSID profile settings (wpa_supplicant.conf only)
 	DNSSettings                 – global system DNS (config.usage.dns.*, networkManager)
 	ScanResult                  – dataclass for one iwlist scan result
 	NetworkWiFiScanScreen       – live iwlist scan, sorted by signal strength
@@ -118,7 +118,7 @@ def applyAdapterChange(interface: str, change: int, callback):
 
 def scanResultToConnection(scanResult: ScanResult, iface: str) -> Connection:
 	# enabled=True: the user is actively picking this network from the scan to
-	# use it now. NetworkConnectionWiFi's "Enabled" field defaults to this
+	# use it now. NetworkWiFi's "Enabled" field defaults to this
 	# value, so a plain scan -> enter password -> Save (without touching that
 	# field) used to save a *disabled* profile – save()'s interfaces-file
 	# writer only emits the wpa_supplicant pre-up lines for an enabled
@@ -724,7 +724,7 @@ class NetworkOverview(Screen):
 	def contextCb(self, choice, conn: Connection | None, adapter: Adapter):
 		def openWiFiManual(adapter: Adapter):
 			conn = Connection(adapter=adapter.name, name=_("New Wi-Fi"), dhcp=True, enabled=False, wifi=WiFiConfig())
-			self.session.openWithCallback(self.setupClosed, NetworkConnectionWiFi, conn, adapter)
+			self.session.openWithCallback(self.setupClosed, NetworkWiFi, conn, adapter)
 
 		def confirmDelete(conn: Connection, adapter: Adapter):
 			def doDelete(confirmed: bool, conn: Connection, adapter: Adapter):
@@ -753,7 +753,7 @@ class NetworkOverview(Screen):
 		def openWiFiScan(iface: str):
 			def wifiScanDone(result: ScanResult | None, adapter: Adapter):
 				if result:
-					self.session.openWithCallback(self.setupClosed, NetworkConnectionWiFi, scanResultToConnection(result, adapter.name), adapter)
+					self.session.openWithCallback(self.setupClosed, NetworkWiFi, scanResultToConnection(result, adapter.name), adapter)
 
 			adapter = networkManager.getAdapter(iface)
 			if adapter is not None and adapter.isWiFi:
@@ -784,7 +784,7 @@ class NetworkOverview(Screen):
 		self.session.openWithCallback(self.setupClosed, NetworkAdapterSetup, adapter)
 
 	def openSetup(self, conn: Connection, adapter: Adapter):
-		self.session.openWithCallback(self.setupClosed, NetworkConnectionWiFi, conn, adapter)
+		self.session.openWithCallback(self.setupClosed, NetworkWiFi, conn, adapter)
 
 	def setupClosed(self, *result):
 		if len(result) == 1 and isinstance(result[0], tuple):
@@ -972,7 +972,7 @@ class NetworkAdapterSetup(Setup):
 			config.network.wol.save()
 
 
-class NetworkConnectionWiFi(Setup):
+class NetworkWiFi(Setup):
 	"""Setup screen for one Wi-Fi profile (SSID)."""
 
 	ENCRYPTION_CHOICES = [
@@ -998,7 +998,7 @@ class NetworkConnectionWiFi(Setup):
 		self.conn = conn
 		self.adapter = adapter
 		self.buildConfigObjects()
-		Setup.__init__(self, session=session, setup="NetworkConnectionWiFi")
+		Setup.__init__(self, session=session, setup="NetworkWiFi")
 		self.setTitle(_("Wi-Fi Connection Settings – %s") % conn.adapter)
 		self["key_info"] = StaticText(_("Info"))
 		self["blueActions"] = HelpableActionMap(self, ["InfoActions"], {
@@ -1449,7 +1449,7 @@ class NetworkWiFiActivator(Screen):
 		# (ifconfig up + wpa_supplicant against wpa_supplicant.conf). It does
 		# NOT go through ifup/etc/network/interfaces. Writing interfaces for a
 		# previously-disabled adapter (so the connection survives a reboot, not
-		# just this live activation) is NetworkConnectionWiFi.keySave()'s job.
+		# just this live activation) is NetworkWiFi.keySave()'s job.
 		# It must happen there, before adapter.adapterEnabled gets flipped to
 		# True, or the "was it already enabled" check is meaningless by the
 		# time this screen opens.
@@ -1550,7 +1550,7 @@ class NetworkWiFiAddFlow:
 	def openScan(session, adapter: Adapter, callback):
 		def scanned(result: ScanResult | None):
 			def setupDone(*result):
-				# NetworkConnectionWiFi.close() shape varies: no args (cancel), a bare
+				# NetworkWiFi.close() shape varies: no args (cancel), a bare
 				# bool, or a (recursive, saved, ip) tuple (see setupClosed).
 				# For Wi-Fi, "ip" is the address NetworkWiFiActivator already verified,
 				# or "" if the connection could not be verified.
@@ -1574,7 +1574,7 @@ class NetworkWiFiAddFlow:
 				return
 			# Reuse the existing profile if this SSID is already configured (e.g.
 			# already in wpa_supplicant.conf) instead of building a fresh, blank
-			# Connection – otherwise NetworkConnectionWiFi.keySave()'s identity
+			# Connection – otherwise NetworkWiFi.keySave()'s identity
 			# check ('x is conn') doesn't recognise it as the same profile, appends
 			# a second Connection with the same SSID, and both get written to
 			# wpa_supplicant.conf as separate network={} blocks, so the existing
@@ -1582,7 +1582,7 @@ class NetworkWiFiAddFlow:
 			existing = next((x for x in networkManager.getConnections(adapter.name) if x.wifi and x.wifi.ssid == result.ssid), None)
 			conn = existing if existing is not None else scanResultToConnection(result, adapter.name)
 
-			session.openWithCallback(setupDone, NetworkConnectionWiFi, conn, adapter)
+			session.openWithCallback(setupDone, NetworkWiFi, conn, adapter)
 
 		session.openWithCallback(scanned, NetworkWiFiScanScreen, adapter)
 
