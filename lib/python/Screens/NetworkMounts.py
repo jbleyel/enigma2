@@ -101,7 +101,7 @@ class NetworkMountsOverview(Screen):
 	def selectionChanged(self):
 		current = self["mountList"].getCurrent()
 		if current:
-			mount = current[self.LIST_DATA]
+			# mount = current[self.LIST_DATA]
 			shareName = current[self.LIST_SHARE_NAME]
 			description = current[self.LIST_DESCRIPTION]
 		else:

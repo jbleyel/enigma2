@@ -666,7 +666,7 @@
 			<item text="Write block size" description="Define the wsize mount option in bytes. Automatic lets the kernel and server negotiate the best size themselves.">self.nfsWsize</item>
 			<item text="Timeout" description="Define how long to wait for a response before retrying (or failing, with 'Give up if unreachable' below). 0 uses the kernel's own default instead of a fixed value.">self.nfsTimeo</item>
 			<item text="Give up if unreachable (soft mount)" description="If enabled, file access returns an error once the server stops responding instead of retrying forever. Off (hard mount, default) is safer against silent data loss but can hang programs accessing this share while the server/NAS is unreachable.">self.nfsSoft</item>
-		</else>
+		<else />
 			<item text="Username" description="Username for the share, if it requires authentication.">self.username</item>
 			<item text="Password" description="Password for the share, if it requires authentication.">self.password</item>
 		</if>
