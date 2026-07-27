@@ -890,7 +890,7 @@ void gPixmap::drawRectangle(const gRegion& region, const eRect& area, const gRGB
 								dst[i].g += (((src[i].g - dst[i].g) * src[i].a) >> 8);
 								dst[i].r += (((src[i].r - dst[i].r) * src[i].a) >> 8);
 								dst[i].a += (((0xFF - dst[i].a) * src[i].a) >> 8);
-							}							
+							}
 							dst += blendRatio;
 							src += blendRatio;
 							width -= blendRatio;
@@ -2375,15 +2375,6 @@ void gPixmap::blit(const gPixmap& src, const eRect& _pos, const gRegion& clip, i
 				int width = area.width();
 				uint32_t* srcp = (uint32_t*)srcptr;
 				uint16_t* dstp = (uint16_t*)dstptr;
-
-				if (y == 0) {
-					uint32_t firstPix = *srcp;
-					uint8_t a = (firstPix >> 24) & 0xFF;
-					uint8_t r = (firstPix >> 16) & 0xFF;
-					uint8_t g = (firstPix >> 8) & 0xFF;
-					uint8_t b = firstPix & 0xFF;
-					eDebug("[gPixmap] [blit] 32->16 First source pixel raw=0x%08X  ARGB=(%02X,%02X,%02X,%02X)", firstPix, a, r, g, b);
-				}
 
 				if (flag & blitAlphaBlend) {
 					while (width--) {

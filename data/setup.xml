@@ -597,14 +597,6 @@
 		<item level="0" text="F2" description="Select the function to be assigned to this button.">config.movielist.btn_F2</item>
 		<item level="0" text="F3" description="Select the function to be assigned to this button.">config.movielist.btn_F3</item>
 	</setup>
-	<setup key="Network" title="Network Settings">
-		<item text="Use DHCP" description="When enabled, use DHCP for the IP configuration.">config.network.dhcp</item>
-		<item text="IP address" description="Configure the IP address.">config.network.ip</item>
-		<item text="Netmask" description="Configure the netmask.">config.network.netmask</item>
-		<item text="Gateway" description="Configure the gateway.">config.network.gateway</item>
-		<item text="Nameserver" description="Configure the name server (DNS).">config.network.dns</item>
-		<item text="Activate network settings" description="Activate the configured network settings.">config.network.activate</item>
-	</setup>
 	<setup key="NetworkAdapter" title="Network Adapter Settings">
 		<item level="0" text="Enabled" description="When enabled, this adapter is initialized and activated at boot time.">self.cfgEnabled</item>
 		<if conditional="self.adapter.isWlan">
@@ -640,6 +632,47 @@
 			</if>
 		</if>
 	</setup>
+	<setup key="NetworkCredentials" title="Network Credentials">
+		<item level="0" text="Username" description="Enter the username to be used to access this host's shares.">self.username</item>
+		<item level="0" text="Password" description="Enter the password to be used to access this host's shares.">self.password</item>
+	</setup>
+	<setup key="NetworkMounts" title="Network Mount Settings">
+		<item level="0" text="Enabled" description="Enable or disable this network mount. Disabling the mount will not delete its definition.">self.enabled</item>
+		<item level="0" text="Protocol" description="Select the share protocol to be used, SMB (Windows-style shares) or NFS.">self.protocol</item>
+		<item level="0" text="Server" description="Enter the hostname or IP address of the network share's server.">self.server</item>
+		<item level="0" text="Remote path" description="Enter the remote share name (SMB) or exported path (NFS) on the server.">self.remotePath</item>
+		<item level="0" text="Local share" description="Enter the local directory name to be used as the local mount for the remote share.">self.shareName</item>
+		<item level="0" text="Mount mode" description="Select when, and how, the remote share will be mounted. For most purposes autofs is recommended.">self.mode</item>
+		<item level="0" text="Use as HDD replacement" description="When enabled, this share is mounted to /media/hdd instead of its own /media/net path. Only use this if the share is reliably available.">self.hddReplacement</item>
+		<if conditional="self.protocol.value == 'nfs'">
+			<item level="0" text="NFS version" description="Select a specific NFS version to force a specific NFS protocol version instead of allowing an automatic negotiation.">self.nfsVersion</item>
+			<!-- item level="0" text="Read-only" description="Select if this NFS share mount will allow read-only or read/write access.">self.nfsReadOnly</item -->
+			<item level="0" text="Access mode" description="Select the mode of access, Read/Write or Read-Only, for this share mount.">self.nfsReadOnly</item>
+			<item level="0" text="Use NFS file locking" description="Select if file locking is available. Select 'No' to add 'nolock' to the settings which is most compatible with older/simple NFS servers.">self.nfsLocking</item>
+			<item level="0" text="Read block size" description="Select the read block buffer size (rsize) mount option. Use 'Automatic' to allow the kernel and server to negotiate the optimal size.">self.nfsRsize</item>
+			<item level="0" text="Write block size" description="Select the write block buffer size (wsize) mount option. Use 'Automatic' to allow the kernel and server to negotiate the optimal size.">self.nfsWsize</item>
+			<item level="0" text="Timeout" description="Enter how long to wait for a response before retrying (or failing, with 'Give up if unreachable' below). Enter '0' to use the kernel's own default instead of a fixed value.">self.nfsTimeo</item>
+			<item level="0" text="Soft mount" description="Select 'Soft mount' to make file access return an error once the server stops responding instead of retrying forever. The 'Hard mount' option, the default, protects against silent data loss but can hang programs accessing this share while the server is unreachable.">self.nfsSoft</item>
+		<else />
+			<item level="0" text="Username" description="Enter the username to be used to access this host's shares if they require authentication.">self.username</item>
+			<item level="0" text="Password" description="Enter the password to be used to access this host's shares if they require authentication.">self.password</item>
+		</if>
+		<item level="0" text="Mount options" description="Enter any extra, raw mount options, not available in the options above. Multiple options should be comma-separated.">self.options</item>
+	</setup>
+	<setup key="NetworkNFS" title="NFS Settings" allowDefault="yes">
+		<item level="0" text="NFS threads" description="Enter the number of NFS server threads to be allocated/used. Higher values improve performance with multiple clients but uses more memory.">self.nfsThreads</item>
+		<item level="0" text="Enable NFSv3" description="When enabled, allow usage of the NFS version 3 protocols.">self.nfsVers3</item>
+		<item level="0" text="Enable NFSv4" description="When enabled, allow usage of the NFS version 4 protocols.">self.nfsVers4</item>
+		<item level="0" text="Access mode" description="Select the mode of access, Read/Write or Read-Only, applied to all exported directories.">self.nfsAccessMode</item>
+		<item level="0" text="Allowed clients" description="Enter the IP address or subnet (e.g. 192.168.1.0/24) to which NFS host access is granted. Enter '*', the default, for all host access.">self.nfsClients</item>
+		<item level="0" text="Root squash" description="When enabled, map root to nobody (more secure). When disabled, full root access is available.">self.nfsRootSquash</item>
+	</setup>
+	<setup key="NetworkSamba" title="Samba Settings" allowDefault="yes">
+		<item level="0" text="Enable automatic shares" description="When enabled, allow each storage device detected to be automatically exported as a Samba share.">config.samba.enableAutoShare</item>
+		<item level="0" text="Access mode" description="Select the mode of access, Read/Write or Read-Only, applied to all automatically exported Samba shares." conditional="config.samba.enableAutoShare.value">config.samba.autoShareAccess</item>
+		<item level="0" text="Allow guest access" description="When enabled, allow Samba network access without a password.">self.guest</item>
+		<item level="0" text="Workgroup name" description="Enter the workgroup name to be used by this receiver for Samba based connections. (Default is 'WORKGROUP'.)">self.workgroup</item>
+	</setup>
 	<setup key="NetworkWiFi" title="Network Wi-Fi Settings">
 		<item level="0" text="Network name (SSID)" description="Select the network name (SSID) of the wireless network to which the receiver should connect.">self.cfgSsid</item>
 		<item level="0" text="Enabled" description="When enabled, connection via saved network is attempted when the Wi-Fi adapter connects.">self.cfgEnabled</item>
@@ -650,48 +683,8 @@
 			<item level="0" text="Password / Key" description="Enter the password, pass-phrase or pre-shared key for the selected wireless network.">self.cfgKey</item>
 		</if>
 	</setup>
-	<setup key="NetworkMounts" title="Network Mount Settings">
-		<item text="Enabled" description="Enable or disable this network mount without deleting its definition.">self.enabled</item>
-		<item text="Protocol" description="SMB/CIFS (Windows-style shares) or NFS.">self.protocol</item>
-		<item text="Server" description="The hostname or IP address of the network share's server.">self.server</item>
-		<item text="Remote path" description="The remote share name (SMB) or exported path (NFS) on the server.">self.remotePath</item>
-		<item text="Local share" description="Define the local mount path.">self.shareName</item>
-		<item text="Mount mode" description="Autofs mounts on first access and is recommended for most setups; fstab mounts at boot.">self.mode</item>
-		<item text="Use as HDD replacement" description="Mount this share to /media/hdd itself instead of its own /media/net path. Only use this if the share is reliably available.">self.hddReplacement</item>
-		<if conditional="self.protocol.value == 'nfs'">
-			<item text="NFS version" description="Force a specific NFS protocol version instead of automatic negotiation.">self.nfsVersion</item>
-			<item text="Read-only" description="Mount this NFS share read-only instead of read-write.">self.nfsReadOnly</item>
-			<item text="Use NFS file locking" description="Advanced: disable to add 'nolock' (no NLM locking, most compatible with older/simple NFS servers).">self.nfsLocking</item>
-			<item text="Read block size" description="Define the rsize mount option in bytes. Automatic lets the kernel and server negotiate the best size themselves.">self.nfsRsize</item>
-			<item text="Write block size" description="Define the wsize mount option in bytes. Automatic lets the kernel and server negotiate the best size themselves.">self.nfsWsize</item>
-			<item text="Timeout" description="Define how long to wait for a response before retrying (or failing, with 'Give up if unreachable' below). 0 uses the kernel's own default instead of a fixed value.">self.nfsTimeo</item>
-			<item text="Give up if unreachable (soft mount)" description="If enabled, file access returns an error once the server stops responding instead of retrying forever. Off (hard mount, default) is safer against silent data loss but can hang programs accessing this share while the server/NAS is unreachable.">self.nfsSoft</item>
-		<else />
-			<item text="Username" description="Username for the share, if it requires authentication.">self.username</item>
-			<item text="Password" description="Password for the share, if it requires authentication.">self.password</item>
-		</if>
-		<item text="Mount options" description="Extra raw mount options, comma-separated. Appended after the individual options below, if set.">self.options</item>
-	</setup>
-	<setup key="NetworkNFS" title="NFS Settings" allowDefault="yes">
-		<item text="NFS threads" description="Enter the number of NFS server threads to be allocated/used. Higher values improve performance with multiple clients but use more memory.">self.nfsThreads</item>
-		<item text="Enable NFSv3" description="When enabled, allow usage of the NFS version 3 protocols.">self.nfsVers3</item>
-		<item text="Enable NFSv4" description="When enabled, allow usage of the NFS version 4 protocols.">self.nfsVers4</item>
-		<item text="Access mode" description="Select the mode of access, Read/Write or Read Only, applied to all exported directories.">self.nfsAccessMode</item>
-		<item text="Allowed clients" description="Enter the IP address or subnet (e.g. 192.168.1.0/24) to which NFS host access is granted. Enter '*', the default, for all host access.">self.nfsClients</item>
-		<item text="Root squash" description="When enabled, map root to nobody (more secure). When disabled, full root access is available.">self.nfsRootSquash</item>
-	</setup>
-	<setup key="NetworkSamba" title="Samba Settings" allowDefault="yes">
-		<item text="Enable automatic shares" description="When enabled, allow each storage device detected to be automatically exported as a Samba share.">config.samba.enableAutoShare</item>
-		<item text="Automatic shares access" description="Select the mode of access, Read/Write or Read Only, applied to all automatically exported Samba shares." conditional="config.samba.enableAutoShare.value">config.samba.autoShareAccess</item>
-		<item text="Allow guest access" description="When enabled, allow Samba network access without a password.">self.guest</item>
-		<item text="Workgroup name" description="Enter the workgroup name to be used by this receiver for Samba based connections. (Default is 'WORKGROUP'.)">self.workgroup</item>
-	</setup>
-	<setup key="NetworkCredentials" title="Network Credentials">
-		<item text="Username" description="Enter the username to be used to access this host's shares.">self.username</item>
-		<item text="Password" description="Enter the password to be used to access this host's shares.">self.password</item>
-	</setup>
 	<setup key="NetworkZeroTier" title="ZeroTier Settings">
-		<item text="Network-ID" description="Enter the ZeroTier Network ID. The ID should be exactly 16 characters in length.">config.network.ZeroTierNetworkId</item>
+		<item level="0" text="Network-ID" description="Enter the ZeroTier Network ID. The ID should be exactly 16 characters in length.">config.network.ZeroTierNetworkId</item>
 	</setup>
 	<setup key="OSCamInfoSetup" title="OSCam Information Settings">
 		<item level="0" text="Read Userdata from 'oscam.conf'" description="Read Userdata from 'oscam.conf'">config.oscaminfo.userDataFromConf</item>
