@@ -90,14 +90,6 @@ apiRalink = "ralink"
 apiZydas = "zydas"
 
 
-# Result of a save() call. The caller passes this to
-# NetworkSetup.applyAdapterChange() itself, save() doesn't try to guess it.
-CHANGE_NONE = 0  # Nothing that needs activating changed.
-CHANGE_WPA_SUPPLICANT = 1  # Only wpa_supplicant configuration changed.
-CHANGE_ADAPTER_ENABLED = 2  # Adapter/connection was just enabled.
-CHANGE_GENERAL = 3  # Anything else (IP/Gateway/DNS/...) changed.
-CHANGE_ADAPTER_DISABLED = 4  # Adapter/connection was just disabled.
-
 
 # Central access point for all network configuration.
 class NetworkManager:

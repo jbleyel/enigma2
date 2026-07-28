@@ -1470,6 +1470,9 @@ def InitUsageConfig():
 
 	config.network.ZeroTierNetworkId = ConfigText(default=" " * 16, fixed_size=True)
 
+	config.network.mountsSortByIP = ConfigYesNo(default=False)
+	config.network.browserSortByIP = ConfigYesNo(default=False)
+
 	config.samba = ConfigSubsection()
 	config.samba.enableAutoShare = ConfigYesNo(default=True)
 	config.samba.autoShareAccess = ConfigSelection(default=1, choices=[

@@ -35,7 +35,7 @@ from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigIP, ConfigNumber, ConfigPassword, ConfigSelection, ConfigText, ConfigYesNo, NoSave, ReadOnly, config, getConfigListEntry
 from Components.Console import Console
 from Components.Label import Label
-from Components.NetworkManager import Adapter, Connection, Encryption, VpnInfo, WiFiConfig, networkManager, encryptionLabels, wpaCliBin, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_ADAPTER_DISABLED, CHANGE_GENERAL
+from Components.NetworkManager import Adapter, Connection, Encryption, VpnInfo, WiFiConfig, networkManager, encryptionLabels, wpaCliBin
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
@@ -51,6 +51,18 @@ from Tools.ServiceAction import ServiceAction
 
 MODULE_NAME = __name__.split(".")[-1]
 
+# Bitmask describing what a screen just changed about an adapter/connection,
+# passed to applyAdapterChange() below. Only used here - networkManager.save()
+# itself is a plain writer and doesn't need to know any of this. A caller ORs
+# together every bit that applies (e.g. general settings changed AND the
+# adapter ends up disabled in the same Save); applyAdapterChange() alone
+# decides the resulting action and its ordering, so callers never have to
+# work out priority between bits themselves.
+CHANGE_NONE = 0				# Nothing that needs activating changed.
+CHANGE_GENERAL = 1 << 0			# IP/Gateway/DNS/link speed/... changed.
+CHANGE_ADAPTER_ENABLED = 1 << 1	# Adapter/connection was just enabled.
+CHANGE_ADAPTER_DISABLED = 1 << 2	# Adapter/connection was just disabled.
+
 
 def ip4Str(addr: list) -> str:
 	joined = ".".join(str(x) for x in addr)
@@ -60,7 +72,9 @@ def ip4Str(addr: list) -> str:
 # Apply the minimal action an adapter (LAN or Wi-Fi) needs after
 # networkManager.save() (nothing / ifup-ifdown / full restart), with a
 # visible progress indicator while it runs, then call callback(). The
-# caller passes 'change' because it already knows what it just changed.
+# caller passes 'change' (a CHANGE_* bitmask) because it already knows what
+# it just changed - this function decides what to actually do about it,
+# including priority between bits and the order save() needs to run in.
 # The save() itself stays a plain writer.
 #
 def applyAdapterChange(interface: str, change: int, callback):
@@ -100,20 +114,38 @@ def applyAdapterChange(interface: str, change: int, callback):
 	# to bounce the plugins at all. The decision is symmetric for both the
 	# False and the True call, so pairing still holds (both activate, or both
 	# are skipped).
-	if change in (CHANGE_GENERAL, CHANGE_ADAPTER_ENABLED, CHANGE_ADAPTER_DISABLED):
-		networkManager.notifyNetworkPlugins(False, interface=interface)
+	networkManager.notifyNetworkPlugins(False, interface=interface)
 	Processing.instance.setDescription(_("Please wait..."))
 	Processing.instance.showProgress(endless=True)
-	if change == CHANGE_GENERAL:
-		networkManager.restartNetwork(interface=interface, callback=done)
-	elif change == CHANGE_ADAPTER_ENABLED:
-		ServiceAction.ifup(interface, doneNotify)
-	elif change == CHANGE_ADAPTER_DISABLED:
+	if change & CHANGE_ADAPTER_DISABLED:
+		# Ending up disabled wins over every other bit, regardless of what
+		# else changed in the same save (CHANGE_GENERAL may well be set too):
+		# restarting/ifup'ing an adapter that's about to go down makes no
+		# sense, and ifdown/wlanDeactivate must run against the interfaces
+		# file as it still stands (adapter still enabled there) or ifdown
+		# fails with "interface not configured" once that stanza is commented
+		# out. Only write the new disabled state to disk afterwards - any
+		# other changed fields (IP/DNS/link speed) are persisted then too and
+		# simply take effect next time the adapter is enabled.
+		def afterDown(*_args):
+			networkManager.save()
+			doneNotify(*_args)
+
 		adapter = networkManager.adapters.get(interface)
 		if adapter and adapter.isWiFi:
-			ServiceAction.wlanDeactivate(interface, doneNotify)
+			ServiceAction.wlanDeactivate(interface, afterDown)
 		else:
-			ServiceAction.ifdown(interface, doneNotify)
+			ServiceAction.ifdown(interface, afterDown)
+	elif change & CHANGE_GENERAL:
+		# ifup/restart need the new settings on disk to pick them up, so save()
+		# comes first here.
+		networkManager.save()
+		networkManager.restartNetwork(interface=interface, callback=done)
+	elif change & CHANGE_ADAPTER_ENABLED:
+		# Same reasoning: ifup only brings up what's actually written in
+		# interfaces, so the enabled state must be on disk before it runs.
+		networkManager.save()
+		ServiceAction.ifup(interface, doneNotify)
 	else:
 		done()
 
@@ -817,7 +849,8 @@ class NetworkOverview(Screen):
 			self.session.showInfo(_("Network adapter enabled") if adapter.adapterEnabled else _("Network adapter disabled"))
 
 		adapter.adapterEnabled = not adapter.adapterEnabled
-		networkManager.save()
+		# applyAdapterChange() itself calls networkManager.save() at the right
+		# point — before ifup when enabling, after ifdown when disabling.
 		change = CHANGE_ADAPTER_ENABLED if adapter.adapterEnabled else CHANGE_ADAPTER_DISABLED
 		applyAdapterChange(adapter.name, change, done)
 
@@ -969,18 +1002,16 @@ class NetworkAdapterSetup(Setup):
 				networkManager.setRouteMetrics(wlanMetric=self.cfgMetric.value)
 			else:
 				networkManager.setRouteMetrics(lanMetric=self.cfgMetric.value)
-		networkManager.save()
 		# Metric alone (self.cfgMetric, applied above) deliberately does NOT
 		# factor into 'change'. It is just a route preference for e2-route-metric
 		# to pick up, not something that needs the adapter itself ifup/ifdown'd
 		# or restarted.
 		nowGeneral = (conn.dhcp, conn.ipMode, list(conn.ip), list(conn.netmask), list(conn.gateway), list(conn.dnsServers))
+		change = CHANGE_NONE
 		if nowGeneral != wasGeneral or self.cfgLinkSpeed.value != wasLinkSpeed:
-			change = CHANGE_GENERAL
-		elif adapter.adapterEnabled != wasEnabled:
-			change = CHANGE_ADAPTER_ENABLED if adapter.adapterEnabled else CHANGE_ADAPTER_DISABLED
-		else:
-			change = CHANGE_NONE
+			change |= CHANGE_GENERAL
+		if adapter.adapterEnabled != wasEnabled:
+			change |= CHANGE_ADAPTER_ENABLED if adapter.adapterEnabled else CHANGE_ADAPTER_DISABLED
 		applyAdapterChange(adapter.name, change, lambda: self.close((False, True)))
 
 		if self.hasWakeOnLan:

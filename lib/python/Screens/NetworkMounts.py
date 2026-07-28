@@ -7,7 +7,7 @@ from uuid import uuid4
 from enigma import eTimer, gRGB
 
 from Components.ActionMap import HelpableActionMap
-from Components.config import ConfigNumber, ConfigPassword, ConfigSelection, ConfigText, ConfigYesNo, NoSave
+from Components.config import ConfigNumber, ConfigPassword, ConfigSelection, ConfigText, ConfigYesNo, NoSave, config
 from Components.Console import Console
 from Components.Input import Input
 from Components.Label import Label
@@ -132,7 +132,10 @@ class NetworkMountsOverview(Screen):
 			server = mount.get("server") or ""
 			return discoveryManager.hosts.get(server, {}).get("hostname") or server
 
-		self.mounts = sorted(self.repository.load(), key=lambda mount: hostnameFor(mount).lower())
+		def sortKey(mount):
+			return mount.get("server") or "" if config.network.mountsSortByIP.value else hostnameFor(mount).lower()
+
+		self.mounts = sorted(self.repository.load(), key=sortKey)
 		mountList = []
 		for mount in self.mounts:
 			shareName = mount.get("shareName") or mount.get("id")
@@ -209,6 +212,11 @@ class NetworkMountsOverview(Screen):
 			self.repository.credentialsClear(mount.get("server") or "")
 			self.session.showInfo(_("Stored credentials deleted for this server."))
 
+		def toggleSort():
+			config.network.mountsSortByIP.value = not config.network.mountsSortByIP.value
+			config.network.mountsSortByIP.save()
+			self.buildList()
+
 		def keyMenuCallback(choice=None):
 			if choice:
 				if choice[1] == "toggle_enable":
@@ -217,15 +225,19 @@ class NetworkMountsOverview(Screen):
 					editCredentials()
 				elif choice[1] == "remove_credentials":
 					removeCredentials()
+				elif choice[1] == "toggle_sort":
+					toggleSort()
 
 		current = self["mountList"].getCurrent()
 		if current:
 			mount = current[self.LIST_DATA]
 			toggleLabel = _("Disable") if mount.get("enabled") else _("Enable")
+			sortLabel = _("Sort by Name") if config.network.mountsSortByIP.value else _("Sort by IP Address")
 			self.session.openWithCallback(keyMenuCallback, ChoiceBox, title=_("Mount actions"), list=[
 				(toggleLabel, "toggle_enable"),
 				(_("Edit Credentials"), "edit_credentials"),
 				(_("Remove Credentials"), "remove_credentials"),
+				(sortLabel, "toggle_sort"),
 			])
 
 	def keyGreen(self):
@@ -458,7 +470,7 @@ class NetworkShares(Screen):
 			"ok": (self.keySelect, _("Expand/collapse the selected host, or use the selected share")),
 			"cancel": (self.close, _("Close the screen")),
 			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
-			"menu": (self.keyMenu, _("Host actions - edit or clear stored credentials")),
+			"menu": (self.keyMenu, _("Host actions and sort order")),
 			"red": (self.close, _("Close the screen")),
 			"green": (self.keySelect, _("Expand/collapse the selected host, or use the selected share")),
 			"yellow": (self.keyRescan, _("Rescan for available network shares")),
@@ -537,14 +549,20 @@ class NetworkShares(Screen):
 
 	def keyMenu(self):
 		current = self["list"].getCurrent()
-		if not current or current[-1].get("kind") != "host":
-			return
-		self.menuAddress = current[-1]["address"]
-		self.menuHostname = self.hostnameFor(self.menuAddress)
-		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Network Share Context Menu"), list=[
-			(_("Edit Username/Password"), "credentials"),
-			(_("Clear Stored Credentials"), "clear_credentials"),
-		])
+		isHost = bool(current) and current[-1].get("kind") == "host"
+		if isHost:
+			self.menuAddress = current[-1]["address"]
+			self.menuHostname = self.hostnameFor(self.menuAddress)
+		else:
+			self.menuAddress = None
+			self.menuHostname = None
+		choices = []
+		if isHost:
+			choices.append((_("Edit Username/Password"), "credentials"))
+			choices.append((_("Clear Stored Credentials"), "clear_credentials"))
+		sortLabel = _("Sort by Name") if config.network.browserSortByIP.value else _("Sort by IP Address")
+		choices.append((sortLabel, "toggle_sort"))
+		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Network Share Context Menu"), list=choices)
 
 	def menuChoiceClosed(self, choice=None):
 		if not choice:
@@ -554,6 +572,10 @@ class NetworkShares(Screen):
 		elif choice[1] == "clear_credentials":
 			self.repository.credentialsClear(self.menuHostname)
 			self.session.open(MessageBox, _("Stored credentials for this server have been deleted."), MessageBox.TYPE_INFO, timeout=3)
+		elif choice[1] == "toggle_sort":
+			config.network.browserSortByIP.value = not config.network.browserSortByIP.value
+			config.network.browserSortByIP.save()
+			self.buildList()
 
 	def credentialsClosed(self, *args):
 		# Re-enumerate with the (possibly new) credentials if this host is
@@ -715,7 +737,10 @@ class NetworkShares(Screen):
 				"nfs": "NFS"
 			}
 
-			for host in sorted(discoveryManager.hosts.values(), key=lambda h: (not h["protocols"], h["hostname"] or h["address"])):
+			def sortKey(host):
+				return (not host["protocols"], host["address"] if config.network.browserSortByIP.value else (host["hostname"] or host["address"]).lower())
+
+			for host in sorted(discoveryManager.hosts.values(), key=sortKey):
 				address = host["address"]
 				name = host["hostname"] or address
 				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", {"kind": "host", "address": address}))
