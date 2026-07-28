@@ -35,7 +35,7 @@ from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigIP, ConfigNumber, ConfigPassword, ConfigSelection, ConfigText, ConfigYesNo, NoSave, ReadOnly, config, getConfigListEntry
 from Components.Console import Console
 from Components.Label import Label
-from Components.NetworkManager import Adapter, Connection, Encryption, VpnInfo, WiFiConfig, networkManager, encryptionLabels, wpaCliBin, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_GENERAL
+from Components.NetworkManager import Adapter, Connection, Encryption, VpnInfo, WiFiConfig, networkManager, encryptionLabels, wpaCliBin, CHANGE_NONE, CHANGE_ADAPTER_ENABLED, CHANGE_ADAPTER_DISABLED, CHANGE_GENERAL
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
@@ -100,16 +100,18 @@ def applyAdapterChange(interface: str, change: int, callback):
 	# to bounce the plugins at all. The decision is symmetric for both the
 	# False and the True call, so pairing still holds (both activate, or both
 	# are skipped).
-	if change in (CHANGE_GENERAL, CHANGE_ADAPTER_ENABLED):
+	if change in (CHANGE_GENERAL, CHANGE_ADAPTER_ENABLED, CHANGE_ADAPTER_DISABLED):
 		networkManager.notifyNetworkPlugins(False, interface=interface)
 	Processing.instance.setDescription(_("Please wait..."))
 	Processing.instance.showProgress(endless=True)
 	if change == CHANGE_GENERAL:
 		networkManager.restartNetwork(interface=interface, callback=done)
 	elif change == CHANGE_ADAPTER_ENABLED:
+		ServiceAction.ifup(interface, doneNotify)
+	elif change == CHANGE_ADAPTER_DISABLED:
 		adapter = networkManager.adapters.get(interface)
-		if adapter and adapter.adapterEnabled:
-			ServiceAction.ifup(interface, doneNotify)
+		if adapter and adapter.isWiFi:
+			ServiceAction.wlanDeactivate(interface, doneNotify)
 		else:
 			ServiceAction.ifdown(interface, doneNotify)
 	else:
@@ -621,6 +623,7 @@ class NetworkOverview(Screen):
 					(_("Disable Adapter") if adapter.adapterEnabled else _("Enable adapter"), "toggleAdapter"),
 					(_("Network Test"), "test"),
 					(_("Restart Adapter"), "restartAdapter"),
+					(_("Restart Network"), "restartNetwork"),
 				]
 				title = adapter.name
 			else:
@@ -750,6 +753,15 @@ class NetworkOverview(Screen):
 			Processing.instance.showProgress(endless=True)
 			networkManager.restartNetwork(interface=adapter.name, callback=done)
 
+		def restartNetwork():
+			def done():
+				Processing.instance.hideProgress()
+				self.buildAdapters()
+
+			Processing.instance.setDescription(_("Restarting network..."))
+			Processing.instance.showProgress(endless=True)
+			networkManager.restartNetwork(interface="all", callback=done)
+
 		def openWiFiScan(iface: str):
 			def wifiScanDone(result: ScanResult | None, adapter: Adapter):
 				if result:
@@ -769,6 +781,8 @@ class NetworkOverview(Screen):
 					confirmDelete(conn, adapter)
 				case "restartAdapter":
 					restartAdapter(adapter)
+				case "restartNetwork":
+					restartNetwork()
 				case "scan":
 					openWiFiScan(adapter.name)
 				case "setup":
@@ -804,7 +818,8 @@ class NetworkOverview(Screen):
 
 		adapter.adapterEnabled = not adapter.adapterEnabled
 		networkManager.save()
-		applyAdapterChange(adapter.name, CHANGE_ADAPTER_ENABLED, done)
+		change = CHANGE_ADAPTER_ENABLED if adapter.adapterEnabled else CHANGE_ADAPTER_DISABLED
+		applyAdapterChange(adapter.name, change, done)
 
 	def toggleSaved(self, conn: Connection, adapter: Adapter):
 		def done(*_args):
@@ -963,7 +978,7 @@ class NetworkAdapterSetup(Setup):
 		if nowGeneral != wasGeneral or self.cfgLinkSpeed.value != wasLinkSpeed:
 			change = CHANGE_GENERAL
 		elif adapter.adapterEnabled != wasEnabled:
-			change = CHANGE_ADAPTER_ENABLED
+			change = CHANGE_ADAPTER_ENABLED if adapter.adapterEnabled else CHANGE_ADAPTER_DISABLED
 		else:
 			change = CHANGE_NONE
 		applyAdapterChange(adapter.name, change, lambda: self.close((False, True)))
