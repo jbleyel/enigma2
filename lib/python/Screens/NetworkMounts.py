@@ -94,8 +94,9 @@ class NetworkMountsOverview(Screen):
 		self["key_menu"] = StaticText("MENU")
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions"], {
 			"ok": (self.keyEdit, _("Edit the selected network mount")),
-			"cancel": (self.close, _("Close the Network Mount Manager screen")),
-			"red": (self.close, _("Close the Network Mount Manager screen")),
+			"cancel": (self.close, _("Close the screen")),
+			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
+			"red": (self.close, _("Close the screen")),
 			"green": (self.keyGreen, _("Add a new network mount")),
 			"yellow": (self.keyYellow, _("Delete the selected mount definition")),
 			"blue": (self.keyBlue, _("Mount or unmount the selected share")),
@@ -124,7 +125,14 @@ class NetworkMountsOverview(Screen):
 				callback(shareName, description)
 
 	def buildList(self):
-		self.mounts = self.repository.load()
+		# Saved mounts only carry "server" (the address, see keyGreen()), not
+		# a hostname - resolve it from discoveryManager's cache if available,
+		# same "hostname or address" fallback used elsewhere in this file.
+		def hostnameFor(mount):
+			server = mount.get("server") or ""
+			return discoveryManager.hosts.get(server, {}).get("hostname") or server
+
+		self.mounts = sorted(self.repository.load(), key=lambda mount: hostnameFor(mount).lower())
 		mountList = []
 		for mount in self.mounts:
 			shareName = mount.get("shareName") or mount.get("id")
@@ -144,6 +152,9 @@ class NetworkMountsOverview(Screen):
 			self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=current[self.LIST_DATA])
 
 	def keySetupClosed(self, *args):
+		if args and isinstance(args[0], bool) and args[0]:  # Special case for close recursive.
+			self.close(True)
+			return
 		self.buildList()
 
 	# Mounts or unmounts the selected share right now, using whatever is
@@ -219,6 +230,9 @@ class NetworkMountsOverview(Screen):
 
 	def keyGreen(self):
 		def keyGreenCallback(picked=None):
+			if isinstance(picked, bool) and picked:  # Special case for close recursive.
+				self.close(True)
+				return
 			mount = None
 			if picked:
 				mount = {
@@ -230,7 +244,7 @@ class NetworkMountsOverview(Screen):
 					mount["remotePath"] = picked["remotePath"]
 				if picked.get("shareName"):
 					mount["shareName"] = picked["shareName"]
-			self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=mount)
+				self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=mount)
 
 		self.session.openWithCallback(keyGreenCallback, NetworkShares)
 
@@ -246,12 +260,15 @@ class NetworkMountsOverview(Screen):
 			mount = current[self.LIST_DATA]
 			name = mount.get("shareName") or mount.get("id")
 			if self.repository.isMounted(mount):
-				self.session.open(MessageBox, _("This mount is currently mounted. Unmount it first, then delete the definition."), MessageBox.TYPE_INFO, timeout=10, windowTitle=self.getTitle())
+				self.session.open(MessageBox, _("This mount is currently active. Unmounting is not supported yet - only remove the definition, not the live mount."), MessageBox.TYPE_INFO, timeout=10, windowTitle=self.getTitle())
 			else:
 				self.session.openWithCallback(keyYellowCallback, MessageBox, _("Do you really want to delete the '%s' network mount?") % name, MessageBox.TYPE_YESNO, default=False, windowTitle=self.getTitle())
 
 	def createSummary(self):
 		return NetworkMountsSummary
+
+	def keyCloseRecursive(self):
+		self.close(True)
 
 
 class NetworkMountsSummary(ScreenSummary):
@@ -294,8 +311,8 @@ class NetworkMountSetup(Setup):
 		self.server = NoSave(ConfigText(default=default("server"), fixed_size=False))
 		self.remotePath = NoSave(ConfigText(default=default("remotePath"), fixed_size=False))
 		self.mode = NoSave(ConfigSelection(default=default("mode", "autofs") or "autofs", choices=[
-			("autofs", _("Autofs (mount on first access)")),
-			("fstab", _("fstab (mount at boot)"))
+			("autofs", _("Mount on first access (autofs)")),
+			("fstab", _("Mount at boot time (fstab)"))
 		]))
 		self.username = NoSave(ConfigText(default=default("username"), fixed_size=False))
 		self.password = NoSave(ConfigPassword(default=default("password")))
@@ -321,7 +338,12 @@ class NetworkMountSetup(Setup):
 		server = self.server.value.strip()
 		remotePath = self.remotePath.value.strip().lstrip("/")
 		if not server or not remotePath:
-			self.session.open(MessageBox, _("Server and remote path are required."), MessageBox.TYPE_ERROR, timeout=5, windowTitle=self.getTitle())
+			self.session.open(MessageBox, _("Error: Both 'server' and 'remote path' are required!"), MessageBox.TYPE_ERROR, timeout=5, windowTitle=self.getTitle())
+			return
+		options = self.options.value.strip()
+		optionsError = self.repository.validateExtraOptions(options, self.protocol.value)
+		if optionsError:
+			self.session.open(MessageBox, optionsError, MessageBox.TYPE_ERROR, timeout=5, windowTitle=self.getTitle())
 			return
 		# Used to build the local mount path further down the line, so it
 		# must never be empty: use what the user typed, or fall back to a
@@ -335,7 +357,7 @@ class NetworkMountSetup(Setup):
 			"remotePath": remotePath,
 			"protocol": self.protocol.value,
 			"mode": self.mode.value,
-			"options": self.options.value.strip(),
+			"options": options,
 			"username": self.username.value if self.protocol.value == "cifs" else "",
 			"password": self.password.value if self.protocol.value == "cifs" else "",
 			"nfsVersion": self.nfsVersion.value if self.protocol.value == "nfs" else "",
@@ -434,13 +456,14 @@ class NetworkShares(Screen):
 		self["key_menu"] = StaticText(_("MENU"))
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "MenuActions", "ColorActions"], {
 			"ok": (self.keySelect, _("Expand/collapse the selected host, or use the selected share")),
-			"cancel": (self.keyClose, _("Close")),
+			"cancel": (self.close, _("Close the screen")),
+			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
 			"menu": (self.keyMenu, _("Host actions - edit or clear stored credentials")),
-			"red": (self.keyClose, _("Close")),
+			"red": (self.close, _("Close the screen")),
 			"green": (self.keySelect, _("Expand/collapse the selected host, or use the selected share")),
-			"yellow": (self.keyRescan, _("Restart discovery")),
+			"yellow": (self.keyRescan, _("Rescan for available network shares")),
 			"blue": (self.keyManual, _("Enter a hostname or IP address manually")),
-		}, prio=0, description=_("Network Share Discovery Actions"))
+		}, prio=0, description=_("Network Share Actions"))
 		self.expanded = set()
 		self.shares = {}         # address -> [share dict, ...]
 		self.shareState = {}     # address -> "loading" | "done" | "empty"
@@ -450,9 +473,8 @@ class NetworkShares(Screen):
 		self.menuAddress = None
 		self.menuHostname = None
 		self.console = Console()
-		self.closed = False
 		self.refreshTimer = eTimer()
-		self.refreshTimer.callback.append(self.rebuildList)
+		self.refreshTimer.callback.append(self.buildList)
 		self.onShow.append(self.startDiscovery)
 		self.onClose.append(self.stopDiscovery)
 
@@ -462,11 +484,10 @@ class NetworkShares(Screen):
 		self.configuredShares = {(mount.get("server"), (mount.get("remotePath") or "").lstrip("/")): self.repository.mountPointFor(mount) for mount in self.repository.load()}
 		discoveryManager.onChanged.append(self.onHostsChanged)
 		discoveryManager.start(runMs=None)
-		self["description"].setText(_("Scanning…"))
-		self.rebuildList()
+		self["description"].setText(_("Scanning..."))
+		self.buildList()
 
 	def stopDiscovery(self):
-		self.closed = True
 		self.refreshTimer.stop()
 		# Guard against removing a callback that was never registered - that
 		# would otherwise skip stopping discovery below.
@@ -484,12 +505,24 @@ class NetworkShares(Screen):
 		self.shares = {}
 		self.shareState = {}
 		self.pendingProtocols = {}
-		self["description"].setText(_("Scanning…"))
+		self["description"].setText(_("Scanning..."))
 		discoveryManager.start(runMs=None)
-		self.rebuildList()
+		# Explicit callback, not just the normal onChanged -> onHostsChanged
+		# flow: that one never fires if the scan found zero hosts, and a
+		# failed rescan (e.g. no default-route interface) would otherwise
+		# leave the screen stuck on "Scanning...".
+		discoveryManager.rescan(self.onRescanDone)
+		self.buildList()
+
+	def onRescanDone(self, ok):
+		if "list" in self:
+			if ok:
+				self.buildList()
+			else:
+				self["description"].setText(_("Rescan failed."))
 
 	def keyManual(self):
-		self.session.openWithCallback(self.manualEntered, InputBox, title=_("Enter a hostname or IP address"), text="", maxSize=False, type=Input.TEXT)
+		self.session.openWithCallback(self.manualEntered, InputBox, title=_("Enter the host name or IP address of the server:"), text="", maxSize=False, type=Input.TEXT)
 
 	def manualEntered(self, text=None):
 		text = (text or "").strip()
@@ -508,7 +541,7 @@ class NetworkShares(Screen):
 			return
 		self.menuAddress = current[-1]["address"]
 		self.menuHostname = self.hostnameFor(self.menuAddress)
-		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Host actions"), list=[
+		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Network Share Context Menu"), list=[
 			(_("Edit Username/Password"), "credentials"),
 			(_("Clear Stored Credentials"), "clear_credentials"),
 		])
@@ -520,7 +553,7 @@ class NetworkShares(Screen):
 			self.session.openWithCallback(self.credentialsClosed, NetworkCredentials, self.menuHostname, self.repository)
 		elif choice[1] == "clear_credentials":
 			self.repository.credentialsClear(self.menuHostname)
-			self.session.open(MessageBox, _("Stored credentials deleted for this server."), MessageBox.TYPE_INFO, timeout=3)
+			self.session.open(MessageBox, _("Stored credentials for this server have been deleted."), MessageBox.TYPE_INFO, timeout=3)
 
 	def credentialsClosed(self, *args):
 		# Re-enumerate with the (possibly new) credentials if this host is
@@ -530,24 +563,23 @@ class NetworkShares(Screen):
 
 	def keySelect(self):
 		current = self["list"].getCurrent()
-		if not current:
-			return
-		data = current[-1]
-		if data["kind"] == "host":
-			self.toggleExpand(data["address"])
-		elif data["kind"] == "share":
-			self.pickShare(data)
+		if current:
+			data = current[-1]
+			if data["kind"] == "host":
+				self.toggleExpand(data["address"])
+			elif data["kind"] == "share":
+				self.pickShare(data)
 
-	def keyClose(self):
-		self.close(None)
+	def keyCloseRecursive(self):
+		self.close(True)
 
 	def toggleExpand(self, address):
 		if address in self.expanded:
 			self.expanded.discard(address)
-			self.rebuildList()
+			self.buildList()
 			return
 		self.expanded.add(address)
-		self.rebuildList()
+		self.buildList()
 		# Many servers refuse or limit anonymous share listing, so without
 		# credentials the SMB shares just silently don't show up - ask for
 		# them up front instead. Leaving it blank still proceeds anonymously;
@@ -612,17 +644,16 @@ class NetworkShares(Screen):
 		self.console.ePopen((self.NFS_SHOWMOUNT_BIN, self.NFS_SHOWMOUNT_BIN, "-e", address), callback=lambda data, retVal, extra=None: self.onNfsResult(address, data, retVal))
 
 	def onNfsResult(self, address, data, retVal):
-		if getattr(self, "closed", True):
-			return
-		if retVal == 0 and data:
-			for line in data.splitlines()[1:]:
-				parts = line.split()
-				if not parts:
-					continue
-				path = parts[0]
-				name = path.rsplit("/", 1)[-1] or path
-				self.mergeShare(address, "nfs", name, path, "")
-		self.finishProtocol(address, "nfs")
+		if "list" in self:
+			if retVal == 0 and data:
+				for line in data.splitlines()[1:]:
+					parts = line.split()
+					if not parts:
+						continue
+					path = parts[0]
+					name = path.rsplit("/", 1)[-1] or path
+					self.mergeShare(address, "nfs", name, path, "")
+			self.finishProtocol(address, "nfs")
 
 	def enumerateSmb(self, address):
 		if not exists(self.SMB_SMBCLIENT_BIN):
@@ -652,67 +683,59 @@ class NetworkShares(Screen):
 				remove(credentialPath)
 			except OSError:
 				pass
-		if getattr(self, "closed", True):
-			return
-		if data:
-			for line in data.splitlines():
-				parts = line.split("|")
-				if len(parts) == 3 and parts[0] == "Disk" and not parts[1].endswith("$"):
-					self.mergeShare(address, "smb", parts[1], parts[1], parts[2])
-		self.finishProtocol(address, "smb")
+		if "list" in self:
+			if data:
+				for line in data.splitlines():
+					parts = line.split("|")
+					if len(parts) == 3 and parts[0] == "Disk" and not parts[1].endswith("$"):
+						self.mergeShare(address, "smb", parts[1], parts[1], parts[2])
+			self.finishProtocol(address, "smb")
 
 	def finishProtocol(self, address, protocol):
-		if getattr(self, "closed", True):
-			return
-		pending = self.pendingProtocols.get(address)
-		if pending is not None:
-			pending.discard(protocol)
-			if not pending:
-				self.shareState[address] = "done" if self.shares.get(address) else "empty"
-		self.rebuildList()
+		if "list" in self:
+			pending = self.pendingProtocols.get(address)
+			if pending is not None:
+				pending.discard(protocol)
+				if not pending:
+					self.shareState[address] = "done" if self.shares.get(address) else "empty"
+			self.buildList()
 
 	# -- discovery (hosts, not shares) - DiscoveryManager owns the merged
 	# host list, this screen just displays it --
 
 	def onHostsChanged(self):
-		# Screen teardown can clear this instance's __dict__ entirely, so
-		# even "self.closed" itself could raise AttributeError - getattr's
-		# default guards against a stale callback firing after that.
-		if getattr(self, "closed", True):
-			return
-		if not self.refreshTimer.isActive():
+		if "list" in self and not self.refreshTimer.isActive():
 			self.refreshTimer.start(self.REFRESH_DEBOUNCE_MS, True)
 
-	def rebuildList(self):
-		if getattr(self, "closed", True):
-			return
-		entries = []
-		protocolLabels = {
-			"smb": "SMB",
-			"nfs": "NFS"
-		}
+	def buildList(self):
+		if "list" in self:
+			entries = []
+			protocolLabels = {
+				"smb": "SMB",
+				"nfs": "NFS"
+			}
 
-		for host in sorted(discoveryManager.hosts.values(), key=lambda h: (not h["protocols"], h["hostname"] or h["address"])):
-			address = host["address"]
-			name = host["hostname"] or address
-			entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", {"kind": "host", "address": address}))
-			if address not in self.expanded:
-				continue
-			state = self.shareState.get(address)
-			if state == "loading":
-				entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares…"), "", {"kind": "status"}))
-			elif state == "empty":
-				entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", {"kind": "status"}))
+			for host in sorted(discoveryManager.hosts.values(), key=lambda h: (not h["protocols"], h["hostname"] or h["address"])):
+				address = host["address"]
+				name = host["hostname"] or address
+				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", {"kind": "host", "address": address}))
+				if address not in self.expanded:
+					continue
+				state = self.shareState.get(address)
+				if state == "loading":
+					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares…"), "", {"kind": "status"}))
+				elif state == "empty":
+					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", {"kind": "status"}))
 
-			for share in self.shares.get(address, []):
-				typeLabel = protocolLabels.get(share["protocol"], share["protocol"])
-				localPath = self.configuredShares.get((address, share["path"].lstrip("/")))
-				glyph = self.GLYPH_MOUNTED if localPath else self.GLYPH_NOT_MOUNTED
-				glyphColor = self.COLOR_MOUNTED if localPath else self.COLOR_NOT_MOUNTED
-				entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", dict(share, kind="share")))
-		self["list"].setList(entries)
-		count = len(discoveryManager.hosts)
-		self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning…"))
+				for share in self.shares.get(address, []):
+					typeLabel = protocolLabels.get(share["protocol"], share["protocol"])
+					localPath = self.configuredShares.get((address, share["path"].lstrip("/")))
+					glyph = self.GLYPH_MOUNTED if localPath else self.GLYPH_NOT_MOUNTED
+					glyphColor = self.COLOR_MOUNTED if localPath else self.COLOR_NOT_MOUNTED
+					entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", dict(share, kind="share")))
+			self["list"].setList(entries)
+			count = len(discoveryManager.hosts)
+			self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning…"))
 
 
 # Username/password prompt for one host's share-listing credentials -
@@ -759,6 +782,12 @@ class NetworkMountRepository:
 	AUTOMOUNTS_PATH = "/etc/enigma2/automounts.xml"
 	AUTO_NETWORK_PATH = "/etc/auto.network"
 	FSTAB_PATH = "/etc/fstab"
+
+	# A disabled mount is still written to fstab/auto.network, just commented
+	# out with this marker, so it survives a reload instead of vanishing -
+	# those two files are the only place a mount's definition lives (see
+	# above), so simply omitting a disabled entry would delete it for good.
+	DISABLED_PREFIX = "#DISABLED# "
 
 	# Username/password are stored in plaintext directly on the entry, same
 	# as the old plugin did. Kept reasonably safe by chmod'ing the file 600
@@ -812,7 +841,13 @@ class NetworkMountRepository:
 		# into automounts.xml going forward, like any other entry.
 		def parseFstabLine(line):
 			line = line.strip()
-			if not line or line.startswith("#"):
+			if not line:
+				return None
+			enabled = True
+			if line.startswith(self.DISABLED_PREFIX):
+				enabled = False
+				line = line[len(self.DISABLED_PREFIX):].strip()
+			elif line.startswith("#"):
 				return None
 			fields = line.split()
 			if len(fields) < 4:
@@ -834,7 +869,7 @@ class NetworkMountRepository:
 				"id": f"fstab:{protocol}:{server}:{remotePath}",
 				"mode": "fstab",
 				"protocol": protocol,
-				"enabled": True,
+				"enabled": enabled,
 				"hddReplacement": mountpoint.rstrip("/") == "/media/hdd",
 				"shareName": shareName,
 				"server": server,
@@ -848,7 +883,13 @@ class NetworkMountRepository:
 
 		def parseAutoNetworkLine(line):
 			line = line.strip()
-			if not line or line.startswith("#"):
+			if not line:
+				return None
+			enabled = True
+			if line.startswith(self.DISABLED_PREFIX):
+				enabled = False
+				line = line[len(self.DISABLED_PREFIX):].strip()
+			elif line.startswith("#"):
 				return None
 			fields = line.split(None, 2)
 			if len(fields) < 3 or not fields[1].startswith("-fstype="):
@@ -871,7 +912,7 @@ class NetworkMountRepository:
 				"id": f"autofs:{protocol}:{server}:{remotePath}",
 				"mode": "autofs",
 				"protocol": protocol,
-				"enabled": True,
+				"enabled": enabled,
 				"hddReplacement": False,
 				"shareName": shareName,
 				"server": server,
@@ -909,6 +950,8 @@ class NetworkMountRepository:
 	def save(self, mounts):
 		def writeMountFiles(effective):
 			def lineIsManaged(line, separator, nfsShares, cifsShares, cifsColonPrefix):
+				if line.startswith(self.DISABLED_PREFIX):
+					line = line[len(self.DISABLED_PREFIX):]
 				tokens = line.split(separator) if separator else line.split()
 				if any(share in tokens for share in nfsShares):
 					return True
@@ -930,8 +973,7 @@ class NetworkMountRepository:
 			fstabLines = [line for line in fileReadLines(self.FSTAB_PATH, default=[], source=MODULE_NAME)
 				if not lineIsManaged(line, None, nfsShares, cifsShares, cifsColonPrefix=False)]
 			for mount, mode in effective:
-				if not mount.get("enabled"):
-					continue
+				prefix = "" if mount.get("enabled") else self.DISABLED_PREFIX
 				protocol = mount.get("protocol") or "nfs"
 				server = mount.get("server") or ""
 				remotePath = mount.get("remotePath") or ""
@@ -939,19 +981,19 @@ class NetworkMountRepository:
 				options = mount.get("options") or ""
 				if mode == "autofs":
 					if protocol == "nfs":
-						autoNetworkLines.append(f"{shareName} -fstype=nfs,{self.buildNfsOptions(mount)} {server}:/{remotePath}")
+						autoNetworkLines.append(f"{prefix}{shareName} -fstype=nfs,{self.buildNfsOptions(mount)} {server}:/{remotePath}")
 					else:
 						username = (mount.get("username") or "").replace(" ", "\\ ")
 						password = (mount.get("password") or "").replace(" ", "\\ ")
-						autoNetworkLines.append(f"{shareName} -fstype=cifs,user={username},pass={password},{self.sanitizeOptions(options)} ://{server}/{remotePath}")
+						autoNetworkLines.append(f"{prefix}{shareName} -fstype=cifs,user={username},pass={password},{self.sanitizeOptions(options)} ://{server}/{remotePath}")
 				elif mode == "fstab":
 					path = self.mountPointFor(mount)
 					if protocol == "nfs":
-						fstabLines.append(f"{server}:/{remotePath}\t{path}\tnfs\t_netdev,{self.buildNfsOptions(mount)}\t0 0")
+						fstabLines.append(f"{prefix}{server}:/{remotePath}\t{path}\tnfs\t_netdev,{self.buildNfsOptions(mount)}\t0 0")
 					else:
 						username = mount.get("username") or ""
 						password = mount.get("password") or ""
-						fstabLines.append(f"//{server}/{remotePath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.sanitizeOptions(options)}\t0 0")
+						fstabLines.append(f"{prefix}//{server}/{remotePath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.sanitizeOptions(options)}\t0 0")
 			fileWriteLines(self.AUTO_NETWORK_PATH, autoNetworkLines, source=MODULE_NAME)
 			fileWriteLines(self.FSTAB_PATH, fstabLines, source=MODULE_NAME)
 
@@ -962,6 +1004,34 @@ class NetworkMountRepository:
 				mode = "fstab"
 			effective.append((mount, mode))
 		writeMountFiles(effective)
+
+	# Option keys already covered by a dedicated NetworkMountSetup field (see
+	# buildNfsOptions()/sanitizeOptions() and NetworkMountSetup.keySave()) -
+	# entering one of these in the free-text "Mount options" field would just
+	# be silently overridden by the dedicated setting, so it's rejected
+	# instead by validateExtraOptions() below.
+	NFS_RESERVED_OPTION_KEYS = frozenset(("ro", "rw", "nolock", "lock", "proto", "nfsvers", "rsize", "wsize", "timeo", "soft", "hard"))
+	CIFS_RESERVED_OPTION_KEYS = frozenset(("user", "username", "pass", "password"))
+
+	# Checks the raw "Mount options" free-text field for anything already
+	# covered by a dedicated setting, and for options repeated within the
+	# field itself. Returns an error message to show the user, or None if the
+	# field is fine as-is.
+	@classmethod
+	def validateExtraOptions(cls, rawOptions, protocol):
+		reserved = cls.NFS_RESERVED_OPTION_KEYS if protocol == "nfs" else cls.CIFS_RESERVED_OPTION_KEYS
+		seen = set()
+		for token in (rawOptions or "").split(","):
+			token = token.strip()
+			if not token:
+				continue
+			key = token.split("=", 1)[0].strip().lower()
+			if key in reserved:
+				return _("'%s' is already set by a dedicated setting above - remove it from 'Mount options'.") % token
+			if key in seen:
+				return _("'%s' is listed more than once in 'Mount options'.") % token
+			seen.add(key)
+		return None
 
 	# CIFS options only - NFS is built explicitly by buildNfsOptions() below
 	# from structured per-field Setup values rather than a free-text string.
@@ -1071,7 +1141,7 @@ class NetworkMountRepository:
 				pickleDump({"username": username, "password": password}, fd, -1)
 			chmod(path, 0o600)  # contains a plaintext password
 		except OSError as err:
-			print(f"[{MODULE_NAME}] Error writing '{path}': {err}")
+			print(f"[{MODULE_NAME}] Error {err.errno}: Error writing '{path}'!  ({err.strerror})")
 
 	def credentialsClear(self, hostname):
 		if not hostname:

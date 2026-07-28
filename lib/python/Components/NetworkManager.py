@@ -27,7 +27,6 @@ from socket import AF_UNIX, SOCK_STREAM, gethostbyname, gethostname, socket
 from subprocess import DEVNULL, check_output
 from collections.abc import Callable
 from twisted.internet import reactor
-from twisted.internet.protocol import ClientFactory, Protocol
 
 from enigma import e2avahi_set_debug, eNetworkServiceBrowser, eTimer
 
@@ -56,7 +55,7 @@ wpaCliBin = "/usr/sbin/wpa_cli"
 socketDaemonPath = "/var/run/daemon.socket"
 netEventSocketPath = "/var/run/daemon_net.socket"
 netinfoPath = "/var/run/netinfo"
-netNeighborsPath = "/var/run/netneighbors"
+netscanPath = "/var/run/netscan"
 netrestarterBin = "/usr/sbin/netrestarter"
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -146,7 +145,6 @@ class NetworkManager:
 		self.pendingRestart = None
 		self.networkCheck = None
 		self.onAdaptersChanged: list[Callable] = []
-		self.onNeighborObservation: list[Callable] = []
 		self.netinfoUpdateTimer = eTimer()
 		self.netinfoUpdateTimer.callback.append(self.onNetinfoUpdateDebounced)
 		self.load()
@@ -919,27 +917,6 @@ class NetworkManager:
 		self.log(f"onScanTrigger: {interface}.")
 		pass  # placeholder: trigger wpa_cli scan when Wi-Fi comes up
 
-	# Fans out NEIGH events from socketdaemon (NetworkManager itself has no
-	# use for ARP data). Same observation shape as AvahiProvider.dispatch(),
-	# minus "protocol" — a neighbor entry isn't tied to any service yet.
-	def onNeighborChange(self, action: str, family: int, ifindex: int, interface: str, address: str, lladdr: str, state: str):
-		self.log(f"onNeighborChange: {action} {address} lladdr={lladdr} interface={interface} state={state}.")
-		observation = {
-			"source": "neighbor",
-			"action": action,       # "ADD" | "CHANGE" | "REMOVE"
-			"family": family,       # 4 | 6
-			"ifindex": ifindex,
-			"interface": interface,
-			"address": address,
-			"lladdr": lladdr,       # empty string for some REMOVE events, see socketdaemon main.c
-			"state": state,         # REACHABLE/STALE/DELAY/PROBE, or last-known state for REMOVE
-		}
-		for callback in self.onNeighborObservation:
-			try:
-				callback(observation)
-			except Exception:
-				pass
-
 
 # Wi-Fi-specific parameters for one Connection.
 @dataclass
@@ -1516,24 +1493,6 @@ def readNetinfoInterfaces() -> dict:
 	return info.get("interfaces", {})
 
 
-def readNetNeighbors() -> list:
-	"""Raw "neighbors" list from socketdaemon's /var/run/netneighbors (the
-	authoritative ARP/NDP snapshot, see nm_dump_neighbors() in
-	socketdaemon/main.c), [] if missing/invalid. Only the daemon's initial
-	full-table dump plus its subsequent RTM_NEWNEIGH/DELNEIGH-driven
-	rewrites live here - NeighborProvider reads this once at start() to
-	seed candidates already in the kernel table before it subscribed to
-	NetworkManager.onNeighborObservation (see doc section 5.3: the
-	incremental event stream alone only reports changes from the moment of
-	connecting, not pre-existing entries)."""
-	try:
-		with open(netNeighborsPath, encoding="utf-8") as fd:
-			info = loads(fd.read())
-	except (OSError, JSONDecodeError):
-		return []
-	return info.get("neighbors", [])
-
-
 def isWirelessName(iface: str) -> bool:
 	return bool(match(r"(wlan|ath|ra|wl)\d+", iface))
 
@@ -1636,13 +1595,6 @@ class NetEventReader:
 			self.manager.onIfaceRemove(parts[1])
 		elif evt == "SCAN_TRIGGER" and len(parts) == 2:
 			self.manager.onScanTrigger(parts[1])
-		elif evt == "NEIGH" and len(parts) == 8:
-			# NEIGH,<ADD|CHANGE|REMOVE>,<family>,<ifindex>,<iface>,<addr>,<lladdr>,<state>
-			# see NETWORK_BROWSER_PLUGIN_V5.md section 5.3/30.1
-			try:
-				self.manager.onNeighborChange(parts[1], int(parts[2]), int(parts[3]), parts[4], parts[5], parts[6], parts[7])
-			except ValueError:
-				self.manager.log(f"NetEventReader: Malformed NEIGH line '{line!r}'.")
 
 
 # Polls up to 10x (1s apart) until the hostname resolves off 127.0.0.1,
@@ -1725,158 +1677,123 @@ class AvahiProvider:
 			callback(observation)
 
 
-# Relays ARP/NDP neighbor-table observations as discovery candidates.
-# socketdaemon already reads the kernel neighbor table continuously;
-# start()/stop() just toggle whether this provider is subscribed to that
-# stream (see NetworkManager.onNeighborChange). Observations are candidate
-# hosts only, not confirmed services - unlike Avahi's, they carry no
-# "protocol".
-class NeighborProvider:
+# Discovers SMB (445) / NFS (2049) hosts that don't speak mDNS, by reading /var/run/netscan
+class NetscanProvider:
+	PORTS = {445: "smb", 2049: "nfs"}
+
 	def __init__(self):
 		self.started = False
-		self.onObservation: list[Callable] = []
+		self.onObservation: list[Callable] = []  # callback(observation) - one per {address, port}
 
 	def start(self):
 		if not self.started:
-			networkManager.onNeighborObservation.append(self.changed)
 			self.started = True
-			# Seed with whatever was already in the kernel neighbor table before
-			# we started listening - the incremental event stream above only
-			# reports changes from this point on, see readNetNeighbors().
-			for entry in readNetNeighbors():
-				self.changed({
-					"source": "neighbor",
-					"action": "ADD",
-					"family": entry.get("family"),
-					"address": entry.get("address"),
-				})
+			self.dispatchAll()
 
 	def stop(self):
-		if self.started:
-			networkManager.onNeighborObservation.remove(self.changed)
-			self.started = False
+		self.started = False
 
-	def changed(self, observation: dict):
-		for callback in self.onObservation:
-			callback(observation)
+	@staticmethod
+	def defaultRouteCidr() -> str | None:
+		for iface in readNetinfoInterfaces().values():
+			if iface.get("gw") and iface.get("ip4") and iface.get("prefix4") is not None:
+				return f"{iface['ip4']}/{iface['prefix4']}"
+		return None
 
+	def rescan(self, callback: Callable | None = None):
+		cidr = self.defaultRouteCidr()
+		if not cidr:
+			networkManager.log("NetscanProvider: rescan: no default-route interface with an IPv4 address.")
+			if callback:
+				callback(False)
+			return
 
-# Probes a list of addresses for open SMB (445) / NFS (2049) ports - finds
-# hosts that don't speak mDNS (plain Windows file sharing / NFS exports, see
-# doc section 5.4). Runs here, not in the socketdaemon: no privilege needed,
-# and it's a discovery concern, not link/neighbor monitoring. Stateless -
-# DiscoveryManager decides which addresses to probe and when (see
-# probeRemainingNeighbors()); this just fires the connects and reports which
-# ones answered.
-class PortProbeProvider:
-	PORTS = {445: "smb", 2049: "nfs"}
+		def done(exitCode):
+			ok = exitCode == 0
+			if ok:
+				self.dispatchAll()
+			if callback:
+				callback(ok)
 
-	class PortProbeFactory(ClientFactory):
-		class PortProbeProtocol(Protocol):
-			def connectionMade(self):
-				self.factory.reportResult(True)
-				self.transport.loseConnection()
+		ServiceAction.netscan(cidr, list(self.PORTS), done)
 
-		protocol = PortProbeProtocol
+	def dispatchAll(self):
+		try:
+			with open(netscanPath, encoding="utf-8") as fd:
+				info = loads(fd.read())
+		except (OSError, JSONDecodeError):
+			info = {}
+		for entry in info.get("scan", []):
+			self.dispatch(entry)
 
-		def __init__(self, onResult):
-			self.onResult = onResult
-
-		def reportResult(self, success):
-			self.onResult(success)
-
-		def clientConnectionFailed(self, connector, reason):
-			self.onResult(False)
-
-	def __init__(self):
-		self.onResult: list[Callable] = []  # callback(address, protocol) - only called on success
-
-	def probe(self, addresses):
-		for address in addresses:
-			for port, protocol in self.PORTS.items():
-				factory = self.PortProbeFactory(lambda success, address=address, protocol=protocol: self.reportResult(address, protocol, success))
-				reactor.connectTCP(address, port, factory, timeout=3)
-
-	def reportResult(self, address, protocol, success):
-		if success:
-			networkManager.log(f"PortProbeProvider: found {protocol.upper()} on {address}")
-			for callback in self.onResult:
-				callback(address, protocol)
+	def dispatch(self, entry: dict):
+		protocol = self.PORTS.get(entry.get("port"))
+		if protocol:
+			observation = {
+				"source": "netscan",
+				"protocol": protocol,
+				"address": entry.get("address"),
+				"hostname": entry.get("hostname") or "",
+			}
+			for callback in self.onObservation:
+				callback(observation)
 
 
-# Owns discovery end to end and holds the one result that matters: hosts, a
-# plain {address: host} dict, host = {"address", "hostname", "protocols" (a
-# set, e.g. {"smb", "nfs"}), "source" ("avahi" | "neighbor" | "portprobe")}.
-# Rules (kept deliberately simple, no per-provider dedup/state-tracking to
-# reason about - see git history for the previous, more "clever" per-
-# candidate delayed-probe design that turned out to be too hard to follow):
-#   - Avahi hosts are always authoritative: an address ADD/CHANGE_ed by
-#     Avahi always sets source "avahi" and merges in hostname/protocol,
-#     even if a neighbor/portprobe entry already existed for it.
-#   - Neighbor-table addresses appear immediately as bare, protocol-less
-#     "neighbor" candidates (unless already known via Avahi).
-#   - Once per run, AVAHI_SETTLE_MS after start(), every neighbor address
-#     NOT already confirmed via Avahi gets port-445-probed exactly once, in
-#     one batch (probeRemainingNeighbors()) - not scanned continuously and
-#     not probed the instant a candidate appears, so Avahi (if it's going
-#     to announce that host at all) gets a real chance to do so first.
-#   - A successful probe adds/merges a "portprobe" host with the matching
-#     protocol (smb/nfs), unless Avahi has meanwhile made it "avahi" - that
-#     always wins.
+# Owns discovery end to end: hosts, a plain {address: host} dict, host =
+# {"address", "hostname", "protocols" (set, e.g. {"smb", "nfs"}), "source"
+# ("avahi" | "netscan"), "avahiShares"}. Kept deliberately simple, no
+# per-candidate state-tracking (see git history for a previous, "clever"
+# delayed-probe design that got too hard to follow).
+#   - Avahi always wins "source" and merges in protocol, even over an
+#     existing netscan entry.
+#   - hostname is the exception: a real netscan hostname (reverse-DNS,
+#     already ISP-wildcard-filtered in socketdaemon) always wins over
+#     Avahi's regardless of arrival order - hostnameSource tracks which one
+#     set it last so this stays correct either way.
 # Runs one bounded pass per boot (DEFAULT_RUN_MS), auto-stopping - a
-# Discovery screen can call start()/stop() itself later for on-demand live
-# results (see NetworkMountDiscoveryScreen).
+# Discovery screen can call start()/stop() itself later for on-demand live.
 class DiscoveryManager:
 	DEFAULT_RUN_MS = 30000   # one discovery pass per boot runs this long, then auto-stops
-	AVAHI_SETTLE_MS = 5000   # head start for Avahi before probing the rest of the neighbor candidates
 
 	def __init__(self):
 		self.started = False
 		self.hosts = {}
-		self.neighborCandidates = set()
 		self.onChanged: list[Callable] = []  # callback() - no payload, re-read self.hosts
 		self.avahi = AvahiProvider()
-		self.neighbor = NeighborProvider()
-		self.portProbe = PortProbeProvider()
+		self.netscan = NetscanProvider()
 		self.avahi.onObservation.append(self.onAvahiObservation)
-		self.neighbor.onObservation.append(self.onNeighborObservation)
-		self.portProbe.onResult.append(self.onPortProbeResult)
+		self.netscan.onObservation.append(self.onNetscanObservation)
 		self.stopTimer = eTimer()
 		self.stopTimer.callback.append(self.stop)
-		self.settleTimer = eTimer()
-		self.settleTimer.callback.append(self.probeRemainingNeighbors)
 
 	# No early return on self.started - a caller wanting an unbounded scan
 	# (runMs=None) must be able to cancel an already-running bounded pass's
 	# auto-stop, not just no-op. provider.start() is idempotent anyway.
 	def start(self, runMs: int | None = DEFAULT_RUN_MS):
 		self.avahi.start()
-		self.neighbor.start()
+		self.netscan.start()
 		self.started = True
 		self.stopTimer.stop()
 		if runMs:
 			self.stopTimer.start(runMs, True)
-		self.settleTimer.stop()
-		self.settleTimer.start(self.AVAHI_SETTLE_MS, True)
 
 	def stop(self):
 		self.stopTimer.stop()
-		self.settleTimer.stop()
 		if self.started:
 			self.avahi.stop()
-			self.neighbor.stop()
+			self.netscan.stop()
 			self.started = False
 
-	# Used by "rescan" actions to start over instead of piling onto stale
-	# results from a previous pass.
+	def rescan(self, callback: Callable | None = None):
+		self.netscan.rescan(callback)
+
 	def reset(self):
 		self.hosts = {}
-		self.neighborCandidates = set()
 		self.notify()
 
 	@staticmethod
 	def newHost(address, source):
-		return {"address": address, "hostname": "", "protocols": set(), "source": source, "avahiShares": {}}
+		return {"address": address, "hostname": "", "hostnameSource": None, "protocols": set(), "source": source, "avahiShares": {}}
 
 	# Some NAS vendors (confirmed: Synology) register one _nfs._tcp/_smb._tcp
 	# service INSTANCE PER EXPORT/SHARE instead of one per host, encoding the
@@ -1897,42 +1814,31 @@ class DiscoveryManager:
 		name = observation.get("name") or ""
 		for address in observation.get("addresses") or []:
 			host = self.hosts.setdefault(address, self.newHost(address, "avahi"))
-			host["source"] = "avahi"  # always leading, even if a neighbor/portprobe entry already existed
-			host["hostname"] = hostname or host["hostname"]
+			host["source"] = "avahi"  # always leading, even if a netscan entry already existed
+			if hostname and host["hostnameSource"] != "netscan":
+				host["hostname"] = hostname
+				host["hostnameSource"] = "avahi"
 			if protocol:
 				host["protocols"].add(protocol)
 				if protocol in ("nfs", "smb") and name:
 					host["avahiShares"][name] = {"protocol": protocol, "name": self.parseAvahiShareName(name), "fullName": name}
 		self.notify()
 
-	def onNeighborObservation(self, observation):
-		address = observation.get("address")
-		if not address or observation.get("family") != 4:
-			return
-		if observation.get("action") == "REMOVE":
-			self.neighborCandidates.discard(address)
-			return
-		self.neighborCandidates.add(address)
-		if address not in self.hosts:
-			self.hosts[address] = self.newHost(address, "neighbor")
-			self.notify()
-
-	def probeRemainingNeighbors(self):
-		pending = [address for address in self.neighborCandidates if self.hosts.get(address, {}).get("source") != "avahi"]
-		if pending:
-			self.portProbe.probe(pending)
-
-	def onPortProbeResult(self, address, protocol):
+	def onNetscanObservation(self, observation):
 		if self.started:
-			# The address almost always already exists here as a bare "neighbor"
-			# entry (that's what made it a probe candidate) - setdefault()'s
-			# default is only used for a genuinely new key, so upgrade the
-			# source explicitly. Never downgrade an "avahi" entry, though.
-			host = self.hosts.setdefault(address, self.newHost(address, "portprobe"))
-			if host["source"] != "avahi":
-				host["source"] = "portprobe"
-			host["protocols"].add(protocol)
-			self.notify()
+			address = observation.get("address")
+			if address:
+				# Never downgrade an "avahi" entry's source - hostname still takes
+				# priority for netscan though, see class comment.
+				host = self.hosts.setdefault(address, self.newHost(address, "netscan"))
+				if host["source"] != "avahi":
+					host["source"] = "netscan"
+				hostname = observation.get("hostname")
+				if hostname:
+					host["hostname"] = hostname
+					host["hostnameSource"] = "netscan"
+				host["protocols"].add(observation["protocol"])
+				self.notify()
 
 	def notify(self):
 		for callback in self.onChanged:

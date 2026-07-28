@@ -999,7 +999,7 @@ class NetworkWiFi(Setup):
 		self.adapter = adapter
 		self.buildConfigObjects()
 		Setup.__init__(self, session=session, setup="NetworkWiFi")
-		self.setTitle(_("Wi-Fi Connection Settings – %s") % conn.adapter)
+		self.setTitle(_("Wi-Fi Settings – %s") % conn.adapter)
 		self["key_info"] = StaticText(_("Info"))
 		self["blueActions"] = HelpableActionMap(self, ["InfoActions"], {
 			"info": (self.keyShowInfo, _("Show network connection info"))

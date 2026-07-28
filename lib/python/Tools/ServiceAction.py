@@ -137,3 +137,13 @@ class ServiceAction:
         obj = cls.__new__(cls)
         obj.serviceName = host
         return obj
+
+    @classmethod
+    def netscan(cls, cidr: str, ports: "list[int]", callback, timeout: int = 10000) -> "ServiceAction":
+        """NETSCAN,<cidr>,<port>[,<port>…] → active TCP connect-scan of <cidr>
+        (max /24), writes /var/run/netscan → callback(exitCode)."""
+        data = cidr + "".join(f",{port}" for port in ports)
+        cls._dispatch("NETSCAN", data, callback, timeout)
+        obj = cls.__new__(cls)
+        obj.serviceName = cidr
+        return obj
