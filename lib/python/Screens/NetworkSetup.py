@@ -60,8 +60,8 @@ MODULE_NAME = __name__.split(".")[-1]
 # work out priority between bits themselves.
 CHANGE_NONE = 0				# Nothing that needs activating changed.
 CHANGE_GENERAL = 1 << 0			# IP/Gateway/DNS/link speed/... changed.
-CHANGE_ADAPTER_ENABLED = 1 << 1	# Adapter/connection was just enabled.
-CHANGE_ADAPTER_DISABLED = 1 << 2	# Adapter/connection was just disabled.
+CHANGE_ADAPTER_ENABLED = 1 << 1  # Adapter/connection was just enabled.
+CHANGE_ADAPTER_DISABLED = 1 << 2  # Adapter/connection was just disabled.
 
 
 def ip4Str(addr: list) -> str:
@@ -556,7 +556,7 @@ class NetworkOverview(Screen):
 		adapter = self.currentAdapter()
 		if adapter:
 			if self.currentList == "adapterList":
-				infoText = "INFO"
+				infoText = _("INFO")
 				greenText = _("Deactivate") if adapter.adapterEnabled else _("Activate")
 				self.helpTextGreen = _("Deactivate Adapter") if adapter.adapterEnabled else _("Activate Adapter")
 			else:
@@ -796,7 +796,9 @@ class NetworkOverview(Screen):
 
 		def openWiFiScan(iface: str):
 			def wifiScanDone(result: ScanResult | None, adapter: Adapter):
-				if result:
+				if result is True:
+					self.keyCloseRecursive()
+				elif result:
 					self.session.openWithCallback(self.setupClosed, NetworkWiFi, scanResultToConnection(result, adapter.name), adapter)
 
 			adapter = networkManager.getAdapter(iface)
@@ -900,7 +902,7 @@ class NetworkAdapterSetup(Setup):
 		self.hasWakeOnLan = adapter.name == "eth0" and BoxInfo.getItem("wol") and BoxInfo.getItem("WakeOnLAN")
 		Setup.__init__(self, session=session, setup="NetworkAdapter")
 		self.setTitle(_("Network Adapter Settings – %s") % adapter.name)
-		self["key_info"] = StaticText(_("Info"))
+		self["key_info"] = StaticText(_("INFO"))
 		self["blueActions"] = HelpableActionMap(self, ["InfoActions"], {
 			"info": (self.keyShowInfo, _("Show network connection info"))
 		}, prio=0)
@@ -1046,7 +1048,7 @@ class NetworkWiFi(Setup):
 		self.buildConfigObjects()
 		Setup.__init__(self, session=session, setup="NetworkWiFi")
 		self.setTitle(_("Wi-Fi Settings – %s") % conn.adapter)
-		self["key_info"] = StaticText(_("Info"))
+		self["key_info"] = StaticText(_("INFO"))
 		self["blueActions"] = HelpableActionMap(self, ["InfoActions"], {
 			"info": (self.keyShowInfo, _("Show network connection info"))
 		}, prio=0)
@@ -1247,6 +1249,7 @@ class NetworkWiFiScanScreen(Screen):
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
 			"ok": (self.keySelect, _("Use selected Wi-Fi network")),
 			"cancel": (self.keyClose, _("Close")),
+			"close": (self.closeRecursive, _("Close the screen and exit all menus")),
 			"red": (self.keyClose, _("Close")),
 			"green": (self.keySelect, _("Use selected Wi-Fi network")),
 			"yellow": (self.keyStartScan, _("Rescan for any available Wi-Fi networks"))
@@ -1265,6 +1268,11 @@ class NetworkWiFiScanScreen(Screen):
 		if self.console:
 			self.console.killAll()
 		self.close(None)
+
+	def closeRecursive(self):
+		if self.console:
+			self.console.killAll()
+		self.close(True)
 
 	def keyStartScan(self):
 		def finishScan(results, parser):
@@ -1614,7 +1622,10 @@ class NetworkWiFiAddFlow:
 				if callback:
 					callback(ip)
 
-			if result is None:
+			if result is None or result is True:
+				# True means the scan screen's own closeRecursive fired (long
+				# EXIT); this flow has no "close everything" signal of its own
+				# to forward, so just treat it like a cancel.
 				if callback:
 					callback()
 				return
