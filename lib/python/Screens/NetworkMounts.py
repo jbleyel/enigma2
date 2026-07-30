@@ -133,7 +133,15 @@ class NetworkMountsOverview(Screen):
 			return discoveryManager.hosts.get(server, {}).get("hostname") or server
 
 		def sortKey(mount):
-			return mount.get("server") or "" if config.network.mountsSortByIP.value else hostnameFor(mount).lower()
+			if config.network.mountsSortByIP.value:
+				server = mount.get("server") or ""
+				try:
+					key = tuple(int(x) for x in server.split("."))
+				except ValueError:
+					key = (999, 999, 999, 999)
+			else:
+				key = hostnameFor(mount).lower()
+			return key
 
 		self.mounts = sorted(self.repository.load(), key=sortKey)
 		mountList = []
@@ -167,6 +175,8 @@ class NetworkMountsOverview(Screen):
 
 	def keyBlue(self):
 		def onMountResult(unmounting, data, retVal, extra=None):
+			action = "umount" if unmounting else "mount"
+			print(f"[{MODULE_NAME}] keyBlue: {action} {mountPoint!r} finished, retVal={retVal}, output={data!r}")
 			if retVal:
 				self.session.showError((_("Unmounting '%s' failed.") if unmounting else _("Mounting '%s' failed.")) % mountPoint)
 			else:
@@ -179,6 +189,7 @@ class NetworkMountsOverview(Screen):
 			mount = current[self.LIST_DATA]
 			mountPoint = self.repository.mountPointFor(mount)
 			if self.repository.isMounted(mount):
+				print(f"[{MODULE_NAME}] keyBlue: unmounting {mountPoint!r}")
 				self.console.ePopen((self.UMOUNT, self.UMOUNT, mountPoint), lambda data, retVal, extra=None: onMountResult(True, data, retVal, extra))
 			else:
 				if not exists(mountPoint):
@@ -194,6 +205,8 @@ class NetworkMountsOverview(Screen):
 					password = mount.get("password") or ""
 					source = f"//{server}/{remotePath}"
 					options = f"user={username},pass={password},{self.repository.sanitizeOptions(mount.get('options'))}"
+				loggedOptions = sub(r"pass=[^,]*", "pass=***", options)
+				print(f"[{MODULE_NAME}] keyBlue: mounting protocol={protocol!r} source={source!r} mountPoint={mountPoint!r} options={loggedOptions!r}")
 				self.console.ePopen((self.MOUNT, self.MOUNT, "-t", protocol, source, mountPoint, "-o", options), lambda data, retVal, extra=None: onMountResult(False, data, retVal, extra))
 
 	def keyMenu(self):

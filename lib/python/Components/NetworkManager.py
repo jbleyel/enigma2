@@ -784,6 +784,7 @@ class NetworkManager:
 			netInfo.netmask = parseIp4(mask) if mask else [0, 0, 0, 0]
 			gw = data.get("gw", "")
 			netInfo.gateway = parseIp4(gw) if gw else [0, 0, 0, 0]
+			netInfo.isDefaultGateway = bool(data.get("defgw", False))
 			brd = data.get("brd", "")
 			netInfo.bcast = parseIp4(brd) if brd else [0, 0, 0, 0]
 			netInfo.driver = data.get("driver", "")
@@ -861,7 +862,7 @@ class NetworkManager:
 		candidates = [
 			interface
 			for interface, adapter in self.adapters.items()
-			if adapter.netInfo.link and adapter.netInfo.gateway != [0, 0, 0, 0] and self.activeConnection(interface) is not None
+			if adapter.netInfo.link and adapter.netInfo.isDefaultGateway and self.activeConnection(interface) is not None
 		]
 		self.log(f"checkConnectionInternet: candidates={candidates}.")
 		if not candidates:
@@ -974,6 +975,7 @@ class NetInfo:
 	ip: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
 	netmask: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
 	gateway: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
+	isDefaultGateway: bool = False  # True on the one interface currently owning the system's default route.
 	bcast: list[int] = field(default_factory=lambda: [0, 0, 0, 0])
 	ip6: list = field(default_factory=list)  # [{"addr": "…", "prefix": 64}, …].
 	speed: int = -1  # LAN only, Mbps; -1 = unknown.
@@ -1678,10 +1680,14 @@ class NetscanProvider:
 		self.started = False
 		self.onObservation: list[Callable] = []  # callback(observation) - one per {address, port}
 
+	# dispatchAll() just re-reads a local file (cheap), unlike an actual
+	# rescan() - always re-dispatch on start() so a screen opening after the
+	# one-shot boot pass (StartEnigma.py) sees whatever socketdaemon's
+	# unattended autoscan has since written, instead of replaying whatever
+	# was (or wasn't) in the file at that first, possibly-too-early read.
 	def start(self):
-		if not self.started:
-			self.started = True
-			self.dispatchAll()
+		self.started = True
+		self.dispatchAll()
 
 	def stop(self):
 		self.started = False
@@ -1689,7 +1695,7 @@ class NetscanProvider:
 	@staticmethod
 	def defaultRouteCidr() -> str | None:
 		for iface in readNetinfoInterfaces().values():
-			if iface.get("gw") and iface.get("ip4") and iface.get("prefix4") is not None:
+			if iface.get("defgw") and iface.get("ip4") and iface.get("prefix4") is not None:
 				return f"{iface['ip4']}/{iface['prefix4']}"
 		return None
 

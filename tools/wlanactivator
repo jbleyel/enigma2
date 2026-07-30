@@ -11,6 +11,11 @@
 set -eu
 
 PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+LOGFILE="/tmp/wlanactivator.log"
+
+log() {
+  echo "[wlanactivator] $*" >> "$LOGFILE"
+}
 
 IFACE="${2:-}"
 
@@ -50,14 +55,36 @@ do_start() {
   # start wpa_supplicant only if a config file was written
   if [ -f "$WPA_CONF" ]; then
     wpa_supplicant -B -D nl80211,wext -i"${IFACE}" -c"${WPA_CONF}" -P"${WPA_PID}"
-    # give wpa_supplicant a moment to associate before ifup
-    sleep 1
     if [ -n "$NETID" ]; then
       # Pin to exactly this saved network - select_network also disables
       # every other enabled network for this run, so wpa_supplicant can't
       # auto-pick/roam to a different saved SSID instead of the one the
-      # user actually chose.
-      wpa_cli -i"${IFACE}" select_network "$NETID" >/dev/null 2>&1 || true
+      # user actually chose. Wait for the control socket instead of a fixed
+      # sleep, and retry+verify the result: a missed or failed call here used
+      # to be swallowed silently, leaving every saved network enabled, so
+      # wpa_supplicant just auto-connected by priority to a different SSID
+      # than the one requested.
+      i=0
+      while [ $i -lt 5 ] && ! wpa_cli -i"${IFACE}" status >/dev/null 2>&1; do
+        sleep 1
+        i=$((i + 1))
+      done
+      i=0
+      selected=0
+      while [ $i -lt 5 ]; do
+        result="$(wpa_cli -i"${IFACE}" select_network "$NETID" 2>/dev/null || true)"
+        if [ "$result" = "OK" ]; then
+          selected=1
+          break
+        fi
+        sleep 1
+        i=$((i + 1))
+      done
+      if [ "$selected" -eq 1 ]; then
+        log "select_network $NETID on ${IFACE}: OK"
+      else
+        log "select_network $NETID on ${IFACE}: FAILED after $i retries, result='$result' - wpa_supplicant may connect to a different saved network instead"
+      fi
     fi
   fi
 

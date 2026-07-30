@@ -561,10 +561,11 @@ class NetworkOverview(Screen):
 				self.helpTextGreen = _("Deactivate Adapter") if adapter.adapterEnabled else _("Activate Adapter")
 			else:
 				conn = self.currentSaved()
-				greenText = _("Disable") if conn.enabled else _("Enable")
-				self.helpTextGreen = _("Disable Network") if conn.enabled else _("Enable Network")
-				if conn.enabled and not self.isConnectionLive(conn, adapter):
-					blueText = _("Connect")
+				if conn:
+					greenText = _("Disable") if conn.enabled else _("Enable")
+					self.helpTextGreen = _("Disable Network") if conn.enabled else _("Enable Network")
+					if conn.enabled and not self.isConnectionLive(conn, adapter):
+						blueText = _("Connect")
 		self["key_info"].setText(infoText)
 		self["key_green"].setText(greenText)
 		self["key_blue"].setText(blueText)
@@ -1248,9 +1249,9 @@ class NetworkWiFiScanScreen(Screen):
 		self["key_yellow"] = StaticText(_("Rescan"))
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
 			"ok": (self.keySelect, _("Use selected Wi-Fi network")),
-			"cancel": (self.keyClose, _("Close")),
+			"cancel": (self.keyClose, _("Close the screen")),
 			"close": (self.closeRecursive, _("Close the screen and exit all menus")),
-			"red": (self.keyClose, _("Close")),
+			"red": (self.keyClose, _("Close the screen")),
 			"green": (self.keySelect, _("Use selected Wi-Fi network")),
 			"yellow": (self.keyStartScan, _("Rescan for any available Wi-Fi networks"))
 		}, prio=0, description=_("Wi-Fi Scan Actions"))
@@ -1466,8 +1467,8 @@ class NetworkWiFiActivator(Screen):
 		self["status"] = Label()
 		self["key_red"] = StaticText("")
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
-			"cancel": (self.keyClose, _("Close")),
-			"red": (self.keyClose, _("Close")),
+			"cancel": (self.keyClose, _("Close the screen")),
+			"red": (self.keyClose, _("Close the screen")),
 		}, prio=0, description=_("Wi-Fi Activation Actions"))
 		self.pollIntervalMs = 1500
 		self.pollMaxAttempts = 20
