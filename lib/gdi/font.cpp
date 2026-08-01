@@ -1367,7 +1367,7 @@ void eTextPara::blit(gDC &dc, const ePoint &offset, const gRGB &cbackground, con
 								register int b = (*s++) >> 4;
 								if (b)
 								{
-									// unsigned char frame_a = (*td) >> 24 & 0xFF;
+									unsigned char frame_a = (*td) >> 24 & 0xFF;
 									unsigned char frame_r = (*td) >> 16 & 0xFF;
 									unsigned char frame_g = (*td) >> 8 & 0xFF;
 									unsigned char frame_b = (*td) & 0xFF;
@@ -1381,8 +1381,13 @@ void eTextPara::blit(gDC &dc, const ePoint &offset, const gRGB &cbackground, con
 									frame_r = BLEND(frame_r, dr, da) & 0xFF;
 									frame_g = BLEND(frame_g, dg, da) & 0xFF;
 									frame_b = BLEND(frame_b, db, da) & 0xFF;
+									/* fade the destination alpha towards the glyph's own opacity by the
+									   same AA coverage weight, instead of snapping straight to full
+									   foreground alpha -- otherwise a later real alpha-composite (OSD
+									   over video/image) sees a hard-edged mask and edges look frayed */
+									frame_a = BLEND(frame_a, (currentforeground.a ^ 0xFF), da) & 0xFF;
 #undef BLEND
-									*td = ((currentforeground.a ^ 0xFF) << 24) | (frame_r << 16) | (frame_g << 8) | frame_b;
+									*td = (frame_a << 24) | (frame_r << 16) | (frame_g << 8) | frame_b;
 								}
 								++td;
 							}
