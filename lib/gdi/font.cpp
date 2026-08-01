@@ -1131,45 +1131,26 @@ void eTextPara::blit(gDC &dc, const ePoint &offset, const gRGB &cbackground, con
 			{
 				opcode = (m_blend) ? 4 : 3;
 
-				if (m_blend)
+				for (int i=0; i<16; ++i)
 				{
-					/* real per-pixel compositing against the actual destination pixel happens
-					   at blit time (opcode 4), so the lookup must not mix in any assumed
-					   background color here -- only AA coverage and the glyph's own opacity,
-					   otherwise edges get a wrong tint against images/gradients (fraying) */
-					unsigned char fgAlpha = currentforeground.a ^ 0xFF;
-					for (int i = 0; i < 16; ++i)
-					{
-						int sa = i * 16;
-						if (sa > 255)
-							sa = 255;
-						unsigned char da = (sa * fgAlpha) >> 8;
-						lookup32_normal[i] = currentforeground.b | (currentforeground.g << 8) | (currentforeground.r << 16) | (da << 24);
-					}
-				}
-				else
-				{
-					for (int i=0; i<16; ++i)
-					{
-						unsigned char da = background.a, dr = background.r, dg = background.g, db = background.b;
+					unsigned char da = background.a, dr = background.r, dg = background.g, db = background.b;
 #define BLEND(y, x, a) (y + (((x-y) * a)>>8))
 
-						int sa = i * 16;
-						if (sa < 256)
-						{
-							da = BLEND(background.a, currentforeground.a, sa) & 0xFF; // NOSONAR
-							dr = BLEND(background.r, currentforeground.r, sa) & 0xFF; // NOSONAR
-							dg = BLEND(background.g, currentforeground.g, sa) & 0xFF; // NOSONAR
-							db = BLEND(background.b, currentforeground.b, sa) & 0xFF; // NOSONAR
-						}
-#undef BLEND
-						da ^= 0xFF;
-						lookup32_normal[i]=db | (dg << 8) | (dr << 16) | (da << 24);;
+					int sa = i * 16;
+					if (sa < 256)
+					{
+						da = BLEND(background.a, currentforeground.a, sa) & 0xFF; // NOSONAR
+						dr = BLEND(background.r, currentforeground.r, sa) & 0xFF; // NOSONAR
+						dg = BLEND(background.g, currentforeground.g, sa) & 0xFF; // NOSONAR
+						db = BLEND(background.b, currentforeground.b, sa) & 0xFF; // NOSONAR
 					}
+#undef BLEND
+					da ^= 0xFF;
+					lookup32_normal[i]=db | (dg << 8) | (dr << 16) | (da << 24);;
 				}
 				for (int i=0; i<16; ++i)
 					lookup32_invert[i]=lookup32_normal[i^0xF];
-			}
+			} 
 			else if (surface->bpp == 16)
 			{
 				opcode=2;
@@ -1367,7 +1348,7 @@ void eTextPara::blit(gDC &dc, const ePoint &offset, const gRGB &cbackground, con
 								register int b = (*s++) >> 4;
 								if (b)
 								{
-									unsigned char frame_a = (*td) >> 24 & 0xFF;
+									// unsigned char frame_a = (*td) >> 24 & 0xFF;
 									unsigned char frame_r = (*td) >> 16 & 0xFF;
 									unsigned char frame_g = (*td) >> 8 & 0xFF;
 									unsigned char frame_b = (*td) & 0xFF;
@@ -1381,13 +1362,8 @@ void eTextPara::blit(gDC &dc, const ePoint &offset, const gRGB &cbackground, con
 									frame_r = BLEND(frame_r, dr, da) & 0xFF;
 									frame_g = BLEND(frame_g, dg, da) & 0xFF;
 									frame_b = BLEND(frame_b, db, da) & 0xFF;
-									/* fade the destination alpha towards the glyph's own opacity by the
-									   same AA coverage weight, instead of snapping straight to full
-									   foreground alpha -- otherwise a later real alpha-composite (OSD
-									   over video/image) sees a hard-edged mask and edges look frayed */
-									frame_a = BLEND(frame_a, (currentforeground.a ^ 0xFF), da) & 0xFF;
 #undef BLEND
-									*td = (frame_a << 24) | (frame_r << 16) | (frame_g << 8) | frame_b;
+									*td = ((currentforeground.a ^ 0xFF) << 24) | (frame_r << 16) | (frame_g << 8) | frame_b;
 								}
 								++td;
 							}
