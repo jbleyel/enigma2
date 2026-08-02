@@ -409,17 +409,18 @@ class NetworkShares(Screen):
 	skin = """
 	<screen name="NetworkShares" title="Network Shares" position="center,center" size="1080,465" resolution="1280,720">
 		<widget source="list" render="Listbox" position="0,0" size="1080,370" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="enigma2icons;28,Regular;22,Regular;18" itemHeight="44">
+			<template name="Default" fonts="enigma2icons;28,Regular;22,Regular;18" itemHeight="50">
 				<rowtemplate>
-					<text index="Glyph" position="10,0" size="40,44" font="0" horizontalAlignment="center" verticalAlignment="center" />
-					<text index="IPAddress" position="60,0" size="220,44" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Name" position="290,0" size="770,44" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Glyph" position="10,0" size="40,50" font="0" horizontalAlignment="center" verticalAlignment="center" />
+					<text index="IPAddress" position="60,0" size="220,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Name" position="290,0" size="770,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
 				</rowtemplate>
 				<rowtemplate>
-					<text index="Type" position="60,0" size="80,44" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Glyph" position="150,0" size="40,44" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+GlyphColor" />
-					<text index="Name" position="200,0" size="350,44" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="LocalPath" position="560,0" size="500,44" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Type" position="60,0" size="80,50" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Glyph" position="150,0" size="40,50" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+GlyphColor" />
+					<text index="Name" position="200,2" size="350,28" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Description" position="200,30" size="350,18" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="LocalPath" position="560,0" size="500,50" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
 				</rowtemplate>
 			</template>
 		</widget>
@@ -470,12 +471,13 @@ class NetworkShares(Screen):
 			"Type": 4,        # Share row only: "NFS"/"CIFS".
 			"Name": 5,        # Host row: hostname; share row: share name.
 			"LocalPath": 6,   # Share row only, when already configured.
-			"Data": 7,
+			"Description": 7,  # Share row only, e.g. the SMB share comment.
+			"Data": 8,
 		}
 		self["list"] = List([], indexNames=indexNames)
 		self["description"] = Label()
 		self["key_red"] = StaticText(_("Close"))
-		self["key_green"] = StaticText(_("Select"))
+		self["key_green"] = StaticText(_("Credentials"))
 		self["key_yellow"] = StaticText(_("Rescan"))
 		self["key_blue"] = StaticText(_("Enter Manually"))
 		self["key_menu"] = StaticText(_("MENU"))
@@ -485,7 +487,7 @@ class NetworkShares(Screen):
 			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
 			"menu": (self.keyMenu, _("Host actions and sort order")),
 			"red": (self.close, _("Close the screen")),
-			"green": (self.keySelect, _("Expand/collapse the selected host, or use the selected share")),
+			"green": (self.keyGreen, _("Edit stored username/password for the selected host")),
 			"yellow": (self.keyRescan, _("Rescan for available network shares")),
 			"blue": (self.keyManual, _("Enter a hostname or IP address manually")),
 		}, prio=0, description=_("Network Share Actions"))
@@ -559,6 +561,14 @@ class NetworkShares(Screen):
 	def hostnameFor(self, address):
 		host = discoveryManager.hosts.get(address) or {}
 		return host.get("hostname") or address
+
+	def keyGreen(self):
+		current = self["list"].getCurrent()
+		if not current or current[-1].get("kind") != "host":
+			return
+		self.menuAddress = current[-1]["address"]
+		self.menuHostname = self.hostnameFor(self.menuAddress)
+		self.session.openWithCallback(self.credentialsClosed, NetworkCredentials, self.menuHostname, self.repository)
 
 	def keyMenu(self):
 		current = self["list"].getCurrent()
@@ -658,8 +668,15 @@ class NetworkShares(Screen):
 			for info in (host.get("avahiShares") or {}).values()
 		]
 		self.pendingProtocols[address] = {"nfs", "smb"}
-		self.enumerateNfs(address)
-		self.enumerateSmb(address)
+
+		if "nfs" in host.get("protocols", set()):
+			self.enumerateNfs(address)
+		else:
+			self.finishProtocol(address, "nfs")
+		if "smb" in host.get("protocols", set()):
+			self.enumerateSmb(address)
+		else:
+			self.finishProtocol(address, "smb")
 
 	# Fills a matching Avahi-seeded hint in place instead of adding a
 	# duplicate row, or appends a new entry if there's no hint to match.
@@ -694,13 +711,14 @@ class NetworkShares(Screen):
 		if not exists(self.SMB_SMBCLIENT_BIN):
 			self.finishProtocol(address, "smb")
 			return
-		# Anonymous (-N) unless credentials were stored for this host, in
-		# which case a temporary credentials file is used instead (-A) so the
-		# password never appears in the process list. The file is removed
-		# again in onSmbResult() once the command finishes, either way.
+		# Anonymous (-N) unless a real (non-guest) username was stored for
+		# this host, in which case a temporary credentials file is used
+		# instead (-A) so the password never appears in the process list.
+		# The file is removed again in onSmbResult() once the command
+		# finishes, either way.
 		credentials = self.repository.credentialsGet(self.hostnameFor(address))
 		credentialFile = None
-		if credentials.get("username"):
+		if credentials.get("username") and credentials["username"] != NetworkCredentials.GUEST_USERNAME:
 			credentialFile = NamedTemporaryFile(mode="w", prefix="smbcreds-", delete=False)
 			credentialFile.write(f"username={credentials['username']}\npassword={credentials.get('password', '')}\n")
 			credentialFile.close()
@@ -713,6 +731,10 @@ class NetworkShares(Screen):
 		self.console.ePopen(cmd, callback=lambda data, retVal, extra=None: self.onSmbResult(address, data, retVal, credentialPath))
 
 	def onSmbResult(self, address, data, retVal, credentialPath=None):
+		print("DEBUG onSmbResult", data)
+		# credentialPath is the temporary smbclient credentials file from
+		# enumerateSmb() - smbclient is done with it now, so delete it before
+		# its plaintext password can linger on disk.
 		if credentialPath:
 			try:
 				remove(credentialPath)
@@ -750,27 +772,33 @@ class NetworkShares(Screen):
 				"nfs": "NFS"
 			}
 
+			def ipKey(address):
+				try:
+					return tuple(int(x) for x in address.split("."))
+				except ValueError:
+					return (999, 999, 999, 999)
+
 			def sortKey(host):
-				return (not host["protocols"], host["address"] if config.network.browserSortByIP.value else (host["hostname"] or host["address"]).lower())
+				return (not host["protocols"], ipKey(host["address"]) if config.network.browserSortByIP.value else (host["hostname"] or host["address"]).lower())
 
 			for host in sorted(discoveryManager.hosts.values(), key=sortKey):
 				address = host["address"]
 				name = host["hostname"] or address
-				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", {"kind": "host", "address": address}))
+				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", "", {"kind": "host", "address": address}))
 				if address not in self.expanded:
 					continue
 				state = self.shareState.get(address)
 				if state == "loading":
-					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares…"), "", {"kind": "status"}))
+					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares…"), "", "", {"kind": "status"}))
 				elif state == "empty":
-					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", {"kind": "status"}))
+					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", "", {"kind": "status"}))
 
 				for share in self.shares.get(address, []):
 					typeLabel = protocolLabels.get(share["protocol"], share["protocol"])
 					localPath = self.configuredShares.get((address, share["path"].lstrip("/")))
 					glyph = self.GLYPH_MOUNTED if localPath else self.GLYPH_NOT_MOUNTED
 					glyphColor = self.COLOR_MOUNTED if localPath else self.COLOR_NOT_MOUNTED
-					entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", dict(share, kind="share")))
+					entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", share.get("description") or "", dict(share, kind="share")))
 			self["list"].setList(entries)
 			count = len(discoveryManager.hosts)
 			self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning…"))
@@ -780,11 +808,15 @@ class NetworkShares(Screen):
 # opened from NetworkShares' MENU action. Keyed by hostname; the caller
 # falls back to the address if no hostname is known for that host.
 class NetworkCredentials(Setup):
+	GUEST_USERNAME = "guest"
+
 	def __init__(self, session, hostname, repository):
 		self.hostname = hostname
 		self.repository = repository
 		credentials = repository.credentialsGet(hostname)
-		self.username = NoSave(ConfigText(default=credentials.get("username", ""), fixed_size=False))
+		username = credentials.get("username", "")
+		self.useGuest = NoSave(ConfigYesNo(default=username == self.GUEST_USERNAME))
+		self.username = NoSave(ConfigText(default=username, fixed_size=False))
 		self.password = NoSave(ConfigPassword(default=credentials.get("password", "")))
 		Setup.__init__(self, session=session, setup="NetworkCredentials")
 		self.setTitle(_("Credentials for %s") % hostname)
@@ -792,7 +824,9 @@ class NetworkCredentials(Setup):
 	def keySave(self):
 		# Password is intentionally not stripped - unlike a username, it may
 		# legitimately start or end with a space.
-		self.repository.credentialsSave(self.hostname, self.username.value.strip(), self.password.value)
+		username = self.GUEST_USERNAME if self.useGuest.value else self.username.value.strip()
+		password = "" if self.useGuest.value else self.password.value
+		self.repository.credentialsSave(self.hostname, username, password)
 		Setup.keySave(self)
 
 

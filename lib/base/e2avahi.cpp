@@ -8,6 +8,7 @@
 #include <avahi-common/malloc.h>
 #include <avahi-common/timeval.h>
 #include <list>
+#include <strings.h>
 
 /* Our link to avahi */
 static AvahiClient* avahi_client = NULL;
@@ -551,6 +552,21 @@ void eNetworkServiceBrowser::handleBrowserEvent(AvahiServiceBrowser* browser, in
 	}
 }
 
+/* True if hostName's leading label matches this box's own avahi hostname
+ * (e.g. "defiant.local" against "defiant"). A resolved service reporting our
+ * own hostname for a foreign address is bogus - typically a stale
+ * avahi-daemon cache entry left over from when this box itself held that
+ * address (e.g. before a DHCP lease change) - not a real remote host name. */
+static bool isOwnAvahiHostname(const char* hostName) {
+	if (!hostName || !avahi_client)
+		return false;
+	const char* ownName = avahi_client_get_host_name(avahi_client);
+	if (!ownName || !*ownName)
+		return false;
+	size_t ownLen = strlen(ownName);
+	return strncasecmp(hostName, ownName, ownLen) == 0 && (hostName[ownLen] == '\0' || hostName[ownLen] == '.');
+}
+
 void eNetworkServiceBrowser::handleResolverEvent(int interfaceIndex, int protocol, AvahiResolverEvent event, const char* name, const char* type, const char* domain, const char* hostName,
 												 const AvahiAddress* address, unsigned short port, AvahiStringList* txt, AvahiLookupResultFlags flags) {
 	if (event != AVAHI_RESOLVER_FOUND) {
@@ -563,13 +579,17 @@ void eNetworkServiceBrowser::handleResolverEvent(int interfaceIndex, int protoco
 
 	avahiDebug("[eNetworkServiceBrowser] ADD '%s' of type '%s' at %s:%u", name, type, hostName, port);
 
+	bool bogusHostname = isOwnAvahiHostname(hostName);
+	if (bogusHostname)
+		avahiDebug("[eNetworkServiceBrowser] '%s' resolved to our own hostname '%s' for a different address - ignoring hostname, keeping the address/shares", name, hostName);
+
 	Instance inst;
 	inst.interfaceIndex = interfaceIndex;
 	inst.protocol = protocol;
 	inst.serviceName = name ? name : "";
 	inst.serviceType = type ? type : "";
 	inst.domain = domain ? domain : "";
-	inst.hostname = hostName ? hostName : "";
+	inst.hostname = (hostName && !bogusHostname) ? hostName : "";
 	inst.port = port;
 
 	if (address) {

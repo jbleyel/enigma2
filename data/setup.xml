@@ -633,8 +633,11 @@
 		</if>
 	</setup>
 	<setup key="NetworkCredentials" title="Network Credentials">
-		<item level="0" text="Username" description="Enter the username to be used to access this host's shares.">self.username</item>
-		<item level="0" text="Password" description="Enter the password to be used to access this host's shares.">self.password</item>
+		<item level="0" text="Use guest login" description="When enabled, this host's shares are listed anonymously (guest), ignoring the username/password below.">self.useGuest</item>
+		<if conditional="!self.useGuest.value">
+			<item level="0" text="Username" description="Enter the username to be used to access this host's shares.">self.username</item>
+			<item level="0" text="Password" description="Enter the password to be used to access this host's shares.">self.password</item>
+		</if>
 	</setup>
 	<setup key="NetworkMounts" title="Network Mount Settings">
 		<item level="0" text="Enabled" description="Enable or disable this network mount. Disabling the mount will not delete its definition.">self.enabled</item>

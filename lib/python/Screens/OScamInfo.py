@@ -489,6 +489,7 @@ class OSCamInfo(Screen, OSCamGlobals):
 		if answer:
 			self.loop.stop()
 			# Execute shutdown/restart in background to avoid blocking
+
 			def doAction():
 				webifok, api, url, signstatus, result = self.openWebIF(part=action)
 				if not webifok:
@@ -983,7 +984,7 @@ class OSCamInfoSetup(Setup):
 	def __init__(self, session):
 		self.status = None
 		self.oldIP = config.oscaminfo.ip.value
-		self.hostValidator = compile(r"(\d*[a-zA-Z]+[\.]*\d*)+$")
+		self.hostValidator = compile(r"[a-zA-Z]")
 		Setup.__init__(self, session, setup="OSCamInfoSetup")
 
 	def selectionChanged(self):
@@ -998,7 +999,7 @@ class OSCamInfoSetup(Setup):
 		footnote = None
 		if self.getCurrentItem() == config.oscaminfo.ip and self.oldIP != config.oscaminfo.ip.value:
 			try:
-				if not self.hostValidator.match(config.oscaminfo.ip.value):
+				if not self.hostValidator.search(config.oscaminfo.ip.value):
 					ip_address(config.oscaminfo.ip.value)
 			except ValueError:
 				footnote = _("IP address is invalid!")

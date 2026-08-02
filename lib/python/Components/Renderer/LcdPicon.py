@@ -2,6 +2,7 @@ from os import listdir
 from os.path import exists, getsize, isdir, join
 from re import sub
 from enigma import ePixmap, ePicLoad
+from Components.config import config
 from Components.Harddisk import harddiskmanager
 from Components.Renderer.Renderer import Renderer
 from Components.SystemInfo import BoxInfo
@@ -12,6 +13,12 @@ from Tools.Directories import SCOPE_SKINS, SCOPE_GUISKIN, resolveFilename, sanit
 searchPaths = []
 lastLcdPiconPath = None
 BW = BoxInfo.getItem("displaytype") in ("bwlcd255", "bwlcd140") and not BoxInfo.getItem("grautec")
+
+
+if config.picon.mode.value:
+	path = getattr(config.picon, f"set{config.picon.display.value}")
+	if exists(path):
+		lastLcdPiconPath = path
 
 
 def initLcdPiconPaths():
@@ -170,5 +177,6 @@ class LcdPicon(Renderer):
 				self.instance.hide()
 
 
-harddiskmanager.on_partition_list_change.append(onPartitionChange)
+if not lastLcdPiconPath:
+	harddiskmanager.on_partition_list_change.append(onPartitionChange)
 initLcdPiconPaths()
