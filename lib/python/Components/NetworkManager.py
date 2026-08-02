@@ -1794,14 +1794,6 @@ class DiscoveryManager:
 	def newHost(address, source):
 		return {"address": address, "hostname": "", "hostnameSource": None, "protocols": set(), "source": source, "avahiShares": {}}
 
-	# This box's own addresses - Avahi sees its own published SMB/NFS
-	# services (and netscan can find its own open ports) just like any other
-	# host on the network, so without this a box would show up as a
-	# discoverable network share of itself.
-	@staticmethod
-	def ownAddresses():
-		return {iface["ip4"] for iface in readNetinfoInterfaces().values() if iface.get("ip4")}
-
 	# Some NAS vendors (confirmed: Synology) register one _nfs._tcp/_smb._tcp
 	# service INSTANCE PER EXPORT/SHARE instead of one per host, encoding the
 	# share name in the instance name, e.g. "nas1 - NFS [Disk4]". This is not
@@ -1819,10 +1811,7 @@ class DiscoveryManager:
 		protocol = observation.get("protocol")
 		hostname = observation.get("hostname") or ""
 		name = observation.get("name") or ""
-		ownAddresses = self.ownAddresses()
 		for address in observation.get("addresses") or []:
-			if address in ownAddresses:
-				continue
 			host = self.hosts.setdefault(address, self.newHost(address, "avahi"))
 			host["source"] = "avahi"  # always leading, even if a netscan entry already existed
 			if hostname and host["hostnameSource"] != "netscan":
@@ -1837,7 +1826,7 @@ class DiscoveryManager:
 	def onNetscanObservation(self, observation):
 		if self.started:
 			address = observation.get("address")
-			if address and address not in self.ownAddresses():
+			if address:
 				# Never downgrade an "avahi" entry's source - hostname still takes
 				# priority for netscan though, see class comment.
 				host = self.hosts.setdefault(address, self.newHost(address, "netscan"))

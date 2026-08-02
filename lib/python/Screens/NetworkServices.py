@@ -775,6 +775,30 @@ class NetworkPassword(Setup):
 		self.language = "C.UTF-8"  # This is a complete hack to negate all the plugins that inappropriately change the language!
 
 	def keySave(self):
+		def dataAvail(data):
+			data = data.decode("UTF-8", "ignore")
+			if data.endswith("password: "):
+				self.container.write(f"{config.network.password.value}\n")
+				self.counter += 1
+
+		def appClosed(retVal=ETIMEDOUT):
+			self.timer.stop()
+			if retVal:
+				if retVal == ETIMEDOUT:
+					self.container.kill()
+				print(f"[NetworkSetup] NetworkPassword: Error {retVal}: Unable to change password!  ({strerror(retVal)})")
+				self.session.open(MessageBox, _("Error %d: Unable to change password!  (%s)") % (retVal, strerror(retVal)), MessageBox.TYPE_ERROR, windowTitle=self.getTitle())
+			elif self.counter == 2:
+				print("[NetworkSetup] NetworkPassword: Password changed.")
+				self.session.open(MessageBox, _("Password changed."), MessageBox.TYPE_INFO, timeout=5, windowTitle=self.getTitle())
+				Setup.keySave(self)
+			else:
+				print("[NetworkSetup] NetworkPassword: Error: Unexpected program interaction!")
+				self.session.open(MessageBox, _("Error: Interaction failure, unable to change password!"), MessageBox.TYPE_ERROR, windowTitle=self.getTitle())
+			del self.container.dataAvail[:]
+			del self.container.appClosed[:]
+			del self.container
+
 		password = config.network.password.value
 		if not password:
 			print("[NetworkSetup] NetworkPassword: Error: The new password may not be blank!")
@@ -783,8 +807,8 @@ class NetworkPassword(Setup):
 		# print(f"[NetworkSetup] NetworkPassword: Changing the password for '{self.user}' to '{password}'.")
 		print(f"[NetworkSetup] NetworkPassword: Changing the password for '{self.user}'.")
 		self.container = eConsoleAppContainer()
-		self.container.dataAvail.append(self.dataAvail)
-		self.container.appClosed.append(self.appClosed)
+		self.container.dataAvail.append(dataAvail)
+		self.container.appClosed.append(appClosed)
 		status = self.container.execute(*("/usr/bin/passwd", "/usr/bin/passwd", self.user))
 		if status:  # If status is -1 code is already/still running, is status is -3 code can not be started!
 			self.session.open(MessageBox, _("Error %d: Unable to start 'passwd' command!") % status, MessageBox.TYPE_ERROR, windowTitle=self.getTitle())
@@ -798,31 +822,6 @@ class NetworkPassword(Setup):
 		passwdLength = 10
 		config.network.password.value = "".join(Random().sample(passwdChars, passwdLength))
 		self["config"].invalidateCurrent()
-
-	def dataAvail(self, data):
-		data = data.decode("UTF-8", "ignore")
-		# print(f"[NetworkSetup] DEBUG NetworkPassword: data='{data}'.")
-		if data.endswith("password: "):
-			self.container.write(f"{config.network.password.value}\n")
-			self.counter += 1
-
-	def appClosed(self, retVal=ETIMEDOUT):
-		self.timer.stop()
-		if retVal:
-			if retVal == ETIMEDOUT:
-				self.container.kill()
-			print(f"[NetworkSetup] NetworkPassword: Error {retVal}: Unable to change password!  ({strerror(retVal)})")
-			self.session.open(MessageBox, _("Error %d: Unable to change password!  (%s)") % (retVal, strerror(retVal)), MessageBox.TYPE_ERROR, windowTitle=self.getTitle())
-		elif self.counter == 2:
-			print("[NetworkSetup] NetworkPassword: Password changed.")
-			self.session.open(MessageBox, _("Password changed."), MessageBox.TYPE_INFO, timeout=5, windowTitle=self.getTitle())
-			Setup.keySave(self)
-		else:
-			print("[NetworkSetup] NetworkPassword: Error: Unexpected program interaction!")
-			self.session.open(MessageBox, _("Error: Interaction failure, unable to change password!"), MessageBox.TYPE_ERROR, windowTitle=self.getTitle())
-		del self.container.dataAvail[:]
-		del self.container.appClosed[:]
-		del self.container
 
 
 # TODO "NetworkInadynLog" skin?

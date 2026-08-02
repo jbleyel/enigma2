@@ -9,6 +9,9 @@
 #include <avahi-common/timeval.h>
 #include <list>
 #include <strings.h>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <net/if.h>
 
 /* Our link to avahi */
 static AvahiClient* avahi_client = NULL;
@@ -567,6 +570,35 @@ static bool isOwnAvahiHostname(const char* hostName) {
 	return strncasecmp(hostName, ownName, ownLen) == 0 && (hostName[ownLen] == '\0' || hostName[ownLen] == '.');
 }
 
+/* True if addrStr (as produced by avahi_address_snprint()) belongs to one of
+ * this box's own, non-loopback interfaces. AVAHI_LOOKUP_RESULT_OUR_OWN above
+ * only catches services this box itself actively publishes via this same
+ * avahi client - it does not catch a resolver hit that happens to resolve to
+ * our own address for other reasons (e.g. a stale/replayed record), so this
+ * is a second, address-based check on top of it. */
+static bool isOwnAddress(const char* addrStr) {
+	if (!addrStr || !*addrStr)
+		return false;
+	struct ifaddrs* ifaddr = NULL;
+	if (getifaddrs(&ifaddr) != 0)
+		return false;
+	bool isOwn = false;
+	for (struct ifaddrs* ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
+		if (!ifa->ifa_addr || (ifa->ifa_flags & IFF_LOOPBACK))
+			continue;
+		if (ifa->ifa_addr->sa_family != AF_INET && ifa->ifa_addr->sa_family != AF_INET6)
+			continue;
+		char ifAddrStr[INET6_ADDRSTRLEN];
+		const void* addrPtr = ifa->ifa_addr->sa_family == AF_INET ? (const void*)&((struct sockaddr_in*)ifa->ifa_addr)->sin_addr : (const void*)&((struct sockaddr_in6*)ifa->ifa_addr)->sin6_addr;
+		if (inet_ntop(ifa->ifa_addr->sa_family, addrPtr, ifAddrStr, sizeof(ifAddrStr)) && strcmp(ifAddrStr, addrStr) == 0) {
+			isOwn = true;
+			break;
+		}
+	}
+	freeifaddrs(ifaddr);
+	return isOwn;
+}
+
 void eNetworkServiceBrowser::handleResolverEvent(int interfaceIndex, int protocol, AvahiResolverEvent event, const char* name, const char* type, const char* domain, const char* hostName,
 												 const AvahiAddress* address, unsigned short port, AvahiStringList* txt, AvahiLookupResultFlags flags) {
 	if (event != AVAHI_RESOLVER_FOUND) {
@@ -576,6 +608,14 @@ void eNetworkServiceBrowser::handleResolverEvent(int interfaceIndex, int protoco
 	}
 	if (flags & (AVAHI_LOOKUP_RESULT_LOCAL | AVAHI_LOOKUP_RESULT_OUR_OWN))
 		return; /* skip our own announced services, same as the existing e2avahi_resolve() path */
+
+	if (address) {
+		char ownCheckBuf[AVAHI_ADDRESS_STR_MAX];
+		if (avahi_address_snprint(ownCheckBuf, sizeof(ownCheckBuf), address) && isOwnAddress(ownCheckBuf)) {
+			avahiDebug("[eNetworkServiceBrowser] '%s' of type '%s' resolved to our own address %s - skipping", name, type, ownCheckBuf);
+			return;
+		}
+	}
 
 	avahiDebug("[eNetworkServiceBrowser] ADD '%s' of type '%s' at %s:%u", name, type, hostName, port);
 

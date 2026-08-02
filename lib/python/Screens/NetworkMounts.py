@@ -663,6 +663,7 @@ class NetworkShares(Screen):
 		# enumeration confirms it. This also covers NFSv4-only servers,
 		# where showmount often returns nothing at all.
 		host = discoveryManager.hosts.get(address) or {}
+		# print(f"[{MODULE_NAME}] DEBUG startShareEnumeration {address} protocols={host.get('protocols')} avahiShares={host.get('avahiShares')}")
 		self.shares[address] = [
 			{"address": address, "protocol": info["protocol"], "name": info["name"], "path": "", "description": ""}
 			for info in (host.get("avahiShares") or {}).values()
@@ -731,7 +732,7 @@ class NetworkShares(Screen):
 		self.console.ePopen(cmd, callback=lambda data, retVal, extra=None: self.onSmbResult(address, data, retVal, credentialPath))
 
 	def onSmbResult(self, address, data, retVal, credentialPath=None):
-		print("DEBUG onSmbResult", data)
+		# print(f"[{MODULE_NAME}] DEBUG onSmbResult: {data}")
 		# credentialPath is the temporary smbclient credentials file from
 		# enumerateSmb() - smbclient is done with it now, so delete it before
 		# its plaintext password can linger on disk.
@@ -750,6 +751,12 @@ class NetworkShares(Screen):
 
 	def finishProtocol(self, address, protocol):
 		if "list" in self:
+			# Some servers announce a single _smb._tcp/_nfs._tcp instance for
+			# the whole host rather than one per share - if the Avahi-seeded
+			# hint for this protocol never got matched to a real share by
+			# mergeShare(), it wasn't a share after all, so drop it instead
+			# of leaving a phantom empty-path entry in the list.
+			self.shares[address] = [share for share in self.shares.get(address, []) if not (share["protocol"] == protocol and not share["path"])]
 			pending = self.pendingProtocols.get(address)
 			if pending is not None:
 				pending.discard(protocol)
