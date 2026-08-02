@@ -204,7 +204,7 @@ class NetworkMountsOverview(Screen):
 					username = mount.get("username") or ""
 					password = mount.get("password") or ""
 					source = f"//{server}/{remotePath}"
-					options = f"user={username},pass={password},{self.repository.sanitizeOptions(mount.get('options'))}"
+					options = f"user={username},pass={password},{self.repository.sanitizeOptions(mount)}"
 				loggedOptions = sub(r"pass=[^,]*", "pass=***", options)
 				print(f"[{MODULE_NAME}] keyBlue: mounting protocol={protocol!r} source={source!r} mountPoint={mountPoint!r} options={loggedOptions!r}")
 				self.console.ePopen((self.MOUNT, self.MOUNT, "-t", protocol, source, mountPoint, "-o", options), lambda data, retVal, extra=None: onMountResult(False, data, retVal, extra))
@@ -342,13 +342,16 @@ class NetworkMountSetup(Setup):
 		self.username = NoSave(ConfigText(default=default("username"), fixed_size=False))
 		self.password = NoSave(ConfigPassword(default=default("password")))
 		self.shareName = NoSave(ConfigText(default=default("shareName"), fixed_size=False))
+		self.accessMode = NoSave(ConfigSelection(default=default("accessMode", "rw") or "rw", choices=[
+			("rw", _("Read/Write")),
+			("ro", _("Read Only"))
+		]))
 		self.options = NoSave(ConfigText(default=default("options"), fixed_size=False))
 		self.nfsVersion = NoSave(ConfigSelection(default=default("nfsVersion", "auto") or "auto", choices=[
 			("auto", _("Automatic")),
 			("3", "NFSv3"),
 			("4", "NFSv4")
 		]))
-		self.nfsReadOnly = NoSave(ConfigYesNo(default=default("nfsReadOnly", False)))
 		self.nfsLocking = NoSave(ConfigYesNo(default=default("nfsLocking", True)))
 		NFS_SIZE_CHOICES = [("0", _("Automatic")), ("8192", "8192"), ("32768", "32768"), ("65536", "65536"), ("131072", "131072")]
 		self.nfsRsize = NoSave(ConfigSelection(default=str(default("nfsRsize", "0")) or "0", choices=NFS_SIZE_CHOICES))
@@ -385,8 +388,8 @@ class NetworkMountSetup(Setup):
 			"options": options,
 			"username": self.username.value if self.protocol.value == "cifs" else "",
 			"password": self.password.value if self.protocol.value == "cifs" else "",
+			"accessMode": self.accessMode.value,
 			"nfsVersion": self.nfsVersion.value if self.protocol.value == "nfs" else "",
-			"nfsReadOnly": self.nfsReadOnly.value if self.protocol.value == "nfs" else False,
 			"nfsLocking": self.nfsLocking.value if self.protocol.value == "nfs" else True,
 			"nfsRsize": self.nfsRsize.value if self.protocol.value == "nfs" else "",
 			"nfsWsize": self.nfsWsize.value if self.protocol.value == "nfs" else "",
@@ -896,11 +899,15 @@ class NetworkMountRepository:
 					"shareName": shareName,
 					"server": server,
 					"remotePath": remotePath,
-					"options": text("options", "rw,nolock,tcp,utf8" if protocol == "nfs" else "rw,utf8"),
-					"username": text("username", "guest") if protocol == "cifs" else "",
-					"password": text("password") if protocol == "cifs" else "",
 					"unmanaged": True,
+					**self.splitOptions(text("options", "rw,nolock,tcp,utf8" if protocol == "nfs" else "rw,utf8"), protocol),
 				}
+				if protocol == "cifs":
+					# The old format stored these in their own tags, not
+					# embedded in "options" - they take priority over
+					# anything splitOptions() might've pulled out above.
+					mount["username"] = text("username", "guest")
+					mount["password"] = text("password")
 				return mount
 
 			mounts = []
@@ -953,11 +960,8 @@ class NetworkMountRepository:
 				"shareName": shareName,
 				"server": server,
 				"remotePath": remotePath,
-				"options": options,
-				"username": "",
-				"password": "",
-				"nfsVersion": "",
-				"unmanaged": True
+				"unmanaged": True,
+				**self.splitOptions(options, protocol),
 			}
 
 		def parseAutoNetworkLine(line):
@@ -996,11 +1000,8 @@ class NetworkMountRepository:
 				"shareName": shareName,
 				"server": server,
 				"remotePath": remotePath,
-				"options": options,
-				"username": "",
-				"password": "",
-				"nfsVersion": "",
-				"unmanaged": True
+				"unmanaged": True,
+				**self.splitOptions(options, protocol),
 			}
 
 		def mergeUnmanaged(mounts, path, parseLine):
@@ -1057,14 +1058,13 @@ class NetworkMountRepository:
 				server = mount.get("server") or ""
 				remotePath = mount.get("remotePath") or ""
 				shareName = mount.get("shareName") or ""
-				options = mount.get("options") or ""
 				if mode == "autofs":
 					if protocol == "nfs":
 						autoNetworkLines.append(f"{prefix}{shareName} -fstype=nfs,{self.buildNfsOptions(mount)} {server}:/{remotePath}")
 					else:
 						username = (mount.get("username") or "").replace(" ", "\\ ")
 						password = (mount.get("password") or "").replace(" ", "\\ ")
-						autoNetworkLines.append(f"{prefix}{shareName} -fstype=cifs,user={username},pass={password},{self.sanitizeOptions(options)} ://{server}/{remotePath}")
+						autoNetworkLines.append(f"{prefix}{shareName} -fstype=cifs,user={username},pass={password},{self.sanitizeOptions(mount)} ://{server}/{remotePath}")
 				elif mode == "fstab":
 					path = self.mountPointFor(mount)
 					if protocol == "nfs":
@@ -1072,7 +1072,7 @@ class NetworkMountRepository:
 					else:
 						username = mount.get("username") or ""
 						password = mount.get("password") or ""
-						fstabLines.append(f"{prefix}//{server}/{remotePath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.sanitizeOptions(options)}\t0 0")
+						fstabLines.append(f"{prefix}//{server}/{remotePath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.sanitizeOptions(mount)}\t0 0")
 			fileWriteLines(self.AUTO_NETWORK_PATH, autoNetworkLines, source=MODULE_NAME)
 			fileWriteLines(self.FSTAB_PATH, fstabLines, source=MODULE_NAME)
 
@@ -1090,7 +1090,75 @@ class NetworkMountRepository:
 	# be silently overridden by the dedicated setting, so it's rejected
 	# instead by validateExtraOptions() below.
 	NFS_RESERVED_OPTION_KEYS = frozenset(("ro", "rw", "nolock", "lock", "proto", "nfsvers", "rsize", "wsize", "timeo", "soft", "hard"))
-	CIFS_RESERVED_OPTION_KEYS = frozenset(("user", "username", "pass", "password"))
+	CIFS_RESERVED_OPTION_KEYS = frozenset(("user", "username", "pass", "password", "ro", "rw"))
+
+	# proto=tcp and _netdev are always added by save() itself (see
+	# buildNfsOptions()/writeMountFiles()), never something the user typed -
+	# drop them rather than showing them back as "extra" options.
+	ALWAYS_IMPLIED_OPTION_KEYS = frozenset(("proto", "_netdev"))
+
+	# Splits a raw options string - as read back from an existing fstab/
+	# auto.network line or automounts.xml - into the structured per-field
+	# values NetworkMountSetup exposes, plus whatever's left over for the
+	# free-text "Mount options" field. Without this, re-editing an existing
+	# mount would show every dedicated setting a second time in "Mount
+	# options", since the file only ever stores one combined string.
+	@classmethod
+	def splitOptions(cls, rawOptions, protocol):
+		tokens = [token.strip() for token in (rawOptions or "").split(",") if token.strip()]
+		extra = []
+		if protocol == "nfs":
+			fields = {"accessMode": "rw", "nfsLocking": True, "nfsVersion": "", "nfsRsize": "0", "nfsWsize": "0", "nfsTimeo": 0, "nfsSoft": False}
+			for token in tokens:
+				parts = token.split("=", 1)
+				key = parts[0].strip().lower()
+				value = parts[1].strip() if len(parts) > 1 else ""
+				if key == "ro":
+					fields["accessMode"] = "ro"
+				elif key == "rw":
+					fields["accessMode"] = "rw"
+				elif key == "nolock":
+					fields["nfsLocking"] = False
+				elif key == "lock":
+					fields["nfsLocking"] = True
+				elif key == "nfsvers":
+					fields["nfsVersion"] = value
+				elif key == "rsize":
+					fields["nfsRsize"] = value
+				elif key == "wsize":
+					fields["nfsWsize"] = value
+				elif key == "timeo":
+					fields["nfsTimeo"] = int(value) if value.isdigit() else 0
+				elif key == "soft":
+					fields["nfsSoft"] = True
+				elif key == "hard":
+					fields["nfsSoft"] = False
+				elif key in cls.ALWAYS_IMPLIED_OPTION_KEYS:
+					pass
+				else:
+					extra.append(token)
+		else:
+			fields = {"username": "", "password": "", "accessMode": "rw"}
+			for token in tokens:
+				parts = token.split("=", 1)
+				key = parts[0].strip().lower()
+				value = parts[1].strip() if len(parts) > 1 else ""
+				if key in ("user", "username"):
+					fields["username"] = value
+				elif key in ("pass", "password"):
+					fields["password"] = value
+				elif key == "ro":
+					fields["accessMode"] = "ro"
+				elif key == "rw":
+					fields["accessMode"] = "rw"
+				elif key == "iocharset" and value == "utf8":
+					pass
+				elif key in cls.ALWAYS_IMPLIED_OPTION_KEYS:
+					pass
+				else:
+					extra.append(token)
+		fields["options"] = ",".join(extra)
+		return fields
 
 	# Checks the raw "Mount options" free-text field for anything already
 	# covered by a dedicated setting, and for options repeated within the
@@ -1115,10 +1183,12 @@ class NetworkMountRepository:
 	# CIFS options only - NFS is built explicitly by buildNfsOptions() below
 	# from structured per-field Setup values rather than a free-text string.
 	@staticmethod
-	def sanitizeOptions(origOptions):
-		options = (origOptions or "").strip()
-		options = options.replace("utf8", "iocharset=utf8")
-		return options or "rw"
+	def sanitizeOptions(mount):
+		parts = [mount.get("accessMode") or "rw"]
+		extra = (mount.get("options") or "").strip().replace("utf8", "iocharset=utf8")
+		if extra:
+			parts.append(extra)
+		return ",".join(parts)
 
 	# Builds the actual mount.nfs/autofs option string from the structured
 	# per-mount fields NetworkMountSetup exposes (rw/ro, locking, nfsVersion,
@@ -1127,7 +1197,7 @@ class NetworkMountRepository:
 	# "options" field is appended last, for anything not covered by a
 	# dedicated field.
 	def buildNfsOptions(self, mount):
-		parts = ["ro" if mount.get("nfsReadOnly") else "rw"]
+		parts = ["ro" if mount.get("accessMode") == "ro" else "rw"]
 		# NFSv3 uses normal server-side (NLM) locking unless told otherwise -
 		# "nolock" is a legacy opt-in for servers without NLM support, not a
 		# default.

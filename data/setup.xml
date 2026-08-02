@@ -647,10 +647,9 @@
 		<item level="0" text="Local share" description="Enter the local directory name to be used as the local mount for the remote share.">self.shareName</item>
 		<item level="0" text="Mount mode" description="Select when, and how, the remote share will be mounted. For most purposes autofs is recommended.">self.mode</item>
 		<item level="0" text="Use as HDD replacement" description="When enabled, this share is mounted to /media/hdd instead of its own /media/net path. Only use this if the share is reliably available.">self.hddReplacement</item>
+		<item level="0" text="Access mode" description="Select the mode of access, Read/Write or Read-Only, for this share mount.">self.accessMode</item>
 		<if conditional="self.protocol.value == 'nfs'">
 			<item level="0" text="NFS version" description="Select a specific NFS version to force a specific NFS protocol version instead of allowing an automatic negotiation.">self.nfsVersion</item>
-			<!-- item level="0" text="Read-only" description="Select if this NFS share mount will allow read-only or read/write access.">self.nfsReadOnly</item -->
-			<item level="0" text="Access mode" description="Select the mode of access, Read/Write or Read-Only, for this share mount.">self.nfsReadOnly</item>
 			<item level="0" text="Use NFS file locking" description="Select if file locking is available. Select 'No' to add 'nolock' to the settings which is most compatible with older/simple NFS servers.">self.nfsLocking</item>
 			<item level="0" text="Read block size" description="Select the read block buffer size (rsize) mount option. Use 'Automatic' to allow the kernel and server to negotiate the optimal size.">self.nfsRsize</item>
 			<item level="0" text="Write block size" description="Select the write block buffer size (wsize) mount option. Use 'Automatic' to allow the kernel and server to negotiate the optimal size.">self.nfsWsize</item>
