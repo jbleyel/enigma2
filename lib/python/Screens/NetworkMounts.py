@@ -111,15 +111,18 @@ class NetworkMountsOverview(Screen):
 
 	def selectionChanged(self):
 		current = self["mountList"].getCurrent()
+		blueText = ""
 		if current:
 			shareName = current[self.LIST_SHARE_NAME]
 			description = current[self.LIST_DESCRIPTION]
 			mount = current[self.LIST_DATA]
-			self["key_blue"].setText(_("Unmount") if self.repository.isMounted(mount) else _("Mount"))
+			if not mount.get("enabled"):
+				blueText = _("Unmount") if self.repository.isMounted(mount) else _("Mount")
 		else:
 			shareName = ""
 			description = ""
-			self["key_blue"].setText("")
+		self["key_blue"].setText(blueText)
+		self["actions"].setEnabledAction("blue", blueText != "")
 		for callback in self.onChangedEntry:
 			if callable(callback):
 				callback(shareName, description)
@@ -187,6 +190,9 @@ class NetworkMountsOverview(Screen):
 		current = self["mountList"].getCurrent()
 		if current:
 			mount = current[self.LIST_DATA]
+			if mount.get("enabled"):
+				self.session.showError(_("This mount is enabled - disable it first to mount or unmount it manually."))
+				return
 			mountPoint = self.repository.mountPointFor(mount)
 			if self.repository.isMounted(mount):
 				print(f"[{MODULE_NAME}] keyBlue: unmounting {mountPoint!r}")
