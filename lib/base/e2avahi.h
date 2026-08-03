@@ -5,8 +5,8 @@
 #include <lib/python/python.h>
 
 #ifndef SWIG
-#include <libsig_comp.h>
 #include <avahi-client/lookup.h>
+#include <libsig_comp.h>
 #include <map>
 #include <string>
 #include <utility>

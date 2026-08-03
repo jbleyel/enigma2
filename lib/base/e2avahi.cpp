@@ -1,28 +1,26 @@
 #include "e2avahi.h"
 #include "ebase.h"
 #include <algorithm>
+#include <arpa/inet.h>
 #include <avahi-client/client.h>
 #include <avahi-client/lookup.h>
 #include <avahi-client/publish.h>
 #include <avahi-common/error.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/timeval.h>
-#include <list>
-#include <strings.h>
-#include <arpa/inet.h>
 #include <ifaddrs.h>
+#include <list>
 #include <net/if.h>
+#include <strings.h>
 
 /* Our link to avahi */
 static AvahiClient* avahi_client = NULL;
 
 /* Set to true to enable the eDebug() calls below */
 static bool avahi_debug = false;
-#define avahiDebug(...)                                                                                                                                                                                \
-	do {                                                                                                                                                                                               \
-		if (avahi_debug)                                                                                                                                                                               \
-			eDebug(__VA_ARGS__);                                                                                                                                                                       \
-	} while (0)
+// clang-format off
+#define avahiDebug(...) do { if (avahi_debug) eDebug(__VA_ARGS__); } while (0)
+// clang-format on
 
 /* API to the E2 event loop */
 static AvahiPoll avahi_poll_api;
@@ -33,7 +31,7 @@ struct AvahiTimeout : public sigc::trackable {
 	void* userdata;
 
 	void timeout() {
-		//		eDebug("[Avahi] timeout elapsed");
+		// eDebug("[Avahi] timeout elapsed");
 		callback(this, userdata);
 	}
 
@@ -525,6 +523,10 @@ void eNetworkServiceBrowser::handleBrowserEvent(AvahiServiceBrowser* browser, in
 												AvahiLookupResultFlags flags) {
 	switch (event) {
 		case AVAHI_BROWSER_NEW:
+			if (isLoopbackInterfaceIndex(interfaceIndex)) {
+				avahiDebug("[eNetworkServiceBrowser] Ignoring '%s' of type '%s' on loopback ifindex=%d", name, type, interfaceIndex);
+				break;
+			}
 			avahiDebug("[eNetworkServiceBrowser] Resolving '%s' of type '%s' on ifindex=%d proto=%s", name, type, interfaceIndex, protocol == AVAHI_PROTO_INET6 ? "inet6" : "inet");
 			avahi_service_resolver_new(avahi_client, (AvahiIfIndex)interfaceIndex, (AvahiProtocol)protocol, name, type, domain, AVAHI_PROTO_UNSPEC, (AvahiLookupFlags)0, avahiResolverCallback, this);
 			break;
@@ -556,7 +558,7 @@ void eNetworkServiceBrowser::handleBrowserEvent(AvahiServiceBrowser* browser, in
 }
 
 /* True if hostName's leading label matches this box's own avahi hostname
- * (e.g. "defiant.local" against "defiant"). A resolved service reporting our
+ * (e.g. "dm900.local" against "dm900"). A resolved service reporting our
  * own hostname for a foreign address is bogus - typically a stale
  * avahi-daemon cache entry left over from when this box itself held that
  * address (e.g. before a DHCP lease change) - not a real remote host name. */
@@ -597,6 +599,29 @@ static bool isOwnAddress(const char* addrStr) {
 	}
 	freeifaddrs(ifaddr);
 	return isOwn;
+}
+
+/* True if interfaceIndex is the loopback interface (typically "lo"). Services
+ * this box announces via its own avahi client are visible to the browser
+ * again over loopback, on top of the announcement's real interface(s) -
+ * that's pure local noise callers never want, so it's dropped before even
+ * starting a resolver for it. */
+static bool isLoopbackInterfaceIndex(int interfaceIndex) {
+	char ifName[IF_NAMESIZE];
+	if (!if_indextoname((unsigned int)interfaceIndex, ifName))
+		return false;
+	struct ifaddrs* ifaddr = NULL;
+	if (getifaddrs(&ifaddr) != 0)
+		return false;
+	bool isLoopback = false;
+	for (struct ifaddrs* ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
+		if (ifa->ifa_name && strcmp(ifa->ifa_name, ifName) == 0 && (ifa->ifa_flags & IFF_LOOPBACK)) {
+			isLoopback = true;
+			break;
+		}
+	}
+	freeifaddrs(ifaddr);
+	return isLoopback;
 }
 
 void eNetworkServiceBrowser::handleResolverEvent(int interfaceIndex, int protocol, AvahiResolverEvent event, const char* name, const char* type, const char* domain, const char* hostName,
