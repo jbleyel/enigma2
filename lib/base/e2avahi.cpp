@@ -519,6 +519,29 @@ void eNetworkServiceBrowser::avahiResolverCallback(AvahiServiceResolver* resolve
 	avahi_service_resolver_free(resolver);
 }
 
+/* True if interfaceIndex is the loopback interface (typically "lo"). Services
+ * this box announces via its own avahi client are visible to the browser
+ * again over loopback, on top of the announcement's real interface(s) -
+ * that's pure local noise callers never want, so it's dropped before even
+ * starting a resolver for it. */
+static bool isLoopbackInterfaceIndex(int interfaceIndex) {
+	char ifName[IF_NAMESIZE];
+	if (!if_indextoname((unsigned int)interfaceIndex, ifName))
+		return false;
+	struct ifaddrs* ifaddr = NULL;
+	if (getifaddrs(&ifaddr) != 0)
+		return false;
+	bool isLoopback = false;
+	for (struct ifaddrs* ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
+		if (ifa->ifa_name && strcmp(ifa->ifa_name, ifName) == 0 && (ifa->ifa_flags & IFF_LOOPBACK)) {
+			isLoopback = true;
+			break;
+		}
+	}
+	freeifaddrs(ifaddr);
+	return isLoopback;
+}
+
 void eNetworkServiceBrowser::handleBrowserEvent(AvahiServiceBrowser* browser, int interfaceIndex, int protocol, AvahiBrowserEvent event, const char* name, const char* type, const char* domain,
 												AvahiLookupResultFlags flags) {
 	switch (event) {
@@ -599,29 +622,6 @@ static bool isOwnAddress(const char* addrStr) {
 	}
 	freeifaddrs(ifaddr);
 	return isOwn;
-}
-
-/* True if interfaceIndex is the loopback interface (typically "lo"). Services
- * this box announces via its own avahi client are visible to the browser
- * again over loopback, on top of the announcement's real interface(s) -
- * that's pure local noise callers never want, so it's dropped before even
- * starting a resolver for it. */
-static bool isLoopbackInterfaceIndex(int interfaceIndex) {
-	char ifName[IF_NAMESIZE];
-	if (!if_indextoname((unsigned int)interfaceIndex, ifName))
-		return false;
-	struct ifaddrs* ifaddr = NULL;
-	if (getifaddrs(&ifaddr) != 0)
-		return false;
-	bool isLoopback = false;
-	for (struct ifaddrs* ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
-		if (ifa->ifa_name && strcmp(ifa->ifa_name, ifName) == 0 && (ifa->ifa_flags & IFF_LOOPBACK)) {
-			isLoopback = true;
-			break;
-		}
-	}
-	freeifaddrs(ifaddr);
-	return isLoopback;
 }
 
 void eNetworkServiceBrowser::handleResolverEvent(int interfaceIndex, int protocol, AvahiResolverEvent event, const char* name, const char* type, const char* domain, const char* hostName,
