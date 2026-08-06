@@ -1743,12 +1743,14 @@ class NetscanProvider:
 # ("avahi" | "netscan"), "avahiShares"}. Kept deliberately simple, no
 # per-candidate state-tracking (see git history for a previous, "clever"
 # delayed-probe design that got too hard to follow).
-#   - Avahi always wins "source" and merges in protocol, even over an
-#     existing netscan entry.
+#   - Avahi is wired in (onAvahiObservation) but never started (see start()
+#     below) - only netscan hosts are shown, by request. Left in place
+#     rather than removed so it's a one-line change to bring back.
 #   - hostname is the exception: a real netscan hostname (reverse-DNS,
 #     already ISP-wildcard-filtered in socketdaemon) always wins over
 #     Avahi's regardless of arrival order - hostnameSource tracks which one
-#     set it last so this stays correct either way.
+#     set it last so this stays correct either way (moot while avahi stays
+#     off, but avoids a landmine if it's ever turned back on).
 # Runs one bounded pass per boot (DEFAULT_RUN_MS), auto-stopping - a
 # Discovery screen can call start()/stop() itself later for on-demand live.
 class DiscoveryManager:
@@ -1768,8 +1770,9 @@ class DiscoveryManager:
 	# No early return on self.started - a caller wanting an unbounded scan
 	# (runMs=None) must be able to cancel an already-running bounded pass's
 	# auto-stop, not just no-op. provider.start() is idempotent anyway.
+	# Avahi is deliberately not started here (see AvahiProvider/onAvahiObservation
+	# above) - only netscan hosts are shown, by request.
 	def start(self, runMs: int | None = DEFAULT_RUN_MS):
-		self.avahi.start()
 		self.netscan.start()
 		self.started = True
 		self.stopTimer.stop()
@@ -1779,7 +1782,6 @@ class DiscoveryManager:
 	def stop(self):
 		self.stopTimer.stop()
 		if self.started:
-			self.avahi.stop()
 			self.netscan.stop()
 			self.started = False
 

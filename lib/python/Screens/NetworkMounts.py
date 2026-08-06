@@ -410,10 +410,11 @@ class NetworkMountSetup(Setup):
 
 
 # Shows discovered network hosts, expandable to list their shares. Host
-# discovery runs continuously in the background (Avahi/mDNS and the neighbor
-# table). Share enumeration (showmount/smbclient) only happens when a host is
-# actually expanded, or via Rescan - never automatically for hosts that are
-# just listed, so an idle NAS isn't woken up by browsing this screen.
+# discovery runs continuously in the background, netscan only (see
+# DiscoveryManager - avahi is wired in but currently not started). Share
+# enumeration (showmount/smbclient) only happens when a host is actually
+# expanded, or via Rescan - never automatically for hosts that are just
+# listed, so an idle NAS isn't woken up by browsing this screen.
 class NetworkShares(Screen):
 	skin = """
 	<screen name="NetworkShares" title="Network Shares" position="center,center" size="1080,465" resolution="1280,720">
@@ -517,13 +518,13 @@ class NetworkShares(Screen):
 	# Discovery only runs while this screen is open, so it stops as soon as
 	# the user leaves instead of scanning the network in the background.
 	def startDiscovery(self):
+		print("NetworkShares DEBUG startDiscovery")
 		self.configuredShares = {(mount.get("server"), (mount.get("remotePath") or "").lstrip("/")): self.repository.mountPointFor(mount) for mount in self.repository.load()}
 		discoveryManager.onChanged.append(self.onHostsChanged)
-		discoveryManager.start(runMs=None)
-		self["description"].setText(_("Scanning..."))
 		self.buildList()
 
 	def stopDiscovery(self):
+		print("NetworkShares DEBUG stopDiscovery")
 		self.refreshTimer.stop()
 		# Guard against removing a callback that was never registered - that
 		# would otherwise skip stopping discovery below.
@@ -535,6 +536,7 @@ class NetworkShares(Screen):
 		self.console.killAll()
 
 	def keyRescan(self):
+		print("NetworkShares DEBUG keyRescan")
 		discoveryManager.stop()
 		discoveryManager.reset()
 		self.expanded = set()
@@ -551,6 +553,7 @@ class NetworkShares(Screen):
 		self.buildList()
 
 	def onRescanDone(self, ok):
+		print("NetworkShares DEBUG onRescanDone")
 		if "list" in self:
 			if ok:
 				self.buildList()
@@ -777,6 +780,7 @@ class NetworkShares(Screen):
 	# host list, this screen just displays it --
 
 	def onHostsChanged(self):
+		print("NetworkShares DEBUG onHostsChanged")
 		if "list" in self and not self.refreshTimer.isActive():
 			self.refreshTimer.start(self.REFRESH_DEBOUNCE_MS, True)
 
@@ -796,6 +800,8 @@ class NetworkShares(Screen):
 
 			def sortKey(host):
 				return (not host["protocols"], ipKey(host["address"]) if config.network.browserSortByIP.value else (host["hostname"] or host["address"]).lower())
+
+			print(f"NetworkShares DEBUG hosts: {discoveryManager.hosts.values()}")
 
 			for host in sorted(discoveryManager.hosts.values(), key=sortKey):
 				address = host["address"]

@@ -927,9 +927,8 @@ if exists(config.usage.keymap_usermod.value):
 	loadKeymap(config.usage.keymap_usermod.value)
 
 enigma.eProfileWrite("InitNetwork")
-from Components.NetworkManager import discoveryManager, networkManager
+from Components.NetworkManager import networkManager
 networkManager.startNetworkCheck()
-discoveryManager.start()  # one bounded SMB/NFS mDNS discovery pass per boot, auto-stops after DiscoveryManager.DEFAULT_RUN_MS
 
 enigma.eProfileWrite("InitLCD")
 from Components.Lcd import IconCheck, InitLcd
