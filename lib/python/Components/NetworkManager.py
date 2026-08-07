@@ -1743,14 +1743,12 @@ class NetscanProvider:
 # ("avahi" | "netscan"), "avahiShares"}. Kept deliberately simple, no
 # per-candidate state-tracking (see git history for a previous, "clever"
 # delayed-probe design that got too hard to follow).
-#   - Avahi is wired in (onAvahiObservation) but never started (see start()
-#     below) - only netscan hosts are shown, by request. Left in place
-#     rather than removed so it's a one-line change to bring back.
+#   - Avahi always wins "source" and merges in protocol, even over an
+#     existing netscan entry.
 #   - hostname is the exception: a real netscan hostname (reverse-DNS,
 #     already ISP-wildcard-filtered in socketdaemon) always wins over
 #     Avahi's regardless of arrival order - hostnameSource tracks which one
-#     set it last so this stays correct either way (moot while avahi stays
-#     off, but avoids a landmine if it's ever turned back on).
+#     set it last so this stays correct either way.
 # Runs one bounded pass per boot (DEFAULT_RUN_MS), auto-stopping - a
 # Discovery screen can call start()/stop() itself later for on-demand live.
 class DiscoveryManager:
@@ -1770,11 +1768,15 @@ class DiscoveryManager:
 	# No early return on self.started - a caller wanting an unbounded scan
 	# (runMs=None) must be able to cancel an already-running bounded pass's
 	# auto-stop, not just no-op. provider.start() is idempotent anyway.
-	# Avahi is deliberately not started here (see AvahiProvider/onAvahiObservation
-	# above) - only netscan hosts are shown, by request.
+	# self.started must already be True before either provider.start() runs -
+	# netscan.start() dispatches /var/run/netscan synchronously, and
+	# onNetscanObservation() below drops observations while not started, so
+	# setting the flag afterwards silently lost that first, synchronous batch.
 	def start(self, runMs: int | None = DEFAULT_RUN_MS):
-		self.netscan.start()
 		self.started = True
+		self.avahi.start()
+		self.netscan.start()  # synchronous dispatchAll() - notify once now that it's fully in, not once per entry (see onNetscanObservation())
+		self.notify()
 		self.stopTimer.stop()
 		if runMs:
 			self.stopTimer.start(runMs, True)
@@ -1782,15 +1784,39 @@ class DiscoveryManager:
 	def stop(self):
 		self.stopTimer.stop()
 		if self.started:
+			self.avahi.stop()
 			self.netscan.stop()
 			self.started = False
 
+	# Never clears hosts up front - a rescan can take a few seconds (active
+	# TCP connect-scan), and blanking self.hosts before it completes would
+	# make already-known netscan hosts disappear from the list for that
+	# whole window. Only prunes at the very end, once the fresh scan is in,
+	# and only netscan-sourced addresses that didn't reappear in this pass -
+	# avahi-sourced hosts are never touched here.
 	def rescan(self, callback: Callable | None = None):
-		self.netscan.rescan(callback)
+		before = {address for address, host in self.hosts.items() if host["source"] == "netscan"}
+		seen = set()
 
-	def reset(self):
-		self.hosts = {}
-		self.notify()
+		def onObservationDuringRescan(observation):
+			address = observation.get("address")
+			if address:
+				seen.add(address)
+
+		self.netscan.onObservation.append(onObservationDuringRescan)
+
+		def done(ok):
+			self.netscan.onObservation.remove(onObservationDuringRescan)
+			if ok:
+				for address in before - seen:
+					host = self.hosts.get(address)
+					if host and host["source"] == "netscan":
+						del self.hosts[address]
+				self.notify()
+			if callback:
+				callback(ok)
+
+		self.netscan.rescan(done)
 
 	@staticmethod
 	def newHost(address, source):
@@ -1809,22 +1835,44 @@ class DiscoveryManager:
 			return name[name.rindex("[") + 1:-1]
 		return name
 
+	# changed() (AvahiProvider) re-dispatches its *entire* current snapshot on
+	# every single underlying ADD/REMOVE, so most observations here just
+	# repeat a host we already know unchanged - only notify if something in
+	# self.hosts actually ends up different, not on every re-dispatch.
 	def onAvahiObservation(self, observation):
 		protocol = observation.get("protocol")
 		hostname = observation.get("hostname") or ""
 		name = observation.get("name") or ""
+		changed = False
 		for address in observation.get("addresses") or []:
-			host = self.hosts.setdefault(address, self.newHost(address, "avahi"))
-			host["source"] = "avahi"  # always leading, even if a netscan entry already existed
-			if hostname and host["hostnameSource"] != "netscan":
+			host = self.hosts.get(address)
+			if host is None:
+				host = self.hosts[address] = self.newHost(address, "avahi")
+				changed = True
+			if host["source"] != "avahi":
+				host["source"] = "avahi"  # always leading, even if a netscan entry already existed
+				changed = True
+			if hostname and host["hostnameSource"] != "netscan" and (host["hostname"] != hostname or host["hostnameSource"] != "avahi"):
 				host["hostname"] = hostname
 				host["hostnameSource"] = "avahi"
+				changed = True
 			if protocol:
-				host["protocols"].add(protocol)
+				if protocol not in host["protocols"]:
+					host["protocols"].add(protocol)
+					changed = True
 				if protocol in ("nfs", "smb") and name:
-					host["avahiShares"][name] = {"protocol": protocol, "name": self.parseAvahiShareName(name), "fullName": name}
-		self.notify()
+					share = {"protocol": protocol, "name": self.parseAvahiShareName(name), "fullName": name}
+					if host["avahiShares"].get(name) != share:
+						host["avahiShares"][name] = share
+						changed = True
+		if changed:
+			self.notify()
 
+	# No self.notify() here, deliberately - a netscan dispatch is always a
+	# full batch of entries (dispatchAll()), not one observation at a time,
+	# so notifying per-entry would fire onChanged many times for what's
+	# conceptually a single update. Callers notify once the batch is fully
+	# in instead - see start() and rescan()'s done() above.
 	def onNetscanObservation(self, observation):
 		if self.started:
 			address = observation.get("address")
@@ -1839,7 +1887,6 @@ class DiscoveryManager:
 					host["hostname"] = hostname
 					host["hostnameSource"] = "netscan"
 				host["protocols"].add(observation["protocol"])
-				self.notify()
 
 	def notify(self):
 		for callback in self.onChanged:

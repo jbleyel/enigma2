@@ -116,7 +116,7 @@ class NetworkMountsOverview(Screen):
 			shareName = current[self.LIST_SHARE_NAME]
 			description = current[self.LIST_DESCRIPTION]
 			mount = current[self.LIST_DATA]
-			if not mount.get("enabled"):
+			if mount.get("mode") != "autofs":
 				blueText = _("Unmount") if self.repository.isMounted(mount) else _("Mount")
 		else:
 			shareName = ""
@@ -192,6 +192,9 @@ class NetworkMountsOverview(Screen):
 			mount = current[self.LIST_DATA]
 			if mount.get("enabled"):
 				self.session.showError(_("This mount is enabled - disable it first to mount or unmount it manually."))
+				return
+			if mount.get("mode") == "autofs":
+				self.session.showError(_("Autofs mounts happen automatically on first access - manual mount/unmount isn't supported."))
 				return
 			mountPoint = self.repository.mountPointFor(mount)
 			if self.repository.isMounted(mount):
@@ -410,11 +413,10 @@ class NetworkMountSetup(Setup):
 
 
 # Shows discovered network hosts, expandable to list their shares. Host
-# discovery runs continuously in the background, netscan only (see
-# DiscoveryManager - avahi is wired in but currently not started). Share
-# enumeration (showmount/smbclient) only happens when a host is actually
-# expanded, or via Rescan - never automatically for hosts that are just
-# listed, so an idle NAS isn't woken up by browsing this screen.
+# discovery runs continuously in the background (Avahi/mDNS and the neighbor
+# table). Share enumeration (showmount/smbclient) only happens when a host is
+# actually expanded, or via Rescan - never automatically for hosts that are
+# just listed, so an idle NAS isn't woken up by browsing this screen.
 class NetworkShares(Screen):
 	skin = """
 	<screen name="NetworkShares" title="Network Shares" position="center,center" size="1080,465" resolution="1280,720">
@@ -521,6 +523,8 @@ class NetworkShares(Screen):
 		print("NetworkShares DEBUG startDiscovery")
 		self.configuredShares = {(mount.get("server"), (mount.get("remotePath") or "").lstrip("/")): self.repository.mountPointFor(mount) for mount in self.repository.load()}
 		discoveryManager.onChanged.append(self.onHostsChanged)
+		discoveryManager.start(runMs=None)
+		self["description"].setText(_("Scanning..."))
 		self.buildList()
 
 	def stopDiscovery(self):
@@ -537,14 +541,17 @@ class NetworkShares(Screen):
 
 	def keyRescan(self):
 		print("NetworkShares DEBUG keyRescan")
-		discoveryManager.stop()
-		discoveryManager.reset()
+		# Deliberately no discoveryManager.stop()/reset()/start() here - discovery
+		# is already running continuously (started in startDiscovery()), and
+		# discoveryManager.rescan() itself only ever removes stale netscan hosts
+		# once the fresh scan is in, never up front - see its docstring. Clearing
+		# local expansion/share state below is safe though, that's just this
+		# screen's own share-listing UI state, unrelated to the host list.
 		self.expanded = set()
 		self.shares = {}
 		self.shareState = {}
 		self.pendingProtocols = {}
 		self["description"].setText(_("Scanning..."))
-		discoveryManager.start(runMs=None)
 		# Explicit callback, not just the normal onChanged -> onHostsChanged
 		# flow: that one never fires if the scan found zero hosts, and a
 		# failed rescan (e.g. no default-route interface) would otherwise
