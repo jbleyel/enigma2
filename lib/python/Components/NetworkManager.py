@@ -19,12 +19,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 from json import JSONDecodeError, loads
-from os import listdir, makedirs, remove
+from os import chmod, listdir, makedirs, remove
 from os.path import basename, exists, isdir, realpath
+from pickle import dump as pickleDump, load as pickleLoad
 from re import compile, match
 from shutil import copy2
 from socket import AF_UNIX, SOCK_STREAM, gethostbyname, gethostname, socket
 from subprocess import DEVNULL, check_output
+from uuid import uuid4
 from collections.abc import Callable
 from twisted.internet import reactor
 
@@ -36,7 +38,7 @@ from Components.Harddisk import harddiskmanager
 from Components.PluginComponent import plugins
 from Components.SystemInfo import BoxInfo
 from Plugins.Plugin import PluginDescriptor
-from Tools.Directories import fileReadLine, fileReadLines, fileWriteLine, fileWriteLines
+from Tools.Directories import fileReadLine, fileReadLines, fileReadXML, fileWriteLine, fileWriteLines
 from Tools.ServiceAction import ServiceAction
 
 # Path constants.
@@ -88,7 +90,6 @@ apiWext = "wext"
 apiMadwifi = "madwifi"
 apiRalink = "ralink"
 apiZydas = "zydas"
-
 
 
 # Central access point for all network configuration.
@@ -1592,13 +1593,513 @@ class NetEventReader:
 			self.manager.onScanTrigger(parts[1])
 
 
-# Polls up to 10x (1s apart) until the hostname resolves off 127.0.0.1,
-# then rescans network mounts that couldn't mount before the network came up.
+# The actual system-of-record for network mounts is /etc/fstab and
+# /etc/auto.network, both read and written directly by this class.
+# automounts.xml (the old plugin's config file) is only read, and only to
+# migrate an existing old-plugin setup once - we never write to it.
+# Lives here (not in Screens/NetworkMounts.py, which just displays/edits
+# this data) because NetworkCheck below needs it too, to know each enabled
+# fstab share's local mount point directory before "mount -a" at Enigma2
+# startup - see mountPendingShares().
+class NetworkMountRepository:
+
+	READ_MODE_WRAPPERS = ("autofs", "fstab", "enigma2")
+	WRITE_MODES = ("autofs", "fstab")
+	NORMALIZE_MODE = {
+		"enigma2": "fstab",
+		"old_enigma2": "fstab"
+	}
+	PROTOCOLS = ("nfs", "cifs")
+
+	# Off by default, only meant for an explicit migration pass - enabling
+	# it can show a mount twice, once from automounts.xml and once from the
+	# matching fstab/auto.network entry it was written to. Kept as a flag
+	# rather than removed outright since migrating an old-plugin setup still
+	# needs it.
+	READ_XML = False
+
+	AUTOMOUNTS_PATH = "/etc/enigma2/automounts.xml"
+	AUTO_NETWORK_PATH = "/etc/auto.network"
+	FSTAB_PATH = "/etc/fstab"
+
+	MOUNT_BIN = "/bin/mount"
+
+	# A disabled mount is still written to fstab/auto.network, just commented
+	# out with this marker, so it survives a reload instead of vanishing -
+	# those two files are the only place a mount's definition lives (see
+	# above), so simply omitting a disabled entry would delete it for good.
+	DISABLED_PREFIX = "#DISABLED# "
+
+	# Username/password are stored in plaintext directly on the entry, same
+	# as the old plugin did. Kept reasonably safe by chmod'ing the file 600
+	# after every save() (see below).
+
+	def load(self):
+		def readMode(node, wrapperMode):
+			def readMount(node, wrapperMode, protocol):
+				def text(tag, default=""):
+					child = node.find(tag)
+					return child.text if child is not None and child.text is not None else default
+
+				mode = self.NORMALIZE_MODE.get(wrapperMode, wrapperMode)
+				server = text("ip", "192.168.0.0")
+				remotePath = text("sharedir", "/media/hdd/" if wrapperMode in ("autofs", "fstab") else "/exports/")
+				shareName = text("shareName", "MEDIA")
+				mount = {
+					# The old format has no <id>/<display_name> field, so a
+					# stable id is synthesized here, the same way the
+					# fstab/auto.network parsers below do, so edit/delete
+					# actions have something stable to key on.
+					"id": f"{mode}:{protocol}:{server}:{remotePath}",
+					"mode": mode,
+					"protocol": protocol,
+					"enabled": text("enabled", "False") in ("True", "true", "1"),
+					"hddReplacement": text("hdd_replacement", "False") in ("True", "true", "1"),
+					"shareName": shareName,
+					"server": server,
+					"remotePath": remotePath,
+					"unmanaged": True,
+					**self.splitOptions(text("options", "rw,nolock,tcp,utf8" if protocol == "nfs" else "rw,utf8"), protocol),
+				}
+				if protocol == "cifs":
+					# The old format stored these in their own tags, not
+					# embedded in "options" - they take priority over
+					# anything splitOptions() might've pulled out above.
+					mount["username"] = text("username", "guest")
+					mount["password"] = text("password")
+				return mount
+
+			mounts = []
+			for protocol in self.PROTOCOLS:
+				for protoNode in node.findall(protocol):
+					for mountNode in protoNode.findall("mount"):
+						mounts.append(readMount(mountNode, wrapperMode, protocol))
+			return mounts
+
+		# automounts.xml isn't necessarily the full story - /etc/fstab and
+		# /etc/auto.network may contain NFS/CIFS lines that were never
+		# written by us (added manually, or left over from something else).
+		# Surface those too instead of hiding them. Their id is derived from
+		# the share identity (mode:protocol:server:remotePath) so reloading
+		# doesn't keep minting new ones, and they're marked "unmanaged": True
+		# so callers can tell them apart - editing and saving one adopts it
+		# into automounts.xml going forward, like any other entry.
+		def parseFstabLine(line):
+			line = line.strip()
+			if not line:
+				return None
+			enabled = True
+			if line.startswith(self.DISABLED_PREFIX):
+				enabled = False
+				line = line[len(self.DISABLED_PREFIX):].strip()
+			elif line.startswith("#"):
+				return None
+			fields = line.split()
+			if len(fields) < 4:
+				return None
+			device, mountpoint, fstype, options = fields[0], fields[1], fields[2], fields[3]
+			if fstype in ("nfs", "nfs4") and ":" in device:
+				protocol = "nfs"
+				server, remotePath = device.split(":", 1)
+				remotePath = remotePath.lstrip("/")
+			elif fstype == "cifs" and device.startswith("//") and "/" in device[2:]:
+				protocol = "cifs"
+				server, remotePath = device[2:].split("/", 1)
+			else:
+				return None
+			if not server or not remotePath:
+				return None
+			shareName = remotePath.rstrip("/").rsplit("/", 1)[-1] or mountpoint.rstrip("/").rsplit("/", 1)[-1] or "MEDIA"
+			return {
+				"id": f"fstab:{protocol}:{server}:{remotePath}",
+				"mode": "fstab",
+				"protocol": protocol,
+				"enabled": enabled,
+				"hddReplacement": mountpoint.rstrip("/") == "/media/hdd",
+				"shareName": shareName,
+				"server": server,
+				"remotePath": remotePath,
+				"unmanaged": True,
+				**self.splitOptions(options, protocol),
+			}
+
+		def parseAutoNetworkLine(line):
+			line = line.strip()
+			if not line:
+				return None
+			enabled = True
+			if line.startswith(self.DISABLED_PREFIX):
+				enabled = False
+				line = line[len(self.DISABLED_PREFIX):].strip()
+			elif line.startswith("#"):
+				return None
+			fields = line.split(None, 2)
+			if len(fields) < 3 or not fields[1].startswith("-fstype="):
+				return None
+			shareName, location = fields[0], fields[2]
+			typeAndOptions = fields[1][len("-fstype="):].split(",")
+			fstype, options = typeAndOptions[0], ",".join(typeAndOptions[1:])
+			if fstype == "nfs" and ":" in location:
+				protocol = "nfs"
+				server, remotePath = location.split(":", 1)
+				remotePath = remotePath.lstrip("/")
+			elif fstype == "cifs" and location.startswith("://") and "/" in location[3:]:
+				protocol = "cifs"
+				server, remotePath = location[3:].split("/", 1)
+			else:
+				return None
+			if not server or not remotePath:
+				return None
+			return {
+				"id": f"autofs:{protocol}:{server}:{remotePath}",
+				"mode": "autofs",
+				"protocol": protocol,
+				"enabled": enabled,
+				"hddReplacement": False,
+				"shareName": shareName,
+				"server": server,
+				"remotePath": remotePath,
+				"unmanaged": True,
+				**self.splitOptions(options, protocol),
+			}
+
+		def mergeUnmanaged(mounts, path, parseLine):
+			known = {(mount["mode"], mount["protocol"], mount["server"], mount["remotePath"].lstrip("/")) for mount in mounts}
+			for line in fileReadLines(path, default=[], source=MODULE_NAME):
+				extra = parseLine(line)
+				if extra is None:
+					continue
+				key = (extra["mode"], extra["protocol"], extra["server"], extra["remotePath"].lstrip("/"))
+				if key not in known:
+					mounts.append(extra)
+					known.add(key)
+
+		mounts = []
+		if self.READ_XML:
+			root = fileReadXML(self.AUTOMOUNTS_PATH, default="<mountmanager />", source=MODULE_NAME)
+			if root is not None:
+				for wrapperMode in self.READ_MODE_WRAPPERS:
+					for modeNode in root.findall(wrapperMode):
+						mounts += readMode(modeNode, wrapperMode)
+				mounts += readMode(root, "old_enigma2")
+		mergeUnmanaged(mounts, self.FSTAB_PATH, parseFstabLine)
+		mergeUnmanaged(mounts, self.AUTO_NETWORK_PATH, parseAutoNetworkLine)
+		return mounts
+
+	def save(self, mounts):
+		def writeMountFiles(effective):
+			def lineIsManaged(line, separator, nfsShares, cifsShares, cifsColonPrefix):
+				if line.startswith(self.DISABLED_PREFIX):
+					line = line[len(self.DISABLED_PREFIX):]
+				tokens = line.split(separator) if separator else line.split()
+				if any(share in tokens for share in nfsShares):
+					return True
+				if cifsColonPrefix:
+					return any((":" + share) in tokens for share in cifsShares)
+				return any(share in tokens for share in cifsShares)
+
+			nfsShares = set()
+			cifsShares = set()
+			for mount, _mode in effective:
+				server = mount.get("server") or ""
+				remotePath = mount.get("remotePath") or ""
+				if (mount.get("protocol") or "nfs") == "nfs":
+					nfsShares.add(f"{server}:/{remotePath}")
+				else:
+					cifsShares.add(f"//{server}/{remotePath}")
+			autoNetworkLines = [line for line in fileReadLines(self.AUTO_NETWORK_PATH, default=[], source=MODULE_NAME)
+				if not lineIsManaged(line, " ", nfsShares, cifsShares, cifsColonPrefix=True)]
+			fstabLines = [line for line in fileReadLines(self.FSTAB_PATH, default=[], source=MODULE_NAME)
+				if not lineIsManaged(line, None, nfsShares, cifsShares, cifsColonPrefix=False)]
+			for mount, mode in effective:
+				prefix = "" if mount.get("enabled") else self.DISABLED_PREFIX
+				protocol = mount.get("protocol") or "nfs"
+				server = mount.get("server") or ""
+				remotePath = mount.get("remotePath") or ""
+				shareName = mount.get("shareName") or ""
+				if mode == "autofs":
+					if protocol == "nfs":
+						autoNetworkLines.append(f"{prefix}{shareName} -fstype=nfs,{self.buildNfsOptions(mount)} {server}:/{remotePath}")
+					else:
+						username = (mount.get("username") or "").replace(" ", "\\ ")
+						password = (mount.get("password") or "").replace(" ", "\\ ")
+						autoNetworkLines.append(f"{prefix}{shareName} -fstype=cifs,user={username},pass={password},{self.sanitizeOptions(mount)} ://{server}/{remotePath}")
+				elif mode == "fstab":
+					path = self.mountPointFor(mount)
+					if protocol == "nfs":
+						fstabLines.append(f"{prefix}{server}:/{remotePath}\t{path}\tnfs\t_netdev,{self.buildNfsOptions(mount)}\t0 0")
+					else:
+						username = mount.get("username") or ""
+						password = mount.get("password") or ""
+						fstabLines.append(f"{prefix}//{server}/{remotePath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.sanitizeOptions(mount)}\t0 0")
+			fileWriteLines(self.AUTO_NETWORK_PATH, autoNetworkLines, source=MODULE_NAME)
+			fileWriteLines(self.FSTAB_PATH, fstabLines, source=MODULE_NAME)
+
+		effective = []
+		for mount in mounts:
+			mode = mount.get("mode")
+			if mode not in self.WRITE_MODES:
+				mode = "fstab"
+			effective.append((mount, mode))
+		writeMountFiles(effective)
+
+	# Option keys already covered by a dedicated NetworkMountSetup field (see
+	# buildNfsOptions()/sanitizeOptions() and NetworkMountSetup.keySave()) -
+	# entering one of these in the free-text "Mount options" field would just
+	# be silently overridden by the dedicated setting, so it's rejected
+	# instead by validateExtraOptions() below.
+	NFS_RESERVED_OPTION_KEYS = frozenset(("ro", "rw", "nolock", "lock", "proto", "nfsvers", "rsize", "wsize", "timeo", "soft", "hard"))
+	CIFS_RESERVED_OPTION_KEYS = frozenset(("user", "username", "pass", "password", "ro", "rw"))
+
+	# proto=tcp and _netdev are always added by save() itself (see
+	# buildNfsOptions()/writeMountFiles()), never something the user typed -
+	# drop them rather than showing them back as "extra" options.
+	ALWAYS_IMPLIED_OPTION_KEYS = frozenset(("proto", "_netdev"))
+
+	# Splits a raw options string - as read back from an existing fstab/
+	# auto.network line or automounts.xml - into the structured per-field
+	# values NetworkMountSetup exposes, plus whatever's left over for the
+	# free-text "Mount options" field. Without this, re-editing an existing
+	# mount would show every dedicated setting a second time in "Mount
+	# options", since the file only ever stores one combined string.
+	@classmethod
+	def splitOptions(cls, rawOptions, protocol):
+		tokens = [token.strip() for token in (rawOptions or "").split(",") if token.strip()]
+		extra = []
+		if protocol == "nfs":
+			fields = {"accessMode": "rw", "nfsLocking": True, "nfsVersion": "", "nfsRsize": "0", "nfsWsize": "0", "nfsTimeo": 0, "nfsSoft": False}
+			for token in tokens:
+				parts = token.split("=", 1)
+				key = parts[0].strip().lower()
+				value = parts[1].strip() if len(parts) > 1 else ""
+				if key == "ro":
+					fields["accessMode"] = "ro"
+				elif key == "rw":
+					fields["accessMode"] = "rw"
+				elif key == "nolock":
+					fields["nfsLocking"] = False
+				elif key == "lock":
+					fields["nfsLocking"] = True
+				elif key == "nfsvers":
+					fields["nfsVersion"] = value
+				elif key == "rsize":
+					fields["nfsRsize"] = value
+				elif key == "wsize":
+					fields["nfsWsize"] = value
+				elif key == "timeo":
+					fields["nfsTimeo"] = int(value) if value.isdigit() else 0
+				elif key == "soft":
+					fields["nfsSoft"] = True
+				elif key == "hard":
+					fields["nfsSoft"] = False
+				elif key in cls.ALWAYS_IMPLIED_OPTION_KEYS:
+					pass
+				else:
+					extra.append(token)
+		else:
+			fields = {"username": "", "password": "", "accessMode": "rw"}
+			for token in tokens:
+				parts = token.split("=", 1)
+				key = parts[0].strip().lower()
+				value = parts[1].strip() if len(parts) > 1 else ""
+				if key in ("user", "username"):
+					fields["username"] = value
+				elif key in ("pass", "password"):
+					fields["password"] = value
+				elif key == "ro":
+					fields["accessMode"] = "ro"
+				elif key == "rw":
+					fields["accessMode"] = "rw"
+				elif key == "iocharset" and value == "utf8":
+					pass
+				elif key in cls.ALWAYS_IMPLIED_OPTION_KEYS:
+					pass
+				else:
+					extra.append(token)
+		fields["options"] = ",".join(extra)
+		return fields
+
+	# Checks the raw "Mount options" free-text field for anything already
+	# covered by a dedicated setting, and for options repeated within the
+	# field itself. Returns an error message to show the user, or None if the
+	# field is fine as-is.
+	@classmethod
+	def validateExtraOptions(cls, rawOptions, protocol):
+		reserved = cls.NFS_RESERVED_OPTION_KEYS if protocol == "nfs" else cls.CIFS_RESERVED_OPTION_KEYS
+		seen = set()
+		for token in (rawOptions or "").split(","):
+			token = token.strip()
+			if not token:
+				continue
+			key = token.split("=", 1)[0].strip().lower()
+			if key in reserved:
+				return _("'%s' is already set by a dedicated setting above - remove it from 'Mount options'.") % token
+			if key in seen:
+				return _("'%s' is listed more than once in 'Mount options'.") % token
+			seen.add(key)
+		return None
+
+	# CIFS options only - NFS is built explicitly by buildNfsOptions() below
+	# from structured per-field Setup values rather than a free-text string.
+	@staticmethod
+	def sanitizeOptions(mount):
+		parts = [mount.get("accessMode") or "rw"]
+		extra = (mount.get("options") or "").strip().replace("utf8", "iocharset=utf8")
+		if extra:
+			parts.append(extra)
+		return ",".join(parts)
+
+	# Builds the actual mount.nfs/autofs option string from the structured
+	# per-mount fields NetworkMountSetup exposes (rw/ro, locking, nfsVersion,
+	# rsize, wsize, timeo). proto=tcp is always added - NFS over UDP isn't
+	# offered as an option. Anything the user still put in the free-text
+	# "options" field is appended last, for anything not covered by a
+	# dedicated field.
+	def buildNfsOptions(self, mount):
+		parts = ["ro" if mount.get("accessMode") == "ro" else "rw"]
+		# NFSv3 uses normal server-side (NLM) locking unless told otherwise -
+		# "nolock" is a legacy opt-in for servers without NLM support, not a
+		# default.
+		if not mount.get("nfsLocking", True):
+			parts.append("nolock")
+		parts.append("proto=tcp")
+		version = mount.get("nfsVersion") or ""
+		if version and version != "auto":
+			parts.append(f"nfsvers={version}")
+		# 0 means "Automatic": let the kernel/server negotiate a size or
+		# timeout themselves, so omit the option entirely instead of forcing
+		# a fixed value.
+		rsize = mount.get("nfsRsize") or "0"
+		if str(rsize) != "0":
+			parts.append(f"rsize={rsize}")
+		wsize = mount.get("nfsWsize") or "0"
+		if str(wsize) != "0":
+			parts.append(f"wsize={wsize}")
+		timeo = mount.get("nfsTimeo") or 0
+		if timeo:
+			parts.append(f"timeo={timeo}")
+		if mount.get("nfsSoft"):
+			parts.append("soft")
+		extra = (mount.get("options") or "").strip()
+		if extra:
+			parts.append(extra)
+		return ",".join(parts)
+
+	def newId(self):
+		return f"mount-{uuid4().hex[:12]}"
+
+	# autofs mounts always go under /media/autofs/<shareName>; a
+	# hddReplacement mount (any other mode) replaces /media/hdd itself;
+	# everything else mounts under /media/net/<shareName>.
+	def mountPointFor(self, mount):
+		shareName = mount.get("shareName") or mount.get("id", "")
+		if mount.get("mode") == "autofs":
+			return f"/media/autofs/{shareName}"
+		if mount.get("hddReplacement"):
+			return "/media/hdd"
+		return f"/media/net/{shareName}"
+
+	def isMounted(self, mount):
+		mountPoint = self.mountPointFor(mount)
+		if mount.get("mode") == "autofs":
+			return exists(mountPoint)
+
+		try:
+			with open("/proc/self/mountinfo") as procFile:
+				for line in procFile:
+					fields = line.split(" ")
+					if len(fields) > 4 and fields[4] == mountPoint:
+						return True
+		except OSError:
+			pass
+		return False
+
+	def ensureMountPoint(self, mount):
+		if mount.get("mode") == "fstab":
+			mountPoint = self.mountPointFor(mount)
+			if not exists(mountPoint):
+				makedirs(mountPoint, exist_ok=True)
+
+	# Builds the argv for a manual "mount -t <protocol> <source> <mountPoint>
+	# -o <options>" call, creating the mount point directory first if it
+	# doesn't exist yet. Shared by the interactive manual mount action
+	# (NetworkMountsOverview.keyYellow()) and the startup pass that mounts
+	# any enabled fstab share still missing once the network is up
+	# (NetworkCheck.mountPendingShares()) - one place building the command
+	# instead of two copies drifting apart.
+	def buildMountCommand(self, mount):
+		mountPoint = self.mountPointFor(mount)
+		self.ensureMountPoint(mount)
+		protocol = mount.get("protocol") or "nfs"
+		server = mount.get("server") or ""
+		remotePath = mount.get("remotePath") or ""
+		if protocol == "nfs":
+			source = f"{server}:/{remotePath}"
+			options = self.buildNfsOptions(mount)
+		else:
+			username = mount.get("username") or ""
+			password = mount.get("password") or ""
+			source = f"//{server}/{remotePath}"
+			options = f"user={username},pass={password},{self.sanitizeOptions(mount)}"
+		return (self.MOUNT_BIN, self.MOUNT_BIN, "-t", protocol, source, mountPoint, "-o", options), mountPoint
+
+	# -- SMB share-enumeration credentials --
+	# Separate from a mount's own username/password: these are needed just
+	# to LIST a host's shares, before a share has even been picked to mount.
+	# Stored the same way the old plugin did - one pickle file per host at
+	# /etc/enigma2/<hostname>.cache, so credentials entered via the old
+	# plugin still work here. Keyed by hostname, so a host with no known
+	# hostname can't use stored credentials at all.
+
+	@staticmethod
+	def credentialsPath(hostname):
+		return f"/etc/enigma2/{hostname.strip()}.cache"
+
+	def credentialsGet(self, hostname):
+		if not hostname:
+			return {}
+		try:
+			with open(self.credentialsPath(hostname), "rb") as fd:
+				data = pickleLoad(fd)
+		except Exception:
+			return {}
+		if not isinstance(data, dict):
+			return {}
+		username = data.get("username", "")
+		password = data.get("password", "")
+		return {"username": username, "password": password} if username or password else {}
+
+	def credentialsSave(self, hostname, username, password):
+		if not hostname:
+			return
+		path = self.credentialsPath(hostname)
+		try:
+			with open(path, "wb") as fd:
+				pickleDump({"username": username, "password": password}, fd, -1)
+			chmod(path, 0o600)  # contains a plaintext password
+		except OSError as err:
+			print(f"[{MODULE_NAME}] Error {err.errno}: Error writing '{path}'!  ({err.strerror})")
+
+	def credentialsClear(self, hostname):
+		if not hostname:
+			return
+		try:
+			remove(self.credentialsPath(hostname))
+		except OSError:
+			pass
+
+
+# Polls up to 10x (1s apart) until the hostname resolves off 127.0.0.1, then
+# runs "mount -a" to pick up any fstab share that couldn't mount before the
+# network was up, and rescans network mounts into the harddiskmanager.
 class NetworkCheck:
+	MOUNT_BIN = "/bin/mount"
+
 	def __init__(self):
 		self.timer = eTimer()
 		self.timer.callback.append(self.check)
 		self.retry = 0
+		self.console = Console()
 
 	def start(self):
 		self.retry = 10
@@ -1611,12 +2112,39 @@ class NetworkCheck:
 		try:
 			if gethostbyname(gethostname()) != "127.0.0.1":
 				print("[NetworkManager] NetworkCheck: Done.")
-				harddiskmanager.enumerateNetworkMounts(refresh=True)
+				self.mountPendingShares()
 				return
 			self.retry -= 1
 			self.timer.start(1000, True)
 		except Exception as err:
 			print(f"[NetworkManager] NetworkCheck: Error {err}!")
+
+	# fstab-mode shares are meant to mount at boot through the kernel's own
+	# fstab pass, but that runs before the network is up, so an NFS/CIFS
+	# entry in there can still race it. NetworkMountRepository is only needed
+	# transiently here (to know each enabled fstab entry's local mount point
+	# directory ahead of "mount -a", which needs the directory to already
+	# exist) - not kept as state on self, there's nothing left to do with it
+	# once this runs. Autofs mounts on first access via its own daemon, so
+	# there's nothing to do for those here.
+	def mountPendingShares(self):
+		repository = NetworkMountRepository()
+		pending = False
+		for mount in repository.load():
+			if mount.get("mode") == "fstab" and mount.get("enabled") and not repository.isMounted(mount):
+				pending = True
+				repository.ensureMountPoint(mount)
+
+		if not pending:
+			harddiskmanager.enumerateNetworkMounts(refresh=True)
+			return
+
+		def done(data, retVal, extra=None):
+			if retVal:
+				print(f"[NetworkManager] NetworkCheck: 'mount -a' finished with errors, retVal={retVal}, output={data!r}")
+			harddiskmanager.enumerateNetworkMounts(refresh=True)
+
+		self.console.ePopen((self.MOUNT_BIN, self.MOUNT_BIN, "-a"), done)
 
 
 # mDNS/DNS-SD discovery for SMB/NFS hosts (NetworkMounts). Not started

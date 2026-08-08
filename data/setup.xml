@@ -659,7 +659,7 @@
 			<item level="0" text="Username" description="Enter the username to be used to access this host's shares if they require authentication.">self.username</item>
 			<item level="0" text="Password" description="Enter the password to be used to access this host's shares if they require authentication.">self.password</item>
 		</if>
-		<item level="0" text="Mount options" description="Enter any extra, raw mount options, not available in the options above. Multiple options should be comma-separated.">self.options</item>
+		<item level="0" text="Optional arguments" description="Enter optional mount arguments not provided for in the configuration settings above. Multiple arguments should be comma-separated. Invalid/Inappropriate entries can cause the mount to fail!">self.options</item>
 	</setup>
 	<setup key="NetworkNFS" title="NFS Settings" allowDefault="yes">
 		<item level="0" text="NFS threads" description="Enter the number of NFS server threads to be allocated/used. Higher values improve performance with multiple clients but uses more memory.">self.nfsThreads</item>
