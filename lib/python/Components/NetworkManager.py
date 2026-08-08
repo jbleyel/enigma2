@@ -1709,7 +1709,12 @@ class NetworkMountRepository:
 				return None
 			if not server or not remotePath:
 				return None
-			shareName = remotePath.rstrip("/").rsplit("/", 1)[-1] or mountpoint.rstrip("/").rsplit("/", 1)[-1] or "MEDIA"
+			# shareName must match the mountpoint's own basename, not a guess
+			# off remotePath - mountPointFor() reconstructs the path as
+			# /media/net/<shareName>, so getting this wrong here silently
+			# points isMounted()/save() at a different directory than the one
+			# actually configured in this very fstab line.
+			shareName = mountpoint.rstrip("/").rsplit("/", 1)[-1] or remotePath.rstrip("/").rsplit("/", 1)[-1] or "MEDIA"
 			return {
 				"id": f"fstab:{protocol}:{server}:{remotePath}",
 				"mode": "fstab",

@@ -40,7 +40,7 @@ class NetworkMountsOverview(Screen):
 				<template name="Default" fonts="Regular;22,Regular;18" itemHeight="50">
 					<mode name="default">
 						<text index="ShareName" position="0,0" size="500,28" font="0" padding="5,0" verticalAlignment="center" />
-						<text index="Description" position="20,28" size="480,20" font="1" padding="5,0" foregroundColor="=DC-Gray" />
+						<text index="Description" position="20,28" size="480,20" font="1" padding="5,0" foregroundColor="gray" />
 						<text index="Mounted" position="500,0" size="200,50" font="0" padding="5,0" verticalAlignment="center" />
 						<text index="Active" position="700,0" size="200,50" font="0" horizontalAlignment="right" padding="5,0" verticalAlignment="center" />
 					</mode>
