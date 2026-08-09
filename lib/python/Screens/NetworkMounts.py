@@ -123,19 +123,14 @@ class NetworkMountsOverview(Screen):
 				callback(shareName, description)
 
 	def buildList(self):
-		# Saved mounts only carry "server" (the address, see keyGreen()), not
-		# a hostname - resolve it from discoveryManager's cache if available,
-		# same "hostname or address" fallback used elsewhere in this file.
-		def hostnameFor(mount):
-			server = mount.get("server") or ""
-			return discoveryManager.hosts.get(server, {}).get("hostname") or server
-
 		def sortKeyByMountName(mount):
 			return (mount.get("shareName") or mount.get("id") or "").lower()
 
 		def sortKeyByHostname(mount):
-			name = hostnameFor(mount)
-			return (0, ".".join(f"{part:0>3}" for part in name.split("."))) if all(ch.isdigit() or ch == "." for ch in name) else (1, name.lower())
+			server = mount.get("server") or ""
+			name = discoveryManager.hosts.get(server, {}).get("hostname") or server
+			octets = name.split(".")
+			return (0, ".".join(f"{x:0>3}" for x in octets)) if len(octets) == 4 and all(x.isdigit() or x == "." for x in name) else (1, name.lower())
 
 		self.mounts = sorted(self.repository.load(), key=sortKeyByMountName if config.network.mountsSortByMount.value else sortKeyByHostname)
 		mountList = []
@@ -774,18 +769,15 @@ class NetworkShares(Screen):
 				"nfs": "NFS"
 			}
 
-			def ipKey(address):
-				try:
-					return tuple(int(x) for x in address.split("."))
-				except ValueError:
-					return (999, 999, 999, 999)
+			def sortKeyByIP(host):
+				return (not host["protocols"], ".".join(f"{x:0>3}" for x in host["address"].split(".")))
 
-			def sortKey(host):
-				return (not host["protocols"], ipKey(host["address"]) if config.network.browserSortByIP.value else (host["hostname"] or host["address"]).lower())
+			def sortKeyByName(host):
+				return (not host["protocols"], (host["hostname"] or host["address"]).lower())
 
 			print(f"NetworkShares DEBUG hosts: {discoveryManager.hosts.values()}")
 
-			for host in sorted(discoveryManager.hosts.values(), key=sortKey):
+			for host in sorted(discoveryManager.hosts.values(), key=sortKeyByIP if config.network.browserSortByIP.value else sortKeyByName):
 				address = host["address"]
 				name = host["hostname"] or address
 				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", "", {"kind": "host", "address": address}))
