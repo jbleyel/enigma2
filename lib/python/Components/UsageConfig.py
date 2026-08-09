@@ -1472,6 +1472,7 @@ def InitUsageConfig():
 
 	config.network.mountsSortByIP = ConfigYesNo(default=False)
 	config.network.browserSortByIP = ConfigYesNo(default=False)
+	config.network.browserUsingIP = ConfigYesNo(default=False)
 
 	config.samba = ConfigSubsection()
 	config.samba.enableAutoShare = ConfigYesNo(default=True)

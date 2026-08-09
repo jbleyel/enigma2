@@ -19,8 +19,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 from json import JSONDecodeError, loads
-from os import chmod, listdir, makedirs, remove
-from os.path import basename, exists, isdir, realpath
+from os import chmod, listdir, makedirs, remove, rmdir
+from os.path import basename, exists, isdir, ismount, realpath
 from pickle import dump as pickleDump, load as pickleLoad
 from re import compile, match
 from shutil import copy2
@@ -1634,6 +1634,99 @@ class NetworkMountRepository:
 	# as the old plugin did. Kept reasonably safe by chmod'ing the file 600
 	# after every save() (see below).
 
+	# Parses one /etc/fstab line into a mount dict, or None if it isn't one
+	# of ours (not nfs/nfs4/cifs, or a malformed device field). Used both by
+	# load() to surface every NFS/CIFS line in fstab (see mergeUnmanaged()
+	# below) and by save() to recognize - and always regenerate - every such
+	# line, whether or not it's still in the set being saved (see
+	# writeMountFiles() below; a share that isn't in that set anymore is
+	# exactly what deletion looks like, so its old line must never survive
+	# just because it doesn't currently match anything).
+	def parseFstabLine(self, line):
+		line = line.strip()
+		if not line:
+			return None
+		enabled = True
+		if line.startswith(self.DISABLED_PREFIX):
+			enabled = False
+			line = line[len(self.DISABLED_PREFIX):].strip()
+		elif line.startswith("#"):
+			return None
+		fields = line.split()
+		if len(fields) < 4:
+			return None
+		device, mountpoint, fstype, options = fields[0], fields[1], fields[2], fields[3]
+		if fstype in ("nfs", "nfs4") and ":" in device:
+			protocol = "nfs"
+			server, remotePath = device.split(":", 1)
+			remotePath = remotePath.lstrip("/")
+		elif fstype == "cifs" and device.startswith("//") and "/" in device[2:]:
+			protocol = "cifs"
+			server, remotePath = device[2:].split("/", 1)
+		else:
+			return None
+		if not server or not remotePath:
+			return None
+		# shareName must match the mountpoint's own basename, not a guess
+		# off remotePath - mountPointFor() reconstructs the path as
+		# /media/net/<shareName>, so getting this wrong here silently
+		# points isMounted()/save() at a different directory than the one
+		# actually configured in this very fstab line.
+		shareName = mountpoint.rstrip("/").rsplit("/", 1)[-1] or remotePath.rstrip("/").rsplit("/", 1)[-1] or "MEDIA"
+		return {
+			"id": f"fstab:{protocol}:{server}:{remotePath}",
+			"mode": "fstab",
+			"protocol": protocol,
+			"enabled": enabled,
+			"hddReplacement": mountpoint.rstrip("/") == "/media/hdd",
+			"shareName": shareName,
+			"server": server,
+			"remotePath": remotePath,
+			"unmanaged": True,
+			**self.splitOptions(options, protocol),
+		}
+
+	# Same as parseFstabLine() above, but for /etc/auto.network lines.
+	def parseAutoNetworkLine(self, line):
+		line = line.strip()
+		if not line:
+			return None
+		enabled = True
+		if line.startswith(self.DISABLED_PREFIX):
+			enabled = False
+			line = line[len(self.DISABLED_PREFIX):].strip()
+		elif line.startswith("#"):
+			return None
+		fields = line.split(None, 2)
+		if len(fields) < 3 or not fields[1].startswith("-fstype="):
+			return None
+		shareName, location = fields[0], fields[2]
+		typeAndOptions = fields[1][len("-fstype="):].split(",")
+		fstype, options = typeAndOptions[0], ",".join(typeAndOptions[1:])
+		if fstype == "nfs" and ":" in location:
+			protocol = "nfs"
+			server, remotePath = location.split(":", 1)
+			remotePath = remotePath.lstrip("/")
+		elif fstype == "cifs" and location.startswith("://") and "/" in location[3:]:
+			protocol = "cifs"
+			server, remotePath = location[3:].split("/", 1)
+		else:
+			return None
+		if not server or not remotePath:
+			return None
+		return {
+			"id": f"autofs:{protocol}:{server}:{remotePath}",
+			"mode": "autofs",
+			"protocol": protocol,
+			"enabled": enabled,
+			"hddReplacement": False,
+			"shareName": shareName,
+			"server": server,
+			"remotePath": remotePath,
+			"unmanaged": True,
+			**self.splitOptions(options, protocol),
+		}
+
 	def load(self):
 		def readMode(node, wrapperMode):
 			def readMount(node, wrapperMode, protocol):
@@ -1676,98 +1769,6 @@ class NetworkMountRepository:
 						mounts.append(readMount(mountNode, wrapperMode, protocol))
 			return mounts
 
-		# automounts.xml isn't necessarily the full story - /etc/fstab and
-		# /etc/auto.network may contain NFS/CIFS lines that were never
-		# written by us (added manually, or left over from something else).
-		# Surface those too instead of hiding them. Their id is derived from
-		# the share identity (mode:protocol:server:remotePath) so reloading
-		# doesn't keep minting new ones, and they're marked "unmanaged": True
-		# so callers can tell them apart - editing and saving one adopts it
-		# into automounts.xml going forward, like any other entry.
-		def parseFstabLine(line):
-			line = line.strip()
-			if not line:
-				return None
-			enabled = True
-			if line.startswith(self.DISABLED_PREFIX):
-				enabled = False
-				line = line[len(self.DISABLED_PREFIX):].strip()
-			elif line.startswith("#"):
-				return None
-			fields = line.split()
-			if len(fields) < 4:
-				return None
-			device, mountpoint, fstype, options = fields[0], fields[1], fields[2], fields[3]
-			if fstype in ("nfs", "nfs4") and ":" in device:
-				protocol = "nfs"
-				server, remotePath = device.split(":", 1)
-				remotePath = remotePath.lstrip("/")
-			elif fstype == "cifs" and device.startswith("//") and "/" in device[2:]:
-				protocol = "cifs"
-				server, remotePath = device[2:].split("/", 1)
-			else:
-				return None
-			if not server or not remotePath:
-				return None
-			# shareName must match the mountpoint's own basename, not a guess
-			# off remotePath - mountPointFor() reconstructs the path as
-			# /media/net/<shareName>, so getting this wrong here silently
-			# points isMounted()/save() at a different directory than the one
-			# actually configured in this very fstab line.
-			shareName = mountpoint.rstrip("/").rsplit("/", 1)[-1] or remotePath.rstrip("/").rsplit("/", 1)[-1] or "MEDIA"
-			return {
-				"id": f"fstab:{protocol}:{server}:{remotePath}",
-				"mode": "fstab",
-				"protocol": protocol,
-				"enabled": enabled,
-				"hddReplacement": mountpoint.rstrip("/") == "/media/hdd",
-				"shareName": shareName,
-				"server": server,
-				"remotePath": remotePath,
-				"unmanaged": True,
-				**self.splitOptions(options, protocol),
-			}
-
-		def parseAutoNetworkLine(line):
-			line = line.strip()
-			if not line:
-				return None
-			enabled = True
-			if line.startswith(self.DISABLED_PREFIX):
-				enabled = False
-				line = line[len(self.DISABLED_PREFIX):].strip()
-			elif line.startswith("#"):
-				return None
-			fields = line.split(None, 2)
-			if len(fields) < 3 or not fields[1].startswith("-fstype="):
-				return None
-			shareName, location = fields[0], fields[2]
-			typeAndOptions = fields[1][len("-fstype="):].split(",")
-			fstype, options = typeAndOptions[0], ",".join(typeAndOptions[1:])
-			if fstype == "nfs" and ":" in location:
-				protocol = "nfs"
-				server, remotePath = location.split(":", 1)
-				remotePath = remotePath.lstrip("/")
-			elif fstype == "cifs" and location.startswith("://") and "/" in location[3:]:
-				protocol = "cifs"
-				server, remotePath = location[3:].split("/", 1)
-			else:
-				return None
-			if not server or not remotePath:
-				return None
-			return {
-				"id": f"autofs:{protocol}:{server}:{remotePath}",
-				"mode": "autofs",
-				"protocol": protocol,
-				"enabled": enabled,
-				"hddReplacement": False,
-				"shareName": shareName,
-				"server": server,
-				"remotePath": remotePath,
-				"unmanaged": True,
-				**self.splitOptions(options, protocol),
-			}
-
 		def mergeUnmanaged(mounts, path, parseLine):
 			known = {(mount["mode"], mount["protocol"], mount["server"], mount["remotePath"].lstrip("/")) for mount in mounts}
 			for line in fileReadLines(path, default=[], source=MODULE_NAME):
@@ -1787,35 +1788,25 @@ class NetworkMountRepository:
 					for modeNode in root.findall(wrapperMode):
 						mounts += readMode(modeNode, wrapperMode)
 				mounts += readMode(root, "old_enigma2")
-		mergeUnmanaged(mounts, self.FSTAB_PATH, parseFstabLine)
-		mergeUnmanaged(mounts, self.AUTO_NETWORK_PATH, parseAutoNetworkLine)
+		mergeUnmanaged(mounts, self.FSTAB_PATH, self.parseFstabLine)
+		mergeUnmanaged(mounts, self.AUTO_NETWORK_PATH, self.parseAutoNetworkLine)
 		return mounts
 
 	def save(self, mounts):
 		def writeMountFiles(effective):
-			def lineIsManaged(line, separator, nfsShares, cifsShares, cifsColonPrefix):
-				if line.startswith(self.DISABLED_PREFIX):
-					line = line[len(self.DISABLED_PREFIX):]
-				tokens = line.split(separator) if separator else line.split()
-				if any(share in tokens for share in nfsShares):
-					return True
-				if cifsColonPrefix:
-					return any((":" + share) in tokens for share in cifsShares)
-				return any(share in tokens for share in cifsShares)
-
-			nfsShares = set()
-			cifsShares = set()
-			for mount, _mode in effective:
-				server = mount.get("server") or ""
-				remotePath = mount.get("remotePath") or ""
-				if (mount.get("protocol") or "nfs") == "nfs":
-					nfsShares.add(f"{server}:/{remotePath}")
-				else:
-					cifsShares.add(f"//{server}/{remotePath}")
+			# A line surviving here isn't decided by whether it currently
+			# matches something in "effective" - that set never contains a
+			# just-deleted share, so its old line would never match and would
+			# be kept forever. Instead: any line that parses as one of ours
+			# (parseFstabLine()/parseAutoNetworkLine() - same ones load() uses
+			# to discover unmanaged NFS/CIFS lines) is always dropped here and
+			# only re-added below if it's still in "effective". A line that
+			# doesn't parse at all (/boot, swap, an unrelated manual mount, …)
+			# is left untouched either way.
 			autoNetworkLines = [line for line in fileReadLines(self.AUTO_NETWORK_PATH, default=[], source=MODULE_NAME)
-				if not lineIsManaged(line, " ", nfsShares, cifsShares, cifsColonPrefix=True)]
+				if self.parseAutoNetworkLine(line) is None]
 			fstabLines = [line for line in fileReadLines(self.FSTAB_PATH, default=[], source=MODULE_NAME)
-				if not lineIsManaged(line, None, nfsShares, cifsShares, cifsColonPrefix=False)]
+				if self.parseFstabLine(line) is None]
 			for mount, mode in effective:
 				prefix = "" if mount.get("enabled") else self.DISABLED_PREFIX
 				protocol = mount.get("protocol") or "nfs"
@@ -1837,6 +1828,9 @@ class NetworkMountRepository:
 						username = mount.get("username") or ""
 						password = mount.get("password") or ""
 						fstabLines.append(f"{prefix}//{server}/{remotePath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.sanitizeOptions(mount)}\t0 0")
+
+			print("[NetworkMountRepository] autoNetworkLines:", autoNetworkLines)
+			print("[NetworkMountRepository] fstabLines:", fstabLines)
 			fileWriteLines(self.AUTO_NETWORK_PATH, autoNetworkLines, source=MODULE_NAME)
 			fileWriteLines(self.FSTAB_PATH, fstabLines, source=MODULE_NAME)
 
@@ -2023,6 +2017,7 @@ class NetworkMountRepository:
 		if mount.get("mode") == "fstab":
 			mountPoint = self.mountPointFor(mount)
 			if not exists(mountPoint):
+				print(f"[NetworkManager] ensureMountPoint create dir '{mountPoint}'")
 				makedirs(mountPoint, exist_ok=True)
 
 	# Builds the argv for a manual "mount -t <protocol> <source> <mountPoint>
@@ -2124,18 +2119,14 @@ class NetworkCheck:
 		except Exception as err:
 			print(f"[NetworkManager] NetworkCheck: Error {err}!")
 
-	# fstab-mode shares are meant to mount at boot through the kernel's own
-	# fstab pass, but that runs before the network is up, so an NFS/CIFS
-	# entry in there can still race it. NetworkMountRepository is only needed
-	# transiently here (to know each enabled fstab entry's local mount point
-	# directory ahead of "mount -a", which needs the directory to already
-	# exist) - not kept as state on self, there's nothing left to do with it
-	# once this runs. Autofs mounts on first access via its own daemon, so
-	# there's nothing to do for those here.
 	def mountPendingShares(self):
 		repository = NetworkMountRepository()
+		mounts = repository.load()
+		known = {mount.get("shareName") for mount in mounts if mount.get("mode") == "fstab" and not mount.get("hddReplacement")}
+		self.removeOrphanedMountPoints(known)
+
 		pending = False
-		for mount in repository.load():
+		for mount in mounts:
 			if mount.get("mode") == "fstab" and mount.get("enabled") and not repository.isMounted(mount):
 				pending = True
 				repository.ensureMountPoint(mount)
@@ -2150,6 +2141,20 @@ class NetworkCheck:
 			harddiskmanager.enumerateNetworkMounts(refresh=True)
 
 		self.console.ePopen((self.MOUNT_BIN, self.MOUNT_BIN, "-a"), done)
+
+	def removeOrphanedMountPoints(self, knownShareNames):
+		base = "/media/net"
+		if isdir(base):
+			for name in listdir(base):
+				if name not in knownShareNames:
+					path = f"{base}/{name}"
+					if not isdir(path) or ismount(path):
+						continue
+					try:
+						rmdir(path)
+						print(f"[NetworkManager] NetworkCheck: removed orphaned mount point {path!r}")
+					except OSError as err:
+						print(f"[NetworkManager] NetworkCheck: could not remove orphaned mount point {path!r}: {err}")
 
 
 # mDNS/DNS-SD discovery for SMB/NFS hosts (NetworkMounts). Not started

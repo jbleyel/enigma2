@@ -7,13 +7,11 @@ from enigma import eTimer, gRGB
 from Components.ActionMap import HelpableActionMap
 from Components.config import ConfigNumber, ConfigPassword, ConfigSelection, ConfigText, ConfigYesNo, NoSave, config
 from Components.Console import Console
-from Components.Input import Input
 from Components.Label import Label
 from Components.NetworkManager import NetworkMountRepository, discoveryManager
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Screens.ChoiceBox import ChoiceBox
-from Screens.InputBox import InputBox
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen, ScreenSummary
 from Screens.Setup import Setup
@@ -237,7 +235,9 @@ class NetworkMountsOverview(Screen):
 
 		def keyMenuCallback(choice=None):
 			if choice:
-				if choice[1] == "delete":
+				if choice[1] == "manual":
+					self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=None)
+				elif choice[1] == "delete":
 					deleteMount()
 				elif choice[1] == "edit_credentials":
 					editCredentials()
@@ -247,18 +247,16 @@ class NetworkMountsOverview(Screen):
 					toggleSort()
 
 		current = self["mountList"].getCurrent()
+		sortLabel = _("Sort by Name") if config.network.mountsSortByIP.value else _("Sort by IP Address")
+		choices = [(_("Add Mount manually"), "manual")]
 		if current:
 			mount = current[self.LIST_DATA]
-			sortLabel = _("Sort by Name") if config.network.mountsSortByIP.value else _("Sort by IP Address")
-			choices = []
 			if not mount.get("hddReplacement"):
-				choices.append((_("Delete"), "delete"))
-			choices += [
-				(_("Edit Credentials"), "edit_credentials"),
-				(_("Remove Credentials"), "remove_credentials"),
-				(sortLabel, "toggle_sort"),
-			]
-			self.session.openWithCallback(keyMenuCallback, ChoiceBox, title=_("Mount actions"), list=choices)
+				choices.append((_("Delete Mount"), "delete"))
+			choices.append((_("Edit Credentials"), "edit_credentials"))
+			choices.append((_("Remove Credentials"), "remove_credentials"))
+		choices.append((sortLabel, "toggle_sort"))
+		self.session.openWithCallback(keyMenuCallback, ChoiceBox, title=_("Mount actions"), list=choices)
 
 	def keyGreen(self):
 		def keyGreenCallback(picked=None):
@@ -471,11 +469,12 @@ class NetworkShares(Screen):
 			"Data": 8,
 		}
 		self["list"] = List([], indexNames=indexNames)
+		self["list"].onSelectionChanged.append(self.selectionChanged)
 		self["description"] = Label()
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Credentials"))
 		self["key_yellow"] = StaticText(_("Rescan"))
-		self["key_blue"] = StaticText(_("Enter Manually"))
+		self["key_blue"] = StaticText("")
 		self["key_menu"] = StaticText(_("MENU"))
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "MenuActions", "ColorActions"], {
 			"ok": (self.keySelect, _("Expand/collapse the selected host, or use the selected share")),
@@ -485,7 +484,7 @@ class NetworkShares(Screen):
 			"red": (self.close, _("Close the screen")),
 			"green": (self.keyGreen, _("Edit stored username/password for the selected host")),
 			"yellow": (self.keyRescan, _("Rescan for available network shares")),
-			"blue": (self.keyManual, _("Enter a hostname or IP address manually")),
+			"blue": (self.keyToggleUsingIP, _("Toggle picking a share by IP address or by DNS name")),
 		}, prio=0, description=_("Network Share Actions"))
 		self.expanded = set()
 		self.shares = {}         # address -> [share dict, ...]
@@ -504,7 +503,6 @@ class NetworkShares(Screen):
 	# Discovery only runs while this screen is open, so it stops as soon as
 	# the user leaves instead of scanning the network in the background.
 	def startDiscovery(self):
-		print("NetworkShares DEBUG startDiscovery")
 		self.configuredShares = {(mount.get("server"), (mount.get("remotePath") or "").lstrip("/")): self.repository.mountPointFor(mount) for mount in self.repository.load()}
 		discoveryManager.onChanged.append(self.onHostsChanged)
 		discoveryManager.start(runMs=None)
@@ -512,7 +510,6 @@ class NetworkShares(Screen):
 		self.buildList()
 
 	def stopDiscovery(self):
-		print("NetworkShares DEBUG stopDiscovery")
 		self.refreshTimer.stop()
 		# Guard against removing a callback that was never registered - that
 		# would otherwise skip stopping discovery below.
@@ -524,46 +521,41 @@ class NetworkShares(Screen):
 		self.console.killAll()
 
 	def keyRescan(self):
-		print("NetworkShares DEBUG keyRescan")
-		# Deliberately no discoveryManager.stop()/reset()/start() here - discovery
-		# is already running continuously (started in startDiscovery()), and
-		# discoveryManager.rescan() itself only ever removes stale netscan hosts
-		# once the fresh scan is in, never up front - see its docstring. Clearing
-		# local expansion/share state below is safe though, that's just this
-		# screen's own share-listing UI state, unrelated to the host list.
 		self.expanded = set()
 		self.shares = {}
 		self.shareState = {}
 		self.pendingProtocols = {}
 		self["description"].setText(_("Scanning..."))
-		# Explicit callback, not just the normal onChanged -> onHostsChanged
-		# flow: that one never fires if the scan found zero hosts, and a
-		# failed rescan (e.g. no default-route interface) would otherwise
-		# leave the screen stuck on "Scanning...".
 		discoveryManager.rescan(self.onRescanDone)
 		self.buildList()
 
 	def onRescanDone(self, ok):
-		print("NetworkShares DEBUG onRescanDone")
 		if "list" in self:
 			if ok:
 				self.buildList()
 			else:
 				self["description"].setText(_("Rescan failed."))
 
-	def keyManual(self):
-		self.session.openWithCallback(self.manualEntered, InputBox, title=_("Enter the host name or IP address of the server:"), text="", maxSize=False, type=Input.TEXT)
-
-	def manualEntered(self, text=None):
-		text = (text or "").strip()
-		if text:
-			self.close({"address": text, "hostname": "", "protocol": None, "remotePath": "", "shareName": ""})
-
 	# Stored credentials are keyed by hostname; fall back to the address if
 	# no hostname is known for this host.
 	def hostnameFor(self, address):
 		host = discoveryManager.hosts.get(address) or {}
 		return host.get("hostname") or address
+
+	def selectionChanged(self):
+		current = self["list"].getCurrent()
+		blueText = ""
+		if current:
+			address = current[-1].get("address")
+			if address and (discoveryManager.hosts.get(address) or {}).get("hostname"):
+				blueText = _("Using IP") if config.network.browserUsingIP.value else _("Using DNS")
+		self["key_blue"].setText(blueText)
+		self["actions"].setEnabledAction("blue", blueText != "")
+
+	def keyToggleUsingIP(self):
+		config.network.browserUsingIP.value = not config.network.browserUsingIP.value
+		config.network.browserUsingIP.save()
+		self.selectionChanged()
 
 	def keyGreen(self):
 		current = self["list"].getCurrent()
@@ -640,10 +632,14 @@ class NetworkShares(Screen):
 
 	def pickShare(self, share):
 		host = discoveryManager.hosts.get(share["address"]) or {}
+		hostname = host.get("hostname") or ""
+		# Falls back to the IP regardless of the toggle if this host has no
+		# DNS name - the same case that keeps blue hidden in selectionChanged().
+		address = hostname if (hostname and not config.network.browserUsingIP.value) else share["address"]
 
 		self.close({
-			"address": share["address"],
-			"hostname": host.get("hostname") or "",
+			"address": address,
+			"hostname": hostname,
 			"protocol": {
 				"smb": "cifs",
 				"nfs": "nfs"
@@ -771,7 +767,6 @@ class NetworkShares(Screen):
 	# host list, this screen just displays it --
 
 	def onHostsChanged(self):
-		print("NetworkShares DEBUG onHostsChanged")
 		if "list" in self and not self.refreshTimer.isActive():
 			self.refreshTimer.start(self.REFRESH_DEBOUNCE_MS, True)
 
@@ -815,6 +810,7 @@ class NetworkShares(Screen):
 			self["list"].setList(entries)
 			count = len(discoveryManager.hosts)
 			self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning…"))
+			self.selectionChanged()
 
 
 # Username/password prompt for one host's share-listing credentials -
