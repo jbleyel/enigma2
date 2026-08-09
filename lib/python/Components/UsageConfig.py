@@ -1470,7 +1470,7 @@ def InitUsageConfig():
 
 	config.network.ZeroTierNetworkId = ConfigText(default=" " * 16, fixed_size=True)
 
-	config.network.mountsSortByIP = ConfigYesNo(default=False)
+	config.network.mountsSortByMount = ConfigYesNo(default=True)
 	config.network.browserSortByIP = ConfigYesNo(default=False)
 	config.network.browserUsingIP = ConfigYesNo(default=False)
 

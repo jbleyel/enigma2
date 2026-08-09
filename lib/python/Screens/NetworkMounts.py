@@ -130,18 +130,14 @@ class NetworkMountsOverview(Screen):
 			server = mount.get("server") or ""
 			return discoveryManager.hosts.get(server, {}).get("hostname") or server
 
-		def sortKey(mount):
-			if config.network.mountsSortByIP.value:
-				server = mount.get("server") or ""
-				try:
-					key = tuple(int(x) for x in server.split("."))
-				except ValueError:
-					key = (999, 999, 999, 999)
-			else:
-				key = hostnameFor(mount).lower()
-			return key
+		def sortKeyByMountName(mount):
+			return (mount.get("shareName") or mount.get("id") or "").lower()
 
-		self.mounts = sorted(self.repository.load(), key=sortKey)
+		def sortKeyByHostname(mount):
+			name = hostnameFor(mount)
+			return (0, ".".join(f"{part:0>3}" for part in name.split("."))) if all(ch.isdigit() or ch == "." for ch in name) else (1, name.lower())
+
+		self.mounts = sorted(self.repository.load(), key=sortKeyByMountName if config.network.mountsSortByMount.value else sortKeyByHostname)
 		mountList = []
 		for mount in self.mounts:
 			shareName = mount.get("shareName") or mount.get("id")
@@ -229,8 +225,8 @@ class NetworkMountsOverview(Screen):
 			self.session.showInfo(_("Stored credentials deleted for this server."))
 
 		def toggleSort():
-			config.network.mountsSortByIP.value = not config.network.mountsSortByIP.value
-			config.network.mountsSortByIP.save()
+			config.network.mountsSortByMount.value = not config.network.mountsSortByMount.value
+			config.network.mountsSortByMount.save()
 			self.buildList()
 
 		def keyMenuCallback(choice=None):
@@ -247,7 +243,7 @@ class NetworkMountsOverview(Screen):
 					toggleSort()
 
 		current = self["mountList"].getCurrent()
-		sortLabel = _("Sort by Name") if config.network.mountsSortByIP.value else _("Sort by IP Address")
+		sortLabel = _("Sort by Mount Name") if config.network.mountsSortByMount.value else _("Sort by Hostname/IP Address")
 		choices = [(_("Add Mount manually"), "manual")]
 		if current:
 			mount = current[self.LIST_DATA]
