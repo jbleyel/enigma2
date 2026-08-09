@@ -238,7 +238,7 @@ class NetworkMountsOverview(Screen):
 					toggleSort()
 
 		current = self["mountList"].getCurrent()
-		sortLabel = _("Sort by Mount Name") if config.network.mountsSortByMount.value else _("Sort by Hostname/IP Address")
+		sortLabel = _("Sort by Hostname/IP Address") if config.network.mountsSortByMount.value else _("Sort by Mount Name")
 		choices = [(_("Add Mount manually"), "manual")]
 		if current:
 			mount = current[self.LIST_DATA]
