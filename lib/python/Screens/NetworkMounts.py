@@ -188,7 +188,7 @@ class NetworkMountsOverview(Screen):
 			mountPoint = self.repository.mountPointFor(mount)
 			if self.repository.isMounted(mount):
 				print(f"[{MODULE_NAME}] keyYellow: unmounting {mountPoint!r}")
-				self.console.ePopen((self.UMOUNT, self.UMOUNT, mountPoint), lambda data, retVal, extra=None: onMountResult(True, data, retVal, extra))
+				self.console.ePopen((self.UMOUNT, self.UMOUNT, "-l", mountPoint), lambda data, retVal, extra=None: onMountResult(True, data, retVal, extra))
 			else:
 				argv, mountPoint = self.repository.buildMountCommand(mount)
 				loggedArgv = sub(r"pass=[^,]*", "pass=***", " ".join(argv))

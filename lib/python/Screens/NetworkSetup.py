@@ -46,7 +46,7 @@ from Screens.Processing import Processing
 from Screens.Screen import Screen
 from Screens.Setup import Setup
 from Tools.Conversions import formatNetworkSpeed
-from Tools.Directories import SCOPE_SKINS, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
+from Tools.Directories import SCOPE_SKINS, fileReadLine, fileReadLines, fileReadXML, fileWriteLines, resolveFilename
 from Tools.ServiceAction import ServiceAction
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -1899,6 +1899,8 @@ class DNSSettings(Setup):
 						v6pos += 1
 				except ValueError:
 					pass
+		hostname = fileReadLine("/etc/hostname", default="", source=MODULE_NAME)
+		self.hostname = NoSave(ConfigText(default=hostname, fixed_size=False))
 		Setup.__init__(self, session=session, setup="DNS")
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
@@ -1985,6 +1987,9 @@ class DNSSettings(Setup):
 		self.moveItem(1)
 
 	def keySave(self):
+		if self.hostname.isChanged:
+			fileWriteLines("/etc/hostname", [self.hostname.value, ""], source=MODULE_NAME)
+
 		servers: list = []
 		if config.usage.dns.value == "dnscrypt":
 			servers = [[127, 0, 0, 1]]
