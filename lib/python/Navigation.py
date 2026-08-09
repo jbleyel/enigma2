@@ -18,7 +18,6 @@ from Plugins.Plugin import PluginDescriptor
 from Screens.InfoBar import InfoBar, MoviePlayer
 from Screens.InfoBarGenerics import streamrelay
 from Screens.MessageBox import MessageBox
-
 import Screens.Standby
 from Tools.BoundFunction import boundFunction
 from Tools.Directories import fileWriteLine
@@ -47,6 +46,7 @@ class Navigation:
 		NavigationInstance.instance = self  # This is needed to prevent circular imports
 		self.ServiceHandler = eServiceCenter.getInstance()
 		self.activeStreamings = []
+		self.activeStreamingsByClient = {}
 		self.indicatorRecordingsCount = None
 		self.anyRecordingsCount = None
 		self.realRecordingsCount = None
@@ -502,6 +502,7 @@ class Navigation:
 			MoviePlayerInstance.close()
 
 	def recordService(self, ref, simulate=False, type=pNavigation.isUnknownRecording):
+		# print(f"[Navigation] recordService service '{str(ref)}' simulate={simulate} type={type}.")
 		service = None
 		if not simulate:
 			print(f"[Navigation] Recording service is '{str(ref)}'.")
@@ -534,17 +535,26 @@ class Navigation:
 		if "127.0.0.1" in host:  # Ignore local host.
 			return
 		print(f"[Navigation] Stream status changed: {status}, {sref}, {host}.")
+		wasStreaming = bool(self.activeStreamings)
+		key = (host or "", sref or "")
 		if status == 0:
-			self.activeStreamings = [sref]  # TODO: Check if this is correct. Add support for multiple streams.
+			ref, count = self.activeStreamingsByClient.get(key, (sref, 0))
+			self.activeStreamingsByClient[key] = (ref, count + 1)
 		else:
-			self.activeStreamings = []
+			ref, count = self.activeStreamingsByClient.get(key, (sref, 0))
+			if count > 1:
+				self.activeStreamingsByClient[key] = (ref, count - 1)
+			else:
+				self.activeStreamingsByClient.pop(key, None)
+		self.activeStreamings = list(dict.fromkeys(ref for ref, count in self.activeStreamingsByClient.values() if ref))
 
 		self.anyRecordingsCount = None
 		self.indicatorRecordingsCount = None
 		self.realRecordingsCount = None
 
-		for x in self.record_event:
-			x(None, iRecordableService.evStart if status == 0 else iRecordableService.evEnd)
+		if wasStreaming != bool(self.activeStreamings):
+			for x in self.record_event:
+				x(None, iRecordableService.evStart if self.activeStreamings else iRecordableService.evEnd)
 
 	def getRecordings(self, simulate=False, type=pNavigation.isAnyRecording):
 		# print_stack()
