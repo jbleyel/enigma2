@@ -34,6 +34,7 @@ class ServiceScan(Screen):
 
 	def __init__(self, session, scanList):
 		Screen.__init__(self, session, enableHelp=True)
+		self.skinName = ["ScanService", "ServiceScan"]
 		self.setTitle(_("Service Scan"))
 		self.scanList = scanList
 		if hasattr(session, "infobar"):
@@ -56,16 +57,16 @@ class ServiceScan(Screen):
 		# 	self.session.pipshown = False
 		self.currentServiceRef = self.session.nav.getCurrentlyPlayingServiceReference()
 		self.session.nav.stopService()
+		self["network"] = Label()
+		self["FrontendInfo"] = FrontendInfo()
+		self["FrontendInfo"].frontend_source = lambda *args: None
+		self["pass"] = Label()
+		self["transponder"] = Label()
+		self["scan_state"] = Label()
+		self["scan_progress"] = ProgressBar()
 		self.serviceList = []
 		self["servicelist"] = MenuList(self.serviceList)
 		self["servicelist"].selectionEnabled(False)
-		self["scan_progress"] = ProgressBar()
-		self["pass"] = Label()
-		self["network"] = Label()
-		self["transponder"] = Label()
-		self["scan_state"] = Label()
-		self["FrontendInfo"] = FrontendInfo()
-		self["FrontendInfo"].frontend_source = lambda *args: None
 		self["key_red"] = StaticText(_("Cancel"))
 		self["key_green"] = StaticText()
 		self["actions"] = HelpableActionMap(self, ["CancelActions"], {
@@ -104,6 +105,8 @@ class ServiceScan(Screen):
 		if self.session.nav.RecordTimer.isRecording():
 			self["pass"].setText(_("Recording in progress!"))
 			self["scan_state"].setText(_("Scanning can't be performed while recordings are in progress."))
+			if self.run == 0:
+				self["key_red"].setText(_("Close"))
 		else:
 			self.scan = eComponentScan()
 			self.scan.newService.get().append(self.newService)
@@ -285,9 +288,9 @@ class ServiceScan(Screen):
 					self["FrontendInfo"].frontend_type = currentSystem
 					self["FrontendInfo"].changed((1,))
 			progress = self.scan.getProgress()
-			self["scan_progress"].setValue(progress)
-			self["network"].setText(transponderType)
+			self["network"].setText(f"{transponderType} {_("Scan")}" if transponderType else "")
 			self["transponder"].setText(transponderText)
+			self["scan_progress"].setValue(progress)
 			for callback in self.onProgressChanged:
 				callback(progress)
 		match self.state:

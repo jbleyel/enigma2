@@ -317,10 +317,12 @@ def getParentSize(object, desktop):
 		if parent and parent.size().isEmpty():
 			parent = parent.getParent()
 		if parent:
-			return parent.size()
+			value = parent.size()
 		elif desktop:
-			return desktop.size()  # Widget has no parent, use desktop size instead for relative coordinates.
-	return eSize()
+			value = desktop.size()  # Widget has no parent, use desktop size instead for relative coordinates.
+		else:
+			value = eSize()
+	return value
 
 
 def skinError(errorMessage):
@@ -342,6 +344,21 @@ def parseOptions(options, attribute, value, default):
 		skinError(f"The '{attribute}' parser is not correctly initialized, using '{default}'")
 		value = default
 	return value
+
+
+def parseValuePair(value, scale, object=None, desktop=None, size=None):
+	if value in variables:
+		value = variables[value]
+	(xValue, yValue) = value.split(",")  # These values will be stripped in parseCoordinate().
+	parentsize = eSize()
+	if object and ("c" in xValue or "c" in yValue or "e" in xValue or "e" in yValue or "%" in xValue or "%" in yValue):  # Need parent size for 'c', 'e' and '%'.
+		parentsize = getParentSize(object, desktop)
+	# x = xValue
+	# y = yValue
+	xValue = parseCoordinate(xValue, parentsize.width(), size and size.width() or 0, None, scale[0])
+	yValue = parseCoordinate(yValue, parentsize.height(), size and size.height() or 0, None, scale[1])
+	# print(f"[Skin] parseValuePair DEBUG: Scaled pair X {x} -> {xValue}, Y {y} -> {yValue}.")
+	return (xValue, yValue)
 
 
 def parseAlphaTest(value):
@@ -388,25 +405,26 @@ def parseColor(value, default=0x00FFFFFF):
 
 # Convert a coordinate string into a number.  Used to convert object position and
 # size attributes into a number.
-#    s is the input string.
-#    e is the parent object size to do relative calculations on parent
-#    size is the size of the object size (e.g. width or height)
-#    font is a font object to calculate relative to font sizes
+# 	s is the input string.
+# 	e is the parent object size to do relative calculations on parent
+# 	size is the size of the object size (e.g. width or height)
+# 	font is a font object to calculate relative to font sizes
 # Note some constructs for speeding up simple cases that are very common.
 #
 # Can do things like:  10+center-10w+4%
 # To center the widget on the parent widget,
-#    but move forward 10 pixels and 4% of parent width
-#    and 10 character widths backward
+# 	but move forward 10 pixels and 4% of parent width
+# 	and 10 character widths backward
 # Multiplication, division and subexpressions are also allowed: 3*(e-c/2)
 #
-# Usage:  center : Center the object on parent based on parent size and object size.
-#         e      : Take the parent size/width.
-#         c      : Take the center point of parent size/width.
-#         %      : Take given percentage of parent size/width.
-#         w      : Multiply by current font width. (Only to be used in elements where the font attribute is available, i.e. not "None")
-#         h      : Multiply by current font height. (Only to be used in elements where the font attribute is available, i.e. not "None")
-#         f      : Replace with getSkinFactor().
+# Usage:
+# 	center	Center the object on parent based on parent size and object size.
+# 	e	Take the parent size/width.
+# 	c	Take the center point of parent size/width.
+# 	%	Take given percentage of parent size/width.
+# 	w	Multiply by current font width. (Only to be used in elements where the font attribute is available, i.e. not "None")
+# 	h	Multiply by current font height. (Only to be used in elements where the font attribute is available, i.e. not "None")
+# 	f	Replace with getSkinFactor().
 #
 def parseCoordinate(value, parent, size=0, font=None, scale=(1, 1)):
 	def scaleNumbers(coordinate, scale):
@@ -428,41 +446,44 @@ def parseCoordinate(value, parent, size=0, font=None, scale=(1, 1)):
 
 	value = value.strip()
 	try:
-		result = int(int(value) * scale[0] / scale[1])  # For speed try a simple number first.
+		value = int(int(value) * scale[0] / scale[1])  # For speed try a simple number first.
 	except ValueError:
 		if value == "center":  # For speed as this can be common case.
-			return max(int((parent - size) // 2) if size else 0, 0)
+			value = max(int((parent - size) // 2) if size else 0, 0)
 		elif value == "*":
-			return None
-		if font is None:
-			font = "Body"
-			if "w" in value or "h" in value:
-				print(f"[Skin] Warning: Coordinate 'w' and/or 'h' used but font is None, '{font}' font ('{fonts[font][0]}', width={fonts[font][3]}, height={fonts[font][2]}) assumed!")
-		val = scaleNumbers(value, scale)
-		if "center" in val:
-			val = val.replace("center", str((parent - size) / 2.0))
-		if "e" in val:
-			val = val.replace("e", str(parent))
-		if "c" in val:
-			val = val.replace("c", str(parent / 2.0))
-		if "%" in val:
-			val = val.replace("%", f"*{parent / 100.0}")
-		if "w" in val:
-			val = val.replace("w", f"*{fonts[font][3]}")
-		if "h" in val:
-			val = val.replace("h", f"*{fonts[font][2]}")
-		if "f" in val:
-			val = val.replace("f", f"{getSkinFactor()}")
-		try:
-			result = int(val)  # For speed try a simple number first.
-		except ValueError:
+			value = None
+		else:
+			if font is None:
+				font = "Body"
+				if "w" in value or "h" in value:
+					print(f"[Skin] Warning: Coordinate 'w' and/or 'h' used but font is None, '{font}' font ('{fonts[font][0]}', width={fonts[font][3]}, height={fonts[font][2]}) assumed!")
+			val = scaleNumbers(value, scale)
+			if "center" in val:
+				val = val.replace("center", str((parent - size) / 2.0))
+			if "e" in val:
+				val = val.replace("e", str(parent))
+			if "c" in val:
+				val = val.replace("c", str(parent / 2.0))
+			if "%" in val:
+				val = val.replace("%", f"*{parent / 100.0}")
+			if "w" in val:
+				val = val.replace("w", f"*{fonts[font][3]}")
+			if "h" in val:
+				val = val.replace("h", f"*{fonts[font][2]}")
+			if "f" in val:
+				val = val.replace("f", f"{getSkinFactor()}")
 			try:
-				result = int(eval(val))
-			except Exception as err:
-				print(f"[Skin] Error ({type(err).__name__} - {err}): Coordinate '{value}', calculated to '{val}', can't be evaluated!")
-				result = 0
-	# print(f"[Skin] parseCoordinate DEBUG: value='{value}', parent='{parent}', size={size}, font='{font}', scale='{scale}', result='{result}'.")
-	return 0 if result < 0 else result
+				value = int(val)  # For speed try a simple number first.
+			except ValueError:
+				try:
+					value = int(eval(val))
+				except Exception as err:
+					print(f"[Skin] Error ({type(err).__name__} - {err}): Coordinate '{value}', calculated to '{val}', can't be evaluated!")
+					value = 0
+			# print(f"[Skin] parseCoordinate DEBUG: value='{value}', parent='{parent}', size={size}, font='{font}', scale='{scale}', val='{val}'.")
+			if value < 0:
+				value = 0
+	return value
 
 
 def parseFont(value, scale=((1, 1), (1, 1))):
@@ -495,19 +516,19 @@ def parseFont(value, scale=((1, 1), (1, 1))):
 
 
 def parseFontScale(value, scale=((1, 1), (1, 1))):
-    scaleType, *size = value.split(";")
-    try:
-        size = int(int(size[0] if size else -4) * scale[1][0] / scale[1][1])
-    except ValueError as err:
-        print(f"[Skin] Error ({type(err).__name__} - {err}): Font scale size in '{value}' is '{size}' and is invalid!")
-        size = 0
-    if scaleType in ("size", "width"):
-        scaleType = 1 if scaleType == "size" else 2
-    else:
-        print(f"[Skin] Error: Font scale must be 'size' or 'width' not '{scaleType}'!")
-        size = 0
-        scaleType = 0
-    return scaleType, size
+	scaleType, *size = value.split(";")
+	try:
+		size = int(int(size[0] if size else -4) * scale[1][0] / scale[1][1])
+	except ValueError as err:
+		print(f"[Skin] Error ({type(err).__name__} - {err}): Font scale size in '{value}' is '{size}' and is invalid!")
+		size = 0
+	if scaleType in ("size", "width"):
+		scaleType = 1 if scaleType == "size" else 2
+	else:
+		print(f"[Skin] Error: Font scale must be 'size' or 'width' not '{scaleType}'!")
+		size = 0
+		scaleType = 0
+	return scaleType, size
 
 
 def parseGradient(value):
@@ -546,10 +567,10 @@ def parseGradient(value):
 
 def parseHorizontalAlignment(value):
 	options = {
-		"left": 0,  # RT_HALIGN_LEFT,
-		"center": 1,  # RT_HALIGN_CENTER,
-		"right": 2,  # RT_HALIGN_RIGHT,
-		"block": 3  # RT_HALIGN_BLOCK
+		"left": 0,  # RT_HALIGN_LEFT.
+		"center": 1,  # RT_HALIGN_CENTER.
+		"right": 2,  # RT_HALIGN_RIGHT.
+		"block": 3  # RT_HALIGN_BLOCK.
 	}
 	return parseOptions(options, "horizontalAlignment", value, 0)
 
@@ -586,16 +607,6 @@ def parseItemAlignment(value):
 	return parseOptions(options, "itemAlignment", value, eListbox.itemAlignLeftTop)
 
 
-def parseScrollbarLength(value, default):
-	if value and value.isdigit():
-		return int(value)
-	options = {
-		"full": 0,
-		"auto": -1
-	}
-	return options.get(value, default)
-
-
 def parseListOrientation(value):
 	options = {
 		"vertical": 0b01,
@@ -615,37 +626,39 @@ def parseOrientation(value):
 		"orBottomToTop": 0x11
 	}
 	value = parseOptions(options, "orientation", value, 0x00)
-	return (value & 0x10, value & 0x01)  # (orHorizontal / orVertical, not swapped / swapped)
+	return (value & 0x10, value & 0x01)  # (orHorizontal / orVertical, not swapped / swapped).
 
 
 # Convert a parameter string into a value based on string triggers.  The type
 # and value returned is based on the trigger.
 #
-# Usage:  *string   : The paramater is a string with the "*" is removed (Type: String).
-#         #aarrggbb : The parameter is a HEX color string (Type: Integer).
-#         0xABCD    : The parameter is a HEX integer (Type: Integer).
-#         5.3       : The parameter is a floating point number (Type: Float).
-#         red       : The parameter is a named color (Type: Integer).
-#         font;zize : The parameter is a font name with a font size (Type: List[Font, Size]).
-#         123       : The parameter is an integer (Type: Integer).
+# Usage:
+# 	*string		The paramater is a string with the "*" is removed (Type: String).
+# 	#aarrggbb	The parameter is a HEX color string (Type: Integer).
+# 	0xABCD		The parameter is a HEX integer (Type: Integer).
+# 	5.3		The parameter is a floating point number (Type: Float).
+# 	red		The parameter is a named color (Type: Integer).
+# 	font;zize	The parameter is a font name with a font size (Type: List[Font, Size]).
+# 	123		The parameter is an integer (Type: Integer).
 #
 def parseParameter(value):
 	"""This function is responsible for parsing parameters in the skin, it can parse integers, floats, hex colors, hex integers, named colors, fonts and strings."""
 	if value[0] == "*":  # String.
-		return value[1:]
+		value = value[1:]
 	elif value[0] == "#":  # HEX Color.
-		return int(value[1:], 16)
+		value = int(value[1:], 16)
 	elif value[:2] == "0x":  # HEX Integer.
-		return int(value, 16)
+		value = int(value, 16)
 	elif "." in value:  # Float number.
-		return float(value)
+		value = float(value)
 	elif value in colors:  # Named color.
-		return colors[value].argb()
+		value = colors[value].argb()
 	elif value.find(";") != -1:  # Font.
 		(font, size) = (x.strip() for x in value.split(";", 1))
-		return [font, int(size)]
+		value = [font, int(size)]
 	else:  # Integer.
-		return int(value)
+		value = int(value)
+	return value
 
 
 def parsePixmap(path, desktop):
@@ -683,9 +696,22 @@ def parseRadius(value):
 		edgeValue = 0
 		for edge in edges:
 			edgeValue += edgesMask.get(edge, 0)
-		return int(data[0]), edgeValue
+		value = int(data[0]), edgeValue
 	else:
-		return int(data[0]), eWidget.RADIUS_ALL
+		value = int(data[0]), eWidget.RADIUS_ALL
+	return value
+
+
+def parseScrollbarLength(value, default):
+	if value and value.isdigit():
+		value = int(value)
+	else:
+		options = {
+			"full": 0,
+			"auto": -1
+		}
+		value = options.get(value, default)
+	return value
 
 
 def parseSize(value, scale, object=None, desktop=None):
@@ -701,21 +727,6 @@ def parseTabWidth(value, default):
 		}
 		value = options.get(value, default)
 	return value
-
-
-def parseValuePair(value, scale, object=None, desktop=None, size=None):
-	if value in variables:
-		value = variables[value]
-	(xValue, yValue) = value.split(",")  # These values will be stripped in parseCoordinate().
-	parentsize = eSize()
-	if object and ("c" in xValue or "c" in yValue or "e" in xValue or "e" in yValue or "%" in xValue or "%" in yValue):  # Need parent size for 'c', 'e' and '%'.
-		parentsize = getParentSize(object, desktop)
-	# x = xValue
-	# y = yValue
-	xValue = parseCoordinate(xValue, parentsize.width(), size and size.width() or 0, None, scale[0])
-	yValue = parseCoordinate(yValue, parentsize.height(), size and size.height() or 0, None, scale[1])
-	# print(f"[Skin] parseValuePair DEBUG: Scaled pair X {x} -> {xValue}, Y {y} -> {yValue}.")
-	return (xValue, yValue)
 
 
 def parseScale(value):
@@ -865,9 +876,9 @@ def parseSeparator(attribute, value):
 	values = [parseInteger(x.strip()) for x in value.split(",")]
 	count = len(values)
 	if count == 1:
-		return [-1, -1, -1, values[0]]
+		values = [-1, -1, -1, values[0]]
 	elif count == 2:
-		return [-1, values[0], -1, values[1]]
+		values = [-1, values[0], -1, values[1]]
 	elif count != 4:
 		print(f"[Skin] Error: Attribute '{attribute}' with value '{value}' is invalid!  Attribute must have 1, 2 or 4 values.")
 		values = [-1, -1, -1, 1]
@@ -891,25 +902,25 @@ def parsePadding(attribute, value):
 
 def parseVerticalAlignment(value):
 	options = {
-		"top": 0,  # RT_VALIGN_TOP,
-		"center": 1,  # RT_VALIGN_CENTER,
-		"middle": 1,  # RT_VALIGN_CENTER,
-		"bottom": 2  # RT_VALIGN_BOTTOM
+		"top": 0,  # RT_VALIGN_TOP.
+		"center": 1,  # RT_VALIGN_CENTER.
+		"middle": 1,  # RT_VALIGN_CENTER.
+		"bottom": 2  # RT_VALIGN_BOTTOM.
 	}
 	return parseOptions(options, "verticalAlignment", value, 1)
 
 
 def parseWrap(value):
-	options = {
-		"noWrap": 0,
-		"off": 0,
-		"0": 0,
-		"wrap": 1,  # RT_WRAP,
-		"on": 1,  # RT_WRAP,
-		"1": 1,  # RT_WRAP,
-		"ellipsis": 2  # RT_ELLIPSIS
-	}
-	return parseOptions(options, "wrap", value, 0)
+	match value:
+		case "ellipsis":
+			result = 2  # RT_ELLIPSIS.
+		case "noWrap":
+			result = 0
+		case "wrap":
+			result = 1  # RT_WRAP.
+		case _:
+			result = 1 if parseBoolean("1", value) else 0
+	return result
 
 
 def parseZoom(mode, zoomType):

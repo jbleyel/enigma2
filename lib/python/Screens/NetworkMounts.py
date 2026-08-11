@@ -124,13 +124,13 @@ class NetworkMountsOverview(Screen):
 
 	def buildList(self):
 		def sortKeyByMountName(mount):
-			return (mount.get("shareName") or mount.get("id") or "").lower()
+			return (mount.get("shareName") or mount.get("id") or "").casefold()
 
 		def sortKeyByHostname(mount):
 			server = mount.get("server") or ""
 			name = discoveryManager.hosts.get(server, {}).get("hostname") or server
 			octets = name.split(".")
-			return (0, ".".join(f"{x:0>3}" for x in octets)) if len(octets) == 4 and all(x.isdigit() or x == "." for x in name) else (1, name.lower())
+			return (0, ".".join(f"{x:0>3}" for x in octets)) if len(octets) == 4 and all(x.isdigit() or x == "." for x in name) else (1, name.casefold())
 
 		self.mounts = sorted(self.repository.load(), key=sortKeyByMountName if config.network.mountsSortByMount.value else sortKeyByHostname)
 		mountList = []
@@ -481,6 +481,7 @@ class NetworkShares(Screen):
 		self.shares = {}         # address -> [share dict, ...]
 		self.shareState = {}     # address -> "loading" | "done" | "empty"
 		self.pendingProtocols = {}  # address -> {"nfs", "smb"} remaining
+		self.smbGuestCallback = {}  # address -> one-shot callback run once the guest SMB probe below finishes
 		self.configuredShares = {}  # (server, remotePath) -> local mount path, for already-configured shares
 		self.repository = NetworkMountRepository()
 		self.menuAddress = None
@@ -611,15 +612,27 @@ class NetworkShares(Screen):
 			return
 		self.expanded.add(address)
 		self.buildList()
-		# Many servers refuse or limit anonymous share listing, so without
-		# credentials the SMB shares just silently don't show up - ask for
-		# them up front instead. Leaving it blank still proceeds anonymously;
-		# it just asks again next time since nothing got saved.
+		# Without stored credentials, probe SMB anonymously first - many
+		# servers do allow guest share listing, and this avoids asking for
+		# credentials up front for hosts that don't need them. Only if the
+		# guest probe turns up no SMB shares do we fall back to asking.
+		# NFS has no such concept (showmount is unauthenticated either way),
+		# so this fallback never applies to NFS-only hosts.
 		hostname = self.hostnameFor(address)
 		if self.repository.credentialsGet(hostname).get("username"):
 			self.startShareEnumeration(address)
-		else:
-			self.session.openWithCallback(lambda *args: self.startShareEnumeration(address), NetworkCredentials, hostname, self.repository)
+			return
+		host = discoveryManager.hosts.get(address) or {}
+		if "smb" in host.get("protocols", set()):
+			self.smbGuestCallback[address] = lambda: self.onGuestSmbDone(address, hostname)
+		self.startShareEnumeration(address)
+
+	def onGuestSmbDone(self, address, hostname):
+		if address not in self.expanded:
+			return
+		if any(share["protocol"] == "smb" for share in self.shares.get(address, [])):
+			return  # Guest access already found SMB shares.
+		self.session.openWithCallback(lambda *args: self.startShareEnumeration(address), NetworkCredentials, hostname, self.repository)
 
 	def pickShare(self, share):
 		host = discoveryManager.hosts.get(share["address"]) or {}
@@ -753,6 +766,10 @@ class NetworkShares(Screen):
 				if not pending:
 					self.shareState[address] = "done" if self.shares.get(address) else "empty"
 			self.buildList()
+			if protocol == "smb":
+				callback = self.smbGuestCallback.pop(address, None)
+				if callback:
+					callback()
 
 	# -- discovery (hosts, not shares) - DiscoveryManager owns the merged
 	# host list, this screen just displays it --

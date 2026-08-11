@@ -12,6 +12,7 @@ from Components.ConfigList import ConfigListScreen
 from Components.International import international
 from Components.Label import Label
 from Components.NimManager import InitNimManager, LNB_CHOICES, MAX_LNB_WILDCARDS, UNICABLE_CHOICES, inputPowerSlotForNim, maxFixedLnbPositions, nimmanager
+from Components.Pixmap import Pixmap
 from Components.SelectionList import SelectionEntryComponent, SelectionList
 from Components.SystemInfo import BoxInfo
 from Components.Sources.List import List
@@ -113,17 +114,22 @@ class ServiceStopScreen:
 class NimSetup(Screen, ConfigListScreen, ServiceStopScreen):
 	def __init__(self, session, slotid):
 		printCallSequence(10)
-		Screen.__init__(self, session)
-		self.setup_title = _("Tuner Settings")
+		Screen.__init__(self, session, mandatoryWidgets=["footnote", "description"])
+		self.skinName = ["NimSetup", "Setup"]
+		self["footnote"] = Label()
+		self["footnote"].hide()
+		self["HelpWindow"] = Pixmap()
+		self["HelpWindow"].hide()
 		self.slotid = slotid
 		self.list = []
 		ServiceStopScreen.__init__(self)
 		ConfigListScreen.__init__(self, self.list, on_change=self.changedEntry)
-		self["key_red"] = Label(_("Close"))
-		self["key_green"] = Label(_("Save"))
-		self["key_yellow"] = Label(_("Configuration mode"))
-		self["key_blue"] = Label()
-		self["description"] = Label(" ")
+		self.setTitle(_("Tuner Settings"))
+		self["key_red"] = StaticText(_("Close"))
+		self["key_green"] = StaticText(_("Save"))
+		self["key_yellow"] = StaticText(_("Configuration mode"))
+		self["key_blue"] = StaticText()
+		self["description"] = Label()
 		self["actions"] = ActionMap(["SetupActions", "SatlistShortcutAction", "ColorActions"], {
 			"ok": self.keyOk,
 			"save": self.keySave,
