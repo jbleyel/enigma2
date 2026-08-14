@@ -367,6 +367,7 @@ class NetworkOverview(Screen):
 				speed = formatNetworkSpeed(netInfo.speed) if netInfo.speed > 0 else "—"
 			internet = adapter.adapterEnabled and adapter.hasInternet
 			inetGlyph = "\uEA68" if internet else ""  # Glyph is Cloud.
+			print("DEBUG buildOverviewAdapterRow:", netInfo.ip, netInfo.gateway)
 			return (
 				self.OVERVIEW_TEMPLATE_ROW,
 				"\uE9FE" if adapter.isWiFi else "\uEA5A",                         # AdapterGlyph (Glyphs are Wi-fi and Settings_ethernet).
@@ -1277,6 +1278,7 @@ class NetworkWiFiScanScreen(Screen):
 
 	def keyStartScan(self):
 		def finishScan(results, parser):
+			print("DEBUG keyStartScan finishScan")
 			self.scanning = False
 			if isinstance(results, bytes):
 				results = results.decode("UTF-8", errors="replace")
@@ -1311,6 +1313,7 @@ class NetworkWiFiScanScreen(Screen):
 
 		def scanViaWpaCli():
 			def scanResultsCallback(results, retVal, extraArgs=None):
+				print("DEBUG keyStartScan scanResultsCallback")
 				finishScan(results, self.parseWpaCliScanResults)
 
 			def triggerScanCallback(results=None, retVal=0, extraArgs=None):
@@ -1318,6 +1321,7 @@ class NetworkWiFiScanScreen(Screen):
 				self.scanTimer.callback.append(lambda: self.console.ePopen((wpaCliBin, wpaCliBin, "-i", self.adapter, "scan_results"), callback=scanResultsCallback))
 				self.scanTimer.start(3000, True)
 
+			print("DEBUG keyStartScan call wpa_cli")
 			# The wpa_supplicant already owns the radio for this iface (it is associated
 			# to a network). A concurrent "iwlist scanning" ioctl typically fails
 			# with "Device or resource busy" on nl80211 drivers in that state, so
@@ -1325,19 +1329,26 @@ class NetworkWiFiScanScreen(Screen):
 			self.console.ePopen((wpaCliBin, wpaCliBin, "-i", self.adapter, "scan"), callback=triggerScanCallback)
 
 		def ifUpCallback(results=None, retVal=0, extraArgs=None):
+			print("DEBUG keyStartScan ifUpCallback")
 			if networkManager.wpaSupplicantRunning(self.adapter):
+				print("DEBUG keyStartScan scanViaWpaCli")
 				scanViaWpaCli()
 			elif self.adapterObj.isBroadcomWl:
+				print("DEBUG keyStartScan call wl")
 				self.console.ePopen(("/usr/bin/wl", "/usr/bin/wl", "up"), callback=scanViaIwlist)
 			else:
+				print("DEBUG keyStartScan scanViaIwlist")
 				scanViaIwlist()
 
+		print("DEBUG keyStartScan self.scanning", self.scanning)
 		if not self.scanning:
 			self.scanning = True
 			self["description"].setText(_("Scanning..."))
 			if self.adapterObj.netInfo.up:
+				print("DEBUG keyStartScan ifUpCallback")
 				ifUpCallback()
 			else:
+				print("DEBUG keyStartScan ifconfig up")
 				self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=ifUpCallback)
 
 	def parseIwlist(self, raw: str) -> list[ScanResult]:
