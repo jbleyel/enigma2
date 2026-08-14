@@ -659,6 +659,8 @@
 		<else />
 			<item level="0" text="Username" description="Enter the username to be used to access this host's shares if they require authentication.">self.username</item>
 			<item level="0" text="Password" description="Enter the password to be used to access this host's shares if they require authentication.">self.password</item>
+			<item level="0" text="SMB version" description="Select a specific SMB protocol version to force instead of allowing an automatic negotiation. Use 'Legacy (SMB1)' only for older servers that do not support SMB2/SMB3.">self.smbVersion</item>
+			<item level="0" text="Character set" description="Select the character set (iocharset) used to translate remote filenames.">self.smbCharset</item>
 		</if>
 		<item level="0" text="Optional arguments" description="Enter optional mount arguments not provided for in the configuration settings above. Multiple arguments should be comma-separated. Invalid/Inappropriate entries can cause the mount to fail!">self.options</item>
 	</setup>

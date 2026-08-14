@@ -321,6 +321,19 @@ class NetworkMountSetup(Setup):
 		]))
 		self.username = NoSave(ConfigText(default=default("username"), fixed_size=False))
 		self.password = NoSave(ConfigPassword(default=default("password")))
+		self.smbVersion = NoSave(ConfigSelection(default=default("smbVersion", "auto") or "auto", choices=[
+			("auto", _("Automatic")),
+			("3.0", _("SMB3")),
+			("2.0", _("SMB2")),
+			("1.0", _("Legacy (SMB1)"))
+		]))
+		self.smbCharset = NoSave(ConfigSelection(default=default("smbCharset", "utf8") or "utf8", choices=[
+			("utf8", "UTF-8"),
+			("iso8859-1", "ISO8859-1"),
+			("iso8859-15", "ISO8859-15"),
+			("cp1252", "CP1252"),
+			("cp850", "CP850")
+		]))
 		self.shareName = NoSave(ConfigText(default=default("shareName"), fixed_size=False))
 		self.accessMode = NoSave(ConfigSelection(default=default("accessMode", "rw") or "rw", choices=[
 			("rw", _("Read/Write")),
@@ -368,6 +381,8 @@ class NetworkMountSetup(Setup):
 			"options": options,
 			"username": self.username.value if self.protocol.value == "cifs" else "",
 			"password": self.password.value if self.protocol.value == "cifs" else "",
+			"smbVersion": self.smbVersion.value if self.protocol.value == "cifs" else "",
+			"smbCharset": self.smbCharset.value if self.protocol.value == "cifs" else "",
 			"accessMode": self.accessMode.value,
 			"nfsVersion": self.nfsVersion.value if self.protocol.value == "nfs" else "",
 			"nfsLocking": self.nfsLocking.value if self.protocol.value == "nfs" else True,

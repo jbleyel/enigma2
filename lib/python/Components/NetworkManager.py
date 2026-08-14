@@ -1819,7 +1819,7 @@ class NetworkMountRepository:
 					else:
 						username = (mount.get("username") or "").replace(" ", "\\ ")
 						password = (mount.get("password") or "").replace(" ", "\\ ")
-						autoNetworkLines.append(f"{prefix}{shareName} -fstype=cifs,user={username},pass={password},{self.sanitizeOptions(mount)} ://{server}/{remotePath}")
+						autoNetworkLines.append(f"{prefix}{shareName} -fstype=cifs,user={username},pass={password},{self.buildCifsOptions(mount)} ://{server}/{remotePath}")
 				elif mode == "fstab":
 					path = self.mountPointFor(mount)
 					if protocol == "nfs":
@@ -1827,7 +1827,7 @@ class NetworkMountRepository:
 					else:
 						username = mount.get("username") or ""
 						password = mount.get("password") or ""
-						fstabLines.append(f"{prefix}//{server}/{remotePath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.sanitizeOptions(mount)}\t0 0")
+						fstabLines.append(f"{prefix}//{server}/{remotePath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.buildCifsOptions(mount)}\t0 0")
 
 			print("[NetworkMountRepository] autoNetworkLines:", autoNetworkLines)
 			print("[NetworkMountRepository] fstabLines:", fstabLines)
@@ -1843,12 +1843,12 @@ class NetworkMountRepository:
 		writeMountFiles(effective)
 
 	# Option keys already covered by a dedicated NetworkMountSetup field (see
-	# buildNfsOptions()/sanitizeOptions() and NetworkMountSetup.keySave()) -
+	# buildNfsOptions()/buildCifsOptions() and NetworkMountSetup.keySave()) -
 	# entering one of these in the free-text "Mount options" field would just
 	# be silently overridden by the dedicated setting, so it's rejected
 	# instead by validateExtraOptions() below.
 	NFS_RESERVED_OPTION_KEYS = frozenset(("ro", "rw", "nolock", "lock", "proto", "nfsvers", "rsize", "wsize", "timeo", "soft", "hard"))
-	CIFS_RESERVED_OPTION_KEYS = frozenset(("user", "username", "pass", "password", "ro", "rw"))
+	CIFS_RESERVED_OPTION_KEYS = frozenset(("user", "username", "pass", "password", "ro", "rw", "vers", "iocharset"))
 
 	# proto=tcp and _netdev are always added by save() itself (see
 	# buildNfsOptions()/writeMountFiles()), never something the user typed -
@@ -1896,7 +1896,7 @@ class NetworkMountRepository:
 				else:
 					extra.append(token)
 		else:
-			fields = {"username": "", "password": "", "accessMode": "rw"}
+			fields = {"username": "", "password": "", "accessMode": "rw", "smbVersion": "", "smbCharset": "utf8"}
 			for token in tokens:
 				parts = token.split("=", 1)
 				key = parts[0].strip().lower()
@@ -1909,8 +1909,14 @@ class NetworkMountRepository:
 					fields["accessMode"] = "ro"
 				elif key == "rw":
 					fields["accessMode"] = "rw"
-				elif key == "iocharset" and value == "utf8":
-					pass
+				elif key == "vers":
+					fields["smbVersion"] = value
+				elif key == "iocharset":
+					fields["smbCharset"] = value
+				elif key == "utf8" and not value:
+					# Bare "utf8" token - legacy stand-in for iocharset=utf8
+					# used by the old plugin's default options string.
+					fields["smbCharset"] = "utf8"
 				elif key in cls.ALWAYS_IMPLIED_OPTION_KEYS:
 					pass
 				else:
@@ -1938,12 +1944,19 @@ class NetworkMountRepository:
 			seen.add(key)
 		return None
 
-	# CIFS options only - NFS is built explicitly by buildNfsOptions() below
-	# from structured per-field Setup values rather than a free-text string.
+	# Builds the mount.cifs option string from the structured per-mount
+	# fields NetworkMountSetup exposes (rw/ro, smbVersion, smbCharset).
+	# Mirrors buildNfsOptions() below. "auto" for smbVersion means "let the
+	# client/server negotiate", so the option is omitted entirely in that
+	# case rather than forcing a fixed value.
 	@staticmethod
-	def sanitizeOptions(mount):
-		parts = [mount.get("accessMode") or "rw"]
-		extra = (mount.get("options") or "").strip().replace("utf8", "iocharset=utf8")
+	def buildCifsOptions(mount):
+		parts = ["ro" if mount.get("accessMode") == "ro" else "rw"]
+		version = mount.get("smbVersion") or ""
+		if version and version != "auto":
+			parts.append(f"vers={version}")
+		parts.append(f"iocharset={mount.get('smbCharset') or 'utf8'}")
+		extra = (mount.get("options") or "").strip()
 		if extra:
 			parts.append(extra)
 		return ",".join(parts)
@@ -2040,7 +2053,7 @@ class NetworkMountRepository:
 			username = mount.get("username") or ""
 			password = mount.get("password") or ""
 			source = f"//{server}/{remotePath}"
-			options = f"user={username},pass={password},{self.sanitizeOptions(mount)}"
+			options = f"user={username},pass={password},{self.buildCifsOptions(mount)}"
 		return (self.MOUNT_BIN, self.MOUNT_BIN, "-t", protocol, source, mountPoint, "-o", options), mountPoint
 
 	# -- SMB share-enumeration credentials --
