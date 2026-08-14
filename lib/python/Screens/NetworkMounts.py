@@ -532,12 +532,16 @@ class NetworkShares(Screen):
 		self.shares = {}
 		self.shareState = {}
 		self.pendingProtocols = {}
+		self["list"].setList([])
 		self["description"].setText(_("Scanning..."))
+		self["key_yellow"].setText("")
+		self["actions"].setEnabledAction("yellow", False)
 		discoveryManager.rescan(self.onRescanDone)
-		self.buildList()
 
 	def onRescanDone(self, ok):
 		if "list" in self:
+			self["key_yellow"].setText(_("Rescan"))
+			self["actions"].setEnabledAction("yellow", True)
 			if ok:
 				self.buildList()
 			else:

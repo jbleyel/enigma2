@@ -2227,9 +2227,18 @@ class AvahiProvider:
 class NetscanProvider:
 	PORTS = {445: "smb", 2049: "nfs"}
 
+	# Keeps a manual rescan() visibly running for at least this long, even if
+	# ServiceAction.netscan() itself finishes almost instantly - otherwise a
+	# user clicking "Rescan" in the UI sees no feedback at all.
+	MIN_RESCAN_MS = 1000
+
 	def __init__(self):
 		self.started = False
 		self.onObservation: list[Callable] = []  # callback(observation) - one per {address, port}
+		self.rescanTimer = eTimer()
+		self.rescanTimer.callback.append(self.onRescanTimerDone)
+		self.rescanOk = None
+		self.rescanCallback = None
 
 	# dispatchAll() just re-reads a local file (cheap), unlike an actual
 	# rescan() - always re-dispatch on start() so a screen opening after the
@@ -2259,13 +2268,27 @@ class NetscanProvider:
 			return
 
 		def done(exitCode):
-			ok = exitCode == 0
-			if ok:
-				self.dispatchAll()
-			if callback:
-				callback(ok)
+			self.rescanOk = exitCode == 0
+			self.finishRescan()
 
+		self.rescanOk = None
+		self.rescanCallback = callback
+		self.rescanTimer.start(self.MIN_RESCAN_MS, True)
 		ServiceAction.netscan(cidr, list(self.PORTS), done)
+
+	def onRescanTimerDone(self):
+		self.finishRescan()
+
+	# Only reports the result once BOTH the minimum-display timer and the
+	# actual scan have finished, whichever takes longer.
+	def finishRescan(self):
+		if self.rescanTimer.isActive() or self.rescanOk is None:
+			return
+		if self.rescanOk:
+			self.dispatchAll()
+		callback = self.rescanCallback
+		if callback:
+			callback(self.rescanOk)
 
 	def dispatchAll(self):
 		try:
