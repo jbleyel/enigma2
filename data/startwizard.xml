@@ -156,7 +156,7 @@ from Components.NimManager import nimmanager
 self.condition = len(nimmanager.nim_slots) > 0 and not nimmanager.nim_slots[0].empty
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="0" type="ConfigList" />
 	</step>
@@ -167,7 +167,7 @@ from Components.NimManager import nimmanager
 self.condition = len(nimmanager.nim_slots) > 1 and not nimmanager.nim_slots[1].empty
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="1" type="ConfigList" />
 	</step>
@@ -179,7 +179,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 2 and not nimmanager.nim_slots[2].empty and not isFBCLink(nimmanager.nim_slots[2].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="2" type="ConfigList" />
 	</step>
@@ -191,7 +191,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 3 and not nimmanager.nim_slots[3].empty and not isFBCLink(nimmanager.nim_slots[3].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="3" type="ConfigList" />
 	</step>
@@ -203,7 +203,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 4 and not nimmanager.nim_slots[4].empty and not isFBCLink(nimmanager.nim_slots[4].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="4" type="ConfigList" />
 	</step>
@@ -215,7 +215,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 5 and not nimmanager.nim_slots[5].empty and not isFBCLink(nimmanager.nim_slots[5].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="5" type="ConfigList" />
 	</step>
@@ -227,7 +227,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 6 and not nimmanager.nim_slots[6].empty and not isFBCLink(nimmanager.nim_slots[6].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="6" type="ConfigList" />
 	</step>
@@ -239,7 +239,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 7 and not nimmanager.nim_slots[7].empty and not isFBCLink(nimmanager.nim_slots[7].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="7" type="ConfigList" />
 	</step>
@@ -251,7 +251,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 8 and not nimmanager.nim_slots[8].empty and not isFBCLink(nimmanager.nim_slots[8].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="8" type="ConfigList" />
 	</step>
@@ -263,7 +263,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 9 and not nimmanager.nim_slots[9].empty and not isFBCLink(nimmanager.nim_slots[9].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="9" type="ConfigList" />
 	</step>
@@ -275,7 +275,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 16 and not nimmanager.nim_slots[16].empty and not isFBCLink(nimmanager.nim_slots[16].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="16" type="ConfigList" />
 	</step>
@@ -287,7 +287,7 @@ from enigma import isFBCLink
 self.condition = len(nimmanager.nim_slots) > 17 and not nimmanager.nim_slots[17].empty and not isFBCLink(nimmanager.nim_slots[17].slot)
 		</condition>
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT,1,2,3,4,5,6,7,8,9,0,BACKSPACE,DEL" />
-		<text value="Set up tuner [TUNER].\n\nFor hybrid tuner models switch Tuner Type with the LEFT and RIGHT buttons." />
+		<text value="Set up tuner [TUNER].\n\nFor tuners supporting multiple reception types, configure each available type separately." />
 		<displaytext value="Set up tuner [TUNER]" />
 		<config screen="NimSetup" module="Satconfig" args="17" type="ConfigList" />
 	</step>
@@ -300,7 +300,7 @@ self.condition = nimmanager.somethingConnected() and any(slot.canBeCompatible("D
 		<buttons enable="OK,UP,DOWN,LEFT,RIGHT" />
 		<text value="Do you want to install a channel list?" />
 		<displaytext value="Do you want to install a channel list?" />
-		<config screen="WizardInstall" module="WizardInstall" args="1" type="ConfigList" />
+		<config screen="InstallWizard" module="InstallWizard" args="1" type="ConfigList" />
 	</step>
 
 	<step id="scanquestion">

@@ -149,13 +149,36 @@ class NetworkMountsOverview(Screen):
 	def keyEdit(self):
 		current = self["mountList"].getCurrent()
 		if current:
-			self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=current[self.LIST_DATA])
+			dlg = self.session.openWithCallback(lambda *args: self.keySetupClosed(dlg, *args), NetworkMountSetup, mount=current[self.LIST_DATA])
 
-	def keySetupClosed(self, *args):
+	# dlg is the closed NetworkMountSetup instance - its "savedMount" attribute
+	# (only set by NetworkMountSetup.keySave(), never on Cancel) tells us
+	# whether to actually mount/restart-autofs now, and with which mode.
+	def keySetupClosed(self, dlg, *args):
 		if args and isinstance(args[0], bool) and args[0]:  # Special case for close recursive.
 			self.close(True)
 			return
 		self.buildList()
+		self.applyMountChange(getattr(dlg, "savedMount", None))
+
+	# Mirrors deleteMount()'s mode handling below: a freshly saved, enabled
+	# mount isn't actually mounted yet - just written to fstab/auto.network -
+	# so bring it up immediately instead of waiting for reboot or a manual
+	# "Mount" (yellow key) press.
+	def applyMountChange(self, mount):
+		def autofsRestarted(exitCode):
+			if exitCode:
+				print(f"[{MODULE_NAME}] applyMountChange: autofs restart failed, exitCode={exitCode}")
+
+		def mountAllDone(data, retVal, extra=None):
+			if retVal:
+				print(f"[{MODULE_NAME}] applyMountChange: 'mount -a' failed, retVal={retVal}, output={data!r}")
+
+		if mount and mount.get("enabled"):
+			if mount.get("mode") == "autofs":
+				ServiceAction("autofs").restart(autofsRestarted)
+			else:
+				self.console.ePopen((self.MOUNT, self.MOUNT, "-a"), mountAllDone)
 
 	# Mounts or unmounts the selected share right now, using whatever is
 	# already in /etc/fstab or /etc/auto.network - it does not touch the
@@ -227,7 +250,7 @@ class NetworkMountsOverview(Screen):
 		def keyMenuCallback(choice=None):
 			if choice:
 				if choice[1] == "manual":
-					self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=None)
+					dlg = self.session.openWithCallback(lambda *args: self.keySetupClosed(dlg, *args), NetworkMountSetup, mount=None)
 				elif choice[1] == "delete":
 					deleteMount()
 				elif choice[1] == "edit_credentials":
@@ -265,7 +288,7 @@ class NetworkMountsOverview(Screen):
 					mount["remotePath"] = picked["remotePath"]
 				if picked.get("shareName"):
 					mount["shareName"] = picked["shareName"]
-				self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=mount)
+				dlg = self.session.openWithCallback(lambda *args: self.keySetupClosed(dlg, *args), NetworkMountSetup, mount=mount)
 
 		self.session.openWithCallback(keyGreenCallback, NetworkShares)
 
@@ -397,6 +420,7 @@ class NetworkMountSetup(Setup):
 		self.repository.save(mounts)
 		if self.enabled.value and self.mode.value == "fstab":
 			self.repository.ensureMountPoint(mount)
+		self.savedMount = mount  # read back by NetworkMountsOverview.keySetupClosed() to mount/restart-autofs
 		Setup.keySave(self)
 
 
@@ -589,15 +613,26 @@ class NetworkShares(Screen):
 		if isHost:
 			choices.append((_("Edit Username/Password"), "credentials"))
 			choices.append((_("Clear Stored Credentials"), "clear_credentials"))
+		choices.append((_("Flush Cache and Rescan"), "flush_neigh"))
 		sortLabel = _("Sort by Name") if config.network.browserSortByIP.value else _("Sort by IP Address")
 		choices.append((sortLabel, "toggle_sort"))
 		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Network Share Context Menu"), list=choices)
 
 	def menuChoiceClosed(self, choice=None):
+		def flushNeighborCache():
+			def flushDone(data, retVal, extra=None):
+				if retVal:
+					print(f"[{MODULE_NAME}] flushNeighborCache failed, retVal={retVal}, output={data!r}")
+				self.keyRescan()
+
+			self.console.ePopen(("/sbin/ip", "/sbin/ip", "neigh", "flush", "all"), flushDone)
+
 		if not choice:
 			return
 		if choice[1] == "credentials":
 			self.session.openWithCallback(self.credentialsClosed, NetworkCredentials, self.menuHostname, self.repository)
+		elif choice[1] == "flush_neigh":
+			flushNeighborCache()
 		elif choice[1] == "clear_credentials":
 			self.repository.credentialsClear(self.menuHostname)
 			self.session.open(MessageBox, _("Stored credentials for this server have been deleted."), MessageBox.TYPE_INFO, timeout=3)

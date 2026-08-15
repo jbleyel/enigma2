@@ -367,7 +367,6 @@ class NetworkOverview(Screen):
 				speed = formatNetworkSpeed(netInfo.speed) if netInfo.speed > 0 else "—"
 			internet = adapter.adapterEnabled and adapter.hasInternet
 			inetGlyph = "\uEA68" if internet else ""  # Glyph is Cloud.
-			print("DEBUG buildOverviewAdapterRow:", netInfo.ip, netInfo.gateway)
 			return (
 				self.OVERVIEW_TEMPLATE_ROW,
 				"\uE9FE" if adapter.isWiFi else "\uEA5A",                         # AdapterGlyph (Glyphs are Wi-fi and Settings_ethernet).
@@ -1278,7 +1277,6 @@ class NetworkWiFiScanScreen(Screen):
 
 	def keyStartScan(self):
 		def finishScan(results, parser):
-			print("DEBUG keyStartScan finishScan")
 			self.scanning = False
 			if isinstance(results, bytes):
 				results = results.decode("UTF-8", errors="replace")
@@ -1313,7 +1311,6 @@ class NetworkWiFiScanScreen(Screen):
 
 		def scanViaWpaCli():
 			def scanResultsCallback(results, retVal, extraArgs=None):
-				print("DEBUG keyStartScan scanResultsCallback")
 				finishScan(results, self.parseWpaCliScanResults)
 
 			def triggerScanCallback(results=None, retVal=0, extraArgs=None):
@@ -1321,7 +1318,6 @@ class NetworkWiFiScanScreen(Screen):
 				self.scanTimer.callback.append(lambda: self.console.ePopen((wpaCliBin, wpaCliBin, "-i", self.adapter, "scan_results"), callback=scanResultsCallback))
 				self.scanTimer.start(3000, True)
 
-			print("DEBUG keyStartScan call wpa_cli")
 			# The wpa_supplicant already owns the radio for this iface (it is associated
 			# to a network). A concurrent "iwlist scanning" ioctl typically fails
 			# with "Device or resource busy" on nl80211 drivers in that state, so
@@ -1329,26 +1325,19 @@ class NetworkWiFiScanScreen(Screen):
 			self.console.ePopen((wpaCliBin, wpaCliBin, "-i", self.adapter, "scan"), callback=triggerScanCallback)
 
 		def ifUpCallback(results=None, retVal=0, extraArgs=None):
-			print("DEBUG keyStartScan ifUpCallback")
 			if networkManager.wpaSupplicantRunning(self.adapter):
-				print("DEBUG keyStartScan scanViaWpaCli")
 				scanViaWpaCli()
 			elif self.adapterObj.isBroadcomWl:
-				print("DEBUG keyStartScan call wl")
 				self.console.ePopen(("/usr/bin/wl", "/usr/bin/wl", "up"), callback=scanViaIwlist)
 			else:
-				print("DEBUG keyStartScan scanViaIwlist")
 				scanViaIwlist()
 
-		print("DEBUG keyStartScan self.scanning", self.scanning)
 		if not self.scanning:
 			self.scanning = True
 			self["description"].setText(_("Scanning..."))
 			if self.adapterObj.netInfo.up:
-				print("DEBUG keyStartScan ifUpCallback")
 				ifUpCallback()
 			else:
-				print("DEBUG keyStartScan ifconfig up")
 				self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=ifUpCallback)
 
 	def parseIwlist(self, raw: str) -> list[ScanResult]:
@@ -1484,7 +1473,7 @@ class NetworkWiFiActivator(Screen):
 		self.pollIntervalMs = 1500
 		self.pollMaxAttempts = 20
 		self.onLayoutFinish.append(self.start)
-		print(f"[NetworkWiFiActivator] DEBUG __init__: iface={adapter.name} ssid={self.ssid!r}")
+		# print(f"[NetworkWiFiActivator] DEBUG __init__: iface={adapter.name} ssid={self.ssid!r}")
 
 	def keyClose(self):
 		self.close("")
@@ -1504,7 +1493,7 @@ class NetworkWiFiActivator(Screen):
 
 	def start(self):
 		def connectedCb(retval: int):
-			print(f"[NetworkWiFiActivator] DEBUG connectedCb: iface={self.adapter.name} retval={retval}")
+			# print(f"[NetworkWiFiActivator] DEBUG connectedCb: iface={self.adapter.name} retval={retval}")
 			if retval != 0:
 				self.setStatus(self.diagnoseFailure())
 				self.showCloseButton()
@@ -1521,7 +1510,7 @@ class NetworkWiFiActivator(Screen):
 		# time this screen opens.
 		self.setStatus(_("Connecting..."))
 		networkId = self.conn.wifi.wpaId if self.conn.wifi else None
-		print(f"[NetworkWiFiActivator] DEBUG start: dispatching wlanActivate for iface={self.adapter.name} networkId={networkId}")
+		# print(f"[NetworkWiFiActivator] DEBUG start: dispatching wlanActivate for iface={self.adapter.name} networkId={networkId}")
 		self.serviceAction = ServiceAction.wlanActivate(self.adapter.name, connectedCb, networkId=networkId)
 
 	def beginPolling(self):
@@ -1542,7 +1531,7 @@ class NetworkWiFiActivator(Screen):
 		networkManager.applyNetinfo()
 		netInfo = self.adapter.netInfo
 		ip = ip4Str(netInfo.ip)
-		print(f"[NetworkWiFiActivator] DEBUG checkIp: iface={iface} attempt={self.pollCount}/{self.pollMaxAttempts} link={netInfo.link} ip={ip!r}")
+		# print(f"[NetworkWiFiActivator] DEBUG checkIp: iface={iface} attempt={self.pollCount}/{self.pollMaxAttempts} link={netInfo.link} ip={ip!r}")
 		if netInfo.link and ip:
 			self.pollTimer.stop()
 			self.setStatus(_("Connected.\nIP address: %s") % ip)
@@ -1562,12 +1551,12 @@ class NetworkWiFiActivator(Screen):
 		setStatus()'s header, so these messages don't repeat it."""
 		interface = self.adapter.name
 		running = networkManager.wpaSupplicantRunning(interface)
-		print(f"[NetworkWiFiActivator] DEBUG diagnoseFailure: iface={interface} wpaSupplicantRunning={running}")
+		# print(f"[NetworkWiFiActivator] DEBUG diagnoseFailure: iface={interface} wpaSupplicantRunning={running}")
 		if not running:
 			reason = _("Could not connect.\nWi-Fi driver (wpa_supplicant) did not start, check the Wi-Fi settings.")
 		else:
 			state = networkManager.getWiFiStatus(interface).get("wpa_state", "")
-			print(f"[NetworkWiFiActivator] DEBUG diagnoseFailure: iface={interface} wpa_state={state!r}")
+			# print(f"[NetworkWiFiActivator] DEBUG diagnoseFailure: iface={interface} wpa_state={state!r}")
 			if state == "COMPLETED":
 				reason = _("Connected, but no IP address was received.\nCheck the router's DHCP settings.")
 			elif state in ("4WAY_HANDSHAKE", "GROUP_HANDSHAKE"):
@@ -1580,16 +1569,16 @@ class NetworkWiFiActivator(Screen):
 
 	def scheduleClose(self, delayMs: int, ip: str):
 		def doClose():
-			print(f"[NetworkWiFiActivator] DEBUG scheduleClose: firing close() now for iface={self.adapter.name} ip={ip!r}")
+			# print(f"[NetworkWiFiActivator] DEBUG scheduleClose: firing close() now for iface={self.adapter.name} ip={ip!r}")
 			self.close(ip)
 
-		print(f"[NetworkWiFiActivator] DEBUG scheduleClose: iface={self.adapter.name} delayMs={delayMs} ip={ip!r}")
+		# print(f"[NetworkWiFiActivator] DEBUG scheduleClose: iface={self.adapter.name} delayMs={delayMs} ip={ip!r}")
 		self.closeTimer = eTimer()
 		self.closeTimer.callback.append(doClose)
 		self.closeTimer.start(delayMs, True)
 
 	def close(self, *args, **kwargs):
-		print(f"[NetworkWiFiActivator] DEBUG close: iface={self.adapter.name} args={args}")
+		# print(f"[NetworkWiFiActivator] DEBUG close: iface={self.adapter.name} args={args}")
 		return Screen.close(self, *args, **kwargs)
 
 
