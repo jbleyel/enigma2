@@ -1,19 +1,3 @@
-"""
-NetworkManager.py – Unified network configuration layer for Enigma2 / OpenATV
-
-Replaces:
-	Components/Network.py                               (iNetwork)
-	Plugins/SystemPlugins/WirelessLan/Wlan.py           (wpaSupplicant, brcmWLConfig)
-	Plugins/SystemPlugins/WirelessLan/plugin.py         (configStrings, ifaceSupported)
-
-Coding conventions (OpenATV):
-	Indentation  : tabs
-	Variables    : camelCase (first letter lower)
-	Functions    : camelCase (first letter lower)
-	Classes      : PascalCase (first letter upper)
-	Private      : _camelCase prefix
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -41,8 +25,6 @@ from Plugins.Plugin import PluginDescriptor
 from Tools.Directories import fileReadLine, fileReadLines, fileReadXML, fileWriteLine, fileWriteLines
 from Tools.ServiceAction import ServiceAction
 
-# Path constants.
-#
 interfacesFile = "/etc/network/interfaces"
 resolvFile = "/etc/resolv.conf"
 nameserverFile = "/etc/enigma2/nameserversdns.conf"
@@ -63,8 +45,6 @@ netrestarterBin = "/usr/sbin/netrestarter"
 MODULE_NAME = __name__.split(".")[-1]
 
 
-# Wi-Fi encryption modes. Old plugin used "Unencrypted" / "WPA/WPA2" – mapped
-# on load, never stored.
 class Encryption(StrEnum):
 	NONE = "none"
 	WEP = "wep"
@@ -112,12 +92,7 @@ class NetworkManager:
 
 	ROUTE_METRIC_FILE = "/etc/default/e2-route-metric"
 	ROUTE_METRIC_CHOICES = [(x, str(x)) for x in range(100, 901, 100)]
-	NETINFO_UPDATE_DEBOUNCE_MS = 250  # coalesce bursts of "UPDATE" events from socketdaemon into one apply/notify
-	# Legacy ethtool SUPPORTED_* bitmask (struct ethtool_cmd), capped at
-	# 1000baseT/Full because that's all socketdaemon reports (main.c reads
-	# ecmd.supported via the old ETHTOOL_GSET, not ETHTOOL_GLINKSETTINGS) –
-	# a 2.5G/5G/10G adapter would need socketdaemon extended first, there's
-	# nothing more to parse here in the meantime.
+	NETINFO_UPDATE_DEBOUNCE_MS = 250
 	LINKSPEED_BITS = {
 		"10baseT/Half": (0x01, "10 Mbps Half Duplex"),
 		"10baseT/Full": (0x02, "10 Mbps Full Duplex"),
@@ -146,9 +121,9 @@ class NetworkManager:
 
 	def log(self, msg: str):
 		if self._debug:
-			print(f"[NetworkManager] {msg}")
+			print(f"[{MODULE_NAME}] {msg}")
 
-	def startNetworkCheck(self):  # Called once by InitNetwork() during Enigma2 startup.
+	def startNetworkCheck(self):
 		self.networkCheck = NetworkCheck()
 		self.networkCheck.start()
 
@@ -231,9 +206,6 @@ class NetworkManager:
 			isWiFi = isWireless(name)
 			module = detectModule(name)
 			api = detectDriverApi(name, module)
-			# Rediscovery (restartNetwork(), onIfaceAdd()) replaces the Adapter
-			# object outright. Carry its live netInfo over so it doesn't go
-			# blank until the next netinfo update arrives.
 			existing = self.adapters.get(name)
 			adapter = Adapter(
 				name=name,
@@ -310,9 +282,6 @@ class NetworkManager:
 				wifi=wifi,
 			))
 
-	# Writes wpa_supplicant.conf for onlyIface, or every Wi-Fi adapter if None.
-	# Does NOT touch /etc/network/interfaces — saving one Wi-Fi profile must
-	# not trigger an adapter-level ifup/ifdown/restart.
 	def saveWpaSupplicant(self, onlyIface: str | None = None) -> bool:
 		ok = True
 		interfaces = [onlyIface] if onlyIface else list(self.adapters.keys())
@@ -335,8 +304,6 @@ class NetworkManager:
 			self.reconfigureWifi(interface)
 		return ok
 
-	# Tells a running wpa_supplicant to re-read its config file — it never
-	# does this on its own. No-op if wpa_supplicant isn't running yet.
 	def reconfigureWifi(self, interface: str) -> None:
 		if not self.wpaSupplicantRunning(interface):
 			return
@@ -344,14 +311,7 @@ class NetworkManager:
 		Console().ePopen(f"{wpaCliBin} -i{interface} reconfigure 2>/dev/null; true")
 
 	def save(self) -> bool:
-		# ===========================================================================
-		# Wi-Fi configStrings (interfaces pre-up / pre-down)
-		# ===========================================================================
-
 		def buildWiFiConfigStrings(adapter: Adapter) -> list[str]:
-			# Generic wpa_supplicant startup, not tied to a specific profile.
-			# Always starts wpa_supplicant, even with zero configured
-			# networks — it just stays idle until one is added.
 			interface = adapter.name
 			api = adapter.driverApi
 			driverFlags = f"-D {api}" if api != apiNl80211 else ""
@@ -371,29 +331,16 @@ class NetworkManager:
 				if conn.wifi:
 					conn.extraLines = list(cs)
 
-		# Wi-Fi writes exactly one base Connection to interfaces (IP/DHCP/DNS/
-		# WOL). SSID profiles live only in wpa_supplicant.conf and just
-		# contribute pre-up/pre-down commands (extraLines) here.
 		connMap = {}
 		for interface, adapter in self.adapters.items():
 			conns = self.getConnections(interface)
 			if adapter.isWiFi:
 				baseConn = self.getBaseConnection(interface)
-				# adapterEnabled is the master switch, except WoW-Only mode keeps
-				# the stanza written (for its wowl pre-up hooks) even while the
-				# adapter is otherwise off.
 				wowOnly = baseConn.wakeOnWiFi and not adapter.adapterEnabled
 				baseConn.enabled = adapter.adapterEnabled or wowOnly
-				# Must not depend on conns being non-empty — an earlier version
-				# did, so an empty profile list silently dropped the
-				# wpa_supplicant pre-up line and it never started, even though
-				# the adapter was enabled.
 				baseConn.extraLines = buildWiFiConfigStrings(adapter)
 				connMap[interface] = [baseConn]
 			else:
-				# adapterEnabled is the master switch here too — keep
-				# conn.enabled in sync or serializeConnection() only comments
-				# out the "auto" line, not the rest of the stanza.
 				for conn in conns:
 					conn.enabled = adapter.adapterEnabled
 				connMap[interface] = conns
@@ -404,15 +351,8 @@ class NetworkManager:
 
 		anyDhcp = any(conn.dhcp for conns in connMap.values() for conn in conns if conn.enabled)
 		self.nsFiles.save(self.nameserverConfig, anyDhcp)
-		# save() only writes files, it doesn't call notifyNetworkPlugins()
-		# itself — that's applyAdapterChange()'s job (NetworkSetup.py),
-		# paired with the matching reason=True once applied.
 		self.log(f"save: Done, status={ok}.")
 		return ok
-
-	# ------------------------------------------------------------------
-	# Runtime
-	# ------------------------------------------------------------------
 
 	def activateCommands(self, interface: str) -> list[str]:
 		adapter = self.adapters.get(interface)
@@ -434,33 +374,19 @@ class NetworkManager:
 			f"ip addr flush dev {interface} scope global 2>/dev/null; true",
 		]
 
-	# Restart via socketdaemon NETRESTART.
 	def restartNetwork(self, interface: str = "", callback: Callable | None = None):
 		self.log(f"restartNetwork: interface={interface or "all"}.")
 
 		def done(retval: int = 0):
 			self.log(f"restartNetwork: {interface or "all"} done, returned {retval}.")
-			# discoverAdapters() resets each Adapter to defaults
-			# (adapterEnabled=False) — restore persisted config on top, same
-			# as load() does at startup.
 			self.discoverAdapters()
 			self.loadInterfacesFile()
 			self.loadWpaSupplicantFiles()
-			# discoverAdapters() carries over the old netInfo so the UI
-			# doesn't go blank, but it's stale. The daemon's async UPDATE
-			# event may lag, so refresh /var/run/netinfo synchronously too.
 			self.applyNetinfo()
-			# Restart plugins stopped earlier (e.g. OpenWebif). If another
-			# adapter kept the box reachable, the matching reason=False call
-			# was skipped, so this one is too.
 			self.notifyNetworkPlugins(True, interface=interface)
 			if callback:
 				callback()
 		self.pendingRestart = ServiceAction.netrestart(done, iface=interface)
-
-	# ------------------------------------------------------------------
-	# Accessors
-	# ------------------------------------------------------------------
 
 	def getAdapter(self, interface: str) -> Adapter | None:
 		return self.adapters.get(interface)
@@ -472,14 +398,10 @@ class NetworkManager:
 	def getConnections(self, interface: str) -> list[Connection]:
 		return self.connections.setdefault(interface, [])
 
-	# Highest-priority enabled connection for this adapter.
 	def activeConnection(self, interface: str) -> Connection | None:
 		enabled = [x for x in self.getConnections(interface) if x.enabled]
 		return max(enabled, key=lambda conn: conn.priority, default=None)
 
-	# The non-SSID Connection carrying IP/DHCP/DNS/WOL config — the only one
-	# ever written to interfaces for a Wi-Fi adapter (for LAN, just the one
-	# Connection). Created on demand if it doesn't exist yet.
 	def getBaseConnection(self, interface: str) -> Connection:
 		conns = self.getConnections(interface)
 		if not conns:
@@ -528,9 +450,9 @@ class NetworkManager:
 		lanAdapters = sorted(name for name, other in self.adapters.items() if not other.isWiFi)
 		if adapter.isWiFi:
 			idx = wifiAdapters.index(interface) if interface in wifiAdapters else 0
-			return _("Wi-Fi connection") + (f" {idx + 1}" if idx else "")
+			return f"{_("Wi-Fi connection")} {idx + 1 if idx else ""}"
 		idx = lanAdapters.index(interface) if interface in lanAdapters else 0
-		return _("LAN connection") + (f" {idx + 1}" if idx else "")
+		return f"{_("LAN connection")} {idx + 1 if idx else ""}"
 
 	# Compatibility shim – returns a short adapter description.
 	def getFriendlyAdapterDescription(self, interface: str) -> str:
@@ -541,14 +463,6 @@ class NetworkManager:
 			return f"{adapter.module or 'Unknown'} {_('wireless network interface')}"
 		return _("Ethernet network interface")
 
-	# Fires WHERE_NETWORKCONFIG_READ plugins (e.g. OpenWebif's
-	# HttpdStart/HttpdStop). reason=False: network is about to change,
-	# plugins stop. reason=True: change is done, plugins restart. Plugins
-	# are expected to handle redundant calls cheaply.
-	#
-	# If `interface` is given and some OTHER adapter is already up with a
-	# real IP, the box stays reachable regardless, so nothing is notified
-	# (e.g. disabling wlan0 while eth0 serves OpenWebif shouldn't bounce it).
 	def notifyNetworkPlugins(self, reason: bool, interface: str = ""):
 		self.log(f"notifyNetworkPlugins: reason={reason} interface={interface!r} states={", ".join(f"{other}(up={adapter.netInfo.up}, ip={adapter.netInfo.ip})" for other, adapter in self.adapters.items())}.")
 		if interface:
@@ -665,10 +579,6 @@ class NetworkManager:
 			return False
 		return self.getBaseConnection(interface).wakeOnWiFi
 
-	# ------------------------------------------------------------------
-	# Link speed (forced, non-auto-negotiated)
-	# ------------------------------------------------------------------
-
 	def getSupportedLinkSpeeds(self, interface: str) -> list[tuple[str, str]]:
 		choices = [("auto", _("Auto"))]
 		adapter = self.adapters.get(interface)
@@ -694,11 +604,6 @@ class NetworkManager:
 				pass
 		else:
 			fileWriteLine(path, value)
-
-	# ------------------------------------------------------------------
-	# Route metric (/etc/default/e2-route-metric – LAN_METRIC/WLAN_METRIC
-	# only; every other line/setting in that file is left untouched)
-	# ------------------------------------------------------------------
 
 	@staticmethod
 	def parseMetricValue(raw: str) -> int | None:
@@ -749,8 +654,6 @@ class NetworkManager:
 				cb()
 			except Exception:
 				pass
-
-	# Update adapter runtime state from /var/run/netinfo without a full rescan.
 
 	def applyNetinfo(self):
 		interfaces = readNetinfoInterfaces()
@@ -828,15 +731,9 @@ class NetworkManager:
 			netInfo = adapter.netInfo
 			netInfo.up = up
 			if adapter.isWiFi:
-				# Wi-Fi link = up and associated to AP; only clear here (on not-running or
-				# not-up) — actually setting it True happens on the next netinfo update.
 				if not running or not up:
 					netInfo.link = False
 					netInfo.ssid = ""
-				# The daemon always sends an UPDATE right after LINK (same read
-				# cycle), which is debounced in onNetinfoUpdate() – skip the
-				# immediate notify here so Wi-Fi association flapping doesn't
-				# cause a GUI refresh per flap.
 				return
 			netInfo.link = up and running
 			self.showToast(interface, running)
@@ -895,9 +792,6 @@ class NetworkManager:
 	def onIfaceAdd(self, interface: str):
 		self.log(f"onIfaceAdd: {interface}.")
 		if interface not in self.adapters:
-			# Same as restartNetwork(): discoverAdapters() resets
-			# adapterEnabled, so restore persisted config on top (e.g. a
-			# re-plugged USB Wi-Fi dongle).
 			self.discoverAdapters()
 			self.loadInterfacesFile()
 			self.loadWpaSupplicantFiles()
@@ -966,9 +860,6 @@ class Connection:
 		return ".".join(str(x) for x in self.gateway)
 
 
-# Live/kernel state for one interface. Refreshed from socketdaemon's
-# /var/run/netinfo JSON, sysfs and /proc/net/dev. Never persisted, held
-# directly on Adapter.netInfo (a plain field, not a lookup).
 @dataclass
 class NetInfo:
 	up: bool = False
@@ -999,10 +890,6 @@ class NetInfo:
 	mtu: int = 0
 
 
-# Read-only snapshot of one "type": "vpn" interface (e.g. "wg0") from
-# socketdaemon's /var/run/netinfo, display only. VPN interfaces are
-# ADAPTER_BLACKLIST'd and never become an Adapter: no interfaces stanza,
-# no configuration UI, nothing writable here.
 @dataclass
 class VpnInfo:
 	name: str
@@ -1019,9 +906,6 @@ class VpnInfo:
 	link: bool = False
 
 
-# Physical network interface identity/config, as discovered in
-# /sys/class/net, plus its live NetInfo. Holds no Connections (see
-# NetworkManager.connections) — those are linked only via adapter name.
 @dataclass
 class Adapter:
 	name: str
@@ -1061,7 +945,6 @@ class Adapter:
 		return value
 
 
-# Global DNS (Dynamic Name Server) configuration.
 @dataclass
 class NameserverConfig:
 
@@ -1072,7 +955,6 @@ class NameserverConfig:
 	ipMode: int = 0  # 0=IPv4 + IPv6, 1=IPv6 + IPv4, 2=IPv4 only, 3=IPv6 only.
 
 
-# Lossless parser and writer for /etc/network/interfaces.
 class InterfacesFile:
 	_header = [
 		"# Automatically generated by Enigma2.",
@@ -1218,7 +1100,7 @@ class InterfacesFile:
 			try:
 				copy2(self.writePath, self.writePath + ".bak")
 			except OSError as err:
-				print(f"[NetworkManager] Error {err.errno}: Cannot backup '{self.writePath}'!  ({err.strerror})")
+				print(f"[{MODULE_NAME}] Error {err.errno}: Cannot backup '{self.writePath}'!  ({err.strerror})")
 
 		status = fileWriteLines(self.writePath, lines, source=MODULE_NAME)
 		if status:
@@ -1226,7 +1108,6 @@ class InterfacesFile:
 		return bool(status)
 
 
-# Serializes one Connection to interfaces-file lines.
 def serializeConnection(conn: Connection, adapterEnabled: bool) -> list[str]:
 	lines: list[str] = []
 	connectionPrefix = "" if conn.enabled else "# "
@@ -1254,7 +1135,6 @@ def serializeConnection(conn: Connection, adapterEnabled: bool) -> list[str]:
 	return lines
 
 
-# Parser and writer for /etc/wpa_supplicant.<iface>.conf.
 class WpaSupplicantFile:
 	WPA_DEFAULT_HEADER = [
 		"ctrl_interface=/var/run/wpa_supplicant",
@@ -1323,7 +1203,7 @@ class WpaSupplicantFile:
 			try:
 				copy2(self.writePath, self.writePath + ".bak")
 			except OSError as err:
-				print(f"[NetworkManager] Error {err.errno}: Cannot backup '{self.writePath}'!  ({err.strerror})")
+				print(f"[{MODULE_NAME}] Error {err.errno}: Cannot backup '{self.writePath}'!  ({err.strerror})")
 
 		return bool(fileWriteLines(self.writePath, self.serialize(configs), source=MODULE_NAME))
 
@@ -1392,7 +1272,6 @@ def wifiConfigToWpaBlock(wifi: WiFiConfig) -> list[str]:
 	return lines
 
 
-# Read and write /etc/resolv.conf + /etc/enigma2/nameserversdns.conf.
 class NameserverFiles:
 	RE_NS4 = compile(r"nameserver\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
 	RE_NS6 = compile(r"nameserver\s+(([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4})")
@@ -1445,7 +1324,6 @@ class NameserverFiles:
 				pass
 
 
-# Builds shell command lists for WiFi bring-up / tear-down.
 class WiFiRuntime:
 	def __init__(self, adapter: Adapter):
 		self.adapter = adapter
@@ -1503,7 +1381,6 @@ def parseIp4(text: str) -> list[int]:
 	return parts
 
 
-# Connects to /var/run/daemon_net.socket (AF_UNIX SOCK_STREAM) and reads.
 class NetEventReader:
 	def __init__(self, manager: NetworkManager):
 		self.manager = manager
@@ -1511,8 +1388,6 @@ class NetEventReader:
 		self.buffer = b""
 		self.retryTimer = None
 		self.connect()
-
-	# -- Twisted FileDescriptor interface. --
 
 	def fileno(self) -> int:
 		return self.sock.fileno() if self.sock else -1
@@ -1536,8 +1411,6 @@ class NetEventReader:
 	def logPrefix(self) -> str:
 		return "NetEventReader"
 
-	# -- Internal. --
-
 	def connect(self):
 		try:
 			sock = socket(AF_UNIX, SOCK_STREAM)
@@ -1545,7 +1418,7 @@ class NetEventReader:
 			sock.setblocking(False)
 			self.sock = sock
 			reactor.addReader(self)
-			print(f"[NetworkManager] NetEventReader connected to '{netEventSocketPath}'.")
+			print(f"[{MODULE_NAME}] NetEventReader connected to '{netEventSocketPath}'.")
 		except OSError:
 			self.scheduleRetry()
 
@@ -1593,16 +1466,7 @@ class NetEventReader:
 			self.manager.onScanTrigger(parts[1])
 
 
-# The actual system-of-record for network mounts is /etc/fstab and
-# /etc/auto.network, both read and written directly by this class.
-# automounts.xml (the old plugin's config file) is only read, and only to
-# migrate an existing old-plugin setup once - we never write to it.
-# Lives here (not in Screens/NetworkMounts.py, which just displays/edits
-# this data) because NetworkCheck below needs it too, to know each enabled
-# fstab share's local mount point directory before "mount -a" at Enigma2
-# startup - see mountPendingShares().
 class NetworkMountRepository:
-
 	READ_MODE_WRAPPERS = ("autofs", "fstab", "enigma2")
 	WRITE_MODES = ("autofs", "fstab")
 	NORMALIZE_MODE = {
@@ -1610,38 +1474,13 @@ class NetworkMountRepository:
 		"old_enigma2": "fstab"
 	}
 	PROTOCOLS = ("nfs", "cifs")
-
-	# Off by default, only meant for an explicit migration pass - enabling
-	# it can show a mount twice, once from automounts.xml and once from the
-	# matching fstab/auto.network entry it was written to. Kept as a flag
-	# rather than removed outright since migrating an old-plugin setup still
-	# needs it.
 	READ_XML = False
-
 	AUTOMOUNTS_PATH = "/etc/enigma2/automounts.xml"
 	AUTO_NETWORK_PATH = "/etc/auto.network"
 	FSTAB_PATH = "/etc/fstab"
-
 	MOUNT_BIN = "/bin/mount"
-
-	# A disabled mount is still written to fstab/auto.network, just commented
-	# out with this marker, so it survives a reload instead of vanishing -
-	# those two files are the only place a mount's definition lives (see
-	# above), so simply omitting a disabled entry would delete it for good.
 	DISABLED_PREFIX = "#DISABLED# "
 
-	# Username/password are stored in plaintext directly on the entry, same
-	# as the old plugin did. Kept reasonably safe by chmod'ing the file 600
-	# after every save() (see below).
-
-	# Parses one /etc/fstab line into a mount dict, or None if it isn't one
-	# of ours (not nfs/nfs4/cifs, or a malformed device field). Used both by
-	# load() to surface every NFS/CIFS line in fstab (see mergeUnmanaged()
-	# below) and by save() to recognize - and always regenerate - every such
-	# line, whether or not it's still in the set being saved (see
-	# writeMountFiles() below; a share that isn't in that set anymore is
-	# exactly what deletion looks like, so its old line must never survive
-	# just because it doesn't currently match anything).
 	def parseFstabLine(self, line):
 		line = line.strip()
 		if not line:
@@ -1667,11 +1506,6 @@ class NetworkMountRepository:
 			return None
 		if not server or not remotePath:
 			return None
-		# shareName must match the mountpoint's own basename, not a guess
-		# off remotePath - mountPointFor() reconstructs the path as
-		# /media/net/<shareName>, so getting this wrong here silently
-		# points isMounted()/save() at a different directory than the one
-		# actually configured in this very fstab line.
 		shareName = mountpoint.rstrip("/").rsplit("/", 1)[-1] or remotePath.rstrip("/").rsplit("/", 1)[-1] or "MEDIA"
 		return {
 			"id": f"fstab:{protocol}:{server}:{remotePath}",
@@ -1686,7 +1520,6 @@ class NetworkMountRepository:
 			**self.splitOptions(options, protocol),
 		}
 
-	# Same as parseFstabLine() above, but for /etc/auto.network lines.
 	def parseAutoNetworkLine(self, line):
 		line = line.strip()
 		if not line:
@@ -1739,10 +1572,6 @@ class NetworkMountRepository:
 				remotePath = text("sharedir", "/media/hdd/" if wrapperMode in ("autofs", "fstab") else "/exports/")
 				shareName = text("shareName", "MEDIA")
 				mount = {
-					# The old format has no <id>/<display_name> field, so a
-					# stable id is synthesized here, the same way the
-					# fstab/auto.network parsers below do, so edit/delete
-					# actions have something stable to key on.
 					"id": f"{mode}:{protocol}:{server}:{remotePath}",
 					"mode": mode,
 					"protocol": protocol,
@@ -1755,9 +1584,6 @@ class NetworkMountRepository:
 					**self.splitOptions(text("options", "rw,nolock,tcp,utf8" if protocol == "nfs" else "rw,utf8"), protocol),
 				}
 				if protocol == "cifs":
-					# The old format stored these in their own tags, not
-					# embedded in "options" - they take priority over
-					# anything splitOptions() might've pulled out above.
 					mount["username"] = text("username", "guest")
 					mount["password"] = text("password")
 				return mount
@@ -1794,15 +1620,6 @@ class NetworkMountRepository:
 
 	def save(self, mounts):
 		def writeMountFiles(effective):
-			# A line surviving here isn't decided by whether it currently
-			# matches something in "effective" - that set never contains a
-			# just-deleted share, so its old line would never match and would
-			# be kept forever. Instead: any line that parses as one of ours
-			# (parseFstabLine()/parseAutoNetworkLine() - same ones load() uses
-			# to discover unmanaged NFS/CIFS lines) is always dropped here and
-			# only re-added below if it's still in "effective". A line that
-			# doesn't parse at all (/boot, swap, an unrelated manual mount, …)
-			# is left untouched either way.
 			autoNetworkLines = [line for line in fileReadLines(self.AUTO_NETWORK_PATH, default=[], source=MODULE_NAME)
 				if self.parseAutoNetworkLine(line) is None]
 			fstabLines = [line for line in fileReadLines(self.FSTAB_PATH, default=[], source=MODULE_NAME)
@@ -1829,8 +1646,8 @@ class NetworkMountRepository:
 						password = mount.get("password") or ""
 						fstabLines.append(f"{prefix}//{server}/{remotePath}\t{path}\tcifs\tuser={username},pass={password},_netdev,{self.buildCifsOptions(mount)}\t0 0")
 
-			print("[NetworkMountRepository] autoNetworkLines:", autoNetworkLines)
-			print("[NetworkMountRepository] fstabLines:", fstabLines)
+			# print("[{MODULE_NAME}] NetworkMountRepository autoNetworkLines:", autoNetworkLines)
+			# print("[{MODULE_NAME}] NetworkMountRepository fstabLines:", fstabLines)
 			fileWriteLines(self.AUTO_NETWORK_PATH, autoNetworkLines, source=MODULE_NAME)
 			fileWriteLines(self.FSTAB_PATH, fstabLines, source=MODULE_NAME)
 
@@ -1842,25 +1659,10 @@ class NetworkMountRepository:
 			effective.append((mount, mode))
 		writeMountFiles(effective)
 
-	# Option keys already covered by a dedicated NetworkMountSetup field (see
-	# buildNfsOptions()/buildCifsOptions() and NetworkMountSetup.keySave()) -
-	# entering one of these in the free-text "Mount options" field would just
-	# be silently overridden by the dedicated setting, so it's rejected
-	# instead by validateExtraOptions() below.
 	NFS_RESERVED_OPTION_KEYS = frozenset(("ro", "rw", "nolock", "lock", "proto", "nfsvers", "rsize", "wsize", "timeo", "soft", "hard"))
 	CIFS_RESERVED_OPTION_KEYS = frozenset(("user", "username", "pass", "password", "ro", "rw", "vers", "iocharset"))
-
-	# proto=tcp and _netdev are always added by save() itself (see
-	# buildNfsOptions()/writeMountFiles()), never something the user typed -
-	# drop them rather than showing them back as "extra" options.
 	ALWAYS_IMPLIED_OPTION_KEYS = frozenset(("proto", "_netdev"))
 
-	# Splits a raw options string - as read back from an existing fstab/
-	# auto.network line or automounts.xml - into the structured per-field
-	# values NetworkMountSetup exposes, plus whatever's left over for the
-	# free-text "Mount options" field. Without this, re-editing an existing
-	# mount would show every dedicated setting a second time in "Mount
-	# options", since the file only ever stores one combined string.
 	@classmethod
 	def splitOptions(cls, rawOptions, protocol):
 		tokens = [token.strip() for token in (rawOptions or "").split(",") if token.strip()]
@@ -1924,10 +1726,6 @@ class NetworkMountRepository:
 		fields["options"] = ",".join(extra)
 		return fields
 
-	# Checks the raw "Mount options" free-text field for anything already
-	# covered by a dedicated setting, and for options repeated within the
-	# field itself. Returns an error message to show the user, or None if the
-	# field is fine as-is.
 	@classmethod
 	def validateExtraOptions(cls, rawOptions, protocol):
 		reserved = cls.NFS_RESERVED_OPTION_KEYS if protocol == "nfs" else cls.CIFS_RESERVED_OPTION_KEYS
@@ -1938,17 +1736,12 @@ class NetworkMountRepository:
 				continue
 			key = token.split("=", 1)[0].strip().lower()
 			if key in reserved:
-				return _("'%s' is already set by a dedicated setting above - remove it from 'Mount options'.") % token
+				return _("'%s' is already set by a dedicated setting above, remove it from 'Mount options'.") % token
 			if key in seen:
 				return _("'%s' is listed more than once in 'Mount options'.") % token
 			seen.add(key)
 		return None
 
-	# Builds the mount.cifs option string from the structured per-mount
-	# fields NetworkMountSetup exposes (rw/ro, smbVersion, smbCharset).
-	# Mirrors buildNfsOptions() below. "auto" for smbVersion means "let the
-	# client/server negotiate", so the option is omitted entirely in that
-	# case rather than forcing a fixed value.
 	@staticmethod
 	def buildCifsOptions(mount):
 		parts = ["ro" if mount.get("accessMode") == "ro" else "rw"]
@@ -1961,26 +1754,14 @@ class NetworkMountRepository:
 			parts.append(extra)
 		return ",".join(parts)
 
-	# Builds the actual mount.nfs/autofs option string from the structured
-	# per-mount fields NetworkMountSetup exposes (rw/ro, locking, nfsVersion,
-	# rsize, wsize, timeo). proto=tcp is always added - NFS over UDP isn't
-	# offered as an option. Anything the user still put in the free-text
-	# "options" field is appended last, for anything not covered by a
-	# dedicated field.
 	def buildNfsOptions(self, mount):
 		parts = ["ro" if mount.get("accessMode") == "ro" else "rw"]
-		# NFSv3 uses normal server-side (NLM) locking unless told otherwise -
-		# "nolock" is a legacy opt-in for servers without NLM support, not a
-		# default.
 		if not mount.get("nfsLocking", True):
 			parts.append("nolock")
 		parts.append("proto=tcp")
 		version = mount.get("nfsVersion") or ""
 		if version and version != "auto":
 			parts.append(f"nfsvers={version}")
-		# 0 means "Automatic": let the kernel/server negotiate a size or
-		# timeout themselves, so omit the option entirely instead of forcing
-		# a fixed value.
 		rsize = mount.get("nfsRsize") or "0"
 		if str(rsize) != "0":
 			parts.append(f"rsize={rsize}")
@@ -2000,9 +1781,6 @@ class NetworkMountRepository:
 	def newId(self):
 		return f"mount-{uuid4().hex[:12]}"
 
-	# autofs mounts always go under /media/autofs/<shareName>; a
-	# hddReplacement mount (any other mode) replaces /media/hdd itself;
-	# everything else mounts under /media/net/<shareName>.
 	def mountPointFor(self, mount):
 		shareName = mount.get("shareName") or mount.get("id", "")
 		if mount.get("mode") == "autofs":
@@ -2030,16 +1808,9 @@ class NetworkMountRepository:
 		if mount.get("mode") == "fstab":
 			mountPoint = self.mountPointFor(mount)
 			if not exists(mountPoint):
-				print(f"[NetworkManager] ensureMountPoint create dir '{mountPoint}'")
+				print(f"[{MODULE_NAME}] ensureMountPoint create dir '{mountPoint}'")
 				makedirs(mountPoint, exist_ok=True)
 
-	# Builds the argv for a manual "mount -t <protocol> <source> <mountPoint>
-	# -o <options>" call, creating the mount point directory first if it
-	# doesn't exist yet. Shared by the interactive manual mount action
-	# (NetworkMountsOverview.keyYellow()) and the startup pass that mounts
-	# any enabled fstab share still missing once the network is up
-	# (NetworkCheck.mountPendingShares()) - one place building the command
-	# instead of two copies drifting apart.
 	def buildMountCommand(self, mount):
 		mountPoint = self.mountPointFor(mount)
 		self.ensureMountPoint(mount)
@@ -2055,14 +1826,6 @@ class NetworkMountRepository:
 			source = f"//{server}/{remotePath}"
 			options = f"user={username},pass={password},{self.buildCifsOptions(mount)}"
 		return (self.MOUNT_BIN, self.MOUNT_BIN, "-t", protocol, source, mountPoint, "-o", options), mountPoint
-
-	# -- SMB share-enumeration credentials --
-	# Separate from a mount's own username/password: these are needed just
-	# to LIST a host's shares, before a share has even been picked to mount.
-	# Stored the same way the old plugin did - one pickle file per host at
-	# /etc/enigma2/<hostname>.cache, so credentials entered via the old
-	# plugin still work here. Keyed by hostname, so a host with no known
-	# hostname can't use stored credentials at all.
 
 	@staticmethod
 	def credentialsPath(hostname):
@@ -2102,9 +1865,6 @@ class NetworkMountRepository:
 			pass
 
 
-# Polls up to 10x (1s apart) until the hostname resolves off 127.0.0.1, then
-# runs "mount -a" to pick up any fstab share that couldn't mount before the
-# network was up, and rescans network mounts into the harddiskmanager.
 class NetworkCheck:
 	MOUNT_BIN = "/bin/mount"
 
@@ -2124,13 +1884,13 @@ class NetworkCheck:
 			return
 		try:
 			if gethostbyname(gethostname()) != "127.0.0.1":
-				print("[NetworkManager] NetworkCheck: Done.")
+				print("[{MODULE_NAME}] NetworkCheck: Done.")
 				self.mountPendingShares()
 				return
 			self.retry -= 1
 			self.timer.start(1000, True)
 		except Exception as err:
-			print(f"[NetworkManager] NetworkCheck: Error {err}!")
+			print(f"[{MODULE_NAME}] NetworkCheck: Error {err}!")
 
 	def mountPendingShares(self):
 		repository = NetworkMountRepository()
@@ -2150,7 +1910,7 @@ class NetworkCheck:
 
 		def done(data, retVal, extra=None):
 			if retVal:
-				print(f"[NetworkManager] NetworkCheck: 'mount -a' finished with errors, retVal={retVal}, output={data!r}")
+				print(f"[{MODULE_NAME}] NetworkCheck: The 'mount -a' finished with errors, retVal='{retVal}', output='{data!r}'!")
 			harddiskmanager.enumerateNetworkMounts(refresh=True)
 
 		self.console.ePopen((self.MOUNT_BIN, self.MOUNT_BIN, "-a"), done)
@@ -2165,13 +1925,11 @@ class NetworkCheck:
 						continue
 					try:
 						rmdir(path)
-						print(f"[NetworkManager] NetworkCheck: removed orphaned mount point {path!r}")
+						print(f"[{MODULE_NAME}] NetworkCheck: Removed orphaned mount point '{path!r}'.")
 					except OSError as err:
-						print(f"[NetworkManager] NetworkCheck: could not remove orphaned mount point {path!r}: {err}")
+						print(f"[{MODULE_NAME}] NetworkCheck Error: Could not remove orphaned mount point '{path!r}'!  ({err})")
 
 
-# mDNS/DNS-SD discovery for SMB/NFS hosts (NetworkMounts). Not started
-# automatically, only on demand by whoever needs SMB/NFS discovery.
 class AvahiProvider:
 	def __init__(self):
 		self.typeToProtocol = {"_smb._tcp": "smb", "_nfs._tcp": "nfs"}
@@ -2197,15 +1955,10 @@ class AvahiProvider:
 			self.started = False
 
 	def changed(self):
-		# changed carries no payload - re-read the full snapshot and
-		# re-dispatch it (cheap: an in-memory list, not a network round-trip).
 		for entry in self.browser.getServices():
 			self.dispatch(entry)
 
 	def dispatch(self, entry: dict):
-		# entry["protocol"] is the IP address family ("inet"/"inet6"), not
-		# the share protocol - keep it under a different key so it doesn't
-		# collide with our own "protocol" (smb/nfs).
 		networkManager.log(f"AvahiProvider: found {entry["name"]} / {entry["hostname"]}")
 		hostname = entry["hostname"]
 		if hostname.lower().endswith(".local."):
@@ -2228,28 +1981,18 @@ class AvahiProvider:
 			callback(observation)
 
 
-# Discovers SMB (445) / NFS (2049) hosts that don't speak mDNS, by reading /var/run/netscan
 class NetscanProvider:
 	PORTS = {445: "smb", 2049: "nfs"}
-
-	# Keeps a manual rescan() visibly running for at least this long, even if
-	# ServiceAction.netscan() itself finishes almost instantly - otherwise a
-	# user clicking "Rescan" in the UI sees no feedback at all.
 	MIN_RESCAN_MS = 1000
 
 	def __init__(self):
 		self.started = False
-		self.onObservation: list[Callable] = []  # callback(observation) - one per {address, port}
+		self.onObservation: list[Callable] = []
 		self.rescanTimer = eTimer()
 		self.rescanTimer.callback.append(self.onRescanTimerDone)
 		self.rescanOk = None
 		self.rescanCallback = None
 
-	# dispatchAll() just re-reads a local file (cheap), unlike an actual
-	# rescan() - always re-dispatch on start() so a screen opening after the
-	# one-shot boot pass (StartEnigma.py) sees whatever socketdaemon's
-	# unattended autoscan has since written, instead of replaying whatever
-	# was (or wasn't) in the file at that first, possibly-too-early read.
 	def start(self):
 		self.started = True
 		self.dispatchAll()
@@ -2284,8 +2027,6 @@ class NetscanProvider:
 	def onRescanTimerDone(self):
 		self.finishRescan()
 
-	# Only reports the result once BOTH the minimum-display timer and the
-	# actual scan have finished, whichever takes longer.
 	def finishRescan(self):
 		if self.rescanTimer.isActive() or self.rescanOk is None:
 			return
@@ -2317,26 +2058,13 @@ class NetscanProvider:
 				callback(observation)
 
 
-# Owns discovery end to end: hosts, a plain {address: host} dict, host =
-# {"address", "hostname", "protocols" (set, e.g. {"smb", "nfs"}), "source"
-# ("avahi" | "netscan"), "avahiShares"}. Kept deliberately simple, no
-# per-candidate state-tracking (see git history for a previous, "clever"
-# delayed-probe design that got too hard to follow).
-#   - Avahi always wins "source" and merges in protocol, even over an
-#     existing netscan entry.
-#   - hostname is the exception: a real netscan hostname (reverse-DNS,
-#     already ISP-wildcard-filtered in socketdaemon) always wins over
-#     Avahi's regardless of arrival order - hostnameSource tracks which one
-#     set it last so this stays correct either way.
-# Runs one bounded pass per boot (DEFAULT_RUN_MS), auto-stopping - a
-# Discovery screen can call start()/stop() itself later for on-demand live.
 class DiscoveryManager:
-	DEFAULT_RUN_MS = 30000   # one discovery pass per boot runs this long, then auto-stops
+	DEFAULT_RUN_MS = 30000
 
 	def __init__(self):
 		self.started = False
 		self.hosts = {}
-		self.onChanged: list[Callable] = []  # callback() - no payload, re-read self.hosts
+		self.onChanged: list[Callable] = []
 		self.avahi = AvahiProvider()
 		self.netscan = NetscanProvider()
 		self.avahi.onObservation.append(self.onAvahiObservation)
@@ -2344,17 +2072,10 @@ class DiscoveryManager:
 		self.stopTimer = eTimer()
 		self.stopTimer.callback.append(self.stop)
 
-	# No early return on self.started - a caller wanting an unbounded scan
-	# (runMs=None) must be able to cancel an already-running bounded pass's
-	# auto-stop, not just no-op. provider.start() is idempotent anyway.
-	# self.started must already be True before either provider.start() runs -
-	# netscan.start() dispatches /var/run/netscan synchronously, and
-	# onNetscanObservation() below drops observations while not started, so
-	# setting the flag afterwards silently lost that first, synchronous batch.
 	def start(self, runMs: int | None = DEFAULT_RUN_MS):
 		self.started = True
 		self.avahi.start()
-		self.netscan.start()  # synchronous dispatchAll() - notify once now that it's fully in, not once per entry (see onNetscanObservation())
+		self.netscan.start()
 		self.notify()
 		self.stopTimer.stop()
 		if runMs:
@@ -2367,12 +2088,6 @@ class DiscoveryManager:
 			self.netscan.stop()
 			self.started = False
 
-	# Never clears hosts up front - a rescan can take a few seconds (active
-	# TCP connect-scan), and blanking self.hosts before it completes would
-	# make already-known netscan hosts disappear from the list for that
-	# whole window. Only prunes at the very end, once the fresh scan is in,
-	# and only netscan-sourced addresses that didn't reappear in this pass -
-	# avahi-sourced hosts are never touched here.
 	def rescan(self, callback: Callable | None = None):
 		before = {address for address, host in self.hosts.items() if host["source"] == "netscan"}
 		seen = set()
@@ -2401,23 +2116,12 @@ class DiscoveryManager:
 	def newHost(address, source):
 		return {"address": address, "hostname": "", "hostnameSource": None, "protocols": set(), "source": source, "avahiShares": {}}
 
-	# Some NAS vendors (confirmed: Synology) register one _nfs._tcp/_smb._tcp
-	# service INSTANCE PER EXPORT/SHARE instead of one per host, encoding the
-	# share name in the instance name, e.g. "nas1 - NFS [Disk4]". This is not
-	# a standard, just a convention worth trying: if the name ends in
-	# "[...]", use the bracketed part as the share name, else fall back to
-	# the raw name. Keyed by full name in avahiShares to naturally dedupe
-	# repeat ADD events for the same instance.
 	@staticmethod
 	def parseAvahiShareName(name):
 		if name.endswith("]") and "[" in name:
 			return name[name.rindex("[") + 1:-1]
 		return name
 
-	# changed() (AvahiProvider) re-dispatches its *entire* current snapshot on
-	# every single underlying ADD/REMOVE, so most observations here just
-	# repeat a host we already know unchanged - only notify if something in
-	# self.hosts actually ends up different, not on every re-dispatch.
 	def onAvahiObservation(self, observation):
 		protocol = observation.get("protocol")
 		hostname = observation.get("hostname") or ""
@@ -2429,7 +2133,7 @@ class DiscoveryManager:
 				host = self.hosts[address] = self.newHost(address, "avahi")
 				changed = True
 			if host["source"] != "avahi":
-				host["source"] = "avahi"  # always leading, even if a netscan entry already existed
+				host["source"] = "avahi"
 				changed = True
 			if hostname and host["hostnameSource"] != "netscan" and (host["hostname"] != hostname or host["hostnameSource"] != "avahi"):
 				host["hostname"] = hostname
@@ -2447,17 +2151,10 @@ class DiscoveryManager:
 		if changed:
 			self.notify()
 
-	# No self.notify() here, deliberately - a netscan dispatch is always a
-	# full batch of entries (dispatchAll()), not one observation at a time,
-	# so notifying per-entry would fire onChanged many times for what's
-	# conceptually a single update. Callers notify once the batch is fully
-	# in instead - see start() and rescan()'s done() above.
 	def onNetscanObservation(self, observation):
 		if self.started:
 			address = observation.get("address")
 			if address:
-				# Never downgrade an "avahi" entry's source - hostname still takes
-				# priority for netscan though, see class comment.
 				host = self.hosts.setdefault(address, self.newHost(address, "netscan"))
 				if host["source"] != "avahi":
 					host["source"] = "netscan"

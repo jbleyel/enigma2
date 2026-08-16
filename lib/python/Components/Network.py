@@ -1,22 +1,3 @@
-"""
-Components/Network2.py – Plugin-compatibility shim for Enigma2 / OpenATV
-
-Future replacement for Components/Network.py. Implements only the iNetwork
-methods that external plugins (OpenWebif, oe-alliance-plugins, E2OpenPlugins,
-...) still call against the new Components/NetworkManager.py backend – see
-"Kompatibilität – iNetwork-Shims" / "Plugin-Nutzung" in
-.claude/NETWORK_PROJEKT_INFO.md.
-
-Anything else falls through to __getattr__, which logs the caller's stack
-trace before raising AttributeError, so unexpected legacy accesses show up
-in the log instead of failing silently.
-
-Usage (existing code – no changes needed):
-	from Components.Network2 import iNetwork
-	iNetwork.getAdapterAttribute("eth0", "ip")
-	iNetwork.restartNetwork(callback)
-"""
-
 from traceback import format_stack
 
 from Components.Console import Console
@@ -212,7 +193,7 @@ class NetworkCompat:
 
 	def __getattr__(self, name):
 		stack = "".join(format_stack(limit=6)[:-1])
-		print(f"[Network2] undefined iNetwork attribute '{name}' accessed:\n{stack}")
+		print(f"[Network] Error: Undefined iNetwork attribute '{name}'!\nAccess stack:\n{stack}")
 		raise AttributeError(name)
 
 

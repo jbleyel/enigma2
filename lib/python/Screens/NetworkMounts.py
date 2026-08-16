@@ -32,15 +32,15 @@ class NetworkMountsOverview(Screen):
 	LIST_DATA = 8
 
 	skin = """
-	<screen name="NetworkMountsOverview" title="Network Mounts Overview" position="center,center" size="970,465" resolution="1280,720">
-		<widget source="mountList" render="Listbox" position="10,10" size="e-20,e-190">
+	<screen name="NetworkMountsOverview" title="Network Mounts Overview" position="center,center" size="870,370" resolution="1280,720">
+		<widget source="mountList" render="Listbox" position="10,10" size="e-20,e-70">
 			<templates>
 				<template name="Default" fonts="Regular;22,Regular;18" itemHeight="50">
 					<mode name="default">
-						<text index="ShareName" position="0,0" size="500,28" font="0" padding="5,0" verticalAlignment="center" />
-						<text index="Description" position="20,28" size="480,20" font="1" padding="5,0" foregroundColor="gray" />
-						<text index="Mounted" position="500,0" size="200,50" font="0" padding="5,0" verticalAlignment="center" />
-						<text index="Active" position="700,0" size="200,50" font="0" horizontalAlignment="right" padding="5,0" verticalAlignment="center" />
+						<text index="ShareName" position="0,0" size="550,28" font="0" padding="5,0" verticalAlignment="center" />
+						<text index="Description" position="20,28" size="530,20" font="1" padding="5,0" foregroundColor="gray" />
+						<text index="Mounted" position="550,0" size="150,50" font="0" padding="5,0" verticalAlignment="center" />
+						<text index="Active" position="700,0" size="150,50" font="0" horizontalAlignment="right" padding="5,0" verticalAlignment="center" />
 					</mode>
 				</template>
 			</templates>
@@ -93,9 +93,9 @@ class NetworkMountsOverview(Screen):
 			"cancel": (self.close, _("Close the screen")),
 			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
 			"red": (self.close, _("Close the screen")),
-			"green": (self.keyGreen, _("Open the network browser")),
+			"green": (self.keyGreen, _("Open the Network Shares Browser")),
 			"yellow": (self.keyYellow, _("Mount or unmount the selected share")),
-			"menu": (self.keyMenu, _("Mount actions")),
+			"menu": (self.keyMenu, _("Open the Mount Context Menu")),
 		}, prio=0, description=_("Network Mount Manager Actions"))
 		self.repository = NetworkMountRepository()
 		self.console = Console()
@@ -151,9 +151,6 @@ class NetworkMountsOverview(Screen):
 		if current:
 			dlg = self.session.openWithCallback(lambda *args: self.keySetupClosed(dlg, *args), NetworkMountSetup, mount=current[self.LIST_DATA])
 
-	# dlg is the closed NetworkMountSetup instance - its "savedMount" attribute
-	# (only set by NetworkMountSetup.keySave(), never on Cancel) tells us
-	# whether to actually mount/restart-autofs now, and with which mode.
 	def keySetupClosed(self, dlg, *args):
 		if args and isinstance(args[0], bool) and args[0]:  # Special case for close recursive.
 			self.close(True)
@@ -161,18 +158,14 @@ class NetworkMountsOverview(Screen):
 		self.buildList()
 		self.applyMountChange(getattr(dlg, "savedMount", None))
 
-	# Mirrors deleteMount()'s mode handling below: a freshly saved, enabled
-	# mount isn't actually mounted yet - just written to fstab/auto.network -
-	# so bring it up immediately instead of waiting for reboot or a manual
-	# "Mount" (yellow key) press.
 	def applyMountChange(self, mount):
 		def autofsRestarted(exitCode):
 			if exitCode:
-				print(f"[{MODULE_NAME}] applyMountChange: autofs restart failed, exitCode={exitCode}")
+				print(f"[{MODULE_NAME}] applyMountChange Error: The autofs restart failed, exitCode='{exitCode}'!")
 
 		def mountAllDone(data, retVal, extra=None):
 			if retVal:
-				print(f"[{MODULE_NAME}] applyMountChange: 'mount -a' failed, retVal={retVal}, output={data!r}")
+				print(f"[{MODULE_NAME}] applyMountChange Error: The 'mount -a' failed, retVal='{retVal}', output='{data!r}'!")
 
 		if mount and mount.get("enabled"):
 			if mount.get("mode") == "autofs":
@@ -180,17 +173,12 @@ class NetworkMountsOverview(Screen):
 			else:
 				self.console.ePopen((self.MOUNT, self.MOUNT, "-a"), mountAllDone)
 
-	# Mounts or unmounts the selected share right now, using whatever is
-	# already in /etc/fstab or /etc/auto.network - it does not touch the
-	# NetworkMountRepository, so this has no effect on the saved "enabled"
-	# state or on what happens at boot.
-
 	def keyYellow(self):
 		def onMountResult(unmounting, data, retVal, extra=None):
 			action = "umount" if unmounting else "mount"
-			print(f"[{MODULE_NAME}] keyYellow: {action} {mountPoint!r} finished, retVal={retVal}, output={data!r}")
+			print(f"[{MODULE_NAME}] keyYellow: {action.capitalize()} '{mountPoint!r}' finished, retVal='{retVal}', output='{data!r}'.")
 			if retVal:
-				self.session.showError((_("Unmounting '%s' failed.") if unmounting else _("Mounting '%s' failed.")) % mountPoint)
+				self.session.showError((_("Error: Unmounting '%s' failed!") if unmounting else _("Error: Mounting '%s' failed!")) % mountPoint)
 			else:
 				self.session.showInfo((_("'%s' unmounted.") if unmounting else _("'%s' mounted.")) % mountPoint)
 			self.buildList()
@@ -201,23 +189,23 @@ class NetworkMountsOverview(Screen):
 			mount = current[self.LIST_DATA]
 			mountPoint = self.repository.mountPointFor(mount)
 			if self.repository.isMounted(mount):
-				print(f"[{MODULE_NAME}] keyYellow: unmounting {mountPoint!r}")
+				print(f"[{MODULE_NAME}] keyYellow: Unmounting '{mountPoint!r}'.")
 				self.console.ePopen((self.UMOUNT, self.UMOUNT, "-l", mountPoint), lambda data, retVal, extra=None: onMountResult(True, data, retVal, extra))
 			else:
 				argv, mountPoint = self.repository.buildMountCommand(mount)
 				loggedArgv = sub(r"pass=[^,]*", "pass=***", " ".join(argv))
-				print(f"[{MODULE_NAME}] keyYellow: mounting {loggedArgv!r}")
+				print(f"[{MODULE_NAME}] keyYellow: Mounting '{loggedArgv!r}'.")
 				self.console.ePopen(argv, lambda data, retVal, extra=None: onMountResult(False, data, retVal, extra))
 
 	def keyMenu(self):
 		def deleteMount():
 			def autofsRestarted(exitCode):
 				if exitCode:
-					print(f"[{MODULE_NAME}] deleteMount: autofs restart failed, exitCode={exitCode}")
+					print(f"[{MODULE_NAME}] deleteMount Error: The autofs restart failed, exitCode='{exitCode}'!")
 
 			def mountAllDone(data, retVal, extra=None):
 				if retVal:
-					print(f"[{MODULE_NAME}] deleteMount: 'mount -a' failed, retVal={retVal}, output={data!r}")
+					print(f"[{MODULE_NAME}] deleteMount Error: The 'mount -a' failed, retVal='{retVal}', output='{data!r}'!")
 
 			def deleteMountCallback(answer):
 				if answer:
@@ -231,7 +219,7 @@ class NetworkMountsOverview(Screen):
 
 			mount = current[self.LIST_DATA]
 			name = mount.get("shareName") or mount.get("id")
-			self.session.openWithCallback(deleteMountCallback, MessageBox, _("Do you really want to delete the '%s' network mount?") % name, MessageBox.TYPE_YESNO, default=False, windowTitle=self.getTitle())
+			self.session.openWithCallback(deleteMountCallback, MessageBox, _("Confirm the deletion of '%s'?") % name, MessageBox.TYPE_YESNO, default=False, windowTitle=self.getTitle())
 
 		def editCredentials():
 			mount = current[self.LIST_DATA]
@@ -262,7 +250,7 @@ class NetworkMountsOverview(Screen):
 
 		current = self["mountList"].getCurrent()
 		sortLabel = _("Sort by Hostname/IP Address") if config.network.mountsSortByMount.value else _("Sort by Mount Name")
-		choices = [(_("Add Mount manually"), "manual")]
+		choices = [(_("Add Mount Manually"), "manual")]
 		if current:
 			mount = current[self.LIST_DATA]
 			if not mount.get("hddReplacement"):
@@ -270,7 +258,7 @@ class NetworkMountsOverview(Screen):
 			choices.append((_("Edit Credentials"), "edit_credentials"))
 			choices.append((_("Remove Credentials"), "remove_credentials"))
 		choices.append((sortLabel, "toggle_sort"))
-		self.session.openWithCallback(keyMenuCallback, ChoiceBox, title=_("Mount actions"), list=choices)
+		self.session.openWithCallback(keyMenuCallback, ChoiceBox, title=_("Mount Context Menu"), list=choices)
 
 	def keyGreen(self):
 		def keyGreenCallback(picked=None):
@@ -320,10 +308,6 @@ class NetworkMountsSummary(ScreenSummary):
 		self["value"].text = desc
 
 
-# Add/edit one network mount definition. Fields are declared in
-# data/setup.xml under key "NetworkMounts" and resolved there via self.<name>
-# - scratch values that only matter for the duration of this dialog, not
-# saved as global config.* entries.
 class NetworkMountSetup(Setup):
 	def __init__(self, session, mount=None):
 		def default(key, default=""):
@@ -360,7 +344,7 @@ class NetworkMountSetup(Setup):
 		self.shareName = NoSave(ConfigText(default=default("shareName"), fixed_size=False))
 		self.accessMode = NoSave(ConfigSelection(default=default("accessMode", "rw") or "rw", choices=[
 			("rw", _("Read/Write")),
-			("ro", _("Read Only"))
+			("ro", _("Read-Only"))
 		]))
 		self.options = NoSave(ConfigText(default=default("options"), fixed_size=False))
 		self.nfsVersion = NoSave(ConfigSelection(default=default("nfsVersion", "auto") or "auto", choices=[
@@ -389,9 +373,6 @@ class NetworkMountSetup(Setup):
 		if optionsError:
 			self.session.open(MessageBox, optionsError, MessageBox.TYPE_ERROR, timeout=5, windowTitle=self.getTitle())
 			return
-		# Used to build the local mount path further down the line, so it
-		# must never be empty: use what the user typed, or fall back to a
-		# cleaned-up version of the server address.
 		shareName = self.shareName.value.strip() or sub(r"\W", "", server)
 		mount = {
 			"id": self.mountId or self.repository.newId(),
@@ -420,36 +401,30 @@ class NetworkMountSetup(Setup):
 		self.repository.save(mounts)
 		if self.enabled.value and self.mode.value == "fstab":
 			self.repository.ensureMountPoint(mount)
-		self.savedMount = mount  # read back by NetworkMountsOverview.keySetupClosed() to mount/restart-autofs
+		self.savedMount = mount
 		Setup.keySave(self)
 
 
-# Shows discovered network hosts, expandable to list their shares. Host
-# discovery runs continuously in the background (Avahi/mDNS and the neighbor
-# table). Share enumeration (showmount/smbclient) only happens when a host is
-# actually expanded, or via Rescan - never automatically for hosts that are
-# just listed, so an idle NAS isn't woken up by browsing this screen.
 class NetworkShares(Screen):
 	skin = """
-	<screen name="NetworkShares" title="Network Shares" position="center,center" size="1080,465" resolution="1280,720">
-		<widget source="list" render="Listbox" position="0,0" size="1080,370" scrollbarMode="showOnDemand">
-			<template name="Default" fonts="enigma2icons;28,Regular;22,Regular;18" itemHeight="50">
+	<screen name="NetworkShares" title="Network Shares Browser" position="center,center" size="872,505" resolution="1280,720">
+		<widget source="list" render="Listbox" position="10,10" size="e-20,e-105">
+			<template name="Default" fonts="enigma2icons;42,Regular;25,enigma2icons;32,Regular;20" itemHeight="50">
 				<rowtemplate>
-					<text index="Glyph" position="10,0" size="40,50" font="0" horizontalAlignment="center" verticalAlignment="center" />
-					<text index="IPAddress" position="60,0" size="220,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Name" position="290,0" size="770,50" font="1" horizontalAlignment="left" verticalAlignment="center" />
+					<text index="Glyph" position="0,4" size="52,42" font="0" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
+					<text index="IPAddress" position="52,0" size="220,50" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="Name" position="272,0" size="580,50" font="1" padding="5,0" verticalAlignment="center" />
 				</rowtemplate>
 				<rowtemplate>
-					<text index="Type" position="60,0" size="80,50" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="Glyph" position="150,0" size="40,50" font="0" horizontalAlignment="center" verticalAlignment="center" foregroundColor="+GlyphColor" />
-					<text index="Name" position="200,2" size="350,28" font="1" horizontalAlignment="left" verticalAlignment="center" />
-					<text index="Description" position="200,30" size="350,18" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
-					<text index="LocalPath" position="560,0" size="500,50" font="2" horizontalAlignment="left" verticalAlignment="center" foregroundColor="grey" />
+					<text index="Glyph" position="50,9" size="42,32" font="2" foregroundColor="+GlyphColor" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
+					<text index="Type" position="102,0" size="50,50" font="3" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="Name" position="152,0" size="200,50" font="3" padding="5,0" verticalAlignment="center" />
+					<text index="Description" position="352,0" size="500,25" font="3" padding="5,0" verticalAlignment="center" />
+					<text index="LocalPath" position="372,25" size="480,25" font="3" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 				</rowtemplate>
 			</template>
 		</widget>
-		<eRectangle position="0,373" size="e,1" />
-		<widget name="description" position="0,378" size="e,52" font="Regular;20" verticalAlignment="top" horizontalAlignment="left" />
+		<widget name="description" position="10,e-85" size="e-20,25" font="Regular;20" padding="5,0" verticalAlignment="center" widgetBorderColor="gray" widgetBorderWidth="1" />
 		<widget source="key_red" render="Label" position="0,e-40" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
@@ -484,7 +459,7 @@ class NetworkShares(Screen):
 
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
-		self.setTitle(_("Network Shares"))
+		self.setTitle(_("Network Shares Browser"))
 		# Index 0 is reserved for the row template selector (which of the two
 		# row layouts below to use), not a real data field.
 		indexNames = {
@@ -510,9 +485,9 @@ class NetworkShares(Screen):
 			"ok": (self.keySelect, _("Expand/collapse the selected host, or use the selected share")),
 			"cancel": (self.close, _("Close the screen")),
 			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
-			"menu": (self.keyMenu, _("Host actions and sort order")),
+			"menu": (self.keyMenu, _("Open the Network Shares Context Menu")),
 			"red": (self.close, _("Close the screen")),
-			"green": (self.keyGreen, _("Edit stored username/password for the selected host")),
+			"green": (self.keyGreen, _("Edit stored username/password credentials for the selected host")),
 			"yellow": (self.keyRescan, _("Rescan for available network shares")),
 			"blue": (self.keyToggleUsingIP, _("Toggle picking a share by IP address or by DNS name")),
 		}, prio=0, description=_("Network Share Actions"))
@@ -542,8 +517,6 @@ class NetworkShares(Screen):
 
 	def stopDiscovery(self):
 		self.refreshTimer.stop()
-		# Guard against removing a callback that was never registered - that
-		# would otherwise skip stopping discovery below.
 		try:
 			discoveryManager.onChanged.remove(self.onHostsChanged)
 		except ValueError:
@@ -569,10 +542,8 @@ class NetworkShares(Screen):
 			if ok:
 				self.buildList()
 			else:
-				self["description"].setText(_("Rescan failed."))
+				self["description"].setText(_("Error: Rescan failed!"))
 
-	# Stored credentials are keyed by hostname; fall back to the address if
-	# no hostname is known for this host.
 	def hostnameFor(self, address):
 		host = discoveryManager.hosts.get(address) or {}
 		return host.get("hostname") or address
@@ -611,18 +582,18 @@ class NetworkShares(Screen):
 			self.menuHostname = None
 		choices = []
 		if isHost:
-			choices.append((_("Edit Username/Password"), "credentials"))
+			choices.append((_("Edit Username/Password Credentials"), "credentials"))
 			choices.append((_("Clear Stored Credentials"), "clear_credentials"))
 		choices.append((_("Flush Cache and Rescan"), "flush_neigh"))
 		sortLabel = _("Sort by Name") if config.network.browserSortByIP.value else _("Sort by IP Address")
 		choices.append((sortLabel, "toggle_sort"))
-		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Network Share Context Menu"), list=choices)
+		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Network Shares Context Menu"), list=choices)
 
 	def menuChoiceClosed(self, choice=None):
 		def flushNeighborCache():
 			def flushDone(data, retVal, extra=None):
 				if retVal:
-					print(f"[{MODULE_NAME}] flushNeighborCache failed, retVal={retVal}, output={data!r}")
+					print(f"[{MODULE_NAME}] Error: flushNeighborCache failed, retVal='{retVal}', output='{data!r}'!")
 				self.keyRescan()
 
 			self.console.ePopen(("/sbin/ip", "/sbin/ip", "neigh", "flush", "all"), flushDone)
@@ -642,8 +613,6 @@ class NetworkShares(Screen):
 			self.buildList()
 
 	def credentialsClosed(self, *args):
-		# Re-enumerate with the (possibly new) credentials if this host is
-		# currently expanded, so the share list picks them up right away.
 		if self.menuAddress in self.expanded:
 			self.startShareEnumeration(self.menuAddress)
 
@@ -666,12 +635,6 @@ class NetworkShares(Screen):
 			return
 		self.expanded.add(address)
 		self.buildList()
-		# Without stored credentials, probe SMB anonymously first - many
-		# servers do allow guest share listing, and this avoids asking for
-		# credentials up front for hosts that don't need them. Only if the
-		# guest probe turns up no SMB shares do we fall back to asking.
-		# NFS has no such concept (showmount is unauthenticated either way),
-		# so this fallback never applies to NFS-only hosts.
 		hostname = self.hostnameFor(address)
 		if self.repository.credentialsGet(hostname).get("username"):
 			self.startShareEnumeration(address)
@@ -685,14 +648,12 @@ class NetworkShares(Screen):
 		if address not in self.expanded:
 			return
 		if any(share["protocol"] == "smb" for share in self.shares.get(address, [])):
-			return  # Guest access already found SMB shares.
+			return
 		self.session.openWithCallback(lambda *args: self.startShareEnumeration(address), NetworkCredentials, hostname, self.repository)
 
 	def pickShare(self, share):
 		host = discoveryManager.hosts.get(share["address"]) or {}
 		hostname = host.get("hostname") or ""
-		# Falls back to the IP regardless of the toggle if this host has no
-		# DNS name - the same case that keeps blue hidden in selectionChanged().
 		address = hostname if (hostname and not config.network.browserUsingIP.value) else share["address"]
 
 		self.close({
@@ -706,21 +667,12 @@ class NetworkShares(Screen):
 			"shareName": share["name"],
 		})
 
-	# Share enumeration only ever runs from here, i.e. only when a host is
-	# explicitly expanded - never automatically for a host that's merely listed.
-
 	def startShareEnumeration(self, address):
 		if self.shareState.get(address) == "loading":
 			return
 		self.shareState[address] = "loading"
-		# Some NAS vendors (e.g. Synology) announce one share per mDNS
-		# service instance, so Avahi may already know the share names before
-		# showmount/smbclient even run. Show those immediately with an empty
-		# path, then mergeShare() fills in the real path once the actual
-		# enumeration confirms it. This also covers NFSv4-only servers,
-		# where showmount often returns nothing at all.
 		host = discoveryManager.hosts.get(address) or {}
-		# print(f"[{MODULE_NAME}] DEBUG startShareEnumeration {address} protocols={host.get('protocols')} avahiShares={host.get('avahiShares')}")
+		# print(f"[{MODULE_NAME}] DEBUG: startShareEnumeration '{address}' protocols='{host.get('protocols')}' avahiShares='{host.get('avahiShares')}'.")
 		self.shares[address] = [
 			{"address": address, "protocol": info["protocol"], "name": info["name"], "path": "", "description": ""}
 			for info in (host.get("avahiShares") or {}).values()
@@ -736,8 +688,6 @@ class NetworkShares(Screen):
 		else:
 			self.finishProtocol(address, "smb")
 
-	# Fills a matching Avahi-seeded hint in place instead of adding a
-	# duplicate row, or appends a new entry if there's no hint to match.
 	def mergeShare(self, address, protocol, name, path, description):
 		shares = self.shares.setdefault(address, [])
 		for share in shares:
@@ -769,11 +719,6 @@ class NetworkShares(Screen):
 		if not exists(self.SMB_SMBCLIENT_BIN):
 			self.finishProtocol(address, "smb")
 			return
-		# Anonymous (-N) unless a real (non-guest) username was stored for
-		# this host, in which case a temporary credentials file is used
-		# instead (-A) so the password never appears in the process list.
-		# The file is removed again in onSmbResult() once the command
-		# finishes, either way.
 		credentials = self.repository.credentialsGet(self.hostnameFor(address))
 		credentialFile = None
 		if credentials.get("username") and credentials["username"] != NetworkCredentials.GUEST_USERNAME:
@@ -789,10 +734,6 @@ class NetworkShares(Screen):
 		self.console.ePopen(cmd, callback=lambda data, retVal, extra=None: self.onSmbResult(address, data, retVal, credentialPath))
 
 	def onSmbResult(self, address, data, retVal, credentialPath=None):
-		# print(f"[{MODULE_NAME}] DEBUG onSmbResult: {data}")
-		# credentialPath is the temporary smbclient credentials file from
-		# enumerateSmb() - smbclient is done with it now, so delete it before
-		# its plaintext password can linger on disk.
 		if credentialPath:
 			try:
 				remove(credentialPath)
@@ -808,11 +749,6 @@ class NetworkShares(Screen):
 
 	def finishProtocol(self, address, protocol):
 		if "list" in self:
-			# Some servers announce a single _smb._tcp/_nfs._tcp instance for
-			# the whole host rather than one per share - if the Avahi-seeded
-			# hint for this protocol never got matched to a real share by
-			# mergeShare(), it wasn't a share after all, so drop it instead
-			# of leaving a phantom empty-path entry in the list.
 			self.shares[address] = [share for share in self.shares.get(address, []) if not (share["protocol"] == protocol and not share["path"])]
 			pending = self.pendingProtocols.get(address)
 			if pending is not None:
@@ -824,9 +760,6 @@ class NetworkShares(Screen):
 				callback = self.smbGuestCallback.pop(address, None)
 				if callback:
 					callback()
-
-	# -- discovery (hosts, not shares) - DiscoveryManager owns the merged
-	# host list, this screen just displays it --
 
 	def onHostsChanged(self):
 		if "list" in self and not self.refreshTimer.isActive():
@@ -854,7 +787,7 @@ class NetworkShares(Screen):
 					continue
 				state = self.shareState.get(address)
 				if state == "loading":
-					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares…"), "", "", {"kind": "status"}))
+					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares..."), "", "", {"kind": "status"}))
 				elif state == "empty":
 					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", "", {"kind": "status"}))
 
@@ -866,13 +799,10 @@ class NetworkShares(Screen):
 					entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", share.get("description") or "", dict(share, kind="share")))
 			self["list"].setList(entries)
 			count = len(discoveryManager.hosts)
-			self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning…"))
+			self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning..."))
 			self.selectionChanged()
 
 
-# Username/password prompt for one host's share-listing credentials -
-# opened from NetworkShares' MENU action. Keyed by hostname; the caller
-# falls back to the address if no hostname is known for that host.
 class NetworkCredentials(Setup):
 	GUEST_USERNAME = "guest"
 
@@ -885,11 +815,9 @@ class NetworkCredentials(Setup):
 		self.username = NoSave(ConfigText(default=username, fixed_size=False))
 		self.password = NoSave(ConfigPassword(default=credentials.get("password", "")))
 		Setup.__init__(self, session=session, setup="NetworkCredentials")
-		self.setTitle(_("Credentials for %s") % hostname)
+		self.setTitle(_("Credentials for '%s'") % hostname)
 
 	def keySave(self):
-		# Password is intentionally not stripped - unlike a username, it may
-		# legitimately start or end with a space.
 		username = self.GUEST_USERNAME if self.useGuest.value else self.username.value.strip()
 		password = "" if self.useGuest.value else self.password.value
 		self.repository.credentialsSave(self.hostname, username, password)
