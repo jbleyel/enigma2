@@ -1182,9 +1182,13 @@ class InfoBarSeek:
 			"pauseServiceYellow": (self.pauseServiceYellow, _("Pause playback")),
 			"unPauseService": (self.unPauseService, _("Continue playback")),
 			"seekFwd": (self.seekFwd, _("Skip forward")),
+			"seekFwdArrow": (self.seekFwdArrow, _("Skip forward")),
 			"seekFwdManual": (self.seekFwdManual, _("Skip forward (enter time)")),
 			"seekBack": (self.seekBack, _("Skip backward")),
-			"seekBackManual": (self.seekBackManual, _("Skip backward (enter time)"))
+			"seekBackArrow": (self.seekBackArrow, _("Skip backward")),
+			"seekBackManual": (self.seekBackManual, _("Skip backward (enter time)")),
+			"seekUpArrow": (self.seekUpArrow, _("Skip forward")),
+			"seekDownArrow": (self.seekDownArrow, _("Skip backward"))
 		}, prio=-1, description=_("Seek Actions"))  # Give them a little more priority to win over the color buttons.
 		self["SeekActionsPTS"].setEnabled(False)
 		self.activity = 0
@@ -1525,6 +1529,39 @@ class InfoBarSeek:
 			self.seekBack_new()
 		else:
 			self.seekBack_old()
+
+	def arrowSkipPts(self, key, direction, sensibility):
+		if config.seek.arrowSkipMode.value == "d":
+			return config.seek.defined[key].value * 90000
+		seekable = self.getSeek()
+		if seekable is None:
+			return 0
+		length = seekable.getLength()[1]
+		return int(direction * length * sensibility / 100.0)
+
+	def seekFwdArrow(self):
+		if config.seek.arrowSkipMode.value == "t":
+			self.seekFwd()
+		else:
+			self.doSeekRelative(self.arrowSkipPts("RIGHT", 1, config.seek.sensibilityHorizontal.value))
+
+	def seekBackArrow(self):
+		if config.seek.arrowSkipMode.value == "t":
+			self.seekBack()
+		else:
+			self.doSeekRelative(self.arrowSkipPts("LEFT", -1, config.seek.sensibilityHorizontal.value))
+
+	def seekUpArrow(self):
+		if config.seek.arrowSkipMode.value == "t":
+			self.UpPressed()
+		else:
+			self.doSeekRelative(self.arrowSkipPts("UP", 1, config.seek.sensibilityVertical.value))
+
+	def seekDownArrow(self):
+		if config.seek.arrowSkipMode.value == "t":
+			self.DownPressed()
+		else:
+			self.doSeekRelative(self.arrowSkipPts("DOWN", -1, config.seek.sensibilityVertical.value))
 
 	def seekFwd_new(self):
 		self.LastseekAction = True
