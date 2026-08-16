@@ -2207,11 +2207,16 @@ class AvahiProvider:
 		# the share protocol - keep it under a different key so it doesn't
 		# collide with our own "protocol" (smb/nfs).
 		networkManager.log(f"AvahiProvider: found {entry["name"]} / {entry["hostname"]}")
+		hostname = entry["hostname"]
+		if hostname.lower().endswith(".local."):
+			hostname = hostname[:-len(".local.")]
+		elif hostname.lower().endswith(".local"):
+			hostname = hostname[:-len(".local")]
 		observation = {
 			"source": "avahi",
 			"protocol": self.typeToProtocol.get(entry["type"], entry["type"]),
 			"name": entry["name"],
-			"hostname": entry["hostname"],
+			"hostname": hostname,
 			"addresses": entry["addresses"],
 			"addressFamily": entry["protocol"],
 			"port": entry["port"],

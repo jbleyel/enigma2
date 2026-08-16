@@ -846,8 +846,6 @@ class NetworkShares(Screen):
 			def sortKeyByName(host):
 				return (not host["protocols"], (host["hostname"] or host["address"]).lower())
 
-			print(f"NetworkShares DEBUG hosts: {discoveryManager.hosts.values()}")
-
 			for host in sorted(discoveryManager.hosts.values(), key=sortKeyByIP if config.network.browserSortByIP.value else sortKeyByName):
 				address = host["address"]
 				name = host["hostname"] or address
