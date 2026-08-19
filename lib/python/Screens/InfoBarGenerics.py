@@ -1182,15 +1182,26 @@ class InfoBarSeek:
 			"pauseServiceYellow": (self.pauseServiceYellow, _("Pause playback")),
 			"unPauseService": (self.unPauseService, _("Continue playback")),
 			"seekFwd": (self.seekFwd, _("Skip forward")),
-			"seekFwdArrow": (self.seekFwdArrow, _("Skip forward")),
 			"seekFwdManual": (self.seekFwdManual, _("Skip forward (enter time)")),
 			"seekBack": (self.seekBack, _("Skip backward")),
-			"seekBackArrow": (self.seekBackArrow, _("Skip backward")),
-			"seekBackManual": (self.seekBackManual, _("Skip backward (enter time)")),
-			"seekUpArrow": (self.seekUpArrow, _("Skip forward")),
-			"seekDownArrow": (self.seekDownArrow, _("Skip backward"))
+			"seekBackManual": (self.seekBackManual, _("Skip backward (enter time)"))
 		}, prio=-1, description=_("Seek Actions"))  # Give them a little more priority to win over the color buttons.
 		self["SeekActionsPTS"].setEnabled(False)
+
+		self["SeekActionsArrowsA"] = HelpableActionMap(self, "InfobarArrowSeekActions", {
+			"right": (self.seekRight, _("Seek forward")),
+			"left": (self.seekLeft, _("Seek backward")),
+			"up": (self.seekUp, _("Seek forward")),
+			"down": (self.seekDown, _("Seek backward"))
+		}, prio=-1, description=_("Seek Actions"))
+		self["SeekActionsArrowsA"].setEnabled(config.seek.arrowSkipMode.value == "t")
+
+		self["SeekActionsArrowsB"] = HelpableActionMap(self, "InfobarArrowSeekActions", {
+			"right": (self.seekFwd, _("Seek forward")),
+			"left": (self.seekBack, _("Seek backward")),
+		}, prio=-1, description=_("Seek Actions"))
+		self["SeekActionsArrowsB"].setEnabled(config.seek.arrowSkipMode.value != "t")
+
 		self.activity = 0
 		self.activityTimer = eTimer()
 		self.activityTimer.callback.append(self.doActivityTimer)
@@ -1518,6 +1529,27 @@ class InfoBarSeek:
 				isTS = True
 		return isTS
 
+	def seekLeft(self):
+		self.doSeekRelative(self.arrowSkipPts("LEFT", -1, config.seek.sensibilityHorizontal.value))
+
+	def seekRight(self):
+		self.doSeekRelative(self.arrowSkipPts("RIGHT", 1, config.seek.sensibilityHorizontal.value))
+
+	def seekUp(self):
+		self.doSeekRelative(self.arrowSkipPts("UP", 1, config.seek.sensibilityVertical.value))
+
+	def seekDown(self):
+		self.doSeekRelative(self.arrowSkipPts("DOWN", 1, config.seek.sensibilityVertical.value))
+
+	def arrowSkipPts(self, key, direction, sensibility):
+		if config.seek.arrowSkipMode.value == "d":
+			return config.seek.defined[key].value * 90000
+		seekable = self.getSeek()
+		if seekable is None:
+			return 0
+		length = seekable.getLength()[1]
+		return int(direction * length * sensibility / 100.0)
+
 	def seekFwd(self):
 		if config.seek.withjumps.value and not self.isServiceTypeTS():
 			self.seekFwd_new()
@@ -1529,39 +1561,6 @@ class InfoBarSeek:
 			self.seekBack_new()
 		else:
 			self.seekBack_old()
-
-	def arrowSkipPts(self, key, direction, sensibility):
-		if config.seek.arrowSkipMode.value == "d":
-			return config.seek.defined[key].value * 90000
-		seekable = self.getSeek()
-		if seekable is None:
-			return 0
-		length = seekable.getLength()[1]
-		return int(direction * length * sensibility / 100.0)
-
-	def seekFwdArrow(self):
-		if config.seek.arrowSkipMode.value == "t":
-			self.seekFwd()
-		else:
-			self.doSeekRelative(self.arrowSkipPts("RIGHT", 1, config.seek.sensibilityHorizontal.value))
-
-	def seekBackArrow(self):
-		if config.seek.arrowSkipMode.value == "t":
-			self.seekBack()
-		else:
-			self.doSeekRelative(self.arrowSkipPts("LEFT", -1, config.seek.sensibilityHorizontal.value))
-
-	def seekUpArrow(self):
-		if config.seek.arrowSkipMode.value == "t":
-			self.UpPressed()
-		else:
-			self.doSeekRelative(self.arrowSkipPts("UP", 1, config.seek.sensibilityVertical.value))
-
-	def seekDownArrow(self):
-		if config.seek.arrowSkipMode.value == "t":
-			self.DownPressed()
-		else:
-			self.doSeekRelative(self.arrowSkipPts("DOWN", -1, config.seek.sensibilityVertical.value))
 
 	def seekFwd_new(self):
 		self.LastseekAction = True
@@ -4307,7 +4306,7 @@ class InfoBarAspectSelection:
 			] + aspectSwitchList + [
 				(_("4:3 Letterbox"), "0"),
 				(_("4:3 PanScan"), "1"),
-				(_("16:9"), "2"),
+				("16:9", "2"),
 				(_("16:9 Always"), "3"),
 				(_("16:10 Letterbox"), "4"),
 				(_("16:10 PanScan"), "5"),
