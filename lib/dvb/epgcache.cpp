@@ -67,6 +67,12 @@ struct eventData
 	{
 		return fromBCD(rawEITdata[7])*3600+fromBCD(rawEITdata[8])*60+fromBCD(rawEITdata[9]);
 	}
+	void setDuration(int duration)
+	{
+		rawEITdata[7] = toBCD(duration / 3600);
+		rawEITdata[8] = toBCD((duration % 3600) / 60);
+		rawEITdata[9] = toBCD(duration % 60);
+	}
 };
 
 unsigned int eventData::CacheSize = 0;
