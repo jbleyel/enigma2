@@ -225,6 +225,7 @@ class InfoBarTimeshift:
 		self.__evSOF()
 
 	def __evSOF(self):
+		print("[Timeshift.py] InfoBarTimeshift: native evSOF fired! (PTS-aware handler)")
 		if self.timeshiftEnabled():
 			service = self.session.nav.getCurrentService()
 			info = service and service.info()
