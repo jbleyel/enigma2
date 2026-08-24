@@ -134,7 +134,7 @@ pts_t eMPEGStreamInformation::getDelta(off_t offset)
 // fixupPTS is apparently called to get UI time information and such
 int eMPEGStreamInformation::fixupPTS(const off_t &offset, pts_t &ts)
 {
-	eDebug("[eMPEGStreamInformation::fixupPTS] offset=%llu pts=%llu, m_streamtime_accesspoints=%d, m_timestamp_deltas.size()=%zu", offset, ts, m_streamtime_accesspoints, m_timestamp_deltas.size());
+	//eDebug("[eMPEGStreamInformation::fixupPTS] offset=%llu pts=%llu", offset, ts);
 	if (m_streamtime_accesspoints)
 	{
 		/*
@@ -143,14 +143,10 @@ int eMPEGStreamInformation::fixupPTS(const off_t &offset, pts_t &ts)
 		 */
 		off_t nearestoffset = offset;
 		getPTS(nearestoffset, ts);
-		eDebug("[eMPEGStreamInformation::fixupPTS] resolved via stream-time access points, ts=%llu", ts);
 		return 0;
 	}
 	if (m_timestamp_deltas.empty())
-	{
-		eDebug("[eMPEGStreamInformation::fixupPTS] m_timestamp_deltas is empty - no access points yet, can't fixup");
 		return -1;
-	}
 
 	std::multimap<pts_t, off_t>::const_iterator
 		l = m_pts_to_offset.upper_bound(ts - 60 * 90000),
@@ -164,13 +160,9 @@ int eMPEGStreamInformation::fixupPTS(const off_t &offset, pts_t &ts)
 		++l;
 	}
 	if (nearest == m_pts_to_offset.end())
-	{
-		eDebug("[eMPEGStreamInformation::fixupPTS] no nearest access point found within +/-60s of ts=%llu", ts);
 		return 1;
-	}
 
 	ts -= getDelta(nearest->second);
-	eDebug("[eMPEGStreamInformation::fixupPTS] resolved via nearest access point, ts -> %llu", ts);
 
 	return 0;
 }
