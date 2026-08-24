@@ -5,14 +5,14 @@
 #include <lib/base/message.h>
 #include <lib/dvb/metaparser.h>
 #include <lib/dvb/pmt.h>
-#include <lib/dvb/subtitle.h>
 #include <lib/dvb/pgssubtitle.h>
+#include <lib/dvb/subtitle.h>
 #include <lib/dvb/teletext.h>
 #include <lib/service/iservice.h>
 /* for subtitles */
 #include <lib/gui/esubtitle.h>
+#include <atomic>
 #include <mutex>
-#include <vector>
 
 class eStaticServiceMP3Info;
 
@@ -97,13 +97,15 @@ class GstMessageContainer : public iObject {
 	GstPad* messagePad;
 	GstBuffer* messageBuffer;
 	int messageType;
+	int messageGeneration;
 
 public:
-	GstMessageContainer(int type, GstMessage* msg, GstPad* pad, GstBuffer* buffer) {
+	GstMessageContainer(int type, GstMessage* msg, GstPad* pad, GstBuffer* buffer, int generation = 0) {
 		messagePointer = msg;
 		messagePad = pad;
 		messageBuffer = buffer;
 		messageType = type;
+		messageGeneration = generation;
 	}
 	~GstMessageContainer() {
 		if (messagePointer)
@@ -115,6 +117,9 @@ public:
 	}
 	int getType() {
 		return messageType;
+	}
+	int getGeneration() {
+		return messageGeneration;
 	}
 	operator GstMessage*() {
 		return messagePointer;
@@ -300,7 +305,6 @@ public:
 		gboolean is_video = FALSE;
 		gboolean is_streaming = FALSE;
 		gboolean is_hls = FALSE;
-		gboolean is_dash = FALSE;
 		sourceStream() {}
 	};
 	struct bufferInfo {
@@ -342,6 +346,10 @@ private:
 	int m_currentAudioStream;
 	int m_currentSubtitleStream;
 	int m_cachedSubtitleStream;
+	/* bumped on every subtitle stream switch and on every seek; buffers stamped
+	   with an older generation are still in the pump queue and must not reach a
+	   parser. Written on the main thread, read on the gstreamer thread. */
+	std::atomic<int> m_subtitle_generation;
 	int selectAudioStream(int i, bool skipAudioFix = false);
 	std::vector<audioStream> m_audioStreams;
 	std::vector<subtitleStream> m_subtitleStreams;
@@ -362,6 +370,8 @@ private:
 	/* cuesheet load check */
 	bool m_cuesheet_loaded;
 	bool m_audiosink_not_running;
+	/* DASH path: bypass playbin, build explicit pipeline via gst_parse_launch */
+	bool m_is_dash_pipeline;
 	/* servicemMP3 chapter TOC support CVR */
 	bool m_use_chapter_entries;
 	/* last used seek position gst-1 only */
@@ -373,6 +383,7 @@ private:
 	bool m_seeking_or_paused;
 	bool m_to_paused;
 	gint64 m_pending_seek_pos;
+	int64_t m_last_trickseek_ms;   /* CLOCK_MONOTONIC, throttle 500ms */
 	bufferInfo m_bufferInfo;
 	errorInfo m_errorInfo;
 	std::string m_download_buffer_path;
@@ -386,27 +397,12 @@ private:
 	int m_state;
 	bool m_gstdot;
 	GstElement* m_gst_playbin;
-	bool m_is_dash_pipeline;
-	GstElement* m_dash_demux;
-	GstElement* m_dash_audio_selector;
-	GstElement* m_dash_subtitle_selector;
-	std::vector<GstPad*> m_dash_audio_selector_pads;
-	std::vector<GstPad*> m_dash_subtitle_selector_pads;
 	GstTagList* m_stream_tags;
 	bool m_coverart;
 	std::list<eDVBSubtitlePage> m_dvb_subtitle_pages;
 
 	eFixedMessagePump<ePtr<GstMessageContainer>> m_pump;
 
-	bool createDashPipeline(const gchar* uri);
-	void dashClearTrackState();
-	int dashSelectAudioStream(int i, bool skipAudioFix = false);
-	RESULT dashEnableSubtitles(iSubtitleUser* user, SubtitleTrack& track);
-	RESULT dashDisableSubtitles();
-	void dashRegisterAudioTrack(GstPad* selectorPad, GstCaps* caps);
-	void dashRegisterSubtitleTrack(GstPad* selectorPad, GstCaps* caps);
-	static void dashDemuxPadAdded(GstElement* element, GstPad* pad, gpointer user_data);
-	static void dashQtDemuxPadAdded(GstElement* element, GstPad* pad, gpointer user_data);
 	audiotype_t gstCheckAudioPad(GstStructure* structure);
 	void gstBusCall(GstMessage* msg);
 	void handleMessage(GstMessage* msg);

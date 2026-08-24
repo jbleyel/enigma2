@@ -5,64 +5,74 @@
 
 DEFINE_REF(ePGSSubtitleParser);
 
-ePGSSubtitleParser::ePGSSubtitleParser() : m_display_size(1920, 1080), m_palette_id(0), m_composition_state(0), m_pts(0) {
-	memset(static_cast<void*>(m_palette), 0, sizeof(m_palette));
+ePGSSubtitleParser::ePGSSubtitleParser() {
+	clearPalette();
 }
 
-ePGSSubtitleParser::~ePGSSubtitleParser() {}
+/* enigma2 gRGB stores transparency in .a: 0x00 opaque, 0xFF invisible.
+   Zeroed entries would render as opaque black boxes, so start fully clear. */
+void ePGSSubtitleParser::clearPalette() {
+	std::fill(m_palette, m_palette + 256, gRGB(0, 0, 0, 0xFF));
+}
 
 void ePGSSubtitleParser::reset() {
 	m_objects.clear();
 	m_composition_objects.clear();
-	memset(static_cast<void*>(m_palette), 0, sizeof(m_palette));
+	clearPalette();
+	m_palette_id = 0;
 	m_composition_state = 0;
+	m_display_size = eSize(1920, 1080);
+	m_pts = 0;
 }
 
 void ePGSSubtitleParser::connectNewPage(const sigc::slot<void(const eDVBSubtitlePage&)>& slot, ePtr<eConnection>& connection) {
 	connection = new eConnection(this, m_new_subtitle_page.connect(slot));
 }
 
-void ePGSSubtitleParser::processBuffer(uint8_t* data, size_t len, pts_t pts) {
+bool ePGSSubtitleParser::isSegmentType(uint8_t type) {
+	return type == PGS_PDS || type == PGS_ODS || type == PGS_PCS || type == PGS_WDS || type == PGS_END;
+}
+
+void ePGSSubtitleParser::processBuffer(const uint8_t* data, size_t len, pts_t pts) {
 	if (len < 3)
 		return;
 
 	m_pts = pts;
 	size_t pos = 0;
 
-	/*
-	 * Detect SUP format: segments prefixed with "PG" magic + PTS + DTS (10 bytes).
-	 * Some GStreamer pipelines may deliver PGS data in SUP format instead of raw segments.
-	 */
-	bool sup_format = (len >= 13 && data[0] == 0x50 && data[1] == 0x47);
+	/* SUP format prefixes every segment with "PG" + PTS(4) + DTS(4). Some
+	   pipelines deliver that instead of bare segments; require a valid segment
+	   type behind the header so a raw segment starting with 0x50 is not
+	   mistaken for it. */
+	bool sup_format = len >= 13 && data[0] == 0x50 && data[1] == 0x47 && isSegmentType(data[10]);
 
 	if (sup_format) {
-		/* SUP format: each segment has a 10-byte header before the segment type */
 		while (pos + 13 <= len) {
 			if (data[pos] != 0x50 || data[pos + 1] != 0x47) {
 				eTrace("[ePGSSubtitleParser] SUP sync lost at pos %zd", pos);
 				break;
 			}
 
-			/* Skip PG(2) + PTS(4) + DTS(4) = 10 bytes header */
 			uint8_t segment_type = data[pos + 10];
 			uint16_t segment_size = (data[pos + 11] << 8) | data[pos + 12];
 			pos += 13;
 
-			if (pos + segment_size > len)
+			if (pos + segment_size > len) {
+				eWarning("[ePGSSubtitleParser] SUP segment truncated, %zu of %d bytes dropped (type=0x%02x)", len - pos, segment_size, segment_type);
 				break;
+			}
 
 			processSegment(segment_type, data + pos, segment_size);
 			pos += segment_size;
 		}
 	} else {
-		/* Raw PGS format: segments start directly with type byte */
 		while (pos + 3 <= len) {
 			uint8_t segment_type = data[pos];
 			uint16_t segment_size = (data[pos + 1] << 8) | data[pos + 2];
 			pos += 3;
 
 			if (pos + segment_size > len) {
-				eTrace("[ePGSSubtitleParser] segment overflows buffer (type=0x%02x, size=%d, remaining=%zd)", segment_type, segment_size, len - pos);
+				eWarning("[ePGSSubtitleParser] segment truncated, %zu of %d bytes dropped (type=0x%02x)", len - pos, segment_size, segment_type);
 				break;
 			}
 
@@ -108,13 +118,16 @@ void ePGSSubtitleParser::processPCS(const uint8_t* data, int len) {
 	m_palette_id = data[9];
 	int num_objects = data[10];
 
-	m_display_size = eSize(width, height);
+	/* eSubtitleWidget scales by these, they must not become 0 */
+	if (width > 0 && height > 0)
+		m_display_size = eSize(width, height);
 
 	eTrace("[ePGSSubtitleParser] PCS: %dx%d state=0x%02x palette=%d objects=%d pts=%lld", width, height, m_composition_state, m_palette_id, num_objects, (long long)m_pts);
 
-	/* Epoch start: clear all cached objects */
+	/* epoch start: nothing from the previous epoch stays valid */
 	if (m_composition_state == 0x80) {
 		m_objects.clear();
+		clearPalette();
 	}
 
 	m_composition_objects.clear();
@@ -147,6 +160,11 @@ void ePGSSubtitleParser::processPDS(const uint8_t* data, int len) {
 	if (len < 2)
 		return;
 
+	if (uint8_t palette_id = data[0]; palette_id != m_palette_id) {
+		eTrace("[ePGSSubtitleParser] PDS: palette ID %d does not match current palette ID %d", palette_id, m_palette_id);
+		return;
+	}
+
 	/* data[0] = palette ID, data[1] = palette version */
 	int pos = 2;
 	while (pos + 5 <= len) {
@@ -170,10 +188,7 @@ void ePGSSubtitleParser::processPDS(const uint8_t* data, int len) {
 			b = std::max(0, std::min(255, (298 * y + 543 * cb) / 256));
 		}
 
-		/*
-		 * enigma2 gRGB alpha convention: 0xFF = transparent, 0x00 = opaque
-		 * PGS alpha convention: 0xFF = opaque, 0x00 = transparent
-		 */
+		/* PGS alpha is opacity, gRGB .a is transparency */
 		m_palette[index] = gRGB(r, g, b, 255 - A);
 	}
 }
@@ -183,47 +198,65 @@ void ePGSSubtitleParser::processODS(const uint8_t* data, int len) {
 		return;
 
 	int object_id = (data[0] << 8) | data[1];
-	/* data[2] = version number */
 	uint8_t seq_flag = data[3];
 
-	PGSObject& obj = m_objects[object_id];
-
-	if (seq_flag & 0x80) /* first segment */
-	{
+	if (seq_flag & 0x80) { /* first segment */
 		if (len < 11)
 			return;
-		/* data[4..6] = object data length (3 bytes) */
+		if (m_objects.size() >= MAX_OBJECTS && m_objects.find(object_id) == m_objects.end()) {
+			eTrace("[ePGSSubtitleParser] ODS: too many objects, ignoring %d", object_id);
+			return;
+		}
+		PGSObject& obj = m_objects[object_id];
 		obj.width = (data[7] << 8) | data[8];
 		obj.height = (data[9] << 8) | data[10];
 		obj.rle_data.clear();
-		obj.complete = false;
+		obj.overflow = false;
+		obj.complete = (seq_flag & 0x40) != 0;
 		obj.rle_data.insert(obj.rle_data.end(), data + 11, data + len);
-	} else /* continuation segment */
-	{
+		if (obj.complete)
+			eTrace("[ePGSSubtitleParser] ODS: object %d complete %dx%d rle=%zd bytes", object_id, obj.width, obj.height, obj.rle_data.size());
+	} else { /* continuation segment */
+		auto it = m_objects.find(object_id);
+		if (it == m_objects.end() || it->second.width == 0) {
+			eTrace("[ePGSSubtitleParser] ODS: continuation for object %d without valid first segment", object_id);
+			return;
+		}
+		PGSObject& obj = it->second;
+		if (obj.rle_data.size() + (len - 4) > MAX_OBJECT_RLE) {
+			if (!obj.overflow) {
+				eWarning("[ePGSSubtitleParser] ODS: object %d exceeds %zu bytes, dropping", object_id, MAX_OBJECT_RLE);
+				obj.overflow = true;
+				obj.rle_data.clear();
+				obj.complete = false;
+			}
+			return;
+		}
 		obj.rle_data.insert(obj.rle_data.end(), data + 4, data + len);
+		if (seq_flag & 0x40) {
+			obj.complete = true;
+			eTrace("[ePGSSubtitleParser] ODS: object %d complete %dx%d rle=%zd bytes", object_id, obj.width, obj.height, obj.rle_data.size());
+		}
 	}
+}
 
-	if (seq_flag & 0x40) /* last segment */
-	{
-		obj.complete = true;
-		eTrace("[ePGSSubtitleParser] ODS: object %d complete %dx%d rle=%zd bytes", object_id, obj.width, obj.height, obj.rle_data.size());
-	}
+void ePGSSubtitleParser::emitPage(std::list<eDVBSubtitleRegion>&& regions) {
+	eDVBSubtitlePage page;
+	page.m_show_time = m_pts;
+	page.m_display_size = m_display_size;
+	page.m_regions = std::move(regions);
+	m_new_subtitle_page(page);
 }
 
 void ePGSSubtitleParser::processEND() {
 	if (m_composition_objects.empty()) {
-		/* Empty composition = clear subtitle display */
+		/* empty composition = clear the display */
 		eTrace("[ePGSSubtitleParser] END: clear screen");
-		eDVBSubtitlePage page;
-		page.m_show_time = m_pts;
-		page.m_display_size = m_display_size;
-		m_new_subtitle_page(page);
+		emitPage({});
 		return;
 	}
 
-	eDVBSubtitlePage page;
-	page.m_show_time = m_pts;
-	page.m_display_size = m_display_size;
+	std::list<eDVBSubtitleRegion> regions;
 
 	for (const auto& comp : m_composition_objects) {
 		auto it = m_objects.find(comp.object_id);
@@ -243,17 +276,17 @@ void ePGSSubtitleParser::processEND() {
 		eDVBSubtitleRegion region;
 		region.m_pixmap = pixmap;
 		region.m_position = ePoint(comp.x, comp.y);
-		page.m_regions.push_back(region);
+		regions.push_back(region);
 	}
 
-	eTrace("[ePGSSubtitleParser] END: %zd regions, show_time=%lld", page.m_regions.size(), (long long)m_pts);
+	eTrace("[ePGSSubtitleParser] END: %zd regions, show_time=%lld", regions.size(), (long long)m_pts);
 
-	if (!page.m_regions.empty()) {
-		m_new_subtitle_page(page);
-	}
+	/* an empty result still has to reach the widget, otherwise the previous
+	   subtitle stays on screen until its hide timer expires */
+	emitPage(std::move(regions));
 }
 
-bool ePGSSubtitleParser::decodeRLE(const PGSObject& obj, ePtr<gPixmap>& pixmap) {
+bool ePGSSubtitleParser::decodeRLE(const PGSObject& obj, ePtr<gPixmap>& pixmap) const {
 	if (obj.width <= 0 || obj.height <= 0 || obj.width > 3840 || obj.height > 2160)
 		return false;
 
@@ -262,7 +295,7 @@ bool ePGSSubtitleParser::decodeRLE(const PGSObject& obj, ePtr<gPixmap>& pixmap) 
 
 	/* Set up the 256-entry palette on the pixmap */
 	pixmap->surface->clut.colors = 256;
-	pixmap->surface->clut.data = new gRGB[256];
+	pixmap->surface->clut.data = new gRGB[256]; //NOSONAR
 	memcpy(static_cast<void*>(pixmap->surface->clut.data), m_palette, 256 * sizeof(gRGB));
 
 	const uint8_t* rle = obj.rle_data.data();
@@ -297,18 +330,15 @@ bool ePGSSubtitleParser::decodeRLE(const PGSObject& obj, ePtr<gPixmap>& pixmap) 
 			int run_length;
 			uint8_t color;
 
-			if (flags & 0x40) /* long run length */
-			{
+			if (flags & 0x40) { /* long run length */
 				if (pos >= rle_size)
 					break;
 				run_length = ((flags & 0x3F) << 8) | rle[pos++];
-			} else /* short run length */
-			{
+			} else { /* short run length */
 				run_length = flags & 0x3F;
 			}
 
-			if (flags & 0x80) /* non-zero color */
-			{
+			if (flags & 0x80) { /* non-zero color */
 				if (pos >= rle_size)
 					break;
 				color = rle[pos++];
