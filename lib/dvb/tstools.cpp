@@ -354,6 +354,15 @@ int eDVBTSTools::fixupPTS(const off_t &offset, pts_t &now)
 
 		pts_t pos = m_pts_begin;
 		eDebug("[eDVBTSTools] fixupPTS: streaminfo fixup unavailable, fallback branch: now=%lld, m_pts_begin=%lld", now, pos);
+		if (now == 0)
+		{
+			/* A real PTS is never exactly 0. A 0 here means the caller (usually the decoder's
+			   live getPTS(), right after unpause) hasn't got a real value yet - not a genuine
+			   wrap-around. Treating it as a wrap-around computes a bogus huge "now", which then
+			   resolves to a seek target far beyond the buffer and triggers a bogus EOF/SwitchToLive. */
+			eDebug("[eDVBTSTools] fixupPTS: now == 0, not a real PTS (decoder not ready yet?) - refusing to fixup");
+			return -1;
+		}
 		if ((now < pos) && ((pos - now) < 90000 * 10))
 		{
 			eDebug("[eDVBTSTools] fixupPTS: now is %lld before begin (<10s) - clamp-to-0 branch. NOTE: this leaves 'now' UNCHANGED (%lld) - only the local 'pos' is set to 0!", pos - now, now);
