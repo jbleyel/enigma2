@@ -2119,6 +2119,7 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 				eDebug("[eDVBChannel] decoder getPTS failed, can't seek relative");
 				continue;
 			}
+			eDebug("[eDVBChannel] seekRelative: decoder->getPTS() succeeded, now=%lld (before getCurrentPosition/fixupPTS)", now);
 			if (!m_cue->m_decoding_demux)
 			{
 				eDebug("[eDVBChannel] getNextSourceSpan, no decoding demux. couldn't seek to %llu... ignore request!", pts);
@@ -2131,6 +2132,7 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 				eDebug("[eDVBChannel] seekTo: getCurrentPosition failed!");
 				continue;
 			}
+			eDebug("[eDVBChannel] seekRelative: after getCurrentPosition/fixupPTS, now=%lld", now);
 		} else if (pts < 0) /* seek relative to end */
 		{
 			pts_t len;

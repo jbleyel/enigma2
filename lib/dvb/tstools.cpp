@@ -336,8 +336,10 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 
 int eDVBTSTools::fixupPTS(const off_t &offset, pts_t &now)
 {
+	pts_t debug_now_in = now;
 	if (m_streaminfo.fixupPTS(offset, now) == 0)
 	{
+		eDebug("[eDVBTSTools] fixupPTS: resolved via streaminfo (access points), now %lld -> %lld", debug_now_in, now);
 		return 0;
 	}
 	else
@@ -351,16 +353,24 @@ int eDVBTSTools::fixupPTS(const off_t &offset, pts_t &now)
 		}
 
 		pts_t pos = m_pts_begin;
+		eDebug("[eDVBTSTools] fixupPTS: streaminfo fixup unavailable, fallback branch: now=%lld, m_pts_begin=%lld", now, pos);
 		if ((now < pos) && ((pos - now) < 90000 * 10))
 		{
+			eDebug("[eDVBTSTools] fixupPTS: now is %lld before begin (<10s) - clamp-to-0 branch. NOTE: this leaves 'now' UNCHANGED (%lld) - only the local 'pos' is set to 0!", pos - now, now);
 			pos = 0;
 			return 0;
 		}
 
 		if (now < pos) /* wrap around */
+		{
 			now = now + 0x200000000LL - pos;
+			eDebug("[eDVBTSTools] fixupPTS: wrap-around branch, now -> %lld", now);
+		}
 		else
+		{
 			now -= pos;
+			eDebug("[eDVBTSTools] fixupPTS: normal branch, now -> %lld", now);
+		}
 		return 0;
 	}
 	eDebug("[eDVBTSTools] fixupPTS failed!");
