@@ -2127,7 +2127,26 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 				size = max;
 				continue;
 			}
-			if (getCurrentPosition(m_cue->m_decoding_demux, now, 1))
+			if (now == 0)
+			{
+				/* Decoder hasn't produced a real PTS yet (e.g. right after unpause) - now==0 gets
+				   rejected by tstools.cpp's fixupPTS() (it's not a genuine wrap-around), so
+				   getCurrentPosition() would just fail and this whole relative seek would be
+				   silently dropped, leaving playback wherever the previous request in this batch
+				   (e.g. the timeshift-activation seek) landed. Fall back to the position we're
+				   already reading from (from the file/index, not the live decoder) instead. */
+				off_t fileOffset = current_offset;
+				m_tstools_lock.lock();
+				int r = m_tstools.getPTS(fileOffset, now, 1);
+				m_tstools_lock.unlock();
+				if (r)
+				{
+					eDebug("[eDVBChannel] seekRelative: decoder PTS not ready and file-based fallback failed, can't seek relative");
+					continue;
+				}
+				eDebug("[eDVBChannel] seekRelative: decoder PTS not ready, using file-based position instead, now=%lld", now);
+			}
+			else if (getCurrentPosition(m_cue->m_decoding_demux, now, 1))
 			{
 				eDebug("[eDVBChannel] seekTo: getCurrentPosition failed!");
 				continue;
