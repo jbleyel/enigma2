@@ -2137,7 +2137,7 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 				   already reading from (from the file/index, not the live decoder) instead. */
 				off_t fileOffset = current_offset;
 				m_tstools_lock.lock();
-				int r = m_tstools.getPTS(fileOffset, now, 1);
+				int r = m_tstools.getPTSAt(fileOffset, now);
 				m_tstools_lock.unlock();
 				if (r)
 				{

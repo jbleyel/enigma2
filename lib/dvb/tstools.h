@@ -53,6 +53,9 @@ public:
 		    pts - zero-based PTS value
 		*/
 	int fixupPTS(const off_t &offset, pts_t &pts);
+	/* public wrapper around the protected getPTS(), for external offset -> zero-based PTS lookups
+	   (e.g. as a fallback position source when a live decoder clock isn't available yet). */
+	int getPTSAt(off_t offset, pts_t &pts) { return getPTS(offset, pts, 1); }
 	int calcLen(pts_t &len);
 	int calcBitrate(); /* in bits/sec */
 
