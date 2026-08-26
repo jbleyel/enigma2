@@ -881,16 +881,9 @@ class SeekBar(Screen):
 
 	def __init__(self, session):
 		def sensibilityHelp(button):
-			match button:
-				case "UP":
-					helpText = _("Skip forward %s%%") % f"{config.seek.sensibilityVertical.value:.1f}"
-				case "LEFT":
-					helpText = _("Skip backward %s%%") % f"{config.seek.sensibilityHorizontal.value:.1f}"
-				case "RIGHT":
-					helpText = _("Skip forward %s%%") % f"{config.seek.sensibilityHorizontal.value:.1f}"
-				case "DOWN":
-					helpText = _("Skip backward %s%%") % f"{config.seek.sensibilityVertical.value:.1f}"
-			return helpText
+			value = config.seek.sensibilities[button].value
+			text = _("Skip forward %s%%") if value > 0 else _("Skip backward %s%%")
+			return text % f"{value:.1f}"
 
 		def symmetricalHelp(button):
 			match button:
@@ -1066,16 +1059,16 @@ class SeekBar(Screen):
 		self.close()
 
 	def keyUp(self):
-		self.target = self.sensibilityTarget(1, config.seek.sensibilityVertical.value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["UP"].value)
+		self.target = self.sensibilityTarget(config.seek.sensibilities["UP"].value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["UP"].value)
 
 	def keyLeft(self):
-		self.target = self.sensibilityTarget(-1, config.seek.sensibilityHorizontal.value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["LEFT"].value)
+		self.target = self.sensibilityTarget(config.seek.sensibilities["LEFT"].value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["LEFT"].value)
 
 	def keyRight(self):
-		self.target = self.sensibilityTarget(1, config.seek.sensibilityHorizontal.value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["RIGHT"].value)
+		self.target = self.sensibilityTarget(config.seek.sensibilities["RIGHT"].value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["RIGHT"].value)
 
 	def keyDown(self):
-		self.target = self.sensibilityTarget(-1, config.seek.sensibilityVertical.value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["DOWN"].value)
+		self.target = self.sensibilityTarget(config.seek.sensibilities["DOWN"].value) if config.seek.arrowSkipMode.value == "s" else self.updateTarget(config.seek.defined["DOWN"].value)
 
 	def keyNumberGlobal(self, number):
 		match config.seek.numberSkipMode.value:
@@ -1107,10 +1100,10 @@ class SeekBar(Screen):
 					# 	number = 100
 					self.target = self.updateTarget(float(length * number) / 9000000.0)
 
-	def sensibilityTarget(self, direction, sensibility):
+	def sensibilityTarget(self, sensibility):
 		self.firstDigit = True
 		length = self.seek.getLength()[1] if self.length is None else self.length
-		skip = (direction * length * sensibility / 100.0) / 90000.0
+		skip = (length * sensibility / 100.0) / 90000.0
 		return self.updateTarget(skip)
 
 	def updateTarget(self, skip):
@@ -1194,13 +1187,13 @@ class InfoBarSeek:
 			"up": (self.seekUp, _("Seek forward")),
 			"down": (self.seekDown, _("Seek backward"))
 		}, prio=-1, description=_("Seek Actions"))
-		self["SeekActionsArrowsA"].setEnabled(config.seek.arrowSkipMode.value == "t")
+		self["SeekActionsArrowsA"].setEnabled(config.seek.arrowSkipMode.value != "t")
 
 		self["SeekActionsArrowsB"] = HelpableActionMap(self, "InfobarArrowSeekActions", {
 			"right": (self.seekFwd, _("Seek forward")),
 			"left": (self.seekBack, _("Seek backward")),
 		}, prio=-1, description=_("Seek Actions"))
-		self["SeekActionsArrowsB"].setEnabled(config.seek.arrowSkipMode.value != "t")
+		self["SeekActionsArrowsB"].setEnabled(config.seek.arrowSkipMode.value == "t")
 
 		self.activity = 0
 		self.activityTimer = eTimer()
@@ -1472,26 +1465,31 @@ class InfoBarSeek:
 		self.doSeekRelative(pts)
 
 	def doSeekRelative(self, pts):
+		print(f"[InfoBarGenerics] InfoBarSeek: doSeekRelative({pts})")
+		if not pts:
+			print("[InfoBarGenerics] InfoBarSeek: doSeekRelative nothing to do (pts=0)")
+			return
 		try:
 			if "<class 'Screens.InfoBar.InfoBar'>" in repr(self):
 				if InfoBarTimeshift.timeshiftEnabled(self):
+					seekable = self.getSeek()
 					length = InfoBarTimeshift.ptsGetLength(self)
-					position = InfoBarTimeshift.ptsGetPosition(self)
-					if length is None or position is None:
+					print(f"[InfoBarGenerics] InfoBarSeek: doSeekRelative PTS branch: seekable={seekable is not None}, length={length}")
+					if seekable is None or not length:
+						print("[InfoBarGenerics] InfoBarSeek: doSeekRelative failed because seek engine is not ready!")
+						self.showUnhandledKey()
 						return
-					if position + pts >= length:
-						InfoBarTimeshift.evEOF(self, position + pts - length)
-						self.showAfterSeek()
-						return
-					elif position + pts < 0:
-						InfoBarTimeshift.evSOF(self, position + pts)
-						self.showAfterSeek()
-						return
+					# No manual position/length bounds pre-check here (that comparison was unreliable, see prior
+					# analysis - getPlayPosition() returns the absolute decoder PTS clock, not a 0..length buffer
+					# position). Just perform the seek and let the native evSOF service event (already wired in
+					# Components/Timeshift.py's ServiceEventTracker) handle running off the start of the current
+					# segment - it already falls back to "start from the beginning" when no earlier segment exists.
 		except Exception:
 			from sys import exc_info
 			print(f"[InfoBarGenerics] InfoBarSeek: Error in 'def doSeekRelative' {exc_info()[:2]}!")
 		seekable = self.getSeek()
 		if seekable is None or int(seekable.getLength()[1]) < 1:
+			print("[InfoBarGenerics] InfoBarSeek: doSeekRelative failed because seekable is None or length < 1!")
 			return
 		prevstate = self.seekstate
 		if self.seekstate == self.SEEK_STATE_EOF:
@@ -1499,6 +1497,7 @@ class InfoBarSeek:
 				self.setSeekState(self.SEEK_STATE_PAUSE)
 			else:
 				self.setSeekState(self.SEEK_STATE_PLAY)
+		print(f"[InfoBarGenerics] InfoBarSeek: doSeekRelative seekRelative(dir={pts < 0 and -1 or 1}, pts={abs(pts)})")
 		seekable.seekRelative(pts < 0 and -1 or 1, abs(pts))
 		if (abs(pts) > 100 or not config.usage.show_infobar_locked_on_pause.value) and config.usage.show_infobar_on_skip.value:
 			self.showAfterSeek()
@@ -1530,25 +1529,82 @@ class InfoBarSeek:
 		return isTS
 
 	def seekLeft(self):
-		self.doSeekRelative(self.arrowSkipPts("LEFT", -1, config.seek.sensibilityHorizontal.value))
+		self.arrowSkip("LEFT")
 
 	def seekRight(self):
-		self.doSeekRelative(self.arrowSkipPts("RIGHT", 1, config.seek.sensibilityHorizontal.value))
+		self.arrowSkip("RIGHT")
 
 	def seekUp(self):
-		self.doSeekRelative(self.arrowSkipPts("UP", 1, config.seek.sensibilityVertical.value))
+		self.arrowSkip("UP")
 
 	def seekDown(self):
-		self.doSeekRelative(self.arrowSkipPts("DOWN", 1, config.seek.sensibilityVertical.value))
+		self.arrowSkip("DOWN")
 
-	def arrowSkipPts(self, key, direction, sensibility):
-		if config.seek.arrowSkipMode.value == "d":
-			return config.seek.defined[key].value * 90000
+	def arrowSkip(self, key):
+		value = config.seek.defined[key].value if config.seek.arrowSkipMode.value == "d" else config.seek.sensibilities[key].value
+		if isStandardInfoBar(self) and self.timeshiftEnabled():
+			ts = self.getTimeshift()
+			if ts is not None and not ts.isTimeshiftActive():
+				if value > 0:  # Forward
+					# Still on plain live TV - a forward skip has nothing to jump to. Do nothing else:
+					# no timeshift activation, no pause, just the popup.
+					print("[InfoBarGenerics] InfoBarSeek: arrowSkip forward skip on live TV - nothing to jump to!")
+					self.showUnhandledKey()
+					return
+				print("[InfoBarGenerics] InfoBarSeek: arrowSkip activates timeshift (not active yet)")
+				ts.activateTimeshift()  # Switches playback onto the seekable timeshift buffer (engine auto-pauses internally while switching source).
+				self.setSeekState(self.SEEK_STATE_PLAY)
+		self.doSeekRelative(self.arrowSkipPts(key, value))
+
+	def arrowSkipPts(self, key, sensibility):
+		print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts(key={key}, sensibility={sensibility})")
+		if isStandardInfoBar(self) and self.timeshiftEnabled():
+			seekable = self.getSeek()
+			length = InfoBarTimeshift.ptsGetLength(self)
+			position = InfoBarTimeshift.ptsGetPosition(self)
+			rawSeek = InfoBarTimeshift.ptsGetSeekInfo(self)
+			if rawSeek is not None:
+				print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts raw getPlayPosition()={rawSeek.getPlayPosition()}, raw getLength()={rawSeek.getLength()}, isCurrentlySeekable()={rawSeek.isCurrentlySeekable()}")
+			print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts PTS branch: seekable={seekable is not None}, position={position}, length={length}")
+			if seekable is None or not length or position is None:
+				print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts failed because seek engine is not ready!")
+				self.showUnhandledKey()
+				return 0
+			pts = config.seek.defined[key].value * 90000 if config.seek.arrowSkipMode.value == "d" else int(length * sensibility / 100.0)
+			ts = self.getTimeshift()
+			# Keep some real margin (not just enough to avoid an outright overrun) between the landing
+			# point and the live edge - the buffer keeps growing in real time while we play forward, so
+			# landing right at the edge leaves no cushion and causes audible/visible stutter once
+			# playback catches up to the write pointer.
+			FORWARD_SKIP_LIVE_MARGIN = 3 * 90000
+			if pts > 0 and ts is not None and ts.isTimeshiftActive():
+				maxPts = length - FORWARD_SKIP_LIVE_MARGIN - position
+				if maxPts <= 0:
+					# Already at/near the live edge - nothing further to jump to.
+					print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts forward skip already at the live edge - nothing to jump to!")
+					self.showUnhandledKey()
+					return 0
+				if pts > maxPts:
+					# Requested jump overruns the buffer - clamp to just short of the live edge instead
+					# of handing seekRelative() a target with no data yet (which stalls playback for
+					# seconds). This still lands the user close to live, same as before.
+					print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts clamping forward skip from {pts} to {maxPts} to stay within the buffer")
+					pts = maxPts
+			print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts PTS branch returns pts={pts}")
+			return pts
+
 		seekable = self.getSeek()
 		if seekable is None:
+			print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts failed because seekable is None!")
 			return 0
+		if config.seek.arrowSkipMode.value == "d":
+			pts = config.seek.defined[key].value * 90000
+			print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts defined mode returns pts={pts}")
+			return pts
 		length = seekable.getLength()[1]
-		return int(direction * length * sensibility / 100.0)
+		pts = int(length * sensibility / 100.0)
+		print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts fallback branch returns pts={pts}")
+		return pts
 
 	def seekFwd(self):
 		if config.seek.withjumps.value and not self.isServiceTypeTS():
@@ -1745,6 +1801,7 @@ class InfoBarSeek:
 		return False
 
 	def __evEOF(self):
+		print("[InfoBarGenerics] InfoBarSeek: native evEOF fired!")
 		if self.seekstate == self.SEEK_STATE_EOF:
 			return
 		# global seek_withjumps_muted
@@ -1770,6 +1827,7 @@ class InfoBarSeek:
 		pass  # Defined in subclasses.
 
 	def __evSOF(self):
+		print("[InfoBarGenerics] InfoBarSeek: native evSOF fired! (InfoBarSeek's own generic handler)")
 		self.setSeekState(self.SEEK_STATE_PLAY)
 		self.doSeek(0)
 
@@ -2687,8 +2745,8 @@ class InfoBarChannelSelection:
 		self["ChannelSelectActions"] = HelpableActionMap(self, "InfobarChannelSelection", {
 			"switchChannelUp": (self.UpPressed, serviceListHelp("up")),
 			"switchChannelDown": (self.DownPressed, serviceListHelp("down")),
-			"switchChannelUpLong": (self.switchChannelUp, pipListHelp("up")),
-			"switchChannelDownLong": (self.switchChannelDown, pipListHelp("down")),
+			# "switchChannelUpLong": (self.switchChannelUp, pipListHelp("up")),
+			# "switchChannelDownLong": (self.switchChannelDown, pipListHelp("down")),
 			"zapUp": (self.zapUp, _("Zap to previous service")),
 			"zapDown": (self.zapDown, _("Zap to next service")),
 			"historyBack": (self.historyBack, _("Zap to previous service in history")),
@@ -2703,6 +2761,9 @@ class InfoBarChannelSelection:
 			"ChannelPlusPressedLong": (self.ChannelPlusPressed, serviceZapHelp("next")),
 			"ChannelMinusPressedLong": (self.ChannelMinusPressed, serviceZapHelp("previous"))
 		}, prio=0, description=_("Service Selection Actions"))
+
+		self["ChannelSelectActions"].setEnabledAction("switchChannelUp", config.seek.arrowSkipMode.value == "t")
+		self["ChannelSelectActions"].setEnabledAction("switchChannelDown", config.seek.arrowSkipMode.value == "t")
 
 	def firstRun(self):
 		self.onShown.remove(self.firstRun)
@@ -3609,6 +3670,8 @@ class InfoBarShowMovies:  # This is used in InfoBar.py.
 			"up": (self.up, _("Open Movie Selection")),
 			"down": (self.down, _("Open Movie Selection"))
 		}, prio=0, description=_("Movie Selection Actions"))
+		self["MovieListActions"].setEnabledAction("up", config.seek.arrowSkipMode.value == "t")
+		self["MovieListActions"].setEnabledAction("down", config.seek.arrowSkipMode.value == "t")
 
 
 class InfoBarJobman:
