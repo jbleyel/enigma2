@@ -1032,7 +1032,6 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	m_currentAudioStream = -1;
 	m_currentSubtitleStream = -1;
 	m_cachedSubtitleStream = -2; /* report the first subtitle stream to be 'cached'. TODO: use an actual cache. */
-	m_subtitle_generation = 0;
 	m_subtitle_widget = 0;
 	m_currentTrickRatio = 1.0;
 	m_buffer_size = 5LL * 1024LL * 1024LL;
@@ -1486,7 +1485,7 @@ eServiceMP3::~eServiceMP3() {
 	}
 
 	m_new_dvb_subtitle_page_connection = 0;
-	m_new_pgs_subtitle_page_connection = 0;
+	m_new_pgs_subtitle_page_connection = nullptr;
 }
 
 #ifdef PASSTHROUGH_FIX
@@ -3965,7 +3964,7 @@ void eServiceMP3::gstCBsubtitleAvail(GstElement* subsink, GstBuffer* buffer, gpo
 	 * the GStreamer thread and m_subtitleStreams can be modified by the main
 	 * thread during stream re-enumeration. The bounds check is done in
 	 * pullSubtitle() which runs on the main thread via the pump. */	
-	_this->m_pump.send(new GstMessageContainer(2, NULL, NULL, buffer, _this->m_subtitle_generation.load()));
+	_this->m_pump.send(new GstMessageContainer(2, nullptr, nullptr, buffer, _this->m_subtitle_generation.load()));
 }
 
 /**
@@ -4466,15 +4465,7 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 	if (m_currentSubtitleStream == track.pid && !eSubtitleSettings::pango_autoturnon)
 		return 0;
 
-	/* Everything the subsink already handed over belongs to the old track. Bump the
-	   generation so gstPoll() discards it instead of feeding it to the new parser. */
 	m_subtitle_generation++;
-
-	/* deselect first: playbin ignores a write of the value it already holds, so
-	   without this the stream is not re-plugged when re-selecting the same track
-	   (which pango_autoturnon does on every zap) */
-	g_object_set(m_gst_playbin, "current-text", -1, NULL);
-
 	m_subtitle_sync_timer->stop();
 	m_dvb_subtitle_sync_timer->stop();
 	m_dvb_subtitle_pages.clear();
@@ -4489,8 +4480,6 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 	setCacheEntry(false, track.pid);
 	m_pgs_subtitle_parser->reset();
 
-	/* set before selecting the stream: gstCBsubtitleAvail() drops buffers while the
-	   widget is NULL, and the select below can take a while */
 	m_subtitle_widget = user;
 	g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
