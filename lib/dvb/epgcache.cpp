@@ -559,7 +559,7 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 			time_t new_end = new_start + new_evt->getDuration();
 
 			// fix duration for events if the next event is overlapping
-			if (new_evt->getDuration() > SUSPICIOUS_DURATION_THRESHOLD && ptr + eit_event_size < len)
+			if (new_evt->getDuration() > SUSPICIOUS_DURATION_THRESHOLD && ptr + eit_event_size + EIT_LOOP_SIZE <= len)
 			{
 				eit_event_struct *next_eit_event = (eit_event_struct*)(((uint8_t*)eit_event) + eit_event_size);
 				time_t next_start = parseDVBtime((const uint8_t*)next_eit_event + 2);
@@ -646,10 +646,16 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 					}
 					else
 					{
+						if(m_debug) {
+							eDebug("[eEPGCache] Removing old overlapping event %04X:\n"
+									"       old %lld ~ %lld\n"
+									"       new %lld ~ %lld",
+									it->second->getEventID(), (long long)old_start, (long long)old_end, (long long)new_start, (long long)new_end);
+						}
+
 						if (eventmap.erase(it->second->getEventID()) == 0)
 						{
-							eDebug("[eEPGCache] Event %04X not found in event map at %lld.",
-								it->second->getEventID(), (long long)old_start);
+							eDebug("[eEPGCache] Event %04X not found in event map at %lld.", it->second->getEventID(), (long long)old_start);
 						}
 						delete it->second;
 						timemap.erase(it++);
@@ -2750,12 +2756,14 @@ PyObject *eEPGCache::search(ePyObject arg)
 							it != eventData::descriptors.end(); ++it)
 						{
 							uint8_t *data = it->second.data;
-							
-							eit_extended_descriptor_struct *extended_event_descriptor = (eit_extended_descriptor_struct *) ((u_char *) data);
-							if ( (u_char)extended_event_descriptor->descriptor_tag == (u_char)EXTENDED_EVENT_DESCRIPTOR ) // extended event descriptor
+
+							int content_len = 0;
+							const char *contentptr = 0;
+
+							if ( (u_char)data[0] == (u_char)EXTENDED_EVENT_DESCRIPTOR ) // extended event descriptor
 							{
-								int content_len = data[EIT_EXTENDED_EVENT_DESCRIPTOR_SIZE+1]; //struct extended_event_descriptor+item information (always "0", see epg.dat for structure)
-								const char *contentptr = (const char*)&data[EIT_EXTENDED_EVENT_DESCRIPTOR_SIZE+2];
+								content_len = data[EIT_EXTENDED_EVENT_DESCRIPTOR_SIZE+1]; //struct extended_event_descriptor+item information (always "0", see epg.dat for structure)
+								contentptr = (const char*)&data[EIT_EXTENDED_EVENT_DESCRIPTOR_SIZE+2];
 								if (data[EIT_EXTENDED_EVENT_DESCRIPTOR_SIZE+2] < 0x20) //Codepage
 								{
 									/* custom encoding */
@@ -2763,80 +2771,97 @@ PyObject *eEPGCache::search(ePyObject arg)
 									contentptr = content.data();
 									content_len = content.length();
 								}
-								#ifdef DEBUG
-								int dbglen=content_len;
-								#endif
-								if (content_len < textlen)
-									/*Doesn't fit, so cannot match anything */
-									continue;
-								if (casetype == NO_CASE_CHECK)
+							}
+							else if ( (u_char)data[0] == (u_char)SHORT_EVENT_DESCRIPTOR ) // short event descriptor (short description text)
+							{
+								eit_short_event_descriptor_struct *short_event_descriptor = (eit_short_event_descriptor_struct *) ((u_char *) data);
+								int text_len_offset = EIT_SHORT_EVENT_DESCRIPTOR_SIZE + short_event_descriptor->event_name_length;
+								content_len = data[text_len_offset];
+								contentptr = (const char*)&data[text_len_offset+1];
+								if (content_len && (u_char)contentptr[0] < 0x20) //Codepage
 								{
-									while (content_len >= textlen)
-									{
-										if (!strncasecmp(contentptr, str, textlen))
-										{
-											descr.push_back(it->first);
-											#ifdef DEBUG
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-security"
-											eDebug("[eEPGCache] IC Debug: Content length %X, Content %s.",content_len,contentptr);
-											char buff[1000]={0};
-											eDebug("[eEPGCache] EIT data:\n");
-			 								std::string tmp="";
-			 								int z=0;
-											for (lloop=0x0;lloop<(dbglen+EIT_EXTENDED_EVENT_DESCRIPTOR_SIZE+2);lloop++)
-											{
-												if ((lloop>0) && (lloop%16==0)) { eDebug(buff); z=0; }
-												snprintf(&buff[z*3], sizeof(buff), "%02X ", data[lloop]); //NOSONAR
-												z++;
-											}
-											if (z>1) { eDebug(buff);}
-#pragma GCC diagnostic pop
-											#endif
-											break;
-										}
-										content_len--;
-										contentptr++;
-									}
+									/* custom encoding */
+									content = convertDVBUTF8((unsigned char*)contentptr, content_len, 0x40, 0);
+									contentptr = content.data();
+									content_len = content.length();
 								}
-								else if (casetype == CASE_CHECK)
+							}
+							else
+								continue;
+
+							#ifdef DEBUG
+							int dbglen=content_len;
+							#endif
+							if (content_len < textlen)
+								/*Doesn't fit, so cannot match anything */
+								continue;
+							if (casetype == NO_CASE_CHECK)
+							{
+								while (content_len >= textlen)
 								{
-									while (content_len >= textlen)
-									{
-										if (!memcmp(contentptr, str, textlen))
-										{
-											descr.push_back(it->first);
-											#ifdef DEBUG
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-security"
-											eDebug("[eEPGCache] CC Debug: Content length %X, Content %s.",content_len,contentptr);
-											char buff[1000]={0};
-											eDebug("[eEPGCache] EIT data:\n");
-			 								std::string tmp="";
-			 								int z=0;
-											for (lloop=0x0;lloop<(dbglen+EIT_EXTENDED_EVENT_DESCRIPTOR_SIZE+2);lloop++)
-											{
-												if ((lloop>0) && (lloop%16==0)) { eDebug(buff); z=0; }
-												snprintf(&buff[z*3], sizeof(buff), "%02X ", data[lloop]); //NOSONAR
-												z++;
-											}
-											if (z>1) { eDebug(buff);}
-#pragma GCC diagnostic pop
-											#endif
-											break;
-										}
-										content_len--;
-										contentptr++;
-									}
-								}
-								else if (casetype == REGEX_CHECK)
-								{
-									std::regex pattern(str);
-									std::string input(contentptr,content_len);
-									if (regex_search(input.begin(),input.end(),pattern))
+									if (!strncasecmp(contentptr, str, textlen))
 									{
 										descr.push_back(it->first);
+										#ifdef DEBUG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
+										eDebug("[eEPGCache] IC Debug: Content length %X, Content %s.",content_len,contentptr);
+										char buff[1000]={0};
+										eDebug("[eEPGCache] EIT data:\n");
+										std::string tmp="";
+										int z=0;
+										for (lloop=0x0;lloop<(dbglen+EIT_EXTENDED_EVENT_DESCRIPTOR_SIZE+2);lloop++)
+										{
+											if ((lloop>0) && (lloop%16==0)) { eDebug(buff); z=0; }
+											snprintf(&buff[z*3], sizeof(buff), "%02X ", data[lloop]); //NOSONAR
+											z++;
+										}
+										if (z>1) { eDebug(buff);}
+#pragma GCC diagnostic pop
+										#endif
+										break;
 									}
+									content_len--;
+									contentptr++;
+								}
+							}
+							else if (casetype == CASE_CHECK)
+							{
+								while (content_len >= textlen)
+								{
+									if (!memcmp(contentptr, str, textlen))
+									{
+										descr.push_back(it->first);
+										#ifdef DEBUG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
+										eDebug("[eEPGCache] CC Debug: Content length %X, Content %s.",content_len,contentptr);
+										char buff[1000]={0};
+										eDebug("[eEPGCache] EIT data:\n");
+										std::string tmp="";
+										int z=0;
+										for (lloop=0x0;lloop<(dbglen+EIT_EXTENDED_EVENT_DESCRIPTOR_SIZE+2);lloop++)
+										{
+											if ((lloop>0) && (lloop%16==0)) { eDebug(buff); z=0; }
+											snprintf(&buff[z*3], sizeof(buff), "%02X ", data[lloop]); //NOSONAR
+											z++;
+										}
+										if (z>1) { eDebug(buff);}
+#pragma GCC diagnostic pop
+										#endif
+										break;
+									}
+									content_len--;
+									contentptr++;
+								}
+							}
+							else if (casetype == REGEX_CHECK)
+							{
+								std::regex pattern(str);
+								std::string input(contentptr,content_len);
+								if (regex_search(input.begin(),input.end(),pattern))
+								{
+									descr.push_back(it->first);
 								}
 							}
 						}
