@@ -664,12 +664,7 @@ int eDVBRecordFileThread::asyncWrite(int len)
 		int parse_result = m_ts_parser.parseData(m_current_offset, m_buffer, len);
 		if (parse_result == -2)
 		{
-			/* Marshal through the message pump: a direct m_event() emission
-			 * runs filepushEvent() -> recordEvent() -> handleEofRecovery()
-			 * on THIS recorder thread, where eTimer::start() and decoder
-			 * calls are not thread-safe. sendEvent() delivers the event
-			 * on the main loop instead. */
-			sendEvent(eFilePushThreadRecorder::evtStreamCorrupt);
+			m_event(eFilePushThreadRecorder::evtStreamCorrupt);
 			return len;
 		}
 	}

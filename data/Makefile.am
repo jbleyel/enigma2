@@ -2,6 +2,7 @@ SUBDIRS = fonts keymaps icons
 
 dist_pkgdata_DATA = \
 	encoding.conf \
+	dab.xml \
 	keymap.xml \
 	keymap.ntr \
 	keymap.u80 \
