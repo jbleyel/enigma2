@@ -206,6 +206,5 @@ class Picon(Renderer):
 				self.instance.hide()
 
 
-if config.picon.mode.value == 0:
-	harddiskmanager.on_partition_list_change.append(onPartitionChange)
-	initPiconPaths()
+harddiskmanager.on_partition_list_change.append(onPartitionChange)
+initPiconPaths()

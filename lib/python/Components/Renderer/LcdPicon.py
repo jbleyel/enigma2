@@ -183,6 +183,5 @@ class LcdPicon(Renderer):
 				self.instance.hide()
 
 
-if config.picon.mode.value == 0:
-	harddiskmanager.on_partition_list_change.append(onPartitionChange)
-	initLcdPiconPaths()
+harddiskmanager.on_partition_list_change.append(onPartitionChange)
+initLcdPiconPaths()
