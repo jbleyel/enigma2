@@ -125,6 +125,7 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 
 	if (m_streaminfo.hasStructure())
 	{
+		off_t requested_offset = offset;
 		off_t local_offset = offset;
 		unsigned long long data;
 		if (m_streaminfo.getStructureEntryFirst(local_offset, data) == 0)
@@ -138,6 +139,18 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 					{
 						// obsolete data that happens to have a '1' there
 						continue;
+					}
+					if (llabs((long long)(local_offset - requested_offset)) > m_maxrange)
+					{
+						/* The nearest sc-file entry with a PTS is much further from the
+						   requested offset than the raw packet scan below would even look.
+						   Blindly accepting it here poisons getOffset()'s interpolation
+						   refinement with a "verified" sample that's actually way off (seen
+						   as the refinement loop repeatedly landing on the same distant sc
+						   entry without ever converging). Fall through to the finer packet
+						   scan instead of trusting this distant entry. */
+						eDebug("[eDVBTSTools] getPTS sc entry at %lld is too far from requested offset %lld, falling back to packet scan", (long long)local_offset, (long long)requested_offset);
+						break;
 					}
 					eDebug("[eDVBTSTools] getPTS got it from sc file offset=%lld pts=%lld", (long long)local_offset, pts);
 					if (fixed && fixupPTS(local_offset, pts))

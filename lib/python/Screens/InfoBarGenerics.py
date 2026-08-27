@@ -1576,8 +1576,12 @@ class InfoBarSeek:
 			# Keep some real margin (not just enough to avoid an outright overrun) between the landing
 			# point and the live edge - the buffer keeps growing in real time while we play forward, so
 			# landing right at the edge leaves no cushion and causes audible/visible stutter once
-			# playback catches up to the write pointer.
-			FORWARD_SKIP_LIVE_MARGIN = 3 * 90000
+			# playback catches up to the write pointer. This also has to absorb the resolution error of
+			# the engine's coarse fallback position search (no access points are ever built for these
+			# timeshift files), which has been observed to be off by several seconds on large buffers -
+			# too small a margin here lets the resolved seek land beyond what's actually been written,
+			# stalling playback in "wait for driver eof" for a long time.
+			FORWARD_SKIP_LIVE_MARGIN = 20 * 90000
 			if pts > 0 and ts is not None and ts.isTimeshiftActive():
 				maxPts = length - FORWARD_SKIP_LIVE_MARGIN - position
 				if maxPts <= 0:
