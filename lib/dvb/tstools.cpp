@@ -123,6 +123,10 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 	if (m_streaminfo.getPTS(offset, pts) == 0)
 		return 0; // Okay, the cache had it
 
+	bool have_fallback = false;
+	off_t fallback_offset = 0;
+	pts_t fallback_pts = 0;
+
 	if (m_streaminfo.hasStructure())
 	{
 		off_t requested_offset = offset;
@@ -147,9 +151,15 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 						   Blindly accepting it here poisons getOffset()'s interpolation
 						   refinement with a "verified" sample that's actually way off (seen
 						   as the refinement loop repeatedly landing on the same distant sc
-						   entry without ever converging). Fall through to the finer packet
-						   scan instead of trusting this distant entry. */
+						   entry without ever converging). Prefer the finer packet scan below,
+						   but remember this entry as a fallback: right at the live edge the
+						   packet scan can genuinely fail (not enough data flushed to disk
+						   yet), and returning nothing at all is worse than an imprecise but
+						   valid sample. */
 						eDebug("[eDVBTSTools] getPTS sc entry at %lld is too far from requested offset %lld, falling back to packet scan", (long long)local_offset, (long long)requested_offset);
+						have_fallback = true;
+						fallback_offset = local_offset;
+						fallback_pts = pts;
 						break;
 					}
 					eDebug("[eDVBTSTools] getPTS got it from sc file offset=%lld pts=%lld", (long long)local_offset, pts);
@@ -174,10 +184,11 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 		}
 	}
 	if (!m_source || !m_source->valid())
-		return -1;
+		goto no_pts_found;
 
 	offset -= offset % m_packet_size;
 
+	{
 	int left = m_maxrange;
 	int resync_failed_counter = 64;
 
@@ -188,7 +199,7 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 		if (m_source->read(offset, buffer, m_packet_size) != m_packet_size)
 		{
 			eDebug("[eDVBTSTools] getPTS read error");
-			return -1;
+			goto no_pts_found;
 		}
 		left -= m_packet_size;
 		offset += m_packet_size;
@@ -207,7 +218,7 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 				if (resync_failed_counter == 0)
 				{
 					eDebug("[eDVBTSTools] getPTS Too many resync failures, probably not a valid stream");
-					return -1;
+					goto no_pts_found;
 				}
 				--resync_failed_counter;
 			}
@@ -340,6 +351,19 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 				/* convert to zero-based */
 			if (fixed && fixupPTS(offset, pts))
 				return -1;
+			return 0;
+		}
+	}
+	}
+
+no_pts_found:
+	if (have_fallback)
+	{
+		pts = fallback_pts;
+		offset = fallback_offset;
+		if (!(fixed && fixupPTS(offset, pts)))
+		{
+			eDebug("[eDVBTSTools] getPTS packet scan found nothing usable, falling back to distant sc entry offset=%lld pts=%lld", (long long)offset, pts);
 			return 0;
 		}
 	}

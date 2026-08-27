@@ -1572,29 +1572,20 @@ class InfoBarSeek:
 				self.showUnhandledKey()
 				return 0
 			pts = config.seek.defined[key].value * 90000 if config.seek.arrowSkipMode.value == "d" else int(length * sensibility / 100.0)
-			ts = self.getTimeshift()
-			# Keep some real margin (not just enough to avoid an outright overrun) between the landing
-			# point and the live edge - the buffer keeps growing in real time while we play forward, so
-			# landing right at the edge leaves no cushion and causes audible/visible stutter once
-			# playback catches up to the write pointer. This also has to absorb the resolution error of
-			# the engine's coarse fallback position search (no access points are ever built for these
-			# timeshift files), which has been observed to be off by several seconds on large buffers -
-			# too small a margin here lets the resolved seek land beyond what's actually been written,
-			# stalling playback in "wait for driver eof" for a long time.
-			FORWARD_SKIP_LIVE_MARGIN = 20 * 90000
-			if pts > 0 and ts is not None and ts.isTimeshiftActive():
-				maxPts = length - FORWARD_SKIP_LIVE_MARGIN - position
-				if maxPts <= 0:
-					# Already at/near the live edge - nothing further to jump to.
-					print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts forward skip already at the live edge - nothing to jump to!")
+			if pts > 0:
+				ts = self.getTimeshift()
+				if ts is None or not ts.isTimeshiftActive():
+					# Already watching live - there's nothing ahead to skip forward to.
+					print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts forward skip requested in live TV - nothing to jump to!")
 					self.showUnhandledKey()
 					return 0
-				if pts > maxPts:
-					# Requested jump overruns the buffer - clamp to just short of the live edge instead
-					# of handing seekRelative() a target with no data yet (which stalls playback for
-					# seconds). This still lands the user close to live, same as before.
-					print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts clamping forward skip from {pts} to {maxPts} to stay within the buffer")
-					pts = maxPts
+				if position + pts >= length:
+					# Requested jump runs past the end of the timeshift buffer - leave the
+					# (delayed) buffer and resume live playback directly, instead of landing
+					# at/near the edge while still inside it.
+					print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts forward skip runs past the buffer end (position={position}, pts={pts}, length={length}), switching to live")
+					ts.stopTimeshift(True)
+					return 0
 			print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts PTS branch returns pts={pts}")
 			return pts
 

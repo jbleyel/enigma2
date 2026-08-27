@@ -2205,6 +2205,28 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 
 		eDebug("[eDVBChannel] ok, resolved skip (rel: %d, diff %lld), now at %16jx", relative, pts, (intmax_t)offset);
 		current_offset = align(offset, blocksize); /* in case tstools return non-aligned offset */
+
+		/* The pts->offset resolution above is approximate (no dense access points exist for
+		   these timeshift files) and has no way of knowing whether the requested pts actually
+		   corresponds to data that has been written yet. A forward seek can therefore resolve
+		   to an offset beyond the real end of the buffer. Landing there makes the span lookup
+		   below return size=0, which stalls the file-push thread in its "wait for driver eof,
+		   buffer might grow" loop for a long time. Clamp to just inside the last known-valid
+		   span - the actual, currently-known live edge - instead of guessing a safety duration
+		   up front (jump sizes are user-configurable per key, so no fixed duration margin can
+		   be correct for all of them). */
+		if (!m_source_span.empty())
+		{
+			off_t live_end = m_source_span.back().second;
+			if (current_offset >= live_end)
+			{
+				off_t clamped = align(live_end, blocksize) - blocksize;
+				if (clamped < 0)
+					clamped = 0;
+				eDebug("[eDVBChannel] resolved offset %16jx is beyond the known live edge %16jx, clamping to %16jx", (intmax_t)current_offset, (intmax_t)live_end, (intmax_t)clamped);
+				current_offset = clamped;
+			}
+		}
 	}
 
 	m_cue->m_lock.Unlock();
