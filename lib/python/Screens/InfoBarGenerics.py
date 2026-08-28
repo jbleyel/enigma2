@@ -1135,6 +1135,17 @@ class InfoBarSeek:
 		})
 		self.fast_winding_hint_message_showed = False
 
+		def buttonSkipHelp(button):
+			if config.seek.arrowSkipMode.value == "s":
+				value = config.seek.sensibilities[button].value
+				text = _("Skip forward %s%%") if value > 0 else _("Skip backward %s%%")
+				text = text % f"{abs(value):.1f}"
+			elif config.seek.arrowSkipMode.value == "d":
+				value = config.seek.defined[button].value
+				magnitude = abs(value)
+				text = (ngettext("Skip backward %d second", "Skip backward %d seconds", magnitude) if value < 0 else ngettext("Skip forward %d second", "Skip forward %d seconds", magnitude)) % magnitude
+			return text
+
 		class InfoBarSeekActionMap(HelpableActionMap):
 			def __init__(self, screen, *args, **kwargs):
 				HelpableActionMap.__init__(self, screen, *args, **kwargs)
@@ -1183,10 +1194,10 @@ class InfoBarSeek:
 		self["SeekActionsPTS"].setEnabled(False)
 
 		self["SeekActionsArrowsA"] = HelpableActionMap(self, "InfobarArrowSeekActions", {
-			"right": (self.seekRight, _("Seek forward")),
-			"left": (self.seekLeft, _("Seek backward")),
-			"up": (self.seekUp, _("Seek forward")),
-			"down": (self.seekDown, _("Seek backward"))
+			"right": (self.seekRight, boundFunction(buttonSkipHelp, "RIGHT")),
+			"left": (self.seekLeft, boundFunction(buttonSkipHelp, "LEFT")),
+			"up": (self.seekUp, boundFunction(buttonSkipHelp, "UP")),
+			"down": (self.seekDown, boundFunction(buttonSkipHelp, "DOWN")),
 		}, prio=-1, description=_("Seek Actions"))
 		self["SeekActionsArrowsA"].setEnabled(config.seek.arrowSkipMode.value != "t")
 
