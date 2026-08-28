@@ -1437,10 +1437,14 @@ class InfoBarSeek:
 				eDVBVolumecontrol.getInstance().volumeUnMute()
 
 	def doSeek(self, pts):
-		print(f"[InfoBarGenerics] InfoBarSeek: doSeek({pts})")
+		if config.crash.debugSeek.value:
+			print(f"[InfoBarGenerics] InfoBarSeek: doSeek({pts})")
+
 		seekable = self.getSeek()
 		if seekable is None:
-			print(f"[InfoBarGenerics] InfoBarSeek: doSeek failed because seekable is None!")
+			if config.crash.debugSeek.value:
+				print(f"[InfoBarGenerics] InfoBarSeek: doSeek failed because seekable is None!")
+
 			return
 		seekable.seekTo(pts)
 
@@ -1466,18 +1470,26 @@ class InfoBarSeek:
 		self.doSeekRelative(pts)
 
 	def doSeekRelative(self, pts):
-		print(f"[InfoBarGenerics] InfoBarSeek: doSeekRelative({pts})")
+		if config.crash.debugSeek.value:
+			print(f"[InfoBarGenerics] InfoBarSeek: doSeekRelative({pts})")
+
 		if not pts:
-			print("[InfoBarGenerics] InfoBarSeek: doSeekRelative nothing to do (pts=0)")
+			if config.crash.debugSeek.value:
+				print("[InfoBarGenerics] InfoBarSeek: doSeekRelative nothing to do (pts=0)")
+
 			return
 		try:
 			if "<class 'Screens.InfoBar.InfoBar'>" in repr(self):
 				if InfoBarTimeshift.timeshiftEnabled(self):
 					seekable = self.getSeek()
 					length = InfoBarTimeshift.ptsGetLength(self)
-					print(f"[InfoBarGenerics] InfoBarSeek: doSeekRelative PTS branch: seekable={seekable is not None}, length={length}")
+					if config.crash.debugSeek.value:
+						print(f"[InfoBarGenerics] InfoBarSeek: doSeekRelative PTS branch: seekable={seekable is not None}, length={length}")
+
 					if seekable is None or not length:
-						print("[InfoBarGenerics] InfoBarSeek: doSeekRelative failed because seek engine is not ready!")
+						if config.crash.debugSeek.value:
+							print("[InfoBarGenerics] InfoBarSeek: doSeekRelative failed because seek engine is not ready!")
+
 						self.showUnhandledKey()
 						return
 					# No manual position/length bounds pre-check here (that comparison was unreliable, see prior
@@ -1487,10 +1499,14 @@ class InfoBarSeek:
 					# segment - it already falls back to "start from the beginning" when no earlier segment exists.
 		except Exception:
 			from sys import exc_info
-			print(f"[InfoBarGenerics] InfoBarSeek: Error in 'def doSeekRelative' {exc_info()[:2]}!")
+			if config.crash.debugSeek.value:
+				print(f"[InfoBarGenerics] InfoBarSeek: Error in 'def doSeekRelative' {exc_info()[:2]}!")
+
 		seekable = self.getSeek()
 		if seekable is None or int(seekable.getLength()[1]) < 1:
-			print("[InfoBarGenerics] InfoBarSeek: doSeekRelative failed because seekable is None or length < 1!")
+			if config.crash.debugSeek.value:
+				print("[InfoBarGenerics] InfoBarSeek: doSeekRelative failed because seekable is None or length < 1!")
+
 			return
 		prevstate = self.seekstate
 		if self.seekstate == self.SEEK_STATE_EOF:
@@ -1498,7 +1514,9 @@ class InfoBarSeek:
 				self.setSeekState(self.SEEK_STATE_PAUSE)
 			else:
 				self.setSeekState(self.SEEK_STATE_PLAY)
-		print(f"[InfoBarGenerics] InfoBarSeek: doSeekRelative seekRelative(dir={pts < 0 and -1 or 1}, pts={abs(pts)})")
+		if config.crash.debugSeek.value:
+			print(f"[InfoBarGenerics] InfoBarSeek: doSeekRelative seekRelative(dir={pts < 0 and -1 or 1}, pts={abs(pts)})")
+
 		seekable.seekRelative(pts < 0 and -1 or 1, abs(pts))
 		if (abs(pts) > 100 or not config.usage.show_infobar_locked_on_pause.value) and config.usage.show_infobar_on_skip.value:
 			self.showAfterSeek()
@@ -1549,26 +1567,38 @@ class InfoBarSeek:
 				if value > 0:  # Forward
 					# Still on plain live TV - a forward skip has nothing to jump to. Do nothing else:
 					# no timeshift activation, no pause, just the popup.
-					print("[InfoBarGenerics] InfoBarSeek: arrowSkip forward skip on live TV - nothing to jump to!")
+					if config.crash.debugSeek.value:
+						print("[InfoBarGenerics] InfoBarSeek: arrowSkip forward skip on live TV - nothing to jump to!")
+
 					self.showUnhandledKey()
 					return
-				print("[InfoBarGenerics] InfoBarSeek: arrowSkip activates timeshift (not active yet)")
+				if config.crash.debugSeek.value:
+					print("[InfoBarGenerics] InfoBarSeek: arrowSkip activates timeshift (not active yet)")
+
 				ts.activateTimeshift()  # Switches playback onto the seekable timeshift buffer (engine auto-pauses internally while switching source).
 				self.setSeekState(self.SEEK_STATE_PLAY)
 		self.doSeekRelative(self.arrowSkipPts(key, value))
 
 	def arrowSkipPts(self, key, sensibility):
-		print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts(key={key}, sensibility={sensibility})")
+		if config.crash.debugSeek.value:
+			print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts(key={key}, sensibility={sensibility})")
+
 		if isStandardInfoBar(self) and self.timeshiftEnabled():
 			seekable = self.getSeek()
 			length = InfoBarTimeshift.ptsGetLength(self)
 			position = InfoBarTimeshift.ptsGetPosition(self)
 			rawSeek = InfoBarTimeshift.ptsGetSeekInfo(self)
 			if rawSeek is not None:
-				print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts raw getPlayPosition()={rawSeek.getPlayPosition()}, raw getLength()={rawSeek.getLength()}, isCurrentlySeekable()={rawSeek.isCurrentlySeekable()}")
-			print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts PTS branch: seekable={seekable is not None}, position={position}, length={length}")
+				if config.crash.debugSeek.value:
+					print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts raw getPlayPosition()={rawSeek.getPlayPosition()}, raw getLength()={rawSeek.getLength()}, isCurrentlySeekable()={rawSeek.isCurrentlySeekable()}")
+
+			if config.crash.debugSeek.value:
+				print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts PTS branch: seekable={seekable is not None}, position={position}, length={length}")
+
 			if seekable is None or not length or position is None:
-				print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts failed because seek engine is not ready!")
+				if config.crash.debugSeek.value:
+					print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts failed because seek engine is not ready!")
+
 				self.showUnhandledKey()
 				return 0
 			pts = config.seek.defined[key].value * 90000 if config.seek.arrowSkipMode.value == "d" else int(length * sensibility / 100.0)
@@ -1576,30 +1606,40 @@ class InfoBarSeek:
 				ts = self.getTimeshift()
 				if ts is None or not ts.isTimeshiftActive():
 					# Already watching live - there's nothing ahead to skip forward to.
-					print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts forward skip requested in live TV - nothing to jump to!")
+					if config.crash.debugSeek.value:
+						print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts forward skip requested in live TV - nothing to jump to!")
+
 					self.showUnhandledKey()
 					return 0
-				if position + pts >= length:
-					# Requested jump runs past the end of the timeshift buffer - leave the
-					# (delayed) buffer and resume live playback directly, instead of landing
-					# at/near the edge while still inside it.
-					print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts forward skip runs past the buffer end (position={position}, pts={pts}, length={length}), switching to live")
-					ts.stopTimeshift(True)
-					return 0
-			print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts PTS branch returns pts={pts}")
+				# If the jump runs past the end of the buffer, just hand the (uncapped) pts to
+				# doSeekRelative() - the engine (eDVBChannel::getNextSourceSpan) clamps the resolved
+				# offset to the real, currently-known live edge itself, which moves playback to live
+				# without ending the still-running time shift buffer. Once actual EOF is then reached,
+				# the existing evEOF()/__evEOF() flow in Timeshift.py takes over from there - it
+				# already seeks the rest of the way to live and (for classic, non-permanent time
+				# shift) shows the "switching to live TV, time shift still active" notice.
+			if config.crash.debugSeek.value:
+				print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts PTS branch returns pts={pts}")
+
 			return pts
 
 		seekable = self.getSeek()
 		if seekable is None:
-			print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts failed because seekable is None!")
+			if config.crash.debugSeek.value:
+				print("[InfoBarGenerics] InfoBarSeek: arrowSkipPts failed because seekable is None!")
+
 			return 0
 		if config.seek.arrowSkipMode.value == "d":
 			pts = config.seek.defined[key].value * 90000
-			print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts defined mode returns pts={pts}")
+			if config.crash.debugSeek.value:
+				print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts defined mode returns pts={pts}")
+
 			return pts
 		length = seekable.getLength()[1]
 		pts = int(length * sensibility / 100.0)
-		print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts fallback branch returns pts={pts}")
+		if config.crash.debugSeek.value:
+			print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts fallback branch returns pts={pts}")
+
 		return pts
 
 	def seekFwd(self):
@@ -1797,7 +1837,9 @@ class InfoBarSeek:
 		return False
 
 	def __evEOF(self):
-		print("[InfoBarGenerics] InfoBarSeek: native evEOF fired!")
+		if config.crash.debugSeek.value:
+			print("[InfoBarGenerics] InfoBarSeek: native evEOF fired!")
+
 		if self.seekstate == self.SEEK_STATE_EOF:
 			return
 		# global seek_withjumps_muted
@@ -1823,7 +1865,9 @@ class InfoBarSeek:
 		pass  # Defined in subclasses.
 
 	def __evSOF(self):
-		print("[InfoBarGenerics] InfoBarSeek: native evSOF fired! (InfoBarSeek's own generic handler)")
+		if config.crash.debugSeek.value:
+			print("[InfoBarGenerics] InfoBarSeek: native evSOF fired! (InfoBarSeek's own generic handler)")
+
 		self.setSeekState(self.SEEK_STATE_PLAY)
 		self.doSeek(0)
 

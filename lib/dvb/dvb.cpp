@@ -1814,11 +1814,14 @@ void eDVBChannelFilePush::filterRecordData(const unsigned char *_data, int len)
 DEFINE_REF(eDVBChannel);
 
 int eDVBChannel::m_debug = -1;
+int eDVBChannel::m_debugSeek = -1;
 
 eDVBChannel::eDVBChannel(eDVBResourceManager *mgr, eDVBAllocatedFrontend *frontend): m_state(state_idle), m_mgr(mgr)
 {
 	if(eDVBChannel::m_debug < 0)
 		eDVBChannel::m_debug = eSimpleConfig::getBool("config.crash.debugDVB", false) ? 1 : 0;
+	if(eDVBChannel::m_debugSeek < 0)
+		eDVBChannel::m_debugSeek = eSimpleConfig::getBool("config.crash.debugSeek", false) ? 1 : 0;
 
 	m_frontend = frontend;
 
@@ -2119,7 +2122,8 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 				eDebug("[eDVBChannel] decoder getPTS failed, can't seek relative");
 				continue;
 			}
-			eDebug("[eDVBChannel] seekRelative: decoder->getPTS() succeeded, now=%lld (before getCurrentPosition/fixupPTS)", now);
+			if (m_debugSeek)
+				eDebug("[eDVBChannel] seekRelative: decoder->getPTS() succeeded, now=%lld (before getCurrentPosition/fixupPTS)", now);
 			if (!m_cue->m_decoding_demux)
 			{
 				eDebug("[eDVBChannel] getNextSourceSpan, no decoding demux. couldn't seek to %llu... ignore request!", pts);
@@ -2141,17 +2145,20 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 				m_tstools_lock.unlock();
 				if (r)
 				{
-					eDebug("[eDVBChannel] seekRelative: decoder PTS not ready and file-based fallback failed, can't seek relative");
+					if (m_debugSeek)
+						eDebug("[eDVBChannel] seekRelative: decoder PTS not ready and file-based fallback failed, can't seek relative");
 					continue;
 				}
-				eDebug("[eDVBChannel] seekRelative: decoder PTS not ready, using file-based position instead, now=%lld", now);
+				if (m_debugSeek)
+					eDebug("[eDVBChannel] seekRelative: decoder PTS not ready, using file-based position instead, now=%lld", now);
 			}
 			else if (getCurrentPosition(m_cue->m_decoding_demux, now, 1))
 			{
 				eDebug("[eDVBChannel] seekTo: getCurrentPosition failed!");
 				continue;
 			}
-			eDebug("[eDVBChannel] seekRelative: after getCurrentPosition/fixupPTS, now=%lld", now);
+			if (m_debugSeek)
+				eDebug("[eDVBChannel] seekRelative: after getCurrentPosition/fixupPTS, now=%lld", now);
 		} else if (pts < 0) /* seek relative to end */
 		{
 			pts_t len;
@@ -2223,7 +2230,8 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 				off_t clamped = align(live_end, blocksize) - blocksize;
 				if (clamped < 0)
 					clamped = 0;
-				eDebug("[eDVBChannel] resolved offset %16jx is beyond the known live edge %16jx, clamping to %16jx", (intmax_t)current_offset, (intmax_t)live_end, (intmax_t)clamped);
+				if (m_debugSeek)
+					eDebug("[eDVBChannel] resolved offset %16jx is beyond the known live edge %16jx, clamping to %16jx", (intmax_t)current_offset, (intmax_t)live_end, (intmax_t)clamped);
 				current_offset = clamped;
 			}
 		}

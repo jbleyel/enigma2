@@ -113,6 +113,8 @@ private:
 	bool m_pmtready;
 
 	void PMTready(int error);
+
+	static int m_debugSeek; /* -1 = not yet read from config.crash.debugSeek, 0/1 = cached value */
 };
 
 #endif

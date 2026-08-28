@@ -2,12 +2,15 @@
 #include <lib/dvb/specs.h>
 #include <lib/base/eerror.h>
 #include <lib/base/cachedtssource.h>
+#include <lib/base/esimpleconfig.h>
 #include <unistd.h>
 #include <fcntl.h>
 
 #include <stdio.h>
 
 static const int m_maxrange = 256*1024;
+
+int eDVBTSTools::m_debugSeek = -1;
 
 static inline bool isHEVCIrapStructureEntry(unsigned int data)
 {
@@ -76,6 +79,8 @@ eDVBTSTools::eDVBTSTools():
 	m_last_filelength(0),
 	m_futile(0)
 {
+	if (m_debugSeek < 0)
+		m_debugSeek = eSimpleConfig::getBool("config.crash.debugSeek", false) ? 1 : 0;
 }
 
 void eDVBTSTools::closeSource()
@@ -156,7 +161,8 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 						   packet scan can genuinely fail (not enough data flushed to disk
 						   yet), and returning nothing at all is worse than an imprecise but
 						   valid sample. */
-						eDebug("[eDVBTSTools] getPTS sc entry at %lld is too far from requested offset %lld, falling back to packet scan", (long long)local_offset, (long long)requested_offset);
+						if (m_debugSeek)
+							eDebug("[eDVBTSTools] getPTS sc entry at %lld is too far from requested offset %lld, falling back to packet scan", (long long)local_offset, (long long)requested_offset);
 						have_fallback = true;
 						fallback_offset = local_offset;
 						fallback_pts = pts;
@@ -363,6 +369,7 @@ no_pts_found:
 		offset = fallback_offset;
 		if (!(fixed && fixupPTS(offset, pts)))
 		{
+			if (m_debugSeek)
 			eDebug("[eDVBTSTools] getPTS packet scan found nothing usable, falling back to distant sc entry offset=%lld pts=%lld", (long long)offset, pts);
 			return 0;
 		}
@@ -376,7 +383,8 @@ int eDVBTSTools::fixupPTS(const off_t &offset, pts_t &now)
 	pts_t debug_now_in = now;
 	if (m_streaminfo.fixupPTS(offset, now) == 0)
 	{
-		eDebug("[eDVBTSTools] fixupPTS: resolved via streaminfo (access points), now %lld -> %lld", debug_now_in, now);
+		if (m_debugSeek)
+			eDebug("[eDVBTSTools] fixupPTS: resolved via streaminfo (access points), now %lld -> %lld", debug_now_in, now);
 		return 0;
 	}
 	else
@@ -390,19 +398,22 @@ int eDVBTSTools::fixupPTS(const off_t &offset, pts_t &now)
 		}
 
 		pts_t pos = m_pts_begin;
-		eDebug("[eDVBTSTools] fixupPTS: streaminfo fixup unavailable, fallback branch: now=%lld, m_pts_begin=%lld", now, pos);
+		if (m_debugSeek)
+			eDebug("[eDVBTSTools] fixupPTS: streaminfo fixup unavailable, fallback branch: now=%lld, m_pts_begin=%lld", now, pos);
 		if (now == 0)
 		{
 			/* A real PTS is never exactly 0. A 0 here means the caller (usually the decoder's
 			   live getPTS(), right after unpause) hasn't got a real value yet - not a genuine
 			   wrap-around. Treating it as a wrap-around computes a bogus huge "now", which then
 			   resolves to a seek target far beyond the buffer and triggers a bogus EOF/SwitchToLive. */
-			eDebug("[eDVBTSTools] fixupPTS: now == 0, not a real PTS (decoder not ready yet?) - refusing to fixup");
+			if (m_debugSeek)
+				eDebug("[eDVBTSTools] fixupPTS: now == 0, not a real PTS (decoder not ready yet?) - refusing to fixup");
 			return -1;
 		}
 		if ((now < pos) && ((pos - now) < 90000 * 10))
 		{
-			eDebug("[eDVBTSTools] fixupPTS: now is %lld before begin (<10s) - clamp-to-0 branch. NOTE: this leaves 'now' UNCHANGED (%lld) - only the local 'pos' is set to 0!", pos - now, now);
+			if (m_debugSeek)
+				eDebug("[eDVBTSTools] fixupPTS: now is %lld before begin (<10s) - clamp-to-0 branch. NOTE: this leaves 'now' UNCHANGED (%lld) - only the local 'pos' is set to 0!", pos - now, now);
 			pos = 0;
 			return 0;
 		}
@@ -410,12 +421,14 @@ int eDVBTSTools::fixupPTS(const off_t &offset, pts_t &now)
 		if (now < pos) /* wrap around */
 		{
 			now = now + 0x200000000LL - pos;
-			eDebug("[eDVBTSTools] fixupPTS: wrap-around branch, now -> %lld", now);
+			if (m_debugSeek)
+				eDebug("[eDVBTSTools] fixupPTS: wrap-around branch, now -> %lld", now);
 		}
 		else
 		{
 			now -= pos;
-			eDebug("[eDVBTSTools] fixupPTS: normal branch, now -> %lld", now);
+			if (m_debugSeek)
+				eDebug("[eDVBTSTools] fixupPTS: normal branch, now -> %lld", now);
 		}
 		return 0;
 	}
