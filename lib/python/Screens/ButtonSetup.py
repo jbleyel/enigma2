@@ -228,6 +228,8 @@ def getButtonSetupFunctions():
 	ButtonSetupFunctions.append((_("Show movies"), "Infobar/showMovies", textInfoBar))
 	ButtonSetupFunctions.append((_("Instant record"), "Infobar/instantRecord", textInfoBar))
 	ButtonSetupFunctions.append((_("Start instant recording"), "Infobar/startInstantRecording", textInfoBar))
+	ButtonSetupFunctions.append((_("Start instant recording and set duration"), "Infobar/startInstantRecordingWithDuration", textInfoBar))
+	ButtonSetupFunctions.append((_("Start instant recording and set end time"), "Infobar/startInstantRecordingWithEndTime", textInfoBar))
 	ButtonSetupFunctions.append((_("Start recording current event"), "Infobar/startRecordingCurrentEvent", textInfoBar))
 	ButtonSetupFunctions.append((_("Activate time shift End"), "Infobar/activateTimeshiftEnd", textInfoBar))
 	ButtonSetupFunctions.append((_("Activate time shift end and pause"), "Infobar/activateTimeshiftEndAndPause", textInfoBar))
@@ -310,7 +312,6 @@ def getButtonSetupFunctions():
 	if isPluginInstalled("Chromium"):
 		ButtonSetupFunctions.append((_("Youtube TV"), "YoutubeTV/", textPlugins))
 	ButtonSetupFunctions.append((_("Reload Skin"), "ReloadSkin/", textSetup))
-	ButtonSetupFunctions.append((_("TOAST"), "TOAST/", textSetup))
 	return ButtonSetupFunctions
 
 
@@ -716,8 +717,6 @@ class InfoBarButtonSetup():
 				from skin import reloadSkins
 				reloadSkins()
 				self.session.reloadDialogs()
-			elif selected[0] == "TOAST":
-				toast(self.session)
 
 	def showServiceListOrMovies(self):
 		if hasattr(self, "openServiceList"):
@@ -727,14 +726,3 @@ class InfoBarButtonSetup():
 
 	def ToggleLCDLiveTV(self):
 		config.lcd.showTv.value = not config.lcd.showTv.value
-
-
-def toast(session=None):
-	#from Tools.Notifications import AddPopup
-	#AddPopup("AAAAAAA AAAAAA AAAAAA", type=MessageBox.TYPE_INFO, timeout=5)
-
-	session.showInfo(_("This is a toast info message! But Very long! This is a toast info message! But Very long! This is a toast info message! But Very long! Even longer! This is a toast info message! But Very long! This is a toast info message! But Very long! This is a toast info message! But Very long! Even longer! "))
-	session.showWarning(_("This is a toast warning message!"))
-	session.showError(_("This is a toast error message!"))
-
-
