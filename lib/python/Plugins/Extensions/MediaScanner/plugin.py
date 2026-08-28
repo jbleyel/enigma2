@@ -10,7 +10,6 @@ global_session = None
 
 
 def execute(option):
-	print("MediaScanner execute: ", option)
 	if not option:
 		if parentScreen:
 			parentScreen.close()
@@ -23,7 +22,6 @@ def execute(option):
 
 
 def mountpoint_choosen(option):
-	print("MediaScanner mountpoint_choosen: ", option)
 	if not option:
 		if parentScreen:
 			parentScreen.close()
@@ -32,7 +30,7 @@ def mountpoint_choosen(option):
 	(description, mountpoint, session, popup) = option
 	res = scanDevice(mountpoint)
 
-	list = [(r.description, r, res[r], session, popup) for r in res]
+	list = [(r.description, (r.description, r, res[r], session, popup)) for r in res]
 
 	if not list:
 		if popup and access(mountpoint, F_OK | R_OK):
@@ -42,13 +40,11 @@ def mountpoint_choosen(option):
 		return
 
 	notificationCenter.addModalNotification(_("The following files were found..."), list=list, callback=execute)
-#	session.openWithCallback(execute, ChoiceBox, title=_("The following files were found..."), list=list)
 
 
 def scan(session, parent=None):
 	global parentScreen
 	parentScreen = parent
-	print("MediaScanner scan parent:", parent)
 	parts = [(r.tabbedDescription(), r.mountpoint, session, True) for r in harddiskmanager.getMountedPartitions(onlyhotplug=False) if access(r.mountpoint, F_OK | R_OK)]
 	parts.append((_("Temporary directory") + "\t/tmp", "/tmp", session, True))
 	session.openWithCallback(mountpoint_choosen, ChoiceBox, title=_("Please select medium to be scanned"), list=parts)
@@ -59,7 +55,6 @@ def main(session, **kwargs):
 
 
 def partitionListChanged(action, device):
-	print("MediaScanner partitionListChanged action:", action, " device:", device)
 	if action == 'add' and device.is_hotplug:
 		mountpoint_choosen((device.description, device.mountpoint, global_session, False))
 

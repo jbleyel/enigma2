@@ -524,7 +524,7 @@ class ServiceListBase(GUIComponent):
 		self.l.setHideNumberMarker(value)
 
 	def getPiconName(self, sref):
-		getPiconName(sref, "channelselection")
+		return getPiconName(sref, "channelselection")
 
 	# Navigation Actions
 	def goTop(self):
