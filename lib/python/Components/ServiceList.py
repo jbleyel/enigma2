@@ -523,6 +523,9 @@ class ServiceListBase(GUIComponent):
 	def setHideNumberMarker(self, value):
 		self.l.setHideNumberMarker(value)
 
+	def getPiconName(self, sref):
+		getPiconName(sref, "channelselection")
+
 	# Navigation Actions
 	def goTop(self):
 		self.instance.goTop()
@@ -821,7 +824,7 @@ class ServiceListLegacy(ServiceListBase):
 		self.l.setShowTwoLines(twoLines)
 
 		if config.usage.service_icon_enable.value:
-			self.l.setGetPiconNameFunc(getPiconName)
+			self.l.setGetPiconNameFunc(self.getPiconName)
 		else:
 			self.l.setGetPiconNameFunc(None)
 
@@ -1087,7 +1090,7 @@ class ServiceList(ServiceListBase, ServiceListTemplateParser):
 			service_str = first_in_alternative.toString() if first_in_alternative else service.toString()
 		else:
 			service_str = service.toString()
-		picon = getPiconName(service_str)
+		picon = self.getPiconName(service_str)
 		if exists(picon):
 			return loadPNG(picon)
 		return None

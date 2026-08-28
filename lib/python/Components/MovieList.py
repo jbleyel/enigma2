@@ -451,7 +451,7 @@ class MovieList(GUIComponent):
 				print(f"[MovieList] Load extended info get failed: '{str(err)}'!")
 			if ext == "2":
 				try:
-					picon = getPiconName(ref)
+					picon = getPiconName(ref, "channelselection")
 					picon = loadPNG(picon)
 				except Exception as err:
 					print(f"[MovieList] Load picon get failed: '{str(err)}'!")

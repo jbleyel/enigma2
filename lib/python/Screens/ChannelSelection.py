@@ -3478,7 +3478,7 @@ class HistoryZapSelector(Screen):
 						localBegin = localtime(begin)
 						localEnd = localtime(end)
 						eventDuration = f"{strftime(config.usage.time.short.value, localBegin)}  -  {strftime(config.usage.time.short.value, localEnd)}    ({prefix}{ngettext('%d Min', '%d Mins', remaining) % remaining})"
-				servicePicon = getPiconName(str(ServiceReference(serviceReference)))
+				servicePicon = getPiconName(str(ServiceReference(serviceReference)), "channelselection")
 				servicePicon = loadPNG(servicePicon) if servicePicon else ""
 				historyList.append(("", index == markedItem and "\u00BB" or "", serviceName, eventName, eventDescription, eventDuration, servicePicon, serviceReference))
 		if config.usage.zapHistorySort.value == 0:

@@ -932,7 +932,7 @@ class EPGList(GUIComponent):
 		displayPicon = None
 		if self.showPicon:
 			if picon is None:  # go find picon and cache its location
-				picon = getPiconName(service)
+				picon = getPiconName(service, "channelselection")
 				curIdx = self.l.getCurrentSelectionIndex()
 				self.list[curIdx] = (service, service_name, events, picon, channel)
 			piconWidth = self.picon_size.width()
