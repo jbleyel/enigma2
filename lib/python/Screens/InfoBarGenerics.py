@@ -2814,8 +2814,8 @@ class InfoBarChannelSelection:
 			"RightPressed": (self.RightPressed, serviceZapHelp("next")),
 			"ChannelPlusPressed": (self.ChannelPlusPressed, serviceZapHelp("next")),
 			"ChannelMinusPressed": (self.ChannelMinusPressed, serviceZapHelp("previous")),
-			"ChannelPlusPressedLong": (self.ChannelPlusPressed, serviceZapHelp("next")),
-			"ChannelMinusPressedLong": (self.ChannelMinusPressed, serviceZapHelp("previous"))
+			"ChannelPlusPressedLong": (self.openServiceList, serviceListHelp("up")),
+			"ChannelMinusPressedLong": (self.openServiceList, serviceListHelp("down"))
 		}, prio=0, description=_("Service Selection Actions"))
 
 		self["ChannelSelectActions"].setEnabledAction("switchChannelUp", config.seek.arrowSkipMode.value == "t")
