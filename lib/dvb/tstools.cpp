@@ -168,7 +168,8 @@ int eDVBTSTools::getPTS(off_t &offset, pts_t &pts, int fixed)
 						fallback_pts = pts;
 						break;
 					}
-					eDebug("[eDVBTSTools] getPTS got it from sc file offset=%lld pts=%lld", (long long)local_offset, pts);
+					if (m_debugSeek)
+						eDebug("[eDVBTSTools] getPTS got it from sc file offset=%lld pts=%lld", (long long)local_offset, pts);
 					if (fixed && fixupPTS(local_offset, pts))
 					{
 						eDebug("[eDVBTSTools]    But failed to fixup!");
@@ -381,7 +382,7 @@ no_pts_found:
 int eDVBTSTools::fixupPTS(const off_t &offset, pts_t &now)
 {
 	pts_t debug_now_in = now;
-	if (m_streaminfo.fixupPTS(offset, now) == 0)
+	if (m_streaminfo.fixupPTS(offset, now, m_debugSeek) == 0)
 	{
 		if (m_debugSeek)
 			eDebug("[eDVBTSTools] fixupPTS: resolved via streaminfo (access points), now %lld -> %lld", debug_now_in, now);
@@ -497,7 +498,8 @@ int eDVBTSTools::getOffset(off_t &offset, pts_t &pts, int marg)
 					continue;
 				}
 
-				eDebug("[eDVBTSTools] getOffset using: %lld:%lld -> %jd:%jd", l->first, u->first, (intmax_t)l->second, (intmax_t)u->second);
+				if (m_debugSeek)
+					eDebug("[eDVBTSTools] getOffset using: %lld:%lld -> %jd:%jd", l->first, u->first, (intmax_t)l->second, (intmax_t)u->second);
 
 				int bitrate;
 
@@ -530,7 +532,8 @@ int eDVBTSTools::getOffset(off_t &offset, pts_t &pts, int marg)
 				{
 					int diff = (p - pts) / 90;
 
-					eDebug("[eDVBTSTools] getOffset calculated diff %d ms", diff);
+					if (m_debugSeek)
+						eDebug("[eDVBTSTools] getOffset calculated diff %d ms", diff);
 					if (abs(diff) > 300)
 					{
 						eDebug("[eDVBTSTools] getOffset diff to big, refining");
@@ -547,14 +550,16 @@ int eDVBTSTools::getOffset(off_t &offset, pts_t &pts, int marg)
 			if (p != -1)
 			{
 				pts = p;
-				eDebug("[eDVBTSTools] getOffset aborting. Taking %lld as offset for %lld", (long long)offset, pts);
+				if (m_debugSeek)
+					eDebug("[eDVBTSTools] getOffset aborting. Taking %lld as offset for %lld", (long long)offset, pts);
 				return 0;
 			}
 		}
 
 		int bitrate = calcBitrate();
 		offset = pts * (pts_t)bitrate / 8ULL / 90000ULL;
-		eDebug("[eDVBTSTools] getOffset fallback, bitrate=%d, results in %016jx", bitrate, (intmax_t)offset);
+		if (m_debugSeek)
+			eDebug("[eDVBTSTools] getOffset fallback, bitrate=%d, results in %016jx", bitrate, (intmax_t)offset);
 		offset -= offset % m_packet_size;
 		return 0;
 	}
@@ -577,10 +582,11 @@ void eDVBTSTools::calcBegin()
 		{
 			off_t begin = m_offset_begin;
 			pts_t pts = m_pts_begin;
-			if (m_streaminfo.fixupPTS(begin, pts) == 0)
+			if (m_streaminfo.fixupPTS(begin, pts, m_debugSeek) == 0)
 			{
-				eDebug("[eDVBTSTools] calcBegin [@ML] m_streaminfo.getLastFrame returned %lld, %lld (%us), fixup to: %lld, %lld (%us)",
-				       (long long)m_offset_begin, (long long)m_pts_begin, (unsigned int)(m_pts_begin/90000), (long long)begin, pts, (unsigned int)(pts/90000));
+				if (m_debugSeek)
+					eDebug("[eDVBTSTools] calcBegin [@ML] m_streaminfo.getLastFrame returned %lld, %lld (%us), fixup to: %lld, %lld (%us)",
+					       (long long)m_offset_begin, (long long)m_pts_begin, (unsigned int)(m_pts_begin/90000), (long long)begin, pts, (unsigned int)(pts/90000));
 			}
 			m_begin_valid = 1;
 		}
@@ -736,8 +742,9 @@ void eDVBTSTools::takeSamples()
 
 	bytes_per_sample -= bytes_per_sample % m_packet_size;
 
-	eDebug("[eDVBTSTools] takeSamples step %lld, pts begin %lld, pts end %lld, offs begin %lld, offs end %lld:",
-		(long long)bytes_per_sample, m_pts_begin, m_pts_end, (long long)m_offset_begin, (long long)m_offset_end);
+	if(m_debugSeek)
+		eDebug("[eDVBTSTools] takeSamples step %lld, pts begin %lld, pts end %lld, offs begin %lld, offs end %lld:",
+			(long long)bytes_per_sample, m_pts_begin, m_pts_end, (long long)m_offset_begin, (long long)m_offset_end);
 
 	for (off_t offset = m_offset_begin; offset < m_offset_end;)
 	{
@@ -773,14 +780,16 @@ int eDVBTSTools::takeSample(off_t off, pts_t &p)
 			{
 				if ((l->second > off) || (u->second < off))
 				{
-					eDebug("[eDVBTSTools] takeSample ignoring sample %jd %jd %jd (%llu %llu %llu)",
-						(intmax_t)l->second, (intmax_t)off, (intmax_t)u->second, l->first, p, u->first);
+					if (m_debugSeek)
+						eDebug("[eDVBTSTools] takeSample ignoring sample %jd %jd %jd (%llu %llu %llu)",
+							(intmax_t)l->second, (intmax_t)off, (intmax_t)u->second, l->first, p, u->first);
 					return 1;
 				}
 			}
 		}
 
-		eDebug("[eDVBTSTools] takeSample adding sample %lld: pts %lld -> pos %lld (diff %lld bytes)", (long long)offset_org, p, (long long)off, (long long)(off-offset_org));
+		if (m_debugSeek)
+			eDebug("[eDVBTSTools] takeSample adding sample %lld: pts %lld -> pos %lld (diff %lld bytes)", (long long)offset_org, p, (long long)off, (long long)(off-offset_org));
 		m_samples[p] = off;
 		return 0;
 	}

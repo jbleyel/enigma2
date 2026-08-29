@@ -362,12 +362,11 @@ class ConfigListScreen:
 					currConf.help_window.hide()
 
 	def keySelect(self):
-		current = self.getCurrentItem()
-		if isinstance(current, ConfigBoolean):
+		if isinstance(self.getCurrentItem(), ConfigBoolean):
 			self.keyToggle()
-		elif isinstance(current, ConfigSelection):
+		elif isinstance(self.getCurrentItem(), ConfigSelection):
 			self.keyMenu()
-		elif isinstance(current, ConfigText) and not isinstance(current, (ConfigMACText, ConfigNumber)):
+		elif isinstance(self.getCurrentItem(), ConfigText) and not isinstance(self.getCurrentItem(), (ConfigMACText, ConfigNumber)):
 			self.keyText()
 		else:
 			self["config"].handleKey(ACTIONKEY_SELECT, self.entryChanged)
@@ -457,11 +456,11 @@ class ConfigListScreen:
 			notifier()
 		quitData = self.saveAll()
 		if quitData:
-			self.session.openWithCallback(boundFunction(self.restartConfirm, quitData[0]), MessageBox, quitData[1], default=True, type=MessageBox.TYPE_YESNO)
+			self.session.openWithCallback(boundFunction(self.restartConfirm, quitValue=quitData[0]), MessageBox, quitData[1], default=True, type=MessageBox.TYPE_YESNO)
 		else:
 			self.close()
 
-	def restartConfirm(self, quitValue, result):
+	def restartConfirm(self, result, quitValue=QUIT_RESTART):
 		if result:
 			self.session.open(TryQuitMainloop, retvalue=quitValue)
 			self.close()
