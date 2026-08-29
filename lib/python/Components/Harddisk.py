@@ -678,11 +678,13 @@ class HarddiskManager:
 		if not blacklisted and medium_found:
 			mountpoint = self.getMountpoint(device)
 			# A device can be reported more than once (udev re-add after a bus
-			# glitch, bdpoll, optical media change).  Do not register it twice.
+			# glitch, bdpoll, optical media change).  Replace the old entry instead
+			# of adding a second one.  Only optical media skip the re-registration,
+			# a repeated medium change must not scan the same disc twice.
 			for existing in self.partitions[:]:
 				if existing.device == device:
-					if existing.mountpoint == mountpoint:
-						self.debugPrint(f"Device {device} already registered at {mountpoint}")
+					if is_cdrom and existing.mountpoint == mountpoint:
+						self.debugPrint(f"Optical device {device} already registered at {mountpoint}")
 						return error, blacklisted, removable, is_cdrom, partitions, medium_found
 					self.partitions.remove(existing)
 					if existing.mountpoint:
