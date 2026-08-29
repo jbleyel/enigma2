@@ -1174,9 +1174,11 @@ class InfoBarSeek:
 			"pauseServiceYellow": (self.pauseServiceYellow, _("Pause playback")),
 			"unPauseService": (self.unPauseService, _("Continue playback")),
 			"okButton": (self.okButton, _("Continue playback")),
+			"right": (self.seekFwd, _("Seek forward")),
 			"seekFwd": (self.seekFwd, _("Seek forward")),
 			"seekFwdManual": (self.seekFwdManual, _("Seek forward (enter time)")),
 			"seekBack": (self.seekBack, _("Seek backward")),
+			"left": (self.seekBack, _("Seek backward")),
 			"seekBackManual": (self.seekBackManual, _("Seek backward (enter time)")),
 			"SeekbarFwd": self.seekFwdSeekbar,
 			"SeekbarBack": self.seekBackSeekbar
@@ -1187,26 +1189,27 @@ class InfoBarSeek:
 			"pauseService": (self.pauseService, _("Pause playback")),
 			"pauseServiceYellow": (self.pauseServiceYellow, _("Pause playback")),
 			"unPauseService": (self.unPauseService, _("Continue playback")),
+			"right": (self.seekFwd, _("Seek forward")),
 			"seekFwd": (self.seekFwd, _("Skip forward")),
 			"seekFwdManual": (self.seekFwdManual, _("Skip forward (enter time)")),
 			"seekBack": (self.seekBack, _("Skip backward")),
+			"left": (self.seekBack, _("Seek backward")),
 			"seekBackManual": (self.seekBackManual, _("Skip backward (enter time)"))
 		}, prio=-1, description=_("Seek Actions"))  # Give them a little more priority to win over the color buttons.
 		self["SeekActionsPTS"].setEnabled(False)
 
-		self["SeekActionsArrowsA"] = HelpableActionMap(self, "InfobarArrowSeekActions", {
-			"right": (self.seekRight, boundFunction(buttonSkipHelp, "RIGHT")),
-			"left": (self.seekLeft, boundFunction(buttonSkipHelp, "LEFT")),
-			"up": (self.seekUp, boundFunction(buttonSkipHelp, "UP")),
-			"down": (self.seekDown, boundFunction(buttonSkipHelp, "DOWN")),
-		}, prio=-1, description=_("Seek Actions"))
-		self["SeekActionsArrowsA"].setEnabled(config.seek.arrowSkipMode.value != "t")
+		if config.seek.arrowSkipMode.value != "t":
+			self["SeekActionsArrows"] = HelpableActionMap(self, "InfobarArrowSeekActions", {
+				"right": (self.seekRight, boundFunction(buttonSkipHelp, "RIGHT")),
+				"left": (self.seekLeft, boundFunction(buttonSkipHelp, "LEFT")),
+				"up": (self.seekUp, boundFunction(buttonSkipHelp, "UP")),
+				"down": (self.seekDown, boundFunction(buttonSkipHelp, "DOWN")),
+			}, prio=-1, description=_("Seek Actions"))
 
-		self["SeekActionsArrowsB"] = HelpableActionMap(self, "InfobarArrowSeekActions", {
-			"right": (self.seekFwd, _("Seek forward")),
-			"left": (self.seekBack, _("Seek backward")),
-		}, prio=-1, description=_("Seek Actions"))
-		self["SeekActionsArrowsB"].setEnabled(config.seek.arrowSkipMode.value == "t")
+			self["SeekActions"].setEnabledAction("left", False)
+			self["SeekActions"].setEnabledAction("right", False)
+			self["SeekActionsPTS"].setEnabledAction("left", False)
+			self["SeekActionsPTS"].setEnabledAction("right", False)
 
 		self.activity = 0
 		self.activityTimer = eTimer()
