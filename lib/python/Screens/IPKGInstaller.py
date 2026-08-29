@@ -179,7 +179,7 @@ class IPKGInstaller(Screen):
 
 	def __init__(self, session, list):
 		Screen.__init__(self, session)
-		self.skinName.insert(0, "IpkgInstaller")
+		self.skinName = ["IpkgInstaller", self.skinName]
 		self.selectionList = SelectionList()
 		self["list"] = self.selectionList
 		p = 0
