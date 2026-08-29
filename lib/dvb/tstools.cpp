@@ -437,6 +437,34 @@ int eDVBTSTools::fixupPTS(const off_t &offset, pts_t &now)
 	return -1;
 }
 
+int eDVBTSTools::getPTSAt(off_t offset, pts_t &pts)
+{
+	/* The plain getPTS() lookup below relies on the .sc structure index (sparse/stale near the
+	   live edge) or, failing that, a raw packet scan (which can genuinely fail right at the live
+	   edge - not enough data flushed to disk yet). Both can be off by many seconds or fail
+	   outright in exactly the situation this is normally called for: finding "now" again right
+	   after a previous seek was just resolved (e.g. the decoder hasn't produced a real PTS yet).
+	   That previous resolution just added a precise, fresh sample to m_samples though - if the
+	   requested offset is close to it, a local linear extrapolation from the two most recent
+	   samples is far more accurate than falling all the way back to the coarse index. */
+	if (m_samples.size() >= 2)
+	{
+		std::map<pts_t, off_t>::const_reverse_iterator newest = m_samples.rbegin();
+		std::map<pts_t, off_t>::const_reverse_iterator prev = newest;
+		++prev;
+		off_t offset_diff = newest->second - prev->second;
+		pts_t pts_diff = newest->first - prev->first;
+		if (offset_diff > 0 && pts_diff > 0 && llabs((long long)(offset - newest->second)) <= 4 * m_maxrange)
+		{
+			pts = newest->first + (pts_t)((offset - newest->second) * pts_diff / offset_diff);
+			if (m_debugSeek)
+				eDebug("[eDVBTSTools] getPTSAt extrapolated from recent sample %jd:%lld (local bitrate) for offset %jd: pts=%lld", (intmax_t)newest->second, newest->first, (intmax_t)offset, pts);
+			return 0;
+		}
+	}
+	return getPTS(offset, pts, 1);
+}
+
 int eDVBTSTools::getOffset(off_t &offset, pts_t &pts, int marg)
 {
 	if (m_streaminfo.hasAccessPoints())

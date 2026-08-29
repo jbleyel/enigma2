@@ -54,8 +54,9 @@ public:
 		*/
 	int fixupPTS(const off_t &offset, pts_t &pts);
 	/* public wrapper around the protected getPTS(), for external offset -> zero-based PTS lookups
-	   (e.g. as a fallback position source when a live decoder clock isn't available yet). */
-	int getPTSAt(off_t offset, pts_t &pts) { return getPTS(offset, pts, 1); }
+	   (e.g. as a fallback position source when a live decoder clock isn't available yet).
+	   Prefers extrapolating from the recent samples map when possible - see tstools.cpp. */
+	int getPTSAt(off_t offset, pts_t &pts);
 	int calcLen(pts_t &len);
 	int calcBitrate(); /* in bits/sec */
 
