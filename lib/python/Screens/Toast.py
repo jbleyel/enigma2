@@ -142,17 +142,22 @@ class Toast:
 			print("[Toast] Error: Only one Toast instance is allowed!")
 		else:
 			Toast.instance = self
-			self._dialog = session.instantiateDialog(ToastScreen)
-			self._dialog.hide()
+			self._dialog = None
 			self._queue = []
-			self._nextTimer = eTimer()
-			self._nextTimer.callback.append(self._showNext)
-			self._dialog.onHide.append(self._scheduleNext)
+
+	def setup(self, session):
+		self._dialog = session.instantiateDialog(ToastScreen)
+		self._dialog.hide()
+		self._nextTimer = eTimer()
+		self._nextTimer.callback.append(self._showNext)
+		self._dialog.onHide.append(self._scheduleNext)
+		if self._queue:
+			self._showNext()
 
 	def showToast(self, text, toasttype, timeout, customIcon=None):
 		timeout = max(3, min(timeout, 10))  # Minimum 3 maximum 10
 		self._queue.append((text, toasttype, timeout, customIcon))
-		if not self._dialog.shown and not self._nextTimer.isActive():
+		if self._dialog and not self._dialog.shown and not self._nextTimer.isActive():
 			self._showNext()
 
 	def _scheduleNext(self):

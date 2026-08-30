@@ -454,7 +454,6 @@ def runScreenTest():
 	vol = VolumeAdjust(session)  # noqa F841
 	enigma.eProfileWrite("Global MessageBox Screen")
 	modalMessagebox = ModalMessageBox(session)  # noqa F841
-	toast = Toast(session)  # noqa F841
 	enigma.eProfileWrite("PowerKey")
 	power = PowerKey(session)  # noqa F841
 	if enigma.getVFDSymbolsPoll():
