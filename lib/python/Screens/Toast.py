@@ -137,7 +137,7 @@ class Toast:
 	TYPE_ERROR = 2
 	instance = None
 
-	def __init__(self, session):
+	def __init__(self):
 		if Toast.instance:
 			print("[Toast] Error: Only one Toast instance is allowed!")
 		else:

@@ -112,7 +112,7 @@ class NotificationCenter:
 		self.modalDialog.hide()
 		self.nextModalTimer = eTimer()
 		self.nextModalTimer.callback.append(self.showNextModal)
-		Toast.instance.setup(self)
+		Toast.instance.setup(session)
 
 	def addModalNotification(self, text, timeout=-1, list=None, default=True, typeIcon=None, windowTitle=None, callback=None):
 		if not self.modalDialog:
