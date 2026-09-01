@@ -446,8 +446,10 @@ int eDVBTSTools::getPTSAt(off_t offset, pts_t &pts)
 	   after a previous seek was just resolved (e.g. the decoder hasn't produced a real PTS yet).
 	   That previous resolution just added a precise, fresh sample to m_samples though - if the
 	   requested offset is close to it, a local linear extrapolation from the two most recent
-	   samples is far more accurate than falling all the way back to the coarse index. */
-	if (m_samples.size() >= 2)
+	   samples is far more accurate than falling all the way back to the coarse index.
+	   m_samples_taken must be checked as well: setSource() resets it without clearing
+	   m_samples, so without it we could extrapolate from the previous source's samples. */
+	if (m_samples_taken && m_samples.size() >= 2)
 	{
 		std::map<pts_t, off_t>::const_reverse_iterator newest = m_samples.rbegin();
 		std::map<pts_t, off_t>::const_reverse_iterator prev = newest;
@@ -456,7 +458,7 @@ int eDVBTSTools::getPTSAt(off_t offset, pts_t &pts)
 		pts_t pts_diff = newest->first - prev->first;
 		if (offset_diff > 0 && pts_diff > 0 && llabs((long long)(offset - newest->second)) <= 4 * m_maxrange)
 		{
-			pts = newest->first + (pts_t)((offset - newest->second) * pts_diff / offset_diff);
+			pts = newest->first + ((offset - newest->second) * pts_diff / offset_diff);
 			if (m_debugSeek)
 				eDebug("[eDVBTSTools] getPTSAt extrapolated from recent sample %jd:%lld (local bitrate) for offset %jd: pts=%lld", (intmax_t)newest->second, newest->first, (intmax_t)offset, pts);
 			return 0;
@@ -610,11 +612,10 @@ void eDVBTSTools::calcBegin()
 		{
 			off_t begin = m_offset_begin;
 			pts_t pts = m_pts_begin;
-			if (m_streaminfo.fixupPTS(begin, pts, m_debugSeek) == 0)
+			if (m_streaminfo.fixupPTS(begin, pts, m_debugSeek) == 0 && m_debugSeek)
 			{
-				if (m_debugSeek)
-					eDebug("[eDVBTSTools] calcBegin [@ML] m_streaminfo.getLastFrame returned %lld, %lld (%us), fixup to: %lld, %lld (%us)",
-					       (long long)m_offset_begin, (long long)m_pts_begin, (unsigned int)(m_pts_begin/90000), (long long)begin, pts, (unsigned int)(pts/90000));
+				eDebug("[eDVBTSTools] calcBegin [@ML] m_streaminfo.getLastFrame returned %lld, %lld (%us), fixup to: %lld, %lld (%us)",
+						(long long)m_offset_begin, (long long)m_pts_begin, (unsigned int)(m_pts_begin/90000), (long long)begin, pts, (unsigned int)(pts/90000));
 			}
 			m_begin_valid = 1;
 		}

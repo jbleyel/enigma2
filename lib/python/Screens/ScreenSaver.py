@@ -72,7 +72,7 @@ class ScreenSaver(Screen):
 					else:
 						serviceReference = None
 					if serviceReference:
-						piconPath = getPiconName(serviceReference, "channelselection")
+						piconPath = getPiconName(serviceReference)
 						if isfile(piconPath):
 							if piconPath != self.picturePath:
 								self["picture"].instance.setPixmapFromFile(piconPath)

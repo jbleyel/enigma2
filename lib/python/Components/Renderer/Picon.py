@@ -14,13 +14,18 @@ searchPaths = []
 lastPiconPath = {}
 
 
+def resetPiconPath():
+	global lastPiconPath
+	lastPiconPath = {}
+
+
 def getPiconPath(mode=None):
 	if config.picon.mode.value:
 		if mode not in ("channelselection", "infobar"):
 			mode = "infobar"
 		modeValue = getattr(config.picon, mode).value
 		path = getattr(config.picon, f"set{modeValue}").path.value
-		if exists(path):
+		if isdir(path):
 			return path
 	return None
 
@@ -71,20 +76,25 @@ def findPicon(serviceName, mode=None):
 	key = mode if config.picon.mode.value else None
 	cachedPath = lastPiconPath.get(key)
 	if cachedPath is not None:
-		pngname = f"{cachedPath}{serviceName}.png"
+		pngname = join(cachedPath, f"{serviceName}.png")
 		return pngname if exists(pngname) else ""
 	else:
 		path = getPiconPath(mode)
 		if path:
 			lastPiconPath[key] = path
-			return f"{path}{serviceName}.png"
+			pngname = join(path, f"{serviceName}.png")
+			return pngname if exists(pngname) else ""
 		for path in searchPaths:
-			if exists(path) and not path.startswith("/media/net"):
-				pngname = f"{path}{serviceName}.png"
+			if isdir(path) and not path.startswith("/media/net"):
+				pngname = join(path, f"{serviceName}.png")
 				if exists(pngname):
 					lastPiconPath[key] = path
 					return pngname
 		return ""
+
+
+def getChannelSelectionPiconName(serviceName):
+	return getPiconName(serviceName, mode="channelselection")
 
 
 def getPiconName(serviceName, mode=None):

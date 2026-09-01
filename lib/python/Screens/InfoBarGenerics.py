@@ -885,7 +885,7 @@ class SeekBar(Screen):
 		def sensibilityHelp(button):
 			value = config.seek.sensibilities[button].value
 			text = _("Skip forward %s%%") if value > 0 else _("Skip backward %s%%")
-			return text % f"{value:.1f}"
+			return text % f"{abs(value):.1f}"
 
 		def symmetricalHelp(button):
 			match button:
@@ -1458,7 +1458,7 @@ class InfoBarSeek:
 		seekable = self.getSeek()
 		if seekable is None:
 			if config.crash.debugSeek.value:
-				print(f"[InfoBarGenerics] InfoBarSeek: doSeek failed because seekable is None!")
+				print("[InfoBarGenerics] InfoBarSeek: doSeek failed because seekable is None!")
 
 			return
 		seekable.seekTo(pts)
@@ -1514,8 +1514,7 @@ class InfoBarSeek:
 					# segment - it already falls back to "start from the beginning" when no earlier segment exists.
 		except Exception:
 			from sys import exc_info
-			if config.crash.debugSeek.value:
-				print(f"[InfoBarGenerics] InfoBarSeek: Error in 'def doSeekRelative' {exc_info()[:2]}!")
+			print(f"[InfoBarGenerics] InfoBarSeek: Error in 'def doSeekRelative' {exc_info()[:2]}!")
 
 		seekable = self.getSeek()
 		if seekable is None or int(seekable.getLength()[1]) < 1:
@@ -1603,9 +1602,8 @@ class InfoBarSeek:
 			length = InfoBarTimeshift.ptsGetLength(self)
 			position = InfoBarTimeshift.ptsGetPosition(self)
 			rawSeek = InfoBarTimeshift.ptsGetSeekInfo(self)
-			if rawSeek is not None:
-				if config.crash.debugSeek.value:
-					print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts raw getPlayPosition()={rawSeek.getPlayPosition()}, raw getLength()={rawSeek.getLength()}, isCurrentlySeekable()={rawSeek.isCurrentlySeekable()}")
+			if rawSeek is not None and config.crash.debugSeek.value:
+				print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts raw getPlayPosition()={rawSeek.getPlayPosition()}, raw getLength()={rawSeek.getLength()}, isCurrentlySeekable()={rawSeek.isCurrentlySeekable()}")
 
 			if config.crash.debugSeek.value:
 				print(f"[InfoBarGenerics] InfoBarSeek: arrowSkipPts PTS branch: seekable={seekable is not None}, position={position}, length={length}")

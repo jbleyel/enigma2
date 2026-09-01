@@ -15,10 +15,15 @@ lastLcdPiconPath = None
 BW = BoxInfo.getItem("displaytype") in ("bwlcd255", "bwlcd140") and not BoxInfo.getItem("grautec")
 
 
+def resetLcdPiconPath():
+	global lastLcdPiconPath
+	lastLcdPiconPath = None
+
+
 def getPiconPath():
 	if config.picon.mode.value:
 		path = getattr(config.picon, f"set{config.picon.display.value}").path.value
-		if exists(path):
+		if isdir(path):
 			return path
 	return None
 
@@ -77,16 +82,17 @@ def onPartitionChange(why, part):
 def findLcdPicon(serviceName):
 	global lastLcdPiconPath
 	if lastLcdPiconPath is not None:
-		pngname = f"{lastLcdPiconPath}{serviceName}.png"
+		pngname = join(lastLcdPiconPath, f"{serviceName}.png")
 		return pngname if exists(pngname) else ""
 	else:
 		path = getPiconPath()
 		if path:
 			lastLcdPiconPath = path
-			return f"{path}{serviceName}.png"
+			pngname = join(lastLcdPiconPath, f"{serviceName}.png")
+			return pngname if exists(pngname) else ""
 		for path in searchPaths:
-			if exists(path) and not path.startswith("/media/net"):
-				pngname = f"{path}{serviceName}.png"
+			if isdir(path) and not path.startswith("/media/net"):
+				pngname = join(path, f"{serviceName}.png")
 				if exists(pngname):
 					lastLcdPiconPath = path
 					return pngname
