@@ -819,7 +819,7 @@
 		<item level="1" text="Show persistent InfoBar while paused" description="Select 'Yes' the keep the InfoBar displayed, with no timeout, while media playback is paused." indent="1">config.usage.show_infobar_locked_on_pause</item>
 		<item level="2" text="Skip Modes" />
 		<item level="2" text="SeekBar activation" description="Select SeekBar to be activated by arrow LEFT/RIGHT (long) or &lt;&lt; &gt;&gt; (long)." indent="1">config.seek.baractivation</item>
-		<item level="2" text="Arrow skip mode" description="Select how the arrow buttons 'UP', 'DOWN', 'LEFT' or 'RIGHT' will act during seek actions." indent="1">config.seek.arrowSkipMode</item>
+		<item level="2" text="Arrow skip mode" description="Select how the arrow buttons 'UP', 'DOWN', 'LEFT' or 'RIGHT' will act during seek actions." restart="gui" indent="1">config.seek.arrowSkipMode</item>
 		<if conditional="config.seek.arrowSkipMode.value == 's'">
 			<item level="2" text="Skip sensibility for '%s' button" description="Set the skip percentage for the '%s' button. Positive numbers skip forward, negative numbers skip backward." data="UP" indent="2">config.seek.sensibilities["UP"]</item>
 			<item level="2" text="Skip sensibility for '%s' button" description="Set the skip percentage for the '%s' button. Positive numbers skip forward, negative numbers skip backward." data="LEFT" indent="2">config.seek.sensibilities["LEFT"]</item>

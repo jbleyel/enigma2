@@ -20,7 +20,7 @@ from Plugins.SystemPlugins.SoftwareManager.BackupRestore import BackupScreen
 from Screens.MessageBox import MessageBox
 from Screens.MultiBootManager import MultiBootManager
 from Screens.Screen import Screen
-from Tools.Downloader import DownloadWithProgress
+from Tools.Downloader import DownloadWithProgress, USER_AGENTS
 from Tools.MultiBoot import MultiBoot
 
 UMOUNT = "/bin/umount"
@@ -29,7 +29,10 @@ OFGWRITE = "/usr/bin/ofgwrite"
 FEED_DISTRIBUTION = 0
 FEED_JSON_URL = 1
 
-USER_AGENT = {"User-agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5"}
+# The feed requests below and the image download in DownloadWithProgress talk to
+# the same servers, so both identify themselves the same way and the string is
+# maintained in exactly one place, Tools.Downloader.USER_AGENTS.
+USER_AGENT = {"User-Agent": USER_AGENTS.CHROME}
 
 
 def checkImageFiles(files):
