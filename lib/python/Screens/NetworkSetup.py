@@ -130,22 +130,22 @@ class NetworkOverview(Screen):
 			<convert type="ConditionalShowHide" />
 		</widget>
 		<widget source="savedList" render="Listbox" position="10,305" size="e-20,175">
-			<template name="Default" colors="#0000CC00,#00CC0000,#00CCCCCC,#00003300,#00330000,#00333333" fonts="Regular;25,Regular;20" itemHeight="35">
+			<template name="Default" colors="#0000CC00,#00CC0000,#00CCCCCC,#00003300,#00330000,#00333333" fonts="Regular;25,Regular;20,enigma2icons;25" itemHeight="35">
 				<rowtemplate>
-					<text index="SSID" position="0,0" size="200,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
-					<text index="StatusText" position="200,0" size="170,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
-					<text index="BSSID" position="370,0" size="210,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
-					<text index="Frequency" position="580,0" size="140,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
-					<text index="Channel" position="720,0" size="120,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
-					<text index="Encryption" position="840,0" size="240,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="SSID" position="0,0" size="270,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="StatusText" position="270,0" size="80,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="BSSID" position="350,0" size="210,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="Frequency" position="560,0" size="140,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="Channel" position="700,0" size="120,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="Encryption" position="820,0" size="260,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 				</rowtemplate>
 				<rowtemplate>
-					<text index="SSID" position="0,0" size="200,35" font="1" padding="5,0" verticalAlignment="center" />
-					<text index="StatusText" position="200,0" size="170,35" font="1" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColorSelected" padding="5,0" verticalAlignment="center" />
-					<text index="BSSID" position="370,0" size="210,35" font="1" padding="5,0" verticalAlignment="center" />
-					<text index="Frequency" position="580,0" size="140,35" font="1" padding="5,0" verticalAlignment="center" />
-					<text index="Channel" position="720,0" size="120,35" font="1" padding="5,0" verticalAlignment="center" />
-					<text index="Encryption" position="840,0" size="240,35" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="SSID" position="0,0" size="270,35" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="StatusGlyph" position="270,0" size="80,35" font="2" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColorSelected" padding="5,0" verticalAlignment="center" />
+					<text index="BSSID" position="350,0" size="210,35" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="Frequency" position="560,0" size="140,35" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="Channel" position="700,0" size="120,35" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="Encryption" position="820,0" size="260,35" font="1" padding="5,0" verticalAlignment="center" />
 				</rowtemplate>
 			</template>
 		</widget>
@@ -213,10 +213,11 @@ class NetworkOverview(Screen):
 			"Channel": 4,
 			"Encryption": 5,
 			"StatusText": 6,
-			"StatusColor": 7,
-			"StatusColorSelected": 8
+			"StatusGlyph": 7,
+			"StatusColor": 8,
+			"StatusColorSelected": 9
 		}
-		self.indexSaved = 9
+		self.indexSaved = 10
 		self["savedList"] = List([], indexNames=indexNames)
 		self.currentList = "adapterList"
 		self["adapterList"].onSelectionChanged.append(self.buildSaved)
@@ -397,11 +398,11 @@ class NetworkOverview(Screen):
 			netInfo = adapter.netInfo
 			isLive = netInfo.link and netInfo.ssid == ssid
 			if isLive:
-				statusText, statusColor, statusColorSelected = _("Connected"), connected, connectedSelected
+				statusText, statusGlyph, statusColor, statusColorSelected = _("Connected"), "\uEA72", connected, connectedSelected
 			elif conn.enabled:
-				statusText, statusColor, statusColorSelected = _("Not Connected"), idle, idleSelected
+				statusText, statusGlyph, statusColor, statusColorSelected = _("Not Connected"), "\uEA73", idle, idleSelected
 			else:
-				statusText, statusColor, statusColorSelected = _("Disabled"), idle, idleSelected
+				statusText, statusGlyph, statusColor, statusColorSelected = _("Disabled"), "\uEA74", idle, idleSelected
 			return (
 				self.OVERVIEW_TEMPLATE_ROW,
 				ssid,                                                                        # SSID.
@@ -410,6 +411,7 @@ class NetworkOverview(Screen):
 				str(netInfo.channel) if isLive and netInfo.channel else "—",                 # Channel.
 				encryptionLabels.get(conn.wifi.encryption, lambda: "")(),                    # Encryption.
 				statusText,                                                                  # StatusText.
+				statusGlyph,                                                                 # StatusGlyph.
 				statusColor,                                                                 # StatusColor.
 				statusColorSelected,                                                         # StatusColorSelected.
 				conn,                                                                        # -> indexSaved.
@@ -427,7 +429,8 @@ class NetworkOverview(Screen):
 				_("Frequency"),   # Frequency.
 				_("Channel"),     # Channel.
 				_("Encryption"),  # Encryption.
-				_("Status"),      # StatusText.
+				_("State"),       # StatusText.
+				None,             # StatusGlyph.
 				None,             # StatusColor.
 				None,             # StatusColorSelected.
 				None,             # -> indexSaved.

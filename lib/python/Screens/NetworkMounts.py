@@ -32,7 +32,7 @@ class NetworkMountsOverview(Screen):
 	LIST_DATA = 8
 
 	skin = """
-	<screen name="NetworkMountsOverview" title="Network Mounts Overview" position="center,center" size="870,370" resolution="1280,720">
+	<screen name="NetworkMountsOverview" title="Network Mounts Overview" position="center,center" size="970,370" resolution="1280,720">
 		<widget source="mountList" render="Listbox" position="10,10" size="e-20,e-70">
 			<templates>
 				<template name="Default" fonts="Regular;22,Regular;18" itemHeight="50">
@@ -45,22 +45,19 @@ class NetworkMountsOverview(Screen):
 				</template>
 			</templates>
 		</widget>
-		<widget source="key_red" render="Label" position="0,e-40" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
+		<widget source="key_red" render="Label" position="10,e-50" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_green" render="Label" position="190,e-40" size="180,40" backgroundColor="key_green" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
+		<widget source="key_green" render="Label" position="200,e-50" size="180,40" backgroundColor="key_green" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_yellow" render="Label" position="380,e-40" size="180,40" backgroundColor="key_yellow" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
+		<widget source="key_yellow" render="Label" position="390,e-50" size="180,40" backgroundColor="key_yellow" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_blue" render="Label" position="570,e-40" size="180,40" backgroundColor="key_blue" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
+		<widget source="key_menu" render="Label" position="e-200,e-50" size="90,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_menu" render="Label" position="e-170,e-40" size="80,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
-			<convert type="ConditionalShowHide" />
-		</widget>
-		<widget source="key_help" render="Label" position="e-80,e-40" size="80,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
+		<widget source="key_help" render="Label" position="e-100,e-50" size="90,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
 	</screen>"""
@@ -86,7 +83,6 @@ class NetworkMountsOverview(Screen):
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Browse"))
 		self["key_yellow"] = StaticText("")
-		self["key_blue"] = StaticText("")
 		self["key_menu"] = StaticText("MENU")
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions"], {
 			"ok": (self.keyEdit, _("Edit the selected network mount")),
@@ -412,46 +408,47 @@ class NetworkMountSetup(Setup):
 
 class NetworkShares(Screen):
 	skin = """
-	<screen name="NetworkShares" title="Network Shares Browser" position="center,center" size="872,505" resolution="1280,720">
+	<screen name="NetworkShares" title="Network Shares Browser" position="center,center" size="1100,505" resolution="1280,720">
 		<widget source="list" render="Listbox" position="10,10" size="e-20,e-105">
 			<template name="Default" fonts="enigma2icons;42,Regular;25,enigma2icons;32,Regular;20" itemHeight="50">
 				<rowtemplate>
 					<text index="Glyph" position="0,4" size="52,42" font="0" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
 					<text index="IPAddress" position="52,0" size="220,50" font="1" padding="5,0" verticalAlignment="center" />
-					<text index="Name" position="272,0" size="580,50" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="Name" position="272,0" size="560,50" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="Username" position="840,0" size="240,50" font="1" foregroundColor="gray" padding="5,0" verticalAlignment="center" horizontalAlignment="right"/>
 				</rowtemplate>
 				<rowtemplate>
 					<text index="Glyph" position="50,9" size="42,32" font="2" foregroundColor="+GlyphColor" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
 					<text index="Type" position="102,0" size="70,50" font="3" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 					<text index="Name" position="172,0" size="200,50" font="3" padding="5,0" verticalAlignment="center" />
-					<text index="Description" position="372,0" size="480,25" font="3" padding="5,0" verticalAlignment="center" />
-					<text index="LocalPath" position="392,25" size="460,25" font="3" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="Description" position="372,0" size="680,25" font="3" padding="5,0" verticalAlignment="center" />
+					<text index="LocalPath" position="392,25" size="660,25" font="3" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 				</rowtemplate>
 			</template>
 		</widget>
 		<widget name="description" position="10,e-85" size="e-20,25" font="Regular;20" padding="5,0" verticalAlignment="center" widgetBorderColor="gray" widgetBorderWidth="1" />
-		<widget source="key_red" render="Label" position="0,e-40" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
+		<widget source="key_red" render="Label" position="10,e-50" size="180,40" backgroundColor="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_green" render="Label" position="190,e-40" size="180,40" backgroundColor="key_green" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
+		<widget source="key_green" render="Label" position="200,e-50" size="180,40" backgroundColor="key_green" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_yellow" render="Label" position="380,e-40" size="180,40" backgroundColor="key_yellow" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
+		<widget source="key_yellow" render="Label" position="390,e-50" size="180,40" backgroundColor="key_yellow" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_blue" render="Label" position="570,e-40" size="180,40" backgroundColor="key_blue" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
+		<widget source="key_blue" render="Label" position="580,e-50" size="180,40" backgroundColor="key_blue" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_menu" render="Label" position="e-180,e-40" size="100,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
+		<widget source="key_menu" render="Label" position="e-200,e-50" size="90,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
-		<widget source="key_help" render="Label" position="e-80,e-40" size="80,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" noWrap="1" verticalAlignment="center">
+		<widget source="key_help" render="Label" position="e-100,e-50" size="90,40" backgroundColor="key_back" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" wrap="off" verticalAlignment="center">
 			<convert type="ConditionalShowHide" />
 		</widget>
 	</screen>"""
 
-	GLYPH_HOST = "\uEA6D"       # Host icon.
-	GLYPH_MOUNTED = "\uE914"     # Green checkmark.
+	GLYPH_HOST = "\uEA6D"  # Host icon.
+	GLYPH_MOUNTED = "\uE914"  # Green checkmark.
 	GLYPH_NOT_MOUNTED = "\uE918"  # Red cross.
 	COLOR_MOUNTED = gRGB(0x0000CC00).argb()
 	COLOR_NOT_MOUNTED = gRGB(0x00808080).argb()  # Gray, not red - "not configured yet" isn't an error.
@@ -471,14 +468,16 @@ class NetworkShares(Screen):
 		# row layouts below to use), not a real data field.
 		indexNames = {
 			"Reserved_for_rowTemplate": 0,
-			"Glyph": 1,       # Host row: host glyph; share row: mounted/not-mounted glyph.
-			"GlyphColor": 2,  # Share row only.
-			"IPAddress": 3,   # Host row only.
-			"Type": 4,        # Share row only: "NFS"/"CIFS".
-			"Name": 5,        # Host row: hostname; share row: share name.
-			"LocalPath": 6,   # Share row only, when already configured.
+			"Glyph": 1,        # Host row: host glyph; share row: mounted/not-mounted glyph.
+			"GlyphColor": 2,   # Share row only.
+			"IPAddress": 3,    # Host row only.
+			"Type": 4,         # Share row only: "NFS"/"CIFS".
+			"Name": 5,         # Host row: hostname; share row: share name.
+			"LocalPath": 6,    # Share row only, when already configured.
 			"Description": 7,  # Share row only, e.g. the SMB share comment.
-			"Data": 8,
+			"Username": 8,     # Host row only, e.g. "(guest)" - kept separate from Name so skins can position it independently.
+			"NameUsername": 9,  # Host row only: "Name (Username)" combined in one field, for skins that don't split them.
+			"Data": 10,
 		}
 		self["list"] = List([], indexNames=indexNames)
 		self["list"].onSelectionChanged.append(self.selectionChanged)
@@ -499,13 +498,13 @@ class NetworkShares(Screen):
 			"blue": (self.keyToggleUsingIP, _("Toggle picking a share by IP address or by DNS name")),
 		}, prio=0, description=_("Network Share Actions"))
 		self.expanded = set()
-		self.shares = {}         # address -> [share dict, ...]
-		self.shareState = {}     # address -> "loading" | "done" | "empty"
-		self.pendingProtocols = {}  # address -> {"nfs", "smb"} remaining
-		self.smbVersions = {}    # address -> negotiated dialect as a mount "vers=" value
-		self.smbGuestCallback = {}  # address -> one-shot callback run once the guest SMB probe below finishes
+		self.shares = {}  # address -> [share dict, ...].
+		self.shareState = {}  # address -> "loading" | "done" | "empty".
+		self.pendingProtocols = {}  # address -> {"nfs", "smb"} remaining.
+		self.smbVersions = {}  # address -> negotiated dialect as a mount "vers=" value.
+		self.smbGuestCallback = {}  # address -> one-shot callback run once the guest SMB probe below finishes.
 		self.savedMount = None
-		self.configuredMounts = {}  # (server, remotePath) -> mount, for shares that are already configured
+		self.configuredMounts = {}  # (server, remotePath) -> mount, for shares that are already configured.
 		self.repository = NetworkMountRepository()
 		self.menuAddress = None
 		self.menuHostname = None
@@ -561,11 +560,15 @@ class NetworkShares(Screen):
 
 	def selectionChanged(self):
 		current = self["list"].getCurrent()
+		isHost = bool(current) and current[-1].get("kind") == "host"
 		blueText = ""
 		if current:
 			address = current[-1].get("address")
 			if address and (discoveryManager.hosts.get(address) or {}).get("hostname"):
 				blueText = _("Using IP") if config.network.browserUsingIP.value else _("Using DNS")
+		greenText = _("Credentials") if isHost else ""
+		self["key_green"].setText(greenText)
+		self["actions"].setEnabledAction("green", greenText != "")
 		self["key_blue"].setText(blueText)
 		self["actions"].setEnabledAction("blue", blueText != "")
 
@@ -839,17 +842,16 @@ class NetworkShares(Screen):
 			for host in sorted(hosts.values(), key=sortKeyByIP if config.network.browserSortByIP.value else sortKeyByName):
 				address = host["address"]
 				name = host["hostname"] or address
-				username = self.repository.credentialsGet(self.hostnameFor(address)).get("username", "")
-				if username:
-					name = f"{name} ({_('guest') if username == NetworkCredentials.GUEST_USERNAME else username})"
-				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", "", {"kind": "host", "address": address}))
+				username = self.repository.credentialsGet(self.hostnameFor(address)).get("username", NetworkCredentials.GUEST_USERNAME)
+				username = f"{_('guest') if username == NetworkCredentials.GUEST_USERNAME else username}"
+				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", "", username, f"{name} ({username})", {"kind": "host", "address": address}))
 				if address not in self.expanded:
 					continue
 				state = self.shareState.get(address)
 				if state == "loading":
-					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares..."), "", "", {"kind": "status"}))
+					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares..."), "", "", "", "", {"kind": "status"}))
 				elif state == "empty":
-					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", "", {"kind": "status"}))
+					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", "", "", "", {"kind": "status"}))
 
 				for share in self.shares.get(address, []):
 					typeLabel = protocolLabels.get(share["protocol"], share["protocol"])
@@ -861,7 +863,7 @@ class NetworkShares(Screen):
 					localPath = self.repository.mountPointFor(existing) if existing else None
 					glyph = self.GLYPH_MOUNTED if localPath else self.GLYPH_NOT_MOUNTED
 					glyphColor = self.COLOR_MOUNTED if localPath else self.COLOR_NOT_MOUNTED
-					entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", share.get("description") or "", dict(share, kind="share")))
+					entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", share.get("description") or "", "", "", dict(share, kind="share")))
 			self["list"].setList(entries)
 			count = len(discoveryManager.hosts)
 			self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning..."))
