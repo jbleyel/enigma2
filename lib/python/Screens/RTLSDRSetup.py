@@ -1,6 +1,8 @@
+from enigma import iServiceInformation
+
 from Components.ActionMap import HelpableActionMap
-from Components.config import ConfigNothing, ConfigText, NoSave, ReadOnly, config
-from Components.RTLSDR import cacheRTLSDRTuner, enumerateRTLSDRDevices, getActiveRTLSDRTuner, hasAvailableSatelliteDAB, hasRTLSDRBackend, isRTLSDRInUse, updateDABBoxInfo
+from Components.config import ConfigText, NoSave, ReadOnly, config
+from Components.RTLSDR import cacheRTLSDRTuner, enumerateRTLSDRDevices, hasAvailableSatelliteDAB, hasRTLSDRBackend, isRTLSDRInUse, updateDABBoxInfo
 from Components.Sources.StaticText import StaticText
 from Screens.Setup import Setup
 
@@ -43,30 +45,30 @@ class RTLSDRSetup(Setup):
 			value = str(value) if value not in (None, "") else _("Not available")
 			return ReadOnly(NoSave(ConfigText(default=value, fixed_size=False)))
 
-		items = [(_("Detected hardware"), NoSave(ConfigNothing()))]
+		items = [(_("Detected hardware"),)]
 		device = self.selectedDevice()
 		if device is None:
-			items.append((_("Status"), readOnly(_("No compatible RTL-SDR USB tuner detected"))))
+			items.append(((_("Status"), 1), readOnly(_("No compatible RTL-SDR USB tuner detected"))))
 		else:
 			inUse = isRTLSDRInUse(device)
 			if inUse:
-				cacheRTLSDRTuner(device, getActiveRTLSDRTuner())
+				cacheRTLSDRTuner(device, self.getActiveRTLSDRTuner())
 			status = _("In use by DAB+") if inUse else (_("Ready") if device.get("available") and hasRTLSDRBackend() else (
 				_("DAB+ decoder back end not installed") if device.get("available") else _("Unable to open tuner (%d)") % device.get("errorCode", -1)))
 			tuner = device.get("tuner")
 			if device.get("probeCached") and tuner:
 				tuner = _("%s (cached)") % tuner
 			items.extend([
-				(_("Status"), readOnly(status)),
-				(_("Model"), readOnly(device.get("name") or device.get("knownModel") or device.get("product"))),
-				(_("Manufacturer"), readOnly(device.get("manufacturer"))),
-				(_("Product"), readOnly(device.get("product"))),
-				(_("Serial number"), readOnly(device.get("serial"))),
-				(_("USB ID"), readOnly(f"{device.get("vendorId", "")}:{device.get("productId", "")}")),
-				(_("USB port"), readOnly(device.get("port"))),
-				(_("USB speed"), readOnly(f"{device.get("speed")} Mbps" if device.get("speed") else "")),
-				(_("Tuner"), readOnly(tuner)),
-				(_("Gain steps"), readOnly(len(device.get("gains", []))))
+				((_("Status"), 1), readOnly(status)),
+				((_("Model"), 1), readOnly(device.get("name") or device.get("knownModel") or device.get("product"))),
+				((_("Manufacturer"), 1), readOnly(device.get("manufacturer"))),
+				((_("Product"), 1), readOnly(device.get("product"))),
+				((_("Serial number"), 1), readOnly(device.get("serial"))),
+				((_("USB ID"), 1), readOnly(f"{device.get("vendorId", "")}:{device.get("productId", "")}")),
+				((_("USB port"), 1), readOnly(device.get("port"))),
+				((_("USB speed"), 1), readOnly(f"{device.get("speed")} Mbps" if device.get("speed") else "")),
+				((_("Tuner"), 1), readOnly(tuner)),
+				((_("Gain steps"), 1), readOnly(len(device.get("gains", []))))
 			])
 		return items
 
@@ -83,3 +85,15 @@ class RTLSDRSetup(Setup):
 		else:
 			device = self.deviceByKey.get(key)
 		return device
+
+	def getActiveRTLSDRTuner(self):
+		try:
+			reference = self.session.nav.getCurrentlyPlayingServiceReference()
+			if reference and reference.getPath().startswith("dab://rtlsdr/"):
+				service = self.session.nav.getCurrentService()
+				info = service and service.info()
+				field = getattr(iServiceInformation, "sDABReceiverName", None)
+				return info.getInfoString(field).strip() if info and field is not None else ""
+		except (AttributeError, TypeError, ValueError):
+			pass
+		return ""

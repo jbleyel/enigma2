@@ -2,6 +2,7 @@ from os import chmod, remove
 from os.path import exists
 from re import sub
 from tempfile import NamedTemporaryFile
+
 from enigma import eTimer, gRGB
 
 from Components.ActionMap import HelpableActionMap
@@ -35,10 +36,10 @@ class NetworkMountsOverview(Screen):
 	<screen name="NetworkMountsOverview" title="Network Mounts Overview" position="center,center" size="970,370" resolution="1280,720">
 		<widget source="mountList" render="Listbox" position="10,10" size="e-20,e-70">
 			<templates>
-				<template name="Default" fonts="Regular;22,Regular;18" itemHeight="50">
+				<template name="Default" fonts="Regular;22,Regular;17" itemHeight="50">
 					<mode name="default">
-						<text index="ShareName" position="0,0" size="550,28" font="0" padding="5,0" verticalAlignment="center" />
-						<text index="Description" position="20,28" size="530,20" font="1" padding="5,0" foregroundColor="gray" />
+						<text index="ShareName" position="0,0" size="550,27" font="0" padding="5,0" verticalAlignment="center" />
+						<text index="Description" position="20,27" size="530,23" font="1" padding="5,0" foregroundColor="gray" verticalAlignment="center" />
 						<text index="Mounted" position="550,0" size="150,50" font="0" padding="5,0" verticalAlignment="center" />
 						<text index="Active" position="700,0" size="150,50" font="0" horizontalAlignment="right" padding="5,0" verticalAlignment="center" />
 					</mode>
@@ -84,14 +85,14 @@ class NetworkMountsOverview(Screen):
 		self["key_green"] = StaticText(_("Browse"))
 		self["key_yellow"] = StaticText("")
 		self["key_menu"] = StaticText("MENU")
-		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions", "MenuActions"], {
+		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "MenuActions", "ColorActions"], {
 			"ok": (self.keyEdit, _("Edit the selected network mount")),
 			"cancel": (self.close, _("Close the screen")),
 			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus")),
+			"menu": (self.keyMenu, _("Open the Mount Context Menu")),
 			"red": (self.close, _("Close the screen")),
 			"green": (self.keyGreen, _("Open the Network Shares Browser")),
 			"yellow": (self.keyYellow, _("Mount or unmount the selected share")),
-			"menu": (self.keyMenu, _("Open the Mount Context Menu")),
 		}, prio=0, description=_("Network Mount Manager Actions"))
 		self.repository = NetworkMountRepository()
 		self.console = Console()
@@ -140,7 +141,7 @@ class NetworkMountsOverview(Screen):
 			remotePath = mount.get("remotePath", "")
 			protocol = mount.get("protocol", "")
 			mode = mount.get("mode", "")
-			mounted = f"{_("Mounted") if self.repository.isMounted(mount) else _('Not mounted')}"
+			mounted = f"{_("Mounted") if self.repository.isMounted(mount) else _("Not mounted")}"
 			active = f"{_("Enabled") if mount.get("enabled") else _("Disabled")}"
 			description = f"{server}/{remotePath}  ({protocol}, {mode})" if server or remotePath else f"({protocol}, {mode})"
 			mountList.append((shareName, server, remotePath, protocol, mode, mounted, active, description, mount))
@@ -150,9 +151,6 @@ class NetworkMountsOverview(Screen):
 		current = self["mountList"].getCurrent()
 		if current:
 			self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=current[self.LIST_DATA], onSaved=self.mountSaved)
-
-	def mountSaved(self, mount):
-		self.savedMount = mount
 
 	def keySetupClosed(self, *args):
 		saved, self.savedMount = self.savedMount, None
@@ -177,31 +175,27 @@ class NetworkMountsOverview(Screen):
 			else:
 				self.console.ePopen((self.MOUNT, self.MOUNT, "-a"), mountAllDone)
 
-	def keyYellow(self):
-		def onMountResult(unmounting, data, retVal, extra=None):
-			action = "umount" if unmounting else "mount"
-			print(f"[{MODULE_NAME}] keyYellow: {action.capitalize()} '{mountPoint!r}' finished, retVal='{retVal}', output='{data!r}'.")
-			if retVal:
-				self.session.showError((_("Error: Unmounting '%s' failed!") if unmounting else _("Error: Mounting '%s' failed!")) % mountPoint)
-			else:
-				self.session.showInfo((_("'%s' unmounted.") if unmounting else _("'%s' mounted.")) % mountPoint)
-			self.buildList()
-			self.selectionChanged()
+	def mountSaved(self, mount):
+		self.savedMount = mount
 
-		current = self["mountList"].getCurrent()
-		if current:
-			mount = current[self.LIST_DATA]
-			mountPoint = self.repository.mountPointFor(mount)
-			if self.repository.isMounted(mount):
-				print(f"[{MODULE_NAME}] keyYellow: Unmounting '{mountPoint!r}'.")
-				self.console.ePopen((self.UMOUNT, self.UMOUNT, "-l", mountPoint), lambda data, retVal, extra=None: onMountResult(True, data, retVal, extra))
-			else:
-				argv, mountPoint = self.repository.buildMountCommand(mount)
-				loggedArgv = sub(r"pass=[^,]*", "pass=***", " ".join(argv))
-				print(f"[{MODULE_NAME}] keyYellow: Mounting '{loggedArgv!r}'.")
-				self.console.ePopen(argv, lambda data, retVal, extra=None: onMountResult(False, data, retVal, extra))
+	def keyCloseRecursive(self):
+		self.close(True)
 
 	def keyMenu(self):
+		def keyMenuCallback(choice=None):
+			if choice:
+				match choice[1]:
+					case "manual":
+						self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=None, onSaved=self.mountSaved)
+					case "delete":
+						deleteMount()
+					case "edit_credentials":
+						editCredentials()
+					case "remove_credentials":
+						removeCredentials()
+					case "toggle_sort":
+						toggleSort()
+
 		def deleteMount():
 			def autofsRestarted(exitCode):
 				if exitCode:
@@ -239,29 +233,15 @@ class NetworkMountsOverview(Screen):
 			config.network.mountsSortByMount.save()
 			self.buildList()
 
-		def keyMenuCallback(choice=None):
-			if choice:
-				if choice[1] == "manual":
-					self.session.openWithCallback(self.keySetupClosed, NetworkMountSetup, mount=None, onSaved=self.mountSaved)
-				elif choice[1] == "delete":
-					deleteMount()
-				elif choice[1] == "edit_credentials":
-					editCredentials()
-				elif choice[1] == "remove_credentials":
-					removeCredentials()
-				elif choice[1] == "toggle_sort":
-					toggleSort()
-
-		current = self["mountList"].getCurrent()
-		sortLabel = _("Sort by Hostname/IP Address") if config.network.mountsSortByMount.value else _("Sort by Mount Name")
 		choices = [(_("Add Mount Manually"), "manual")]
+		current = self["mountList"].getCurrent()
 		if current:
 			mount = current[self.LIST_DATA]
 			if not mount.get("hddReplacement"):
 				choices.append((_("Delete Mount"), "delete"))
 			choices.append((_("Edit Credentials"), "edit_credentials"))
 			choices.append((_("Remove Credentials"), "remove_credentials"))
-		choices.append((sortLabel, "toggle_sort"))
+		choices.append((_("Sort by Hostname/IP Address") if config.network.mountsSortByMount.value else _("Sort by Mount Name"), "toggle_sort"))
 		self.session.openWithCallback(keyMenuCallback, ChoiceBox, title=_("Mount Context Menu"), list=choices)
 
 	def keyGreen(self):
@@ -280,11 +260,32 @@ class NetworkMountsOverview(Screen):
 
 		self.session.openWithCallback(keyGreenCallback, NetworkShares)
 
+	def keyYellow(self):
+		def onMountResult(unmounting, data, retVal, extra=None):
+			action = "umount" if unmounting else "mount"
+			print(f"[{MODULE_NAME}] keyYellow: {action.capitalize()} '{mountPoint!r}' finished, retVal='{retVal}', output='{data!r}'.")
+			if retVal:
+				self.session.showError((_("Error: Unmounting '%s' failed!") if unmounting else _("Error: Mounting '%s' failed!")) % mountPoint)
+			else:
+				self.session.showInfo((_("'%s' unmounted.") if unmounting else _("'%s' mounted.")) % mountPoint)
+			self.buildList()
+			self.selectionChanged()
+
+		current = self["mountList"].getCurrent()
+		if current:
+			mount = current[self.LIST_DATA]
+			mountPoint = self.repository.mountPointFor(mount)
+			if self.repository.isMounted(mount):
+				print(f"[{MODULE_NAME}] keyYellow: Unmounting '{mountPoint!r}'.")
+				self.console.ePopen((self.UMOUNT, self.UMOUNT, "-l", mountPoint), lambda data, retVal, extra=None: onMountResult(True, data, retVal, extra))
+			else:
+				argv, mountPoint = self.repository.buildMountCommand(mount)
+				loggedArgv = sub(r"pass=[^,]*", "pass=***", " ".join(argv))
+				print(f"[{MODULE_NAME}] keyYellow: Mounting '{loggedArgv!r}'.")
+				self.console.ePopen(argv, lambda data, retVal, extra=None: onMountResult(False, data, retVal, extra))
+
 	def createSummary(self):
 		return NetworkMountsSummary
-
-	def keyCloseRecursive(self):
-		self.close(True)
 
 
 class NetworkMountsSummary(ScreenSummary):
@@ -303,9 +304,9 @@ class NetworkMountsSummary(ScreenSummary):
 	def removeWatcher(self):
 		self.parent.onChangedEntry.remove(self.selectionChanged)
 
-	def selectionChanged(self, name, desc):
-		self["entry"].text = name
-		self["value"].text = desc
+	def selectionChanged(self, shareName, description):
+		self["entry"].text = shareName
+		self["value"].text = description
 
 
 class NetworkMountSetup(Setup):
@@ -353,9 +354,9 @@ class NetworkMountSetup(Setup):
 			("4", "NFSv4")
 		]))
 		self.nfsLocking = NoSave(ConfigYesNo(default=default("nfsLocking", True)))
-		NFS_SIZE_CHOICES = [("0", _("Automatic")), ("8192", "8192"), ("32768", "32768"), ("65536", "65536"), ("131072", "131072")]
-		self.nfsRsize = NoSave(ConfigSelection(default=str(default("nfsRsize", "0")) or "0", choices=NFS_SIZE_CHOICES))
-		self.nfsWsize = NoSave(ConfigSelection(default=str(default("nfsWsize", "0")) or "0", choices=NFS_SIZE_CHOICES))
+		nfsSizeChoices = [("0", _("Automatic")), ("8192", "8192"), ("32768", "32768"), ("65536", "65536"), ("131072", "131072")]
+		self.nfsRsize = NoSave(ConfigSelection(default=str(default("nfsRsize", "0")) or "0", choices=nfsSizeChoices))
+		self.nfsWsize = NoSave(ConfigSelection(default=str(default("nfsWsize", "0")) or "0", choices=nfsSizeChoices))
 		self.nfsTimeo = NoSave(ConfigNumber(default=int(default("nfsTimeo", 0) or 0)))
 		self.nfsSoft = NoSave(ConfigYesNo(default=default("nfsSoft", False)))
 		self.hddReplacement = NoSave(ConfigYesNo(default=default("hddReplacement", False)))
@@ -410,19 +411,19 @@ class NetworkShares(Screen):
 	skin = """
 	<screen name="NetworkShares" title="Network Shares Browser" position="center,center" size="1100,505" resolution="1280,720">
 		<widget source="list" render="Listbox" position="10,10" size="e-20,e-105">
-			<template name="Default" fonts="enigma2icons;42,Regular;25,enigma2icons;32,Regular;20" itemHeight="50">
+			<template name="Default" fonts="enigma2icons;40,Regular;25,enigma2icons;25,Regular;20" itemHeight="50">
 				<rowtemplate>
-					<text index="Glyph" position="0,4" size="52,42" font="0" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
-					<text index="IPAddress" position="52,0" size="220,50" font="1" padding="5,0" verticalAlignment="center" />
-					<text index="Name" position="272,0" size="560,50" font="1" padding="5,0" verticalAlignment="center" />
-					<text index="Username" position="840,0" size="240,50" font="1" foregroundColor="gray" padding="5,0" verticalAlignment="center" horizontalAlignment="right"/>
+					<text index="Glyph" position="0,0" size="50,50" font="0" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
+					<text index="IPAddress" position="60,0" size="220,50" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="Name" position="280,0" size="550,50" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="Username" position="830,0" size="250,50" font="1" padding="5,0" verticalAlignment="center" />
 				</rowtemplate>
 				<rowtemplate>
-					<text index="Glyph" position="50,9" size="42,32" font="2" foregroundColor="+GlyphColor" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
-					<text index="Type" position="102,0" size="70,50" font="3" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
-					<text index="Name" position="172,0" size="200,50" font="3" padding="5,0" verticalAlignment="center" />
-					<text index="Description" position="372,0" size="680,25" font="3" padding="5,0" verticalAlignment="center" />
-					<text index="LocalPath" position="392,25" size="660,25" font="3" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="Glyph" position="60,0" size="40,50" font="2" foregroundColor="+GlyphColor" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
+					<text index="Type" position="100,0" size="80,50" font="3" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="Name" position="180,0" size="230,50" font="3" padding="5,0" verticalAlignment="center" />
+					<text index="Description" position="410,0" size="670,25" font="3" padding="5,0" verticalAlignment="center" />
+					<text index="LocalPath" position="430,25" size="650,25" font="3" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 				</rowtemplate>
 			</template>
 		</widget>
@@ -468,14 +469,14 @@ class NetworkShares(Screen):
 		# row layouts below to use), not a real data field.
 		indexNames = {
 			"Reserved_for_rowTemplate": 0,
-			"Glyph": 1,        # Host row: host glyph; share row: mounted/not-mounted glyph.
-			"GlyphColor": 2,   # Share row only.
-			"IPAddress": 3,    # Host row only.
-			"Type": 4,         # Share row only: "NFS"/"CIFS".
-			"Name": 5,         # Host row: hostname; share row: share name.
-			"LocalPath": 6,    # Share row only, when already configured.
-			"Description": 7,  # Share row only, e.g. the SMB share comment.
-			"Username": 8,     # Host row only, e.g. "(guest)" - kept separate from Name so skins can position it independently.
+			"Glyph": 1,         # Host row: host glyph; share row: mounted/not-mounted glyph.
+			"GlyphColor": 2,    # Share row only.
+			"IPAddress": 3,     # Host row only.
+			"Type": 4,          # Share row only: "NFS"/"CIFS".
+			"Name": 5,          # Host row: hostname; share row: share name.
+			"LocalPath": 6,     # Share row only, when already configured.
+			"Description": 7,   # Share row only, e.g. the SMB share comment.
+			"Username": 8,      # Host row only, e.g. "(guest)" - kept separate from Name so skins can position it independently.
 			"NameUsername": 9,  # Host row only: "Name (Username)" combined in one field, for skins that don't split them.
 			"Data": 10,
 		}
@@ -514,6 +515,76 @@ class NetworkShares(Screen):
 		self.onShow.append(self.startDiscovery)
 		self.onClose.append(self.stopDiscovery)
 
+	def selectionChanged(self):
+		current = self["list"].getCurrent()
+		isHost = bool(current) and current[-1].get("kind") == "host"
+		greenText = _("Credentials") if isHost else ""
+		self["key_green"].setText(greenText)
+		self["actions"].setEnabledAction("green", greenText != "")
+		blueText = ""
+		if current:
+			address = current[-1].get("address")
+			if address and (discoveryManager.hosts.get(address) or {}).get("hostname"):
+				blueText = _("Using IP") if config.network.browserUsingIP.value else _("Using DNS")
+		self["key_blue"].setText(blueText)
+		self["actions"].setEnabledAction("blue", blueText != "")
+
+	def buildList(self):
+		def sortKeyByIP(host):
+			return (not host["protocols"], ".".join(f"{x:0>3}" for x in host["address"].split(".")))
+
+		def sortKeyByName(host):
+			return (not host["protocols"], (host["hostname"] or host["address"]).lower())
+
+		if "list" in self:
+			entries = []
+			protocolLabels = {
+				"smb": "SMB",
+				"nfs": "NFS"
+			}
+			hosts = {}
+			for host in discoveryManager.hosts.values():
+				key = (host["hostname"] or host["address"], ":" in host["address"])
+				known = hosts.get(key)
+				if known is None or host["address"] < known["address"]:
+					hosts[key] = host
+			for host in sorted(hosts.values(), key=sortKeyByIP if config.network.browserSortByIP.value else sortKeyByName):
+				address = host["address"]
+				name = host["hostname"] or address
+				username = self.repository.credentialsGet(self.hostnameFor(address)).get("username", NetworkCredentials.GUEST_USERNAME)
+				username = f"{_("guest") if username == NetworkCredentials.GUEST_USERNAME else username}"
+				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", "", username, f"{name} ({username})", {"kind": "host", "address": address}))
+				if address not in self.expanded:
+					continue
+				state = self.shareState.get(address)
+				if state == "loading":
+					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares..."), "", "", "", "", {"kind": "status"}))
+				elif state == "empty":
+					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", "", "", "", {"kind": "status"}))
+				for share in self.shares.get(address, []):
+					typeLabel = protocolLabels.get(share["protocol"], share["protocol"])
+					if share["protocol"] == "smb":
+						version = self.smbVersions.get(address)
+						if version:
+							typeLabel = f"SMB{version.split(".")[0]}"
+					existing = self.configuredMount(address, host["hostname"], share["path"])
+					localPath = self.repository.mountPointFor(existing) if existing else None
+					glyph = self.GLYPH_MOUNTED if localPath else self.GLYPH_NOT_MOUNTED
+					glyphColor = self.COLOR_MOUNTED if localPath else self.COLOR_NOT_MOUNTED
+					entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", share.get("description") or "", "", "", dict(share, kind="share")))
+			self["list"].setList(entries)
+			count = len(discoveryManager.hosts)
+			self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning..."))
+			self.selectionChanged()
+
+	def hostnameFor(self, address):
+		host = discoveryManager.hosts.get(address) or {}
+		return host.get("hostname") or address
+
+	def configuredMount(self, address, hostname, remotePath):
+		path = remotePath.lstrip("/")
+		return self.configuredMounts.get((address, path)) or (self.configuredMounts.get((hostname, path)) if hostname else None)
+
 	# Discovery only runs while this screen is open, so it stops as soon as
 	# the user leaves instead of scanning the network in the background.
 	def startDiscovery(self):
@@ -524,6 +595,10 @@ class NetworkShares(Screen):
 		self["description"].setText(_("Scanning..."))
 		self.buildList()
 
+	def onHostsChanged(self):
+		if "list" in self and not self.refreshTimer.isActive():
+			self.refreshTimer.start(self.REFRESH_DEBOUNCE_MS, True)
+
 	def stopDiscovery(self):
 		self.refreshTimer.stop()
 		try:
@@ -533,116 +608,24 @@ class NetworkShares(Screen):
 		discoveryManager.stop()
 		self.console.killAll()
 
-	def keyRescan(self):
-		self.expanded = set()
-		self.shares = {}
-		self.shareState = {}
-		self.smbVersions = {}
-		self.pendingProtocols = {}
-		self["list"].setList([])
-		self["description"].setText(_("Scanning..."))
-		self["key_yellow"].setText("")
-		self["actions"].setEnabledAction("yellow", False)
-		discoveryManager.rescan(self.onRescanDone)
-
-	def onRescanDone(self, ok):
-		if "list" in self:
-			self["key_yellow"].setText(_("Rescan"))
-			self["actions"].setEnabledAction("yellow", True)
-			if ok:
-				self.buildList()
-			else:
-				self["description"].setText(_("Error: Rescan failed!"))
-
-	def hostnameFor(self, address):
-		host = discoveryManager.hosts.get(address) or {}
-		return host.get("hostname") or address
-
-	def selectionChanged(self):
-		current = self["list"].getCurrent()
-		isHost = bool(current) and current[-1].get("kind") == "host"
-		blueText = ""
-		if current:
-			address = current[-1].get("address")
-			if address and (discoveryManager.hosts.get(address) or {}).get("hostname"):
-				blueText = _("Using IP") if config.network.browserUsingIP.value else _("Using DNS")
-		greenText = _("Credentials") if isHost else ""
-		self["key_green"].setText(greenText)
-		self["actions"].setEnabledAction("green", greenText != "")
-		self["key_blue"].setText(blueText)
-		self["actions"].setEnabledAction("blue", blueText != "")
-
-	def keyToggleUsingIP(self):
-		config.network.browserUsingIP.value = not config.network.browserUsingIP.value
-		config.network.browserUsingIP.save()
-		self.selectionChanged()
-
-	def keyGreen(self):
-		current = self["list"].getCurrent()
-		if not current or current[-1].get("kind") != "host":
-			return
-		self.menuAddress = current[-1]["address"]
-		self.menuHostname = self.hostnameFor(self.menuAddress)
-		self.session.openWithCallback(self.credentialsClosed, NetworkCredentials, self.menuHostname, self.repository)
-
-	def keyMenu(self):
-		current = self["list"].getCurrent()
-		isHost = bool(current) and current[-1].get("kind") == "host"
-		if isHost:
-			self.menuAddress = current[-1]["address"]
-			self.menuHostname = self.hostnameFor(self.menuAddress)
-		else:
-			self.menuAddress = None
-			self.menuHostname = None
-		choices = []
-		if isHost:
-			choices.append((_("Edit Username/Password Credentials"), "credentials"))
-			choices.append((_("Clear Stored Credentials"), "clear_credentials"))
-		choices.append((_("Flush Cache and Rescan"), "flush_neigh"))
-		sortLabel = _("Sort by Name") if config.network.browserSortByIP.value else _("Sort by IP Address")
-		choices.append((sortLabel, "toggle_sort"))
-		self.session.openWithCallback(self.menuChoiceClosed, ChoiceBox, title=_("Network Shares Context Menu"), list=choices)
-
-	def menuChoiceClosed(self, choice=None):
-		def flushNeighborCache():
-			def flushDone(data, retVal, extra=None):
-				if retVal:
-					print(f"[{MODULE_NAME}] Error: flushNeighborCache failed, retVal='{retVal}', output='{data!r}'!")
-				self.keyRescan()
-
-			self.console.ePopen(("/sbin/ip", "/sbin/ip", "neigh", "flush", "all"), flushDone)
-
-		if not choice:
-			return
-		if choice[1] == "credentials":
-			self.session.openWithCallback(self.credentialsClosed, NetworkCredentials, self.menuHostname, self.repository)
-		elif choice[1] == "flush_neigh":
-			flushNeighborCache()
-		elif choice[1] == "clear_credentials":
-			self.repository.credentialsClear(self.menuHostname)
-			self.session.open(MessageBox, _("Stored credentials for this server have been deleted."), MessageBox.TYPE_INFO, timeout=3)
-		elif choice[1] == "toggle_sort":
-			config.network.browserSortByIP.value = not config.network.browserSortByIP.value
-			config.network.browserSortByIP.save()
-			self.buildList()
-
-	def credentialsClosed(self, *args):
-		if self.menuAddress in self.expanded:
-			self.startShareEnumeration(self.menuAddress)
-
 	def keySelect(self):
 		current = self["list"].getCurrent()
 		if current:
 			data = current[-1]
-			if data["kind"] == "host":
-				self.toggleExpand(data["address"])
-			elif data["kind"] == "share":
-				self.pickShare(data)
-
-	def keyCloseRecursive(self):
-		self.close(True)
+			match data["kind"]:
+				case "host":
+					self.toggleExpand(data["address"])
+				case "share":
+					self.pickShare(data)
 
 	def toggleExpand(self, address):
+		def onGuestSmbDone(address, hostname):
+			if address not in self.expanded:
+				return
+			if any(share["protocol"] == "smb" for share in self.shares.get(address, [])):
+				return
+			self.session.openWithCallback(lambda *args: self.startShareEnumeration(address), NetworkCredentials, hostname, self.repository)
+
 		if address in self.expanded:
 			self.expanded.discard(address)
 			self.buildList()
@@ -655,26 +638,140 @@ class NetworkShares(Screen):
 			return
 		host = discoveryManager.hosts.get(address) or {}
 		if "smb" in host.get("protocols", set()):
-			self.smbGuestCallback[address] = lambda: self.onGuestSmbDone(address, hostname)
+			self.smbGuestCallback[address] = lambda: onGuestSmbDone(address, hostname)
 		self.startShareEnumeration(address)
 
-	def onGuestSmbDone(self, address, hostname):
-		if address not in self.expanded:
+	def startShareEnumeration(self, address):
+		if self.shareState.get(address) == "loading":
 			return
-		if any(share["protocol"] == "smb" for share in self.shares.get(address, [])):
-			return
-		self.session.openWithCallback(lambda *args: self.startShareEnumeration(address), NetworkCredentials, hostname, self.repository)
+		self.shareState[address] = "loading"
+		host = discoveryManager.hosts.get(address) or {}
+		# print(f"[{MODULE_NAME}] DEBUG: startShareEnumeration '{address}' protocols='{host.get("protocols")}' avahiShares='{host.get("avahiShares")}'.")
+		self.shares[address] = [{
+			"address": address,
+			"protocol": info["protocol"],
+			"name": info["name"],
+			"path": "",
+			"description": ""
+		} for info in (host.get("avahiShares") or {}).values()]
+		self.pendingProtocols[address] = {"nfs", "smb"}
+		if "nfs" in host.get("protocols", set()):
+			self.enumerateNfs(address)
+		else:
+			self.finishProtocol(address, "nfs")
+		if "smb" in host.get("protocols", set()):
+			self.enumerateSmb(address)
+		else:
+			self.finishProtocol(address, "smb")
 
-	def configuredMount(self, address, hostname, remotePath):
-		path = remotePath.lstrip("/")
-		return self.configuredMounts.get((address, path)) or (self.configuredMounts.get((hostname, path)) if hostname else None)
+	def finishProtocol(self, address, protocol):
+		if "list" in self:
+			self.shares[address] = [share for share in self.shares.get(address, []) if not (share["protocol"] == protocol and not share["path"])]
+			pending = self.pendingProtocols.get(address)
+			if pending is not None:
+				pending.discard(protocol)
+				if not pending:
+					self.shareState[address] = "done" if self.shares.get(address) else "empty"
+			self.buildList()
+			if protocol == "smb":
+				callback = self.smbGuestCallback.pop(address, None)
+				if callback:
+					callback()
+
+	def enumerateNfs(self, address):
+		def nfsCallback(address, data, retVal):
+			if "list" in self:
+				if retVal == 0 and data:
+					for line in data.splitlines()[1:]:
+						parts = line.split()
+						if not parts:
+							continue
+						path = parts[0]
+						name = path.rsplit("/", 1)[-1] or path
+						self.mergeShare(address, "nfs", name, path, "")
+				self.finishProtocol(address, "nfs")
+
+		if not exists(self.NFS_SHOWMOUNT_BIN):
+			self.finishProtocol(address, "nfs")
+			return
+		self.console.ePopen((self.NFS_SHOWMOUNT_BIN, self.NFS_SHOWMOUNT_BIN, "-e", address), callback=lambda data, retVal, extra=None: nfsCallback(address, data, retVal))
+
+	def mergeShare(self, address, protocol, name, path, description):
+		shares = self.shares.setdefault(address, [])
+		for share in shares:
+			if share["protocol"] == protocol and not share["path"] and share["name"].lower() == name.lower():
+				share["path"] = path
+				share["description"] = description or share["description"]
+				return
+		shares.append({
+			"address": address,
+			"protocol": protocol,
+			"name": name,
+			"path": path,
+			"description": description
+		})
+
+	def enumerateSmb(self, address, step=0):
+		def smbCallback(address, step, data, retVal, credentialPath=None):
+			if credentialPath:
+				try:
+					remove(credentialPath)
+				except OSError:
+					pass
+			if "list" in self:
+				data = data or ""
+				if retVal and not data.strip():
+					self.finishProtocol(address, "smb")
+					return
+				if self.smbNegotiateRejected(data):
+					self.enumerateSmb(address, step + 1)
+					return
+				self.smbVersions[address] = self.SMB_DIALECTS[step][1]
+				for line in data.splitlines():
+					parts = line.split("|")
+					if len(parts) == 3 and parts[0] == "Disk" and not parts[1].endswith("$"):
+						self.mergeShare(address, "smb", parts[1], parts[1], parts[2])
+				self.finishProtocol(address, "smb")
+
+		if not exists(self.SMB_SMBCLIENT_BIN) or step >= len(self.SMB_DIALECTS):
+			self.finishProtocol(address, "smb")
+			return
+		dialect = self.SMB_DIALECTS[step][0]
+		credentials = self.repository.credentialsGet(self.hostnameFor(address))
+		credentialFile = None
+		if credentials.get("username") and credentials["username"] != NetworkCredentials.GUEST_USERNAME:
+			credentialFile = NamedTemporaryFile(mode="w", prefix="smbcreds-", delete=False)
+			credentialFile.write(f"username={credentials["username"]}\npassword={credentials.get("password", "")}\n")
+			credentialFile.close()
+			chmod(credentialFile.name, 0o600)
+			authArgs = ("-A", credentialFile.name)
+		else:
+			authArgs = ("-N",)
+		cmd = (self.SMB_SMBCLIENT_BIN, self.SMB_SMBCLIENT_BIN, f"--option=clientminprotocol={dialect}", "-m", dialect, "-g", *authArgs, "-L", address)
+		credentialPath = credentialFile.name if credentialFile else None
+		self.console.ePopen(cmd, callback=lambda data, retVal, extra=None: smbCallback(address, step, data, retVal, credentialPath))
+
+	@staticmethod
+	def smbNegotiateRejected(data):
+		return "Protocol negotiation" in data and "failed" in data
 
 	def pickShare(self, share):
+		def mountSetupCallback(*args):
+			saved = self.savedMount
+			self.savedMount = None
+			if args and args[0] is True:
+				self.close(True)
+				return
+			if saved:
+				self.close(saved)
+			else:
+				self.buildList()
+
 		host = discoveryManager.hosts.get(share["address"]) or {}
 		hostname = host.get("hostname") or ""
 		existing = self.configuredMount(share["address"], hostname, share["path"])
 		if existing:
-			self.session.openWithCallback(self.mountSetupClosed, NetworkMountSetup, mount=existing, onSaved=self.mountSaved)
+			self.session.openWithCallback(mountSetupCallback, NetworkMountSetup, mount=existing, onSaved=mountSaved)
 			return
 		server = hostname if (hostname and not config.network.browserUsingIP.value) else share["address"]
 		mount = {
@@ -693,181 +790,89 @@ class NetworkShares(Screen):
 			if username and username != NetworkCredentials.GUEST_USERNAME:
 				mount["username"] = username
 				mount["password"] = credentials.get("password", "")
-		self.session.openWithCallback(self.mountSetupClosed, NetworkMountSetup, mount=mount, onSaved=self.mountSaved)
+		self.session.openWithCallback(mountSetupCallback, NetworkMountSetup, mount=mount, onSaved=mountSaved)
 
 	def mountSaved(self, mount):
 		self.savedMount = mount
 
-	def mountSetupClosed(self, *args):
-		saved, self.savedMount = self.savedMount, None
-		if args and args[0] is True:
-			self.close(True)
-			return
-		if saved:
-			self.close(saved)
+	def keyCloseRecursive(self):
+		self.close(True)
+
+	def keyMenu(self):
+		def keyMenuCallback(self, choice=None):
+			def flushNeighborCache():
+				def flushDone(data, retVal, extra=None):
+					if retVal:
+						print(f"[{MODULE_NAME}] Error: flushNeighborCache failed, retVal='{retVal}', output='{data!r}'!")
+					self.keyRescan()
+
+				self.console.ePopen(("/sbin/ip", "/sbin/ip", "neigh", "flush", "all"), flushDone)
+
+			if choice:
+				match choice[1]:
+					case "credentials":
+						self.session.openWithCallback(self.credentialsClosed, NetworkCredentials, self.menuHostname, self.repository)
+					case "flush_neigh":
+						flushNeighborCache()
+					case "clear_credentials":
+						self.repository.credentialsClear(self.menuHostname)
+						self.session.open(MessageBox, _("Stored credentials for this server have been deleted."), MessageBox.TYPE_INFO, timeout=3)
+					case "toggle_sort":
+						config.network.browserSortByIP.value = not config.network.browserSortByIP.value
+						config.network.browserSortByIP.save()
+						self.buildList()
+
+		current = self["list"].getCurrent()
+		isHost = bool(current) and current[-1].get("kind") == "host"
+		choices = []
+		if isHost:
+			self.menuAddress = current[-1]["address"]
+			self.menuHostname = self.hostnameFor(self.menuAddress)
+			choices.append((_("Edit Username/Password Credentials"), "credentials"))
+			choices.append((_("Clear Stored Credentials"), "clear_credentials"))
 		else:
-			self.buildList()
+			self.menuAddress = None
+			self.menuHostname = None
+		choices.append((_("Flush Cache and Rescan"), "flush_neigh"))
+		choices.append((_("Sort by Name") if config.network.browserSortByIP.value else _("Sort by IP Address"), "toggle_sort"))
+		self.session.openWithCallback(keyMenuCallback, ChoiceBox, title=_("Network Shares Context Menu"), list=choices)
 
-	def startShareEnumeration(self, address):
-		if self.shareState.get(address) == "loading":
-			return
-		self.shareState[address] = "loading"
-		host = discoveryManager.hosts.get(address) or {}
-		# print(f"[{MODULE_NAME}] DEBUG: startShareEnumeration '{address}' protocols='{host.get('protocols')}' avahiShares='{host.get('avahiShares')}'.")
-		self.shares[address] = [
-			{"address": address, "protocol": info["protocol"], "name": info["name"], "path": "", "description": ""}
-			for info in (host.get("avahiShares") or {}).values()
-		]
-		self.pendingProtocols[address] = {"nfs", "smb"}
+	def credentialsClosed(self, *args):
+		if self.menuAddress in self.expanded:
+			self.startShareEnumeration(self.menuAddress)
 
-		if "nfs" in host.get("protocols", set()):
-			self.enumerateNfs(address)
-		else:
-			self.finishProtocol(address, "nfs")
-		if "smb" in host.get("protocols", set()):
-			self.enumerateSmb(address)
-		else:
-			self.finishProtocol(address, "smb")
+	def keyGreen(self):
+		current = self["list"].getCurrent()
+		if current and current[-1].get("kind") == "host":
+			self.menuAddress = current[-1]["address"]
+			self.menuHostname = self.hostnameFor(self.menuAddress)
+			self.session.openWithCallback(self.credentialsClosed, NetworkCredentials, self.menuHostname, self.repository)
 
-	def mergeShare(self, address, protocol, name, path, description):
-		shares = self.shares.setdefault(address, [])
-		for share in shares:
-			if share["protocol"] == protocol and not share["path"] and share["name"].lower() == name.lower():
-				share["path"] = path
-				share["description"] = description or share["description"]
-				return
-		shares.append({"address": address, "protocol": protocol, "name": name, "path": path, "description": description})
+	def keyRescan(self):
+		def keyRescanCallback(status):
+			if "list" in self:
+				self["key_yellow"].setText(_("Rescan"))
+				self["actions"].setEnabledAction("yellow", True)
+				if status:
+					self.buildList()
+				else:
+					self["description"].setText(_("Error: Rescan failed!"))
 
-	def enumerateNfs(self, address):
-		if not exists(self.NFS_SHOWMOUNT_BIN):
-			self.finishProtocol(address, "nfs")
-			return
-		self.console.ePopen((self.NFS_SHOWMOUNT_BIN, self.NFS_SHOWMOUNT_BIN, "-e", address), callback=lambda data, retVal, extra=None: self.onNfsResult(address, data, retVal))
+		self.expanded = set()
+		self.shares = {}
+		self.shareState = {}
+		self.smbVersions = {}
+		self.pendingProtocols = {}
+		self["list"].setList([])
+		self["description"].setText(_("Scanning..."))
+		self["key_yellow"].setText("")
+		self["actions"].setEnabledAction("yellow", False)
+		discoveryManager.rescan(keyRescanCallback)
 
-	def onNfsResult(self, address, data, retVal):
-		if "list" in self:
-			if retVal == 0 and data:
-				for line in data.splitlines()[1:]:
-					parts = line.split()
-					if not parts:
-						continue
-					path = parts[0]
-					name = path.rsplit("/", 1)[-1] or path
-					self.mergeShare(address, "nfs", name, path, "")
-			self.finishProtocol(address, "nfs")
-
-	def enumerateSmb(self, address, step=0):
-		if not exists(self.SMB_SMBCLIENT_BIN) or step >= len(self.SMB_DIALECTS):
-			self.finishProtocol(address, "smb")
-			return
-		dialect = self.SMB_DIALECTS[step][0]
-		credentials = self.repository.credentialsGet(self.hostnameFor(address))
-		credentialFile = None
-		if credentials.get("username") and credentials["username"] != NetworkCredentials.GUEST_USERNAME:
-			credentialFile = NamedTemporaryFile(mode="w", prefix="smbcreds-", delete=False)
-			credentialFile.write(f"username={credentials['username']}\npassword={credentials.get('password', '')}\n")
-			credentialFile.close()
-			chmod(credentialFile.name, 0o600)
-			authArgs = ("-A", credentialFile.name)
-		else:
-			authArgs = ("-N",)
-		cmd = (self.SMB_SMBCLIENT_BIN, self.SMB_SMBCLIENT_BIN, f"--option=clientminprotocol={dialect}", "-m", dialect, "-g", *authArgs, "-L", address)
-		credentialPath = credentialFile.name if credentialFile else None
-		self.console.ePopen(cmd, callback=lambda data, retVal, extra=None: self.onSmbResult(address, step, data, retVal, credentialPath))
-
-	@staticmethod
-	def smbNegotiateRejected(data):
-		return "Protocol negotiation" in data and "failed" in data
-
-	def onSmbResult(self, address, step, data, retVal, credentialPath=None):
-		if credentialPath:
-			try:
-				remove(credentialPath)
-			except OSError:
-				pass
-		if "list" in self:
-			data = data or ""
-			if retVal and not data.strip():
-				self.finishProtocol(address, "smb")
-				return
-			if self.smbNegotiateRejected(data):
-				self.enumerateSmb(address, step + 1)
-				return
-			self.smbVersions[address] = self.SMB_DIALECTS[step][1]
-			for line in data.splitlines():
-				parts = line.split("|")
-				if len(parts) == 3 and parts[0] == "Disk" and not parts[1].endswith("$"):
-					self.mergeShare(address, "smb", parts[1], parts[1], parts[2])
-			self.finishProtocol(address, "smb")
-
-	def finishProtocol(self, address, protocol):
-		if "list" in self:
-			self.shares[address] = [share for share in self.shares.get(address, []) if not (share["protocol"] == protocol and not share["path"])]
-			pending = self.pendingProtocols.get(address)
-			if pending is not None:
-				pending.discard(protocol)
-				if not pending:
-					self.shareState[address] = "done" if self.shares.get(address) else "empty"
-			self.buildList()
-			if protocol == "smb":
-				callback = self.smbGuestCallback.pop(address, None)
-				if callback:
-					callback()
-
-	def onHostsChanged(self):
-		if "list" in self and not self.refreshTimer.isActive():
-			self.refreshTimer.start(self.REFRESH_DEBOUNCE_MS, True)
-
-	def buildList(self):
-		if "list" in self:
-			entries = []
-			protocolLabels = {
-				"smb": "SMB",
-				"nfs": "NFS"
-			}
-
-			def sortKeyByIP(host):
-				return (not host["protocols"], ".".join(f"{x:0>3}" for x in host["address"].split(".")))
-
-			def sortKeyByName(host):
-				return (not host["protocols"], (host["hostname"] or host["address"]).lower())
-
-			hosts = {}
-			for host in discoveryManager.hosts.values():
-				key = (host["hostname"] or host["address"], ":" in host["address"])
-				known = hosts.get(key)
-				if known is None or host["address"] < known["address"]:
-					hosts[key] = host
-
-			for host in sorted(hosts.values(), key=sortKeyByIP if config.network.browserSortByIP.value else sortKeyByName):
-				address = host["address"]
-				name = host["hostname"] or address
-				username = self.repository.credentialsGet(self.hostnameFor(address)).get("username", NetworkCredentials.GUEST_USERNAME)
-				username = f"{_('guest') if username == NetworkCredentials.GUEST_USERNAME else username}"
-				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", "", username, f"{name} ({username})", {"kind": "host", "address": address}))
-				if address not in self.expanded:
-					continue
-				state = self.shareState.get(address)
-				if state == "loading":
-					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("Scanning for shares..."), "", "", "", "", {"kind": "status"}))
-				elif state == "empty":
-					entries.append((self.TEMPLATE_SHARE, "", 0, "", "", _("No shares found."), "", "", "", "", {"kind": "status"}))
-
-				for share in self.shares.get(address, []):
-					typeLabel = protocolLabels.get(share["protocol"], share["protocol"])
-					if share["protocol"] == "smb":
-						version = self.smbVersions.get(address)
-						if version:
-							typeLabel = f"SMB{version.split('.')[0]}"
-					existing = self.configuredMount(address, host["hostname"], share["path"])
-					localPath = self.repository.mountPointFor(existing) if existing else None
-					glyph = self.GLYPH_MOUNTED if localPath else self.GLYPH_NOT_MOUNTED
-					glyphColor = self.COLOR_MOUNTED if localPath else self.COLOR_NOT_MOUNTED
-					entries.append((self.TEMPLATE_SHARE, glyph, glyphColor, "", typeLabel, share["name"], localPath or "", share.get("description") or "", "", "", dict(share, kind="share")))
-			self["list"].setList(entries)
-			count = len(discoveryManager.hosts)
-			self["description"].setText((ngettext("%d host found.", "%d hosts found.", count) % count) if count else _("No hosts found yet - still scanning..."))
-			self.selectionChanged()
+	def keyToggleUsingIP(self):
+		config.network.browserUsingIP.value = not config.network.browserUsingIP.value
+		config.network.browserUsingIP.save()
+		self.selectionChanged()
 
 
 class NetworkCredentials(Setup):
