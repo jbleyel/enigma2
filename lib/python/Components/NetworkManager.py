@@ -2195,7 +2195,7 @@ class DiscoveryManager:
 			self.notify()
 
 	def onAvahiSnapshot(self, addresses):
-		stale = [address for address, host in self.hosts.items() if host["source"] == "avahi" and address not in addresses]
+		stale = [address for address, host in self.hosts.items() if host["source"] == "avahi" and host["hostnameSource"] != "netscan" and address not in addresses]
 		for address in stale:
 			del self.hosts[address]
 		if stale:
