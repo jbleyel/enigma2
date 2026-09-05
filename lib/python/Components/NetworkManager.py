@@ -1866,7 +1866,7 @@ class NetworkMountRepository:
 
 	@staticmethod
 	def credentialsPath(hostname):
-		return f"/etc/enigma2/{hostname.strip()}.cache"
+		return f"/etc/enigma2/{hostname.strip().upper()}.cache"
 
 	def credentialsGet(self, hostname):
 		if not hostname:

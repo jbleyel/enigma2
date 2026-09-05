@@ -771,7 +771,7 @@ class NetworkShares(Screen):
 		hostname = host.get("hostname") or ""
 		existing = self.configuredMount(share["address"], hostname, share["path"])
 		if existing:
-			self.session.openWithCallback(mountSetupCallback, NetworkMountSetup, mount=existing, onSaved=mountSaved)
+			self.session.openWithCallback(mountSetupCallback, NetworkMountSetup, mount=existing, onSaved=self.mountSaved)
 			return
 		server = hostname if (hostname and not config.network.browserUsingIP.value) else share["address"]
 		mount = {
@@ -790,7 +790,7 @@ class NetworkShares(Screen):
 			if username and username != NetworkCredentials.GUEST_USERNAME:
 				mount["username"] = username
 				mount["password"] = credentials.get("password", "")
-		self.session.openWithCallback(mountSetupCallback, NetworkMountSetup, mount=mount, onSaved=mountSaved)
+		self.session.openWithCallback(mountSetupCallback, NetworkMountSetup, mount=mount, onSaved=self.mountSaved)
 
 	def mountSaved(self, mount):
 		self.savedMount = mount

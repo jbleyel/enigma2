@@ -1032,6 +1032,7 @@ class NimManager:
 		self.firstRun = True
 		InitNimManager(self)  # Initialize config stuff.
 		self.firstRun = False
+		BoxInfo.setMutableItem("HasDVBS", self.hasNimType("DVB-S"))
 
 	def getConfiguredSats(self):
 		return self.sec.getConfiguredSats()
@@ -1810,6 +1811,8 @@ def InitSecParams():
 	x = ConfigInteger(default=150, limits=(0, 9999))
 	x.addNotifier(lambda configElement: secClass.setParam(secClass.DELAY_AFTER_DISEQC_PERIPHERIAL_POWERON_CMD, configElement.value))
 	config.sec.delay_after_diseqc_peripherial_poweron_cmd = x
+
+	config.crash.debugSec.addNotifier(lambda configElement: secClass.setParam(secClass.SEC_DEBUG, int(configElement.value)))
 
 # TODO: Add support for satPos depending nims to advanced nim configuration
 # so a second/third/fourth cable from a motorized lnb can used behind a
