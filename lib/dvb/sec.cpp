@@ -11,8 +11,6 @@
 
 #include "absdiff.h"
 
-/* off by default, enable at runtime via setParam(SEC_DEBUG, 1) so the
-   (potentially expensive) format args are only evaluated when requested */
 #define eSecDebug(arg...) \
 	do { \
 		if (eDVBSatelliteEquipmentControl::m_params[eDVBSatelliteEquipmentControl::SEC_DEBUG]) \

@@ -551,8 +551,9 @@ class NetworkShares(Screen):
 			for host in sorted(hosts.values(), key=sortKeyByIP if config.network.browserSortByIP.value else sortKeyByName):
 				address = host["address"]
 				name = host["hostname"] or address
-				username = self.repository.credentialsGet(self.hostnameFor(address)).get("username", NetworkCredentials.GUEST_USERNAME)
-				username = f"{_("guest") if username == NetworkCredentials.GUEST_USERNAME else username}"
+				username, password = self.repository.credentialsGet(self.hostnameFor(address))
+				if username is None or username == NetworkCredentials.GUEST_USERNAME:
+					username = NetworkCredentials.GUEST_TRANSLATED
 				entries.append((self.TEMPLATE_HOST, self.GLYPH_HOST, 0, address, "", name, "", "", username, f"{name} ({username})", {"kind": "host", "address": address}))
 				if address not in self.expanded:
 					continue
@@ -633,7 +634,8 @@ class NetworkShares(Screen):
 		self.expanded.add(address)
 		self.buildList()
 		hostname = self.hostnameFor(address)
-		if self.repository.credentialsGet(hostname).get("username"):
+		username, password = self.repository.credentialsGet(hostname)
+		if username:
 			self.startShareEnumeration(address)
 			return
 		host = discoveryManager.hosts.get(address) or {}
@@ -737,11 +739,11 @@ class NetworkShares(Screen):
 			self.finishProtocol(address, "smb")
 			return
 		dialect = self.SMB_DIALECTS[step][0]
-		credentials = self.repository.credentialsGet(self.hostnameFor(address))
+		username, password = self.repository.credentialsGet(self.hostnameFor(address))
 		credentialFile = None
-		if credentials.get("username") and credentials["username"] != NetworkCredentials.GUEST_USERNAME:
+		if username and username != NetworkCredentials.GUEST_USERNAME:
 			credentialFile = NamedTemporaryFile(mode="w", prefix="smbcreds-", delete=False)
-			credentialFile.write(f"username={credentials["username"]}\npassword={credentials.get("password", "")}\n")
+			credentialFile.write(f"username={username}\npassword={password}\n")
 			credentialFile.close()
 			chmod(credentialFile.name, 0o600)
 			authArgs = ("-A", credentialFile.name)
@@ -785,11 +787,12 @@ class NetworkShares(Screen):
 		}
 		if share["protocol"] == "smb":
 			mount["smbVersion"] = self.smbVersions.get(share["address"], self.SMB_FALLBACK_VERSION)
-			credentials = self.repository.credentialsGet(self.hostnameFor(share["address"]))
-			username = credentials.get("username", "")
+			username, password = self.repository.credentialsGet(self.hostnameFor(share["address"]))
+			if username is None:
+				username = NetworkCredentials.GUEST_USERNAME
 			if username and username != NetworkCredentials.GUEST_USERNAME:
 				mount["username"] = username
-				mount["password"] = credentials.get("password", "")
+				mount["password"] = password
 		self.session.openWithCallback(mountSetupCallback, NetworkMountSetup, mount=mount, onSaved=self.mountSaved)
 
 	def mountSaved(self, mount):
@@ -799,7 +802,7 @@ class NetworkShares(Screen):
 		self.close(True)
 
 	def keyMenu(self):
-		def keyMenuCallback(self, choice=None):
+		def keyMenuCallback(choice=None):
 			def flushNeighborCache():
 				def flushDone(data, retVal, extra=None):
 					if retVal:
@@ -877,20 +880,20 @@ class NetworkShares(Screen):
 
 class NetworkCredentials(Setup):
 	GUEST_USERNAME = "guest"
+	GUEST_TRANSLATED = _("guest")
 
 	def __init__(self, session, hostname, repository):
 		self.hostname = hostname
 		self.repository = repository
-		credentials = repository.credentialsGet(hostname)
-		username = credentials.get("username", "")
+		username, password = repository.credentialsGet(hostname)
+		if username is None:
+			username = self.GUEST_USERNAME
 		self.useGuest = NoSave(ConfigYesNo(default=username == self.GUEST_USERNAME))
 		self.username = NoSave(ConfigText(default=username, fixed_size=False))
-		self.password = NoSave(ConfigPassword(default=credentials.get("password", "")))
+		self.password = NoSave(ConfigPassword(default=password))
 		Setup.__init__(self, session=session, setup="NetworkCredentials")
 		self.setTitle(_("Credentials for '%s'") % hostname)
 
 	def keySave(self):
-		username = self.GUEST_USERNAME if self.useGuest.value else self.username.value.strip()
-		password = "" if self.useGuest.value else self.password.value
-		self.repository.credentialsSave(self.hostname, username, password)
+		self.repository.credentialsSave(self.hostname, self.GUEST_USERNAME if self.useGuest.value else self.username.value, "" if self.useGuest.value else self.password.value)
 		Setup.keySave(self)
