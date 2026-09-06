@@ -67,7 +67,6 @@ add_type("video/mpeg", ".pva")
 add_type("video/mpeg", ".wtv")
 
 
-# Guess the mimetype of a file, falling back to a few hardcoded special cases mimetypes doesn't know.
 def getType(file):
 	(type, _) = guess_type(file, strict=False)
 	if type is None:
@@ -90,7 +89,6 @@ def getType(file):
 	return type
 
 
-# Describes one file type handler: which mimetypes/paths it cares about, and what to do when a matching file was found.
 class Scanner:
 	def __init__(self, name, mimetypes=[], paths_to_scan=[], description="", openfnc=None):
 		self.mimetypes = mimetypes
@@ -99,11 +97,9 @@ class Scanner:
 		self.description = description
 		self.openfnc = openfnc
 
-	# Extra filter hook subclasses can override; base implementation accepts every file.
 	def checkFile(self, file):
 		return True
 
-	# Add "file" to the result dict (keyed by this scanner) if its mimetype and checkFile() match.
 	def handleFile(self, res, file):
 		if (self.mimetypes is None or file.mimetype in self.mimetypes) and self.checkFile(file):
 			res.setdefault(self, []).append(file)
@@ -111,13 +107,11 @@ class Scanner:
 	def __repr__(self):
 		return "<Scanner " + self.name + ">"
 
-	# Invoke the configured openfnc (e.g. to open a screen) with the matched files.
 	def open(self, list, *args, **kwargs):
 		if self.openfnc is not None:
 			self.openfnc(list, *args, **kwargs)
 
 
-# A directory to look for files in, and whether to recurse into subdirectories.
 class ScanPath:
 	def __init__(self, path, with_subdirs=False):
 		self.path = path
@@ -140,7 +134,6 @@ class ScanPath:
 		return ((self.with_subdirs, self.path) > (other.with_subdirs, other.path))
 
 
-# A single file found while scanning, with its (auto-detected or explicit) mimetype.
 class ScanFile:
 	def __init__(self, path, mimetype=None, size=None, autodetect=True):
 		self.path = path
@@ -154,14 +147,12 @@ class ScanFile:
 		return "<ScanFile " + self.path + " (" + str(self.mimetype) + ", " + str(self.size) + " MB)>"
 
 
-# openfnc for the built-in Ipkg scanner: open the IPKGInstaller screen with the list of matched .ipk files.
 def filescan_open(list, session, **kwargs):
-	from Screens.IPKGInstaller import IPKGInstaller  # Prevent Cicle imports
+	from Screens.Opkg import IpkgInstaller  # Prevent Cicle imports
 	filelist = [x.path for x in list]
-	session.open(IPKGInstaller, filelist)  # List.
+	session.open(IpkgInstaller, filelist)
 
 
-# Builds the Scanner that finds .ipk packages, either directly in the scanned root or below an "ipk" subdirectory.
 def filescan(**kwargs):
 	return Scanner(mimetypes=["application/x-debian-package"], paths_to_scan=[
 		ScanPath(path="ipk", with_subdirs=True),
@@ -169,12 +160,6 @@ def filescan(**kwargs):
 	], name="Ipkg", description=_("Install extensions."), openfnc=filescan_open)
 
 
-# Scanners that always exist, independent of what filescan plugins happen to be installed.
-def getBuiltinScanners():
-	return [filescan()]
-
-
-# Callback for the ChoiceBox in openList(): re-opens the scanner the user picked with its matched files.
 def execute(option):
 	print("[Scanner] execute", option)
 	if option is None:
@@ -184,11 +169,8 @@ def execute(option):
 	scanner.open(files, session)
 
 
-# Walks a freshly mounted device (e.g. USB stick, DVD) and sorts every file it finds into the scanners that want it.
-# Returns a dict of {scanner: [ScanFile, ...]}.
 def scanDevice(mountpoint):
-	# Collect built-in scanners plus every plugin registered for WHERE_FILESCAN.
-	scanner = getBuiltinScanners()
+	scanner = [filescan()]
 
 	for pluginObj in plugins.getPlugins(PluginDescriptor.WHERE_FILESCAN):
 		func = pluginObj()
@@ -241,14 +223,11 @@ def scanDevice(mountpoint):
 	return res
 
 
-# Given an explicit list of files (e.g. selected in a file browser), find matching scanners and open one.
-# If several scanners match, let the user pick via a ChoiceBox; returns False if nothing matched at all.
 def openList(session, files):
 	if not isinstance(files, list):
 		files = [files]
 
-	# Collect built-in scanners plus every plugin registered for WHERE_FILESCAN.
-	scanner = getBuiltinScanners()
+	scanner = [filescan()]
 
 	for pluginObj in plugins.getPlugins(PluginDescriptor.WHERE_FILESCAN):
 		func = pluginObj()
