@@ -317,12 +317,10 @@ def getParentSize(object, desktop):
 		if parent and parent.size().isEmpty():
 			parent = parent.getParent()
 		if parent:
-			value = parent.size()
+			return parent.size()
 		elif desktop:
-			value = desktop.size()  # Widget has no parent, use desktop size instead for relative coordinates.
-		else:
-			value = eSize()
-	return value
+			return desktop.size()  # Widget has no parent, use desktop size instead for relative coordinates.
+	return eSize()
 
 
 def skinError(errorMessage):
@@ -427,22 +425,46 @@ def parseColor(value, default=0x00FFFFFF):
 # 	f	Replace with getSkinFactor().
 #
 def parseCoordinate(value, parent, size=0, font=None, scale=(1, 1)):
+	RATIOTOKENS = frozenset("ewhcf%")
+
 	def scaleNumbers(coordinate, scale):
-		inNumber = False
-		chars = []
-		digits = []
-		for char in list(f"{coordinate} "):
-			if char.isdigit():
-				inNumber = True
-				digits.append(char)
-			elif inNumber:
-				inNumber = False
-				chars.append(str(int(int("".join(digits)) * scale[0] / scale[1])))
-				digits = []
-				chars.append(char)
+		# Terms (split on "+"/"-") that reference an already real, resolution-independent
+		# quantity ("e", "c", "w", "h", "f" or "%") are ratios/coefficients of that quantity
+		# (e.g. the "4" in "e/4", the "3" in "3*e", the "25" in "25%") and must be left
+		# unscaled - only terms made up purely of literal numbers (e.g. the "48" in "e-48")
+		# represent real pixel quantities that need scaling.
+		def scaleTerm(term):
+			if not RATIOTOKENS.isdisjoint(term):  # Cheap early-exit set check instead of scanning the term once per token.
+				return term
+			inNumber = False
+			chars = []
+			digits = []
+			for char in f"{term} ":
+				if char.isdigit():
+					inNumber = True
+					digits.append(char)
+				elif inNumber:
+					inNumber = False
+					chars.append(str(int(int("".join(digits)) * scale[0] / scale[1])))
+					digits = []
+					chars.append(char)
+				else:
+					chars.append(char)
+			return "".join(chars).strip()
+
+		if RATIOTOKENS.isdisjoint(coordinate) or ("+" not in coordinate and "-" not in coordinate):
+			return scaleTerm(coordinate)  # Single term, no need to split - the common case.
+		terms = []
+		current = []
+		for char in coordinate:
+			if char in "+-":
+				terms.append("".join(current))
+				terms.append(char)
+				current = []
 			else:
-				chars.append(char)
-		return "".join(chars).strip()
+				current.append(char)
+		terms.append("".join(current))
+		return "".join(term if term in ("+", "-") else scaleTerm(term) for term in terms)
 
 	value = value.strip()
 	try:
@@ -1109,7 +1131,7 @@ class AttributeParser:
 			self.guiObject.setFontScale(scaleType, size)
 
 	def foregroundColor(self, value):
-		if "," in value:
+		if "," in value or value in gradients:
 			self.guiObject.setForegroundGradient(*parseGradient(value))  # Only for eSlider.
 		else:
 			self.guiObject.setForegroundColor(parseColor(value, 0x00FFFFFF))
@@ -1120,6 +1142,9 @@ class AttributeParser:
 	def foregroundGradient(self, value):
 		self.guiObject.setForegroundGradient(*parseGradient(value))
 		attribDeprecationWarning("foregroundGradient", "foregroundColor")
+
+	def gradientMode(self, value):  # Per-slider opt-in; existing skins keep their rendering behavior.
+		self.guiObject.setGradientMode(parseOptions({"legacy": 0, "explicit": 1}, "gradientMode", value, 0))
 
 	def hAlign(self, value):  # This typo catcher definition uses an inconsistent name, use 'horizontalAlignment' instead!
 		self.horizontalAlignment(value)

@@ -27,7 +27,6 @@ public:
 	RESULT getLength(pts_t& len) override;
 	RESULT getPlayPosition(pts_t& pos) override;
 
-	// Seek disabled for RAM timeshift
 	RESULT seekTo(pts_t to) override;
 	RESULT seekRelative(int direction, pts_t to) override;
 
@@ -42,6 +41,7 @@ public:
 protected:
 	RESULT startTimeshift() override;
 	RESULT stopTimeshift(bool swToLive = false) override;
+	void updateTimeshiftClockPid(int pid) override;
 	ePtr<iTsSource> createTsSource(eServiceReferenceDVB& ref, int packetsize = 188) override;
 
 private:
