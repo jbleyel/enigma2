@@ -499,7 +499,7 @@ class NetworkOverview(Screen):
 				_("Frequency"),   # Frequency.
 				_("Channel"),     # Channel.
 				_("Encryption"),  # Encryption.
-				_("State"),       # StatusText.
+				_("Status"),      # StatusText.
 				None,             # StatusGlyph.
 				None,             # StatusColor.
 				None,             # StatusColorSelected.
@@ -1129,14 +1129,6 @@ class NetworkWiFiScan(Screen):
 
 	def keyStartScan(self):
 		def ifUpCallback(results=None, retVal=0, extraArgs=None):
-			def scanCallback(results=None, retVal=0, extraArgs=None):
-				def scanResultsCallback(results, retVal, extraArgs=None):
-					scanFinishedCallback(results, self.parseWpaCliScanResults)
-
-				self.scanTimer = eTimer()
-				self.scanTimer.callback.append(lambda: self.console.ePopen((wpaCliBin, wpaCliBin, "-i", self.adapter, "scan_results"), callback=scanResultsCallback))
-				self.scanTimer.start(3000, True)
-
 			def iwScanCallback(results=None, retVal=0, extraArgs=None):
 				self.console.ePopen((iwBin, iwBin, "dev", self.adapter, "scan"), callback=lambda results, rv, ea=None: scanFinishedCallback(results, self.parseIwScan))
 
@@ -1170,9 +1162,7 @@ class NetworkWiFiScan(Screen):
 					self["list"].setList([])
 					self["description"].setText(_("No networks found."))
 
-			if networkManager.wpaSupplicantRunning(self.adapter):
-				self.console.ePopen((wpaCliBin, wpaCliBin, "-i", self.adapter, "scan"), callback=scanCallback)
-			elif self.adapterObj.isBroadcomWl:
+			if not networkManager.wpaSupplicantRunning(self.adapter) and self.adapterObj.isBroadcomWl:
 				self.console.ePopen(("/usr/bin/wl", "/usr/bin/wl", "up"), callback=iwScanCallback)
 			else:
 				iwScanCallback()
@@ -1194,52 +1184,6 @@ class NetworkWiFiScan(Screen):
 		if 5000 <= freqMhz <= 5900:
 			return (freqMhz - 5000) // 5
 		return 0
-
-	def parseWpaCliScanResults(self, raw: str) -> list[ScanResult]:
-		results: list[ScanResult] = []
-		reBssid = compile(r"^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$")
-		for line in raw.splitlines():
-			fields = line.strip().split("\t")
-			if len(fields) < 5 or not reBssid.match(fields[0]):
-				continue
-			bssid, freqStr, signalStr, flags, ssid = fields[0], fields[1], fields[2], fields[3], fields[4]
-			if not ssid:
-				continue
-			try:
-				freqMhz = int(freqStr)
-				signalDbm = int(signalStr)
-			except ValueError:
-				continue
-			if "SAE" in flags:  # "[WPA2-PSK+SAE-CCMP]" is transition mode, "[WPA2-SAE-CCMP]" is WPA3 only.
-				encryption = Encryption.WPA2_WPA3 if "PSK" in flags else Encryption.WPA3
-			elif "EAP" in flags:  # "[WPA2-EAP+EAP-SHA256-CCMP]" is the enterprise transition mode.
-				sha256 = "EAP-SHA256" in flags
-				plain = "EAP" in flags.replace("EAP-SHA256", "")
-				if sha256 and plain:
-					encryption = Encryption.WPA2_WPA3_ENTERPRISE
-				elif sha256:
-					encryption = Encryption.WPA3_ENTERPRISE
-				else:
-					encryption = Encryption.WPA2_ENTERPRISE
-			elif "WPA2" in flags or "RSN" in flags:
-				encryption = Encryption.WPA2
-			elif "WPA" in flags:
-				encryption = Encryption.WPA
-			elif "WEP" in flags:
-				encryption = Encryption.WEP
-			else:
-				encryption = Encryption.NONE
-			results.append(ScanResult(
-				ssid=ssid,
-				bssid=bssid,
-				frequency=f"{freqMhz / 1000:.3f} GHz",
-				channel=self.channelFromFreq(freqMhz),
-				signalDbm=signalDbm,
-				signalPct=max(0, min(100, 2 * (signalDbm + 100))),
-				encryption=encryption,
-				encDetails=flags
-			))
-		return sorted(results, key=lambda x: -x.signalPct)
 
 	def parseIwScan(self, raw: str) -> list[ScanResult]:
 		# Unlike iwlist (wireless-tools), iw is nl80211-native and knows AKM suites by name,
