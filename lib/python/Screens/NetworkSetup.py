@@ -714,6 +714,11 @@ class NetworkOverview(Screen):
 		change = CHANGE_ADAPTER_ENABLED if adapter.adapterEnabled else CHANGE_ADAPTER_DISABLED
 		applyAdapterChange(adapter.name, change, toggleAdapterCallback)
 
+	def promoteWiFiPriority(self, adapter: Adapter, connection: Connection):
+		others = [x for x in networkManager.getConnections(adapter.name) if x.isWiFi and x.wifi and x.wifi.ssid and x is not connection]
+		if others:
+			connection.priority = max(x.priority for x in others) + 10
+
 	def toggleSaved(self, adapter: Adapter, connection: Connection):
 		def toggleSavedCallback(*_args):
 			self.refreshAdapters()
@@ -729,9 +734,7 @@ class NetworkOverview(Screen):
 				toggleSavedCallback()
 		else:
 			connection.enabled = True
-			others = [x for x in networkManager.getConnections(adapter.name) if x.isWiFi and x.wifi and x.wifi.ssid and x is not connection]
-			if others:
-				connection.priority = max(x.priority for x in others) + 10  # Bump priority
+			self.promoteWiFiPriority(adapter, connection)
 			networkManager.save()
 			if connection.wifi and connection.wifi.wpaId is not None:
 				Console().ePopen((wpaCliBin, wpaCliBin, "-i", adapter.name, "select_network", str(connection.wifi.wpaId)), callback=toggleSavedCallback)
@@ -747,6 +750,8 @@ class NetworkOverview(Screen):
 		adapter = self.getCurrentAdapter()
 		connection = self.getCurrentSaved()
 		if adapter and connection and connection.enabled and not self.isConnectionLive(adapter, connection):
+			self.promoteWiFiPriority(adapter, connection)
+			networkManager.save()
 			self.session.openWithCallback(lambda *_: self.refreshAdapters(), NetworkWiFiActivator, adapter, connection)
 
 	def keyTop(self):

@@ -740,7 +740,7 @@
 	<setup key="NetworkWiFi" title="Network Wi-Fi Settings">
 		<item level="0" text="Network name (SSID)" description="Select the network name (SSID) of the wireless network to which the receiver should connect.">self.cfgSsid</item>
 		<item level="0" text="Enabled" description="When enabled, connection via saved network is attempted when the Wi-Fi adapter connects.">self.cfgEnabled</item>
-		<item level="0" text="Priority" description="Preferred connection priority when multiple Wi-Fi profiles are configured. Lower numbers have a higher priority." conditional="self._hasMultiplePriorities">self.cfgPriority</item>
+		<item level="0" text="Priority" description="Preferred connection priority when multiple Wi-Fi profiles are configured. Lower numbers have a higher priority." conditional="self.hasMultiplePriorities">self.cfgPriority</item>
 		<item level="1" text="Hidden network" description="When enabled, allow connection to access points that don't broadcast their SSID.">self.cfgHidden</item>
 		<item level="0" text="Encryption" description="Select the security protocol that will be used to access the selected wireless network.">self.cfgEncryption</item>
 		<if conditional="self.cfgEncryption.value != 'none'">
@@ -1129,6 +1129,26 @@
 			</if>
 		</if>
 	</setup>
+	<setup key="SecParameterSetup" title="Satellite equipment setup">
+		<item text="Delay after DiSEqC reset command" description="Delay after DiSEqC reset command.">config.sec.delay_after_diseqc_reset_cmd</item>
+		<item text="Delay after DiSEqC peripheral power on command" description="Delay after DiSEqC peripheral power on command.">config.sec.delay_after_diseqc_peripherial_poweron_cmd</item>
+		<item text="Delay after continuous tone disable before DiSEqC" description="Delay after continuous tone disable before DiSEqC.">config.sec.delay_after_continuous_tone_disable_before_diseqc</item>
+		<item text="Delay after final continuous tone change" description="Delay after final continuous tone change.">config.sec.delay_after_final_continuous_tone_change</item>
+		<item text="Delay after last voltage change" description="Delay after last voltage change.">config.sec.delay_after_final_voltage_change</item>
+		<item text="Delay between DiSEqC commands" description="Delay between DiSEqC commands.">config.sec.delay_between_diseqc_repeats</item>
+		<item text="Delay after last DiSEqC command" description="Delay after last DiSEqC command.">config.sec.delay_after_last_diseqc_command</item>
+		<item text="Delay after tone burst" description="Delay after tone burst.">config.sec.delay_after_toneburst</item>
+		<item text="Delay after change voltage before switch command" description="Delay after change voltage before switch command.">config.sec.delay_after_change_voltage_before_switch_command</item>
+		<item text="Delay after enable voltage before switch command" description="Delay after enable voltage before switch command.">config.sec.delay_after_enable_voltage_before_switch_command</item>
+		<item text="Delay between switch and motor command" description="Delay between switch and motor command.">config.sec.delay_between_switch_and_motor_command</item>
+		<item text="Delay after set voltage before measure motor power" description="Delay after set voltage before measure motor power.">config.sec.delay_after_voltage_change_before_measure_idle_inputpower</item>
+		<item text="Delay after enable voltage before motor command" description="Delay after enable voltage before motor command.">config.sec.delay_after_enable_voltage_before_motor_command</item>
+		<item text="Delay after motor stop command" description="Delay after motor stop command.">config.sec.delay_after_motor_stop_command</item>
+		<item text="Delay after voltage change before motor command" description="Delay after voltage change before motor command.">config.sec.delay_after_voltage_change_before_motor_command</item>
+		<item text="Delay before sequence repeat" description="Delay before sequence repeat.">config.sec.delay_before_sequence_repeat</item>
+		<item text="Motor running timeout" description="Motor running timeout.">config.sec.motor_running_timeout</item>
+		<item text="Motor command retries" description="Motor command retries.">config.sec.motor_command_retries</item>
+	</setup>
 	<setup key="Skin" title="Skin Settings">
 		<if conditional="config.usage.fastSkinReload.value">
 			<item text="GUI Skin" description="Choose the skin to be used for the graphical user interface (GUI). Press 'GREEN' to activate the skin.">config.skin.guiSkin</item>
@@ -1363,7 +1383,7 @@
 		<item level="1" text="Show InfoBar on event change" description="Select 'Yes' to display the InfoBar when a new event starts." indent="1">config.usage.show_infobar_on_event_change</item>
 		<item level="0" text="InfoBar Content And Time Display" />
 		<item level="1" text="Show channel number in InfoBar" description="Select 'Yes' to display the channel number in the InfoBar." indent="1">config.usage.show_infobar_channel_number</item>
-		<item level="0" text="Show picon background color" description="This option allows you to choose the background color of transparent picons." indent="1">config.usage.show_picon_bkgrn</item>
+		<item level="0" text="Show picon background color" description="This option allows you to choose the background color of transparent picons." conditional="not config.skin.primary_skin.value.startswith('Umbra/')" indent="1">config.usage.show_picon_bkgrn</item>
 		<item level="0" text="Show event genre information" description="This option allows you to choose whether or not to display genre information for the event." indent="1">config.usage.show_genre_info</item>
 		<item level="2" text="Show background in Radio Mode" description="Show background when tuned to a radio channel." indent="1">config.misc.showradiopic</item>
 		<item level="0" text="Show time remaining/elapsed" description="This option allows you to choose how to display the remaining time, the elapsed time, or both." indent="1">config.usage.swap_time_remaining_on_osd</item>
