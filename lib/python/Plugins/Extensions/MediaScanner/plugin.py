@@ -3,8 +3,7 @@ from Plugins.Plugin import PluginDescriptor
 from Components.Scanner import scanDevice
 from Components.Harddisk import harddiskmanager
 from Screens.ChoiceBox import ChoiceBox
-from Screens.InfoBar import InfoBar
-from Screens.MessageBox import MessageBox
+from Tools.Notifications import notificationCenter, showInfo
 
 parentScreen = None
 global_session = None
