@@ -317,7 +317,7 @@ class NetworkMountSetup(Setup):
 		self.onSaved = onSaved
 		self.repository = NetworkMountRepository()
 		self.mountId = mount.get("id") if mount else None
-		self.isNewMount = mount is None
+		self.isNewMount = not self.mountId
 		self.address = address
 		self.dnsHostname = hostname
 		self.enabled = NoSave(ConfigYesNo(default=default("enabled", True)))
@@ -374,6 +374,10 @@ class NetworkMountSetup(Setup):
 		current = self["config"].getCurrent()
 		if self.isNewMount and current and current[1] is config.network.browserUsingDNS:
 			self.server.value = self.dnsHostname if config.network.browserUsingDNS.value else self.address
+			serverItem = next((item for item in self["config"].list if item[1] is self.server), None)
+			if serverItem is not None:
+				self.server.changed()
+				self["config"].invalidate(serverItem)
 		Setup.changedEntry(self)
 
 	def keySave(self):
