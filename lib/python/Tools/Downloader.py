@@ -80,10 +80,10 @@ class DiscardProtocol(Protocol):
 		file we failed to open) still have to be drained, else the socket stays
 		registered with the reactor for the lifetime of the process. """
 
-	def dataReceived(self, data):
+	def dataReceived(self, data):  # Overwrite
 		pass
 
-	def connectionLost(self, reason):
+	def connectionLost(self, reason):  # Overwrite
 		pass
 
 

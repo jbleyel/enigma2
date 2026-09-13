@@ -80,7 +80,7 @@ class GUITest(Screen, HelpableScreen):
 	skin = """
 	<screen name="GUITest" title="GUI Test Main Menu" position="fill" backgroundColor="#00000000" flags="wfNoBorder" resolution="1280,720" transparent="0">
 		<widget source="Title" render="Label" position="0,0" size="e,35" font="Regular;25" noWrap="1" transparent="1" verticalAlignment="center" />
-		<eLabel position="10,44" size="e-20,36" text="Press a number key 1–8 to open a test screen   |   OK / Red: Close" backgroundColor="#00222222" font="Regular;20" horizontalAlignment="center" verticalAlignment="center" />
+		<eLabel position="10,44" size="e-20,36" text="Press a number key 1–9 to open a test screen   |   OK / Red: Close" backgroundColor="#00222222" font="Regular;20" horizontalAlignment="center" verticalAlignment="center" />
 		<!-- Left column: keys 1–4 -->
 		<eLabel position="50,100" size="60,52" text="1" backgroundColor="#00335577" font="Regular;28" horizontalAlignment="center" verticalAlignment="center" cornerRadius="6" />
 		<eLabel position="118,100" size="500,52" text="eRectangle and eLabel widgets" backgroundColor="#001a2a3a" font="Regular;22" horizontalAlignment="left" verticalAlignment="center" />
@@ -90,6 +90,8 @@ class GUITest(Screen, HelpableScreen):
 		<eLabel position="118,220" size="500,52" text="ScrollLabel widget" backgroundColor="#001a2a3a" font="Regular;22" horizontalAlignment="left" verticalAlignment="center" />
 		<eLabel position="50,280" size="60,52" text="4" backgroundColor="#00335577" font="Regular;28" horizontalAlignment="center" verticalAlignment="center" cornerRadius="6" />
 		<eLabel position="118,280" size="500,52" text="Image / Pixmap alphatest" backgroundColor="#001a2a3a" font="Regular;22" horizontalAlignment="left" verticalAlignment="center" />
+		<eLabel position="50,340" size="60,52" text="9" backgroundColor="#00335577" font="Regular;28" horizontalAlignment="center" verticalAlignment="center" cornerRadius="6" />
+		<eLabel position="118,340" size="500,52" text="gpixmap drawRectangleNew multi-rect region stress" backgroundColor="#001a2a3a" font="Regular;22" horizontalAlignment="left" verticalAlignment="center" />
 		<!-- Right column: keys 5–8 -->
 		<eLabel position="660,100" size="60,52" text="5" backgroundColor="#00335577" font="Regular;28" horizontalAlignment="center" verticalAlignment="center" cornerRadius="6" />
 		<eLabel position="728,100" size="510,52" text="Listbox: grid and plugin list" backgroundColor="#001a2a3a" font="Regular;22" horizontalAlignment="left" verticalAlignment="center" />
@@ -129,7 +131,7 @@ class GUITest(Screen, HelpableScreen):
 			"6": (self.keyGUITestScreen6, _("Display GUI Test Screen 6")),
 			"7": (self.keyGUITestScreen7, _("Display GUI Test Screen 7")),
 			"8": (self.keyGUITestScreen8, _("Display GUI Test Screen 8")),
-			# "9": (self.keyGUITestScreen9, _("Display GUI Test Screen 9")),
+			"9": (self.keyGUITestScreen9, _("Display GUI Test Screen 9")),
 			# "0": (self.keyGUITestScreen10, _("Display GUI Test Screen 10"))
 		}, prio=0, description=_("GUI Test Actions"))
 		self["key_red"] = StaticText(_("Close"))
@@ -160,6 +162,9 @@ class GUITest(Screen, HelpableScreen):
 
 	def keyGUITestScreen8(self):
 		self.session.open(GUITestScreen8)
+
+	def keyGUITestScreen9(self):
+		self.session.open(GUITestScreen9)
 
 
 class GUITestScreenBase(Screen, HelpableScreen):
@@ -1029,6 +1034,78 @@ class GUITestScreen8(GUITestScreenBase):
 
 	def _navPageDown(self):
 		self._nav(eListbox.pageDown)
+
+
+class GUITestScreen9(GUITestScreenBase):
+	# Stresses gPixmap::drawRectangleNew's handling of a *multi-rect* clip region.
+	#
+	# "target" is a translucent, rounded, bordered rectangle -- borderWidth + cornerRadius
+	# together force gPainter::drawRectangle() onto the drawRectangleNew() path (see
+	# grc.cpp gOpcode::rectangle). "occluderH"/"occluderV" are fully opaque siblings with a
+	# HIGHER zPosition placed on top of it, forming an opaque cross through its middle. Per
+	# eWidgetDesktop::calcWidgetClipRegion, an opaque, non-transparent, non-alphablended,
+	# non-cornered sibling subtracts its own area from the shared parent_visible region
+	# BEFORE lower-zPosition siblings are processed -- so "target" ends up with a clip
+	# region punched out in the shape of that cross, i.e. up to 4 disjoint rects (one per
+	# corner) instead of 1.
+	#
+	# drawRectangleNew() computes "reg" (area intersected with the current region rect) per
+	# iteration of its outer loop but never actually uses it to bound the corner/border/fill
+	# drawing -- those all run against the full "area" every iteration. With a 4-rect clip
+	# region that means the translucent fill/border gets alpha-blended on top of itself up
+	# to 4 times per repaint: visibly more saturated/opaque than the single blend a 1-rect
+	# region would produce, and ~4x the pixel work. Compare the 4 visible quadrants here
+	# against a version with the OpenViX-style reg-clipping fix applied (or hide/show the
+	# occluders) to see the difference; with GPIXMAP_DEBUG active (see gpixmap.cpp) the
+	# per-draw timing in the debug log will also show the extra work.
+	skin = """
+	<screen name="GUITestScreen9" title="GUI Test Screen 9 (drawRectangleNew multi-rect region)" position="fill" backgroundColor="#00000000" flags="wfNoBorder" resolution="1280,720" transparent="0">
+		<widget source="Title" render="Label" position="0,0" size="e,35" font="Regular;25" noWrap="1" transparent="1" verticalAlignment="center" />
+		<widget name="item1" position="10,35" size="e-20,60" font="Regular;18" transparent="1" />
+
+		<!-- Plain backdrop so any leftover tint from over-blending the translucent target is visible through the cross-shaped cutout -->
+		<eRectangle position="340,110" size="600,440" backgroundColor="#00E0C000" cornerRadius="0" />
+
+		<!-- Target: translucent + rounded + bordered -> hits gPixmap::drawRectangleNew -->
+		<widget name="target" position="390,150" size="500,360" backgroundColor="#80224488" font="Regular;20" cornerRadius="60" widgetBorderColor="#00FFFFFF" widgetBorderWidth="10" transparent="0" zPosition="0" />
+
+		<!-- Opaque occluders (higher zPosition): together an interior cross, splitting target's visible region into 4 disjoint rects -->
+		<widget name="occluderH" position="390,300" size="500,60" backgroundColor="#00E0C000" font="Regular;20" transparent="0" zPosition="5" />
+		<widget name="occluderV" position="590,150" size="100,360" backgroundColor="#00E0C000" font="Regular;20" transparent="0" zPosition="5" />
+
+		<widget source="key_red" render="Label" position="0,e-40" size="180,40" backgroundColor="key_red" conditional="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center" zPosition="+2">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_green" render="Label" position="190,e-40" size="180,40" backgroundColor="key_green" conditional="key_green" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center" zPosition="+2">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_yellow" render="Label" position="380,e-40" size="180,40" backgroundColor="key_yellow" conditional="key_yellow" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center" zPosition="+2">
+			<convert type="ConditionalShowHide" />
+		</widget>
+		<widget source="key_help" render="Label" position="e-80,e-40" size="80,40" backgroundColor="key_back" conditional="key_help" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center" zPosition="+2">
+			<convert type="ConditionalShowHide" />
+		</widget>
+	</screen>"""
+
+	def __init__(self, session):
+		GUITestScreenBase.__init__(self, session, "9")
+		self["item1"] = Label(_(
+			"This screen stresses gPixmap::drawRectangleNew() with a multi-rect clip region: "
+			"an opaque cross occludes the middle of a translucent, rounded, bordered rectangle, "
+			"leaving it a 4-rect visible region. Enable GPIXMAP_DEBUG in lib/gdi/gpixmap.cpp to "
+			"see per-draw timing in the debug log. Yellow: force a repaint."
+		))
+		self["target"] = Label()
+		self["occluderH"] = Label()
+		self["occluderV"] = Label()
+		self["key_yellow"] = StaticText(_("Force Repaint"))
+		self["repaintActions"] = HelpableActionMap(self, ["ColorActions"], {
+			"yellow": (self.forceRepaint, _("Force the target rectangle to repaint")),
+		}, prio=0, description=_("GUI Test Screen 9 Actions"))
+
+	def forceRepaint(self):
+		self["target"].hide()
+		self["target"].show()
 
 
 def main(session, **kwargs):

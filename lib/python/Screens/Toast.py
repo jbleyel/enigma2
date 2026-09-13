@@ -9,7 +9,7 @@ FADESTEPS = 10
 
 class ToastScreen(Screen):
 	skin = """
-	<screen name="ToastScreen" position="0,0" size="1280,720" resolution="1280,720" backgroundColor="#FE000000" flags="wfNoBorder" zPosition="101">
+	<screen name="ToastScreen" position="0,0" size="1280,720" resolution="1280,720" backgroundColor="#FE000000" flags="wfNoBorder,wfModal" zPosition="101">
 		<widget name="border" position="0,0" size="40,40" backgroundColor="#00000000" widgetBorderColor="#FFFFFF" widgetBorderWidth="2" />
 		<widget name="icon" position="0,0" size="40,40" font="enigma2icons;34" horizontalAlignment="center" verticalAlignment="center" backgroundColor="#00000000" />
 		<widget name="text" position="0,0" size="e,e" font="Regular;25" horizontalAlignment="left" verticalAlignment="center" backgroundColor="#00000000" />
