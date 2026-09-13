@@ -340,17 +340,28 @@ def InitUsageConfig():
 	screenChoiceList = [("", _("Legacy mode"))]
 	widgetChoiceList = []
 	styles = getcomponentTemplateNames("serviceList")
+	translateSkinString = None
+	if "MetrixHD" in config.skin.primary_skin.value:
+		try:
+			from Plugins.Extensions.MyMetrixLite import translateSkinString
+		except ImportError:
+			pass
+
+	if not translateSkinString:
+		def translateSkinString(text):
+			return text
+
 	default = ""
 	if styles:
 		for screen in domScreens:
 			element, path = domScreens.get(screen, (None, None))
 			if element.get("base") == "ChannelSelection":
 				label = element.get("label", screen)
-				screenChoiceList.append((screen, label))
+				screenChoiceList.append((screen, translateSkinString(label)))
 
 		default = styles[0]
 		for style in styles:
-			widgetChoiceList.append((style, style))
+			widgetChoiceList.append((style, translateSkinString(style)))
 
 	config.channelSelection.screenStyle = ConfigSelection(default="", choices=screenChoiceList)
 	config.channelSelection.widgetStyle = ConfigSelection(default=default, choices=widgetChoiceList)
