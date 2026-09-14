@@ -432,7 +432,7 @@ def runScreenTest():
 			RestoreSettings = True
 			if firstPath:
 				config.plugins.configurationbackup.backuplocation.value = firstPath.replace("images/config/settings", "")
-			from Plugins.SystemPlugins.SoftwareManager.BackupRestore import RestoreScreen
+			from Screens.BackupRestore import RestoreScreen
 			session.open(RestoreScreen, runRestore=True)
 		else:
 			screensToRun = [p.__call__ for p in plugins.getPlugins(PluginDescriptor.WHERE_WIZARD)]

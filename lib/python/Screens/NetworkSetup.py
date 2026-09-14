@@ -120,16 +120,16 @@ class NetworkOverview(Screen):
 		<widget source="savedList" render="Listbox" position="10,305" size="e-20,175">
 			<template name="Default" colors="#0000CC00,#00CC0000,#00CCCCCC,#00003300,#00330000,#00333333" fonts="Regular;25,Regular;20,enigma2icons;25" itemHeight="35">
 				<rowtemplate>
-					<text index="SSID" position="0,0" size="270,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
-					<text index="StatusText" position="270,0" size="80,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="SSID" position="0,0" size="250,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
+					<text index="StatusText" position="250,0" size="100,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 					<text index="BSSID" position="350,0" size="210,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 					<text index="Frequency" position="560,0" size="140,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 					<text index="Channel" position="700,0" size="120,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 					<text index="Encryption" position="820,0" size="260,35" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 				</rowtemplate>
 				<rowtemplate>
-					<text index="SSID" position="0,0" size="270,35" font="1" padding="5,0" verticalAlignment="center" />
-					<text index="StatusGlyph" position="270,0" size="80,35" font="2" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColorSelected" padding="5,0" verticalAlignment="center" />
+					<text index="SSID" position="0,0" size="250,35" font="1" padding="5,0" verticalAlignment="center" />
+					<text index="StatusGlyph" position="250,0" size="100,35" font="2" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColorSelected" padding="5,0" verticalAlignment="center" />
 					<text index="BSSID" position="350,0" size="210,35" font="1" padding="5,0" verticalAlignment="center" />
 					<text index="Frequency" position="560,0" size="140,35" font="1" padding="5,0" verticalAlignment="center" />
 					<text index="Channel" position="700,0" size="120,35" font="1" padding="5,0" verticalAlignment="center" />

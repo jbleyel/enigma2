@@ -736,7 +736,7 @@ class NetworkManager:
 				netInfo.signal = data.get("signal_dbm", 0)
 			else:
 				netInfo.link = netInfo.up and data.get("link", False)
-				netInfo.speed = data.get("speed", -1)
+				netInfo.speed = data.get("speed", -1) if netInfo.link else -1
 				netInfo.duplex = data.get("duplex", "")
 				netInfo.port = data.get("port", "")
 				netInfo.transceiver = data.get("transceiver", "")

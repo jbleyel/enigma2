@@ -56,7 +56,7 @@ from Screens.PictureInPicture import PictureInPicture
 from Screens.PiPSetup import PiPSetup
 from Screens.PVRState import PVRState, TimeshiftState
 from Screens.SubtitleDisplay import SubtitleDisplay
-from Screens.RdsDisplay import RassInteractive, RdsInfoDisplay
+from Screens.RdsDisplay import DABSlideDisplay, RassInteractive, RdsInfoDisplay
 from Screens.Screen import Screen
 from Screens.ScreenSaver import ScreenSaver
 from Screens.Setup import Setup
@@ -3549,9 +3549,12 @@ class InfoBarRdsDecoder:
 
 	def __init__(self):
 		self["RdsDecoder"] = RdsDecoder(self.session.nav)
+		self.dab_slide_display = self.session.instantiateDialog(DABSlideDisplay)
+		self.dab_slide_display.setAnimationMode(0)
 		self.rds_display = self.session.instantiateDialog(RdsInfoDisplay)
 		self.session.instantiateSummaryDialog(self.rds_display)
 		self.rds_display.setAnimationMode(0)
+		self.dab_slide_display.reserveRadioTextArea(self.rds_display)
 		self.rass_interactive = None
 		self.__event_tracker = ServiceEventTracker(screen=self, eventmap={
 			iPlayableService.evEnd: self.__serviceStopped,
@@ -4018,12 +4021,12 @@ class InfoBarInstantRecord:
 					if len(items) >= 2 and BoxInfo.getItem("ChipsetString") in ("meson-6", "meson-64"):
 						Notifications.AddNotification(MessageBox, _("Sorry it is only possible to record 2 channels at once!"), MessageBox.TYPE_ERROR, timeout=5)
 						return
-					self.startInstantRecording(limitEvent=answer[1] in ("event", "manualendtime") or False)
+					recording = self.startInstantRecording(limitEvent=answer[1] in ("event", "manualendtime") or False)
 					match answer[1]:
 						case "manualduration":
-							self.changeDuration(self.recording[-1] if self.recording else None, 5)
+							self.changeDuration(recording, 5)
 						case "manualendtime":
-							self.changeEndTime(self.recording[-1] if self.recording else None)
+							self.changeEndTime(recording)
 				case "savetimeshift":
 					if self.isSeekable() and self.pts_eventcount != self.pts_currplaying:
 						InfoBarTimeshift.SaveTimeshift(self, timeshiftfile=f"pts_livebuffer_{self.pts_currplaying}")
@@ -4142,9 +4145,11 @@ class InfoBarInstantRecord:
 			recording.autoincrease = True
 			recording.setAutoincreaseEnd()
 		simulTimerList = self.session.nav.RecordTimer.record(recording)
+		started = False
 		if simulTimerList is None:  # No conflict.
 			recording.autoincrease = False
 			self.recording.append(recording)
+			started = True
 		else:
 			if len(simulTimerList) > 1:  # With other recording.
 				name = simulTimerList[1].name
@@ -4153,6 +4158,7 @@ class InfoBarInstantRecord:
 				recording.autoincrease = True  # Start with max available length, then increment.
 				if recording.setAutoincreaseEnd() and self.session.nav.RecordTimer.record(recording) is None:
 					self.recording.append(recording)
+					started = True
 					message = _("Recording time limited due to conflicting timer:%s") % f"\n'{nameDate}'"
 				else:
 					message = _("Could not record due to conflicting timer:%s") % f"\n'{name}'"
@@ -4160,6 +4166,7 @@ class InfoBarInstantRecord:
 			else:
 				self.session.open(MessageBox, _("Could not record due to invalid service:%s") % f"\n'{serviceReference}'", MessageBox.TYPE_INFO, timeout=10)
 			recording.autoincrease = False
+		return recording if started else None
 
 	def startRecordingCurrentEvent(self):  # Used by ButtonSetup.
 		self.startInstantRecording(True)
@@ -4173,7 +4180,10 @@ class InfoBarInstantRecord:
 		self.recordQuestionCallback((None, "manualendtime"))
 
 	def getTimerConflicts(self):
-		timerSanityCheck = TimerSanityCheck(self.session.nav.RecordTimer.timer_list)
+		now = int(time())
+		end = now + 86400  # Longest instant recording.
+		timerList = [timer for timer in self.session.nav.RecordTimer.timer_list if timer.repeated or (timer.begin < end and timer.end > now)]
+		timerSanityCheck = TimerSanityCheck(timerList)
 		if not timerSanityCheck.check():
 			simulTimerList = timerSanityCheck.getSimulTimerList()
 			if simulTimerList and len(simulTimerList) > 1:
