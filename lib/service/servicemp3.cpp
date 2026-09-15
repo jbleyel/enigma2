@@ -1889,6 +1889,39 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
 		return 0;
 	}
 	m_last_trickseek_ms = now_ms_k;
+
+	/* TEMP DEBUG: dump inputselector2 (text selector) active-pad vs actually linked
+	   sink pad right before the seek, to check for a stale active-pad after a
+	   current-text track switch. Remove once the subtitle-seek hang is diagnosed. */
+	{
+		GstElement* textsel = gst_bin_get_by_name(GST_BIN(m_gst_playbin), "inputselector2");
+		if (textsel) {
+			GstPad* active = NULL;
+			g_object_get(textsel, "active-pad", &active, NULL);
+			eDebug("[eServiceMP3][SUBDBG] inputselector2 active-pad=%p name=%s", (void*)active,
+				   active ? GST_PAD_NAME(active) : "(null)");
+			GstIterator* it = gst_element_iterate_sink_pads(textsel);
+			GValue item = G_VALUE_INIT;
+			while (gst_iterator_next(it, &item) == GST_ITERATOR_OK) {
+				GstPad* p = GST_PAD(g_value_get_object(&item));
+				GstPad* peer = gst_pad_get_peer(p);
+				eDebug("[eServiceMP3][SUBDBG] inputselector2 sinkpad=%p name=%s linked=%d peer=%s is_active=%d",
+					   (void*)p, GST_PAD_NAME(p), gst_pad_is_linked(p), peer ? GST_PAD_NAME(peer) : "(none)",
+					   p == active);
+				if (peer)
+					gst_object_unref(peer);
+				g_value_reset(&item);
+			}
+			g_value_unset(&item);
+			gst_iterator_free(it);
+			if (active)
+				gst_object_unref(active);
+			gst_object_unref(textsel);
+		} else {
+			eDebug("[eServiceMP3][SUBDBG] inputselector2 not found");
+		}
+	}
+
 	if (!gst_element_seek(m_gst_playbin, m_currentTrickRatio, GST_FORMAT_TIME,
 						  (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT), GST_SEEK_TYPE_SET,
 						  (gint64)(m_last_seek_pos * 11111LL), GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
