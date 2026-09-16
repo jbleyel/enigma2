@@ -4509,6 +4509,20 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 			eDebug("[eServiceMP3] enableSubtitles: forcing input-selector active-pad commit for %s",
 				   GST_PAD_NAME(textPad));
 			g_object_set(selector, "active-pad", textPad, NULL);
+			/* setting active-pad only records a *pending* switch; input-selector
+			   only actually commits it (gst_input_selector_maybe_commit_active_pad)
+			   lazily, from inside the event/chain handler of the NEXT event that
+			   happens to arrive on any of its sink pads. For a sparse stream like
+			   PGS that next event can be seconds away, leaving active_sinkpad
+			   stale in the meantime -- which is why a seek issued in that window
+			   never gets its FLUSH_START forwarded past this selector and the
+			   whole pipeline hangs. Force the commit to happen right now by
+			   sending a harmless custom event through the pad ourselves; its
+			   event handler checks for a pending commit unconditionally before
+			   even looking at the event type. */
+			gst_pad_send_event(textPad,
+				gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB,
+									  gst_structure_new_empty("eServiceMP3-force-selector-commit")));
 		}
 		if (selector)
 			gst_object_unref(selector);
