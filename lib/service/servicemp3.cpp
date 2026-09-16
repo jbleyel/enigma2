@@ -1890,40 +1890,44 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
 	}
 	m_last_trickseek_ms = now_ms_k;
 
-	/* TEST: a flushing seek while a text stream is active deadlocks inside
-	   gst_element_seek() -- confirmed via full-thread wchan dump, every thread
-	   parked on futex_wait_queue_me, and via GST_DEBUG that the seek's FLUSH_START
-	   sets the flush flag on inputselector2:sink_0 but is never forwarded past it
-	   to streamsynchronizer0/subqueue/subsink0.
-	   On a plain current-text switch, playsink itself flushes that exact branch
-	   cleanly using its own custom out-of-band event pair, observed in the log as
-	   "playsink-custom-subtitle-flush" / "playsink-custom-subtitle-flush-finish"
-	   sent to playsink's "text_sink" pad. Replay that same handshake ourselves
-	   right before the seek, so whatever the regular FLUSH_START gets stuck on is
-	   already clear by the time it arrives. */
+	/* TEST: a flushing seek in PLAYING while a text stream is active deadlocks
+	   inside gst_element_seek() -- confirmed via full-thread wchan dump (every
+	   thread parked on futex_wait_queue_me) and via GST_DEBUG (FLUSH_START sets
+	   the flush flag on inputselector2:sink_0 but is never forwarded onward).
+	   Every attempt to reconfigure/flush that branch *while data is actively
+	   flowing in PLAYING* hit the same lock pattern as the known playsink
+	   deadlock (data flow causes a pad block while playsink reconfigures, both
+	   sides wait on the stream lock).
+	   Work around it by using the state-change machinery instead of a live
+	   flush: drop to PAUSED first (the same, symmetric mechanism that already
+	   builds and settles every branch -- including subtitle tracks > 0 --
+	   cleanly at startup), seek while quiesced, then resume. */
 	bool subtitleWorkaround = m_currentSubtitleStream >= 0;
+	GstState preSeekState = GST_STATE_VOID_PENDING;
 	if (subtitleWorkaround) {
-		GstElement* playsink = gst_bin_get_by_name(GST_BIN(m_gst_playbin), "playsink");
-		if (playsink) {
-			GstPad* textSinkPad = gst_element_get_static_pad(playsink, "text_sink");
-			if (textSinkPad) {
-				eDebug("[eServiceMP3] seekToImpl: replaying playsink custom subtitle-flush handshake "
-					   "before seek (subtitle stream %d active)", m_currentSubtitleStream);
-				gst_pad_send_event(textSinkPad,
-					gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB,
-										  gst_structure_new_empty("playsink-custom-subtitle-flush")));
-				gst_pad_send_event(textSinkPad,
-					gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB,
-										  gst_structure_new_empty("playsink-custom-subtitle-flush-finish")));
-				gst_object_unref(textSinkPad);
-			}
-			gst_object_unref(playsink);
+		GstState pending;
+		gst_element_get_state(m_gst_playbin, &preSeekState, &pending, 0);
+		if (preSeekState == GST_STATE_PLAYING) {
+			eDebug("[eServiceMP3] seekToImpl: dropping to PAUSED before seek (subtitle stream %d active)",
+				   m_currentSubtitleStream);
+			gst_element_set_state(m_gst_playbin, GST_STATE_PAUSED);
+			GstStateChangeReturn ret =
+				gst_element_get_state(m_gst_playbin, NULL, NULL, 5 * GST_SECOND);
+			eDebug("[eServiceMP3] seekToImpl: PAUSED settle result=%d", ret);
 		}
 	}
 
 	bool seekOk = gst_element_seek(m_gst_playbin, m_currentTrickRatio, GST_FORMAT_TIME,
 						  (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT), GST_SEEK_TYPE_SET,
 						  (gint64)(m_last_seek_pos * 11111LL), GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
+
+	eDebug("[eServiceMP3] seekToImpl: gst_element_seek returned %d", seekOk);
+
+	if (subtitleWorkaround && preSeekState == GST_STATE_PLAYING) {
+		gst_element_get_state(m_gst_playbin, NULL, NULL, 5 * GST_SECOND);
+		eDebug("[eServiceMP3] seekToImpl: resuming PLAYING after seek");
+		gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
+	}
 
 	if (!seekOk) {
 		eDebug("[eServiceMP3] seekTo failed");
