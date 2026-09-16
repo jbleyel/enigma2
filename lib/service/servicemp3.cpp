@@ -4484,6 +4484,37 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 	m_subtitle_widget = user;
 	g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
+	/* current-text only asks playbin's text input-selector to switch; internally
+	   that only sets a *pending* active pad. The actual pending->active commit is
+	   buffer-driven (from the new pad's chain function) and can be delayed
+	   arbitrarily long for a sparse stream like PGS with long gaps between cues --
+	   confirmed via GST_DEBUG: "setting pending active pad" logged at switch time,
+	   but the matching "New active pad is ..." commit never follows, and the
+	   selector's src pad keeps routing queries to the stale old pad. Left
+	   uncommitted, the selector's active_sinkpad stays on the old pad, which is
+	   why a later flushing seek never gets its FLUSH_START forwarded past the
+	   selector for this branch and the whole pipeline hangs.
+	   Work around it by finding the input-selector sink pad actually linked to
+	   the new text stream and committing it directly via input-selector's own
+	   "active-pad" property, instead of relying on current-text's pending-only
+	   switch. */
+	GstPad* textPad = NULL;
+	g_signal_emit_by_name(m_gst_playbin, "get-text-pad", m_currentSubtitleStream, &textPad);
+	if (textPad) {
+		GstPad* selectorSink = gst_pad_get_peer(textPad);
+		if (selectorSink) {
+			GstElement* selector = gst_pad_get_parent_element(selectorSink);
+			if (selector) {
+				eDebug("[eServiceMP3] enableSubtitles: forcing input-selector active-pad commit for %s",
+					   GST_PAD_NAME(selectorSink));
+				g_object_set(selector, "active-pad", selectorSink, NULL);
+				gst_object_unref(selector);
+			}
+			gst_object_unref(selectorSink);
+		}
+		gst_object_unref(textPad);
+	}
+
 	eDebug("[eServiceMP3] switched to subtitle stream %i (generation %d)", m_currentSubtitleStream,
 		   m_subtitle_generation.load());
 
