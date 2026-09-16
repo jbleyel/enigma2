@@ -4501,17 +4501,17 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 	GstPad* textPad = NULL;
 	g_signal_emit_by_name(m_gst_playbin, "get-text-pad", m_currentSubtitleStream, &textPad);
 	if (textPad) {
-		GstPad* selectorSink = gst_pad_get_peer(textPad);
-		if (selectorSink) {
-			GstElement* selector = gst_pad_get_parent_element(selectorSink);
-			if (selector) {
-				eDebug("[eServiceMP3] enableSubtitles: forcing input-selector active-pad commit for %s",
-					   GST_PAD_NAME(selectorSink));
-				g_object_set(selector, "active-pad", selectorSink, NULL);
-				gst_object_unref(selector);
-			}
-			gst_object_unref(selectorSink);
+		/* get-text-pad returns the input-selector's own sink pad for this stream
+		   (its peer is the upstream uridecodebin src pad) -- set it active directly. */
+		GstElement* selector = gst_pad_get_parent_element(textPad);
+		if (selector && GST_IS_ELEMENT(selector) &&
+			g_object_class_find_property(G_OBJECT_GET_CLASS(selector), "active-pad")) {
+			eDebug("[eServiceMP3] enableSubtitles: forcing input-selector active-pad commit for %s",
+				   GST_PAD_NAME(textPad));
+			g_object_set(selector, "active-pad", textPad, NULL);
 		}
+		if (selector)
+			gst_object_unref(selector);
 		gst_object_unref(textPad);
 	}
 
