@@ -72,6 +72,30 @@ struct uniqueEPGKey
 	};
 };
 
+// --- Temporary targeted EPG debug instrumentation --------------------------
+// Restricts extra logging to a single, user-reported service so the log is
+// not flooded by every channel. Remove once the issue is found.
+// SREF: 1:0:19:435:430:1012:EEEE0000:0:0:0
+#define EPG_DEBUG_SREF_SID  0x435
+#define EPG_DEBUG_SREF_ONID 0x1012
+#define EPG_DEBUG_SREF_TSID 0x430
+
+static inline bool isEPGDebugService(int sid, int onid, int tsid)
+{
+	return sid == EPG_DEBUG_SREF_SID && onid == EPG_DEBUG_SREF_ONID && tsid == EPG_DEBUG_SREF_TSID;
+}
+
+static inline bool isEPGDebugService(const uniqueEPGKey &s)
+{
+	return isEPGDebugService(s.sid, s.onid, s.tsid);
+}
+
+static inline bool isEPGDebugTransponder(int onid, int tsid)
+{
+	return onid == EPG_DEBUG_SREF_ONID && tsid == EPG_DEBUG_SREF_TSID;
+}
+// -----------------------------------------------------------------------
+
 //eventMap is sorted by event_id
 typedef std::map<uint16_t, eventData*> eventMap;
 //timeMap is sorted by beginTime
