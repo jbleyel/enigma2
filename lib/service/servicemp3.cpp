@@ -1890,55 +1890,9 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
 	}
 	m_last_trickseek_ms = now_ms_k;
 
-	/* TEST: a flushing seek in PLAYING while a text stream is active deadlocks
-	   inside gst_element_seek() -- confirmed via full-thread wchan dump (every
-	   thread parked on futex_wait_queue_me) and via GST_DEBUG (FLUSH_START sets
-	   the flush flag on inputselector2:sink_0 but is never forwarded onward).
-	   Every attempt to reconfigure/flush that branch *while data is actively
-	   flowing in PLAYING* hit the same lock pattern as the known playsink
-	   deadlock (data flow causes a pad block while playsink reconfigures, both
-	   sides wait on the stream lock).
-	   Work around it by using the state-change machinery instead of a live
-	   flush: drop to PAUSED first (the same, symmetric mechanism that already
-	   builds and settles every branch -- including subtitle tracks > 0 --
-	   cleanly at startup), seek while quiesced, then resume. */
-	bool subtitleWorkaround = m_currentSubtitleStream >= 0;
-	GstState preSeekState = GST_STATE_VOID_PENDING;
-	if (subtitleWorkaround) {
-		GstState pending;
-		gst_element_get_state(m_gst_playbin, &preSeekState, &pending, 0);
-		if (preSeekState == GST_STATE_PLAYING) {
-			eDebug("[eServiceMP3] seekToImpl: dropping to PAUSED before seek (subtitle stream %d active)",
-				   m_currentSubtitleStream);
-			gst_element_set_state(m_gst_playbin, GST_STATE_PAUSED);
-			GstStateChangeReturn ret =
-				gst_element_get_state(m_gst_playbin, NULL, NULL, 5 * GST_SECOND);
-			eDebug("[eServiceMP3] seekToImpl: PAUSED settle result=%d", ret);
-		}
-		/* now quiesced: no data flow, so deselecting the text stream here should
-		   not hit the playsink reconfigure-vs-dataflow lock we saw in PLAYING */
-		eDebug("[eServiceMP3] seekToImpl: deselecting current-text (was %d) before seek",
-			   m_currentSubtitleStream);
-		g_object_set(m_gst_playbin, "current-text", -1, NULL);
-	}
-
-	bool seekOk = gst_element_seek(m_gst_playbin, m_currentTrickRatio, GST_FORMAT_TIME,
+	if (!gst_element_seek(m_gst_playbin, m_currentTrickRatio, GST_FORMAT_TIME,
 						  (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT), GST_SEEK_TYPE_SET,
-						  (gint64)(m_last_seek_pos * 11111LL), GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
-
-	eDebug("[eServiceMP3] seekToImpl: gst_element_seek returned %d", seekOk);
-
-	if (subtitleWorkaround) {
-		eDebug("[eServiceMP3] seekToImpl: reselecting current-text %d after seek", m_currentSubtitleStream);
-		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
-		if (preSeekState == GST_STATE_PLAYING) {
-			gst_element_get_state(m_gst_playbin, NULL, NULL, 5 * GST_SECOND);
-			eDebug("[eServiceMP3] seekToImpl: resuming PLAYING after seek");
-			gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
-		}
-	}
-
-	if (!seekOk) {
+						  (gint64)(m_last_seek_pos * 11111LL), GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
 		eDebug("[eServiceMP3] seekTo failed");
 		return -1;
 	}
