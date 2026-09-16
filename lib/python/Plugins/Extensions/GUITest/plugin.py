@@ -1112,14 +1112,7 @@ def main(session, **kwargs):
 	session.open(GUITest)
 
 
-def startFromMainMenu(menuid, **kwargs):
-	if menuid == "mainmenu":  # Starting from main menu.
-		return [(_("GUITest"), main, "guitest", 1)]
-	return []
-
-
 def Plugins(**kwargs):
 	return [
-		PluginDescriptor(name=_("GUITest"), description=_("Plugin to test the functionality of the GUI code. (Version %s)") % PLUGIN_VERSION_NUMBER, icon="GUITest.png", where=[PluginDescriptor.WHERE_PLUGINMENU], fnc=main),
-		PluginDescriptor(name=_("GUITest"), description=_("Plugin to test the functionality of the GUI code. (Version %s)") % PLUGIN_VERSION_NUMBER, icon="GUITest.png", where=[PluginDescriptor.WHERE_MENU], fnc=startFromMainMenu)
+		PluginDescriptor(name=_("GUITest"), description=_("Plugin to test the functionality of the GUI code. (Version %s)") % PLUGIN_VERSION_NUMBER, icon="GUITest.png", where=[PluginDescriptor.WHERE_PLUGINMENU], fnc=main)
 	]
