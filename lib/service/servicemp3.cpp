@@ -1915,6 +1915,11 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
 				gst_element_get_state(m_gst_playbin, NULL, NULL, 5 * GST_SECOND);
 			eDebug("[eServiceMP3] seekToImpl: PAUSED settle result=%d", ret);
 		}
+		/* now quiesced: no data flow, so deselecting the text stream here should
+		   not hit the playsink reconfigure-vs-dataflow lock we saw in PLAYING */
+		eDebug("[eServiceMP3] seekToImpl: deselecting current-text (was %d) before seek",
+			   m_currentSubtitleStream);
+		g_object_set(m_gst_playbin, "current-text", -1, NULL);
 	}
 
 	bool seekOk = gst_element_seek(m_gst_playbin, m_currentTrickRatio, GST_FORMAT_TIME,
@@ -1923,10 +1928,14 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
 
 	eDebug("[eServiceMP3] seekToImpl: gst_element_seek returned %d", seekOk);
 
-	if (subtitleWorkaround && preSeekState == GST_STATE_PLAYING) {
-		gst_element_get_state(m_gst_playbin, NULL, NULL, 5 * GST_SECOND);
-		eDebug("[eServiceMP3] seekToImpl: resuming PLAYING after seek");
-		gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
+	if (subtitleWorkaround) {
+		eDebug("[eServiceMP3] seekToImpl: reselecting current-text %d after seek", m_currentSubtitleStream);
+		g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
+		if (preSeekState == GST_STATE_PLAYING) {
+			gst_element_get_state(m_gst_playbin, NULL, NULL, 5 * GST_SECOND);
+			eDebug("[eServiceMP3] seekToImpl: resuming PLAYING after seek");
+			gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
+		}
 	}
 
 	if (!seekOk) {
