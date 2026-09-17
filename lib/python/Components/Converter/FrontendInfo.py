@@ -2,7 +2,6 @@ from Components.config import config
 from Components.Element import cached
 from Components.NimManager import nimmanager
 from Components.Converter.Converter import Converter
-import NavigationInstance
 
 
 class FrontendInfo(Converter):
@@ -82,9 +81,12 @@ class FrontendInfo(Converter):
 			return self.source.frontend_type or _("Unknown")
 		elif self.type == self.STRING:
 			string = ""
+			recording_tuners = self.source.getRecordingTuners()
 			for n in nimmanager.nim_slots:
 				if n.enabled:
-					if n.slot == self.source.slot_number:
+					if n.slot in recording_tuners:
+						color = r"\c00ff0000"
+					elif n.slot == self.source.slot_number:
 						color = r"\c0000ff00"
 					elif self.source.tuner_mask & 1 << n.slot:
 						color = r"\c00ffffff"
@@ -106,16 +108,7 @@ class FrontendInfo(Converter):
 		if self.type == self.LOCK:
 			return self.source.lock or False
 		elif self.type == self.REC_TUNER:
-			for timer in NavigationInstance.instance.RecordTimer.timer_list:
-				if timer.isRunning() and not timer.justplay:
-					service = timer.record_service
-					feinfo = service and service.frontendInfo()
-					data = feinfo and feinfo.getFrontendData()
-					if data:
-						tuner = data.get('tuner_number', -1)
-						if tuner is not None and tuner > -1 and tuner == self.tunernum:
-							return True
-			return False
+			return self.tunernum in self.source.getRecordingTuners()
 		else:
 			return (self.source.ber or 0) > 0
 

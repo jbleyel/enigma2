@@ -1,9 +1,11 @@
 from enigma import iPlayableService, eDVBResourceManager, eDVBSatelliteEquipmentControl, iServiceInformation
 
 from Components.config import config
+from Components.Element import cached
 from Components.NimManager import nimmanager
 from Components.PerServiceDisplay import PerServiceBase
 from Components.Sources.Source import Source
+import NavigationInstance
 
 
 class FrontendInfo(Source, PerServiceBase):
@@ -83,6 +85,19 @@ class FrontendInfo(Source, PerServiceBase):
 			return feinfo and feinfo.getFrontendData()
 		else:
 			return None
+
+	@cached
+	def getRecordingTuners(self):
+		tuners = set()
+		for timer in NavigationInstance.instance.RecordTimer.timer_list:
+			if timer.isRunning() and not timer.justplay:
+				service = timer.record_service
+				feinfo = service and service.frontendInfo()
+				data = feinfo and feinfo.getFrontendData()
+				tuner = data and data.get("tuner_number", -1)
+				if tuner is not None and tuner > -1:
+					tuners.add(tuner)
+		return tuners
 
 	def getFrontendTransponderType(self):
 		service = None
