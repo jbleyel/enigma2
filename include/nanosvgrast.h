@@ -885,10 +885,10 @@ static NSVGactiveEdge* nsvg__addActive(NSVGrasterizer* r, NSVGedge* e, double st
 //	STBTT_assert(e->y0 <= start_point);
 	// round dx down to avoid going too far
 	if (dxdy < 0)
-		z->dx = static_cast<int>(-roundf(NSVG__FIX * -dxdy));
+		z->dx = static_cast<int>(-round(NSVG__FIX * -dxdy));
 	else
-		z->dx = static_cast<int>(roundf(NSVG__FIX * dxdy));
-	z->x = static_cast<int>(roundf(NSVG__FIX * (e->x0 + dxdy * (startPoint - e->y0))));
+		z->dx = static_cast<int>(round(NSVG__FIX * dxdy));
+	z->x = static_cast<int>(round(NSVG__FIX * (e->x0 + dxdy * (startPoint - e->y0))));
 //	z->x -= off_x * FIX;
 	z->ey = e->y1;
 	z->next = nullptr;

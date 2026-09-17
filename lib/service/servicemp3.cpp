@@ -4484,48 +4484,32 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 	m_subtitle_widget = user;
 	g_object_set(m_gst_playbin, "current-text", m_currentSubtitleStream, NULL);
 
-	/* current-text only asks playbin's text input-selector to switch; internally
-	   that only sets a *pending* active pad. The actual pending->active commit is
-	   buffer-driven (from the new pad's chain function) and can be delayed
-	   arbitrarily long for a sparse stream like PGS with long gaps between cues --
-	   confirmed via GST_DEBUG: "setting pending active pad" logged at switch time,
-	   but the matching "New active pad is ..." commit never follows, and the
-	   selector's src pad keeps routing queries to the stale old pad. Left
-	   uncommitted, the selector's active_sinkpad stays on the old pad, which is
-	   why a later flushing seek never gets its FLUSH_START forwarded past the
-	   selector for this branch and the whole pipeline hangs.
-	   Work around it by finding the input-selector sink pad actually linked to
-	   the new text stream and committing it directly via input-selector's own
-	   "active-pad" property, instead of relying on current-text's pending-only
-	   switch. */
+	/* Work around a playbin/input-selector timing bug (verified against the
+	   gstplaybin2.c and gstinputselector.c sources, and GST_DEBUG traces):
+	   playbin's own current-text setter (gst_play_bin_set_current_text_stream)
+	   already does g_object_set(combiner, "active-pad", sinkpad, NULL) for us,
+	   but that call, like ours would be, is a no-op beyond recording a *pending*
+	   active pad on the text input-selector -- gst_input_selector_set_active_pad
+	   only ever touches pending_active_sinkpad. The actual switch only commits
+	   lazily, the next time an event or buffer happens to pass through any of
+	   the selector's sink pads (gst_selector_pad_event/_chain check for a
+	   pending commit unconditionally, before looking at what they received).
+	   For a sparse stream (e.g. PGS, with long gaps between cues) that next
+	   occasion can be many seconds away. Until then the selector still treats
+	   the OLD pad as active, so a seek issued in that window never gets its
+	   FLUSH_START forwarded to the new branch and the whole pipeline deadlocks.
+	   Force the commit to happen now instead of waiting for the lazy one: send
+	   the selector's sink pad for this stream a harmless custom event, which
+	   makes it run that unconditional pending-commit check immediately. */
 	GstPad* textPad = NULL;
-	g_signal_emit_by_name(m_gst_playbin, "get-text-pad", m_currentSubtitleStream, &textPad);
+	if (g_signal_lookup("get-text-pad", G_OBJECT_TYPE(m_gst_playbin)))
+		g_signal_emit_by_name(m_gst_playbin, "get-text-pad", m_currentSubtitleStream, &textPad);
 	if (textPad) {
-		/* get-text-pad returns the input-selector's own sink pad for this stream
-		   (its peer is the upstream uridecodebin src pad) -- set it active directly. */
-		GstElement* selector = gst_pad_get_parent_element(textPad);
-		if (selector && GST_IS_ELEMENT(selector) &&
-			g_object_class_find_property(G_OBJECT_GET_CLASS(selector), "active-pad")) {
-			eDebug("[eServiceMP3] enableSubtitles: forcing input-selector active-pad commit for %s",
-				   GST_PAD_NAME(textPad));
-			g_object_set(selector, "active-pad", textPad, NULL);
-			/* setting active-pad only records a *pending* switch; input-selector
-			   only actually commits it (gst_input_selector_maybe_commit_active_pad)
-			   lazily, from inside the event/chain handler of the NEXT event that
-			   happens to arrive on any of its sink pads. For a sparse stream like
-			   PGS that next event can be seconds away, leaving active_sinkpad
-			   stale in the meantime -- which is why a seek issued in that window
-			   never gets its FLUSH_START forwarded past this selector and the
-			   whole pipeline hangs. Force the commit to happen right now by
-			   sending a harmless custom event through the pad ourselves; its
-			   event handler checks for a pending commit unconditionally before
-			   even looking at the event type. */
-			gst_pad_send_event(textPad,
-				gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB,
-									  gst_structure_new_empty("eServiceMP3-force-selector-commit")));
-		}
-		if (selector)
-			gst_object_unref(selector);
+		eDebug("[eServiceMP3] enableSubtitles: forcing input-selector active-pad commit for %s",
+			   GST_PAD_NAME(textPad));
+		gst_pad_send_event(textPad,
+			gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB,
+								  gst_structure_new_empty("eServiceMP3-force-selector-commit")));
 		gst_object_unref(textPad);
 	}
 
