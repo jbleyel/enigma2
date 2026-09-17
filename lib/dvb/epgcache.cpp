@@ -695,6 +695,18 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 									it->second->getEventID(), (long long)old_start, (long long)old_end, (long long)new_start, (long long)new_end);
 						}
 
+						if (isEPGDebugService(service) && it->second->getEventID() != event_id)
+						{
+							time_t real_now = ::time(0);
+							bool was_airing = old_start <= real_now && real_now < old_end;
+							eDebug("[eEPGCache] DBG GAP-CANDIDATE service=(%04X:%04X:%04X) dropping event %04X (%lld~%lld, type=0x%X) without replacement, "
+								"was_currently_airing=%d, overlap caused by new event %04X (%lld~%lld, source=0x%X) now=%lld.",
+								service.onid, service.tsid, service.sid,
+								it->second->getEventID(), (long long)old_start, (long long)old_end, it->second->type,
+								was_airing,
+								event_id, (long long)new_start, (long long)new_end, source, (long long)real_now);
+						}
+
 						if (eventmap.erase(it->second->getEventID()) == 0)
 						{
 							eDebug("[eEPGCache] Event %04X not found in event map at %lld.", it->second->getEventID(), (long long)old_start);
