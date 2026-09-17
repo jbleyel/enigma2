@@ -630,7 +630,6 @@ void eFBCTunerManager::AddLink(eDVBRegisteredFrontend *leaf, eDVBRegisteredFront
 /* all unused linked fbc fe must be unlinked! */
 void eFBCTunerManager::Unlink(eDVBRegisteredFrontend *fe) const
 {
-	eDVBRegisteredFrontend *simul_fe;
 	bool simulate = fe->m_frontend->is_simulate();
 	eTrace("	[*][eFBCTunerManager::unLink] fe id : %p(%d) %s", fe, FESlotID(fe), simulate?"(simulate)":"");
 
@@ -650,7 +649,8 @@ void eFBCTunerManager::Unlink(eDVBRegisteredFrontend *fe) const
 	/* simulate disconnect */
 	if (!simulate)
 	{
-		if((simul_fe = GetSimulFE(fe)) && !IsRootFE(simul_fe) && !IsFEUsed(simul_fe, true) &&
+		eDVBRegisteredFrontend *simul_fe = GetSimulFE(fe);
+		if(simul_fe && !IsRootFE(simul_fe) && !IsFEUsed(simul_fe, true) &&
 				!isUnicable(simul_fe) && IsLinked(simul_fe))
 		{
 			DisconnectLink(simul_fe, FrontendGetLinkPtr(simul_fe, link_prev), FrontendGetLinkPtr(simul_fe, link_next), true);
@@ -715,16 +715,19 @@ bool eFBCTunerManager::CanLink(eDVBRegisteredFrontend *fe) const
 }
 
 
-int eFBCTunerManager::getLinkedSlotID(int fe_id) const {
+int eFBCTunerManager::getLinkedSlotID(int fe_id) const
+{
 	int link = -1;
-	eSmartPtrList<eDVBRegisteredFrontend>& frontends = m_res_mgr->m_frontend;
+	eSmartPtrList<eDVBRegisteredFrontend> &frontends = m_res_mgr->m_frontend;
 
-	for (auto it = frontends.begin(); it != frontends.end(); ++it) {
+	for (eSmartPtrList<eDVBRegisteredFrontend>::iterator it(frontends.begin()); it != frontends.end(); ++it)
+	{
 		if (it->m_frontend->getSlotID() != fe_id)
 			continue;
 
-		eDVBRegisteredFrontend* prev_fe = FrontendGetLinkPtr(it, link_prev);
-		if (prev_fe) {
+		eDVBRegisteredFrontend *prev_fe = FrontendGetLinkPtr(it, link_prev);
+		if (prev_fe)
+		{
 			link = FESlotID(prev_fe);
 			break;
 		}
