@@ -83,7 +83,7 @@ class FrontendInfo(Converter):
 		elif self.type == self.STRING:
 			string = ""
 			for n in nimmanager.nim_slots:
-				if n.type:
+				if n.enabled:
 					if n.slot == self.source.slot_number:
 						color = r"\c0000ff00"
 					elif self.source.tuner_mask & 1 << n.slot:
