@@ -1004,6 +1004,8 @@ class NIM:
 		return None
 
 	def isEnabled(self):
+		if not self.isSupported() or self.empty:
+			return False
 		if self.canBeCompatible("DVB-S") and (self.config_mode_dvbs != "nothing" or self.isFBCLinkEnabled()):
 			return True
 		if self.canBeCompatible("DVB-C") and self.config_mode_dvbc != "nothing":

@@ -2,6 +2,7 @@ from Components.config import config
 from Components.Element import cached
 from Components.NimManager import nimmanager
 from Components.Converter.Converter import Converter
+import NavigationInstance
 
 
 class FrontendInfo(Converter):
@@ -14,15 +15,19 @@ class FrontendInfo(Converter):
 	TUNER_TYPE = 6
 	STRING = 7
 	REC_TUNER = 8
+	STRING_REC = 9
 
 	def __init__(self, type):
 		Converter.__init__(self, type)
 
 		if type.startswith("STRING"):
 			self.type = self.STRING
+			if type.startswith("STRING_REC"):
+				self.type = self.STRING_REC
 			type = type.split(",")
 			self.space_for_tuners = len(type) > 1 and int(type[1]) or 10
 			self.space_for_tuners_with_spaces = len(type) > 2 and int(type[2]) or 6
+
 		elif type.split("_")[0] == "REC":
 			self.type = self.REC_TUNER
 			self.tunernum = int(type.split("_")[1])
@@ -61,6 +66,19 @@ class FrontendInfo(Converter):
 		return round(min(100, agc_percent) * self.range / 100.0)
 
 	@cached
+	def getRecordingTuners(self):
+		tuners = set()
+		for timer in NavigationInstance.instance.RecordTimer.timer_list:
+			if timer.isRunning() and not timer.justplay:
+				service = timer.record_service
+				feinfo = service and service.frontendInfo()
+				data = feinfo and feinfo.getFrontendData()
+				tuner = data.get("tuner_number", -1) if data else -1
+				if tuner is not None and tuner > -1:
+					tuners.add(tuner)
+		return tuners
+
+	@cached
 	def getText(self):
 		assert self.type not in (self.LOCK, self.SLOT_NUMBER), "the text output of FrontendInfo cannot be used for lock info"
 		percent = None
@@ -79,12 +97,13 @@ class FrontendInfo(Converter):
 				percent = self.source.snr
 		elif self.type == self.TUNER_TYPE:
 			return self.source.frontend_type or _("Unknown")
-		elif self.type == self.STRING:
+		elif self.type in (self.STRING, self.STRING_REC):
 			string = ""
-			recording_tuners = self.source.getRecordingTuners()
+			is_rec = self.type == self.STRING_REC
+			recording_tuners = self.getRecordingTuners() if is_rec else ()
 			for n in nimmanager.nim_slots:
-				if n.enabled:
-					if n.slot in recording_tuners:
+				if n.enabled if is_rec else n.type:
+					if is_rec and n.slot in recording_tuners:
 						color = r"\c00ff0000"
 					elif n.slot == self.source.slot_number:
 						color = r"\c0000ff00"
@@ -108,7 +127,7 @@ class FrontendInfo(Converter):
 		if self.type == self.LOCK:
 			return self.source.lock or False
 		elif self.type == self.REC_TUNER:
-			return self.tunernum in self.source.getRecordingTuners()
+			return self.tunernum in self.getRecordingTuners()
 		else:
 			return (self.source.ber or 0) > 0
 

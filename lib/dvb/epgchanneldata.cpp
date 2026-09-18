@@ -766,9 +766,7 @@ uint8_t *eEPGChannelData::delimitName( uint8_t *in, uint8_t *out, int len_in )
 	return out;
 }
 
-/* Central European DST transitions happen at 01:00 UTC on the last Sunday of
-   March (CET -> CEST) and the last Sunday of October (CEST -> CET). Computing
-   this directly avoids touching the process-wide TZ environment variable. */
+// MHW times are Central European local time.
 static time_t lastSundayUtc(int year, int month /* 0-based */)
 {
 	tm t = {};

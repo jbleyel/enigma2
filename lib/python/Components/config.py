@@ -558,9 +558,9 @@ class ConfigBoolean(ConfigElement):
 		return self.descriptions[self.value]
 
 	def getMulti(self, selected):
-		from Components.config import config  # This import my be here to avoid a circular import!
+		from Components.config import config  # This import must be here to avoid a circular import!
 		if self.graphic and config.usage.boolean_graphic.value:
-			from skin import switchPixmap  # This import my be here to avoid a circular import!
+			from skin import switchPixmap  # This import must be here to avoid a circular import!
 			if "menu_on" in switchPixmap and "menu_off" in switchPixmap:
 				return ("pixmap", switchPixmap["menu_on" if self.value else "menu_off"])
 		return ("text", f"{READONLY_COLOR}{self.descriptions[self.value]}" if self.isReadOnly() else self.descriptions[self.value])
@@ -1096,7 +1096,7 @@ class ConfigSequence(ConfigElement):
 					self.markedPos += 1
 			case ActionKeys.ACTIONKEY_LAST:
 				self.markedPos = self.totalLen
-			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) | x == ActionKeys.ACTIONKEY_ASCII:
+			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) or x == ActionKeys.ACTIONKEY_ASCII:
 				# prev = self._value
 				if key == ActionKeys.ACTIONKEY_ASCII:
 					code = getPrevAsciiCode()
@@ -1226,7 +1226,7 @@ class ConfigCECAddress(ConfigSequence):
 			case ActionKeys.ACTIONKEY_LAST:
 				self.marked_block = len(self.limits) - 1
 				self.overwrite = True
-			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) | x == ActionKeys.ACTIONKEY_ASCII:
+			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) or x == ActionKeys.ACTIONKEY_ASCII:
 				if key == ActionKeys.ACTIONKEY_ASCII:
 					code = getPrevAsciiCode()
 					if code < 48 or code > 57:
@@ -1467,7 +1467,7 @@ class ConfigIP(ConfigSequence):
 				self.markedPos = 0
 				self._value = [0, 0, 0, 0]
 				self.overwrite = True
-			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) | x == ActionKeys.ACTIONKEY_ASCII:
+			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) or x == ActionKeys.ACTIONKEY_ASCII:
 				if key == ActionKeys.ACTIONKEY_ASCII:
 					code = getPrevAsciiCode()
 					if code < 48 or code > 57:
@@ -1555,7 +1555,7 @@ class ConfigSet(ConfigElement):
 				self.pos = self.pos + 1 if self.pos < len(self.choices) - 1 else 0
 			case ActionKeys.ACTIONKEY_LAST:
 				self.pos = len(self.choices) - 1
-			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) | x == ActionKeys.ACTIONKEY_TOGGLE | x == ActionKeys.ACTIONKEY_SELECT | x == ActionKeys.ACTIONKEY_DELETE | x == ActionKeys.ACTIONKEY_BACKSPACE:
+			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) or x == ActionKeys.ACTIONKEY_TOGGLE or x == ActionKeys.ACTIONKEY_SELECT or x == ActionKeys.ACTIONKEY_DELETE or x == ActionKeys.ACTIONKEY_BACKSPACE:
 				value = self.value
 				choice = self.choices[self.pos]
 				if choice in value:
@@ -1829,7 +1829,7 @@ class ConfigText(ConfigElement, NumericalTextInput):
 	def onSelect(self, session):
 		self.allmarked = (self.value != "")
 		if session is not None and not self.isReadOnly():
-			from Screens.NumericalTextInputHelpDialog import NumericalTextInputHelpDialog  # This import my be here to avoid a circular import!
+			from Screens.NumericalTextInputHelpDialog import NumericalTextInputHelpDialog  # This import must be here to avoid a circular import!
 			self.help_window = session.instantiateDialog(NumericalTextInputHelpDialog, self)
 			self.help_window.setAnimationMode(0)
 			self.help_window.show()
@@ -1955,7 +1955,7 @@ class ConfigNumber(ConfigText):
 
 	def handleKey(self, key, callback=None):
 		match key:
-			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) | x == ActionKeys.ACTIONKEY_ASCII:
+			case x if (x in ActionKeys.ACTIONKEY_NUMBERS) or x == ActionKeys.ACTIONKEY_ASCII:
 				prev = int(self.text)
 				if key == ActionKeys.ACTIONKEY_ASCII:
 					ascii = getPrevAsciiCode()
@@ -2013,6 +2013,11 @@ class ConfigPassword(ConfigText):
 		self.hidden = True
 
 	def getMulti(self, selected):
+		if self.isReadOnly():
+			mtext, text = ConfigText.getMulti(self, selected)
+			if self.hidden:
+				text = f"{READONLY_COLOR}{self.censor * (len(text) - len(READONLY_COLOR))}"  # For more security a fixed length string can be used!
+			return (mtext, text)
 		mtext, text, mark = ConfigText.getMulti(self, selected)
 		if self.hidden:
 			text = self.censor * len(text)  # For more security a fixed length string can be used!

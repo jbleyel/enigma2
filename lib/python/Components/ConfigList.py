@@ -342,18 +342,26 @@ class ConfigListScreen:
 				if isinstance(currentConfig, (ConfigInteger, ConfigSequence, ConfigText)):
 					self["charConfigActions"].setEnabled(True)
 					self["editConfigActions"].setEnabled(True)
-					if isinstance(currentConfig, ConfigText):
-						if "HelpWindow" in self and currentConfig.help_window and currentConfig.help_window.instance is not None:
-							helpWindowPos = self["HelpWindow"].getPosition()
-							currConfig[1].help_window.instance.move(ePoint(helpWindowPos[0], helpWindowPos[1]))
-						showVirtualKeyBoard(True)
+				else:
+					self["charConfigActions"].setEnabled(False)
+					self["editConfigActions"].setEnabled(False)
 				if isinstance(currentConfig, ConfigSelection):
 					self["menuConfigActions"].setEnabled(True)
 					self["key_menu"].setText(_("MENU"))
-				if isinstance(currConfig[1], ConfigMACText):
+				else:
+					self["menuConfigActions"].setEnabled(False)
+					self["key_menu"].setText("")
+				if isinstance(currentConfig, ConfigText):
+					if "HelpWindow" in self and currentConfig.help_window and currentConfig.help_window.instance is not None:
+						helpWindowPos = self["HelpWindow"].getPosition()
+						currentConfig.help_window.instance.move(ePoint(helpWindowPos[0], helpWindowPos[1]))
+					showVirtualKeyBoard(True)
+				else:
+					showVirtualKeyBoard(False)
+				if isinstance(currentConfig, ConfigMACText):
 					self["editConfigActions"].setEnabled(False)
 					showVirtualKeyBoard(False)
-				if isinstance(currConfig[1], ConfigNumber):
+				if isinstance(currentConfig, ConfigNumber):
 					showVirtualKeyBoard(False)
 
 	def showHelpWindow(self):
@@ -372,12 +380,13 @@ class ConfigListScreen:
 					currConf.help_window.hide()
 
 	def keySelect(self):
-		if not self.getCurrentItem().isReadOnly():
-			if isinstance(self.getCurrentItem(), ConfigBoolean):
+		currentItem = self.getCurrentItem()
+		if currentItem and not currentItem.isReadOnly():
+			if isinstance(currentItem, ConfigBoolean):
 				self.keyToggle()
-			elif isinstance(self.getCurrentItem(), ConfigSelection):
+			elif isinstance(currentItem, ConfigSelection):
 				self.keyMenu()
-			elif isinstance(self.getCurrentItem(), ConfigText) and not isinstance(self.getCurrentItem(), (ConfigMACText, ConfigNumber)):
+			elif isinstance(currentItem, ConfigText) and not isinstance(currentItem, (ConfigMACText, ConfigNumber)):
 				self.keyText()
 			else:
 				self["config"].handleKey(ActionKeys.ACTIONKEY_SELECT, self.entryChanged)
