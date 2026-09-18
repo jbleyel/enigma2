@@ -1,7 +1,6 @@
 #include <lib/dvb/eit.h>
 #include <lib/dvb/specs.h>
 #include <lib/dvb/dvbtime.h>
-#include <lib/dvb/epgcache.h>
 #include <lib/base/eerror.h>
 #include <lib/service/event.h>
 
@@ -19,15 +18,10 @@ void eDVBServiceEITHandler::EITready(int error)
 					i != ptr->getSections().end(); ++i)
 				{
 					const EventInformationSection *eit = *i;
-					bool epgdbg = isEPGDebugService(m_sid, eit->getOriginalNetworkId(), eit->getTransportStreamId());
 					for (EventConstIterator ev = eit->getEvents()->begin(); ev != eit->getEvents()->end(); ++ev)
 					{
 						ePtr<eServiceEvent> evt = new eServiceEvent();
 						evt->parseFrom(*ev,(eit->getTransportStreamId()<<16)|eit->getOriginalNetworkId(), m_sid);
-						if (epgdbg)
-							eDebug("[eDVBServiceEITHandler] DBG live EIT sid=0x%04X (onid=%04X tsid=%04X) %s event=%04X begin=%lld duration=%d now=%lld.",
-								m_sid, eit->getOriginalNetworkId(), eit->getTransportStreamId(),
-								a ? "next" : "now", evt->getEventId(), (long long)evt->getBeginTime(), evt->getDuration(), (long long)::time(0));
 						if (!a)
 							m_event_now = evt;
 						else
