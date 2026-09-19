@@ -2841,13 +2841,24 @@ int eServiceMP3::selectAudioStream(int i, bool skipAudioFix) {
 		m_currentAudioStream = 0;
 		return i == 0 ? 0 : -1;
 	}
-	int current_audio, current_audio_orig, n_audio = 0;
+	if (i < 0 || i >= (int)m_audioStreams.size()) {
+		eDebug("[eServiceMP3] selectAudioStream: index %d out of range (n=%d)", i, (int)m_audioStreams.size());
+		return -1;
+	}
+	int current_audio, current_audio_orig;
 	g_object_get(m_gst_playbin, "current-audio", &current_audio_orig, NULL);
-	g_object_get(m_gst_playbin, "n-audio", &n_audio, NULL);
 	g_object_set(m_gst_playbin, "current-audio", i, NULL);
 	g_object_get(m_gst_playbin, "current-audio", &current_audio, NULL);
-	eDebug("[eServiceMP3] selectAudioStream request i=%d orig=%d n-audio=%d readback=%d", i, current_audio_orig,
-		   n_audio, current_audio);
+	if (current_audio != i) {
+		/* GStreamer can still be in a transitional state and not have applied
+		 * the property yet when read back immediately. i was already validated
+		 * against our own track list, so trust the set instead of silently
+		 * aborting: bailing here skipped clearBuffers()/setCacheEntry() below
+		 * and left the pipeline stuck, needing a pause/resume to recover. */
+		eDebug("[eServiceMP3] selectAudioStream: readback returned %d (expected %d), trusting validated set",
+			   current_audio, i);
+		current_audio = i;
+	}
 	if (current_audio == i) {
 		if (!skipAudioFix) {
 			eDebug("[eServiceMP3] switched to audio stream %d", current_audio);
