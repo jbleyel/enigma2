@@ -1132,26 +1132,6 @@
 			</if>
 		</if>
 	</setup>
-	<setup key="SecParameterSetup" title="Satellite equipment setup">
-		<item text="Delay after DiSEqC reset command" description="Delay after DiSEqC reset command.">config.sec.delay_after_diseqc_reset_cmd</item>
-		<item text="Delay after DiSEqC peripheral power on command" description="Delay after DiSEqC peripheral power on command.">config.sec.delay_after_diseqc_peripherial_poweron_cmd</item>
-		<item text="Delay after continuous tone disable before DiSEqC" description="Delay after continuous tone disable before DiSEqC.">config.sec.delay_after_continuous_tone_disable_before_diseqc</item>
-		<item text="Delay after final continuous tone change" description="Delay after final continuous tone change.">config.sec.delay_after_final_continuous_tone_change</item>
-		<item text="Delay after last voltage change" description="Delay after last voltage change.">config.sec.delay_after_final_voltage_change</item>
-		<item text="Delay between DiSEqC commands" description="Delay between DiSEqC commands.">config.sec.delay_between_diseqc_repeats</item>
-		<item text="Delay after last DiSEqC command" description="Delay after last DiSEqC command.">config.sec.delay_after_last_diseqc_command</item>
-		<item text="Delay after tone burst" description="Delay after tone burst.">config.sec.delay_after_toneburst</item>
-		<item text="Delay after change voltage before switch command" description="Delay after change voltage before switch command.">config.sec.delay_after_change_voltage_before_switch_command</item>
-		<item text="Delay after enable voltage before switch command" description="Delay after enable voltage before switch command.">config.sec.delay_after_enable_voltage_before_switch_command</item>
-		<item text="Delay between switch and motor command" description="Delay between switch and motor command.">config.sec.delay_between_switch_and_motor_command</item>
-		<item text="Delay after set voltage before measure motor power" description="Delay after set voltage before measure motor power.">config.sec.delay_after_voltage_change_before_measure_idle_inputpower</item>
-		<item text="Delay after enable voltage before motor command" description="Delay after enable voltage before motor command.">config.sec.delay_after_enable_voltage_before_motor_command</item>
-		<item text="Delay after motor stop command" description="Delay after motor stop command.">config.sec.delay_after_motor_stop_command</item>
-		<item text="Delay after voltage change before motor command" description="Delay after voltage change before motor command.">config.sec.delay_after_voltage_change_before_motor_command</item>
-		<item text="Delay before sequence repeat" description="Delay before sequence repeat.">config.sec.delay_before_sequence_repeat</item>
-		<item text="Motor running timeout" description="Motor running timeout.">config.sec.motor_running_timeout</item>
-		<item text="Motor command retries" description="Motor command retries.">config.sec.motor_command_retries</item>
-	</setup>
 	<setup key="Skin" title="Skin Settings">
 		<if conditional="config.usage.fastSkinReload.value">
 			<item text="GUI Skin" description="Choose the skin to be used for the graphical user interface (GUI). Press 'GREEN' to activate the skin.">config.skin.guiSkin</item>
@@ -1367,7 +1347,7 @@
 		<item level="0" text="2nd InfoBar" description="Enable and set the duration of the second InfoBar (press 'OK' twice) that may include additional information." indent="1">config.usage.show_second_infobar</item>
 		<item level="0" text="2nd InfoBar timeout" description="Set how long the second InfoBar stays visible. The second InfoBar also disappears when you press 'OK'." indent="2">config.usage.second_infobar_timeout</item>
 		<item level="0" text="Show InfoBar picons" description="Option to disable picons on the InfoBar." indent="1">config.usage.showpicon</item>
-		<item level="0" text="Show InfoBar lite" description="Set the screen type you see on pressing 'OK' when the InfoBar shows the second InfoBar Lite or event info." restart="gui" indent="1">config.usage.show_infobar_lite</item>
+		<item level="0" text="Show InfoBar lite" description="Set the screen type you see on pressing 'OK' when the InfoBar shows the second InfoBar Lite or event info." indent="1">config.usage.show_infobar_lite</item>
 		<if requires="CanChangeOsdAlpha">
 			<item level="0" text="Enable InfoBar fade-out" description="Fade the InfoBar on hide." indent="1">config.usage.show_infobar_do_dimming</item>
 			<item level="0" text="InfoBar fade-out speed" description="Control the InfoBar fading speed." conditional="config.usage.show_infobar_do_dimming.value" indent="2">config.usage.show_infobar_dimming_speed</item>

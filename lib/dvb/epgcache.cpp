@@ -74,6 +74,21 @@ struct eventData
 		rawEITdata[8] = toBCD((duration % 3600) / 60);
 		rawEITdata[9] = toBCD(duration % 60);
 	}
+	void setStartTime(time_t t)
+	{
+		tm time;
+		gmtime_r(&t, &time);
+		int l = 0;
+		int month = time.tm_mon + 1;
+		if (month == 1 || month == 2)
+			l = 1;
+		int mjd = 14956 + time.tm_mday + (int)((time.tm_year - l) * 365.25) + (int)((month + 1 + l * 12) * 30.6001);
+		rawEITdata[2] = mjd >> 8;
+		rawEITdata[3] = mjd & 0xFF;
+		rawEITdata[4] = toBCD(time.tm_hour);
+		rawEITdata[5] = toBCD(time.tm_min);
+		rawEITdata[6] = toBCD(time.tm_sec);
+	}
 };
 
 unsigned int eventData::CacheSize = 0;
@@ -690,6 +705,38 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 							(long long)old_start, (long long)old_end, it->second->type,
 							event_id, (long long)new_start, (long long)new_end, source);
 						++it;
+					}
+					else if (it->second->getEventID() != event_id &&
+							(source & ~EPG_IMPORT) == (it->second->type & ~EPG_IMPORT) &&
+							old_end > new_end)
+					{
+						// Same-priority conflict (typically NOWNEXT "now" vs a previously
+						// cached NOWNEXT "next"). The new event only claims [new_start,new_end);
+						// keep the cached event's tail instead of dropping it outright, so the
+						// slot after new_end isn't left empty until the next refresh.
+						eDebug("[eEPGCache] Truncating same-priority overlapping event %04X for service (%04X:%04X:%04X) "
+							"(%lld~%lld, type=0x%X) to tail %lld~%lld instead of removing it, "
+							"superseded at the front by new event %04X (%lld~%lld, source=0x%X).",
+							it->second->getEventID(), service.onid, service.tsid, service.sid,
+							(long long)old_start, (long long)old_end, it->second->type,
+							(long long)new_end, (long long)old_end,
+							event_id, (long long)new_start, (long long)new_end, source);
+
+						if (isEPGDebugService(service))
+						{
+							time_t real_now = ::time(0);
+							bool was_airing = old_start <= real_now && real_now < old_end;
+							eDebug("[eEPGCache] DBG TRUNCATE service=(%04X:%04X:%04X) event %04X "
+								"was_currently_airing=%d before truncation, now=%lld.",
+								service.onid, service.tsid, service.sid,
+								it->second->getEventID(), was_airing, (long long)real_now);
+						}
+
+						eventData *tail = it->second;
+						timemap.erase(it++);
+						tail->setStartTime(new_end);
+						tail->setDuration(old_end - new_end);
+						timemap[new_end] = tail;
 					}
 					else
 					{
