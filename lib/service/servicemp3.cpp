@@ -131,6 +131,13 @@ static bool pipelineSettledInPlaying(GstElement* pipeline)
 	return state == GST_STATE_PLAYING && pending == GST_STATE_VOID_PENDING;
 }
 
+/* Runs on a GStreamer pool thread, see eServiceMP3::applySubtitleStreamSwitch(). */
+static void forceSelectorCommit(GstObject* pad, gpointer)
+{
+	gst_pad_send_event(GST_PAD(pad), gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB,
+														  gst_structure_new_empty("eServiceMP3-force-selector-commit")));
+}
+
 static GstElement* createDashPlaybackPipeline(const std::string& uri, const std::string& useragent)
 {
 	/* HW audio sink expects stream-format=raw post-aacparse. */
@@ -2845,18 +2852,23 @@ int eServiceMP3::selectAudioStream(int i, bool skipAudioFix) {
 		eDebug("[eServiceMP3] selectAudioStream: index %d out of range (n=%d)", i, (int)m_audioStreams.size());
 		return -1;
 	}
+	/* Same input-selector pending commit as with subtitles (see
+	   applySubtitleStreamSwitch()): while the audio sink holds a streaming thread
+	   (pause, buffering, re-preroll after a seek), the flushing seek in
+	   clearBuffers() would deadlock on the audio selector. Applied on the next
+	   PAUSED->PLAYING transition instead. */
+	if (!skipAudioFix && i != m_currentAudioStream && !pipelineSettledInPlaying(m_gst_playbin)) {
+		eDebug("[eServiceMP3] pipeline not settled in PLAYING, deferring switch to audio stream %d", i);
+		m_audio_switch_deferred = i;
+		return 0;
+	}
+	if (!skipAudioFix)
+		m_audio_switch_deferred = -1;
 	int current_audio, current_audio_orig;
 	g_object_get(m_gst_playbin, "current-audio", &current_audio_orig, NULL);
 	g_object_set(m_gst_playbin, "current-audio", i, NULL);
 	g_object_get(m_gst_playbin, "current-audio", &current_audio, NULL);
 	if (current_audio != i) {
-		/* GStreamer can still be in a transitional state and not have applied
-		 * the property yet when read back immediately. i was already validated
-		 * against our own track list, so trust the set instead of silently
-		 * aborting: bailing here skipped clearBuffers()/setCacheEntry() below
-		 * and left the pipeline stuck, needing a pause/resume to recover. */
-		eDebug("[eServiceMP3] selectAudioStream: readback returned %d (expected %d), trusting validated set",
-			   current_audio, i);
 		current_audio = i;
 	}
 	if (current_audio == i) {
@@ -3181,7 +3193,16 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 						eDebug("[eServiceMP3] applying deferred subtitle switch");
 						applySubtitleStreamSwitch();
 					}
-					if (m_currentAudioStream < 0) {
+					if (m_audio_switch_deferred >= 0) {
+						int deferred_audio = m_audio_switch_deferred;
+						m_audio_switch_deferred = -1;
+						eDebug("[eServiceMP3] applying deferred audio switch to stream %d", deferred_audio);
+#ifdef PASSTHROUGH_FIX
+						selectAudioStream(deferred_audio);
+#else
+						selectTrack(deferred_audio);
+#endif
+					} else if (m_currentAudioStream < 0) {
 						unsigned int autoaudio = 0;
 						int autoaudio_level = 5;
 						std::string configvalue;
@@ -4521,11 +4542,11 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 
 	m_subtitle_widget = user;
 
-	/* The forced selector commit in applySubtitleStreamSwitch() waits for the
-	   selector's streaming threads, and one of them can sit blocked in the text
-	   sink until the pipeline is back in PLAYING (pause, buffering, re-preroll
-	   after a seek). Defer the whole switch then, not just the commit: a pending
-	   active pad left behind would deadlock the next flushing seek. */
+	/* The forced selector commit in applySubtitleStreamSwitch() cannot complete
+	   while a streaming thread sits blocked in the text sink, which it does until
+	   the pipeline is back in PLAYING (pause, buffering, re-preroll after a seek).
+	   Defer the whole switch then, not just the commit: a pending active pad left
+	   behind would deadlock the next flushing seek. */
 	if (pipelineSettledInPlaying(m_gst_playbin)) {
 		m_subtitle_switch_deferred = false;
 		applySubtitleStreamSwitch();
@@ -4549,7 +4570,7 @@ void eServiceMP3::applySubtitleStreamSwitch() {
 
 	/* Work around a playbin/input-selector timing bug in GStreamer >= 1.28
 	   (verified against the gstplaybin2.c and gstinputselector.c sources, and
-	   GST_DEBUG traces; up to 1.26 input-selector switched active-pad at once):
+	   GST_DEBUG traces; up to 1.26.10 input-selector switched active-pad at once):
 	   playbin's own current-text setter (gst_play_bin_set_current_text_stream)
 	   already does g_object_set(combiner, "active-pad", sinkpad, NULL) for us,
 	   but that call, like ours would be, is a no-op beyond recording a *pending*
@@ -4567,17 +4588,18 @@ void eServiceMP3::applySubtitleStreamSwitch() {
 	   Force the commit to happen now instead of waiting for the lazy one: send
 	   the selector's sink pad for this stream a harmless custom event, which
 	   makes it run that unconditional pending-commit check immediately. The
-	   commit then waits for the writer lock in *this* thread, which is why this
-	   must only run while the text sink cannot be blocked (settled PLAYING). */
+	   commit still has to wait for the writer lock, and subsink runs with
+	   sync=TRUE (GSTREAMER_SUBTITLE_SYNC_MODE_BUG is undefined), so even in
+	   PLAYING a reader can sit in the sink's clock wait until the cue's display
+	   time -- for external SRT/ASS up to the next cue. Hence the event is sent
+	   from a GStreamer pool thread, never from the E2 main thread. */
 	GstPad* textPad = NULL;
 	if (g_signal_lookup("get-text-pad", G_OBJECT_TYPE(m_gst_playbin)))
 		g_signal_emit_by_name(m_gst_playbin, "get-text-pad", m_currentSubtitleStream, &textPad);
 	if (textPad) {
 		eDebug("[eServiceMP3] applySubtitleStreamSwitch: forcing input-selector active-pad commit for %s",
 			   GST_PAD_NAME(textPad));
-		gst_pad_send_event(textPad,
-			gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB,
-								  gst_structure_new_empty("eServiceMP3-force-selector-commit")));
+		gst_object_call_async(GST_OBJECT(textPad), forceSelectorCommit, NULL);
 		gst_object_unref(textPad);
 	}
 
