@@ -131,11 +131,14 @@ static bool pipelineSettledInPlaying(GstElement* pipeline)
 	return state == GST_STATE_PLAYING && pending == GST_STATE_VOID_PENDING;
 }
 
-/* Runs on a GStreamer pool thread, see eServiceMP3::applySubtitleStreamSwitch(). */
-static void forceSelectorCommit(GstObject* pad, gpointer)
+/* Runs on a GStreamer pool thread, see eServiceMP3::applySubtitleStreamSwitch().
+   user_data is the text-selector sink pad; it holds one ref, released via the
+   GDestroyNotify passed to gst_element_call_async(). */
+static void forceSelectorCommit(GstElement*, gpointer user_data)
 {
-	gst_pad_send_event(GST_PAD(pad), gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB,
-														  gst_structure_new_empty("eServiceMP3-force-selector-commit")));
+	GstPad* pad = GST_PAD(user_data);
+	gst_pad_send_event(pad, gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB,
+												  gst_structure_new_empty("eServiceMP3-force-selector-commit")));
 }
 
 static GstElement* createDashPlaybackPipeline(const std::string& uri, const std::string& useragent)
@@ -4599,8 +4602,15 @@ void eServiceMP3::applySubtitleStreamSwitch() {
 	if (textPad) {
 		eDebug("[eServiceMP3] applySubtitleStreamSwitch: forcing input-selector active-pad commit for %s",
 			   GST_PAD_NAME(textPad));
-		gst_object_call_async(GST_OBJECT(textPad), forceSelectorCommit, NULL);
-		gst_object_unref(textPad);
+		GstElement* selector = gst_pad_get_parent_element(textPad);
+		if (selector) {
+			/* textPad's ref is handed to the async call, released by the
+			   GDestroyNotify once forceSelectorCommit has run. */
+			gst_element_call_async(selector, forceSelectorCommit, textPad, (GDestroyNotify)gst_object_unref);
+			gst_object_unref(selector);
+		} else {
+			gst_object_unref(textPad);
+		}
 	}
 
 	eDebug("[eServiceMP3] switched to subtitle stream %i (generation %d)", m_currentSubtitleStream,
