@@ -23,7 +23,7 @@ class FrontendInfo(Converter):
 	def __init__(self, type):
 		def checkColor(color, default):
 			if color in ("", "Default"):
-				return rf"\c{default:08X}"
+				color = default
 			return None if color == "None" else rf"\c{parseColor(color, default).argb():08X}"
 
 		Converter.__init__(self, type)
@@ -35,13 +35,13 @@ class FrontendInfo(Converter):
 		elif type.startswith("TUNERS"):  # "TUNERS[,idleColor[,activeColor[,recordingColor[,disabledColor[,spacer]]]]]"
 			self.type = self.TUNERS
 			data = [x.strip() for x in type.split(",", 5)]
-			self.idleColor = checkColor(data[1], 0x00CFCFCF) if len(data) > 1 and data[1] else r"\c00CFCFCF"
-			self.activeColor = checkColor(data[2], 0x0000FF00) if len(data) > 2 and data[2] else r"\c0000FF00"
-			self.recordingColor = checkColor(data[3], 0x00FF0000) if len(data) > 3 and data[3] else r"\c00FF0000"
-			self.disabledColor = checkColor(data[4], 0x006F6F6F) if len(data) > 4 and data[4] else r"\c006F6F6F"
+			self.idleColor = checkColor(data[1], "#00CFCFCF") if len(data) > 1 and data[1] else r"\c00CFCFCF"
+			self.activeColor = checkColor(data[2], "#0000FF00") if len(data) > 2 and data[2] else r"\c0000FF00"
+			self.recordingColor = checkColor(data[3], "#00FF0000") if len(data) > 3 and data[3] else r"\c00FF0000"
+			self.disabledColor = checkColor(data[4], "#006F6F6F") if len(data) > 4 and data[4] else r"\c006F6F6F"
 			if len(data) > 5 and data[5]:
 				spacer = data[5]
-				self.spacer = spacer[1:-1] if len(spacer) > 1 and spacer[0] == spacer[-1] and spacer[0] in ("'", "\"") else spacer
+				self.spacer = spacer[1:-1] if len(spacer) > 1 and spacer[0] == spacer[-1] else spacer
 			else:
 				self.spacer = " "
 		elif type.split("_")[0] == "REC":

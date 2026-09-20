@@ -803,7 +803,9 @@ class NetworkManager:
 
 		pending = list(candidates)
 
-		# One at a time: all at once can outlast the caller's timeout.
+		# One interface at a time: a ping occupies the daemon until it has its
+		# reply or runs into its timeout, so firing all of them at once can
+		# outlast the caller's timeout on boxes with several interfaces.
 		def nextInterface():
 			if pending:
 				interface = pending.pop(0)
