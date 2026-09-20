@@ -4,10 +4,11 @@ from re import compile
 
 from enigma import BT_SCALE, BT_VALIGN_CENTER, RT_HALIGN_LEFT, RT_VALIGN_CENTER, eListboxPythonMultiContent, eServiceCenter, eServiceReference, eServiceReferenceFS, gFont
 
-from skin import fonts, parameters
+from skin import colors, fonts, parameters, getSkinFactor
 from Components.config import config
 from Components.Harddisk import harddiskmanager
 from Components.MenuList import MenuList
+from Components.SkinIcon import SkinIcon, loadSkinIcon
 from Tools.Directories import SCOPE_GUISKIN, resolveFilename
 from Tools.LoadPixmap import LoadPixmap
 
@@ -135,20 +136,35 @@ RECORDING_EXTENSIONS = frozenset((".ap", ".cuts", ".eit", ".meta", ".sc"))
 KNOWN_EXTENSIONS = MOVIE_EXTENSIONS.union(AUDIO_EXTENSIONS, DVD_EXTENSIONS, IMAGE_EXTENSIONS)
 
 
+def parseParameter(value):
+	"""This function is responsible for parsing parameters in the skin, it can parse integers, floats, hex colors, hex integers, named colors, fonts and strings."""
+	if value[0] == "*":  # String.
+		return value[1:]
+	elif value[0] == "#":  # HEX Color.
+		return int(value[1:], 16)
+	elif value[:2] == "0x":  # HEX Integer.
+		return int(value, 16)
+	elif "." in value:  # Float number.
+		return float(value)
+	elif value in colors:  # Named color.
+		return colors[value].argb()
+	elif value.find(";") != -1:  # Font.
+		(font, size) = (x.strip() for x in value.split(";", 1))
+		factor = getSkinFactor()
+		return [font, int(int(size) * factor)]
+	else:  # Integer.
+		factor = getSkinFactor()
+		return int(int(value) * factor)
+
+
 class FileListBase(MenuList):
 	def __init__(self, selectedItems, directory, showDirectories=True, showFiles=True, showMountPoints=True, matchingPattern=None, useServiceRef=False, inhibitDirs=False, inhibitMounts=False, isTop=False, additionalExtensions=None, sortDirectories="0.0", sortFiles="0.0", directoriesFirst=True, showCurrentDirectory=False):
 		self.extensionIcons = {}
-		self.extensionIcons["lock_off"] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "icons/lock_off.png"))
-		self.extensionIcons["lock_on"] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "icons/lock_on.png"))
-		self.extensionIcons["link_arrow"] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "extensions/link_arrow.png"))
-		self.extensionIcons["link_error"] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "extensions/link_error.png"))
-		self.extensionIcons["storage"] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "extensions/storage.png"))
-		self.extensionIcons["parent"] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "extensions/parent.png"))
-		self.extensionIcons["current"] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "extensions/current.png"))
-		self.extensionIcons["directory"] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "extensions/directory.png"))
-		self.extensionIcons["file"] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, "extensions/file.png"))
+		for icon in ("lock_off", "lock_on", "link_arrow", "link_error", "storage", "parent", "current", "directory", "file"):
+			folder = "icons" if icon.startswith("lock_") else "extensions"
+			self.extensionIcons[icon] = loadSkinIcon("FileList", icon, f"{folder}/{icon}.png")
 		for icon in set(EXTENSIONS.values()):
-			self.extensionIcons[icon] = LoadPixmap(resolveFilename(SCOPE_GUISKIN, f"extensions/{icon}.png"))
+			self.extensionIcons[icon] = loadSkinIcon("FileList", icon, f"extensions/{icon}.png")
 		if self.extensionIcons["storage"] is None:
 			self.extensionIcons["storage"] = self.extensionIcons["directory"]
 		if self.extensionIcons["parent"] is None:
@@ -175,12 +191,24 @@ class FileListBase(MenuList):
 		self.currentDirectory = None
 		self.previousDirectory = None
 		self.serviceHandler = eServiceCenter.getInstance()
+		self.parameters = {}
 		if self.multiSelect:
 			self.setMultiSelectMode()
 		else:
 			self.setSingleSelectMode()
 		self.refreshMountPoints()
 		self.changeDir(directory, directory)
+
+	def applySkin(self, desktop, screen):
+		if self.skinAttributes is not None:
+			attribs = []
+			for (attrib, value) in self.skinAttributes[:]:
+				if attrib in ("FileList", "FileListMulti", "FileListIcon", "FileListName", "FileListMultiLock", "FileListMultiIcon", "FileListMultiName"):
+					self.parameters[attrib] = list(map(parseParameter, [x.strip() for x in value.split(",")])) if "," in value else parseParameter(value)
+				else:
+					attribs.append((attrib, value))
+			self.skinAttributes = attribs
+		return MenuList.applySkin(self, desktop, screen)
 
 	def execBegin(self):
 		harddiskmanager.on_partition_list_change.append(self.partitionListChanged)
@@ -199,25 +227,38 @@ class FileListBase(MenuList):
 
 	def setSingleSelectMode(self):
 		self.multiSelect = False
-		font = fonts.get("FileList", ("Regular", 20, 25))
+		font = self.parameters("FileList", fonts.get("FileList", ("Regular", 20, 25)))
 		self.l.setFont(0, gFont(font[0], font[1]))
 		self.l.setItemHeight(font[2])
 		self.itemHeight = font[2]
 		self.lockX, self.lockY, self.lockW, self.lockH = (0, 0, 0, 0)
-		self.iconX, self.iconY, self.iconW, self.iconH = parameters.get("FileListIcon", (15, 0, self.itemHeight, self.itemHeight - 4))
-		self.nameX, self.nameY, self.nameW, self.nameH = parameters.get("FileListName", (25 + self.iconW, 0, 900, self.itemHeight))
+		self.iconX, self.iconY, self.iconW, self.iconH = self.parameters.get("FileListIcon", parameters.get("FileListIcon", (15, 0, self.itemHeight, self.itemHeight - 4)))
+		self.nameX, self.nameY, self.nameW, self.nameH = self.parameters.get("FileListName", parameters.get("FileListName", (25 + self.iconW, 0, 900, self.itemHeight)))
+		self.setIconFont()
 		self.refresh()
 
 	def setMultiSelectMode(self):
 		self.multiSelect = True
-		font = fonts.get("FileListMulti", ("Regular", 20, 25))
+		font = self.parameters("FileListMulti", fonts.get("FileListMulti", ("Regular", 20, 25)))
 		self.l.setFont(0, gFont(font[0], font[1]))
 		self.l.setItemHeight(font[2])
 		self.itemHeight = font[2]
-		self.lockX, self.lockY, self.lockW, self.lockH = parameters.get("FileListMultiLock", (15, 0, self.itemHeight, self.itemHeight - 4))
-		self.iconX, self.iconY, self.iconW, self.iconH = parameters.get("FileListMultiIcon", (25 + self.lockW, 0, self.itemHeight, self.itemHeight - 4))
-		self.nameX, self.nameY, self.nameW, self.nameH = parameters.get("FileListMultiName", (35 + self.lockW + self.iconW, 0, 900, self.itemHeight))
+		self.lockX, self.lockY, self.lockW, self.lockH = self.parameters.get("FileListMultiLock", parameters.get("FileListMultiLock", (15, 0, self.itemHeight, self.itemHeight - 4)))
+		self.iconX, self.iconY, self.iconW, self.iconH = self.parameters.get("FileListMultiIcon", parameters.get("FileListMultiIcon", (25 + self.lockW, 0, self.itemHeight, self.itemHeight - 4)))
+		self.nameX, self.nameY, self.nameW, self.nameH = self.parameters.get("FileListMultiName", parameters.get("FileListMultiName", (35 + self.lockW + self.iconW, 0, 900, self.itemHeight)))
+		self.setIconFont()
 		self.refresh()
+
+	def setIconFont(self):
+		if parameters.get("FileListNativeIcons", 0):
+			font = fonts.get("FileListIcons", ("enigma2icons", min(self.iconW, self.iconH)))
+			self.l.setFont(1, gFont(font[0], font[1]))
+			self.l.setFont(2, gFont(font[0], max(1, font[1] // 2)))
+
+	def iconEntry(self, icon, x, y, w, h):
+		if isinstance(icon, SkinIcon):
+			return icon.entry((x, y), (w, h), 1)
+		return (eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, x, y, w, h, icon, None, None, BT_SCALE | BT_VALIGN_CENTER)
 
 	def changeDir(self, directory, select=None):
 		def buildDirectoryList():
@@ -330,7 +371,7 @@ class FileListBase(MenuList):
 		if selected is not None and not self.getIsSpecialFolder(res[0]):
 			icon = self.extensionIcons[f"lock_{'on' if selected else 'off'}"]
 			if icon:
-				res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, self.lockX, self.lockY, self.lockW, self.lockH, icon, None, None, BT_SCALE | BT_VALIGN_CENTER))
+				res.append(self.iconEntry(icon, self.lockX, self.lockY, self.lockW, self.lockH))
 		if isDir:
 			icon = self.extensionIcons[{
 				ICON_STORAGE: "storage",
@@ -343,10 +384,16 @@ class FileListBase(MenuList):
 			extension = splitext(path.getPath())[1].lower() if isinstance(path, eServiceReference) else splitext(path)[1].lower()
 			icon = self.extensionIcons[EXTENSIONS.get(extension, "file")]
 		if icon:
-			res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, self.iconX, self.iconY, self.iconW, self.iconH, icon, None, None, BT_SCALE | BT_VALIGN_CENTER))
+			res.append(self.iconEntry(icon, self.iconX, self.iconY, self.iconW, self.iconH))
 			if isLink:
-				icon = self.extensionIcons["link_arrow"] if exists(path) else self.extensionIcons["link_error"]
-				res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, self.iconX, self.iconY, self.iconW, self.iconH, icon, None, None, BT_SCALE | BT_VALIGN_CENTER))
+				linkPath = path.getPath() if isinstance(path, eServiceReference) else path
+				icon = self.extensionIcons["link_arrow"] if exists(linkPath) else self.extensionIcons["link_error"]
+				if isinstance(icon, SkinIcon):
+					# A separate badge keeps both the file type and link status readable.
+					w, h = self.iconW // 2, self.iconH // 2
+					res.append(icon.entry((self.iconX + self.iconW - w, self.iconY + self.iconH - h), (w, h), 2))
+				else:
+					res.append(self.iconEntry(icon, self.iconX, self.iconY, self.iconW, self.iconH))
 		res.append((eListboxPythonMultiContent.TYPE_TEXT, self.nameX, self.nameY, self.nameW, self.nameH, 0, RT_HALIGN_LEFT | RT_VALIGN_CENTER, name))
 		return res
 
@@ -513,7 +560,10 @@ class FileListBase(MenuList):
 			else:
 				date = 0
 				size = 0
-			itemList.append((textSort(name), date, size, path, isDir, isLink, name))
+			if isinstance(name, eServiceReference):
+				itemList.append((name, date, size, path, isDir, isLink, name))
+			else:
+				itemList.append((textSort(name), date, size, path, isDir, isLink, name))
 		itemList = sorted(itemList, key=lambda x: x[sort], reverse=reverse)
 		items = []
 		for _, date, size, path, isDir, isLink, name in itemList:  # The "_" here is the text used for sorting but not needed in the final list.

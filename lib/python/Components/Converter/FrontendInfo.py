@@ -23,7 +23,7 @@ class FrontendInfo(Converter):
 	def __init__(self, type):
 		def checkColor(color, default):
 			if color in ("", "Default"):
-				color = default
+				return rf"\c{default:08X}"
 			return None if color == "None" else rf"\c{parseColor(color, default).argb():08X}"
 
 		Converter.__init__(self, type)
@@ -41,7 +41,7 @@ class FrontendInfo(Converter):
 			self.disabledColor = checkColor(data[4], 0x006F6F6F) if len(data) > 4 and data[4] else r"\c006F6F6F"
 			if len(data) > 5 and data[5]:
 				spacer = data[5]
-				self.spacer = spacer[1:-1] if spacer[0] == spacer[-1] else spacer
+				self.spacer = spacer[1:-1] if len(spacer) > 1 and spacer[0] == spacer[-1] and spacer[0] in ("'", "\"") else spacer
 			else:
 				self.spacer = " "
 		elif type.split("_")[0] == "REC":

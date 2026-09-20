@@ -801,15 +801,21 @@ class NetworkManager:
 			callback()
 			return
 
-		remaining = [len(candidates)]
+		pending = list(candidates)
 
-		def onResult(interface: str, ok: bool):
-			self.adapters[interface].hasInternet = ok
-			remaining[0] -= 1
-			if remaining[0] == 0:
+		# One at a time: all at once can outlast the caller's timeout.
+		def nextInterface():
+			if pending:
+				interface = pending.pop(0)
+				ServiceAction.ping(interface, "8.8.8.8", lambda exitCode, iface=interface: primaryDone(iface, exitCode))
+			else:
 				results = {interface: self.adapters[interface].hasInternet for interface in candidates}
 				self.log(f"checkConnectionInternet: results={results}.")
 				callback()
+
+		def onResult(interface: str, ok: bool):
+			self.adapters[interface].hasInternet = ok
+			nextInterface()
 
 		def fallbackDone(interface: str, exitCode: int):
 			onResult(interface, exitCode == 0)
@@ -818,10 +824,9 @@ class NetworkManager:
 			if exitCode == 0:
 				onResult(interface, True)
 			else:
-				ServiceAction.ping(interface, "1.1.1.1", lambda ec, iface=interface: fallbackDone(interface, ec))
+				ServiceAction.ping(interface, "1.1.1.1", lambda exitCode, iface=interface: fallbackDone(iface, exitCode))
 
-		for interface in candidates:
-			ServiceAction.ping(interface, "8.8.8.8", lambda ec, iface=interface: primaryDone(interface, ec))
+		nextInterface()
 
 	def onIfaceAdd(self, interface: str):
 		self.log(f"onIfaceAdd: {interface}.")
