@@ -740,6 +740,8 @@ class NetworkManager:
 				netInfo.channel = data.get("channel", 0)
 				netInfo.bitrateBps = data.get("bitrate_bps", 0)
 				netInfo.signal = data.get("signal_dbm", 0)
+				netInfo.keyMgmt = data.get("key_mgmt", "")
+				netInfo.pairwiseCipher = data.get("pairwise_cipher", "")
 			else:
 				netInfo.link = netInfo.up and data.get("link", False)
 				netInfo.speed = data.get("speed", -1) if netInfo.link else -1
@@ -962,6 +964,8 @@ class NetInfo:
 	channel: int = 0  # Wi-Fi only, channel number.
 	bitrateBps: int = 0  # Wi-Fi only, TX bitrate in bps.
 	signal: int = 0  # Wi-Fi only, dBm.
+	keyMgmt: str = ""  # Wi-Fi only, key management wpa_supplicant negotiated (e.g. "SAE", "WPA2-PSK").
+	pairwiseCipher: str = ""  # Wi-Fi only, negotiated pairwise cipher (e.g. "CCMP", "WEP-104").
 	driver: str = ""  # Kernel module name (e.g. "r8168", "mt76x2u").
 	hwId: str = ""  # "VVVV:DDDD" PCI or USB vendor:product hex.
 	bus: str = ""  # Physical bus from socketdaemon (e.g. "usb", "pci", "platform").

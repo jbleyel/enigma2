@@ -92,7 +92,7 @@ class NetworkOverview(Screen):
 	skin = """
 	<screen name="NetworkOverview" title="Network Overview" position="center,center" size="1100,540" resolution="1280,720">
 		<widget source="adapterList" render="Listbox" position="10,10" size="e-20,250">
-			<template name="Default" colors="#0000CC00,#00CC0000,#00CCCCCC,#00003300,#00330000,#00333333" fonts="Regular;25,enigma2icons;38,Regular;24,Regular;18,enigma2icons;20" itemHeight="50">
+			<template name="Default" colors="#0000CC00,#00CC0000,#00CCCCCC,#00003300,#00330000,#00333333" fonts="Regular;25,enigma2icons;38,Regular;24,Regular;18,enigma2icons;20,Regular;10" itemHeight="50">
 				<rowtemplate>
 					<text index="AdapterName" position="0,0" size="250,50" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
 					<text index="StatusText" position="270,0" size="170,50" font="0" foregroundColor="gray" padding="5,0" verticalAlignment="center" />
@@ -106,6 +106,7 @@ class NetworkOverview(Screen):
 					<text index="AdapterName" position="60,0" size="170,28" font="2" padding="5,0" verticalAlignment="center" />
 					<text index="AdapterType" position="60,28" size="170,22" font="3" padding="5,0" verticalAlignment="center" />
 					<text index="InternetGlyph" position="230,15" size="40,20" font="4" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
+					<text index="SecurityText" position="370,4" size="70,46" font="5" padding="5,0" verticalAlignment="center" />
 					<text index="StatusText" position="270,0" size="170,50" font="3" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColorSelected" padding="5,0" verticalAlignment="center" />
 					<text index="MAC" position="440,0" size="180,50" font="3" padding="5,0" verticalAlignment="center" />
 					<text index="IPAddress" position="620,0" size="160,50" font="3" padding="5,0" verticalAlignment="center" />
@@ -193,9 +194,10 @@ class NetworkOverview(Screen):
 			"IPAddress": 8,
 			"Gateway": 9,
 			"Speed": 10,
-			"InternetGlyph": 11
+			"InternetGlyph": 11,
+			"SecurityText": 12
 		}
-		self.indexAdapter = 12
+		self.indexAdapter = 13
 		self["adapterList"] = List([], indexNames=indexNames)
 		indexNames = {
 			"Reserved_for_rowTemplate": 0,
@@ -368,6 +370,7 @@ class NetworkOverview(Screen):
 				ip4Str(netInfo.gateway) or "-",                                   # Gateway.
 				speed,                                                            # Speed.
 				inetGlyph,                                                        # InternetGlyph.
+				self.securityText(adapter),                                       # SecurityText.
 				adapter,                                                          # -> indexAdapter.
 			)
 
@@ -392,6 +395,7 @@ class NetworkOverview(Screen):
 				"-",                    # Gateway.
 				"-",                    # Speed.
 				inetGlyph,              # InternetGlyph.
+				"",                     # SecurityText.
 				None,                   # -> indexAdapter.
 			)
 
@@ -409,6 +413,7 @@ class NetworkOverview(Screen):
 				_("Gateway"),      # Gateway.
 				_("Speed"),        # Speed.
 				None,              # InternetGlyph.
+				None,              # SecurityText.
 				None,              # -> indexAdapter.
 			)
 
@@ -561,6 +566,24 @@ class NetworkOverview(Screen):
 	#
 	def isConnectionLive(self, adapter: Adapter, conn: Connection) -> bool:
 		return adapter.netInfo.link and adapter.netInfo.ssid == conn.wifi.ssid
+
+	# Drawn over the Wi-Fi icon, so it has to stay short. This is what
+	# wpa_supplicant negotiated, not what the saved connection asks for: on an
+	# access point offering both, WPA2/WPA3 ends up as one of the two.
+	def securityText(self, adapter: Adapter) -> str:
+		netInfo = adapter.netInfo
+		if not adapter.isWiFi or not netInfo.link:
+			return ""
+		keyMgmt = netInfo.keyMgmt.upper()
+		if "SAE" in keyMgmt or "OWE" in keyMgmt:
+			text = "WPA3"
+		elif "WPA2" in keyMgmt:
+			text = "WPA2"
+		elif "WPA" in keyMgmt:
+			text = "WPA"
+		else:
+			return "WEP" if "WEP" in netInfo.pairwiseCipher.upper() else ""
+		return f"{text}E" if "EAP" in keyMgmt else text  # 802.1X, e.g. "WPA2E".
 
 	def keyOK(self):
 		if adapter := self.getCurrentAdapter():

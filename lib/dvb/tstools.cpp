@@ -587,6 +587,11 @@ int eDVBTSTools::getOffset(off_t &offset, pts_t &pts, int marg)
 		}
 
 		int bitrate = calcBitrate();
+		if (bitrate <= 0)
+		{
+			eDebug("[eDVBTSTools] getOffset fallback failed, no usable bitrate");
+			return -1;
+		}
 		offset = pts * (pts_t)bitrate / 8ULL / 90000ULL;
 		if (m_debugSeek)
 			eDebug("[eDVBTSTools] getOffset fallback, bitrate=%d, results in %016jx", bitrate, (intmax_t)offset);
@@ -651,6 +656,16 @@ static pts_t pts_diff(pts_t low, pts_t high)
 	return high;
 }
 
+/* a small backwards difference is frame reordering, not a 33 bit wrap */
+static bool calcPtsLength(pts_t begin, pts_t end, pts_t &len)
+{
+	pts_t raw = end - begin;
+	if ((raw < 0) && (raw > -90000LL * 60))
+		return false;
+	len = pts_diff(begin, end);
+	return true;
+}
+
 void eDVBTSTools::calcEnd()
 {
 	if (!m_source || !m_source->valid())
@@ -682,7 +697,13 @@ void eDVBTSTools::calcEnd()
 			if (m_streaminfo.fixupPTS(end, m_pts_length) != 0)
 			{
 				/* Not enough structure info, estimate */
-				m_pts_length = pts_diff(m_pts_begin, m_pts_end);
+				if (!calcPtsLength(m_pts_begin, m_pts_end, m_pts_length))
+				{
+					if (m_debugSeek)
+						eDebug("[eDVBTSTools] calcEnd end pts %lld is before begin pts %lld, length not usable yet",
+							m_pts_end, m_pts_begin);
+					return;
+				}
 			}
 			m_end_valid = 1;
 		}
@@ -707,8 +728,8 @@ void eDVBTSTools::calcEnd()
 				{
 					offset = m_offset_end;
 					m_pts_end = pts;
-					m_pts_length = pts_diff(m_pts_begin, m_pts_end);
-					m_end_valid = 1;
+					if (calcPtsLength(m_pts_begin, m_pts_end, m_pts_length))
+						m_end_valid = 1;
 				}
 
 				if (!m_offset_end)
@@ -784,7 +805,7 @@ void eDVBTSTools::takeSamples()
 		offset += bytes_per_sample;
 	}
 	m_samples[0] = m_offset_begin;
-	m_samples[m_pts_end - m_pts_begin] = m_offset_end;
+	m_samples[m_pts_length] = m_offset_end;
 }
 
 	/* returns 0 when a sample was taken. */

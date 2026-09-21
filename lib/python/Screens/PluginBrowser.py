@@ -3,7 +3,7 @@ from os.path import exists, join, islink
 from re import compile
 from shutil import rmtree
 
-from enigma import checkInternetAccess, eDVBDB, eTimer, gRGB
+from enigma import eDVBDB, eInternetCheck, eTimer, gRGB
 
 from skin import parseColor
 from Components.ActionMap import HelpableActionMap, HelpableNumberActionMap
@@ -372,7 +372,12 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 		self.updatePluginList()
 
 	def checkInternet(self):
-		self.internetAccess = checkInternetAccess(FEED_SERVER, INTERNET_TIMEOUT)
+		self.internetCheckThread = eInternetCheck()
+		self.internetCheckThread.callback.append(self.internetCheckCallback)
+		self.internetCheckThread.startThread(FEED_SERVER, INTERNET_TIMEOUT, True)
+
+	def internetCheckCallback(self, result):  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
+		self.internetAccess = result
 		self.updateButtons()
 
 	def updatePluginList(self):
@@ -1025,25 +1030,30 @@ class PackageAction(Screen, NumericalTextInput):
 			case self.MODE_UPDATE:
 				self.opkgComponent.runCommand(self.opkgComponent.CMD_REFRESH_UPDATES, self.opkgFilterArguments)
 			case self.MODE_MANAGE:
-				match checkInternetAccess(FEED_SERVER, INTERNET_TIMEOUT):  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
-					case 0:
-						self.opkgComponent.runCommand(self.opkgComponent.CMD_REFRESH_INFO, self.opkgFilterArguments)
-					case 1:
-						self["description"].setText(_("Feed server DNS error!"))
-						print("[PluginBrowser] PackageAction Error: Feed server DNS error!")
-						self.setWaiting(None)
-					case 2:
-						self["description"].setText(_("Feed server access error!"))
-						print("[PluginBrowser] PackageAction Error: Feed server access error!")
-						self.setWaiting(None)
-					case 3:
-						self["description"].setText(_("Network adapter not connected to a network!"))
-						print("[PluginBrowser] PackageAction Error: Network adapter not connected to a network!")
-						self.setWaiting(None)
-					case 4:
-						self["description"].setText(_("No network adapters enabled/available!"))
-						print("[PluginBrowser] PackageAction Error: No network adapters enabled/available!")
-						self.setWaiting(None)
+				self.internetCheckThread = eInternetCheck()
+				self.internetCheckThread.callback.append(self.internetCheckCallback)
+				self.internetCheckThread.startThread(FEED_SERVER, INTERNET_TIMEOUT, True)
+
+	def internetCheckCallback(self, result):  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
+		match result:
+			case 0:
+				self.opkgComponent.runCommand(self.opkgComponent.CMD_REFRESH_INFO, self.opkgFilterArguments)
+			case 1:
+				self["description"].setText(_("Feed server DNS error!"))
+				print("[PluginBrowser] PackageAction Error: Feed server DNS error!")
+				self.setWaiting(None)
+			case 2:
+				self["description"].setText(_("Feed server access error!"))
+				print("[PluginBrowser] PackageAction Error: Feed server access error!")
+				self.setWaiting(None)
+			case 3:
+				self["description"].setText(_("Network adapter not connected to a network!"))
+				print("[PluginBrowser] PackageAction Error: Network adapter not connected to a network!")
+				self.setWaiting(None)
+			case 4:
+				self["description"].setText(_("No network adapters enabled/available!"))
+				print("[PluginBrowser] PackageAction Error: No network adapters enabled/available!")
+				self.setWaiting(None)
 
 	def selectionChanged(self):
 		label = ""
