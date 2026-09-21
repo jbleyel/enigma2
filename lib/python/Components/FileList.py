@@ -227,7 +227,7 @@ class FileListBase(MenuList):
 
 	def setSingleSelectMode(self):
 		self.multiSelect = False
-		font = self.parameters("FileList", fonts.get("FileList", ("Regular", 20, 25)))
+		font = self.parameters.get("FileList", fonts.get("FileList", ("Regular", 20, 25)))
 		self.l.setFont(0, gFont(font[0], font[1]))
 		self.l.setItemHeight(font[2])
 		self.itemHeight = font[2]
@@ -239,7 +239,7 @@ class FileListBase(MenuList):
 
 	def setMultiSelectMode(self):
 		self.multiSelect = True
-		font = self.parameters("FileListMulti", fonts.get("FileListMulti", ("Regular", 20, 25)))
+		font = self.parameters.get("FileListMulti", fonts.get("FileListMulti", ("Regular", 20, 25)))
 		self.l.setFont(0, gFont(font[0], font[1]))
 		self.l.setItemHeight(font[2])
 		self.itemHeight = font[2]
