@@ -123,7 +123,7 @@ class SecConfigure:
 				sec.setVoltageMode(switchParam.HV_13 if diseqc13V else switchParam.HV)
 				sec.setToneMode(switchParam.HILO)
 			else:
-				# NoInspection PyProtectedMember.
+				# noinspection PyProtectedMember.
 				sec.setVoltageMode(switchParam._14V)
 				sec.setToneMode(switchParam.OFF)
 		elif 3 <= diseqcmode < 5:  # DiSEqC 1.2.
@@ -591,7 +591,7 @@ class SecConfigure:
 				# Finally add the orbital positions.
 				for y in lnbSat[x]:
 					self.addSatellite(sec, y)
-					satpos = (x > maxFixedLnbPositions and (3606 - (70 - x)) or y) if x > maxFixedLnbPositions else y
+					satpos = 3606 - (70 - x) if x > maxFixedLnbPositions else y
 					currSat = advanced.sat[satpos]
 					match currSat.voltage.value:
 						case "polarization":
@@ -729,7 +729,7 @@ class NIM:
 
 	def canBeCompatible(self, what):
 		if not self.isSupported():
-			print(f"[NimManager] Item '{what}' is not suportetd.")
+			print(f"[NimManager] Item '{what}' is not supported.")
 			return False
 		if self.isMultiType():
 			# print(f"[NimManager] adenin: '{self.slot}' is multitype.")
@@ -1017,7 +1017,7 @@ class NimManager:
 			if not exists("/etc/enigma2/lamedb"):
 				print("[NimManager] File '/etc/enigma2/lamedb' not found.")
 				return None
-			lamedb = fileReadLines("/etc/enigma2/lamedb", default=[], source=MODULE_NAME)
+			lamedb = fileReadLines("/etc/enigma2/lamedb", default=[""], source=MODULE_NAME)
 			if lamedb[0].find("/3/") != -1:
 				version = 3
 			elif lamedb[0].find("/4/") != -1:
@@ -1030,10 +1030,10 @@ class NimManager:
 			transponders = []
 			tp = []
 			for line in lamedb:
-				if line == "transponders\n":
+				if line == "transponders":
 					collect = True
 					continue
-				if line == "end\n":
+				if line == "end":
 					break
 				if collect:
 					data = line.strip().split(":")
@@ -1823,6 +1823,7 @@ def InitNimManager(nimmgr, update_slots=None):
 			p_update({"positions": tuple(positions)})  # Add 'positons' to dictionary product.
 			bootuptime = product.get("bootuptime", 2700)
 			p_update({"bootuptime": tuple([bootuptime])})  # Add 'bootuptime' to dictionary product.
+			m_update({product.get("name"): p})  # Add dictionary product to dictionary manufacturer.
 		unicablematrixproducts.update({manufacturer.get("name"): m})  # Add dictionary manufacturer to dictionary unicablematrixproducts.
 	UnicableLnbManufacturers = list(unicablelnbproducts.keys())
 	UnicableLnbManufacturers.sort()
