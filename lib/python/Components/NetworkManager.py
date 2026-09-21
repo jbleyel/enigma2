@@ -1029,6 +1029,22 @@ class Adapter:
 			value = 600 if self.isWiFi else 100
 		return value
 
+	@property
+	def encryptionText(self) -> str:
+		# What wpa_supplicant negotiated, not what the saved connection asks for.
+		if not self.isWiFi or not self.netInfo.link:
+			return ""
+		keyMgmt = self.netInfo.keyMgmt.upper()
+		if "SAE" in keyMgmt or "OWE" in keyMgmt:
+			text = "WPA3"
+		elif "WPA2" in keyMgmt:
+			text = "WPA2"
+		elif "WPA" in keyMgmt:
+			text = "WPA"
+		else:
+			return "WEP" if "WEP" in self.netInfo.pairwiseCipher.upper() else ""
+		return f"{text}E" if "EAP" in keyMgmt else text  # 802.1X, e.g. "WPA2E".
+
 
 @dataclass
 class NameserverConfig:

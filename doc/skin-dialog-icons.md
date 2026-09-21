@@ -6,7 +6,7 @@ Register the icon font in the skin before enabling the corresponding option.
 
 ## ChoiceList
 
-As with `VirtualKeyboardNative`, the skin explicitly enables the native path:
+Similar to VirtualKeyboard's `nativeKeys` attribute on its own `<screen>` tag, the skin explicitly enables the native path:
 
 ```xml
 <fonts>
