@@ -678,21 +678,10 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 
 				if ((old_start < new_end) && (old_end > new_start))
 				{
-					if (old_start < new_start && old_duration > SUSPICIOUS_DURATION_THRESHOLD)
-					{
-						if (epgdbg)
-							eDebug("[eEPGCache] Truncating suspiciously long event %04X: "
-								"duration %d s, end %lld -> %lld "
-								"(overlaps new event %04X at %lld).",
-								it->second->getEventID(), old_duration,
-								(long long)old_end, (long long)new_start,
-								event_id, (long long)new_start);
+					bool oldHigherPriority = it->second->getEventID() != event_id &&
+						(source & ~EPG_IMPORT) > (it->second->type & ~EPG_IMPORT);
 
-						it->second->setDuration(new_start - old_start);
-						++it;
-					}
-					else if (it->second->getEventID() != event_id &&
-							(source & ~EPG_IMPORT) > (it->second->type & ~EPG_IMPORT))
+					if (oldHigherPriority)
 					{
 						// The cached event overlapping this new one comes from a strictly
 						// higher-priority source (e.g. NOWNEXT) than the new event (e.g.
@@ -707,14 +696,34 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 						++it;
 					}
 					else if (it->second->getEventID() != event_id &&
-							(source & ~EPG_IMPORT) == (it->second->type & ~EPG_IMPORT) &&
-							old_end > new_end)
+							old_start < new_start && old_end <= new_end)
 					{
-						// Same-priority conflict (typically NOWNEXT "now" vs a previously
-						// cached NOWNEXT "next"). The new event only claims [new_start,new_end);
-						// keep the cached event's tail instead of dropping it outright, so the
-						// slot after new_end isn't left empty until the next refresh.
-						eDebug("[eEPGCache] Truncating same-priority overlapping event %04X for service (%04X:%04X:%04X) "
+						// The cached event only sticks out at the FRONT (its own start is
+						// before the new event's start, and it has no tail beyond new_end).
+						// That head portion isn't claimed by the new event at all, so keep
+						// it and just shrink the old event's end down to new_start instead
+						// of deleting it outright -- regardless of duration or priority,
+						// since the head was never in conflict with the new event.
+						if (epgdbg)
+							eDebug("[eEPGCache] Truncating event %04X for service (%04X:%04X:%04X): "
+								"duration %d s, end %lld -> %lld "
+								"(overlaps new event %04X at %lld).",
+								it->second->getEventID(), service.onid, service.tsid, service.sid,
+								old_duration, (long long)old_end, (long long)new_start,
+								event_id, (long long)new_start);
+
+						it->second->setDuration(new_start - old_start);
+						++it;
+					}
+					else if (it->second->getEventID() != event_id && old_end > new_end)
+					{
+						// The cached event sticks out at the BACK (its end is beyond the
+						// new event's end), typically NOWNEXT "now" vs a previously cached
+						// NOWNEXT "next", but also a lower-priority SCHEDULE tail. The new
+						// event only claims [new_start,new_end); keep the cached event's
+						// tail instead of dropping it outright, so the slot after new_end
+						// isn't left empty until the next refresh.
+						eDebug("[eEPGCache] Truncating event %04X for service (%04X:%04X:%04X) "
 							"(%lld~%lld, type=0x%X) to tail %lld~%lld instead of removing it, "
 							"superseded at the front by new event %04X (%lld~%lld, source=0x%X).",
 							it->second->getEventID(), service.onid, service.tsid, service.sid,

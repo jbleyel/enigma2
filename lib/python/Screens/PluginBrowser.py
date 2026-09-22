@@ -373,7 +373,7 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 
 	def checkInternet(self):
 		self.internetCheckThread = eInternetCheck()
-		self.internetCheckThread.callback.append(self.internetCheckCallback)
+		self.internetCheckThread.callback.get().append(self.internetCheckCallback)
 		self.internetCheckThread.startThread(FEED_SERVER, INTERNET_TIMEOUT, True)
 
 	def internetCheckCallback(self, result):  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
@@ -1031,7 +1031,7 @@ class PackageAction(Screen, NumericalTextInput):
 				self.opkgComponent.runCommand(self.opkgComponent.CMD_REFRESH_UPDATES, self.opkgFilterArguments)
 			case self.MODE_MANAGE:
 				self.internetCheckThread = eInternetCheck()
-				self.internetCheckThread.callback.append(self.internetCheckCallback)
+				self.internetCheckThread.callback.get().append(self.internetCheckCallback)
 				self.internetCheckThread.startThread(FEED_SERVER, INTERNET_TIMEOUT, True)
 
 	def internetCheckCallback(self, result):  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
