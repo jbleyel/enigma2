@@ -6,7 +6,6 @@ from Components.ActionMap import NumberActionMap, ActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.NimManager import nimmanager, getConfigSatlist
 from Components.Label import Label
-from Components.Pixmap import Pixmap
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
 from Tools.Transponder import getChannelNumber, channel2frequency, supportedChannels
@@ -607,12 +606,8 @@ class TerrestrialTransponderSearchSupport:
 
 class ScanSetup(ConfigListScreen, Screen, CableTransponderSearchSupport, TerrestrialTransponderSearchSupport):
 	def __init__(self, session):
-		Screen.__init__(self, session, mandatoryWidgets=["footnote", "description"])
-		self.skinName = ["ScanSetup", "Setup"]
-		self["footnote"] = Label()
-		self["footnote"].hide()
-		self["HelpWindow"] = Pixmap()
-		self["HelpWindow"].hide()
+		Screen.__init__(self, session)
+		Screen.setTitle(self, _("Manual Scan"))
 
 		self.finished_cb = None
 
@@ -657,13 +652,12 @@ class ScanSetup(ConfigListScreen, Screen, CableTransponderSearchSupport, Terrest
 
 		self.list = []
 		ConfigListScreen.__init__(self, self.list)
-		Screen.setTitle(self, _("Manual Scan"))
-		# self["header"] = Label(_("Manual Scan"))
+		self["header"] = Label(_("Manual Scan"))
 		if not self.scan_nims.value == "":
 			self.createSetup()
-			self["description"] = Label(_("Press OK to start the scan"))
+			self["introduction"] = Label(_("Press OK to start the scan"))
 		else:
-			self["description"] = Label(_("Nothing to scan!\nPlease setup your tuner settings before you start a service scan."))
+			self["introduction"] = Label(_("Nothing to scan!\nPlease setup your tuner settings before you start a service scan."))
 
 	def runAsync(self, finished_cb):
 		self.finished_cb = finished_cb
@@ -1915,12 +1909,8 @@ class ScanSimple(ConfigListScreen, Screen, CableTransponderSearchSupport, Terres
 		return networks
 
 	def __init__(self, session):
-		Screen.__init__(self, session, mandatoryWidgets=["footnote", "description"])
-		self.skinName = ["ScanSimple", "Setup"]
-		self["footnote"] = Label()
-		self["footnote"].hide()
-		self["HelpWindow"] = Pixmap()
-		self["HelpWindow"].hide()
+		Screen.__init__(self, session)
+		Screen.setTitle(self, _("Automatic Scan"))
 
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Scan"))
@@ -2076,9 +2066,8 @@ class ScanSimple(ConfigListScreen, Screen, CableTransponderSearchSupport, Terres
 								break
 		self.list.sort()
 		ConfigListScreen.__init__(self, self.list)
-		Screen.setTitle(self, _("Automatic Scan"))
-		# self["header"] = Label(_("Automatic Scan"))
-		self["description"] = Label(_("Press OK to scan"))
+		self["header"] = Label(_("Automatic Scan"))
+		self["footer"] = Label(_("Press OK to scan"))
 
 	def runAsync(self, finished_cb):
 		self.finished_cb = finished_cb
