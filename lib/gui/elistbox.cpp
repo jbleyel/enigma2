@@ -87,6 +87,12 @@ eListbox::eListbox(eWidget *parent) : eWidget(parent), m_textPixmap(nullptr)
 
 eListbox::~eListbox()
 {
+	/* The content object can outlive this listbox (it's owned on the Python side),
+	   and its scrollTimer keeps ticking independently. Detach the back-pointer so
+	   a pending tick doesn't dereference this (about to be freed) listbox. */
+	if (m_content)
+		m_content->m_listbox = nullptr;
+
 	if (m_scrollbar)
 		delete m_scrollbar;
 
