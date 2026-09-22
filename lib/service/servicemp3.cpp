@@ -1908,9 +1908,40 @@ RESULT eServiceMP3::seekToImpl(pts_t to) {
 		return 0;
 	}
 	m_last_trickseek_ms = now_ms_k;
-	if (!gst_element_seek(m_gst_playbin, m_currentTrickRatio, GST_FORMAT_TIME,
+
+	/* A flushing seek while a text stream is active can deadlock inside
+	 * gst_element_seek(): FLUSH_START needs the input-selector's active-pad
+	 * writer lock, but the streaming thread pushing a subtitle buffer already
+	 * holds it as reader through gst_selector_pad_chain() (confirmed via
+	 * thread dump; upstream GStreamer issue #5150). Route through PAUSED
+	 * first instead of a live flush: state changes cancel any sink clock
+	 * wait and are bounded, so this can only stall for the timeout below,
+	 * never forever. */
+	bool subtitleWorkaround = m_currentSubtitleStream >= 0;
+	GstState preSeekState = GST_STATE_VOID_PENDING;
+	if (subtitleWorkaround) {
+		GstState pending;
+		gst_element_get_state(m_gst_playbin, &preSeekState, &pending, 0);
+		if (preSeekState == GST_STATE_PLAYING) {
+			eDebug("[eServiceMP3] seekToImpl: dropping to PAUSED before seek (subtitle stream %d active)",
+				   m_currentSubtitleStream);
+			gst_element_set_state(m_gst_playbin, GST_STATE_PAUSED);
+			GstStateChangeReturn pauseRet = gst_element_get_state(m_gst_playbin, NULL, NULL, GST_SECOND);
+			eDebug("[eServiceMP3] seekToImpl: PAUSED settle result=%d", pauseRet);
+		}
+	}
+
+	bool seekOk = gst_element_seek(m_gst_playbin, m_currentTrickRatio, GST_FORMAT_TIME,
 						  (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT), GST_SEEK_TYPE_SET,
-						  (gint64)(m_last_seek_pos * 11111LL), GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
+						  (gint64)(m_last_seek_pos * 11111LL), GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
+
+	if (subtitleWorkaround && preSeekState == GST_STATE_PLAYING) {
+		gst_element_get_state(m_gst_playbin, NULL, NULL, GST_SECOND);
+		eDebug("[eServiceMP3] seekToImpl: resuming PLAYING after seek");
+		gst_element_set_state(m_gst_playbin, GST_STATE_PLAYING);
+	}
+
+	if (!seekOk) {
 		eDebug("[eServiceMP3] seekTo failed");
 		return -1;
 	}
