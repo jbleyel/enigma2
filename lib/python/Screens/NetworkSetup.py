@@ -107,7 +107,7 @@ class NetworkOverview(Screen):
 					<text index="AdapterType" position="60,28" size="170,22" font="3" padding="5,0" verticalAlignment="center" />
 					<text index="InternetGlyph" position="230,0" size="40,50" font="4" horizontalAlignment="center" padding="5,0" verticalAlignment="center" />
 					<text index="StatusText" position="270,0" size="170,25" font="3" foregroundColor="+StatusColor" foregroundColorSelected="+StatusColorSelected" padding="5,0" verticalAlignment="center" />
-					<text index="EncryptionText" position="290,25" size="150,25" font="5" padding="5,0" verticalAlignment="center" />
+					<text index="StatusDetailsText" position="270,25" size="150,25" font="5" padding="5,0" verticalAlignment="center" />
 					<text index="MAC" position="440,0" size="180,50" font="3" padding="5,0" verticalAlignment="center" />
 					<text index="IPAddress" position="620,0" size="160,50" font="3" padding="5,0" verticalAlignment="center" />
 					<text index="Gateway" position="780,0" size="160,50" font="3" padding="5,0" verticalAlignment="center" />
@@ -195,7 +195,7 @@ class NetworkOverview(Screen):
 			"Gateway": 9,
 			"Speed": 10,
 			"InternetGlyph": 11,
-			"EncryptionText": 12
+			"StatusDetailsText": 12
 		}
 		self.indexAdapter = 13
 		self["adapterList"] = List([], indexNames=indexNames)
@@ -370,7 +370,7 @@ class NetworkOverview(Screen):
 				ip4Str(netInfo.gateway) or "-",                                   # Gateway.
 				speed,                                                            # Speed.
 				inetGlyph,                                                        # InternetGlyph.
-				adapter.encryptionText,                                           # EncryptionText.
+				adapter.statusDetailsText,                                        # StatusDetailsText.
 				adapter,                                                          # -> indexAdapter.
 			)
 
@@ -395,7 +395,7 @@ class NetworkOverview(Screen):
 				"-",                    # Gateway.
 				"-",                    # Speed.
 				inetGlyph,              # InternetGlyph.
-				"",                     # EncryptionText.
+				"",                     # StatusDetailsText.
 				None,                   # -> indexAdapter.
 			)
 
@@ -413,7 +413,7 @@ class NetworkOverview(Screen):
 				_("Gateway"),      # Gateway.
 				_("Speed"),        # Speed.
 				None,              # InternetGlyph.
-				None,              # EncryptionText.
+				None,              # StatusDetailsText.
 				None,              # -> indexAdapter.
 			)
 
