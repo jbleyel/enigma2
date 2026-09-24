@@ -47,7 +47,7 @@ class DateTime(Setup):
 	def keyCancel(self):  # This overrides the same class in ConfigList.py as part of Setup.py.
 		self.close((False,))
 
-	def keyCloseRecursive(self):  # This overrides the same class in ConfigList.py as part of Setup.py.
+	def closeRecursive(self):  # This overrides the same class in ConfigList.py as part of Setup.py.
 		self.close((True,))
 
 

@@ -2295,9 +2295,6 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 						scrollRect.setY(scrollRect.y() - m_scroll_pos);
 					gRGB bcolor = (pTextBorderColor && btwidth) ? gRGB(PyLong_AsUnsignedLongMask(pTextBorderColor)) : border_color;
 					int bsize = (pTextBorderColor && btwidth) ? btwidth : border_size;
-					/* The outer clip is still the unpadded item 'rect' (needed for background/border),
-					   but m_scroll_size/textRect already excludes padding. Without a tighter clip here,
-					   scrolling text can bleed up to paddingLeft+paddingRight pixels past the padded box. */
 					painter.clip(textRect);
 					painter.renderText(scrollRect, m_scroll_text_str, flags & ~gPainter::RT_ELLIPSIS, bcolor, bsize);
 					painter.clippop();

@@ -183,7 +183,7 @@ class ConfigListScreen:
 				self["key_green"] = StaticText(_("Save"))
 			self["fullUIActions"] = HelpableActionMap(self, ["ConfigListActions"], {
 				"cancel": (self.keyCancel, _("Cancel any changed settings and exit")),
-				"close": (self.keyCloseRecursive, _("Cancel any changed settings and exit all menus")),
+				"close": (self.closeRecursive, _("Cancel any changed settings and exit all menus")),
 				"save": (self.keySave, _("Save all changed settings and exit"))
 			}, prio=1, description=_("Common Setup Actions"))
 			self.actionMaps = ["fullUIActions"]
@@ -515,11 +515,8 @@ class ConfigListScreen:
 	def keyCancel(self):
 		self.closeConfigList(())
 
-	def keyCloseRecursive(self):
+	def closeRecursive(self):
 		self.closeConfigList((True,))
-
-	def closeRecursive(self):    # This is the deprecated version of keyCloseRecursive!
-		self.keyCloseRecursive()
 
 	def closeConfigList(self, closeParameters=()):
 		if self["config"].isChanged():

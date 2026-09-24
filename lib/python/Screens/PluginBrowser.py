@@ -2,6 +2,7 @@ from os import makedirs, symlink, unlink
 from os.path import exists, join, islink
 from re import compile
 from shutil import rmtree
+from time import time
 
 from enigma import eDVBDB, eInternetCheck, eTimer, gRGB
 
@@ -23,14 +24,19 @@ from Screens.ParentalControlSetup import ProtectedScreen
 from Screens.Processing import Processing
 from Screens.Screen import Screen, ScreenSummary
 from Screens.Setup import Setup
+from Screens.Toast import Toast
 from Tools.Directories import SCOPE_GUISKIN, SCOPE_PLUGINS, fileAccess, fileReadLines, fileWriteLine, fileWriteLines, resolveFilename
 from Tools.LoadPixmap import LoadPixmap
 from Tools.NumericalTextInput import NumericalTextInput
 
 MODULE_NAME = __name__.split(".")[-1]
 
-INTERNET_TIMEOUT = 2
+INTERNET_TIMEOUT = 3
+INTERNET_CHECK_VALID = 30 * 60  # Re-check if the last successful check is older than this, in seconds.
 FEED_SERVER = "feeds2.mynonpublic.com"
+
+
+
 ENIGMA_PREFIX = "enigma2-plugin-%s"
 KODI_ADDON_PREFIX = "kodi-addon-%s"
 PACKAGE_PREFIX = "%s"
@@ -278,7 +284,7 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 		self.firstTime = True
 		self.sortMode = False
 		self.selectedPlugin = None
-		self.internetAccess = 0  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
+		self.internetCheckedTime = None
 		if config.pluginfilter.userfeed.value != "https://" and not exists("/etc/opkg/user-feed.conf"):
 			self.createFeedConfig()
 		self.onFirstExecBegin.append(self.checkWarnings)  # This is needed to avoid a modal screen issue.
@@ -368,17 +374,36 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 
 	def layoutFinished(self):
 		self[self.layout].enableAutoNavigation(False)  # Override list box self navigation.
-		self.callLater(self.checkInternet)
 		self.updatePluginList()
 
-	def checkInternet(self):
+	def startDownloadCheck(self, mode):
+		self["key_green"].setText("")
+		self["key_yellow"].setText("")
+		self["pluginDownloadActions"].setEnabled(False)
+		Processing.instance.setDescription(_("Please wait while the Internet connection is checked..."))
+		Processing.instance.showProgress(endless=True)
 		self.internetCheckThread = eInternetCheck()
-		self.internetCheckThread.callback.get().append(self.internetCheckCallback)
+		self.internetCheckThread.callback.get().append(lambda result: self.internetCheckCallback(result, mode))
 		self.internetCheckThread.startThread(FEED_SERVER, INTERNET_TIMEOUT, True)
 
-	def internetCheckCallback(self, result):  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
-		self.internetAccess = result
+	def internetCheckCallback(self, result, mode):  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
+		Processing.instance.hideProgress()
 		self.updateButtons()
+		if result == 0:
+			self.internetCheckedTime = time()
+			self.openDownloadScreen(mode)
+		else:
+			text = PackageAction.getInternetErrorText(result)
+			print(f"[PluginBrowser] Error: {text}")
+			Toast.instance.showToast(text=_(text), toasttype=Toast.TYPE_ERROR, timeout=5)
+
+	def openDownloadScreen(self, mode):
+		self.session.openWithCallback(self.childScreenClosedCallback, PackageAction, mode)
+		if mode == PackageAction.MODE_INSTALL:
+			self.firstTime = False
+
+	def isInternetCheckValid(self):
+		return self.internetCheckedTime is not None and time() - self.internetCheckedTime < INTERNET_CHECK_VALID
 
 	def updatePluginList(self):
 		pluginList = pluginComponent.getPlugins(PluginDescriptor.WHERE_PLUGINMENU)
@@ -405,14 +430,9 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 			self["pluginEditActions"].setEnabled(True)
 		else:
 			self["key_red"].setText(_("Remove Plugins"))
-			if self.internetAccess == 0:  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
-				self["key_green"].setText(_("Install Plugins"))
-				self["key_yellow"].setText(_("Update Plugins"))
-				self["pluginDownloadActions"].setEnabled(True)
-			else:
-				self["key_green"].setText("")
-				self["key_yellow"].setText("")
-				self["pluginDownloadActions"].setEnabled(False)
+			self["key_green"].setText(_("Install Plugins"))
+			self["key_yellow"].setText(_("Update Plugins"))
+			self["pluginDownloadActions"].setEnabled(True)
 			self["key_blue"].setText(_("Edit Mode On") if config.usage.plugins_sort_mode.value == "user" else "")
 			self["pluginRemoveActions"].setEnabled(True)
 			self["pluginEditActions"].setEnabled(False)
@@ -497,9 +517,10 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 		if self.sortMode:
 			if config.usage.plugins_sort_mode.value == "user" and self.sortMode:
 				self.keySelect()
+		elif self.isInternetCheckValid():
+			self.openDownloadScreen(PackageAction.MODE_INSTALL)
 		else:
-			self.session.openWithCallback(self.childScreenClosedCallback, PackageAction, PackageAction.MODE_INSTALL)
-			self.firstTime = False
+			self.startDownloadCheck(PackageAction.MODE_INSTALL)
 
 	def keyYellow(self):
 		if self.sortMode:
@@ -511,8 +532,10 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 			else:
 				config.usage.plugin_sort_weight.changeConfigValue(plugin.name.lower(), "hidden", 1)
 				self["key_yellow"].setText(_("Show"))
+		elif self.isInternetCheckValid():
+			self.openDownloadScreen(PackageAction.MODE_UPDATE)
 		else:
-			self.session.openWithCallback(self.childScreenClosedCallback, PackageAction, PackageAction.MODE_UPDATE)
+			self.startDownloadCheck(PackageAction.MODE_UPDATE)
 
 	def childScreenClosedCallback(self):
 		self.checkWarnings()
@@ -836,6 +859,16 @@ class PackageAction(Screen, NumericalTextInput):
 		4: "MODE_PACKAGE",
 		5: "MODE_SOFTCAM"
 	}
+	INTERNET_ERROR_TEXTS = {  # 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
+		1: "Feed server DNS error!",
+		2: "Feed server access error!",
+		3: "Network adapter not connected to a network!",
+		4: "No network adapters enabled/available!"
+	}
+
+	@staticmethod
+	def getInternetErrorText(result):  # Always English, for logging. Wrap with _() for display.
+		return PackageAction.INTERNET_ERROR_TEXTS.get(result, "No Internet connection available!")
 
 	MANAGE_OPTIONS = {
 		MODE_MANAGE: (MODE_MANAGE, _("Plugin"), _("Plugins"), _("plugin"), _("plugins"), ENIGMA_PREFIX, PLUGIN_CATEGORIES),
@@ -1035,25 +1068,13 @@ class PackageAction(Screen, NumericalTextInput):
 				self.internetCheckThread.startThread(FEED_SERVER, INTERNET_TIMEOUT, True)
 
 	def internetCheckCallback(self, result):  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
-		match result:
-			case 0:
-				self.opkgComponent.runCommand(self.opkgComponent.CMD_REFRESH_INFO, self.opkgFilterArguments)
-			case 1:
-				self["description"].setText(_("Feed server DNS error!"))
-				print("[PluginBrowser] PackageAction Error: Feed server DNS error!")
-				self.setWaiting(None)
-			case 2:
-				self["description"].setText(_("Feed server access error!"))
-				print("[PluginBrowser] PackageAction Error: Feed server access error!")
-				self.setWaiting(None)
-			case 3:
-				self["description"].setText(_("Network adapter not connected to a network!"))
-				print("[PluginBrowser] PackageAction Error: Network adapter not connected to a network!")
-				self.setWaiting(None)
-			case 4:
-				self["description"].setText(_("No network adapters enabled/available!"))
-				print("[PluginBrowser] PackageAction Error: No network adapters enabled/available!")
-				self.setWaiting(None)
+		if result == 0:
+			self.opkgComponent.runCommand(self.opkgComponent.CMD_REFRESH_INFO, self.opkgFilterArguments)
+		else:
+			text = self.getInternetErrorText(result)
+			self["description"].setText(_(text))
+			print(f"[PluginBrowser] PackageAction Error: {text}")
+			self.setWaiting(None)
 
 	def selectionChanged(self):
 		label = ""

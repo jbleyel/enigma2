@@ -1030,7 +1030,7 @@ class Adapter:
 		return value
 
 	@property
-	def statusDetailsText(self) -> str:
+	def connectionText(self) -> str:
 		# Encryption is what wpa_supplicant negotiated, not what the saved connection asks for; DHCP reflects the active connection's own setting.
 		parts = []
 		connection = networkManager.activeConnection(self.name)
