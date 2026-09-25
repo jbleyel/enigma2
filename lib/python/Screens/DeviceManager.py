@@ -1054,6 +1054,7 @@ class DeviceManagerMountPoints(Setup):
 						if item[1] == self.customMountPoints[index]:
 							self.moveToItem(item)
 							break
+					self.setFootnote(None)
 					return
 				mountPoint = f"/media/{mountPoint}"
 			mountPoints.append(mountPoint)
