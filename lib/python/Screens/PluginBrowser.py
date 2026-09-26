@@ -30,19 +30,14 @@ from Tools.LoadPixmap import LoadPixmap
 from Tools.NumericalTextInput import NumericalTextInput
 
 MODULE_NAME = __name__.split(".")[-1]
-
 INTERNET_TIMEOUT = 3
 INTERNET_CHECK_VALID = 30 * 60  # Re-check if the last successful check is older than this, in seconds.
 FEED_SERVER = "feeds2.mynonpublic.com"
-
-
-
 ENIGMA_PREFIX = "enigma2-plugin-%s"
 KODI_ADDON_PREFIX = "kodi-addon-%s"
 PACKAGE_PREFIX = "%s"
 SOFTCAM_PREFIX = "enigma2-plugin-softcams-%s"
 KERNEL_PREFIX = "kernel-module-%s"
-
 PLUGIN_CATEGORIES = {
 	"": _("Other Packages"),
 	"display": _("Display Skin Packages"),
@@ -104,7 +99,6 @@ PACKAGE_CATEGORY_MAPPINGS = {
 	"x11/libs": "x11",
 	"x11/utils": "x11"
 }
-
 PLUGIN_LIST = 0
 PLUGIN_GRID = 1
 
@@ -289,6 +283,7 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 			self.createFeedConfig()
 		self.onFirstExecBegin.append(self.checkWarnings)  # This is needed to avoid a modal screen issue.
 		self.onLayoutFinish.append(self.layoutFinished)
+		self.onClose.append(self.doClose)
 
 	def isProtected(self):
 		return config.ParentalControl.setuppinactive.value and not config.ParentalControl.config_sections.main_menu.value and config.ParentalControl.config_sections.plugin_browser.value
@@ -304,6 +299,9 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 						PluginBrowser.moveFontColor = parseColor(value)
 						item.skinAttributes.remove((attribute, value))
 		Screen.createGUIScreen(self, parent, desktop, updateonly)
+
+	def doClose(self):
+		self.internetCheckThread = None
 
 	def selectionChanged(self):
 		if self.pluginList:
