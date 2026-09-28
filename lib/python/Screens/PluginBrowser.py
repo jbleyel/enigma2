@@ -279,6 +279,7 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 		self.sortMode = False
 		self.selectedPlugin = None
 		self.internetCheckedTime = None
+		self.internetCheckThread = None
 		if config.pluginfilter.userfeed.value != "https://" and not exists("/etc/opkg/user-feed.conf"):
 			self.createFeedConfig()
 		self.onFirstExecBegin.append(self.checkWarnings)  # This is needed to avoid a modal screen issue.
@@ -301,7 +302,9 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 		Screen.createGUIScreen(self, parent, desktop, updateonly)
 
 	def doClose(self):
-		self.internetCheckThread = None
+		if self.internetCheckThread:
+			Processing.instance.hideProgress()
+			self.internetCheckThread = None
 
 	def selectionChanged(self):
 		if self.pluginList:
@@ -378,6 +381,8 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 		self["key_green"].setText("")
 		self["key_yellow"].setText("")
 		self["pluginDownloadActions"].setEnabled(False)
+		self["pluginRemoveActions"].setEnabled(False)
+		self["actions"].setEnabled(False)
 		Processing.instance.setDescription(_("Please wait while the Internet connection is checked..."))
 		Processing.instance.showProgress(endless=True)
 		self.internetCheckThread = eInternetCheck()
@@ -387,6 +392,7 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 	def internetCheckCallback(self, result, mode):  # 0=Site reachable, 1=DNS error, 2=Other network error, 3=No link, 4=No active adapter.
 		Processing.instance.hideProgress()
 		self.updateButtons()
+		self.internetCheckThread = None
 		if result == 0:
 			self.internetCheckedTime = time()
 			self.openDownloadScreen(mode)
@@ -419,6 +425,7 @@ class PluginBrowser(Screen, NumericalTextInput, ProtectedScreen):
 		self.updateButtons()
 
 	def updateButtons(self):
+		self["actions"].setEnabled(True)
 		if self.sortMode:
 			self["key_red"].setText(_("Reset Order"))
 			self["key_green"].setText(_("Move Mode Off") if self.selectedPlugin else _("Move Mode On"))
@@ -1015,6 +1022,7 @@ class PackageAction(Screen, NumericalTextInput):
 		self.currentBootLogo = None
 		self.currentSettings = None
 		self.logData = ""
+		self.internetCheckThread = None
 		self.opkgComponent = OpkgComponent()
 		self.opkgComponent.addCallback(self.fetchOpkgDataCallback)
 		opkgFilterArguments = [self.modeData[self.DATA_FILTER] % "*"]
@@ -1049,6 +1057,11 @@ class PackageAction(Screen, NumericalTextInput):
 		# 	print(f"[PluginBrowser] DEBUG: Plugin exclude filter {count} is '{exclude}'.")
 		# print("[PluginBrowser] DEBUG: Exclude filter is '%s'." % (r"(%s)$" % "|".join(displayExclude) if displayExclude else r"^$"))
 		self.onLayoutFinish.append(self.layoutFinished)
+		self.onClose.append(self.doClose)
+
+	def doClose(self):
+		if self.internetCheckThread:
+			self.internetCheckThread = None
 
 	def layoutFinished(self):
 		self["plugins"].enableAutoNavigation(False)
