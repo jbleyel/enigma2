@@ -1515,9 +1515,8 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 		else
 			current_delay = (live_pts + 0x200000000LL) - playback_pts;
 
-		pts_t final_target_delay = m_original_timeshift_delay + safety_buffer_pts;
-
 #ifdef ENABLE_TIMESHIFT_HW_LATENCY_FIX
+		pts_t final_target_delay = m_original_timeshift_delay + safety_buffer_pts;
 		int hw_latency_ms = eSimpleConfig::getInt("config.timeshift.hwLatencyCorrection", 2000);
 		if (hw_latency_ms < 0)
 			hw_latency_ms = 0;
@@ -1528,10 +1527,11 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 			final_target_delay -= latency_correction;
 		else
 			final_target_delay = 9000;
-#endif
 
-		// (void)final_target_delay; // no longer used for the decision
-
+		// unchanged legacy behaviour for devices that define the macro
+		if (current_delay >= final_target_delay)
+			recovery_complete = true;
+#else
 		if (!m_recovery_return_seen) {
 			// step 1: wait until valid data is back (live_pts moved past the frozen value)
 			if (current_delay >= m_original_timeshift_delay + 90 * 100) { // +100 ms
@@ -1546,6 +1546,7 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 			if (adv >= safety_buffer_pts)
 				recovery_complete = true;
 		}
+#endif
 	}
 
 	if (recovery_complete) {
