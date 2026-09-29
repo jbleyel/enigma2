@@ -1434,6 +1434,7 @@ void eDVBServicePlay::serviceEvent(int event)
 void eDVBServicePlay::resetRecoveryState() {
 	m_original_timeshift_delay = 0;
 	m_delay_calculated = false;
+	m_recovery_return_seen = false;
 	m_stream_corruption_detected = false;
 	if (m_precise_recovery_timer->isActive())
 		m_precise_recovery_timer->stop();
@@ -1459,6 +1460,7 @@ void eDVBServicePlay::handleEofRecovery() {
 			else
 				m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
 			m_delay_calculated = true;
+			m_recovery_return_seen = false;
 			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
 		}
 	}
@@ -1528,8 +1530,22 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 			final_target_delay = 9000;
 #endif
 
-		if (current_delay >= final_target_delay)
-			recovery_complete = true;
+		// (void)final_target_delay; // no longer used for the decision
+
+		if (!m_recovery_return_seen) {
+			// step 1: wait until valid data is back (live_pts moved past the frozen value)
+			if (current_delay >= m_original_timeshift_delay + 90 * 100) { // +100 ms
+				m_recovery_return_seen = true;
+				m_recovery_return_pts = live_pts;
+			}
+		} else {
+			// step 2: hold for `safety` of STREAM time after that moment
+			pts_t adv = (live_pts - m_recovery_return_pts) & 0x1FFFFFFFFLL;
+			if (adv > (1LL << 32)) // small backwards PTS noise (B-frames)
+				adv -= (1LL << 33);
+			if (adv >= safety_buffer_pts)
+				recovery_complete = true;
+		}
 	}
 
 	if (recovery_complete) {
