@@ -263,6 +263,5 @@ def openList(session, files):
 	return False
 
 
-# Convenience wrapper around openList() for a single file with a known mimetype.
 def openFile(session, mimetype, file):
 	return openList(session, [ScanFile(file, mimetype)])
