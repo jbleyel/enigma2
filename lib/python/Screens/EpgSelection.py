@@ -1912,7 +1912,7 @@ class EPGSelection(Screen):
 			return
 		if self.zapFunc:
 			self.zapSelectedService(True)
-			self.refreshTimer.start(2000)
+			self.refreshTimer.start(5000)
 		if not self.currch or self.currch == self.prevch:
 			if self.zapFunc:
 				self.zapFunc(None, False)
