@@ -27,7 +27,6 @@ int bidirpipe(int pfd[], const char *cmd , const char * const argv[], const char
 		return(-1);
 	else if (pid == 0) /* child process */
 	{
-		//eDebug("[eConsoleAppContainer] Child Process");
 		setsid();
 		if ( close(0) == -1 || close(1) == -1 || close(2) == -1 )
 			_exit(0);
@@ -46,7 +45,6 @@ int bidirpipe(int pfd[], const char *cmd , const char * const argv[], const char
 		if (cwd && chdir(cwd) < 0)
 			eDebug("[eConsoleAppContainer] failed to change directory to %s (%m)", cwd);
 
-		//eDebug("[eConsoleAppContainer] execvp");
 		execvp(cmd, (char * const *)argv);
 		/* the vfork will actually suspend the parent thread until execvp is called. thus it's ok to use the shared arg/cmdline pointers here. */
 		eDebug("[eConsoleAppContainer] Finished %s", cmd);
@@ -59,7 +57,6 @@ int bidirpipe(int pfd[], const char *cmd , const char * const argv[], const char
 	pfd[1] = pfdout[1];
 	pfd[2] = pfderr[0];
 
-	//eDebug("[eConsoleAppContainer] bidirpipe pid = %d", pid);
 	return(pid);
 }
 
@@ -270,10 +267,10 @@ void eConsoleAppContainer::closePipes()
 
 void eConsoleAppContainer::readyRead(int what)
 {
-	//eDebug("[eConsoleAppContainer] readyRead what = %d / pid = %d", what, pid);
 	bool hungup = what & eSocketNotifier::Hungup;
 	if (what & (eSocketNotifier::Priority|eSocketNotifier::Read))
 	{
+//		eDebug("[eConsoleAppContainer] readyRead what = %d", what);
 		char* buf = &buffer[0];
 		int rd;
 		while((rd = read(fd[0], buf, buffer.size()-1)) > 0)
@@ -293,7 +290,6 @@ void eConsoleAppContainer::readyRead(int what)
 	readyErrRead(eSocketNotifier::Priority|eSocketNotifier::Read); /* be sure to flush all data which might be already written */
 	if (hungup)
 	{
-		//eDebug("[eConsoleAppContainer] readyRead hungup pid = %d", pid);
 		int childstatus;
 		int retval = killstate;
 		/*
@@ -302,16 +298,12 @@ void eConsoleAppContainer::readyRead(int what)
 		 */
 		if (::waitpid(-pid, &childstatus, 0) > 0)
 		{
-			//eDebug("[eConsoleAppContainer] readyRead hungup waitpid pid = %d / childstatus = %d", pid, childstatus);
 			if (WIFEXITED(childstatus))
 			{
-				//eDebug("[eConsoleAppContainer] readyRead hungup WEXITSTATUS pid = %d", pid);
 				retval = WEXITSTATUS(childstatus);
 			}
 		}
-		//eDebug("[eConsoleAppContainer] readyRead hungup closePipes pid = %d", pid);
 		closePipes();
-		//eDebug("[eConsoleAppContainer] readyRead hungup appClosed pid = %d / retval = %d", pid, retval);
 		/*emit*/ appClosed(retval);
 	}
 }
