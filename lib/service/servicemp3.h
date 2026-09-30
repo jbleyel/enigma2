@@ -23,6 +23,7 @@ public:
 	eServiceFactoryMP3();
 	virtual ~eServiceFactoryMP3();
 	enum { id = eServiceReference::idServiceMP3 };
+	static eServiceFactoryMP3 *getDVBIFactory(const eServiceReference &ref);
 
 	// iServiceHandler
 	RESULT play(const eServiceReference&, ePtr<iPlayableService>& ptr);
@@ -33,6 +34,7 @@ public:
 	gint m_eServicemp3_counter;
 
 private:
+	static eServiceFactoryMP3 *instance;
 	ePtr<eStaticServiceMP3Info> m_service_info;
 };
 
@@ -374,6 +376,7 @@ private:
 	bool m_audiosink_not_running;
 	/* DASH path: bypass playbin, build explicit pipeline via gst_parse_launch */
 	bool m_is_dash_pipeline;
+	bool m_is_adaptive_stream;
 	/* servicemMP3 chapter TOC support CVR */
 	bool m_use_chapter_entries;
 	/* last used seek position gst-1 only */
@@ -384,7 +387,13 @@ private:
 	gint m_last_seek_count;
 	bool m_seeking_or_paused;
 	bool m_to_paused;
+	// seek held back until preroll, -1 = none
 	gint64 m_pending_seek_pos;
+	bool m_prerolled;
+	// evResumed still to be sent
+	bool m_resume_pending;
+	// "&e2subtitletrack=" given, ignore pango_autoturnon
+	bool m_subtitle_requested;
 	int64_t m_last_trickseek_ms;   /* CLOCK_MONOTONIC, throttle 500ms */
 	bufferInfo m_bufferInfo;
 	errorInfo m_errorInfo;
@@ -464,6 +473,7 @@ private:
 	gulong m_subs_to_pull_handler_id, m_notify_source_handler_id, m_notify_element_added_handler_id;
 
 	RESULT seekToImpl(pts_t to);
+	void applyPendingSeek();
 
 	gint m_aspect, m_width, m_height, m_framerate, m_progressive, m_gamma;
 	std::string m_useragent;
