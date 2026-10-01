@@ -1821,8 +1821,9 @@ class DNSSettings(Setup):
 		self.dnsServerGroups = []
 		if config.usage.dns.value != "dnscrypt":
 			current = self.dnsOptions[config.usage.dns.value]
-			self.dnsServersV4 = current["v4"][:]
-			self.dnsServersV6 = current["v6"][:]
+			# Keep edits and ordering in the profile when another option rebuilds the list.
+			self.dnsServersV4 = current["v4"]
+			self.dnsServersV6 = current["v6"]
 			v4 = config.usage.dnsMode.value != 3
 			v6 = config.usage.dnsMode.value != 2
 			isCustom = config.usage.dns.value == "custom"
@@ -1880,8 +1881,10 @@ class DNSSettings(Setup):
 					if value:
 						servers.append(value)
 		networkManager.setNameservers(servers)
-		networkManager.save()
-		Setup.keySave(self)
+		if networkManager.save():
+			Setup.keySave(self)
+		else:
+			self.session.showError(_("Unable to save network configuration!"))
 
 	def writeDnsCryptToml(self):  # DNSCrypt TOML helpers.
 		def replaceKeyLine(line, key, value, foundSet):

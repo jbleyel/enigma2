@@ -524,7 +524,6 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 		tsid = chid.transport_stream_id.get();
 	}
 	uniqueEPGKey service( eit->getServiceID(), onid, tsid);
-	bool epgdbg = m_debug || isEPGDebugService(service);
 
 	eit_event_struct* eit_event = (eit_event_struct*) (data+ptr);
 	int eit_event_size;
@@ -532,10 +531,6 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 
 	time_t start_time = parseDVBtime((const uint8_t*)eit_event + 2);
 	time_t now = ::time(0) - historySeconds;
-
-	if (isEPGDebugService(service))
-		eDebug("[eEPGCache] DBG sectionRead service=(%04X:%04X:%04X) source=0x%X table_id=0x%02X now=%lld.",
-			service.onid, service.tsid, service.sid, source, data[0], (long long)::time(0));
 
 	// Set a flag in the channel to signify that the source is available
 	if ( start_time != 3599 && start_time > -1 && channel)
@@ -576,11 +571,7 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 
 		std::vector<int>::iterator m_it=find(onid_blacklist.begin(),onid_blacklist.end(),onid);
 		if (m_it != onid_blacklist.end())
-		{
-			if (isEPGDebugService(service))
-				eDebug("[eEPGCache] DBG service=(%04X:%04X:%04X) skip: onid blacklisted.", service.onid, service.tsid, service.sid);
 			goto next;
-		}
 
 		if ((start_time != 3599) &&  // NVOD Service
 				(start_time < (now+maxdays*24*60*60)) &&  // maxdays for EPG - no more than maxdays in future
@@ -608,7 +599,7 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 				if (next_start > new_start && new_end > next_start)
 				{
 					int fixed_duration = next_start - new_start;
-					if (epgdbg)
+					if (m_debug)
 						eDebug("[eEPGCache] Event %04X: suspicious duration %d s corrected to %d s using next event in same section (starts at %lld).", event_id, new_evt->getDuration(), fixed_duration, (long long)next_start);
 					new_evt->setDuration(fixed_duration);
 					new_end = next_start;
@@ -623,7 +614,7 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 				{
 					time_t cached_start = next_it->second->getStartTime();
 					int fixed_duration = cached_start - new_start;
-					if (epgdbg)
+					if (m_debug)
 						eDebug("[eEPGCache] Event %04X: suspicious duration %d s corrected to %d s using cached event %04X (starts at %lld).", event_id, new_evt->getDuration(), fixed_duration, next_it->second->getEventID(), (long long)cached_start);
 					new_evt->setDuration(fixed_duration);
 					new_end = cached_start;
@@ -668,21 +659,13 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 					int remainder = clip_end > clip_start ? clip_end - clip_start : 0;
 					if (!keepRemainder(remainder, new_end - new_start))
 					{
-						if (isEPGDebugService(service))
-							eDebug("[eEPGCache] DBG service=(%04X:%04X:%04X) event %04X (%lld~%lld, source=0x%X) skipped: overlaps higher-priority event.",
-								service.onid, service.tsid, service.sid,
-								event_id, (long long)new_start, (long long)new_end, source);
-						else if(epgdbg)
+						if(m_debug)
 							eDebug("[eEPGCache] Event %04X for service (%04X:%04X:%04X) (%lld~%lld, source=0x%X) skipped: overlaps higher-priority event.",
 								event_id, service.onid, service.tsid, service.sid, (long long)new_start, (long long)new_end, source);
 						delete new_evt;
 						goto next;
 					}
-					if (isEPGDebugService(service))
-						eDebug("[eEPGCache] DBG service=(%04X:%04X:%04X) event %04X (source=0x%X) clipped %lld~%lld -> %lld~%lld by higher-priority event.",
-							service.onid, service.tsid, service.sid,
-							event_id, source, (long long)new_start, (long long)new_end, (long long)clip_start, (long long)clip_end);
-					else if(epgdbg)
+					if(m_debug)
 						eDebug("[eEPGCache] Event %04X for service (%04X:%04X:%04X) (source=0x%X) clipped %lld~%lld -> %lld~%lld by higher-priority event.",
 							event_id, service.onid, service.tsid, service.sid, source, (long long)new_start, (long long)new_end, (long long)clip_start, (long long)clip_end);
 					if (clip_start != new_start)
@@ -699,19 +682,20 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 			{
 				if ((source & ~EPG_IMPORT) > (ev_it->second->type & ~EPG_IMPORT))
 				{
-					if(epgdbg)
+					if(m_debug)
 						eDebug("[eEPGCache] Event %04X skip update: source=0x%X > type=0x%X.", event_id, source, ev_it->second->type);
 					delete new_evt;
 					goto next;
 				}
 
-				if(epgdbg)
+				if(m_debug)
 					eDebug("[eEPGCache] Removing event %04X at %lld.", ev_it->second->getEventID(), (long long)ev_it->second->getStartTime());
 
 				// Remove existing event
 				if (timemap.erase(ev_it->second->getStartTime()) == 0)
 				{
-					eDebug("[eEPGCache] Event %04X not found in time map at %lld.", event_id, (long long)ev_it->second->getStartTime());
+					if (m_debug)
+						eDebug("[eEPGCache] Event %04X not found in time map at %lld.", event_id, (long long)ev_it->second->getStartTime());
 				}
 				eventData *data = ev_it->second;
 				eventmap.erase(ev_it);
@@ -743,7 +727,7 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 					// Keep the part sticking out at the front, else the one at the back.
 					if (old_start < new_start && keepRemainder(new_start - old_start, old_duration))
 					{
-						if(epgdbg)
+						if(m_debug)
 							eDebug("[eEPGCache] Truncating event %04X for service (%04X:%04X:%04X): "
 								"duration %d s, end %lld -> %lld "
 								"(overlaps new event %04X at %lld).",
@@ -756,7 +740,7 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 					}
 					else if (old_end > new_end && keepRemainder(old_end - new_end, old_duration) && timemap.find(new_end) == timemap.end())
 					{
-						if(epgdbg)
+						if(m_debug)
 							eDebug("[eEPGCache] Truncating event %04X for service (%04X:%04X:%04X) "
 								"(%lld~%lld, type=0x%X) to tail %lld~%lld instead of removing it, "
 								"superseded at the front by new event %04X (%lld~%lld, source=0x%X).",
@@ -773,23 +757,11 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 					}
 					else
 					{
-						if(epgdbg) {
+						if(m_debug) {
 							eDebug("[eEPGCache] Removing old overlapping event %04X:\n"
 									"       old %lld ~ %lld\n"
 									"       new %lld ~ %lld",
 									it->second->getEventID(), (long long)old_start, (long long)old_end, (long long)new_start, (long long)new_end);
-						}
-
-						if (isEPGDebugService(service) && it->second->getEventID() != event_id)
-						{
-							time_t real_now = ::time(0);
-							bool was_airing = old_start <= real_now && real_now < old_end;
-							eDebug("[eEPGCache] DBG GAP service=(%04X:%04X:%04X) dropping event %04X (%lld~%lld, type=0x%X) "
-								"was_currently_airing=%d, overlap caused by new event %04X (%lld~%lld, source=0x%X) now=%lld.",
-								service.onid, service.tsid, service.sid,
-								it->second->getEventID(), (long long)old_start, (long long)old_end, it->second->type,
-								was_airing,
-								event_id, (long long)new_start, (long long)new_end, source, (long long)real_now);
 						}
 
 						if (eventmap.erase(it->second->getEventID()) == 0)
@@ -808,7 +780,7 @@ void eEPGCache::sectionRead(const uint8_t *data, int source, eEPGChannelData *ch
 					break;
 			}
 
-			if(epgdbg)
+			if(m_debug)
 				eDebug("[eEPGCache] Inserting event %04X at %lld.", event_id, (long long)new_start);
 
 			eventmap[event_id] = new_evt;
@@ -938,7 +910,7 @@ void eEPGCache::cleanLoop()
 				time_t end_time = start_time + It->second->getDuration();
 				if (end_time < now)
 				{
-					if(m_debug || isEPGDebugService(DBIt->first)) {
+					if(m_debug) {
 						eDebug("[eEPGCache] cleanLoop: Service (%04X:%04X:%04X) delete old event %04X at time %ld.",
 							DBIt->first.onid, DBIt->first.tsid, DBIt->first.sid,
 							It->second->getEventID(), (long)start_time);
@@ -1370,12 +1342,6 @@ RESULT eEPGCache::lookupEventTime(const eServiceReference &service, time_t t, co
 
 	// check whether EPG for this service is ready...
 	eventCache::iterator It = eventDB.find( key );
-
-	if (isEPGDebugService(key))
-		eDebug("[eEPGCache] DBG lookupEventTime service=(%04X:%04X:%04X) t=%lld direction=%d cached=%d events=%d now=%lld.",
-			key.onid, key.tsid, key.sid, (long long)t, direction,
-			It != eventDB.end(), It != eventDB.end() ? (int)It->second.byEvent.size() : 0, (long long)::time(0));
-
 	if ( It != eventDB.end() && !It->second.byEvent.empty() ) // entries cached ?
 	{
 		if ( t == -1 )

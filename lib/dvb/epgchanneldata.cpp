@@ -51,11 +51,6 @@ void eEPGChannelData::startChannel()
 		eTrace("[eEPGChannelData] next update in %i min", update/60000);
 	else if (update >= 1000)
 		eTrace("[eEPGChannelData] next update in %i sec", update/1000);
-
-	if (isEPGDebugTransponder(channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get()))
-		eDebug("[eEPGChannelData] DBG startChannel transponder (onid=%04X tsid=%04X) next update in %d ms now=%lld.",
-			channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get(),
-			update, (long long)::time(0));
 }
 
 /**
@@ -66,9 +61,6 @@ void eEPGChannelData::startChannel()
 void eEPGChannelData::startEPG()
 {
 	eTrace("[eEPGChannelData] start reading events(%lld)", (long long)::time(0));
-	if (channel && isEPGDebugTransponder(channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get()))
-		eDebug("[eEPGChannelData] DBG startEPG transponder (onid=%04X tsid=%04X) now=%lld.",
-			channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get(), (long long)::time(0));
 	state=0;
 	haveData=0;
 	for (unsigned int i=0; i < sizeof(seenSections)/sizeof(tidMap); ++i)
@@ -297,10 +289,6 @@ void eEPGChannelData::finishEPG()
 	if (!isRunning)  // epg ready
 	{
 		eTrace("[eEPGChannelData] stop caching events(%lld)", (long long)::time(0));
-		if (isEPGDebugTransponder(channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get()))
-			eDebug("[eEPGChannelData] DBG finishEPG transponder (onid=%04X tsid=%04X) haveData=0x%X now=%lld.",
-				channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get(),
-				haveData, (long long)::time(0));
 		zapTimer->start(UPDATE_INTERVAL, 1);
 		eTrace("[eEPGChannelData] next update in %i min", UPDATE_INTERVAL / 60000);
 		for (unsigned int i=0; i < sizeof(seenSections)/sizeof(tidMap); ++i)
@@ -324,10 +312,6 @@ void eEPGChannelData::finishEPG()
 
 void eEPGChannelData::abortEPG()
 {
-	if (channel && isEPGDebugTransponder(channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get()))
-		eDebug("[eEPGChannelData] DBG abortEPG transponder (onid=%04X tsid=%04X) state=%d isRunning=0x%X haveData=0x%X now=%lld.",
-			channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get(),
-			state, isRunning, haveData, (long long)::time(0));
 	for (unsigned int i=0; i < sizeof(seenSections)/sizeof(tidMap); ++i)
 	{
 		seenSections[i].clear();
@@ -532,10 +516,6 @@ void eEPGChannelData::readData( const uint8_t *data, int source)
 			default: eTraceNoNewLine("unknown");break;
 		}
 		eTraceNoNewLine(" finished(%lld)\n", (long long)::time(0));
-		if (isEPGDebugTransponder(channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get()))
-			eDebug("[eEPGChannelData] DBG readData source=0x%X finished for transponder (onid=%04X tsid=%04X) state=%d isRunning=0x%X haveData=0x%X now=%lld.",
-				source, channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get(),
-				state, isRunning, haveData, (long long)::time(0));
 		if ( reader )
 			reader->stop();
 		isRunning &= ~source;
@@ -552,12 +532,6 @@ void eEPGChannelData::readData( const uint8_t *data, int source)
 
 		tidMap::iterator it =
 			seenSections.find(sectionNo);
-
-		if (isEPGDebugService((data[3] << 8) | data[4], channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get()))
-			eDebug("[eEPGChannelData] DBG readData service=0x%04X source=0x%X table_id=0x%02X version=%d section=%d/%d segment_last=%d duplicate=%d state=%d.",
-				(data[3] << 8) | data[4], source, data[0], eit->version_number,
-				eit->section_number, eit->last_section_number, eit->segment_last_section_number,
-				it != seenSections.end(), state);
 
 		if ( it == seenSections.end() )
 		{
@@ -583,10 +557,6 @@ void eEPGChannelData::readData( const uint8_t *data, int source)
 
 void eEPGChannelData::abortNonAvail()
 {
-	if (isEPGDebugTransponder(channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get()))
-		eDebug("[eEPGChannelData] DBG abortNonAvail transponder (onid=%04X tsid=%04X) state=%d isRunning=0x%X haveData=0x%X now=%lld.",
-			channel->getChannelID().original_network_id.get(), channel->getChannelID().transport_stream_id.get(),
-			state, isRunning, haveData, (long long)::time(0));
 	if (!state)
 	{
 		if ( !(haveData & eEPGCache::NOWNEXT) && (isRunning & eEPGCache::NOWNEXT) )

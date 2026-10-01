@@ -43,7 +43,7 @@ class ConfigList(GUIComponent):
 		self.timer.callback.remove(self.timeout)
 
 	def timeout(self):
-		self.handleKey(ActionKeys.ACTIONKEY_TIMEOUT)
+		self.handleKey(ActionKeys.TIMEOUT)
 
 	def postWidgetCreate(self, instance):
 		instance.selectionChanged.get().append(self.selectionChanged)
@@ -74,10 +74,10 @@ class ConfigList(GUIComponent):
 
 	def handleKey(self, key, callback=None):
 		selection = self.getCurrent(full=False)
-		if selection and selection[1].enabled:
+		if selection and selection[1].enabled and not selection[1].isReadOnly():
 			changed = selection[1].handleKey(key, callback)
 			self.invalidateCurrent()
-			if key in ActionKeys.ACTIONKEY_NUMBERS:
+			if key in ActionKeys.NUMBERS:
 				self.timer.start(1000, 1)
 			return changed
 		return False
@@ -323,7 +323,7 @@ class ConfigListScreen:
 		if currConfig is not None:
 			currentConfig = currConfig[1]
 			if currentConfig.isReadOnly():
-				self["configActions"].setEnabled(False)
+				self["configActions"].setEnabledAction("select", False)
 				self["navigationActions"].setEnabledAction("first", False)
 				self["navigationActions"].setEnabledAction("left", False)
 				self["navigationActions"].setEnabledAction("right", False)
@@ -334,7 +334,7 @@ class ConfigListScreen:
 				self["editConfigActions"].setEnabled(False)
 				showVirtualKeyBoard(False)
 			else:
-				self["configActions"].setEnabled(True)
+				self["configActions"].setEnabledAction("select", True)
 				self["navigationActions"].setEnabledAction("first", True)
 				self["navigationActions"].setEnabledAction("left", True)
 				self["navigationActions"].setEnabledAction("right", True)
@@ -389,7 +389,7 @@ class ConfigListScreen:
 			elif isinstance(currentItem, ConfigText) and not isinstance(currentItem, (ConfigMACText, ConfigNumber)):
 				self.keyText()
 			else:
-				self["config"].handleKey(ActionKeys.ACTIONKEY_SELECT, self.entryChanged)
+				self["config"].handleKey(ActionKeys.SELECT, self.entryChanged)
 
 	def keyOK(self):  # This is the deprecated version of keySelect!
 		self.keySelect()
@@ -433,16 +433,16 @@ class ConfigListScreen:
 		self["config"].goLineUp()
 
 	def keyFirst(self):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_FIRST, self.entryChanged)
+		self["config"].handleKey(ActionKeys.FIRST, self.entryChanged)
 
 	def keyLeft(self):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_LEFT, self.entryChanged)
+		self["config"].handleKey(ActionKeys.LEFT, self.entryChanged)
 
 	def keyRight(self):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_RIGHT, self.entryChanged)
+		self["config"].handleKey(ActionKeys.RIGHT, self.entryChanged)
 
 	def keyLast(self):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_LAST, self.entryChanged)
+		self["config"].handleKey(ActionKeys.LAST, self.entryChanged)
 
 	def keyDown(self):
 		self["config"].goLineDown()
@@ -454,22 +454,22 @@ class ConfigListScreen:
 		self["config"].goBottom()
 
 	def keyBackspace(self):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_BACKSPACE, self.entryChanged)
+		self["config"].handleKey(ActionKeys.BACKSPACE, self.entryChanged)
 
 	def keyDelete(self):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_DELETE, self.entryChanged)
+		self["config"].handleKey(ActionKeys.DELETE, self.entryChanged)
 
 	def keyErase(self):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_ERASE, self.entryChanged)
+		self["config"].handleKey(ActionKeys.ERASE, self.entryChanged)
 
 	def keyToggle(self):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_TOGGLE, self.entryChanged)
+		self["config"].handleKey(ActionKeys.TOGGLE, self.entryChanged)
 
 	def keyGotAscii(self):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_ASCII, self.entryChanged)
+		self["config"].handleKey(ActionKeys.ASCII, self.entryChanged)
 
 	def keyNumberGlobal(self, number):
-		self["config"].handleKey(ActionKeys.ACTIONKEY_0 + number, self.entryChanged)
+		self["config"].handleKey(ActionKeys.NUMBER_0 + number, self.entryChanged)
 
 	def keySave(self):
 		for notifier in self.onSave:
