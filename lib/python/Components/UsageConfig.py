@@ -1,7 +1,8 @@
+from gettext import bindtextdomain, dgettext
 from glob import glob
 from locale import AM_STR, PM_STR, nl_langinfo
 from os import makedirs, remove, unlink
-from os.path import exists, isfile, join as pathjoin, normpath, splitext
+from os.path import dirname, exists, isdir, isfile, join as pathjoin, normpath, splitext
 from sys import maxsize
 from time import time
 
@@ -15,7 +16,7 @@ from Components.International import international
 from Components.NimManager import nimmanager
 from Components.ServiceList import refreshServiceList
 from Components.SystemInfo import BoxInfo
-from Tools.Directories import SCOPE_HDD, SCOPE_SKINS, SCOPE_TIMESHIFT, defaultRecordingLocation, fileReadLines, fileReadXML, fileWriteLine, fileWriteLines, resolveFilename
+from Tools.Directories import SCOPE_HDD, SCOPE_PLUGINS, SCOPE_SKINS, SCOPE_TIMESHIFT, defaultRecordingLocation, fileReadLines, fileReadXML, fileWriteLine, fileWriteLines, resolveFilename
 
 MODULE_NAME = __name__.split(".")[-1]
 DEFAULTKEYMAP = eEnv.resolve("${datadir}/enigma2/keymap.xml")
@@ -28,6 +29,38 @@ visuallyImpairedCommentary = "NAR qad"
 def eEnv_resolve_multi(path):
 	resolve = eEnv.resolve(path)
 	return [] if resolve == path else resolve.split()
+
+
+def refreshChannelSelectionStyleChoices():
+	def translateSkinString(text):
+		return dgettext(skinDir, text)
+
+	skinDir = dirname(config.skin.primary_skin.value).replace("MetrixHD", "MyMetrixLite")
+	localePath = resolveFilename(SCOPE_PLUGINS, pathjoin("Extensions", skinDir, "locale"))
+
+	if skinDir and isdir(localePath):
+		bindtextdomain(skinDir, localePath)
+	else:
+		translateSkinString = _
+
+	screenChoiceList = [("", _("Legacy mode"))]
+	styles = getcomponentTemplateNames("serviceList") or []
+	if styles:
+		for screen, (element, path) in domScreens.items():
+			if element.get("base") == "ChannelSelection":
+				screenChoiceList.append((screen, translateSkinString(element.get("label", screen))))
+	widgetChoiceList = [(style, translateSkinString(style)) for style in styles]
+	for name, choices, default in (
+		("screenStyle", screenChoiceList, ""),
+		("widgetStyle", widgetChoiceList, styles[0] if styles else "")
+	):
+		setting = getattr(config.channelSelection, name, None)
+		if setting is None:
+			setattr(config.channelSelection, name, ConfigSelection(default=default, choices=choices))
+		else:
+			setting.setChoices(choices, default=default)
+			# Refresh the cached label even when the new skin uses the same selection key.
+			setting.value = setting.value
 
 
 def InitUsageConfig():
@@ -342,34 +375,7 @@ def InitUsageConfig():
 
 	config.channelSelection.showTimers = ConfigYesNo(default=False)
 
-	screenChoiceList = [("", _("Legacy mode"))]
-	widgetChoiceList = []
-	styles = getcomponentTemplateNames("serviceList")
-	translateSkinString = None
-	if "MetrixHD" in config.skin.primary_skin.value:
-		try:
-			from Plugins.Extensions.MyMetrixLite import translateSkinString
-		except ImportError:
-			pass
-
-	if not translateSkinString:
-		def translateSkinString(text):
-			return text
-
-	default = ""
-	if styles:
-		for screen in domScreens:
-			element, path = domScreens.get(screen, (None, None))
-			if element.get("base") == "ChannelSelection":
-				label = element.get("label", screen)
-				screenChoiceList.append((screen, translateSkinString(label)))
-
-		default = styles[0]
-		for style in styles:
-			widgetChoiceList.append((style, translateSkinString(style)))
-
-	config.channelSelection.screenStyle = ConfigSelection(default="", choices=screenChoiceList)
-	config.channelSelection.widgetStyle = ConfigSelection(default=default, choices=widgetChoiceList)
+	refreshChannelSelectionStyleChoices()
 
 	# ########  Workaround for VTI Skins   ##############
 	config.usage.picon_dir = ConfigDirectory(default="/usr/share/enigma2/picon")

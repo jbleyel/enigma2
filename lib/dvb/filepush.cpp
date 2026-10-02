@@ -609,6 +609,13 @@ void eFilePushThreadRecorder::thread()
 					break;
 				}
 				m_buffer_fill = 0;
+				m_stall_ticks = 0;
+			}
+			else if (!m_stall_signalled && ++m_stall_ticks >= stallTriggerTicks)
+			{
+				eDebug("[eFilePushThreadRecorder] TS data stall: no packets from demux for %u ms", m_stall_ticks * 100);
+				m_stall_signalled = true;
+				sendEvent(evtStreamCorrupt);
 			}
 			continue;
 		}
@@ -658,6 +665,13 @@ void eFilePushThreadRecorder::thread()
 			eDebug("[eFilePushThreadRecorder] *read error* (%m) - aborting thread because i don't know what else to do.");
 			sendEvent(evtReadError);
 			break;
+		}
+
+		if (bytes > 0)
+		{
+			/* Data arrived - re-arm the stall detector. */
+			m_stall_ticks = 0;
+			m_stall_signalled = false;
 		}
 
 		/* Accumulate data. */

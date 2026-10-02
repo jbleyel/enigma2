@@ -282,8 +282,6 @@ protected:
 
 	void updateTimeshiftPids();
 
-	virtual void updateTimeshiftClockPid(int /*pid*/) {}
-
 	void resetTimeshift(int start);
 	void switchToTimeshift();
 
@@ -379,8 +377,6 @@ protected:
 	std::atomic<bool> m_stream_corruption_detected; // FIXED: Changed to std::atomic<bool> to prevent Race Conditions
 
 	bool m_delay_calculated = false; // Flag to ensure delay is calculated only once.
-	bool m_recovery_return_seen = false;
-	pts_t m_recovery_return_pts = 0;
 
 	virtual void handleEofRecovery();
 	virtual void startPreciseRecoveryCheck();

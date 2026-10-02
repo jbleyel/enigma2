@@ -15,7 +15,7 @@ from Tools.LoadPixmap import LoadPixmap
 
 MODULE_NAME = __name__.split(".")[-1].capitalize()
 
-DEFAULT_SKIN = "MetrixHD/skin.xml"
+DEFAULT_SKIN = "Umbra/skin.xml" if BoxInfo.getItem("SmallFlash") else "MetrixHD/skin.xml"
 EMERGENCY_SKIN = "skin_default/skin.xml"
 EMERGENCY_NAME = "Default OE-A"
 DEFAULT_DISPLAY_SKIN = "skin_display_grautec.xml" if BoxInfo.getItem("grautec") else "skin_display.xml"
@@ -255,7 +255,10 @@ def reloadSkins():
 	clearResolveLists()
 	clearFonts()
 	clearPixmapCache()
+	componentTemplates.clear()
 	InitSkins()
+	from Components.UsageConfig import refreshChannelSelectionStyleChoices
+	refreshChannelSelectionStyleChoices()
 
 
 # Method to load a skinTemplates.xml if one exists or load the templates from the screens.
@@ -1799,11 +1802,10 @@ class ComponentTemplates:
 	def clear(self):
 		self.templates = {}
 		self.changedTimes = {}
+		BoxInfo.setMutableItem("CanRefreshTemplates", False)
 
 	def get(self, component, name):
-		if component in self.templates and self.templates[component][name] is not None:
-			return self.templates[component][name]
-		return None
+		return self.templates.get(component, {}).get(name)
 
 	def names(self, component):
 		if component in self.templates:

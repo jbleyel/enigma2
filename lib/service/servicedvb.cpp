@@ -1813,7 +1813,6 @@ void eDVBServicePlay::serviceEvent(int event)
 void eDVBServicePlay::resetRecoveryState() {
 	m_original_timeshift_delay = 0;
 	m_delay_calculated = false;
-	m_recovery_return_seen = false;
 	m_stream_corruption_detected = false;
 	if (m_precise_recovery_timer->isActive())
 		m_precise_recovery_timer->stop();
@@ -1825,19 +1824,18 @@ void eDVBServicePlay::handleEofRecovery() {
 
 	eTrace("[PreciseRecovery] Corruption detected. Pausing playback, recording continues.");
 
+	/* Take the delay fingerprint BEFORE pausing: pause() freezes the decoder
+	 * clock, and a getPlayPosition() taken after it would read a stale or
+	 * zero PTS, corrupting the fingerprint. */
 	if (m_record) {
 		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
-			if (live_pts >= playback_pts)
-				m_original_timeshift_delay = live_pts - playback_pts;
-			else
-				m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
+		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
+			m_original_timeshift_delay = live_pts - playback_pts;
 			m_delay_calculated = true;
-			m_recovery_return_seen = false;
 			eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
 		}
 	}
-	
+
 	if (m_decoder) {
 		m_decoder->pause();
 		m_is_paused = 1;
@@ -1853,13 +1851,14 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 		return;
 	}
 
+	/* The fingerprint is taken in handleEofRecovery() before the pause, so by
+	 * the time this timer runs m_delay_calculated is expected to be set. If it
+	 * is not (reads failed), keep retrying once per tick rather than stopping
+	 * the recovery outright. */
 	if (!m_delay_calculated) {
 		pts_t live_pts = 0, playback_pts = 0;
-		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0) {
-			if (live_pts >= playback_pts)
-				m_original_timeshift_delay = live_pts - playback_pts;
-			else
-				m_original_timeshift_delay = (live_pts + 0x200000000LL) - playback_pts;
+		if (m_record->getCurrentPCR(live_pts) == 0 && getPlayPosition(playback_pts) == 0 && live_pts > playback_pts) {
+			m_original_timeshift_delay = live_pts - playback_pts;
 			m_delay_calculated = true;
 			eTrace("[PreciseRecovery] Delayed fingerprint set: %lld PTS", m_original_timeshift_delay);
 		}
@@ -1894,8 +1893,9 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 		else
 			current_delay = (live_pts + 0x200000000LL) - playback_pts;
 
-#ifdef ENABLE_TIMESHIFT_HW_LATENCY_FIX
 		pts_t final_target_delay = m_original_timeshift_delay + safety_buffer_pts;
+
+#ifdef ENABLE_TIMESHIFT_HW_LATENCY_FIX
 		int hw_latency_ms = eSimpleConfig::getInt("config.timeshift.hwLatencyCorrection", 2000);
 		if (hw_latency_ms < 0)
 			hw_latency_ms = 0;
@@ -1906,26 +1906,10 @@ void eDVBServicePlay::startPreciseRecoveryCheck() {
 			final_target_delay -= latency_correction;
 		else
 			final_target_delay = 9000;
+#endif
 
-		// unchanged legacy behaviour for devices that define the macro
 		if (current_delay >= final_target_delay)
 			recovery_complete = true;
-#else
-		if (!m_recovery_return_seen) {
-			// step 1: wait until valid data is back (live_pts moved past the frozen value)
-			if (current_delay >= m_original_timeshift_delay + 90 * 100) { // +100 ms
-				m_recovery_return_seen = true;
-				m_recovery_return_pts = live_pts;
-			}
-		} else {
-			// step 2: hold for `safety` of STREAM time after that moment
-			pts_t adv = (live_pts - m_recovery_return_pts) & 0x1FFFFFFFFLL;
-			if (adv > (1LL << 32)) // small backwards PTS noise (B-frames)
-				adv -= (1LL << 33);
-			if (adv >= safety_buffer_pts)
-				recovery_complete = true;
-		}
-#endif
 	}
 
 	if (recovery_complete) {
@@ -3833,10 +3817,6 @@ void eDVBServicePlay::updateTimeshiftPids() {
 	if (program.pmtPid != -1)
 		pids_to_record.insert(program.pmtPid);
 
-	// PCR
-	if (program.pcrPid >= 0 && program.pcrPid < 0x1fff)
-		pids_to_record.insert(program.pcrPid);
-
 	// Videotext
 	if (program.textPid != -1)
 		pids_to_record.insert(program.textPid);
@@ -3884,8 +3864,6 @@ void eDVBServicePlay::updateTimeshiftPids() {
 
 	if (timing_pid != -1)
 		m_record->setTimingPID(timing_pid, timing_pid_type, timing_stream_type);
-
-	updateTimeshiftClockPid((program.pcrPid >= 0 && program.pcrPid < 0x1fff) ? program.pcrPid : timing_pid);
 }
 
 RESULT eDVBServicePlay::setNextPlaybackFile(const char *f)
