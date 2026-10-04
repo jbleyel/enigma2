@@ -4,6 +4,24 @@ Not all files in the codebase follow these rules — when editing legacy code, a
 
 ---
 
+## General rules
+
+1. Write human readable code.
+2. Write code so that it looks like it was written by a human, the same human who wrote the rest of the code.
+3. Use variable names that explain what the variable is for and what it does.
+4. Keep UI components consistent, coherent and familiar with all the other UI code.
+5. Write code that flows in a logical progression and does not require jumping all over the current and other modules to make sense.
+6. Don't create a mess of modules where the code is not being shared.
+7. Don't define static items in a module that doesn't use them and force an import into the module that does use them.
+8. Don't create a method if the code is only a few lines long and the method is only used once.
+9. Use `Screens/Menu.py` and `Screens/Setup.py` as reference examples for screens.
+10. When creating new code, tell the skinners what they need to do to skin it.
+11. Use screen variables that allow screens to be shared or "panel"ed as appropriate.
+12. Don't use Python reserved words or builtin names as variable names.
+13. Follow PEP 8. Not every PEP 8 rule is used, but most are; see [PEP 8 rules enforced by autopep8](#pep-8-rules-enforced-by-autopep8) below.
+
+---
+
 ## Indentation
 
 Tabs, not spaces.  
@@ -238,6 +256,73 @@ label = _("Settings")
 
 ---
 
+## Code patterns
+
+### Single return
+
+Use a single `return` at the end of a function where possible.  
+Don't force it if early returns keep the code easier to read.
+
+```python
+# Bad
+def getServiceName(self, serviceReference):
+	if serviceReference is None:
+		return ""
+	info = eServiceCenter.getInstance().info(serviceReference)
+	if info is None:
+		return ""
+	return info.getName(serviceReference)
+
+# Good
+def getServiceName(self, serviceReference):
+	serviceName = ""
+	info = serviceReference and eServiceCenter.getInstance().info(serviceReference)
+	if info:
+		serviceName = info.getName(serviceReference)
+	return serviceName
+```
+
+### List comprehensions
+
+Use list comprehensions where possible.  
+Inside a comprehension the loop variable is always `x`.
+
+```python
+# Bad
+choices = []
+for adapter in adapters:
+	if adapter.isActive:
+		choices.append((adapter.name, adapter.description))
+
+# Good
+choices = [(x.name, x.description) for x in adapters if x.isActive]
+```
+
+### Tuple or set instead of list
+
+Use a tuple for fixed sequences and a set for membership tests where possible.  
+A list is only needed when the content changes.
+
+```python
+# Bad
+if mode in ["auto", "manual", "off"]:
+	pass
+for key in ["red", "green", "yellow", "blue"]:
+	pass
+
+# Good
+if mode in ("auto", "manual", "off"):
+	pass
+for key in ("red", "green", "yellow", "blue"):
+	pass
+
+SKIP_EXTENSIONS = {".tmp", ".bak", ".swp"}
+if extension in SKIP_EXTENSIONS:
+	pass
+```
+
+---
+
 ## PEP 8 rules enforced by autopep8
 
 The following rule codes are applied automatically. Violations in new code should be avoided.
@@ -457,3 +542,14 @@ from module import name  # noqa F401
 ```
 
 Use sparingly — only when the suppression is genuinely correct, not to silence a real bug.
+
+---
+
+## Testing
+
+1. Test your changes. Then test them again.
+2. Test as many options as possible, not just your personal configuration. The code is not just for you.
+3. If you want others to test your code, give them a test plan.
+4. If you can't test all the options your code addresses, ask for testing help. Tell the helpers what you need tested, what to expect and what not to expect.
+5. If you ask others to test, freeze that version of the code so you can verify their issue reports. Then confirm that their issues are fixed in the next test version.
+6. If you are testing hardware drivers or hardware-related code, make sure you have enough test devices to reasonably test it.
