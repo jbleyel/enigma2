@@ -119,13 +119,6 @@ protected:
 	size_t m_buffer_fill;
 	size_t m_buffer_min_write = minWriteDefault;
 	int m_stop;
-	/* Stall detection: consecutive poll() timeouts with zero bytes read.
-	 * A locked DVB frontend always delivers TS packets (PCR at least every
-	 * 40 ms), so ~500 ms of silence means the signal is gone - long before
-	 * the driver's evtSignalLost (1.5-2 s debounce). */
-	static const int stallTriggerTicks = 5; /* 5 x 100 ms poll timeout */
-	unsigned int m_stall_ticks = 0;
-	bool m_stall_signalled = false;
 private:
 	eFixedMessagePump<int> m_messagepump;
 	void recvEvent(const int &evt);
