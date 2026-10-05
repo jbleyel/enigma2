@@ -156,29 +156,26 @@ Never rename a config key once it has been released — doing so discards saved 
 
 ## Import order
 
-Defined by `pyproject.toml` (`[tool.isort]`).  
-Five sections, in this order, with a blank line between each group:
+Imports are grouped in this order:
 
-| Section       | Contents                                             |
-| ------------- | ---------------------------------------------------- |
-| `STDLIB`      | Python standard library                              |
-| `ENIGMA`      | `enigma` C++ extension (`from enigma import ...`)    |
-| `THIRDPARTY`  | `skin`, `Components.*`, `Screens.*`, `Tools.*`       |
-| `FIRSTPARTY`  | `Plugins.*`                                          |
-| `LOCALFOLDER` | Relative imports (rare)                              |
+1. Python standard library (`os`, `time`, ...)
+2. Third-party packages like `twisted` or `PIL`
+3. `enigma`
+4. `skin`, `Components.*`, `Plugins.Plugin`, `Screens.*`, `Tools.*`
+5. Absolute imports of the plugin's own modules (`Plugins.Extensions.MyPlugin.*`)
+6. Relative imports (rare)
 
-Within each section, imports are sorted alphabetically (case-sensitive).  
-Multiple names from the same module go on one line, sorted alphabetically.
+- There is **no blank line** between groups 1 to 5. Only the relative imports are separated by one blank line.
+- Within each group, imports are sorted alphabetically and case-sensitive, `import x` and `from x import y` mixed.
+- Multiple names from the same module go on one line, sorted alphabetically, also with `as`. Lines are never wrapped.
 
 ```python
-# STDLIB
 from gettext import dgettext
-from os.path import getmtime, isdir, isfile
+from os.path import getmtime, isdir, isfile, join
+from twisted.internet.threads import deferToThread
 
-# ENIGMA
 from enigma import eTimer, eWindowStyleManager
 
-# THIRDPARTY — skin, Components, Screens, Tools (alphabetical across all)
 from skin import menus
 from Components.ActionMap import HelpableActionMap, HelpableNumberActionMap
 from Components.config import ConfigDictionarySet, NoSave, config, configfile
@@ -186,21 +183,23 @@ from Components.Label import Label
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo, getBoxDisplayName
+from Plugins.Plugin import PluginDescriptor
 from Screens.Screen import Screen, ScreenSummary
 from Screens.Setup import Setup
 from Tools.BoundFunction import boundFunction
 from Tools.Directories import SCOPE_GUISKIN, SCOPE_SKINS, fileReadXML, resolveFilename
 from Tools.LoadPixmap import LoadPixmap
 
-# FIRSTPARTY
-from Plugins.Plugin import PluginDescriptor
+from Plugins.Extensions.MyPlugin.MyList import MyList
+
+from .client import uploadReport
 ```
 
 **No multiple modules on one line** (`import os, sys` → `E401`).
 
-### Prefer explicit `from` imports
+### Always use `from` imports
 
-Always import names directly. Do not use the bare `import module` form and then access names via dotted path.
+Always import names directly with `from module import name`, for example `from os import close`. Never use the bare `import module` form and then access names via dotted path.
 
 ```python
 # Bad
@@ -209,9 +208,9 @@ if os.path.exists(path):
     os.path.join(a, b)
 
 # Good
-from os.path import exists, join as pathjoin
+from os.path import exists, join
 if exists(path):
-    pathjoin(a, b)
+    join(a, b)
 ```
 
 ```python
@@ -221,12 +220,11 @@ import sys
 
 # Good
 from os import listdir, unlink
-from os.path import dirname, isfile, join as pathjoin
+from os.path import dirname, isfile, join
 from sys import argv
 ```
 
-This applies to stdlib, enigma, and all enigma2 modules alike.  
-Exception: if a module has too many names to list, or the dotted form is genuinely clearer in context, the bare import is acceptable — but this is rare.
+This applies to stdlib, enigma, all enigma2 modules and other modules like `twisted`, `PIL` or `qrcode` alike. There is no exception: also a long list of names goes into one `from` line. If a name clashes with a builtin or another import, rename it with `as` (`from os import open as osOpen`).
 
 ### No wildcard imports
 
@@ -319,6 +317,59 @@ for key in ("red", "green", "yellow", "blue"):
 SKIP_EXTENSIONS = {".tmp", ".bak", ".swp"}
 if extension in SKIP_EXTENSIONS:
 	pass
+```
+
+### Path concatenation
+
+Use `join` from `os.path` to build paths. Import it as `join`, not under another name.
+Don't concatenate paths with `+`, `%` or f-strings.
+
+```python
+# Bad
+path = directory + "/" + fileName
+path = f"{directory}/{fileName}"
+from os.path import join as pathjoin
+
+# Good
+from os.path import join
+path = join(directory, fileName)
+```
+
+### f-strings
+
+Use f-strings where possible, instead of `%` formatting, `str.format()` or `+` concatenation.
+
+```python
+# Bad
+print("[Example] Error %d: %s" % (err.errno, err.strerror))
+text = "Version " + version
+text = "{} of {}".format(index, count)
+
+# Good
+print(f"[Example] Error {err.errno}: {err.strerror}")
+text = f"Version {version}"
+text = f"{index} of {count}"
+```
+
+Exception: translatable texts. The msgid must be a constant string, so keep `%` there.
+
+```python
+# Good
+text = _("Tracking: %s") % tracking
+```
+
+### Shell commands
+
+Run commands without an extra shell where possible and always use the full path of the binary.  
+Pass a tuple to `Console().ePopen()`: the binary, `argv[0]` and then the arguments.  
+Only use a command string (which starts a shell) when shell features like pipes or redirection are really needed.
+
+```python
+# Bad — starts /bin/sh and depends on $PATH
+self.console.ePopen(f"ifconfig {self.adapter} up", callback=ifUpCallback)
+
+# Good — no shell, full path
+self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=ifUpCallback)
 ```
 
 ---
