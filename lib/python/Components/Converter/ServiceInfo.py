@@ -147,7 +147,7 @@ class ServiceInfo(Converter):
 					tokens.append(literal)
 				if field:
 					typeValue, interestingEvent = handleType(field)
-					if typeValue:
+					if typeValue is not None:
 						interestingEvents.extend(list(interestingEvent))
 						tokens.append(typeValue)
 			self.interestingEvents = tuple(set(interestingEvents))
@@ -330,7 +330,7 @@ class ServiceInfo(Converter):
 				case self.FORMAT_STRING:
 					out = []
 					for part in self.tokens:
-						out.append(self.getText(part[0]) if isinstance(part, int) else part)
+						out.append(self.getText(part) if isinstance(part, int) else part)
 					result = "".join(out)
 
 		# print(f"[ServiceInfo] DEBUG: Converter string argument '{self.argument}' result is '{result}'{"." if isinstance(result, str) else " TYPE MISMATCH!"}")
