@@ -9,8 +9,7 @@ GlobalStrings.py must contain these markers:
         ...constants...
         # END
 
-    def reloadStrings(self):
-        self.strings = {
+        strings = {
             # START
             ...dict entries...
             # END
@@ -36,8 +35,8 @@ GLOBAL_STRINGS_PATH = os.path.join(ROOT_DIR, "GlobalStrings.py")
 
 CONST_START = "\t# START\n"
 CONST_END = "\n\t# END"
-STR_START = "\t\t\t# START\n"
-STR_END = "\n\t\t\t# END"
+STR_START = "\t\t# START\n"
+STR_END = "\n\t\t# END"
 
 
 def to_constant_name(text):
@@ -152,7 +151,7 @@ def parse_existing(content):
 
 	# name -> text from the strings dict
 	name_to_text = {}
-	for m in re.finditer(r'^\t\t\tself\.([A-Z_]+): _\("([^"]+)"\),?\s*$', str_block, re.MULTILINE):
+	for m in re.finditer(r'^\t\t([A-Z0-9_]+): N_\("([^"]+)"\),?\s*$', str_block, re.MULTILINE):
 		name_to_text[m.group(1)] = m.group(2)
 
 	return name_to_text
@@ -172,7 +171,7 @@ def build_blocks(name_to_text):
 	for i, name in enumerate(sorted_names):
 		text = name_to_text[name]
 		comma = "," if i < last else ""
-		str_lines.append('\t\t\tself.' + name + ': _("' + text + '")' + comma)
+		str_lines.append('\t\t' + name + ': N_("' + text + '")' + comma)
 
 	return "\n".join(const_lines), "\n".join(str_lines)
 
