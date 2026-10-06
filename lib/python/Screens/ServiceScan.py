@@ -1,7 +1,4 @@
-from os import remove
-from os.path import exists
-
-from enigma import eComponentScan, eServiceCenter, eServiceReference, eTimer, iDVBFrontend
+from enigma import eComponentScan, eServiceReference, eTimer, iDVBFrontend
 
 from Components.ActionMap import HelpableActionMap
 from Components.config import config
@@ -19,17 +16,12 @@ from Screens.InfoBar import InfoBar
 from Screens.Processing import Processing
 from Screens.Screen import Screen, ScreenSummary
 from ServiceReference import isRadioServiceReference, serviceRefAppendPath, service_types_radio_ref, service_types_tv_ref
-from Tools.Directories import SCOPE_CONFIG, fileReadLines, fileWriteLines, resolveFilename
+from Tools.Directories import SCOPE_CONFIG, fileReadLines, resolveFilename
+from Tools.Notifications import notificationCenter
+from Tools.ScanBouquetRepair import ScanBouquetRepair
 from Tools.Transponder import getChannelNumber
 
 MODULE_NAME = __name__.split(".")[-1]
-REMOVED_SERVICES_FILE = resolveFilename(SCOPE_CONFIG, "removed_services")
-REMOVED_SERVICES_HEADER = [
-	"# Bouquet services removed (R) or renamed (C) by the last service scan.",
-	"# #BOUQUET<TAB>file<TAB>name",
-	"# R<TAB>service reference<TAB>old name",
-	"# C<TAB>service reference<TAB>old name<TAB>new name"
-]
 
 
 class ServiceScan(Screen):
@@ -43,11 +35,13 @@ class ServiceScan(Screen):
 		3: _("No channel list")
 	}
 
-	def __init__(self, session, scanList):
+	def __init__(self, session, scanList, updateBouquets=False):
 		Screen.__init__(self, session, enableHelp=True)
-		self.skinName = ["ScanService", "ServiceScan"]
 		self.setTitle(_("Service Scan"))
 		self.scanList = scanList
+		self.updateBouquets = updateBouquets and bool(scanList) and all(scan["flags"] & eComponentScan.scanRemoveServices for scan in scanList)
+		self.bouquetRepair = None
+		self.onClose.append(self.clearBouquetRepair)
 		if hasattr(session, "infobar"):
 			self.currentInfobar = InfoBar.instance
 			if self.currentInfobar:
@@ -106,9 +100,7 @@ class ServiceScan(Screen):
 		self.state = self.RUNNING
 		self.currentSystem = None
 		self.foundServices = 0
-		self.removedServicesPending = False
 		self.onLayoutFinish.append(self.layoutFinished)
-		self.onClose.append(self.updateRemovedServices)
 
 	def layoutFinished(self):
 		self["servicelist"].enableAutoNavigation(False)
@@ -118,11 +110,13 @@ class ServiceScan(Screen):
 		if self.session.nav.RecordTimer.isRecording():
 			self["pass"].setText(_("Recording in progress!"))
 			self["scan_state"].setText(_("Scanning can't be performed while recordings are in progress."))
-			if self.run == 0:
-				self["key_red"].setText(_("Close"))
 		else:
-			if self.run == 0 and any(x["flags"] & eComponentScan.scanRemoveServices for x in self.scanList):
-				self.writeRemovedServices()
+			if self.run == 0 and self.updateBouquets:
+				try:
+					self.bouquetRepair = ScanBouquetRepair()
+				except Exception as err:
+					print(f"[ServiceScan] Unable to prepare bouquet update: {err}")
+					notificationCenter.showError(_("Unable to prepare the bouquet update. The scan will continue without updating bouquets."))
 			self.scan = eComponentScan()
 			self.scan.newService.get().append(self.newService)
 			self.scan.statusChanged.get().append(self.statusChanged)
@@ -142,6 +136,8 @@ class ServiceScan(Screen):
 		self.foundServices += 1
 		serviceName = self.scan.getLastServiceName()
 		serviceRef = self.scan.getLastServiceRef()
+		if self.bouquetRepair is not None:
+			self.bouquetRepair.addScannedService(serviceRef)
 		self.serviceList.append((serviceName, serviceRef))
 		self["servicelist"].setList(self.serviceList)
 		self["servicelist"].goBottom()
@@ -332,10 +328,10 @@ class ServiceScan(Screen):
 					self.timer.callback.append(delayNext1)  # Hack to work around a timing bug in eComponentScan!
 					self.timer.startLongTimer(2)  # Delay the next step by 2 seconds to give eComponentScan time to finish.
 				else:
+					self.finishBouquetRepair()
 					def delayNext2():
 						self.timer.stop()
 						self.timer.callback.remove(delayNext2)
-						self.updateRemovedServices()
 						if self.foundServices:
 							self.runLCNScanner()
 							self["servicelist"].setCurrentIndex(0)
@@ -348,6 +344,7 @@ class ServiceScan(Screen):
 					self.timer.callback.append(delayNext2)  # Hack to work around a timing bug in eComponentScan!
 					self.timer.startLongTimer(2)  # Delay the next step by 2 seconds to give eComponentScan time to finish.
 			case self.ERROR:
+				self.clearBouquetRepair()
 				stateText = _("Error: Failed to run service scan!  (%s)") % self.ERRORS[errorCode]
 
 		if stateText:
@@ -355,56 +352,27 @@ class ServiceScan(Screen):
 			for callback in self.onStateChanged:
 				callback(stateText)
 
-	def writeRemovedServices(self):  # Save the current bouquet services before the scan removes them.
-		def getName(serviceRef):
-			info = serviceHandler.info(serviceRef)
-			return info and info.getName(serviceRef) or ""
+	def clearBouquetRepair(self):
+		if self.bouquetRepair is not None:
+			self.bouquetRepair.clear()
+			self.bouquetRepair = None
 
-		serviceHandler = eServiceCenter.getInstance()
-		# Keep the old names of services that are still missing from a previous scan.
-		oldNames = {x[1]: x[2] for x in [x.split("\t") for x in fileReadLines(REMOVED_SERVICES_FILE, default=[], source=MODULE_NAME)] if len(x) > 2 and x[0] == "R"}
-		lines = REMOVED_SERVICES_HEADER[:]
-		for root in ("bouquets.tv", "bouquets.radio"):
-			bouquetList = serviceHandler.list(eServiceReference(f"1:7:1:0:0:0:0:0:0:0:FROM BOUQUET \"{root}\" ORDER BY bouquet"))
-			for bouquet in bouquetList.getContent("R") if bouquetList else []:
-				path = bouquet.getPath()
-				serviceList = serviceHandler.list(bouquet) if bouquet.flags & eServiceReference.isDirectory and "\"" in path else None
-				if serviceList:
-					lines.append(f"#BOUQUET\t{path.split('"')[1]}\t{getName(bouquet)}")
-					for service in serviceList.getContent("R"):
-						if service.type == eServiceReference.idDVB and not service.flags & (eServiceReference.isMarker | eServiceReference.isDirectory) and not service.getPath():
-							serviceRef = eServiceReference(service.toCompareString())  # Ignore the bouquet description name.
-							key = serviceRef.toString()
-							name = getName(serviceRef) or oldNames.get(key, "")
-							if name:
-								lines.append(f"S\t{key}\t{name}")
-		fileWriteLines(REMOVED_SERVICES_FILE, lines, source=MODULE_NAME)
-		self.removedServicesPending = True
-
-	def updateRemovedServices(self):  # Keep only the services that were removed or renamed by the scan.
-		if self.removedServicesPending:
-			self.removedServicesPending = False
-			serviceHandler = eServiceCenter.getInstance()
-			lines = []
-			bouquet = None
-			for line in fileReadLines(REMOVED_SERVICES_FILE, default=[], source=MODULE_NAME):
-				data = line.split("\t")
-				if data[0] == "#BOUQUET":
-					bouquet = line
-				elif data[0] == "S" and len(data) > 2:
-					serviceRef = eServiceReference(data[1])
-					info = serviceHandler.info(serviceRef)
-					name = info and info.getName(serviceRef) or ""
-					if name != data[2]:
-						if bouquet:
-							lines.append(bouquet)
-							bouquet = None
-						lines.append(f"C\t{data[1]}\t{data[2]}\t{name}" if name else f"R\t{data[1]}\t{data[2]}")
-			if lines:
-				fileWriteLines(REMOVED_SERVICES_FILE, REMOVED_SERVICES_HEADER + lines, source=MODULE_NAME)
-			elif exists(REMOVED_SERVICES_FILE):
-				remove(REMOVED_SERVICES_FILE)
-			print(f"[ServiceScan] {len([x for x in lines if not x.startswith("#")])} bouquet services were removed or renamed by the scan.")
+	def finishBouquetRepair(self):
+		if self.bouquetRepair is None:
+			return
+		try:
+			updated, unresolved, failed = self.bouquetRepair.repair()
+			message = _("Bouquet update: %(updated)d updated, %(unresolved)d unresolved, %(failed)d failed.") % {"updated": updated, "unresolved": unresolved, "failed": failed}
+			print(f"[ServiceScan] {message}")
+			if failed:
+				notificationCenter.showError(message, timeout=8)
+			else:
+				notificationCenter.showInfo(message, timeout=8)
+		except Exception as err:
+			print(f"[ServiceScan] Unable to update bouquets: {err}")
+			notificationCenter.showError(_("Unable to complete the bouquet update. Please check your bouquets."))
+		finally:
+			self.clearBouquetRepair()
 
 	def runLCNScanner(self):
 		def performScan():
@@ -438,6 +406,9 @@ class ServiceScan(Screen):
 		self.finish(True)
 
 	def finish(self, returnValue):
+		self.clearBouquetRepair()
+		if self.state == self.RUNNING:
+			self.timer.stop()
 		# try:
 		# 	self.session.nav.playService(self.currentServiceRef)
 		# except Exception:
