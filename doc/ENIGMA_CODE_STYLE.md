@@ -60,7 +60,8 @@ def addItem(self, element):
 
 ### Module-level constants
 
-`UPPER_SNAKE_CASE` — immutable values that represent fixed configuration, indices, or flags.
+`UPPER_SNAKE_CASE` — immutable values that represent fixed configuration, indices, or flags.  
+Keep module-level constants to a minimum. Prefer class constants where possible, see [Helper class instead of module-level code](#helper-class-instead-of-module-level-code).
 
 ```python
 MENU_TEXT = 0
@@ -91,14 +92,20 @@ self.timerEntry = None
 
 ### Private / internal
 
-Prefix with a single underscore `_`.
+Don't prefix names with an underscore `_`. Python doesn't enforce privacy anyway and the prefix makes the code harder to read.
 
 ```python
+# Bad
 self._dynPhase = 0
-self._dynTimer = eTimer()
 
 def _updateDynamicStack(self):
-    pass
+	pass
+
+# Good
+self.dynPhase = 0
+
+def updateDynamicStack(self):
+	pass
 ```
 
 ### Parameters
@@ -226,6 +233,23 @@ from sys import argv
 
 This applies to stdlib, enigma, all enigma2 modules and other modules like `twisted`, `PIL` or `qrcode` alike. There is no exception: also a long list of names goes into one `from` line. If a name clashes with a builtin or another import, rename it with `as` (`from os import open as osOpen`).
 
+### Imports at the top
+
+Put all imports at the top of the module whenever possible.  
+Only import inside a function when really needed, e.g. to prevent circular imports. Add a short comment why.
+
+```python
+# Bad
+def showInfo(self):
+	from Screens.MessageBox import MessageBox
+	self.session.open(MessageBox, _("Done."), MessageBox.TYPE_INFO)
+
+# Good — local import only to prevent a circular import
+def openSetup(self):
+	from Screens.Setup import Setup  # Prevent circular import.
+	self.session.open(Setup, "MySetup")
+```
+
 ### No wildcard imports
 
 `from module import *` is not allowed. It pollutes the namespace and makes it impossible to tell where a name comes from.
@@ -251,6 +275,29 @@ Do not import them — they are always available.
 # Correct — no import needed
 label = _("Settings")
 ```
+
+### Plugin translations
+
+Special case: plugins with their own translation domain define `PluginLanguageDomain` and their own `_()` in the plugin's `__init__.py`.  
+`_()` looks in the plugin domain first and falls back to the enigma2 translation.  
+The plugin modules import it with `from . import _`.
+
+```python
+# __init__.py
+PluginLanguageDomain = "MyPlugin"
+
+
+def localeInit():
+	bindtextdomain(PluginLanguageDomain, resolveFilename(SCOPE_PLUGINS, "Extensions/MyPlugin/locale"))
+
+
+def _(text):
+	translated = dgettext(PluginLanguageDomain, text)
+	return gettext(text) if translated == text else translated
+```
+
+`PluginLanguageDomain` keeps this name although it is a constant, because it matches the `PluginLanguageDomain` parameter of `Setup`.  
+Don't use another name like `translate()` for the translation function, `xgettext` finds `_()` by default.
 
 ---
 
@@ -319,6 +366,43 @@ if extension in SKIP_EXTENSIONS:
 	pass
 ```
 
+### Helper class instead of module-level code
+
+Avoid module-level functions and constants. Group related constants, data and functions in a helper class with one module-level instance.  
+Only functions that the framework calls by name, like `Plugins()`, `main()` or an autostart function, stay at module level and just call the helper.
+
+```python
+# Bad
+DEVICE_PATH = "/proc/stb/xyz"
+MODES = (("0", "Off"), ("1", "On"))
+
+
+def readMode():
+	with open(DEVICE_PATH) as fd:
+		return fd.read().strip()
+
+
+# Good
+class DeviceHelper:
+	DEVICE_PATH = "/proc/stb/xyz"
+
+	def __init__(self):
+		self.modes = (("0", "Off"), ("1", "On"))
+
+	def readMode(self):
+		with open(self.DEVICE_PATH) as fd:
+			mode = fd.read().strip()
+		return mode
+
+
+deviceHelper = DeviceHelper()
+
+
+def autostart(reason, **kwargs):
+	if reason == 0:
+		deviceHelper.applyMode()
+```
+
 ### Path concatenation
 
 Use `join` from `os.path` to build paths. Import it as `join`, not under another name.
@@ -370,6 +454,54 @@ self.console.ePopen(f"ifconfig {self.adapter} up", callback=ifUpCallback)
 
 # Good — no shell, full path
 self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=ifUpCallback)
+```
+
+---
+
+## Screens
+
+### Color buttons
+
+Fill the four color buttons from left to right without gaps: red, green, yellow, blue.  
+Red is almost always close / exit / cancel.  
+Keep the button texts short.
+
+```python
+# Bad — gap at green, long text
+self["key_red"] = StaticText(_("Cancel"))
+self["key_yellow"] = StaticText(_("Edit the selected entry"))
+
+# Good
+self["key_red"] = StaticText(_("Cancel"))
+self["key_green"] = StaticText(_("Edit"))
+```
+
+### Setup screens
+
+Setup based classes should subclass `Setup` and not `ConfigListScreen`.  
+Use a setup XML file when possible. A screen with only one or two entries doesn't need one, use `setup=None` and override `createSetup()` instead.
+
+```python
+# Bad
+class MySetup(ConfigListScreen, Screen):
+	def __init__(self, session):
+		Screen.__init__(self, session)
+		...
+
+# Good
+class MySetup(Setup):
+	def __init__(self, session):
+		Setup.__init__(self, session, setup="MySetup")
+
+# Good — only one entry, no XML file
+class MySetup(Setup):
+	def __init__(self, session):
+		Setup.__init__(self, session, setup=None)
+
+	def createSetup(self):
+		self.list = [(_("My option"), config.plugins.myPlugin.option, _("Description of my option."))]
+		self["config"].setList(self.list)
+		self.setTitle(_("My Setup"))
 ```
 
 ---
