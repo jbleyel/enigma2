@@ -278,17 +278,18 @@ label = _("Settings")
 
 ### Plugin translations
 
-Special case: plugins with their own translation domain define `PluginLanguageDomain` and their own `_()` in the plugin's `__init__.py`.  
+Special case: plugins with their own translation domain define `PluginLanguageDomain`, `PluginLanguagePath` and their own `_()` in the plugin's `__init__.py`.  
 `_()` looks in the plugin domain first and falls back to the enigma2 translation.  
 The plugin modules import it with `from . import _`.
 
 ```python
 # __init__.py
 PluginLanguageDomain = "MyPlugin"
+PluginLanguagePath = "Extensions/MyPlugin/locale"
 
 
 def localeInit():
-	bindtextdomain(PluginLanguageDomain, resolveFilename(SCOPE_PLUGINS, "Extensions/MyPlugin/locale"))
+	bindtextdomain(PluginLanguageDomain, resolveFilename(SCOPE_PLUGINS, PluginLanguagePath))
 
 
 def _(text):
@@ -296,7 +297,7 @@ def _(text):
 	return gettext(text) if translated == text else translated
 ```
 
-`PluginLanguageDomain` keeps this name although it is a constant, because it matches the `PluginLanguageDomain` parameter of `Setup`.  
+`PluginLanguageDomain` and `PluginLanguagePath` keep these names although they are constants. `PluginLanguageDomain` matches the `PluginLanguageDomain` parameter of `Setup`, and many plugins use both names.  
 Don't use another name like `translate()` for the translation function, `xgettext` finds `_()` by default.
 
 ---

@@ -38,7 +38,7 @@ Licensed under GPLv2.
 #define GFX_SURFACE_BLIT_ACCELERATION_THRESHOLD 0
 #endif
 
-#define GPIXMAP_DEBUG
+// #define GPIXMAP_DEBUG
 
 #ifdef GPIXMAP_DEBUG
 #	include "../base/benchmark.h"

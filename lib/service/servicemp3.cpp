@@ -1333,8 +1333,14 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 	if (strstr(filename, "://"))
 		m_sourceinfo.is_streaming = TRUE;
 	const int mediaHint = m_ref.getData(7) & DVB_I_MEDIA_MASK;
-	m_is_adaptive_stream = (!strncmp(filename, "http://", 7) || !strncmp(filename, "https://", 8))
-		&& (mediaHint == DVB_I_DASH || mediaHint == DVB_I_HLS);
+	const bool isHttp = !strncmp(filename, "http://", 7) || !strncmp(filename, "https://", 8);
+	m_is_adaptive_stream = isHttp && (mediaHint == DVB_I_DASH || mediaHint == DVB_I_HLS);
+#ifndef DREAMNEXTGEN
+	// Use caps discovery on DVB hardware, also for broadcast Internet links.
+	// The Dream-specific fixed DASH pipeline forces AVC instead of byte-stream
+	// and only exposes one audio track; it must not replace normal playbin here.
+	m_is_adaptive_stream = m_is_adaptive_stream || (isHttp && isDashUri(filename));
+#endif
 	if (m_is_adaptive_stream) {
 		m_sourceinfo.is_hls = mediaHint == DVB_I_HLS;
 		m_sourceinfo.is_audio = m_ref.getData(0) == 2;
@@ -1477,6 +1483,12 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 					g_object_set(dvb_audiosink, "volume", (gdouble)v / 100.0, NULL);
 				g_object_set(m_gst_playbin, "volume", (gdouble)1.0, NULL);
 			}
+		}
+		/* Follow eAudioDecoder to the Bluetooth sink (audio_source 2). */
+		if (dvb_audiosink) {
+			int port = 0;
+			CFile::parseInt(&port, "/sys/class/amhdmitx/amhdmitx0/audio_source");
+			g_object_set(dvb_audiosink, "device", port == 2 ? "dreambt" : "dreamhdmi", NULL);
 		}
 		/* dreamaudiosink and eAlsaOutput share the dmix slave on
 		 * dreamhdmi; only the first writer's bytes get forwarded. */
@@ -2117,7 +2129,7 @@ void eServiceMP3::applyPendingSeek() {
  */
 RESULT eServiceMP3::seekTo(pts_t to) {
 	RESULT ret = -1;
-	eDebug("[eServiceMP3] seekTo pts_t to %" G_GINT64_FORMAT, (gint64)to);
+	// eDebug("[eServiceMP3] seekTo pts_t to %" G_GINT64_FORMAT, (gint64)to);
 	if (m_gst_playbin) {
 		m_prev_decoder_time = -1;
 		m_decoder_time_valid_state = 0;
@@ -3241,8 +3253,8 @@ RESULT eServiceMP3::getTrackInfo(struct iAudioTrackInfo& info, unsigned int i) {
 		info.m_language += m_audioStreams[i].title;
 	}
 
-	eDebug("[eServiceMP3] getTrackInfo (%d) - m_description=%s m_language=%s", i, info.m_description.c_str(),
-		   info.m_language.c_str());
+	// eDebug("[eServiceMP3] getTrackInfo (%d) - m_description=%s m_language=%s", i, info.m_description.c_str(),
+	// info.m_language.c_str());
 
 	return 0;
 }
@@ -3466,7 +3478,7 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 						m_subtitle_switch_deferred = false;
 						/* buffers of the previous track may still be queued in the pump */
 						m_subtitle_generation++;
-						eDebug("[eServiceMP3] applying deferred subtitle switch");
+						// eDebug("[eServiceMP3] applying deferred subtitle switch");
 						applySubtitleStreamSwitch();
 					}
 					applyAudioSelection();
@@ -3650,7 +3662,7 @@ void eServiceMP3::gstBusCall(GstMessage* msg) {
 				g_object_get(m_gst_playbin, "n-audio", &n_audio, NULL);
 				g_object_get(m_gst_playbin, "n-text", &n_text, NULL);
 
-				eDebug("[eServiceMP3] async-done - %d video, %d audio, %d subtitle", n_video, n_audio, n_text);
+				// eDebug("[eServiceMP3] async-done - %d video, %d audio, %d subtitle", n_video, n_audio, n_text);
 
 				if (n_video + n_audio <= 0)
 					stop();
@@ -4237,9 +4249,6 @@ void eServiceMP3::gstPoll(ePtr<GstMessageContainer> const& msg) {
 				   the buffer still holds data of the previous track and would be fed to
 				   the parser of the new one */
 				if (m_subtitle_switch_deferred || msg->getGeneration() != m_subtitle_generation) {
-					eDebug("[eServiceMP3] dropping stale subtitle buffer (gen %d, current %d%s)",
-						   msg->getGeneration(), m_subtitle_generation.load(),
-						   m_subtitle_switch_deferred ? ", switch deferred" : "");
 					break;
 				}
 				pullSubtitle(buffer);
@@ -4586,8 +4595,8 @@ void eServiceMP3::pushSubtitles() {
 	}
 	delay_ms = 0;
 
-	eDebug("[eServiceMP3] pushSubtitles running_pts=%lld decoder_ms=%d delay=%d fps=%.2f", running_pts, decoder_ms,
-		   delay_ms, convert_fps);
+	// eDebug("[eServiceMP3] pushSubtitles running_pts=%lld decoder_ms=%d delay=%d fps=%.2f", running_pts, decoder_ms,
+	//	   delay_ms, convert_fps);
 
 #if 0
     eDebug("\n*** all subs: ");
@@ -4817,8 +4826,8 @@ RESULT eServiceMP3::enableSubtitles(iSubtitleUser* user, struct SubtitleTrack& t
 		applySubtitleStreamSwitch();
 	} else {
 		m_subtitle_switch_deferred = true;
-		eDebug("[eServiceMP3] enableSubtitles: pipeline not settled in PLAYING, deferring switch to stream %i",
-			   m_currentSubtitleStream);
+		// eDebug("[eServiceMP3] enableSubtitles: pipeline not settled in PLAYING, deferring switch to stream %i",
+		//	   m_currentSubtitleStream);
 	}
 
 	return 0;
@@ -4862,8 +4871,8 @@ void eServiceMP3::applySubtitleStreamSwitch() {
 	if (g_signal_lookup("get-text-pad", G_OBJECT_TYPE(m_gst_playbin)))
 		g_signal_emit_by_name(m_gst_playbin, "get-text-pad", m_currentSubtitleStream, &textPad);
 	if (textPad) {
-		eDebug("[eServiceMP3] applySubtitleStreamSwitch: forcing input-selector active-pad commit for %s",
-			   GST_PAD_NAME(textPad));
+		// eDebug("[eServiceMP3] applySubtitleStreamSwitch: forcing input-selector active-pad commit for %s",
+		//	   GST_PAD_NAME(textPad));
 		GstElement* selector = gst_pad_get_parent_element(textPad);
 		if (selector) {
 			/* textPad's ref is handed to the async call, released by the
@@ -4875,8 +4884,8 @@ void eServiceMP3::applySubtitleStreamSwitch() {
 		}
 	}
 
-	eDebug("[eServiceMP3] switched to subtitle stream %i (generation %d)", m_currentSubtitleStream,
-		   m_subtitle_generation.load());
+	// eDebug("[eServiceMP3] switched to subtitle stream %i (generation %d)", m_currentSubtitleStream,
+	//	   m_subtitle_generation.load());
 }
 
 /**
