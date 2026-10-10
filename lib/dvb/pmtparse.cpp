@@ -98,6 +98,8 @@ int eDVBPMTParser::getProgramInfo(program &program)
 			for (es = pmt.getEsInfo()->begin(); es != pmt.getEsInfo()->end(); ++es)
 			{
 				int isaudio = 0, isvideo = 0, issubtitle = 0, forced_video = 0, forced_audio = 0, isteletext = 0;
+				int supp_editorial = -1;
+				std::string supp_language;
 				int streamtype = (*es)->getType();
 				videoStream video;
 				audioStream audio;
@@ -381,31 +383,7 @@ int eDVBPMTParser::getProgramInfo(program &program)
 										audio.type = audioStream::atAC4;
 									}
 									break;
-								case 0x06: /* supplementary_audio_descriptor */
-									{
-										if(isaudio)
-										{
-											eDebug("[eDVBPMTParser] supplementary_audio_descriptor");
-											const SelectorByteVector* data = d->getSelectorBytes();
-											if (data->size() > 1)
-											{
-												uint8_t item = data->at(0);
-												uint8_t mix_type = item & 128;
-										        uint8_t editorial_classification = (item & 0x7C) >> 2;
-												char lng[4];
-												lng[0] = '\0';
-												if ((item & 1) && data->size() > 3)
-												{
-													lng[0] = data->at(1);
-													lng[1] = data->at(2);
-													lng[2] = data->at(3);
-													lng[3] = '\0';
-													audio.language_code = lng;
-												}
-												eDebug("mixed %d / type %d lng %s / PID %d LANG %s", mix_type, editorial_classification, lng, (*es)->getPid(), audio.language_code.c_str());
-											}
-										}
-									}
+								case 0x06: /* supplementary_audio_descriptor, handled below */
 									break;
 								default:
 									eDebug("[eDVBPMTParser] TODO: Fix parsing for Extension descriptor with tag: %d", d->getExtensionTag());
@@ -446,9 +424,32 @@ int eDVBPMTParser::getProgramInfo(program &program)
 							processCaDescriptor(program, (CaDescriptor*)(*desc));
 							break;
 						}
+						case EXTENSION_DESCRIPTOR:
+						{
+							ExtensionDescriptor *d = (ExtensionDescriptor*)(*desc);
+							if (d->getExtensionTag() == 0x06) /* supplementary_audio_descriptor */
+							{
+								const SelectorByteVector *data = d->getSelectorBytes();
+								if (!data->empty())
+								{
+									supp_editorial = ((*data)[0] >> 2) & 0x1f;
+									if (((*data)[0] & 0x01) && data->size() >= 4)
+										supp_language.assign(data->begin() + 1, data->begin() + 4);
+								}
+							}
+							break;
+						}
 						default:
 							break;
 						}
+					}
+					/* applied after the loop, independent of descriptor order */
+					if (isaudio && supp_editorial != -1)
+					{
+						if (supp_editorial == 0x01) /* audio description */
+							audio.language_code = "NAR";
+						else if (audio.language_code.empty())
+							audio.language_code = supp_language;
 					}
 					if (!num_descriptors && streamtype == 0x06 && prev_audio)
 					{

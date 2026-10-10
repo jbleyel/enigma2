@@ -172,8 +172,9 @@ Imports are grouped in this order:
 5. Absolute imports of the plugin's own modules (`Plugins.Extensions.MyPlugin.*`)
 6. Relative imports (rare)
 
-- There is **no blank line** between groups 1 to 5. Only the relative imports are separated by one blank line.
-- Within each group, imports are sorted alphabetically and case-sensitive, `import x` and `from x import y` mixed.
+- There is **no blank line** between groups 1 and 2. All other groups are separated by one blank line.
+- Within each group, imports are sorted alphabetically by module path and case-insensitive, `import x` and `from x import y` mixed.
+- Module paths are sorted by folder: first the modules directly in a folder, then its sub folders. So `skin` and `ServiceReference` (in `lib/python`) come before `Components.*`, and `Components.Element` comes before `Components.Converter.*`. This is not done for the Python standard library, `os.path` stays before `re`.
 - Multiple names from the same module go on one line, sorted alphabetically, also with `as`. Lines are never wrapped.
 
 ```python
@@ -187,9 +188,9 @@ from skin import menus
 from Components.ActionMap import HelpableActionMap, HelpableNumberActionMap
 from Components.config import ConfigDictionarySet, NoSave, config, configfile
 from Components.Label import Label
+from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
-from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Plugins.Plugin import PluginDescriptor
 from Screens.Screen import Screen, ScreenSummary
 from Screens.Setup import Setup
@@ -455,6 +456,22 @@ self.console.ePopen(f"ifconfig {self.adapter} up", callback=ifUpCallback)
 
 # Good — no shell, full path
 self.console.ePopen(("/sbin/ifconfig", "/sbin/ifconfig", self.adapter, "up"), callback=ifUpCallback)
+```
+
+### Sizes and units
+
+Use `NumberScaler` from `Tools.Conversions` to show sizes like KB, MB or GB. Don't divide by 1024 and add the unit by hand.  
+`style` selects the units: `"Si"` (kB, MB, GB, base 1000), `"Iec"` (KiB, MiB, GiB, base 1024) or `"Jedec"` (KB, MB, GB, base 1024).  
+Use `UnitScaler` when you need the number and the unit prefix separately.
+
+```python
+# Bad
+size = f"{freeSpace / 1024 / 1024:.1f} MB"
+
+# Good
+from Tools.Conversions import NumberScaler
+
+size = NumberScaler().scale(freeSpace, style="Iec", maxNumLen=3, decimals=1)  # "1.5 MiB"
 ```
 
 ---

@@ -1,7 +1,7 @@
 from enigma import eInputDeviceManager
 
-from Components.Converter.Converter import Converter
 from Components.Element import cached
+from Components.Converter.Converter import Converter
 
 BATTERY_LOW_LEVEL = 20  # Same threshold as DFU_BATTERY_MIN in inputdevicemanager.h.
 

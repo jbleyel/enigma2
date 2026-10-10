@@ -18,11 +18,11 @@
 
 from enigma import eServiceCenter, eServiceReference, eTimer, getBestPlayableServiceReference, iPlayableService, iPlayableServicePtr, iServiceInformation
 
-from Components.Converter.Converter import Converter
+import NavigationInstance
+from Components.config import config
 from Components.Element import cached
 from Components.NimManager import nimmanager
-from Components.config import config
-import NavigationInstance
+from Components.Converter.Converter import Converter
 try:
 	from Components.Renderer.ChannelNumber import ChannelNumberClasses
 	correctChannelNumber = True
