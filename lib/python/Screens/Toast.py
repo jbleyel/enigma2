@@ -157,6 +157,7 @@ class Toast:
 	def showToast(self, text, toasttype, timeout, customIcon=None):
 		timeout = max(3, min(timeout, 10))  # Minimum 3 maximum 10
 		self._queue.append((text, toasttype, timeout, customIcon))
+		print(f"[Toast] Queued '{text}', queue={len(self._queue)}, ready={self._dialog is not None}.")
 		if self._dialog and not self._dialog.shown and not self._nextTimer.isActive():
 			self._showNext()
 
@@ -168,6 +169,7 @@ class Toast:
 		self._nextTimer.stop()
 		if not self._dialog.shown and self._queue:
 			text, toasttype, timeout, customIcon = self._queue.pop(0)
+			print(f"[Toast] Showing '{text}', remaining={len(self._queue)}.")
 			self._dialog.showToast(text, toasttype, timeout, customIcon)
 
 	def doShutdown(self):
