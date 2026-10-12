@@ -1,7 +1,9 @@
 from os.path import exists
 from time import time
-from enigma import eDVBVolumecontrol, eTimer, eDVBLocalTimeHandler, eServiceReference, eStreamServer, quitMainloop, iRecordableService, eDBoxLCD
 
+from enigma import eDBoxLCD, eDVBLocalTimeHandler, eDVBVolumecontrol, eServiceReference, eStreamServer, eTimer, iRecordableService, quitMainloop
+
+from GlobalActions import globalActionMap
 from Components.ActionMap import HelpableActionMap
 from Components.AVSwitch import AVSwitch
 from Components.config import config
@@ -11,10 +13,9 @@ from Components.ImportChannels import ImportChannels
 from Components.Label import Label
 import Components.RecordingConfig
 from Components.ScrambledRecordings import ScrambledRecordings
-from Components.Sources.StreamService import StreamServiceList
 from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Components.Task import job_manager
-from GlobalActions import globalActionMap
+from Components.Sources.StreamService import StreamServiceList
 import Screens.InfoBar
 from Screens.MessageBox import MessageBox, MessageBoxSummary
 from Screens.Screen import Screen, ScreenSummary

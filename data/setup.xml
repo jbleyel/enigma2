@@ -1300,7 +1300,7 @@
 		<item level="2" text="Ignore DVB-S namespace sub network" description="On valid ONIDs, ignore frequency sub network part.">config.usage.subnetwork</item>
 		<item level="2" text="Ignore DVB-C namespace sub network" description="On valid ONIDs, ignore frequency sub network part.">config.usage.subnetwork_cable</item>
 		<item level="2" text="Ignore DVB-T namespace sub network" description="On valid ONIDs, ignore frequency sub network part.">config.usage.subnetwork_terrestrial</item>
-		<item level="1" text="Delivery system workaround" description="Workaround for old tuner driver." requires="need_dsw">config.usage.enable_delivery_system_workaround</item>
+		<item level="1" text="Reopen tuner when changing delivery system" description="Select 'Yes' if a multi-standard tuner fails to tune after switching between satellite, cable and terrestrial reception. The tuner will be closed and reopened after each switch. This is only needed for some older tuner drivers.">config.usage.enable_delivery_system_workaround</item>
 	</setup>
 	<setup key="UBISlotManager" title="Slot Manager">
 		<item level="0" text="Target location" description="Choose the target device for the slots.">self.UBISlotManagerLocation</item>
@@ -1388,6 +1388,10 @@
 		</if>
 		<item level="0" text="InfoBar EPG mode" description="Select how to activate the Quick EPG mode." requires="InfoBarEpg" indent="1">config.plisettings.InfoBarEpg_mode</item>
 		<item level="0" text="General OSD Behavior" />
+		<if requires="CanChangeOsdAlpha">
+			<item level="0" text="Automatically hide OSD" description="Hide the OSD after a period without key presses. Screens and background jobs keep running. The first key press only restores the OSD, and newly opened dialogs make it visible again. Hold 0 to pause until the next GUI restart, or hold 0 again to resume." indent="1">config.osd.autoHide</item>
+			<item level="0" text="Hide OSD after" description="Time without key presses before hiding the OSD." conditional="config.osd.autoHide.value" indent="2">config.osd.autoHideDelay</item>
+		</if>
 		<item level="0" text="Time delay of the shutdown messages" description="Set the time to wait before executing the default action in shutdown, standby or restart messages, e.g. used in RecordTimer, Scheduler, SleepTimer etc." indent="1">config.usage.shutdown_msgbox_timeout</item>
 		<item level="1" text="Show job tasks in Extension Menu" description="With this option you can hide Job Tasks from the Extension Menu screen (BLUE button press)." indent="1">config.usage.jobtaksextensions</item>
 		<item level="1" text="Show positioner movement" description="Select whether or not to show an icon when a motorized dish is moving." indent="1">config.usage.showdish</item>
@@ -1439,7 +1443,7 @@
 		</if>
 		<item level="0" text="HDR OSD adjustment" description="This option adjusts SDR graphics and OSD colors while the HDMI output is in HDR mode." requires="havehdmihdrosd">config.av.hdmihdrosd</item>
 		<item level="0" text="Bypass HDMI EDID Check" description="This option allows you to bypass HDMI EDID check." requires="Canedidchecking">config.av.bypass_edid_checking</item>
-		<item level="0" text="Change Boxmode to control Hardware Chip Modes*" description="Switch Mode to enable HDR Modes or PiP Functions" requires="haveboxmode">config.av.boxmode</item>
+		<item level="0" text="Hardware video mode" description="Select the video mode of the hardware chip. PiP and 12-bit HDR output cannot be used at the same time, so choose whether to enable Picture in Picture or 12-bit HDR output." requires="haveboxmode">config.av.boxmode</item>
 		<if requires="HDRSupport">
 			<item level="0" text="HLG Support" description="This option allows you to force the HLG Modes for UHD.">config.av.hlg_support</item>
 			<item level="0" text="HDR10 Support" description="This option allows you to force the HDR10 Modes for UHD.">config.av.hdr10_support</item>

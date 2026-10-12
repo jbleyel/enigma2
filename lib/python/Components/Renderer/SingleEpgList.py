@@ -1,7 +1,10 @@
 from time import localtime
-from enigma import eLabel, eEPGCache
-from Components.Renderer.Renderer import Renderer
+
+from enigma import eEPGCache, eLabel
+
+from skin import parseBoolean
 from Components.VariableText import VariableText
+from Components.Renderer.Renderer import Renderer
 
 
 class SingleEpgList(Renderer, VariableText):
@@ -25,7 +28,7 @@ class SingleEpgList(Renderer, VariableText):
 				self.minEvent = int(value)
 				attribs.remove((attrib, value))
 			if attrib == "ignoreNA":
-				self.ignoreNA = value.toLower() in ("true", "1", "enabled", "yes", "on", attrib.toLower())
+				self.ignoreNA = parseBoolean(attrib, value)
 				attribs.remove((attrib, value))
 		if self.maxEvents < self.minEvent:
 			self.minEvent = 1
@@ -40,7 +43,7 @@ class SingleEpgList(Renderer, VariableText):
 		if event:
 			service = self.source.service
 			if self.epgcache:
-				events = self.epgcache.lookupEvent(['IBDCTM', (service.toString(), 0, -1, -1)])
+				events = self.epgcache.lookupEvent(["IBDCTM", (service.toString(), 0, -1, -1)])
 				if events:
 					eventCount = 0
 					for event in events:

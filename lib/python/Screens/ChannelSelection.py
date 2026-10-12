@@ -15,7 +15,7 @@ from Components.MenuList import MenuList
 from Components.NimManager import nimmanager
 from Components.ParentalControl import parentalControl
 from Components.PluginComponent import plugins
-from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
+from Components.ServiceEventTracker import InfoBarBase, ServiceEventTracker
 from Components.ServiceList import ServiceList, ServiceListLegacy, refreshServiceList
 from Components.SystemInfo import BoxInfo, getBoxDisplayName
 from Components.UsageConfig import preferredTimerPath
@@ -2678,9 +2678,12 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 	def zap(self, enable_pipzap=False, preview_zap=False, checkParentalControl=True, ref=None, doPlay=True, recordingHandoff=None):
 		if recordingHandoff and not recordingHandoff.isValid():
 			recordingHandoff.finish(False)
+		nref = ref if ref is not None else self.getCurrentSelection()
+		# IPTV may have zero DVB identifiers; valid() only rejects idInvalid.
+		if nref is None or not nref.valid():
+			print("[ChannelSelection] Ignore zap without a valid service reference.")
 			return
 		self.curRoot = self.startRoot
-		nref = ref or self.getCurrentSelection()
 		ref = self.session.nav.getCurrentlyPlayingServiceOrGroup()
 		if enable_pipzap and self.dopipzap:
 			ref = self.session.pip.getCurrentService()
