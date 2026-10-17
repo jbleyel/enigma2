@@ -100,7 +100,6 @@ def setResumePoint(session):
 		seek = service.seek()
 		if seek:
 			pos = seek.getPlayPosition()
-			print(f"[InfoBarGenerics] setResumePoint: ref='{ref.toString()}', pos='{pos}'")
 			if not pos[0]:
 				key = ref.toString()
 				lru = int(time())
@@ -109,7 +108,6 @@ def setResumePoint(session):
 					length = length[1]
 				else:
 					length = None
-				print(f"[InfoBarGenerics] setResumePoint: key='{key}', lru='{lru}', pos='{pos[1]}', length='{length}'")
 				resumePointCache[key] = [lru, pos[1], length]
 				for k, v in list(resumePointCache.items()):
 					if v[0] < lru:
@@ -4340,7 +4338,7 @@ class InfoBarAudioSelection:
 				message = _("enabled")
 			print(f"[InfoBarGenerics] InfoBarAudioSelection: Dolby Digital down mix is now {status}.")
 			if popup:
-				self.session.showInfo(_("Dolby Digital downmix is now") + " " + message)
+				self.session.showInfo(_("Dolby Digital downmix is now") + " " + message, replaceId="DDdownmixToggle")
 
 	def audioDownmixOn(self):
 		if not config.av.downmix_ac3.value:
