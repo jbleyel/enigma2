@@ -62,16 +62,16 @@ class ServiceScan(Screen):
 		# 	self.session.pipshown = False
 		self.currentServiceRef = self.session.nav.getCurrentlyPlayingServiceReference()
 		self.session.nav.stopService()
-		self["network"] = Label()
-		self["FrontendInfo"] = FrontendInfo()
-		self["FrontendInfo"].frontend_source = lambda *args: None
-		self["pass"] = Label()
-		self["transponder"] = Label()
-		self["scan_state"] = Label()
-		self["scan_progress"] = ProgressBar()
 		self.serviceList = []
 		self["servicelist"] = MenuList(self.serviceList)
 		self["servicelist"].selectionEnabled(False)
+		self["scan_progress"] = ProgressBar()
+		self["pass"] = Label()
+		self["network"] = Label()
+		self["transponder"] = Label()
+		self["scan_state"] = Label()
+		self["FrontendInfo"] = FrontendInfo()
+		self["FrontendInfo"].frontend_source = lambda *args: None
 		self["key_red"] = StaticText(_("Cancel"))
 		self["key_green"] = StaticText()
 		self["actions"] = HelpableActionMap(self, ["CancelActions"], {
@@ -299,9 +299,9 @@ class ServiceScan(Screen):
 					self["FrontendInfo"].frontend_type = currentSystem
 					self["FrontendInfo"].changed((1,))
 			progress = self.scan.getProgress()
-			self["network"].setText(f"{transponderType} {_("Scan")}" if transponderType else "")
-			self["transponder"].setText(transponderText)
 			self["scan_progress"].setValue(progress)
+			self["network"].setText(transponderType)
+			self["transponder"].setText(transponderText)
 			for callback in self.onProgressChanged:
 				callback(progress)
 		match self.state:
@@ -329,6 +329,7 @@ class ServiceScan(Screen):
 					self.timer.startLongTimer(2)  # Delay the next step by 2 seconds to give eComponentScan time to finish.
 				else:
 					self.finishBouquetRepair()
+
 					def delayNext2():
 						self.timer.stop()
 						self.timer.callback.remove(delayNext2)

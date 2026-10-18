@@ -17,6 +17,7 @@ class PixmapLabel(GUIComponent):
 		self.isLabel = True
 		self.message = text
 		self.pixmaps = []
+		self.glyphs = []
 
 	def setInstance(self, label=True):
 		self.isLabel = label
@@ -39,7 +40,9 @@ class PixmapLabel(GUIComponent):
 				elif attrib in ("pixmap", "scale", "alphatest"):
 					attribsPixmap.append((attrib, value))
 				elif attrib == "pixmaps":
-					self.pixmaps = [p for path in value.split(",") if (p := LoadPixmap(resolveFilename(SCOPE_GUISKIN, path.strip())))]
+					self.pixmaps = [pixmap for path in value.split(",") if (pixmap := LoadPixmap(resolveFilename(SCOPE_GUISKIN, path.strip())))]
+				elif attrib == "glyphs":
+					self.glyphs = [x.strip() for x in value.split(",")]
 				else:
 					attribs.append((attrib, value))
 
@@ -135,3 +138,10 @@ class PixmapLabel(GUIComponent):
 				self.instance.setPixmap(self.pixmaps[index])
 			else:
 				print(f"[Pixmap] setPixmapNum({index}) failed!  Defined pixmaps: {str(self.pixmaps)}.")
+
+	def setGlyphNum(self, index):
+		if self.isLabel and self.instance and self.glyphs:
+			if len(self.glyphs) > index:
+				self.instance.setText(self.glyphs[index])
+			else:
+				print(f"[Pixmap] setGlyphNum({index}) failed!  Defined glyphs: {str(self.glyphs)}.")

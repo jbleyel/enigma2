@@ -1,12 +1,14 @@
-from enigma import getPrevAsciiCode
-from Screens.Screen import Screen
-from Screens.MessageBox import MessageBox
-from Components.ActionMap import NumberActionMap
-from Components.Label import Label
-from Components.Input import Input
-from Components.config import config
-from Tools.BoundFunction import boundFunction
 from time import time
+
+from enigma import getPrevAsciiCode
+
+from Components.ActionMap import NumberActionMap
+from Components.config import config
+from Components.Input import Input
+from Components.Label import Label
+from Screens.MessageBox import MessageBox
+from Screens.Screen import Screen
+from Tools.BoundFunction import boundFunction
 
 
 class InputBox(Screen):
@@ -117,7 +119,7 @@ class PinInput(InputBox):
 			else:
 				self.setTries(3)
 
-		self["tries"] = Label("")
+		self["tries"] = Label()
 		self.onShown.append(self.showTries)
 
 	def gotAsciiCode(self):
