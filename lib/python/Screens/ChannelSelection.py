@@ -3559,7 +3559,17 @@ class HistoryZapSelector(Screen):
 			self.selectedItem = selectedItem
 		self["key_red"] = StaticText(_("Cancel"))
 		self["key_green"] = StaticText(_("Select"))
-		self["menu"] = List(historyList)
+		indexNames = {
+			# "Spacer": 0,  # What is this?
+			"ServiceMarker": 1,  # "ActiveServiceMarker"?
+			"ServiceName": 2,
+			"EventName": 3,
+			"EventDescriptions": 4,
+			"EventDuration": 5,
+			"ServicePicon": 6,
+			# "ServiceReference": 7  # Should this be accessible to the skin?
+		}
+		self["menu"] = List(historyList, indexNames=indexNames)
 		self["actions"] = HelpableActionMap(self, ["SelectCancelActions"], {
 			"select": (self.keySelect, _("Select the currently highlighted service")),
 			"cancel": (self.keyCancel, _("Cancel the service history zap"))
