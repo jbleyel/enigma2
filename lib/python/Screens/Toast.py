@@ -5,11 +5,11 @@ from Components.config import config
 from Components.Label import Label
 from Screens.Screen import Screen
 
-# config.usage.show_infobar_do_dimming
-# config.usage.show_infobar_dimming_speed
-
-
 class ToastScreen(Screen):
+	FADE_SETTINGS = {  # Fade timer interval in milliseconds and alpha step per tick.
+		1: (50, 10),  # Slow
+		2: (20, 25)  # Fast
+	}
 	skin = """
 	<screen name="Toast" title="Toast Message" position="center,500" size="65,55" backgroundColors="#00000000,#00FFAF00,#00FF0000" expand="center" foregroundColors="#00FFFFFF,#00000000,#00FFFFFF" flags="wfNoBorder,wfModal" maxWidth="800" resolution="1280,720" widgetBorderColors="#00FFFFFF,#00000000,#00FFFFFF" zPosition="101">
 		<widget name="background" position="0,0" size="e,e" widgetBorderWidth="2" />
@@ -25,8 +25,6 @@ class ToastScreen(Screen):
 		self["glyph"] = Label()
 		self["text"] = Label()
 		self.defaultTimeout = 10  # Default timeout/hide in 10 seconds.
-		self.fadeSpeed = 50  # IanSav: These should come from a user selectable configuration.  A value of 0 means don't fade.
-		self.fadeSteps = 10
 		self.toastGlyphs = {
 			0: "\uE90A",  # TYPE_INFO
 			1: "\uEA59",  # TYPE_WARNING
@@ -157,9 +155,12 @@ class ToastScreen(Screen):
 		self.fadeTimer.stop()
 		self.fadeIn = not self.shown
 		self.alpha = 0xFF if self.fadeIn else 0x00
+		fadeSettings = self.FADE_SETTINGS.get(config.usage.toastFade.value)
+		if self.fadeIn and not fadeSettings:
+			self.alpha = 0x00
 		self.applyColors()
-		if self.fadeIn:
-			self.fadeTimer.start(self.fadeSpeed)
+		if self.fadeIn and fadeSettings:
+			self.fadeTimer.start(fadeSettings[0])
 		self.show()
 
 	def applyColors(self):
@@ -178,17 +179,22 @@ class ToastScreen(Screen):
 	def hideToast(self):
 		self.hideTimer.stop()
 		self.fadeIn = False
-		self.fadeTimer.start(self.fadeSpeed)
+		fadeSettings = self.FADE_SETTINGS.get(config.usage.toastFade.value)
+		if fadeSettings:
+			self.fadeTimer.start(fadeSettings[0])
+		else:
+			self.hide()
 
 	def fadeToast(self):
+		fadeSteps = self.FADE_SETTINGS.get(config.usage.toastFade.value, self.FADE_SETTINGS[1])[1]
 		if self.fadeIn:
-			self.alpha -= self.fadeSteps
+			self.alpha -= fadeSteps
 			if self.alpha <= 0x00:
 				self.alpha = 0x00
 				self.fadeTimer.stop()
 				self.fadeIn = False
 		else:
-			self.alpha += self.fadeSteps
+			self.alpha += fadeSteps
 			if self.alpha >= 0xFF:
 				self.alpha = 0xFF
 				self.fadeTimer.stop()

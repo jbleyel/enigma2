@@ -1306,6 +1306,12 @@ def InitUsageConfig():
 	config.usage.show_slider_value = ConfigYesNo(default=True)
 	config.usage.cursorscroll = ConfigSelectionNumber(min=0, max=50, stepwidth=5, default=0, wraparound=True)
 
+	config.usage.toastFade = ConfigSelection(default=1, choices=[
+		(0, _("Off")),
+		(1, _("Slow")),
+		(2, _("Fast"))
+	])
+
 	config.epg = ConfigSubsection()
 	config.epg.eit = ConfigYesNo(default=True)
 	config.epg.mhw = ConfigYesNo(default=False)
