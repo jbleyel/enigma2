@@ -109,7 +109,6 @@ class Listbox(Renderer):
 		return mode
 
 	def setScrollbarMode(self, mode):
-		print(f"[Listbox] DEBUG setScrollbarMode mode={mode!r} instance={self.instance!r}")
 		if self.instance is not None:
 			self.instance.setScrollbarMode({
 				"showOnDemand": eListbox.showOnDemand,

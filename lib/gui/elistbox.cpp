@@ -84,7 +84,6 @@ eListbox::eListbox(eWidget *parent) : eWidget(parent), m_textPixmap(nullptr)
 
 	allowNativeKeys(true);
 
-	eDebug("[eListbox] DEBUG ctor this=%p defaultScrollBarMode=%d", (void*)this, m_scrollbar_mode);
 	if (m_scrollbar_mode != showNever)
 		setScrollbarMode(m_scrollbar_mode);
 }
@@ -102,7 +101,6 @@ eListbox::~eListbox()
 
 void eListbox::setScrollbarMode(uint8_t mode)
 {
-	eDebug("[eListbox] DEBUG setScrollbarMode this=%p mode=%d", (void*)this, mode);
 	if (mode == eListbox::showOnDemandShrink) {
 		m_style.is_set.shrink = true;
 		mode = eListbox::showOnDemand;

@@ -1736,7 +1736,6 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 		itemZoomContent = itemZoomed && local_style->is_set.zoom_content;
 		if (local_style->is_set.shrink)
 			rightShrink = m_listbox->getScrollbarListOffset();
-		eDebug("[eListboxPythonMultiContent] DEBUG paint listbox=%p shrink=%d rightShrink=%d", (void*)m_listbox, (int)local_style->is_set.shrink, rightShrink);
 	}
 
 	ePoint offs = offset;
