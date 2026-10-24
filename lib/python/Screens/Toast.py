@@ -5,11 +5,8 @@ from Components.config import config
 from Components.Label import Label
 from Screens.Screen import Screen
 
+
 class ToastScreen(Screen):
-	FADE_SETTINGS = {  # Fade timer interval in milliseconds and alpha step per tick.
-		1: (50, 10),  # Slow
-		2: (20, 25)  # Fast
-	}
 	skin = """
 	<screen name="Toast" title="Toast Message" position="center,500" size="65,55" backgroundColors="#00000000,#00FFAF00,#00FF0000" expand="center" foregroundColors="#00FFFFFF,#00000000,#00FFFFFF" flags="wfNoBorder,wfModal" maxWidth="800" resolution="1280,720" widgetBorderColors="#00FFFFFF,#00000000,#00FFFFFF" zPosition="101">
 		<widget name="background" position="0,0" size="e,e" widgetBorderWidth="2" />
@@ -25,6 +22,7 @@ class ToastScreen(Screen):
 		self["glyph"] = Label()
 		self["text"] = Label()
 		self.defaultTimeout = 10  # Default timeout/hide in 10 seconds.
+		self.fadeSpeed = 50  # Timer between fade steps.
 		self.toastGlyphs = {
 			0: "\uE90A",  # TYPE_INFO
 			1: "\uEA59",  # TYPE_WARNING
@@ -58,13 +56,10 @@ class ToastScreen(Screen):
 			for attribute, value in self.skinAttributes:
 				match attribute:
 					case "backgroundColors":
-						print(f"[Toast] DEBUG: backgroundColors='{value}'.")
 						self.backgroundColors = parseColors(value, self.backgroundColors)  # Black, Orange, Red.
 					case "foregroundColors":
-						print(f"[Toast] DEBUG: foregroundColors='{value}'.")
 						self.foregroundColors = parseColors(value, self.foregroundColors)  # White, Black, White.
 					case "expand":
-						print(f"[Toast] DEBUG: expand='{value}'.")
 						self.expansion = {
 							"center": 0,
 							"left": 1,
@@ -73,10 +68,8 @@ class ToastScreen(Screen):
 							"down": 4
 						}.get(value, 0)
 					case "maxWidth":
-						print(f"[Toast] DEBUG: maxWidth='{value}'.")
 						maxWidth = parseInteger(value, 0)
 					case "widgetBorderColors":
-						print(f"[Toast] DEBUG: widgetBorderColors='{value}'.")
 						self.widgetBorderColors = parseColors(value, self.widgetBorderColors)  # White, Black, White.
 					case _:
 						screenAttributes.append((attribute, value))
@@ -92,21 +85,17 @@ class ToastScreen(Screen):
 		self.toastH = self.instance.size().height()
 		self.centerX = self.toastX + (self.toastW // 2)
 		self.centerY = self.toastY + (self.toastH // 2)
-		print(f"[Toast] DEBUG Screen: X={self.toastX}, Y={self.toastY}, W={self.toastW}, H={self.toastH}, CenterX={self.centerX}, CenterY={self.centerY}.")
 		self.glyphX = self["glyph"].instance.position().x()
 		self.glyphY = self["glyph"].instance.position().y()
 		self.glyphW = self["glyph"].instance.size().width()
 		self.glyphH = self["glyph"].instance.size().height()
-		print(f"[Toast] DEBUG Glyph: X={self.glyphX}, Y={self.glyphY}, W={self.glyphW}, H={self.glyphH}.")
 		self.textX = self["text"].instance.position().x()
 		self.textY = self["text"].instance.position().y()
 		self.textW = self["text"].instance.size().width()
 		self.textH = self["text"].instance.size().height()
-		print(f"[Toast] DEBUG Text: X={self.textX}, Y={self.textY}, W={self.textW}, H={self.textH}.")
 		self.rightPadding = self.toastW - self.textX - self.textW
 		self.bottomPadding = self.toastH - self.textY - self.textH
 		self.minimumHeight = self.glyphY + self.glyphH + self.bottomPadding
-		print(f"[Toast] DEBUG Text: rightPadding={self.rightPadding}, bottomPadding={self.bottomPadding}.")
 
 	def showToast(self, text, toastType, timeout, customGlyph):
 		self.widgetBorderColor = self.widgetBorderColors[toastType]
@@ -117,7 +106,6 @@ class ToastScreen(Screen):
 		textSize = self["text"].instance.calculateTextSize(self["text"].instance.getFont(), text, eSize(10000, 10000), True)
 		textWidth = textSize.width()
 		textHeight = textSize.height()
-		print(f"[Toast] DEBUG: Text='{text}', Width={textWidth}, Height={textHeight}.")
 		# The skin attribute maxWidth is the total width of the toast, so the text gets what remains after the glyph and padding.
 		maxTextWidth = self.maxWidth - self.textX - self.rightPadding
 		if textWidth > maxTextWidth:
@@ -144,23 +132,18 @@ class ToastScreen(Screen):
 			case _:  # Center based on center of skin screen.
 				xPos = self.centerX - (width // 2)
 				yPos = self.centerY - (height // 2)
-		print(f"[Toast] DEBUG Screen: X={xPos}, Y={yPos}, W={width}, H={height}, CenterX={self.centerX}, CenterY={self.centerY}.")
 		self.instance.move(ePoint(xPos, yPos))
 		self.instance.resize(eSize(width, height))
 		self["background"].instance.resize(eSize(width, height))
 		self["text"].instance.resize(eSize(textWidth, textHeight))
-		print(f"[Toast] DEBUG Text: X={self["text"].instance.position().x()}, Y={self["text"].instance.position().y()}, W={textWidth}, H={textHeight}.")
 		self.hideTimer.start((timeout if timeout else self.defaultTimeout) * 1000)
-		# Updating a visible status must not restart the fade from transparent.
-		self.fadeTimer.stop()
-		self.fadeIn = not self.shown
-		self.alpha = 0xFF if self.fadeIn else 0x00
-		fadeSettings = self.FADE_SETTINGS.get(config.usage.toastFade.value)
-		if self.fadeIn and not fadeSettings:
+		if config.misc.toastFade.value:
+			self.alpha = 0xFF
+			self.fadeIn = True
+			self.fadeTimer.start(self.fadeSpeed)
+		else:
 			self.alpha = 0x00
 		self.applyColors()
-		if self.fadeIn and fadeSettings:
-			self.fadeTimer.start(fadeSettings[0])
 		self.show()
 
 	def applyColors(self):
@@ -168,7 +151,6 @@ class ToastScreen(Screen):
 		widgetBorderColor = gRGB((self.widgetBorderColor.argb() & 0x00FFFFFF) | alpha)
 		backgroundColor = gRGB((self.backgroundColor.argb() & 0x00FFFFFF) | alpha)
 		foregroundColor = gRGB((self.foregroundColor.argb() & 0x00FFFFFF) | alpha)
-		# print(f"[Toast] DEBUG: widgetBorderColor={widgetBorderColor.argb():08X}, backgroundColor={backgroundColor.argb():08X}, foregroundColor={foregroundColor.argb():08X}.")
 		self["background"].instance.setBackgroundColor(backgroundColor)
 		self["background"].instance.setWidgetBorderColor(widgetBorderColor)
 		self["glyph"].instance.setBackgroundColor(backgroundColor)
@@ -178,23 +160,21 @@ class ToastScreen(Screen):
 
 	def hideToast(self):
 		self.hideTimer.stop()
-		self.fadeIn = False
-		fadeSettings = self.FADE_SETTINGS.get(config.usage.toastFade.value)
-		if fadeSettings:
-			self.fadeTimer.start(fadeSettings[0])
+		if config.misc.toastFade.value:
+			self.fadeIn = False
+			self.fadeTimer.start(self.fadeSpeed)
 		else:
 			self.hide()
 
 	def fadeToast(self):
-		fadeSteps = self.FADE_SETTINGS.get(config.usage.toastFade.value, self.FADE_SETTINGS[1])[1]
 		if self.fadeIn:
-			self.alpha -= fadeSteps
+			self.alpha -= config.misc.toastFade.value
 			if self.alpha <= 0x00:
 				self.alpha = 0x00
 				self.fadeTimer.stop()
 				self.fadeIn = False
 		else:
-			self.alpha += fadeSteps
+			self.alpha += config.misc.toastFade.value
 			if self.alpha >= 0xFF:
 				self.alpha = 0xFF
 				self.fadeTimer.stop()
@@ -226,7 +206,7 @@ class Toast:
 		def scheduleNext():
 			self.activeToastId = None
 			if self.queue:
-				self.nextTimer.start(500, True)  # 500 ms pause.
+				self.nextTimer.start(500, True)  # 500 ms pause between Toast messages.
 
 		self.dialog = session.instantiateDialog(ToastScreen)
 		self.dialog.hide()
@@ -237,11 +217,12 @@ class Toast:
 			self.showNext()
 
 	def showToast(self, text, toasttype, timeout, customIcon=None, replaceId=None):
-		timeout = max(3, min(timeout, 10))  # Minimum 3 maximum 10.
-		toast = (text, toasttype, timeout, customIcon, replaceId)
+		toastType = toasttype
+		timeout = max(3, min(timeout, 60))  # Toast can be shown for a minimum 3 seconds and a maximum of 60 seconds.
+		toast = (text, toastType, timeout, customIcon, replaceId)
 		if replaceId is not None:
 			if self.dialog and self.dialog.shown and self.activeToastId == replaceId:
-				self.dialog.showToast(text, toasttype, timeout, customIcon)
+				self.dialog.showToast(text, toastType, timeout, customIcon)
 				return
 			for index, queuedToast in enumerate(self.queue):
 				if queuedToast[4] == replaceId:
@@ -263,9 +244,9 @@ class Toast:
 	def showNext(self):
 		self.nextTimer.stop()
 		if not self.dialog.shown and self.queue:
-			text, toasttype, timeout, customIcon, self.activeToastId = self.queue.pop(0)
+			text, toastType, timeout, customIcon, self.activeToastId = self.queue.pop(0)
 			print(f"[Toast] Showing '{text}', remaining={len(self.queue)}.")
-			self.dialog.showToast(text, toasttype, timeout, customIcon)
+			self.dialog.showToast(text, toastType, timeout, customIcon)
 
 	def doShutdown(self):
 		self.queue = []

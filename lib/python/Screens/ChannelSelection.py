@@ -3525,6 +3525,7 @@ class HistoryZapSelector(Screen):
 
 	def __init__(self, session, serviceReferences, markedItem=0, selectedItem=0):
 		Screen.__init__(self, session, enableHelp=True)
+		self.skinName = ["HistoryZap", "HistoryZapSelector"]
 		self.setTitle(_("History Zap"))
 		serviceHandler = eServiceCenter.getInstance()
 		historyList = []
@@ -3560,14 +3561,14 @@ class HistoryZapSelector(Screen):
 		self["key_red"] = StaticText(_("Cancel"))
 		self["key_green"] = StaticText(_("Select"))
 		indexNames = {
-			# "Spacer": 0,  # What is this?
-			"ServiceMarker": 1,  # "ActiveServiceMarker"?
+			# "Spacer": 0,  # This is a legacy value that is not actively used.  This index can be reassigned to something more useful.
+			"ServiceMarker": 1,
 			"ServiceName": 2,
 			"EventName": 3,
-			"EventDescriptions": 4,
+			"EventDescription": 4,
 			"EventDuration": 5,
 			"ServicePicon": 6,
-			# "ServiceReference": 7  # Should this be accessible to the skin?
+			# "ServiceReference": 7  # This is for internal use only.
 		}
 		self["menu"] = List(historyList, indexNames=indexNames)
 		self["actions"] = HelpableActionMap(self, ["SelectCancelActions"], {
