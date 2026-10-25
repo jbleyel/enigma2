@@ -36,7 +36,7 @@ extern "C" {
 }
 #endif
 
-#define DEBUG_PICLOAD
+// #define DEBUG_PICLOAD
 
 #ifdef DEBUG_PICLOAD
 #include "../base/benchmark.h"
@@ -530,22 +530,11 @@ static void png_load(Cfilepara* filepara, uint32_t background, bool forceRGB = f
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 
 		// Assign output
-		eDebug("[ePicLoad] bpp %d / transparent %d", bpp, filepara->transparent);
+		// eDebug("[ePicLoad] bpp %d / transparent %d", bpp, filepara->transparent);
 
 		if (bpp == 4 && filepara->transparent) {
 			filepara->pic_buffer = pic_buffer;
 			filepara->bits = 32;
-
-			uint8_t r = filepara->pic_buffer[0];
-			uint8_t g = filepara->pic_buffer[1];
-			uint8_t b = filepara->pic_buffer[2];
-			uint8_t a = filepara->pic_buffer[3];
-
-			uint32_t firstPix = (r << 24) | (g << 16) | (b << 8) | a;
-			eDebug("[ePicLoad] png_load 32 First pixel RGBA = R:%02X G:%02X B:%02X A:%02X  (raw=0x%08X)",
-				r, g, b, a, firstPix);
-
-
 		} else if (bpp == 4) {
 			// Precompute blend table (static, initialized once)
 			static bool blend_init = false;
@@ -1460,10 +1449,8 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 		if (m_filepara->bits == 8) {
 			gRGB bg(m_conf.background);
 			background = surface->clut.findOrAddColor(bg);
-			eDebug("[ePicload] 8Bit m_conf.background 0x%08X / background %d", m_conf.background, background);
 		} else {
 			background = m_conf.background ^ 0xFF000000;
-			eDebug("[ePicload] 32Bit m_conf.background 0x%08X / background 0x%08X", m_conf.background, background);
 		}
 
 		if (yoff != 0) {
@@ -1639,14 +1626,6 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				sws_scale(sws_ctx, src_slices, src_stride, 0, m_filepara->oy, dst_slices, dst_stride);
 				sws_freeContext(sws_ctx);
 
-				uint8_t b = tmp_buffer[0];
-				uint8_t g = tmp_buffer[1];
-				uint8_t r = tmp_buffer[2];
-				uint8_t a = tmp_buffer[3];
-
-				eDebug("[ePicLoad] png_load 32 First pixel after swscale pixel RGBA = R:%02X G:%02X B:%02X A:%02X",
-					r, g, b, a);
-
 				delete m_filepara; // so caller can start a new decode in background
 				m_filepara = NULL;
 				if (m_exif) {
@@ -1734,17 +1713,6 @@ int ePicLoad::getData(ePtr<gPixmap>& result) {
 				}
 			}
 		}
-	}
-
-	if (m_filepara->bits == 32) {
-
-		uint8_t b = tmp_buffer[0];
-		uint8_t g = tmp_buffer[1];
-		uint8_t r = tmp_buffer[2];
-		uint8_t a = tmp_buffer[3];
-
-		eDebug("[ePicLoad] png_load 32 First pixel after scale pixel RGBA = R:%02X G:%02X B:%02X A:%02X",
-			r, g, b, a);
 	}
 
 	delete m_filepara; // so caller can start a new decode in background

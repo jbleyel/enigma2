@@ -270,7 +270,7 @@
 		<item level="2" text="Correct invalid EPG data" description="Choose the option to correct invalid EPG data." indent="1">config.usage.correct_invalid_epgdata</item>
 	</setup>
 	<!-- ═══════════════════════════════════════════════════════════════════
-	     EnhancedEPG (EPG_TYPE_ENHANCED) — single-service multi-event list
+	     EnhancedEPG (EPG_TYPE_ENHANCED) - single-service multi-event list
 	     Old config: enhanced_*  →  new config: single.*
 	     ═══════════════════════════════════════════════════════════════════ -->
 	<setup key="EPGEnhanced" title="SingleEPG Settings" level="2" showOpenWebif="yes">
@@ -298,7 +298,7 @@
 		<item level="2" text="Record button (long)" description="Set to what you want the button to do.">config.epgselection.single.btn_reclong</item>
 	</setup>
 	<!-- ═══════════════════════════════════════════════════════════════════
-	     GraphicalEPG (EPG_TYPE_GRAPH) — grid/timeline EPG
+	     GraphicalEPG (EPG_TYPE_GRAPH) - grid/timeline EPG
 	     Old config: graph_*  →  new config: grid.*
 	     ═══════════════════════════════════════════════════════════════════ -->
 	<setup key="EPGGraphical" title="GraphicalEPG Settings" level="2" showOpenWebif="yes">
@@ -354,7 +354,7 @@
 		<item level="2" text="Timeline scale" description="Configure the amount of time that will be presented." indent="1">config.epgselection.grid.prevtimeperiod</item>
 	</setup>
 	<!-- ═══════════════════════════════════════════════════════════════════
-	     InfoBarEPG (EPG_TYPE_INFOBAR) — text EPG launched from infobar
+	     InfoBarEPG (EPG_TYPE_INFOBAR) - text EPG launched from infobar
 	     Old config: infobar_*  →  new config: infobar.*
 	     ═══════════════════════════════════════════════════════════════════ -->
 	<setup key="EPGInfobar" title="InfoBar EPG Settings" level="2" showOpenWebif="yes">
@@ -383,9 +383,9 @@
 		<item level="2" text="Record button (long)" description="Set to what you want the button to do.">config.epgselection.infobar.btn_reclong</item>
 	</setup>
 	<!-- ═══════════════════════════════════════════════════════════════════
-	     GraphicalInfoBarEPG (EPG_TYPE_INFOBARGRAPH) — graphical timeline from infobar
+	     GraphicalInfoBarEPG (EPG_TYPE_INFOBARGRAPH) - graphical timeline from infobar
 	     Old config: infobar_* (for most) + graph_* (shared alignment/rec_icon)
-	     New config: all infobar.* — alignment now has its own infobar keys
+	     New config: all infobar.* - alignment now has its own infobar keys
 	     Note: in old setup.xml, graph_event_alignment and graph_servicename_alignment
 	           were used here. These are now grid.* since infobar has no separate
 	           alignment settings in EpgConfig.py. TODO: add infobar.* alignment if needed.
@@ -434,7 +434,7 @@
 		<item level="2" text="Timeline scale" description="Configure the amount of time that will be presented." indent="1">config.epgselection.infobar.prevtimeperiod</item>
 	</setup>
 	<!-- ═══════════════════════════════════════════════════════════════════
-	     MultiEPG (EPG_TYPE_MULTI) — now/next/later view
+	     MultiEPG (EPG_TYPE_MULTI) - now/next/later view
 	     Old config: multi_*  →  new config: multi.*
 	     ═══════════════════════════════════════════════════════════════════ -->
 	<setup key="EPGMulti" title="MultiEPG Settings" level="2" showOpenWebif="yes">
@@ -463,7 +463,7 @@
 		<item level="2" text="Record button (long)" description="Set to what you want the button to do.">config.epgselection.multi.btn_reclong</item>
 	</setup>
 	<!-- ═══════════════════════════════════════════════════════════════════
-	     SingleEPG (EPG_TYPE_SINGLE) — minimal channel-event list
+	     SingleEPG (EPG_TYPE_SINGLE) - minimal channel-event list
 	     ═══════════════════════════════════════════════════════════════════ -->
 	<setup key="EPGSingle" title="ChannelEPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="Sort list by" description="You can have the list sorted by time or alphanumerical.">config.epgselection.sort</item>
@@ -471,7 +471,7 @@
 		<item level="2" text="Event font size" description="Configure the font size relative to skin size, so 1 increases by 1 point size, and -1 decreases by 1 point size.">config.epgselection.single.eventfs</item>
 	</setup>
 	<!-- ═══════════════════════════════════════════════════════════════════
-	     VerticalEPG (EPG_TYPE_VERTICAL) — column-based multi-channel view
+	     VerticalEPG (EPG_TYPE_VERTICAL) - column-based multi-channel view
 	     Old config: vertical_*  →  new config: vertical.*
 	     Old ok/info had string labels as values; new uses action IDs.
 	     Old color buttons had old-style string values; new uses action IDs.
@@ -1539,6 +1539,7 @@
 		<item level="2" text="Show VCR SCART on main menu" description="When enabled, the VCR SCART option will be shown on the main menu." requires="ScartSwitch" indent="1">config.usage.show_vcr_scart</item>
 		<item level="0" text="Toast fade" description="Select the speed of the fade-in and fade-out of toast messages." indent="1">config.misc.toastFade</item>
 		<item level="2" text="Spinner Position" description="Set the top left location of the busy spinner. The coordinates are scaled such that the top left is at (0,0) and the bottom right is at (1260,700). Note that the position is the top left of the spinner and not the centre of the spinner." indent="1">config.misc.spinnerPosition</item>
+		<item level="2" text="Spinner color" description="Select the color of the built-in busy spinner. Custom PNG spinners keep their own colors." conditional="config.usage.show_spinner.value" indent="1">config.misc.spinnerColor</item>
 	</setup>
 	<setup key="Video" title="Video Settings">
 		<!-- VideoSetup in Screens/VideoMode.py prepends the dynamic items. -->
