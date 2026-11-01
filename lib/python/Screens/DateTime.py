@@ -3,7 +3,6 @@ from Components.config import config
 from Components.DateTimes import dateTimes
 from Components.NetworkTime import ntpSyncPoller
 from Components.Sources.StaticText import StaticText
-from Screens.MessageBox import MessageBox
 from Screens.Setup import Setup
 from Tools.Geolocation import geolocation
 
@@ -11,47 +10,30 @@ from Tools.Geolocation import geolocation
 class DateTime(Setup):
 	def __init__(self, session):
 		def updatePreviews(configElement):
-			self.selectionChanged()
+			dateTimes.updateDatesAndTimes()
+			self.setFootnote(f"{_("Preview")}:  {dateTimes.getDateTime()}")
 
 		def updateNetworkTime():
 			if config.misc.SyncTimeUsing.isChanged() or config.misc.NTPserver.isChanged() or config.misc.useNTPminutes.isChanged():
 				ntpSyncPoller.timeCheck()
 
 		def removeNotifiers():
-			for configElement in self.formatOptions:
+			for configElement in self.configElements:
 				configElement.removeNotifier(updatePreviews)
+			dateTimes.updateDatesAndTimes()
 
-		self.formatOptions = dateTimes.configElements
 		Setup.__init__(self, session=session, setup="DateTime")
-		self.skinName[-1:-1] = ("Time", "setup_Time", "SetupTime")
 		self["key_yellow"] = StaticText()
 		self["geolocationActions"] = HelpableActionMap(self, "ColorActions", {
 			"yellow": (self.keyUseGeolocation, _("Use geolocation to set the current time zone location"))
 		}, prio=0, description=_("Date and Time Setup Actions"))
-		for configElement in self.formatOptions:
+		self.configElements = dateTimes.getConfigElements()
+		for configElement in self.configElements:
 			configElement.addNotifier(updatePreviews, initial_call=False)
 		self.addSaveNotifier(updateNetworkTime)
+		updatePreviews(None)
 		self.selectionChanged()
 		self.onClose.append(removeNotifiers)
-
-	def saveAll(self):
-		# Save hidden date/time options before Setup writes the settings file.
-		for configElement in self.formatOptions:
-			configElement.save()
-		return Setup.saveAll(self)
-
-	def closeConfigList(self, closeParameters=()):
-		if any(x.isChanged() for x in self.formatOptions):
-			self.closeParameters = closeParameters
-			self.session.openWithCallback(self.cancelConfirm, MessageBox, self.cancelMsg, default=False, type=MessageBox.TYPE_YESNO)
-		else:
-			Setup.closeConfigList(self, closeParameters)
-
-	def cancelConfirm(self, result):
-		if result:
-			for configElement in self.formatOptions:
-				configElement.cancel()
-		Setup.cancelConfirm(self, result)
 
 	def selectionChanged(self):
 		if Setup.getCurrentItem(self) in (config.timezone.area, config.timezone.val):
@@ -61,8 +43,18 @@ class DateTime(Setup):
 			self["key_yellow"].setText("")
 			self["geolocationActions"].setEnabled(False)
 		Setup.selectionChanged(self)
-		if Setup.getCurrentItem(self) in self.formatOptions:
+		if Setup.getCurrentItem(self) in self.configElements:
 			self.setFootnote(f"{_("Preview")}:  {dateTimes.getDateTime()}")
+
+	def keySave(self):
+		config.usage.date.daySeparator.save()  # Save this value in case it is hidden.
+		config.usage.time.meridiemFormat.save()  # Save this value in case it is hidden.
+		Setup.keySave(self)
+
+	def cancelConfirmed(self):
+		config.usage.date.daySeparator.cancel()  # Cancel any changes to this value in case it is hidden.
+		config.usage.time.meridiemFormat.cancel()  # Cancel any changes to this value in case it is hidden.
+		Setup.cancelConfirmed(self)
 
 	def keyUseGeolocation(self):
 		def keyUseGeolocationCallback(geolocationData):

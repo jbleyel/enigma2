@@ -27,7 +27,7 @@ class ClockToText(Converter):
 		"DisplayDate": lambda t: dateTimes.getDateNoDayShortMonthNoYear(localtime(t)),  #  Date Mon; No day, month name in short word and no year.
 		"DisplayDayDate": lambda t: dateTimes.getDateShortDayShortMonthNoYear(localtime(t)),  #  Day Date Mon; Day and month names in short words and no year.
 		"DisplayTime": lambda t: dateTimes.getTimeShort(localtime(t)),  # Hours Minutes Meridiem; Time in hours, minutes and meridiem (AM/PM).
-		"Full": lambda t: dateTimes.getDateTimeShortDayShortMonthNoYear(localtime(t)),  # Short day and month, no year, followed by hours and minutes.
+		"Full": lambda t: dateTimes.getDateTimeShortDayShortMonthNoYearNoSeconds(localtime(t)),  # Day Date Mon Hours Minutes Meridiem; Day and month names in short words and time in hours, minutes and meridiem (AM/PM) for a 12 hour clock.
 		"FullDate": lambda t: dateTimes.getDateShortDay(localtime(t)),  # Day Date Month Year; Day name in short word and month name full word.
 		"InMinutes": lambda t: ngettext("%d Min", "%d Mins", (t // 60)) % (t // 60),
 		"LongDate": lambda t: dateTimes.getDateNoYear(localtime(t)),  # Day Date Month; Day and month names in full words.
@@ -44,10 +44,10 @@ class ClockToText(Converter):
 		"Timestamp": lambda t: str(t),
 		"VFD": lambda t: dateTimes.getVfdDisplay12(localtime(t)),  # Same as "VFD12".
 		"VFD08": lambda t: dateTimes.getVfdDisplay08(localtime(t)),  # Hours Minutes Seconds Meridiem; Time in hours, minutes and meridiem (AM/PM) for a 12 hour clock.
-		"VFD12": lambda t: dateTimes.getVfdDisplay12(localtime(t)),  # Date Month Hours Minutes Meridiem; Date, month in digits with time in hours, minutes and meridiem (AM/PM) for a 12 hour clock trimmed to 12 characters (meridiem is dropped if it does not fit).
-		"VFD14": lambda t: dateTimes.getVfdDisplay14(localtime(t)),  # Date and time in 14 characters, dropping the whole meridiem if needed.
-		"VFD18": lambda t: dateTimes.getVfdDisplay18(localtime(t)),  # Short day, date and time in 18 characters, dropping the whole meridiem if needed.
-		"WithSeconds": lambda t: dateTimes.getTimeWithSeconds(localtime(t))  # Explicit seconds, independent of the optional seconds setting.
+		"VFD12": lambda t: dateTimes.getVfdDisplay12(localtime(t)),  # Date Month Hours Minutes Meridiem; Date, month in digits with time in hours, minutes and meridiem (AM/PM) for a 12 hour clock trimmed to 12 characters (meridiem may be lost).
+		"VFD14": lambda t: dateTimes.getVfdDisplay14(localtime(t)),  # Date Month Hours Minutes Meridiem; Date, month in digits with time in hours, minutes and meridiem (AM/PM) for a 12 hour clock trimmed to 14 characters (meridiem may be lost).
+		"VFD18": lambda t: dateTimes.getVfdDisplay18(localtime(t)),  # Day Date Mon Hours Minutes Meridiem; Day in short word, month in digits with time in hours, minutes and meridiem (AM/PM) for a 12 hour clock trimmed to 18 characters (meridiem may be lost).
+		"WithSeconds": lambda t: dateTimes.getTime(localtime(t))  # Hours Minutes Seconds Meridiem; Time in hours, minutes, seconds and meridiem (AM/PM).
 	}
 
 	def __init__(self, tokens):

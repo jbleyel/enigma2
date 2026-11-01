@@ -2,7 +2,7 @@ from locale import AM_STR, PM_STR, nl_langinfo
 from time import localtime, strftime
 
 from skin import onReload as skinOnReload, parameters
-from Components.config import ConfigBoolean, ConfigSelection, ConfigSubsection, ConfigText, NoSave, config
+from Components.config import ConfigBoolean, ConfigSelection, ConfigSubsection, ConfigText, NoSave, config, setOnSaveCallback
 
 
 class DateTimes:
@@ -16,27 +16,14 @@ class DateTimes:
 	SECOND_SEPARATOR = 7  # Default second separator.
 	SUFFIX = 8  # Default date suffix.
 	DEFAULTS = {
-		"de_DE": ("%A+%d=%m#%Y", "%d.%m.%Y", "%d.%m", "commaSpace", "%d", "%m", "period", "period", ""),
-		"en_AU": ("%A+%d=%m#%Y", "%d/%m/%Y", "%d/%m", "commaSpace", "%d", "%B", "hyphen", "hyphen", ""),
-		"en_GB": ("%A+%d=%m#%Y", "%d/%m/%Y", "%d/%m", "commaSpace", "%d", "%B", "hyphen", "hyphen", ""),
+		"de_DE": ("%A+%d=%m#%Y", "%d.%m.%Y", "%d.%m", ",_", "%d", "%m", ".", ".", ""),
+		"en_AU": ("%A+%d=%m#%Y", "%d/%m/%Y", "%d/%m", ",_", "%d", "%B", "-", "-", ""),
+		"en_GB": ("%A+%d=%m#%Y", "%d/%m/%Y", "%d/%m", ",_", "%d", "%B", "-", "-", ""),
 	}
-	FALLBACK_DEFAULTS = ("%A+%m=%d#%Y", "%m/%d/%Y", "%m/%d", "space", "%-d", "%m", "slash", "slash", "")
-	SEPARATORS = {
-		"space": " ",
-		"twoSpaces": "  ",
-		"hyphen": "-",
-		"spacedHyphen": " - ",
-		"period": ".",
-		"periodSpace": ". ",
-		"comma": ",",
-		"commaSpace": ", ",
-		"colon": ":",
-		"semicolon": ";",
-		"slash": "/"
-	}
+	DEFAULTS_US = ("%A+%m=%d#%Y", "%m/%d/%Y", "%m/%d", "_", "%-d", "%m", "/", "/", "")
 
 	def initConfig(self):
-		defaults = self.DEFAULTS.get(config.misc.locale.value, self.FALLBACK_DEFAULTS)
+		defaults = self.DEFAULTS.get(config.misc.locale.value, self.DEFAULTS_US)
 		config.usage.date = ConfigSubsection()
 		date = config.usage.date
 		date.enabled = NoSave(ConfigBoolean(default=False))
@@ -61,17 +48,16 @@ class DateTimes:
 			("%b", _("Abbreviated month name")),
 			("%B", _("Full month name"))
 		])
-		# Settings values are stripped on load, so store IDs rather than whitespace.
 		choices = [
-			("space", _("Space ' '")),
-			("hyphen", _("Hyphen '-'")),
-			("period", _("Period '.'")),
-			("periodSpace", _("Period and space '. '")),
-			("comma", _("Comma ','")),
-			("commaSpace", _("Comma and space ', '")),
-			("colon", _("Colon ':'")),
-			("semicolon", _("Semicolon ';'")),
-			("slash", _("Forward slash '/'"))
+			("_", _("Space ' '")),
+			("-", _("Hyphen '-'")),
+			(".", _("Period '.'")),
+			("._", _("Period and space '. '")),
+			(",", _("Comma ','")),
+			(",_", _("Comma and space ', '")),
+			(":", _("Colon ':'")),
+			(";", _("Semicolon ';'")),
+			("/", _("Forward slash '/'"))
 		]
 		date.daySeparator = ConfigSelection(default=defaults[self.DAY_SEPARATOR], choices=choices)
 		date.firstSeparator = ConfigSelection(default=defaults[self.FIRST_SEPARATOR], choices=choices)
@@ -81,10 +67,10 @@ class DateTimes:
 			(".", _("Period '.'")),
 			(",", _("Comma ','"))
 		])
-		date.timeSeparator = ConfigSelection(default="twoSpaces", choices=[
-			("space", _("One space ' '")),
-			("twoSpaces", _("Two spaces '  '")),
-			("spacedHyphen", _("Space Hyphen Space ' - '"))
+		date.timeSeparator = ConfigSelection(default="__", choices=[
+			("_", _("One space ' '")),
+			("__", _("Two spaces '  '")),
+			("_-_", _("Space Hyphen Space ' - '"))
 		])
 		#
 		config.usage.time = ConfigSubsection()
@@ -107,11 +93,12 @@ class DateTimes:
 			))
 		time.meridiemFormat = ConfigSelection(default="", choices=choices)
 		time.meridiemActive = NoSave(ConfigText(default=""))
-		time.secondsFormat = ConfigSelection(default="", choices=[
+		time.secondsFormat = ConfigSelection(default="=%S", choices=[
 			("", _("No")),
 			("=%S", _("Yes"))
 		])
 		time.separator = ConfigSelection(default=":", choices=[
+			("_", _("Space ' '")),
 			("-", _("Hyphen '-'")),
 			(".", _("Period '.'")),
 			(":", _("Colon ':'")),
@@ -119,14 +106,11 @@ class DateTimes:
 			("/", _("Forward slash '/'"))
 		])
 		self.updateDatesAndTimes(init=True)
-		self.configElements = (date.layout, date.dayFormat, date.dateFormat, date.monthFormat, date.daySeparator, date.firstSeparator, date.secondSeparator, date.suffix, date.timeSeparator, time.layout, time.hourFormat, time.meridiemFormat, time.secondsFormat, time.separator)
-		for configElement in self.configElements:
-			configElement.addNotifier(self.updateDatesAndTimes, initial_call=False)
-		config.misc.locale.addNotifier(self.updateDatesAndTimes, initial_call=False)
 		if self.updateDatesAndTimes not in skinOnReload:
 			skinOnReload.append(self.updateDatesAndTimes)
+		setOnSaveCallback("DateTime", dateTimes.updateDatesAndTimes)  # Rebuild the formats when the settings are saved via OpenWebif.
 
-	def updateDatesAndTimes(self, configElement=None, init=False):
+	def updateDatesAndTimes(self, init=False):
 		try:
 			dateEnabled, timeEnabled = parameters.get("AllowUserDatesAndTimes", (0, 0))
 		except Exception as error:
@@ -137,24 +121,25 @@ class DateTimes:
 		date = config.usage.date
 		date.enabled.value = dateEnabled
 		if dateEnabled:
-			daySeparator = self.SEPARATORS[date.daySeparator.value]
-			firstSeparator = self.SEPARATORS[date.firstSeparator.value]
-			secondSeparator = self.SEPARATORS[date.secondSeparator.value]
-			self.date = date.layout.value.replace("%A", date.dayFormat.value).replace("+", daySeparator if date.dayFormat.value else "").replace("%d", date.dateFormat.value).replace("%m", date.monthFormat.value).replace("=", firstSeparator).replace("#", secondSeparator)
+			daySeparator = "" if date.dayFormat.value == "" else date.daySeparator.value.replace("_", " ")
+			firstSeparator = date.firstSeparator.value.replace("_", " ")
+			secondSeparator = date.secondSeparator.value.replace("_", " ")
+			self.date = date.layout.value.replace("%A", date.dayFormat.value).replace("+", daySeparator).replace("%d", date.dateFormat.value).replace("%m", date.monthFormat.value).replace("=", firstSeparator).replace("#", secondSeparator)
 			if suffix := date.suffix.value:
 				self.date = f"{self.date}{suffix}"
 			self.dateNoDay = date.layout.value.replace("%A+", "").replace("%d", date.dateFormat.value).replace("%m", date.monthFormat.value).replace("=", firstSeparator).replace("#", secondSeparator)
 			self.dateNoDayNoYear = date.layout.value.replace("%A+", "").replace("%d", date.dateFormat.value).replace("%m", date.monthFormat.value).replace("#%Y", "").replace("%Y=", "").replace("=", firstSeparator).replace("#", secondSeparator)
 			self.dateNoDayShortMonth = date.layout.value.replace("%A+", "").replace("%d", date.dateFormat.value).replace("%m", "%b").replace("=", firstSeparator).replace("#", secondSeparator)
 			self.dateNoDayShortMonthNoYear = date.layout.value.replace("%A+", "").replace("%d", date.dateFormat.value).replace("%m", "%b").replace("#%Y", "").replace("%Y=", "").replace("=", firstSeparator).replace("#", secondSeparator)
-			self.dateNoYear = date.layout.value.replace("%A", date.dayFormat.value).replace("+", daySeparator if date.dayFormat.value else "").replace("%d", date.dateFormat.value).replace("%m", date.monthFormat.value).replace("#%Y", "").replace("%Y=", "").replace("=", firstSeparator).replace("#", secondSeparator)
+			self.dateNoYear = date.layout.value.replace("%A", date.dayFormat.value).replace("+", daySeparator).replace("%d", date.dateFormat.value).replace("%m", date.monthFormat.value).replace("#%Y", "").replace("%Y=", "").replace("=", firstSeparator).replace("#", secondSeparator)
+			daySeparator = date.daySeparator.value.replace("_", " ")
 			self.dateShortDay = date.layout.value.replace("%A", "%a").replace("+", daySeparator).replace("%d", date.dateFormat.value).replace("%m", date.monthFormat.value).replace("=", firstSeparator).replace("#", secondSeparator)
-			self.dateShortDayNoMonthNoYear = f"%a{daySeparator}{date.dateFormat.value}"
+			self.dateShortDayNoMonthNoYear = f"%a{daySeparator}{config.usage.date.dateFormat.value}"
 			self.dateShortDayShortMonth = date.layout.value.replace("%A", "%a").replace("+", daySeparator).replace("%d", date.dateFormat.value).replace("%m", "%b").replace("=", firstSeparator).replace("#", secondSeparator)
 			self.dateShortDayShortMonthNoYear = date.layout.value.replace("%A", "%a").replace("+", daySeparator).replace("%d", date.dateFormat.value).replace("%m", "%b").replace("#%Y", "").replace("%Y=", "").replace("=", firstSeparator).replace("#", secondSeparator)
-			timeSeparator = self.SEPARATORS[date.timeSeparator.value]
+			timeSeparator = date.timeSeparator.value.replace("_", " ")
 		else:
-			defaults = self.DEFAULTS.get(config.misc.locale.value, self.FALLBACK_DEFAULTS)
+			defaults = self.DEFAULTS.get(config.misc.locale.value, self.DEFAULTS_US)
 			self.date = defaults[self.LEGACY]
 			self.dateNoDay = self.date
 			self.dateNoDayNoYear = defaults[self.LEGACY_NO_YEAR]
@@ -169,34 +154,49 @@ class DateTimes:
 		time = config.usage.time
 		time.enabled.value = timeEnabled
 		if timeEnabled:
+			separator = time.separator.value.replace("_", " ")
 			time.meridiemActive.value = time.meridiemFormat.value if "H" not in time.hourFormat.value and "k" not in time.hourFormat.value else ""
-			self.time = time.layout.value.replace("%H", time.hourFormat.value).replace("=%S", time.secondsFormat.value).replace("%P", time.meridiemActive.value).replace("=", time.separator.value)
-			self.timeWithSeconds = time.layout.value.replace("%H", time.hourFormat.value).replace("%P", time.meridiemActive.value).replace("=", time.separator.value)
-			self.timeNoMeridiem = time.layout.value.replace("%H", time.hourFormat.value).replace("=%S", time.secondsFormat.value).replace("%P", "").replace("=", time.separator.value)
-			self.timeShort = time.layout.value.replace("%H", time.hourFormat.value).replace("=%S", "").replace("%P", time.meridiemActive.value).replace("=", time.separator.value)
-			self.timeShortNoMeridiem = time.layout.value.replace("%H", time.hourFormat.value).replace("=%S", "").replace("%P", "").replace("=", time.separator.value)
+			self.time = time.layout.value.replace("%H", time.hourFormat.value).replace("=%S", time.secondsFormat.value).replace("%P", time.meridiemActive.value).replace("=", separator)
+			self.timeNoMeridiem = time.layout.value.replace("%H", time.hourFormat.value).replace("=%S", time.secondsFormat.value).replace("%P", "").replace("=", separator)
+			self.timeShort = time.layout.value.replace("%H", time.hourFormat.value).replace("=%S", "").replace("%P", time.meridiemActive.value).replace("=", separator)
+			self.timeShortNoMeridiem = time.layout.value.replace("%H", time.hourFormat.value).replace("=%S", "").replace("%P", "").replace("=", separator)
 			self.timeMixed = self.timeShort if time.meridiemActive.value else self.time
 		else:
 			time.meridiemActive.value = ""
 			time.meridiemActive.default = time.meridiemActive.value
 			self.time = "%H:%M:%S"
-			self.timeWithSeconds = self.time
 			self.timeNoMeridiem = self.time
 			self.timeShort = "%H:%M"
 			self.timeShortNoMeridiem = self.timeShort
 			self.timeMixed = self.time
 		self.dateTime = f"{self.date}{timeSeparator}{self.time}"
-		self.dateTimeShortDayShortMonthNoSeconds = f"{self.dateShortDayShortMonth}{timeSeparator}{self.timeShort}"
-		self.dateTimeShortDayShortMonthNoYear = f"{self.dateShortDayShortMonthNoYear}{timeSeparator}{self.timeShort}"
+		self.dateTimeShortDayShortMonthNoSeconds = f"{self.dateShortDayShortMonth} {self.timeShort}"
+		self.dateTimeShortDayShortMonthNoYearNoSeconds = f"{self.dateShortDayShortMonthNoYear} {self.timeShort}"
 		configItems = (
-			# ConfigClock and plugin layouts use this flag for 12-hour time fields.
+			(date, "date", self.date),
+			(date, "noDay", self.dateNoDay),
+			(date, "noDayNoYear", self.dateNoDayNoYear),
+			(date, "noDayShortMonth", self.dateNoDayShortMonth),
+			(date, "noDayShortMonthNoYear", self.dateNoDayShortMonthNoYear),
+			(date, "noYear", self.dateNoYear),
+			(date, "shortDay", self.dateShortDay),
+			(date, "shortDayNoMonthNoYear", self.dateShortDayNoMonthNoYear),
+			(date, "shortDayShortMonth", self.dateShortDayShortMonth),
+			(date, "shortDayShortMonthNoYear", self.dateShortDayShortMonthNoYear),
+			(time, "time", self.time),
+			(time, "noMeridiem", self.timeNoMeridiem),
+			(time, "short", self.timeShort),
+			(time, "shortNoMeridiem", self.timeShortNoMeridiem),
+			(time, "mixed", self.timeMixed),
 			(time, "wide", bool(time.meridiemActive.value)),
-			# Keep only the format names used by plugins; do not migrate saved formats.
+			# These are legacy items retained for code functionality.
+			(date, "dayfull", self.date),
+			(date, "daylong", self.dateShortDayShortMonth),
 			(date, "dayshort", self.dateShortDayShortMonthNoYear),
 			(date, "full", self.dateNoDay),
+			(date, "long", self.dateNoDayShortMonth),
 			(date, "short", self.dateNoDayShortMonthNoYear),
-			(time, "long", self.time),
-			(time, "short", self.timeShort)
+			(time, "long", self.time)
 		)
 		for key, attribute, value in configItems:
 			if init:
@@ -205,6 +205,30 @@ class DateTimes:
 			else:
 				getattr(key, attribute).value = value
 				getattr(key, attribute).default = value
+
+	# This is a convenience to allow the DateTime to get the on screen configuration items
+	# from here.  (It is assumed that this list will be maintained with any changes make to
+	# the configuration items defined above!)
+	#
+	def getConfigElements(self):
+		date = config.usage.date
+		time = config.usage.time
+		return (
+			date.layout,
+			date.dayFormat,
+			date.dateFormat,
+			date.monthFormat,
+			date.daySeparator,
+			date.firstSeparator,
+			date.secondSeparator,
+			date.suffix,
+			date.timeSeparator,
+			time.layout,
+			time.hourFormat,
+			time.meridiemFormat,
+			time.secondsFormat,
+			time.separator
+		)
 
 	def getDate(self, timestamp=None, forceNumeric=False, dataFormat=None):  # Day Date Month Year; Day and month names in full words.
 		if timestamp is None:
@@ -249,8 +273,8 @@ class DateTimes:
 	def getDateTimeShortDayShortMonthNoSeconds(self, timestamp=None, forceNumeric=False):  # Day Date Mon Year Hours Minutes Meridiem; Day and month names in short words with time in hours, minutes and meridiem (AM/PM) for a 12 hour clock.
 		return self.getDate(timestamp=timestamp, forceNumeric=forceNumeric, dataFormat=self.dateTimeShortDayShortMonthNoSeconds)
 
-	def getDateTimeShortDayShortMonthNoYear(self, timestamp=None, forceNumeric=False):
-		return self.getDate(timestamp=timestamp, forceNumeric=forceNumeric, dataFormat=self.dateTimeShortDayShortMonthNoYear)
+	def getDateTimeShortDayShortMonthNoYearNoSeconds(self, timestamp=None, forceNumeric=False):  # Day Date Mon Hours Minutes Meridiem; Day and month names in short words and no year with time in hours, minutes and meridiem (AM/PM) for a 12 hour clock.
+		return self.getDate(timestamp=timestamp, forceNumeric=forceNumeric, dataFormat=self.dateTimeShortDayShortMonthNoYearNoSeconds)
 
 	def getTime(self, timestamp=None, dataFormat=None):  # Hours Minutes Seconds Meridiem; Time in hours, minutes, seconds and meridiem (AM/PM).
 		if timestamp is None:
@@ -271,34 +295,17 @@ class DateTimes:
 	def getTimeShortNoMeridiem(self, timestamp=None):  # Hours Minutes; Time in hours, minutes and no meridiem (AM/PM) for a 12 hour clock.
 		return self.getTime(timestamp=timestamp, dataFormat=self.timeShortNoMeridiem)
 
-	def getTimeWithSeconds(self, timestamp=None):
-		return self.getTime(timestamp=timestamp, dataFormat=self.timeWithSeconds)
+	def getVfdDisplay08(self, timestamp=None, forceNumeric=True):  # Hours Minutes Seconds Meridiem; Time in hours, minutes and meridiem (AM/PM) for a 12 hour clock.
+		return self.getDate(timestamp=timestamp, forceNumeric=forceNumeric, dataFormat=self.timeShort)[:8]
 
-	def formatVfdDisplay(self, timestamp, dateFormat, width, forceNumeric):
-		if timestamp is None:
-			timestamp = localtime()
-		date = self.getDate(timestamp, forceNumeric, dateFormat).strip()
-		time = self.getTimeShort(timestamp).strip()
-		if len(date) + bool(date) + len(time) > width:
-			time = self.getTimeShortNoMeridiem(timestamp).strip()
-		if len(date) + bool(date) + len(time) > width:
-			date = "".join(date.split())
-		if len(date) + bool(date) + len(time) > width:
-			# Shorten only the date; never cut minutes or leave half an AM/PM suffix.
-			date = date[:max(0, width - len(time) - 1)].rstrip()
-		return f"{date} {time}" if date else time
+	def getVfdDisplay12(self, timestamp=None, forceNumeric=True):  # Hours Minutes Meridiem; No day, month in digits with time in hours, minutes and meridiem (AM/PM) for a 12 hour clock.
+		return self.getDate(timestamp=timestamp, forceNumeric=forceNumeric, dataFormat=f"{self.dateNoDayShortMonthNoYear} {self.timeShort}")[:12]
 
-	def getVfdDisplay08(self, timestamp=None, forceNumeric=True):
-		return self.formatVfdDisplay(timestamp, "", 8, forceNumeric)
+	def getVfdDisplay14(self, timestamp=None, forceNumeric=True):  # Hours Minutes Meridiem; No day, month in digits with time in hours, minutes and meridiem (AM/PM) for a 12 hour clock.
+		return self.getDate(timestamp=timestamp, forceNumeric=forceNumeric, dataFormat=f"{self.dateNoDayShortMonthNoYear} {self.timeShort}")[:14]
 
-	def getVfdDisplay12(self, timestamp=None, forceNumeric=True):
-		return self.formatVfdDisplay(timestamp, self.dateNoDayShortMonthNoYear, 12, forceNumeric)
-
-	def getVfdDisplay14(self, timestamp=None, forceNumeric=True):
-		return self.formatVfdDisplay(timestamp, self.dateNoDayShortMonthNoYear, 14, forceNumeric)
-
-	def getVfdDisplay18(self, timestamp=None, forceNumeric=True):
-		return self.formatVfdDisplay(timestamp, self.dateShortDayShortMonthNoYear, 18, forceNumeric)
+	def getVfdDisplay18(self, timestamp=None, forceNumeric=True):  # Day Date Mon Year Hours Minutes Meridiem; Day name in short, month in digits with time in hours, minutes and meridiem (AM/PM) for a 12 hour clock.
+		return self.getDate(timestamp=timestamp, forceNumeric=forceNumeric, dataFormat=f"{self.dateShortDayShortMonthNoYear} {self.timeShort}")[:18]
 
 
 dateTimes = DateTimes()
