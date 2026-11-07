@@ -1080,12 +1080,9 @@ class SchedulerEntry(TimerEntry):
 		NavigationInstance.instance.Scheduler.doActivate(self)
 
 	def getNextActivation(self):
-		print(f"[Scheduler] getNextActivation state={self.state}")
 		if self.state in (self.StateEnded, self.StateFailed, self.StateDisabled):
-			print(f"[Scheduler] getNextActivation return self.end={self.end}")
 			return int(time()) - 1 if self.function else self.end
 		nextState = self.state + 1
-		print(f"[Scheduler] getNextActivation return nextState {nextState} self.end={self.end}")
 		return {
 			self.StatePrepared: self.start_prepare,
 			self.StateRunning: self.begin,
