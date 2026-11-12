@@ -35,19 +35,6 @@ bool eListbox::defaultWrapAround = eListbox::DefaultWrapAround;
 int eListbox::defaultHorizontalAlignment = -1;
 int eListbox::defaultVerticalAlignment = -1;
 
-static int listboxMaxItemsForSpace(int space, int item, int spacing)
-{
-	if (space <= 0 || item <= 0)
-		return 0;
-	if (spacing <= 0)
-		return space / item;
-
-	int count = (space + spacing) / (item + spacing);
-	if (!count && space >= item)
-		count = 1;
-	return count;
-}
-
 eListbox::eListbox(eWidget *parent) : eWidget(parent), m_textPixmap(nullptr)
 {
 	m_scrollbar_width = eListbox::defaultScrollBarWidth;
@@ -172,10 +159,7 @@ void eListbox::setContent(iListboxContent *content)
 {
 	m_content = content;
 	if (content)
-	{
 		m_content->setListbox(this);
-		recalcSize();
-	}
 	entryReset();
 }
 
@@ -274,6 +258,11 @@ void eListbox::setStartIndex(int offset)
 	int maxItems = (m_orientation == orHorizontal) ? m_max_columns : effectiveMaxRows();
 	int max = std::max(0, (int)m_content->size() - maxItems);
 	int minOffset = (m_lock_first_row && m_orientation == orVertical) ? 1 : 0;
+	if (m_scrollbar_scroll == byCenter && m_orientation != orGrid && minOffset == 0)
+	{
+		minOffset = -(maxItems / 2);
+		max = std::max(0, (int)m_content->size() - 1 - maxItems / 2);
+	}
 	offset = std::max(minOffset, std::min(offset, max));
 	if (m_orientation == orHorizontal)
 	{
@@ -480,7 +469,7 @@ void eListbox::updateScrollBar()
 			scrollbarvisible = false;
 		}
 
-		if (m_scrollbar_scroll == byLine)
+		if (m_scrollbar_scroll != byPage)
 		{
 			m_scrollbar->setRange(0, m_scrollbar_calcsize - (m_scrollbar_border_width * 2));
 		}
@@ -490,7 +479,7 @@ void eListbox::updateScrollBar()
 	if (maxItems && entries && scrollbarvisible)
 	{
 
-		if (m_scrollbar_scroll == byLine)
+		if (m_scrollbar_scroll != byPage)
 		{
 
 			if (m_prev_scrollbar_page != m_selected)
@@ -610,10 +599,15 @@ int eListbox::event(int event, void *data, void *data2)
 
 		gRegion entryRect;
 		m_content->cursorSave();
+		/* byCenter: slots in front of the first entry stay empty (cursorMove would clamp to 0 and repeat entry 0) */
+		const bool centerMode = m_scrollbar_scroll == byCenter && m_orientation != orGrid && !(m_lock_first_row && m_orientation == orVertical);
+		int emptySlots = 0;
+		if (centerMode)
+			emptySlots = std::max(0, -((m_orientation == orVertical) ? m_top : m_left));
 		if (m_orientation == orVertical)
-			m_content->cursorMove(m_top - m_selected);
+			m_content->cursorMove(m_top + emptySlots - m_selected);
 		else if (m_orientation == orHorizontal)
-			m_content->cursorMove(m_left - m_selected);
+			m_content->cursorMove(m_left + emptySlots - m_selected);
 		else
 			m_content->cursorMove((m_max_columns * m_top) - m_selected);
 
@@ -685,6 +679,9 @@ int eListbox::event(int event, void *data, void *data2)
 				}
 				continue;
 			}
+
+			if (i < emptySlots)
+				continue;
 
 			bool sel = (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled);
 
@@ -859,7 +856,7 @@ void eListbox::recalcSize()
 		if (m_content)
 			m_content->setSize(eSize(m_itemwidth, m_itemheight));
 		int w = size().width();
-		m_max_columns = listboxMaxItemsForSpace(w, m_itemwidth, m_spacing.x());
+		m_max_columns = (w + m_spacing.x()) / (m_itemwidth + m_spacing.x());
 		if (m_style.m_selection_zoom > 1.0)
 		{
 			int item_w_zoom = (m_style.m_selection_width) - m_spacing.x();
@@ -878,8 +875,8 @@ void eListbox::recalcSize()
 		int w = size().width() - xscrollBar;
 		int h = size().height();
 
-		m_max_columns = listboxMaxItemsForSpace(w, m_itemwidth, m_spacing.x());
-		m_max_rows = listboxMaxItemsForSpace(h, m_itemheight, m_spacing.y());
+		m_max_columns = (w + m_spacing.x()) / (m_itemwidth + m_spacing.x());
+		m_max_rows = (h + m_spacing.y()) / (m_itemheight + m_spacing.y());
 
 		if (m_style.m_selection_zoom > 1.0)
 		{
@@ -924,17 +921,10 @@ void eListbox::recalcSizeAlignment(bool scrollbarVisible)
 		int yscrollBar = (m_orientation == orHorizontal) ? ((scrollbarVisible) ? m_scrollbar->size().height() + m_scrollbar_offset : 0) : 0;
 		int xfullSpace = size().width() - xscrollBar;
 		int yfullSpace = size().height() - yscrollBar;
-		int alignment_columns = m_max_columns;
-		if (m_orientation == orHorizontal && m_content && m_max_columns > 0)
-		{
-			int visible_items = m_content->size() - m_left;
-			if (visible_items > 0 && visible_items < alignment_columns)
-				alignment_columns = visible_items;
-		}
 		m_x_itemSpace = m_style.m_selection_width + m_defined_spacing.x();
-		if (alignment_columns > 1)
+		if (m_max_columns > 1)
 		{
-			m_x_itemSpace += ((alignment_columns - 1) * (m_itemwidth + m_defined_spacing.x()));
+			m_x_itemSpace += ((m_max_columns - 1) * (m_itemwidth + m_defined_spacing.x()));
 
 			if (m_style.m_selection_width == m_itemwidth) // no zoom : remove 1 space
 				m_x_itemSpace -= m_defined_spacing.x();
@@ -968,10 +958,10 @@ void eListbox::recalcSizeAlignment(bool scrollbarVisible)
 				xOffset = ((xfullSpace - m_x_itemSpace) / 2) + scrollbarLeftSpace;
 			if (m_item_alignment & itemHorizontalAlignRight)
 				xOffset = (xfullSpace - m_x_itemSpace) + scrollbarLeftSpace;
-			if ((m_item_alignment & itemHorizontalAlignJustify) && alignment_columns > 1)
+			if (m_item_alignment & itemHorizontalAlignJustify)
 			{
-				m_x_itemSpace = m_style.m_selection_width + ((alignment_columns - 1) * m_itemwidth);
-				int xspace = (xfullSpace - m_x_itemSpace) / (alignment_columns - 1);
+				m_x_itemSpace = m_style.m_selection_width + ((m_max_columns - 1) * m_itemwidth);
+				int xspace = (xfullSpace - m_x_itemSpace) / (m_max_columns - 1);
 				m_spacing.setX(xspace);
 			}
 		}
@@ -982,7 +972,7 @@ void eListbox::recalcSizeAlignment(bool scrollbarVisible)
 				yOffset = ((yfullSpace - m_y_itemSpace) / 2) + scrollbarTopSpace;
 			if (m_item_alignment & itemVerticalAlignBottom)
 				yOffset = (yfullSpace - m_y_itemSpace) + scrollbarTopSpace;
-			if ((m_item_alignment & itemVerticalAlignJustify) && m_max_rows > 1)
+			if (m_item_alignment & itemVerticalAlignJustify)
 			{
 				m_y_itemSpace = m_style.m_selection_height + ((m_max_rows - 1) * m_itemheight);
 				int yspace = (yfullSpace - m_y_itemSpace) / (m_max_rows - 1);
@@ -1310,8 +1300,6 @@ void eListbox::setItemAlignment(int align)
 	if (m_item_alignment != align)
 	{
 		m_item_alignment = align;
-		if (m_content)
-			recalcSize();
 		invalidate();
 	}
 }
@@ -1411,28 +1399,22 @@ void eListbox::setSelectionZoomSize(int width, int height, int zoomContentMode)
 	}
 }
 
-
 ePoint eListbox::getItemPostion(int index)
 {
 	int posx = 0, posy = 0;
-	if (m_orientation == orGrid)
+	ePoint indexSpacing = (index > 0) ? m_spacing : ePoint(0, 0);
+	if (m_orientation == orGrid || m_orientation == orHorizontal)
 	{
-		if (m_max_columns <= 0)
-			return ePoint(xOffset, yOffset);
-		const int local_index = index - (m_top * m_max_columns);
-		if (local_index < 0)
-			return ePoint(xOffset, yOffset);
-		posx = (m_itemwidth + m_spacing.x()) * (local_index % m_max_columns);
-		posy = (m_itemheight + m_spacing.y()) * (local_index / m_max_columns);
+		posx = (m_orientation == orGrid) ? (m_itemwidth + indexSpacing.x()) * ((index - (m_top * m_max_columns)) % m_max_columns) : (m_itemwidth + indexSpacing.x()) * (index - m_left);
+		posy = (m_orientation == orGrid) ? (m_itemheight + indexSpacing.y()) * ((index - (m_top * m_max_columns)) / m_max_columns) : 0;
 	}
-	else if (m_orientation == orHorizontal)
-		posx = (m_itemwidth + m_spacing.x()) * (index - m_left);
 	else if (m_lock_first_row && index == 0)
 		posy = 0;
 	else if (m_lock_first_row)
-		posy = (m_itemheight + m_spacing.y()) * (index - m_top + 1);
+		/* slot 0 is reserved for the pinned row, so every scrolling entry sits one slot lower */
+		posy = (m_itemheight + indexSpacing.y()) * (index - m_top + 1);
 	else
-		posy = (m_itemheight + m_spacing.y()) * (index - m_top);
+		posy = (m_itemheight + indexSpacing.y()) * (index - m_top);
 
 	return ePoint(posx + xOffset, posy + yOffset);
 }
@@ -1812,6 +1794,15 @@ void eListbox::moveSelection(int dir)
 	/* row 0 is pinned to its own fixed slot; the scrolling area must never start at it too, or it would be painted twice */
 	if (m_lock_first_row && m_orientation == orVertical && !isGrid && m_top < 1)
 		m_top = 1;
+
+	/* byCenter: the selection stays on the middle slot, the entries scroll past it */
+	if (m_scrollbar_scroll == byCenter && !isGrid && !(m_lock_first_row && m_orientation == orVertical))
+	{
+		if (m_orientation == orHorizontal)
+			m_left = m_selected - maxItems / 2;
+		else
+			m_top = m_selected - maxItems / 2;
+	}
 
 	// if it is, then the old selection clip is irrelevant, clear it or we'll get artifacts
 	if (m_orientation == orHorizontal)
