@@ -223,9 +223,7 @@ void eEPGTransponderDataReader::restartReader()
 {
 	singleLock l(last_channel_update_lock);
 	m_channelLastUpdated.clear();
-	// startEPG() touches timers and section readers owned by our own thread,
-	// so it must run there, not on the caller's thread (e.g. eEPGCache::flushEPG()
-	// called synchronously from the GUI thread via the "Delete EPG Cache" menu entry).
+	// startEPG() touches timers and readers owned by our thread
 	m_messages.send(Message(Message::restart));
 }
 

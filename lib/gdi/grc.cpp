@@ -904,6 +904,14 @@ void gDC::discardOpcode(const gOpcode *o)
 	}
 }
 
+// Start of the UTF-8 character at pos, so a cut never splits a character.
+static size_t utf8CharStart(const std::string &str, size_t pos)
+{
+	while (pos > 0 && (str[pos] & 0xC0) == 0x80)
+		pos--;
+	return pos;
+}
+
 static int measureTextWidth(const std::string &str, const gFont *textFont, const eRect &area)
 {
 	eTextPara para(area);
@@ -912,25 +920,22 @@ static int measureTextWidth(const std::string &str, const gFont *textFont, const
 	return para.getBoundBox().width();
 }
 
-// Cut the text so it fits into the area together with the ellipsis (binary search on whole UTF-8 characters).
+// Shorten the text until it fits into the area with the ellipsis.
 static std::string shortenWithEllipsis(const std::string &text, const gFont *textFont, const eRect &area)
 {
 	const char *ellipsis = reinterpret_cast<const char *>(u8"…");
-	std::vector<size_t> starts; // Byte offset of every character, so a cut never splits one.
-	for (size_t pos = 0; pos < text.size(); pos++)
-		if ((text[pos] & 0xC0) != 0x80)
-			starts.push_back(pos);
-	auto cut = [&](size_t count) { return count < starts.size() ? starts[count] : text.size(); };
-	size_t lo = 0, hi = starts.size(); // Largest number of characters that fits, 0 is always allowed.
-	while (lo < hi)
+	int w = area.width();
+	int bw = measureTextWidth(text, textFont, area);
+	if (bw <= w)
+		return text;
+	size_t len = utf8CharStart(text, text.size() * w / bw); // Estimate, then shorten one character at a time.
+	std::string shortened = text.substr(0, len) + ellipsis;
+	while (len > 0 && measureTextWidth(shortened, textFont, area) > w)
 	{
-		size_t mid = (lo + hi + 1) / 2;
-		if (measureTextWidth(text.substr(0, cut(mid)) + ellipsis, textFont, area) <= area.width())
-			lo = mid;
-		else
-			hi = mid - 1;
+		len = utf8CharStart(text, len - 1);
+		shortened = text.substr(0, len) + ellipsis;
 	}
-	return text.substr(0, cut(lo)) + ellipsis;
+	return shortened;
 }
 
 void gDC::exec(const gOpcode *o)
@@ -993,17 +998,19 @@ void gDC::exec(const gOpcode *o)
 		ASSERT(m_current_font);
 		para->setFont(m_current_font, o->parm.renderText->tabwidth);
 
-		const bool ellipsis = (flags & gPainter::RT_ELLIPSIS) != 0;
-		if (ellipsis && (flags & gPainter::RT_WRAP)) // Remove wrap
-			flags -= gPainter::RT_WRAP;
-		para->renderString(o->parm.renderText->text, (flags & gPainter::RT_WRAP) ? RS_WRAP : 0, border, markedpos);
-		if (ellipsis && para->getBoundBox().width() > o->parm.renderText->area.width()) // Only text that does not fit is rendered again.
+		if (flags & gPainter::RT_ELLIPSIS)
 		{
-			std::string shortened = shortenWithEllipsis(o->parm.renderText->text, m_current_font, o->parm.renderText->area);
-			para = new eTextPara(o->parm.renderText->area);
-			para->setFont(m_current_font, o->parm.renderText->tabwidth);
-			para->renderString(shortened.c_str(), 0, border, markedpos);
+			if (flags & gPainter::RT_WRAP) // Remove wrap
+				flags -= gPainter::RT_WRAP;
+			std::string text = o->parm.renderText->text;
+			std::string shortened = shortenWithEllipsis(text, m_current_font, o->parm.renderText->area);
+			if (shortened != text)
+			{
+				free(o->parm.renderText->text);
+				o->parm.renderText->text = strdup(shortened.c_str());
+			}
 		}
+		para->renderString(o->parm.renderText->text, (flags & gPainter::RT_WRAP) ? RS_WRAP : 0, border, markedpos);
 
 		if (o->parm.renderText->text)
 			free(o->parm.renderText->text);
