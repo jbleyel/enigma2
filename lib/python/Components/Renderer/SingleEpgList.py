@@ -14,6 +14,7 @@ class SingleEpgList(Renderer, VariableText):
 		self.maxEvents = 4
 		self.minEvent = 1
 		self.ignoreNA = False
+		self.eventFormat = "IBDCTM"
 		Renderer.__init__(self)
 		VariableText.__init__(self)
 		self.epgcache = eEPGCache.getInstance()
@@ -32,8 +33,8 @@ class SingleEpgList(Renderer, VariableText):
 				attribs.remove((attrib, value))
 		if self.maxEvents < self.minEvent:
 			self.minEvent = 1
-		if self.maxEvents > 10:
-			self.maxEvents = 10
+		# "M" limits the query to 10 entries (running event included)
+		self.eventFormat = "IBDCTM" if self.maxEvents < 10 else "IBDCT"
 		self.skinAttributes = attribs
 		return Renderer.applySkin(self, desktop, parent)
 
@@ -43,7 +44,7 @@ class SingleEpgList(Renderer, VariableText):
 		if event:
 			service = self.source.service
 			if self.epgcache:
-				events = self.epgcache.lookupEvent(["IBDCTM", (service.toString(), 0, -1, -1)])
+				events = self.epgcache.lookupEvent([self.eventFormat, (service.toString(), 0, -1, -1)])
 				if events:
 					eventCount = 0
 					for event in events:
