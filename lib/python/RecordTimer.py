@@ -10,7 +10,6 @@ from enigma import eActionMap, eEPGCache, eServiceEventEnums, eServiceReference,
 import NavigationInstance
 from timer import Timer, TimerEntry
 from Components.config import config
-#from Components.DataBaseAPI import moviedb
 from Components.Harddisk import findMountPoint
 import Components.RecordingConfig
 Components.RecordingConfig.InitRecordingConfig()

@@ -4,7 +4,7 @@ from re import compile
 
 from enigma import BT_SCALE, BT_VALIGN_CENTER, RT_HALIGN_LEFT, RT_VALIGN_CENTER, eListboxPythonMultiContent, eServiceCenter, eServiceReference, eServiceReferenceFS, gFont
 
-from skin import colors, fonts, parameters, getSkinFactor
+from skin import fonts, parameters
 from Components.config import config
 from Components.Harddisk import harddiskmanager
 from Components.MenuList import MenuList
@@ -136,27 +136,6 @@ RECORDING_EXTENSIONS = frozenset((".ap", ".cuts", ".eit", ".meta", ".sc"))
 KNOWN_EXTENSIONS = MOVIE_EXTENSIONS.union(AUDIO_EXTENSIONS, DVD_EXTENSIONS, IMAGE_EXTENSIONS)
 
 
-def parseParameter(value):
-	"""This function is responsible for parsing parameters in the skin, it can parse integers, floats, hex colors, hex integers, named colors, fonts and strings."""
-	if value[0] == "*":  # String.
-		return value[1:]
-	elif value[0] == "#":  # HEX Color.
-		return int(value[1:], 16)
-	elif value[:2] == "0x":  # HEX Integer.
-		return int(value, 16)
-	elif "." in value:  # Float number.
-		return float(value)
-	elif value in colors:  # Named color.
-		return colors[value].argb()
-	elif value.find(";") != -1:  # Font.
-		(font, size) = (x.strip() for x in value.split(";", 1))
-		factor = getSkinFactor()
-		return [font, int(int(size) * factor)]
-	else:  # Integer.
-		factor = getSkinFactor()
-		return int(int(value) * factor)
-
-
 class FileListBase(MenuList):
 	def __init__(self, selectedItems, directory, showDirectories=True, showFiles=True, showMountPoints=True, matchingPattern=None, useServiceRef=False, inhibitDirs=False, inhibitMounts=False, isTop=False, additionalExtensions=None, sortDirectories="0.0", sortFiles="0.0", directoriesFirst=True, showCurrentDirectory=False):
 		self.extensionIcons = {}
@@ -191,24 +170,12 @@ class FileListBase(MenuList):
 		self.currentDirectory = None
 		self.previousDirectory = None
 		self.serviceHandler = eServiceCenter.getInstance()
-		self.parameters = {}
 		if self.multiSelect:
 			self.setMultiSelectMode()
 		else:
 			self.setSingleSelectMode()
 		self.refreshMountPoints()
 		self.changeDir(directory, directory)
-
-	def applySkin(self, desktop, screen):
-		if self.skinAttributes is not None:
-			attribs = []
-			for (attrib, value) in self.skinAttributes[:]:
-				if attrib in ("FileList", "FileListMulti", "FileListIcon", "FileListName", "FileListMultiLock", "FileListMultiIcon", "FileListMultiName"):
-					self.parameters[attrib] = list(map(parseParameter, [x.strip() for x in value.split(",")])) if "," in value else parseParameter(value)
-				else:
-					attribs.append((attrib, value))
-			self.skinAttributes = attribs
-		return MenuList.applySkin(self, desktop, screen)
 
 	def execBegin(self):
 		harddiskmanager.on_partition_list_change.append(self.partitionListChanged)
@@ -227,25 +194,25 @@ class FileListBase(MenuList):
 
 	def setSingleSelectMode(self):
 		self.multiSelect = False
-		font = self.parameters.get("FileList", fonts.get("FileList", ("Regular", 20, 25)))
+		font = fonts.get("FileList", ("Regular", 20, 25))
 		self.l.setFont(0, gFont(font[0], font[1]))
 		self.l.setItemHeight(font[2])
 		self.itemHeight = font[2]
 		self.lockX, self.lockY, self.lockW, self.lockH = (0, 0, 0, 0)
-		self.iconX, self.iconY, self.iconW, self.iconH = self.parameters.get("FileListIcon", parameters.get("FileListIcon", (15, 0, self.itemHeight, self.itemHeight - 4)))
-		self.nameX, self.nameY, self.nameW, self.nameH = self.parameters.get("FileListName", parameters.get("FileListName", (25 + self.iconW, 0, 900, self.itemHeight)))
+		self.iconX, self.iconY, self.iconW, self.iconH = parameters.get("FileListIcon", (15, 0, self.itemHeight, self.itemHeight - 4))
+		self.nameX, self.nameY, self.nameW, self.nameH = parameters.get("FileListName", (25 + self.iconW, 0, 900, self.itemHeight))
 		self.setIconFont()
 		self.refresh()
 
 	def setMultiSelectMode(self):
 		self.multiSelect = True
-		font = self.parameters.get("FileListMulti", fonts.get("FileListMulti", ("Regular", 20, 25)))
+		font = fonts.get("FileListMulti", ("Regular", 20, 25))
 		self.l.setFont(0, gFont(font[0], font[1]))
 		self.l.setItemHeight(font[2])
 		self.itemHeight = font[2]
-		self.lockX, self.lockY, self.lockW, self.lockH = self.parameters.get("FileListMultiLock", parameters.get("FileListMultiLock", (15, 0, self.itemHeight, self.itemHeight - 4)))
-		self.iconX, self.iconY, self.iconW, self.iconH = self.parameters.get("FileListMultiIcon", parameters.get("FileListMultiIcon", (25 + self.lockW, 0, self.itemHeight, self.itemHeight - 4)))
-		self.nameX, self.nameY, self.nameW, self.nameH = self.parameters.get("FileListMultiName", parameters.get("FileListMultiName", (35 + self.lockW + self.iconW, 0, 900, self.itemHeight)))
+		self.lockX, self.lockY, self.lockW, self.lockH = parameters.get("FileListMultiLock", (15, 0, self.itemHeight, self.itemHeight - 4))
+		self.iconX, self.iconY, self.iconW, self.iconH = parameters.get("FileListMultiIcon", (25 + self.lockW, 0, self.itemHeight, self.itemHeight - 4))
+		self.nameX, self.nameY, self.nameW, self.nameH = parameters.get("FileListMultiName", (35 + self.lockW + self.iconW, 0, 900, self.itemHeight))
 		self.setIconFont()
 		self.refresh()
 
