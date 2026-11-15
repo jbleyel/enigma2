@@ -1908,6 +1908,9 @@ RESULT eDVBServicePlay::setTimeshiftSyncEnabled(bool enabled)
 			unpause();
 		resetRecoveryState();
 		m_timeshift_sync_enabled = enabled;
+		m_timeshift_sync_log_time = -1;
+		m_timeshift_sync_eof_count = 0;
+		eDebug("[TimeshiftSync] Stream-clock recovery enabled=%d, active=%d", enabled, m_timeshift_active);
 	}
 	return 0;
 }
@@ -1933,12 +1936,23 @@ bool eDVBServicePlay::getTimeshiftSyncPosition(pts_t &live, pts_t &playback)
 
 RESULT eDVBServicePlay::getTimeshiftDelay(pts_t &delay)
 {
-	pts_t live = 0, playback = 0;
+	pts_t live = -1, playback = -1;
 	delay = 0;
-	if (!getTimeshiftSyncPosition(live, playback))
-		return -1;
-	delay = (live - playback) & 0x1FFFFFFFFLL;
-	return 0;
+	const bool valid = getTimeshiftSyncPosition(live, playback);
+	if (valid)
+		delay = (live - playback) & 0x1FFFFFFFFLL;
+	// No extra decoder read or per-packet logging. These are the exact
+	// clock samples returned to the plugin, including failed measurements.
+	if (debugLvl >= lvlTrace)
+	{
+		struct timespec now;
+		if (!clock_gettime(CLOCK_MONOTONIC, &now) && (m_timeshift_sync_log_time < 0 || now.tv_sec - m_timeshift_sync_log_time >= 2))
+		{
+			m_timeshift_sync_log_time = now.tv_sec;
+			eTrace("[TimeshiftSync] live=%lld playback=%lld delay=%lld valid=%d enabled=%d paused=%d recovering=%d held=%lld eofCount=%u", live, playback, delay, valid, m_timeshift_sync_enabled, m_is_paused, m_stream_corruption_detected.load(), m_timeshift_sync_playback_pts, m_timeshift_sync_eof_count);
+		}
+	}
+	return valid ? 0 : -1;
 }
 
 void eDVBServicePlay::handleEofRecovery() {
@@ -1966,6 +1980,8 @@ void eDVBServicePlay::handleEofRecovery() {
 	if (m_record && getTimeshiftRecoveryDelay(m_original_timeshift_delay, position)) {
 		m_delay_calculated = true;
 		eTrace("[PreciseRecovery] Original delay fingerprint set: %lld PTS", m_original_timeshift_delay);
+		if (m_timeshift_sync_enabled)
+			eTrace("[TimeshiftSync] Recovery snapshot: live=%lld playback=%lld delay=%lld", m_timeshift_sync_live_pts, m_timeshift_sync_playback_pts, m_original_timeshift_delay);
 	}
 
 	if (m_decoder) {
@@ -2149,6 +2165,14 @@ void eDVBServicePlay::serviceEventTimeshift(int event) {
 			m_event((iPlayableService*)this, evSOF);
 		break;
 	case eDVBServicePMTHandler::eventEOF:
+		// A plugin-owned buffer may temporarily run out of decodable data.
+		// Keep recording and let its delay controller recover instead of
+		// silently discarding the requested delay by switching to live.
+		if (m_timeshift_sync_enabled && m_timeshift_active)
+		{
+			++m_timeshift_sync_eof_count;
+			break;
+		}
 		// Ignore EOF event if we are in the middle of a recovery process.
 		if (m_stream_corruption_detected || m_recovery_phase == RecoveryPhase::Playing)
 		{
