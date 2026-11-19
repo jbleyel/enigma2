@@ -743,8 +743,6 @@ def InitUsageConfig():
 	config.usage.http_startdelay = ConfigSelection(default=0, choices=[(0, _("Disabled"))] + [(x, _("%d ms") % x) for x in (10, 50, 100, 500, 1000, 2000)])
 	config.usage.http_startdelay.addNotifier(setHttpStartDelay)
 
-	config.usage.alternateGitHubDNS = ConfigYesNo(default=False)
-
 	config.usage.days_mark_as_new = ConfigInteger(default=3, limits=(0, 31))
 	config.usage.only_unseen_mark_as_new = ConfigYesNo(default=False)
 

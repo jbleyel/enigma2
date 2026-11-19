@@ -141,6 +141,7 @@ class OpkgComponent:
 	EVENT_UPDATED = 34
 	EVENT_LISTITEM = 35
 	EVENT_DOWNLOAD_DONE = 36
+	EVENT_PICON_STORAGE = 37
 
 	EVENT_NAMES = {
 		EVENT_COMMAND_ERROR: "EVENT_COMMAND_ERROR",
@@ -180,7 +181,8 @@ class OpkgComponent:
 		EVENT_UPGRADE: "EVENT_UPGRADE",
 		EVENT_UPDATED: "EVENT_UPDATED",
 		EVENT_LISTITEM: "EVENT_LISTITEM",
-		EVENT_DOWNLOAD_DONE: "EVENT_DOWNLOAD_DONE"
+		EVENT_DOWNLOAD_DONE: "EVENT_DOWNLOAD_DONE",
+		EVENT_PICON_STORAGE: "EVENT_PICON_STORAGE"
 	}
 
 	LIST_KEYS = [
@@ -215,9 +217,11 @@ class OpkgComponent:
 		self.opkgCommands = []
 		self.opkgCommand = None
 		self.opkgCacheEmpty = False
+		self.piconStorageFailed = False
 
 	def runCommand(self, command, args=None):
 		self.command = command
+		self.piconStorageFailed = False
 		if args is None:
 			args = {}
 		self.opkgCommands = self.CMD_TABLE.get(command)[:]  # Copy the command list so it can be manipulated.
@@ -277,6 +281,7 @@ class OpkgComponent:
 
 	def consoleDataAvail(self, data):
 		def consoleDataParse(line):
+			self.checkPiconStorageError(line)
 			if line:  # Skip empty lines. (Continuation lines should only occur in list commands.)
 				try:
 					argv = line.split()
@@ -429,26 +434,30 @@ class OpkgComponent:
 	def parseListData(self, listData, listKeys, installed):
 		data = {}
 		if listData:
-			lines = listData.splitlines()
-			for line in lines:
+			requiredFields = 3 if "Update" in listKeys else 2
+			entry = None
+			invalidCount = 0
+			for line in listData.splitlines():
+				if line.startswith(" ") and entry is not None and "Description" in entry:
+					entry["Description"] = f"{entry['Description']} {line.strip()}"
+					continue
+				entry = None
 				if line.startswith("Not selecting "):
 					print(f"[Opkg] Warning: Not selecting '{line[14:]}'.")
-			args = []
-			for line in lines + [""]:  # Flush the last record even without a trailing blank line.
-				if args:
-					if line[:1] == " ":
-						args[-1] = f"{args[-1]} {line.strip()}"
-						continue
-					entry = {}
-					for index, arg in enumerate(args):
-						entry[listKeys[index]] = arg
-					package = args[0]
-					entry["Installed"] = installed
-					if package in data:
-						data[package].append(entry)
-					else:
-						data[package] = [entry]
-				args = [x.strip() for x in line.split(" - ", 2)] if line.strip() else []
+					continue
+				if not line.strip():
+					continue
+				args = [x.strip() for x in line.split(" - ", 2)]
+				if len(args) < requiredFields or not all(args[:requiredFields]) or len(args[0].split()) != 1:
+					if not invalidCount:
+						print(f"[Opkg] Invalid package list entry: '{line}'.")
+					invalidCount += 1
+					continue
+				entry = dict(zip(listKeys, args))
+				entry["Installed"] = installed
+				data.setdefault(args[0], []).append(entry)
+			if invalidCount:
+				print(f"[Opkg] Ignored {invalidCount} invalid package list entries.")
 		packages = []
 		for package in sorted(data.keys()):
 			select = 0
@@ -553,6 +562,7 @@ class OpkgComponent:
 
 
 	def startCmd(self, cmd, args=None):
+		self.piconStorageFailed = False
 		self.nextCommand = None
 		extra = []
 		consoleBuffer = 2048
@@ -631,6 +641,7 @@ class OpkgComponent:
 			self.cachePtr = linePtr
 
 	def parseLine(self, line):
+		self.checkPiconStorageError(line)
 		# print(f"[Opkg] DEBUG: Line='{line}'.")
 		if not line or line.startswith(" "):  # Skip empty or continuation lines.
 			return
@@ -638,6 +649,10 @@ class OpkgComponent:
 			argv = line.split(" - ", 2)
 			argc = len(argv)
 			if not line.startswith("Not selecting ") and not line.startswith("error: "):
+				# Diagnostics share the output with package records; upgrades need both versions.
+				if argc < (3 if self.command == self.CMD_UPGRADE_LIST else 2):
+					print(f"[Opkg] Ignoring invalid package list entry: '{line}'.")
+					return
 				if self.command == self.CMD_UPGRADE_LIST and self.isExcluded(argv[0]):
 					self.excludeList.append(argv)
 				else:
@@ -676,6 +691,11 @@ class OpkgComponent:
 				self.callCallbacks(self.EVENT_MODIFIED, line.split(" '", 3)[1][:-1])
 		except IndexError as err:
 			print(f"[Opkg] Error: Failed to parse line '{line}'!  ({str(err)})")
+
+	def checkPiconStorageError(self, line):
+		if line and "PICON_STORAGE:" in line and not self.piconStorageFailed:
+			self.piconStorageFailed = True
+			self.callCallbacks(self.EVENT_PICON_STORAGE, _("The picon package could not be installed. Connect an HDD or USB device and select it as the picon install location in Plugin Browser settings. Check that the device is mounted and writable.\n\nInternal flash only allows small packages with up to 1,000 files and 10 MiB, with enough free space and file entries remaining."))
 
 	def isExcluded(self, item):  # NOTE: These filters are for SoftwareUpdate.
 		if item.find("busybox") > -1:

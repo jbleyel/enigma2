@@ -474,7 +474,10 @@ Eckenradius der Scrollleiste
 
 #### scrollbarScroll=
 Scroll-Verhalten der Scrollleiste
-- Werte: `byPage`, `byLine`
+- Werte: `byPage`, `byLine`, `byCenter`
+- `byPage`: Die Liste scrollt seitenweise.
+- `byLine`: Die Liste scrollt zeilenweise.
+- `byCenter`: Die Markierung bleibt auf dem mittleren Slot, die Einträge scrollen daran vorbei. Slots vor dem ersten und nach dem letzten Eintrag bleiben leer. Funktioniert bei horizontalen und vertikalen Listen; Grid-Listen und vertikale Listen mit `lockFirstRow` fallen auf `byPage` zurück. Für eine exakte Mitte eine ungerade Anzahl sichtbarer Einträge verwenden; bei gerader Anzahl wird der untere/rechte der beiden mittleren Slots verwendet. Jede Änderung der Auswahl zeichnet die ganze Liste neu.
 
 #### scrollText=
 Legt das Scroll-Verhalten für Text-Widgets fest (für langen Text der gescrollt werden muss).

@@ -132,13 +132,18 @@ void eListbox::setScrollbarMode(uint8_t mode)
 
 void eListbox::setScrollbarScroll(uint8_t scroll)
 {
-	if (m_scrollbar && m_scrollbar_scroll != scroll)
-	{
-		m_scrollbar_scroll = scroll;
-		updateScrollBar();
+	if (m_scrollbar_scroll == scroll)
 		return;
-	}
 	m_scrollbar_scroll = scroll;
+	/* both modes use the cache for different values and the slider range differs */
+	m_prev_scrollbar_page = -1;
+	if (m_content)
+	{
+		/* recalc the start offset for the current selection right away, with or without scrollbar widget */
+		m_content_changed = true;
+		moveSelection(justCheck);
+	}
+	updateScrollBar();
 }
 
 void eListbox::setLockFirstRow(bool lock)
@@ -149,6 +154,12 @@ void eListbox::setLockFirstRow(bool lock)
 	if (m_content)
 	{
 		m_content->resetClip();
+		/* byCenter switches between line and page thumb, drop the stale cache and slider range */
+		if (m_scrollbar_scroll == byCenter && m_orientation == orVertical)
+		{
+			m_prev_scrollbar_page = -1;
+			m_content_changed = true;
+		}
 		moveSelection(justCheck);
 		updateScrollBar();
 		invalidate();
@@ -157,6 +168,9 @@ void eListbox::setLockFirstRow(bool lock)
 
 void eListbox::setContent(iListboxContent *content)
 {
+	// Pending callbacks may keep the old content alive after its widget is gone.
+	if (m_content)
+		m_content->m_listbox = nullptr;
 	m_content = content;
 	if (content)
 		m_content->setListbox(this);
@@ -260,8 +274,10 @@ void eListbox::setStartIndex(int offset)
 	int minOffset = (m_lock_first_row && m_orientation == orVertical) ? 1 : 0;
 	if (m_scrollbar_scroll == byCenter && m_orientation != orGrid && minOffset == 0)
 	{
-		minOffset = -(maxItems / 2);
-		max = std::max(0, (int)m_content->size() - 1 - maxItems / 2);
+		/* an empty list is pinned to 0 */
+		minOffset = m_content->size() ? -(maxItems / 2) : 0;
+		/* a short list needs a negative start offset to stay centered, only an empty list is pinned to 0 */
+		max = m_content->size() ? (int)m_content->size() - 1 - maxItems / 2 : 0;
 	}
 	offset = std::max(minOffset, std::min(offset, max));
 	if (m_orientation == orHorizontal)
@@ -391,6 +407,8 @@ void eListbox::updateScrollBar()
 {
 	if (!m_scrollbar || !m_content || m_scrollbar_mode == showNever)
 		return;
+	/* byCenter only centers horizontal and vertical lists, grid and lockFirstRow fall back to page behavior */
+	const bool lineThumb = m_scrollbar_scroll == byLine || (m_scrollbar_scroll == byCenter && m_orientation != orGrid && !(m_lock_first_row && m_orientation == orVertical));
 	int entries = m_content->size();
 	if ((m_orientation == orGrid) && m_max_columns)
 		entries = (m_content->size() + m_max_columns - 1) / m_max_columns;
@@ -469,17 +487,17 @@ void eListbox::updateScrollBar()
 			scrollbarvisible = false;
 		}
 
-		if (m_scrollbar_scroll != byPage)
-		{
+		if (lineThumb)
 			m_scrollbar->setRange(0, m_scrollbar_calcsize - (m_scrollbar_border_width * 2));
-		}
+		else
+			m_scrollbar->setRange(0, 100);
 	}
 
 	// Don't set Start/End if scollbar not visible or entries/maxItems = 0
 	if (maxItems && entries && scrollbarvisible)
 	{
 
-		if (m_scrollbar_scroll != byPage)
+		if (lineThumb)
 		{
 
 			if (m_prev_scrollbar_page != m_selected)
@@ -682,6 +700,10 @@ int eListbox::event(int event, void *data, void *data2)
 
 			if (i < emptySlots)
 				continue;
+
+			/* byCenter: slots behind the last entry stay empty */
+			if (centerMode && !m_content->cursorValid())
+				break;
 
 			bool sel = (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled);
 
@@ -1402,7 +1424,8 @@ void eListbox::setSelectionZoomSize(int width, int height, int zoomContentMode)
 ePoint eListbox::getItemPostion(int index)
 {
 	int posx = 0, posy = 0;
-	ePoint indexSpacing = (index > 0) ? m_spacing : ePoint(0, 0);
+	/* same step as the paint loop, the first entry may sit behind empty center slots */
+	ePoint indexSpacing = m_spacing;
 	if (m_orientation == orGrid || m_orientation == orHorizontal)
 	{
 		posx = (m_orientation == orGrid) ? (m_itemwidth + indexSpacing.x()) * ((index - (m_top * m_max_columns)) % m_max_columns) : (m_itemwidth + indexSpacing.x()) * (index - m_left);

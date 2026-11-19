@@ -1910,7 +1910,7 @@ RESULT eDVBServicePlay::setTimeshiftSyncEnabled(bool enabled)
 		m_timeshift_sync_enabled = enabled;
 		m_timeshift_sync_log_time = -1;
 		m_timeshift_sync_eof_count = 0;
-		eDebug("[TimeshiftSync] Stream-clock recovery enabled=%d, active=%d", enabled, m_timeshift_active);
+		eTrace("[TimeshiftSync] Stream-clock recovery enabled=%d, active=%d", enabled, m_timeshift_active);
 	}
 	return 0;
 }
