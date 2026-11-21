@@ -298,33 +298,6 @@
 		<item level="2" text="Country for EPG event genre information" description="Choose a country scheme for decoding genre information in EPG events." indent="1">config.misc.epggenrecountry</item>
 		<item level="2" text="Correct invalid EPG data" description="Choose the option to correct invalid EPG data." indent="1">config.usage.correct_invalid_epgdata</item>
 	</setup>
-	<setup key="EPGEnhanced" title="SingleEPG Settings" level="2" showOpenWebif="yes">
-		<item level="2" text="General Appearance" />
-		<item level="2" text="Start mode" description="Select which service to use when opening the EPG." indent="1">config.epgselection.single.browse_mode</item>
-		<item level="2" text="Service preview mode" description="Select 'Yes' to enable preview of channels while in the EPG list." indent="1">config.epgselection.single.preview_mode</item>
-		<item level="2" text="Skip empty services" description="When enabled, services without EPG data will be hidden." indent="1">config.epgselection.overjump</item>
-		<item level="2" text="Sort list by" description="You can have the list sorted by time or alphanumerical." indent="1">config.epgselection.sort</item>
-		<item level="2" text="Layout And Fonts" />
-		<item level="2" text="Number of rows" description="Configure the number of rows shown." indent="1">config.epgselection.single.itemsperpage</item>
-		<item level="2" text="Event font size" description="Configure the font size relative to skin size, so 1 increases by 1 point size, and -1 decreases by 1 point size." indent="1">config.epgselection.single.eventfs</item>
-		<item level="2" text="Button Assignments" />
-		<item level="2" text="OK" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_ok</item>
-		<item level="2" text="OK (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_oklong</item>
-		<item level="2" text="EPG" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_epg</item>
-		<item level="2" text="EPG (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_epglong</item>
-		<item level="2" text="INFO" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_info</item>
-		<item level="2" text="INFO (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_infolong</item>
-		<item level="2" text="RECORD" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_rec</item>
-		<item level="2" text="RECORD (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_reclong</item>
-		<item level="2" text="RED" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_red</item>
-		<item level="2" text="RED (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_redlong</item>
-		<item level="2" text="GREEN" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_green</item>
-		<item level="2" text="GREEN (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_greenlong</item>
-		<item level="2" text="YELLOW" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_yellow</item>
-		<item level="2" text="YELLOW (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_yellowlong</item>
-		<item level="2" text="BLUE" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_blue</item>
-		<item level="2" text="BLUE (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_bluelong</item>
-	</setup>
 	<setup key="EPGGraphical" title="GraphicalEPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="General Appearance" />
 		<item level="2" text="Start mode" description="Select which service to use when opening the EPG." indent="1">config.epgselection.grid.browse_mode</item>
@@ -476,12 +449,32 @@
 		<item level="2" text="BLUE" description="Select the action that this button will perform." indent="1">config.epgselection.multi.btn_blue</item>
 		<item level="2" text="BLUE (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.multi.btn_bluelong</item>
 	</setup>
-	<setup key="EPGSingle" title="ChannelEPG Settings" level="2" showOpenWebif="yes">
+	<setup key="EPGSingle" title="SingleEPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="General Appearance" />
+		<item level="2" text="Start mode" description="Select which service to use when opening the EPG." indent="1">config.epgselection.single.browse_mode</item>
+		<item level="2" text="Service preview mode" description="Select 'Yes' to enable preview of channels while in the EPG list." indent="1">config.epgselection.single.preview_mode</item>
+		<item level="2" text="Skip empty services" description="When enabled, services without EPG data will be hidden." indent="1">config.epgselection.overjump</item>
 		<item level="2" text="Sort list by" description="You can have the list sorted by time or alphanumerical." indent="1">config.epgselection.sort</item>
 		<item level="2" text="Layout And Fonts" />
 		<item level="2" text="Number of rows" description="Select the number of services to be shown in the list." indent="1">config.epgselection.single.itemsperpage</item>
 		<item level="2" text="Event font size" description="Configure the font size relative to skin size, so 1 increases by 1 point size, and -1 decreases by 1 point size." indent="1">config.epgselection.single.eventfs</item>
+		<item level="2" text="Button Assignments" />
+		<item level="2" text="OK" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_ok</item>
+		<item level="2" text="OK (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_oklong</item>
+		<item level="2" text="EPG" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_epg</item>
+		<item level="2" text="EPG (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_epglong</item>
+		<item level="2" text="INFO" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_info</item>
+		<item level="2" text="INFO (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_infolong</item>
+		<item level="2" text="RECORD" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_rec</item>
+		<item level="2" text="RECORD (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_reclong</item>
+		<item level="2" text="RED" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_red</item>
+		<item level="2" text="RED (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_redlong</item>
+		<item level="2" text="GREEN" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_green</item>
+		<item level="2" text="GREEN (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_greenlong</item>
+		<item level="2" text="YELLOW" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_yellow</item>
+		<item level="2" text="YELLOW (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_yellowlong</item>
+		<item level="2" text="BLUE" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_blue</item>
+		<item level="2" text="BLUE (Long press)" description="Select the action that this button will perform." indent="1">config.epgselection.single.btn_bluelong</item>
 	</setup>
 	<setup key="EPGVertical" title="VerticalEPG Settings" level="2" showOpenWebif="yes">
 		<item level="2" text="General Appearance" />

@@ -77,9 +77,12 @@ class ServiceStopScreen:
 					self.oldAlternativeRef = self.session.nav.getCurrentlyPlayingServiceReference()
 					self.session.nav.stopService()
 			if self.pipAvailable() and self.session.pipshown:  # Try to disable PiP.
-				if hasattr(self.session, "infobar"):
-					if self.session.infobar.servicelist and self.session.infobar.servicelist.dopipzap:
-						self.session.infobar.servicelist.togglePipzap()
+				serviceList = getattr(getattr(self.session, "infobar", None), "servicelist", None)
+				if serviceList is None:
+					from Screens.InfoBar import InfoBar  # Avoid importing the main InfoBar during tuner setup initialization.
+					serviceList = getattr(InfoBar.instance, "servicelist", None)
+				if getattr(serviceList, "dopipzap", False) and getattr(self.session, "pip", None) is not None:
+					serviceList.togglePipzap()
 				if hasattr(self.session, "pip"):
 					del self.session.pip
 				self.session.pipshown = False
@@ -882,7 +885,7 @@ class NimSetup(Screen, ConfigListScreen, ServiceStopScreen, ProtectedScreen):
 				self.appendMultiTypeConfigMode("DVB-C", inputName, self.nimConfig.dvbc.configMode, description, indentLevel=1 if self.isCableTerrestrialMultiType() else 0)
 			detailStart = len(self.list)
 			if self.nimConfig.dvbc.configMode.value == "enabled":
-				self.list.append(getConfigListEntry(_("Network ID"), self.nimConfig.dvbc.scan_networkid, _("This setting depends on your cable provider and location. If you don't know the correct setting refer to the menu in the official cable receiver, or get it from your cable provider, or seek help via Internet forum.")))
+				self.list.append(getConfigListEntry(_("Network-ID"), self.nimConfig.dvbc.scan_networkid, _("This setting depends on your cable provider and location. If you don't know the correct setting refer to the menu in the official cable receiver, or get it from your cable provider, or seek help via Internet forum.")))
 				self.cableScanType = getConfigListEntry(_("Used service scan type"), self.nimConfig.dvbc.scan_type, _("Select 'Provider' to scan from the predefined list of cable multiplexes. Select 'Bands' to only scan certain parts of the spectrum. Select 'Steps' to scan in steps of a particular frequency bandwidth."))
 				self.list.append(self.cableScanType)
 				if self.nimConfig.dvbc.scan_type.value == "provider":
